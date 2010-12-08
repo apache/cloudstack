@@ -36,7 +36,9 @@ import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -51,17 +53,19 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.ConsoleProxyVO;
+import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.Type;
-import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineName;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = { ConsoleProxyManager.class })
-public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, VirtualMachineManager<ConsoleProxyVO>, AgentHook {
+public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, VirtualMachineGuru<ConsoleProxyVO>, AgentHook {
     private static final Logger s_logger = Logger.getLogger(AgentBasedConsoleProxyManager.class);
 
     private String _name;
@@ -92,8 +96,9 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 
-        if (s_logger.isInfoEnabled())
+        if (s_logger.isInfoEnabled()) {
             s_logger.info("Start configuring AgentBasedConsoleProxyManager");
+        }
 
         _name = name;
 
@@ -105,16 +110,19 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
 
         Map<String, String> configs = configDao.getConfiguration("management-server", params);
         String value = configs.get("consoleproxy.url.port");
-        if (value != null)
+        if (value != null) {
             _consoleProxyUrlPort = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_URL_PORT);
+        }
         
         value = configs.get("consoleproxy.port");
-        if (value != null)
+        if (value != null) {
             _consoleProxyPort = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT);
+        }
 
         value = configs.get("consoleproxy.sslEnabled");
-        if (value != null && value.equalsIgnoreCase("true"))
+        if (value != null && value.equalsIgnoreCase("true")) {
             _sslEnabled = true;
+        }
 
         _instance = configs.get("instance.name");
 
@@ -126,8 +134,9 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
         HighAvailabilityManager haMgr = locator.getManager(HighAvailabilityManager.class);
         haMgr.registerHandler(Type.ConsoleProxy, this);
 
-        if (s_logger.isInfoEnabled())
+        if (s_logger.isInfoEnabled()) {
             s_logger.info("AgentBasedConsoleProxyManager has been configured. SSL enabled: " + _sslEnabled);
+        }
         return true;
     }
 
@@ -155,24 +164,27 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
 
         HostVO host = findHost(userVm);
         if (host != null) {
-            if (s_logger.isDebugEnabled())
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Assign embedded console proxy running at " + host.getName() + " to user vm " + userVmId + " with public IP "
                         + host.getPublicIpAddress());
+            }
 
             // only private IP, public IP, host id have meaningful values, rest
             // of all are place-holder values
             String publicIp = host.getPublicIpAddress();
             if (publicIp == null) {
-                if (s_logger.isDebugEnabled())
+                if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Host " + host.getName() + "/" + host.getPrivateIpAddress()
                             + " does not have public interface, we will return its private IP for cosole proxy.");
+                }
                 publicIp = host.getPrivateIpAddress();
             }
             
             int urlPort = _consoleProxyUrlPort;
 
-            if (host.getProxyPort() != null && host.getProxyPort().intValue() > 0)
+            if (host.getProxyPort() != null && host.getProxyPort().intValue() > 0) {
                 urlPort = host.getProxyPort().intValue();
+            }
             
             return new ConsoleProxyInfo(_sslEnabled, publicIp, _consoleProxyPort, urlPort, _consoleProxyUrlDomain);
         } else {
@@ -190,8 +202,9 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
         long vmId = 0;
 
         if (cmd.getVmId() != null && cmd.getVmId().isEmpty()) {
-            if (s_logger.isTraceEnabled())
+            if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Invalid vm id sent from proxy(happens when proxy session has terminated)");
+            }
             return new ConsoleAccessAuthenticationAnswer(cmd, false);
         }
 
@@ -326,4 +339,46 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
 		// TODO Auto-generated method stub
 		return false;
 	}
+
+    @Override
+    public ConsoleProxyVO findByName(String name) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ConsoleProxyVO findById(long id) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public ConsoleProxyVO persist(ConsoleProxyVO vm) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean finalizeStart(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, long hostId, String reservationId) {
+        // TODO Auto-generated method stub
+        
+    }
 }

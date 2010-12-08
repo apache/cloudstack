@@ -33,10 +33,10 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -70,7 +70,7 @@ import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
-import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VmManager;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -141,7 +141,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     int _migrateRetryInterval;
     int _restartRetryInterval;
 
-    HashMap<VirtualMachine.Type, VirtualMachineManager<VMInstanceVO>> _handlers;
+    HashMap<VirtualMachine.Type, VirtualMachineGuru<VMInstanceVO>> _handlers;
 
     int _maxRetries;
     long _timeBetweenFailures;
@@ -149,7 +149,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     boolean _forceHA;
 
     protected HighAvailabilityManagerImpl() {
-        _handlers = new HashMap<VirtualMachine.Type, VirtualMachineManager<VMInstanceVO>>(11);
+        _handlers = new HashMap<VirtualMachine.Type, VirtualMachineGuru<VMInstanceVO>>(11);
     }
 
     @Override
@@ -240,9 +240,9 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     }
 
     @Override
-    public synchronized void registerHandler(final VirtualMachine.Type type, final VirtualMachineManager<? extends VMInstanceVO> handler) {
+    public synchronized void registerHandler(final VirtualMachine.Type type, final VirtualMachineGuru<? extends VMInstanceVO> handler) {
         s_logger.info("Registering " + handler.getClass().getSimpleName() + " as the handler for " + type);
-        _handlers.put(type, (VirtualMachineManager<VMInstanceVO>)handler);
+        _handlers.put(type, (VirtualMachineGuru<VMInstanceVO>)handler);
     }
 
     @Override
@@ -267,7 +267,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     @Override
     public void scheduleRestart(VMInstanceVO vm, final boolean investigate) {
     	Long hostId = vm.getHostId();
-    	VirtualMachineManager<VMInstanceVO> mgr = findManager(vm.getType());
+    	VirtualMachineGuru<VMInstanceVO> mgr = findManager(vm.getType());
     	vm = mgr.get(vm.getId());
         if (!investigate) {
         	if (s_logger.isDebugEnabled()) {
@@ -317,14 +317,14 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         wakeupWorkers();
     }
 
-    protected VirtualMachineManager<VMInstanceVO> findManager(final VirtualMachine.Type type) {
+    protected VirtualMachineGuru<VMInstanceVO> findManager(final VirtualMachine.Type type) {
         return _handlers.get(type);
     }
 
     protected Long restart(final HaWorkVO work) {
         final long vmId = work.getInstanceId();
 
-        final VirtualMachineManager<VMInstanceVO> mgr = findManager(work.getType());
+        final VirtualMachineGuru<VMInstanceVO> mgr = findManager(work.getType());
         if (mgr == null) {
             s_logger.warn("Unable to find a handler for " + work.getType().toString() + ", throwing out " + vmId);
             return null;
@@ -636,10 +636,10 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             return map;
         }
 
-        final Collection<VirtualMachineManager<VMInstanceVO>> handlers = _handlers.values();
+        final Collection<VirtualMachineGuru<VMInstanceVO>> handlers = _handlers.values();
 
         for (final Map.Entry<String, State> entry : states.entrySet()) {
-            for (final VirtualMachineManager<VMInstanceVO> handler : handlers) {
+            for (final VirtualMachineGuru<VMInstanceVO> handler : handlers) {
                 final String name = entry.getKey();
 
                 final Long id = handler.convertToId(name);
@@ -682,7 +682,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     public Long migrate(final HaWorkVO work) {
         final long vmId = work.getInstanceId();
 
-        final VirtualMachineManager<VMInstanceVO> mgr = findManager(work.getType());
+        final VirtualMachineGuru<VMInstanceVO> mgr = findManager(work.getType());
 
         VMInstanceVO vm = mgr.get(vmId);
         if (vm == null || vm.getRemoved() != null) {
@@ -827,7 +827,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     }
     
     protected Long destroyVM(HaWorkVO work) {
-        final VirtualMachineManager<VMInstanceVO> mgr = findManager(work.getType());
+        final VirtualMachineGuru<VMInstanceVO> mgr = findManager(work.getType());
         final VMInstanceVO vm = mgr.get(work.getInstanceId());
         s_logger.info("Destroying " + vm.toString());
         try {
@@ -864,7 +864,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     }
 
     protected Long stopVM(final HaWorkVO work) {
-        final VirtualMachineManager<VMInstanceVO> mgr = findManager(work.getType());
+        final VirtualMachineGuru<VMInstanceVO> mgr = findManager(work.getType());
         final VMInstanceVO vm = mgr.get(work.getInstanceId());
         s_logger.info("Stopping " + vm.toString());
         try {
@@ -931,47 +931,6 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         _name = name;
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
 
-        /*
-        _haDao = locator.getDao(HighAvailabilityDao.class);
-        if (_haDao == null) {
-            throw new ConfigurationException("Unable to get ha dao");
-        }
-
-        _instanceDao = locator.getDao(VMInstanceDao.class);
-        if (_instanceDao == null) {
-            throw new ConfigurationException("Unable to get vm dao");
-        }
-
-        _hostDao = locator.getDao(HostDao.class);
-        if (_hostDao == null) {
-            throw new ConfigurationException("unable to get host dao");
-        }
-
-        _dcDao = locator.getDao(DataCenterDao.class);
-        if (_dcDao == null) {
-            throw new ConfigurationException("unable to get data center dao");
-        }
-
-        _podDao = locator.getDao(HostPodDao.class);
-        if (_podDao == null) {
-            throw new ConfigurationException("unable to get pod dao");
-        }
-
-        _agentMgr = locator.getManager(AgentManager.class);
-        if (_agentMgr == null) {
-            throw new ConfigurationException("Unable to find " + AgentManager.class.getName());
-        }
-
-        _alertMgr = locator.getManager(AlertManager.class);
-        if (_alertMgr == null) {
-            throw new ConfigurationException("Unable to find " + AlertManager.class.getName());
-        }
-        
-        _storageMgr = locator.getManager(StorageManager.class);
-        if (_storageMgr == null) {
-        	throw new ConfigurationException("Unable to find " + StorageManager.class.getName());
-        }
-*/
         _serverId = ((ManagementServer)ComponentLocator.getComponent(ManagementServer.Name)).getId();
 
         _investigators = locator.getAdapters(Investigator.class);
@@ -1188,11 +1147,11 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     
     protected class AgentVmInfo {
         public String name;
-        public VirtualMachineManager mgr;
+        public VirtualMachineGuru<VMInstanceVO> mgr;
         public State state;
         public State action;
 
-        public AgentVmInfo(final String name, final VirtualMachineManager handler, final State state) {
+        public AgentVmInfo(final String name, final VirtualMachineGuru<VMInstanceVO> handler, final State state) {
             this.name = name;
             this.mgr = handler;
             this.state = state;

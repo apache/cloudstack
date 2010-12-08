@@ -58,9 +58,9 @@ import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
@@ -980,7 +980,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (state == Network.State.Implemented || state == Network.State.Setup) {
                 if (state == Network.State.Setup) {
                     config.setState(Network.State.Implemented);
-                    _networkConfigDao.update(configId, config);
+                    _networksDao.update(networkId, config);
                 }
                 implemented.set(guru, config);
                 return implemented;

@@ -24,7 +24,7 @@ import com.cloud.host.Status;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineGuru;
 
 /**
  * HighAvailabilityManager checks to make sure the VMs are running fine.
@@ -84,7 +84,7 @@ public interface HighAvailabilityManager extends Manager {
      * @param type virtual machine type.
      * @param handler handler that can handle starting and stopping the machine.
      */
-    void registerHandler(final VirtualMachine.Type type, final VirtualMachineManager<? extends VMInstanceVO> handler);
+    void registerHandler(final VirtualMachine.Type type, final VirtualMachineGuru<? extends VMInstanceVO> handler);
 
     /**
      * Unregisters a handler.  Not likely called but here for completeness.
