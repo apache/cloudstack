@@ -132,6 +132,7 @@ import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
@@ -2172,7 +2173,23 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	    NetworkVO network = _networkDao.findById(router.getNetworkId());
 	    
 	    String type = null;
-	    String dhcpRange = network.getCidr();
+	    String dhcpRange = null;
+	    if (network.getGuestType() == GuestIpType.Virtual) {
+	        //If network is virtual, get first ip address from cidr
+	        String cidr = network.getCidr();
+	        String[] splitResult = cidr.split("\\/");
+	        long size = Long.valueOf(splitResult[1]);
+	        dhcpRange = NetUtils.getIpRangeStartIpFromCidr(splitResult[0], size);
+	    } else {
+	        //If network is direct, get first ip address of corresponding vlan
+	        List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(network.getId());
+	        if (vlans != null) {
+	            String ipRange = vlans.get(0).getIpRange();
+	            String[] ips = ipRange.split("-");
+	            dhcpRange = ips[0];
+	        }
+	    }
+	    
 	    String domain = network.getNetworkDomain();
 	    if (router.getRole() == Role.DHCP_USERDATA) {
 	        type="dhcpsrvr";
