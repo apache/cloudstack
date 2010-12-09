@@ -4779,15 +4779,15 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public String getVersion(){
-        final Class<?> c = ManagementServer.class;
-        String fullVersion = c.getPackage().getImplementationVersion();
-        String version = "unknown"; 
-        if(fullVersion.length() > 0){
-            version = fullVersion.substring(0,fullVersion.lastIndexOf("."));
-        }
-        return version;
+    	final Class<?> c = ManagementServer.class;
+    	String fullVersion = c.getPackage().getImplementationVersion();
+    	if(fullVersion.length() > 0){
+    		return fullVersion;
+    	}
+
+    	return "unknown"; 
     }
-    
+
     private Long saveScheduledEvent(Long userId, Long accountId, String type, String description) 
     {
         EventVO event = new EventVO();
