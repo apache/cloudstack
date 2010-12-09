@@ -572,6 +572,47 @@
 </div>
 <!-- Add IP Range for public netework dialog (end) -->
 
+<!-- Add IP Range for direct netework dialog (begin) -->
+<div id="dialog_add_iprange_to_directnetwork" title="Add IP Range to Direct Network" style="display: none">
+    <p>
+        Add an IP range to direct network <b><span id="directnetwork_name"></span></b> in zone <b><span id="zone_name"></span></b>
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>                
+            <li>
+                <label for="user_name">
+                    IP Range:</label>
+                <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_startip"
+                    id="add_publicip_vlan_startip" /><span>-</span>
+                <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_endip"
+                    id="add_publicip_vlan_endip" />
+                <div id="add_publicip_vlan_startip_errormsg" class="dialog_formcontent_errormsg"
+                    style="display: none;">
+                </div>
+                <div id="add_publicip_vlan_endip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+        </ol>
+        </form>
+    </div>
+    <!--Loading box-->
+    <div id="spinning_wheel" class="ui_dialog_loaderbox" style="display: none;">
+        <div class="ui_dialog_loader">
+        </div>
+        <p>
+            Adding....</p>
+    </div>
+    <!--Confirmation msg box-->
+    <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+    <div id="info_container" class="ui_dialog_messagebox error" style="display: none;">
+        <div id="icon" class="ui_dialog_msgicon error">
+        </div>
+        <div id="info" class="ui_dialog_messagebox_text error">
+            (info)</div>
+    </div>
+</div>
+<!-- Add IP Range for direct netework dialog (end) -->
 
 <!-- Add network dialog for zone (begin) -->
 <div id="dialog_add_network_for_zone" title="Add Network" style="display: none">

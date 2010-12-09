@@ -99,7 +99,7 @@ function publicNetworkToMidmenu(jsonObj, $midmenuItem1) {
     */
          
     $midmenuItem1.find("#first_row").text("Public Network"); 
-    $midmenuItem1.find("#second_row").text("Network ID: " + fromdb(jsonObj.id));   
+    $midmenuItem1.find("#second_row").text("VLAN: multiple");   
 }
 
 function publicNetworkToRightPanel($midmenuItem1) {      
@@ -514,7 +514,7 @@ function directNetworkToMidmenu(jsonObj, $midmenuItem1) {
     */
          
     $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
-    $midmenuItem1.find("#second_row").text("VLAN ID: " + fromdb(jsonObj.vlan));   
+    $midmenuItem1.find("#second_row").text("VLAN : " + fromdb(jsonObj.vlan));   
 }
 
 function directNetworkToRightPanel($midmenuItem1) {    
@@ -522,6 +522,8 @@ function directNetworkToRightPanel($midmenuItem1) {
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);  
             
     $("#direct_network_page").show();
+    initAddIpRangeToDirectNetworkButton($("#midmenu_add_iprange_button"), $midmenuItem1);
+    
     $("#public_network_page").hide();
     
     $("#direct_network_page").find("#tab_details").click();     
@@ -865,6 +867,63 @@ function initAddNetworkButton($button) {
 					});
 				}
 				
+			}, 
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			} 
+		}).dialog("open");           
+        return false;
+    });
+}
+
+function initAddIpRangeToDirectNetworkButton($button, $midmenuItem1) {   
+    var jsonObj = $midmenuItem1.data("jsonObj");       
+    initDialog("dialog_add_iprange_to_directnetwork");        
+    var $dialogAddIpRangeToDirectNetwork = $("#dialog_add_iprange_to_directnetwork");     
+  
+    $dialogAddIpRangeToDirectNetwork.find("#directnetwork_name").text(fromdb(jsonObj.name));
+    $dialogAddIpRangeToDirectNetwork.find("#zone_name").text(fromdb(zoneObj.name));
+    
+    $button.show();   
+    $button.unbind("click").bind("click", function(event) {           
+        $("#direct_network_page").find("#tab_ipallocation").click();    
+        //$dialogAddIpRangeToDirectNetwork.find("#add_publicip_vlan_startip, #add_publicip_vlan_endip").val("");
+        
+		$dialogAddIpRangeToDirectNetwork
+		.dialog('option', 'buttons', { 	
+			"Add": function() { 	
+			    var $thisDialog = $(this);		
+			    					
+				// validate values
+				var isValid = true;		
+				isValid &= validateIp("Start IP Range", $thisDialog.find("#add_publicip_vlan_startip"), $thisDialog.find("#add_publicip_vlan_startip_errormsg"));   //required
+				isValid &= validateIp("End IP Range", $thisDialog.find("#add_publicip_vlan_endip"), $thisDialog.find("#add_publicip_vlan_endip_errormsg"), true);  //optional
+				if (!isValid) 
+				    return;						    
+				
+				$thisDialog.find("#spinning_wheel").show()
+											
+				var startip = trim($thisDialog.find("#add_publicip_vlan_startip").val());
+				var endip = trim($thisDialog.find("#add_publicip_vlan_endip").val());										
+						
+				$.ajax({
+					data: createURL("command=createVlanIpRange&forVirtualNetwork=false&networkid="+todb(jsonObj.id)+"&startip="+todb(startip)+"&endip="+todb(endip)),
+					dataType: "json",
+					success: function(json) {	
+						$thisDialog.find("#spinning_wheel").hide();
+						$thisDialog.dialog("close");
+					
+					    var item = json.createvlaniprangeresponse.vlan;	
+					    var $newTemplate = $("#iprange_template").clone();
+		                directNetworkIprangeJsonToTemplate(item, $newTemplate);
+		                $("#right_panel_content #direct_network_page #tab_content_ipallocation").find("#tab_container").append($newTemplate.show());					    			   
+					},
+					error: function(XMLHttpResponse) {
+						handleError(XMLHttpResponse, function() {
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);	
+						});
+					}
+				});					
 			}, 
 			"Cancel": function() { 
 				$(this).dialog("close"); 
