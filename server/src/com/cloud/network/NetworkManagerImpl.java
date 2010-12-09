@@ -1662,6 +1662,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                    userNetwork.setGateway(gateway);
                    if (vlanId != null) {
                        userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
+                       userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
                        if (!vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
                            userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
                        } else {

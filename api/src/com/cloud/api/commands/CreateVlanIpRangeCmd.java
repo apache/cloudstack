@@ -52,10 +52,10 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="true if VLAN is of Virtual type, false if Direct")
     private Boolean forVirtualNetwork;
 
-    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, required=true, description="the gateway of the VLAN IP range")
+    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, description="the gateway of the VLAN IP range")
     private String gateway;
 
-    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, required=true, description="the netmask of the VLAN IP range")
+    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, description="the netmask of the VLAN IP range")
     private String netmask;
 
     @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="optional parameter. Have to be specified for Direct Untagged vlan only.")
@@ -67,8 +67,11 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the VLAN. Default is an \"untagged\" VLAN.")
     private String vlan;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="	the Zone ID of the VLAN IP range")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the VLAN IP range")
     private Long zoneId;
+    
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="the network id")
+    private Long networkID;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -114,10 +117,14 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
         return zoneId;
     }
 
-
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
+    public Long getNetworkID() {
+        return networkID;
+    }
 
     @Override
     public String getName() {

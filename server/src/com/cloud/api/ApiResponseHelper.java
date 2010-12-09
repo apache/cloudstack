@@ -737,7 +737,6 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public VlanIpRangeResponse createVlanIpRangeResponse(Vlan vlan) {
-        Long accountId = ApiDBUtils.getAccountIdForVlan(vlan.getId());
         Long podId = ApiDBUtils.getPodIdForVlan(vlan.getId());
 
         VlanIpRangeResponse vlanResponse = new VlanIpRangeResponse();
@@ -745,13 +744,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         vlanResponse.setForVirtualNetwork(vlan.getVlanType().equals(VlanType.VirtualNetwork));
         vlanResponse.setVlan(vlan.getVlanId());
         vlanResponse.setZoneId(vlan.getDataCenterId());
-
-        if (accountId != null) {
-            Account account = ApiDBUtils.findAccountById(accountId);
-            vlanResponse.setAccountName(account.getAccountName());
-            vlanResponse.setDomainId(account.getDomainId());
-            vlanResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
-        }
 
         if (podId != null) {
             HostPodVO pod = ApiDBUtils.findPodById(podId);
@@ -767,10 +759,24 @@ public class ApiResponseHelper implements ResponseGenerator {
         String[] range = ipRange.split("-"); 
         vlanResponse.setStartIp(range[0]);
         vlanResponse.setEndIp(range[1]);
-
-        vlanResponse.setNetworkId(vlan.getNetworkId());
+        
+        Long networkId = vlan.getNetworkId();
+        if (networkId != null) {
+            vlanResponse.setNetworkId(vlan.getNetworkId());
+            Network network = ApiDBUtils.findNetworkById(networkId);
+            if (network != null) {
+              Long accountId = network.getAccountId();
+              //Set account information
+                if (accountId != null) {
+                    Account account = ApiDBUtils.findAccountById(accountId);
+                    vlanResponse.setAccountName(account.getAccountName());
+                    vlanResponse.setDomainId(account.getDomainId());
+                    vlanResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
+                }
+            }
+        }
+        
         vlanResponse.setObjectName("vlan");
-
         return vlanResponse;
     }
 

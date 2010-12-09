@@ -97,28 +97,20 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
     
     @Override
     public void execute() throws ResourceUnavailableException {
+        UserContext callerContext = UserContext.current();
+    
+        boolean success = false;
+        PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
         try {
-            UserContext callerContext = UserContext.current();
-            
-            PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId);
-            if (result == null) {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "An existing rule for ipAddress / port / protocol of " + ipAddress + " / " + publicPort + " / " + protocol + " exits.");
+            success = _rulesService.applyPortForwardingRules(rule.getSourceIpAddress(), callerContext.getAccount());
+        }  finally {
+            if (!success) {
+                _rulesService.revokePortForwardingRule(getEntityId(), true);
             }
-            boolean success = false;
-            try {
-                success = _rulesService.applyPortForwardingRules(result.getSourceIpAddress(), callerContext.getAccount());
-            }  finally {
-                if (!success) {
-                    _rulesService.revokePortForwardingRule(result.getId(), true);
-                }
-            }
-            FirewallRuleResponse fwResponse = _responseGenerator.createFirewallRuleResponse(result);
-            fwResponse.setResponseName(getName());
-            setResponseObject(fwResponse);
-        } catch (NetworkRuleConflictException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
         }
+        FirewallRuleResponse fwResponse = _responseGenerator.createFirewallRuleResponse(rule);
+        fwResponse.setResponseName(getName());
+        setResponseObject(fwResponse);
     }
 
     @Override

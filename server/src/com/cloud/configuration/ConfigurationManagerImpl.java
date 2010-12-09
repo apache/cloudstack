@@ -16,6 +16,7 @@
  */
 package com.cloud.configuration;
 
+import java.net.URI;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -89,6 +90,7 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
@@ -151,6 +153,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	@Inject AccountDao _accountDao;
 	@Inject EventDao _eventDao;
 	@Inject UserDao _userDao;
+	@Inject NetworkDao _networkDao;
 	@Inject ConsoleProxyDao _consoleDao;
 	@Inject SecondaryStorageVmDao _secStorageDao;
     @Inject AccountManager _accountMgr;
@@ -1483,6 +1486,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Long userId = UserContext.current().getUserId();
         String vlanId = cmd.getVlan();
         Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
+        Long networkId = cmd.getNetworkID();
         // If an account name and domain ID are specified, look up the account
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
@@ -1494,13 +1498,67 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
         
-        return createVlanAndPublicIpRange(userId, zoneId, podId, startIP, endIP, vlanGateway, vlanNetmask, forVirtualNetwork, vlanId, account, null);
+        //if Vlan is direct, don't allow to specify networkId
+        if (forVirtualNetwork && networkId != null) {
+            throw new InvalidParameterValueException("Can't specify networkId for Virtual network");   
+        }
+        
+        if (forVirtualNetwork && (vlanGateway == null || vlanNetmask == null || zoneId == null)) {
+            throw new InvalidParameterValueException("Gateway, netmask and zoneId have to be passed in for virtual network");
+        }
+        
+        //Verify that network is valid, and ip range matches network's cidr
+        if (networkId != null) {
+            NetworkVO network = _networkDao.findById(networkId);
+            if (network == null) {
+                throw new InvalidParameterValueException("Unable to find network by id " + networkId);
+            } else {
+                //Check that network is of type Direct
+                if (network.getGuestType() == GuestIpType.Virtual) {
+                    throw new InvalidParameterValueException("Can't create direct vlan for network with GuestType " + network.getGuestType().toString());
+                }
+                
+                //check if startIp and endIp belong to network Cidr
+                String networkCidr = network.getCidr();
+                String networkGateway = network.getGateway();
+                
+                Long networkZoneId = network.getDataCenterId();
+                String[] splitResult = networkCidr.split("\\/");
+                long size = Long.valueOf(splitResult[1]);
+                String networkNetmask = NetUtils.getCidrNetmask(size);
+                
+                //Check if ip addresses are in network range
+                if (!NetUtils.sameSubnet(startIP, networkGateway, networkNetmask)) {
+                    throw new InvalidParameterValueException("Start ip is not in network cidr: " + networkCidr);
+                } 
+                
+                if (endIP != null) {
+                    if (!NetUtils.sameSubnet(endIP, networkGateway, networkNetmask)) {
+                        throw new InvalidParameterValueException("End ip is not in network cidr: " + networkCidr);
+                    } 
+                }
+                
+                //set gateway, netmask, zone from network object
+                vlanGateway = networkGateway;
+                vlanNetmask = networkNetmask;
+                zoneId = networkZoneId;
+                
+                //set vlanId if it's not null for the network
+                URI uri = network.getBroadcastUri();
+                if (uri != null) {
+                    String[] vlan = uri.toString().split("vlan:\\/\\/");
+                    vlanId = vlan[1];
+                }
+             } 
+         }
+        
+        return createVlanAndPublicIpRange(userId, zoneId, podId, startIP, endIP, vlanGateway, vlanNetmask, forVirtualNetwork, vlanId, account, networkId);
     }
     
 
     @Override
     public Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException{
-        
+
         // Check that the pod ID is valid
         if (podId != null && ((_podDao.findById(podId)) == null)) {
             throw new InvalidParameterValueException("Please specify a valid pod.");
