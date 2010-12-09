@@ -25,6 +25,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -48,6 +49,7 @@ public interface VirtualMachineManager extends Manager {
             List<Pair<NetworkVO, NicProfile>> networks,
             Map<String, Object> params,
             DeploymentPlan plan,
+            HypervisorType hyperType,
             Account owner) throws InsufficientCapacityException, ResourceUnavailableException;
     
     <T extends VMInstanceVO> T allocate(T vm,
@@ -57,6 +59,7 @@ public interface VirtualMachineManager extends Manager {
             Pair<DiskOfferingVO, Long> dataDiskOffering,
             List<Pair<NetworkVO, NicProfile>> networks,
             DeploymentPlan plan,
+            HypervisorType hyperType,
             Account owner) throws InsufficientCapacityException, ResourceUnavailableException;
     
     <T extends VMInstanceVO> T allocate(T vm,
@@ -64,9 +67,10 @@ public interface VirtualMachineManager extends Manager {
             ServiceOfferingVO serviceOffering,
             List<Pair<NetworkVO, NicProfile>> networkProfiles,
             DeploymentPlan plan,
+            HypervisorType hyperType,
             Account owner) throws InsufficientCapacityException, ResourceUnavailableException;
     
-    <T extends VMInstanceVO> T start(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException;
+    <T extends VMInstanceVO> T start(T vm, Map<String, Object> params, User caller, Account account, HypervisorType hyperType) throws InsufficientCapacityException, ResourceUnavailableException;
     
     <T extends VMInstanceVO> boolean stop(T vm, User caller, Account account) throws ResourceUnavailableException;
     
@@ -77,7 +81,7 @@ public interface VirtualMachineManager extends Manager {
 	boolean stateTransitTo(VMInstanceVO vm, Event e, Long id);
 
 	
-    <T extends VMInstanceVO> T advanceStart(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
+    <T extends VMInstanceVO> T advanceStart(T vm, Map<String, Object> params, User caller, Account account, HypervisorType hyperType) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
     
 	<T extends VMInstanceVO> boolean advanceStop(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 	

@@ -45,13 +45,10 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru 
 
     @Override
     public <T extends VirtualMachine> VirtualMachineTO implement(VirtualMachineProfile<T> vm) {
-        VirtualMachineTemplate template = vm.getTemplate();
-        
         BootloaderType bt = BootloaderType.PyGrub;
-        if (template.getFormat() == Storage.ImageFormat.ISO || template.isRequiresHvm()) {
-            bt = BootloaderType.HVM;
+        if (vm.getBootLoaderType() != null) {
+        	 bt = vm.getBootLoaderType();
         }
-        
         VirtualMachineTO to = toVirtualMachineTO(vm);
         to.setBootloader(bt);
         

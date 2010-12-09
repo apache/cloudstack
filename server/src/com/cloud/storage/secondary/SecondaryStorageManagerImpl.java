@@ -281,7 +281,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId);
 		Account systemAcct = _accountMgr.getSystemAccount();
 		User systemUser = _accountMgr.getSystemUser();
-		return _itMgr.start(secStorageVm, null, systemUser, systemAcct);
+		return _itMgr.start(secStorageVm, null, systemUser, systemAcct, null);
 	}
 
 	@Override @DB
@@ -772,7 +772,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	        SecondaryStorageVmVO secStorageVm = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, _template.getId(), 
 	        															 _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId());
 	        try {
-	        	secStorageVm = _itMgr.allocate(secStorageVm, _template, _serviceOffering, networks, plan, systemAcct);
+	        	secStorageVm = _itMgr.allocate(secStorageVm, _template, _serviceOffering, networks, plan, null, systemAcct);
 	        } catch (InsufficientCapacityException e) {
 	            s_logger.warn("InsufficientCapacity", e);
 	            throw new CloudRuntimeException("Insufficient capacity exception", e);

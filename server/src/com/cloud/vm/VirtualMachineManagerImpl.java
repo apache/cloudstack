@@ -146,12 +146,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
             List<Pair<NetworkVO, NicProfile>> networks,
             Map<String, Object> params,
             DeploymentPlan plan,
+            HypervisorType hyperType,
             Account owner) throws InsufficientCapacityException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocating entries for VM: " + vm);
         }
         
-        VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, serviceOffering, owner, params);
+        VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, serviceOffering, owner, params, hyperType);
         
         vm.setDataCenterId(plan.getDataCenterId());
         if (plan.getPodId() != null) {
@@ -209,12 +210,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
             Pair<DiskOfferingVO, Long> dataDiskOffering,
             List<Pair<NetworkVO, NicProfile>> networks,
             DeploymentPlan plan,
+            HypervisorType hyperType,
             Account owner) throws InsufficientCapacityException {
         List<Pair<DiskOfferingVO, Long>> diskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>(1);
         if (dataDiskOffering != null) {
             diskOfferings.add(dataDiskOffering);
         }
-        return allocate(vm, template, serviceOffering, new Pair<DiskOfferingVO, Long>(serviceOffering, rootSize), diskOfferings, networks, null, plan, owner);
+        return allocate(vm, template, serviceOffering, new Pair<DiskOfferingVO, Long>(serviceOffering, rootSize), diskOfferings, networks, null, plan, hyperType, owner);
     }
     
     @Override
@@ -223,8 +225,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
             ServiceOfferingVO serviceOffering,
             List<Pair<NetworkVO, NicProfile>> networks,
             DeploymentPlan plan, 
+            HypervisorType hyperType,
             Account owner) throws InsufficientCapacityException {
-        return allocate(vm, template, serviceOffering, new Pair<DiskOfferingVO, Long>(serviceOffering, null), null, networks, null, plan, owner);
+        return allocate(vm, template, serviceOffering, new Pair<DiskOfferingVO, Long>(serviceOffering, null), null, networks, null, plan, hyperType, owner);
     }
     
     @SuppressWarnings("unchecked")
@@ -321,16 +324,16 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     }
     
     @Override
-    public <T extends VMInstanceVO> T start(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException {
+    public <T extends VMInstanceVO> T start(T vm, Map<String, Object> params, User caller, Account account, HypervisorType hyperType) throws InsufficientCapacityException, ResourceUnavailableException {
         try {
-            return advanceStart(vm, params, caller, account);
+            return advanceStart(vm, params, caller, account, hyperType);
         } catch (ConcurrentOperationException e) {
             throw new CloudRuntimeException("Unable to start a VM due to concurrent operation", e);
         }
     }
 
     @Override
-    public <T extends VMInstanceVO> T advanceStart(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    public <T extends VMInstanceVO> T advanceStart(T vm, Map<String, Object> params, User caller, Account account, HypervisorType hyperType) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         State state = vm.getState();
         if (state == State.Starting || state == State.Running) {
             s_logger.debug("VM is already started: " + vm);
@@ -358,7 +361,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
         
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodId(), null, null);
         
-        HypervisorGuru hvGuru = _hvGurus.get(template.getHypervisorType());
+        HypervisorGuru hvGuru;
+        if (hyperType != null && !hyperType.equals(HypervisorType.None)) {
+        	hvGuru = _hvGurus.get(hyperType);
+        } else {
+        	hvGuru = _hvGurus.get(template.getHypervisorType());
+        }
         @SuppressWarnings("unchecked")
         VirtualMachineGuru<T> vmGuru = (VirtualMachineGuru<T>)_vmGurus.get(vm.getType());
         
@@ -378,7 +386,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
         		stateTransitTo(vm, Event.OperationRetry, dest.getHost().getId());
         	}
         	
-            VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, null, params);
+            VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, null, params, hyperType);
             
             for (DeploymentPlanner planner : _planners) {
                 dest = planner.plan(vmProfile, plan, avoids);

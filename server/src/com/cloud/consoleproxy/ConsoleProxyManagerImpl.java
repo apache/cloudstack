@@ -576,7 +576,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
         Account systemAcct = _accountMgr.getSystemAccount();
         User systemUser = _accountMgr.getSystemUser();
-        return _itMgr.start(proxy, null, systemUser, systemAcct);
+        return _itMgr.start(proxy, null, systemUser, systemAcct, null);
     }
 
     @Override
@@ -1113,7 +1113,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         }
         ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, _template.getId(), _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), 0);
         try {
-            proxy = _itMgr.allocate(proxy, _template, _serviceOffering, networks, plan, systemAcct);
+            proxy = _itMgr.allocate(proxy, _template, _serviceOffering, networks, plan, null, systemAcct);
         } catch (InsufficientCapacityException e) {
             s_logger.warn("InsufficientCapacity", e);
             throw new CloudRuntimeException("Insufficient capacity exception", e);

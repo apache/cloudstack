@@ -2116,10 +2116,10 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
             
             router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), _template.getId(), _template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestConfig.getId(), _offering.getOfferHA());
-    	    router = _itMgr.allocate(router, _template, _offering, networks, plan, owner);
+    	    router = _itMgr.allocate(router, _template, _offering, networks, plan, null, owner);
         }
         
-        return _itMgr.start(router, null, _accountService.getSystemUser(), _accountService.getSystemAccount());
+        return _itMgr.start(router, null, _accountService.getSystemUser(), _accountService.getSystemAccount(), null);
 	}
 	
 	
@@ -2159,10 +2159,10 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	            
 	            router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), _template.getId(), _template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestConfig.getId(), _offering.getOfferHA());
 	            router.setRole(Role.DHCP_USERDATA);
-	            router = _itMgr.allocate(router, _template, _offering, networks, plan, owner);
+	            router = _itMgr.allocate(router, _template, _offering, networks, plan, null, owner);
 	        }
 	        
-	        return _itMgr.start(router, null, _accountService.getSystemUser(), _accountService.getSystemAccount());
+	        return _itMgr.start(router, null, _accountService.getSystemUser(), _accountService.getSystemAccount(), null);
 	    }
 	
 	@Override
@@ -2343,7 +2343,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	}
 	
 	public DomainRouterVO start(DomainRouterVO router, User user, Account caller) throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-	    return _itMgr.start(router, null, user, caller);
+	    return _itMgr.start(router, null, user, caller, null);
 	}
 
     @Override

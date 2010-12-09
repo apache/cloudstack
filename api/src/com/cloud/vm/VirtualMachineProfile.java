@@ -23,6 +23,7 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.Account;
 
 
@@ -106,4 +107,7 @@ public interface VirtualMachineProfile<T extends VirtualMachine> {
     VirtualMachine.Type getType();
     
     void setParameter(String name, Object value);
+
+	void setBootLoaderType(BootloaderType bootLoader);
+	BootloaderType getBootLoaderType();
 }

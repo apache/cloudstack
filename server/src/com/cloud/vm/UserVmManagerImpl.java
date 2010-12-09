@@ -60,6 +60,7 @@ import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
+import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -154,6 +155,8 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
@@ -3756,7 +3759,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                                    template.getId(), template.getGuestOSId(), offering.getOfferHA(), domainId, owner.getId(), offering.getId(), userData);
 
         try{
-	        if (_itMgr.allocate(vm, template, offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, owner) == null) {
+	        if (_itMgr.allocate(vm, template, offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, cmd.getHypervisor(), owner) == null) {
 	            return null;
 	        }
         }finally{
@@ -3792,19 +3795,42 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	    
 	    AccountVO owner = _accountDao.findById(vm.getAccountId());
 	    
-	    vm = _itMgr.start(vm, null, caller, owner);
+	    vm = _itMgr.start(vm, null, caller, owner, cmd.getHypervisor());
 	    vm.setPassword(password);
 	    return vm;
 	}
 	
 	@Override
 	public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
-	    UserVmVO vo = profile.getVirtualMachine();
-	    VirtualMachineTemplate template = profile.getTemplate();
-	    if (template.getFormat() == ImageFormat.ISO && template.isBootable()) {
-	        
-	    }
-	    return true;
+		UserVmVO vo = profile.getVirtualMachine();
+		VirtualMachineTemplate template = profile.getTemplate();
+		if (vo.getIsoId() != null) {
+			template = _templateDao.findById(vo.getIsoId());
+		}
+		if (template != null && template.getFormat() == ImageFormat.ISO  && template.isBootable()) {
+			String isoPath = null;
+			Pair<String, String> isoPathPair = _storageMgr.getAbsoluteIsoPath(template.getId(), vo.getDataCenterId()); 	
+			if (isoPathPair == null) {
+				s_logger.warn("Couldn't get absolute iso path");
+				return false;
+			} else {
+				isoPath = isoPathPair.first();
+			}
+			profile.setBootLoaderType(BootloaderType.CD);
+			VolumeTO iso = new VolumeTO(profile.getId(), Volume.VolumeType.ISO, StorageResourceType.STORAGE_POOL, StoragePoolType.ISO, null, template.getName(), null, isoPath,
+										0, null);
+			iso.setDeviceId(3);
+			profile.addDisk(iso);
+			vo.setIsoId(template.getId());
+		} else {
+			/*create a iso placeholder*/
+			VolumeTO iso = new VolumeTO(profile.getId(), Volume.VolumeType.ISO, StorageResourceType.STORAGE_POOL, StoragePoolType.ISO, null, template.getName(), null, null,
+					0, null);
+			iso.setDeviceId(3);
+			profile.addDisk(iso);
+		}
+		
+		return true;
 	}
 	
     @Override
@@ -3904,8 +3930,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         
         userId = accountAndUserValidation(vmId, account, userId, vm);
         UserVO user = _userDao.findById(userId);
-        
-        return _itMgr.start(vm, null, user, account);
+        VolumeVO disk = _volsDao.findByInstance(vmId).get(0);
+        HypervisorType hyperType = _volsDao.getHypervisorType(disk.getId());
+        return _itMgr.start(vm, null, user, account, hyperType);
     }
     
     @Override

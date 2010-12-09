@@ -2783,6 +2783,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 }
                 throw new StorageUnavailableException("Unable to create " + newVol, newVol);
             }
+            created.first().setDeviceId(newVol.getDeviceId().intValue());
             newVol.setStatus(AsyncInstanceCreateStatus.Created);
             newVol.setFolder(created.second().getPath());
             newVol.setPath(created.first().getPath());

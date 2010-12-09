@@ -463,7 +463,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     			}
     		}
     	} else {
-    		VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm, template, offering, null, null);
+    		VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm, template, offering, null, null, null);
     		DeployDestination dest = null;
     		DataCenterDeployment plan = new DataCenterDeployment(dc.getId(), pod.getId(), sp.getClusterId(), null);
     		ExcludeList avoids = new ExcludeList();

@@ -63,10 +63,15 @@ public class VolumeTO {
         this.storagePoolUuid = pool.getUuid();
         this.mountPoint = volume.getFolder();
         this.chainInfo = volume.getChainInfo();
+        this.deviceId = volume.getDeviceId().intValue();
     }
    
     public int getDeviceId() {
         return deviceId;
+    }
+    
+    public void setDeviceId(int id) {
+    	this.deviceId = id;
     }
 
     public Storage.StorageResourceType getResourceType() {

@@ -692,7 +692,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     
     protected VDI mount(Connection conn, String vmName, VolumeTO volume) throws XmlRpcException, XenAPIException {
         if (volume.getType() == VolumeType.ISO) {
+        	
             String isopath = volume.getPath();
+            if (isopath == null) {
+            	return null;
+            }
             int index = isopath.lastIndexOf("/");
 
             String mountpoint = isopath.substring(0, index);
@@ -724,7 +728,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         
         VBD.Record vbdr = new VBD.Record();
         vbdr.VM = vm;
-        vbdr.VDI = vdi;
+        if (vdi != null)
+        	vbdr.VDI = vdi;
+        else {
+        	vbdr.empty = true;
+        }
         if (type == VolumeType.ROOT) {
             vbdr.bootable = true;
         }
