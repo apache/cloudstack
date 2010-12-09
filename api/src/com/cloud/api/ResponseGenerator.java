@@ -148,12 +148,6 @@ public interface ResponseGenerator {
 
     IpForwardingRuleResponse createIpForwardingRuleResponse(PortForwardingRule fwRule);
 
-    UserVmResponse createUserVm2Response(UserVm userVm);
-
-    DomainRouterResponse createDomainRouter2Response(VirtualRouter router);
-
-    SystemVmResponse createSystemVm2Response(VirtualMachine systemVM);
-
     void synchronizeCommand(Object job, String syncObjType, Long syncObjId);
 
     User findUserById(Long userId);

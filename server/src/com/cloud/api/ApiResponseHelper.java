@@ -414,231 +414,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public UserVmResponse createUserVmResponse(UserVm userVm) {
-        if (userVm.getPrivateIpAddress() == null) {
-            return createUserVm2Response(userVm);
-        }
-        UserVmResponse userVmResponse = new UserVmResponse();
-        Account acct = ApiDBUtils.findAccountById(Long.valueOf(userVm.getAccountId()));
-        // FIXME - this check should be done in searchForUserVm method in
-        // ManagementServerImpl;
-        // otherwise the number of vms returned is not going to match pageSize
-        // request parameter
-        if ((acct != null) && (acct.getRemoved() == null)) {
-            userVmResponse.setAccountName(acct.getAccountName());
-            userVmResponse.setDomainId(acct.getDomainId());
-            userVmResponse.setDomainName(ApiDBUtils.findDomainById(acct.getDomainId()).getName());
-        } else {
-            return null; // the account has been deleted, skip this VM in the
-                         // response
-        }
-
-        userVmResponse.setId(userVm.getId());
-        userVmResponse.setName(userVm.getHostName());
-        userVmResponse.setCreated(userVm.getCreated());
-        userVmResponse.setIpAddress(userVm.getPrivateIpAddress());
-        if (userVm.getState() != null) {
-            userVmResponse.setState(userVm.getState().toString());
-        }
-
-        userVmResponse.setHaEnable(userVm.isHaEnabled());
-
-        if (userVm.getDisplayName() != null) {
-            userVmResponse.setDisplayName(userVm.getDisplayName());
-        } else {
-            userVmResponse.setDisplayName(userVm.getHostName());
-        }
-
-        InstanceGroupVO group = ApiDBUtils.findInstanceGroupForVM(userVm.getId());
-        if (group != null) {
-            userVmResponse.setGroup(group.getName());
-            userVmResponse.setGroupId(group.getId());
-        }
-
-        // Data Center Info
-        userVmResponse.setZoneId(userVm.getDataCenterId());
-        userVmResponse.setZoneName(ApiDBUtils.findZoneById(userVm.getDataCenterId()).getName());
-
-        Account account = UserContext.current().getAccount();
-        // if user is an admin, display host id
-        if (((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) && (userVm.getHostId() != null)) {
-            userVmResponse.setHostId(userVm.getHostId());
-            userVmResponse.setHostName(ApiDBUtils.findHostById(userVm.getHostId()).getName());
-        }
-
-        // Template Info
-        VMTemplateVO template = ApiDBUtils.findTemplateById(userVm.getTemplateId());
-        if (template != null) {
-            userVmResponse.setTemplateId(userVm.getTemplateId());
-            userVmResponse.setTemplateName(template.getName());
-            userVmResponse.setTemplateDisplayText(template.getDisplayText());
-            userVmResponse.setPasswordEnabled(template.getEnablePassword());
-        } else {
-            userVmResponse.setTemplateId(-1L);
-            userVmResponse.setTemplateName("ISO Boot");
-            userVmResponse.setTemplateDisplayText("ISO Boot");
-            userVmResponse.setPasswordEnabled(false);
-        }
-
-        if (userVm.getPassword() != null) {
-            userVmResponse.setPassword(userVm.getPassword());
-        }
-
-        // ISO Info
-        if (userVm.getIsoId() != null) {
-            VMTemplateVO iso = ApiDBUtils.findTemplateById(userVm.getIsoId());
-            if (iso != null) {
-                userVmResponse.setIsoId(userVm.getIsoId());
-                userVmResponse.setIsoName(iso.getName());
-            }
-        }
-
-        // Service Offering Info
-        ServiceOffering offering = ApiDBUtils.findServiceOfferingById(userVm.getServiceOfferingId());
-        userVmResponse.setServiceOfferingId(userVm.getServiceOfferingId());
-        userVmResponse.setServiceOfferingName(offering.getName());
-        userVmResponse.setCpuNumber(offering.getCpu());
-        userVmResponse.setCpuSpeed(offering.getSpeed());
-        userVmResponse.setMemory(offering.getRamSize());
-        userVmResponse.setForVirtualNetwork(offering.getGuestIpType().equals(GuestIpType.Virtual));
-
-        VolumeVO rootVolume = ApiDBUtils.findRootVolume(userVm.getId());
-        if (rootVolume != null) {
-            userVmResponse.setRootDeviceId(rootVolume.getDeviceId());
-            String rootDeviceType = "Not created";
-            if (rootVolume.getPoolId() != null) {
-                StoragePoolVO storagePool = ApiDBUtils.findStoragePoolById(rootVolume.getPoolId());
-                rootDeviceType = storagePool.getPoolType().toString();
-            }
-            userVmResponse.setRootDeviceType(rootDeviceType);
-        }
-
-        // stats calculation
-        DecimalFormat decimalFormat = new DecimalFormat("#.##");
-        String cpuUsed = null;
-        VmStats vmStats = ApiDBUtils.getVmStatistics(userVm.getId());
-        if (vmStats != null) {
-            float cpuUtil = (float) vmStats.getCPUUtilization();
-            cpuUsed = decimalFormat.format(cpuUtil) + "%";
-            userVmResponse.setCpuUsed(cpuUsed);
-
-            Long networkKbRead = Double.doubleToLongBits(vmStats.getNetworkReadKBs());
-            userVmResponse.setNetworkKbsRead(networkKbRead);
-
-            Long networkKbWrite = Double.doubleToLongBits(vmStats.getNetworkWriteKBs());
-            userVmResponse.setNetworkKbsWrite(networkKbWrite);
-        }
-
-        userVmResponse.setGuestOsId(userVm.getGuestOSId());
-        // network groups
-        userVmResponse.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(userVm.getId()));
-        userVmResponse.setObjectName("virtualmachine");
-        return userVmResponse;
-    }
-
-    @Override
-    public SystemVmResponse createSystemVmResponse(VirtualMachine systemVM) {
-        if (systemVM.getPrivateIpAddress() == null) {
-            return createSystemVm2Response(systemVM);
-        }
-        SystemVmResponse vmResponse = new SystemVmResponse();
-        if (systemVM instanceof SystemVm) {
-            SystemVm vm = (SystemVm) systemVM;
-
-            vmResponse.setId(vm.getId());
-            vmResponse.setSystemVmType(vm.getType().toString().toLowerCase());
-
-            String instanceType = "console_proxy";
-            if (systemVM instanceof SecondaryStorageVmVO) {
-                instanceType = "sec_storage_vm"; // FIXME: this should be a
-                                                 // constant so that the async
-                                                 // jobs get updated with the
-                                                 // correct instance type, they
-                                                 // are using
-                                                 // different instance types at
-                                                 // the moment
-            }
-
-            vmResponse.setZoneId(vm.getDataCenterId());
-            vmResponse.setZoneName(ApiDBUtils.findZoneById(vm.getDataCenterId()).getName());
-            vmResponse.setDns1(vm.getDns1());
-            vmResponse.setDns2(vm.getDns2());
-            vmResponse.setNetworkDomain(vm.getDomain());
-            vmResponse.setGateway(vm.getGateway());
-            vmResponse.setName(vm.getHostName());
-            vmResponse.setPodId(vm.getPodId());
-            if (vm.getHostId() != null) {
-                vmResponse.setHostId(vm.getHostId());
-                vmResponse.setHostName(ApiDBUtils.findHostById(vm.getHostId()).getName());
-            }
-            vmResponse.setPrivateIp(vm.getPrivateIpAddress());
-            vmResponse.setPrivateMacAddress(vm.getPrivateMacAddress());
-            vmResponse.setPrivateNetmask(vm.getPrivateNetmask());
-            vmResponse.setPublicIp(vm.getPublicIpAddress());
-            vmResponse.setPublicMacAddress(vm.getPublicMacAddress());
-            vmResponse.setPublicNetmask(vm.getPublicNetmask());
-            vmResponse.setTemplateId(vm.getTemplateId());
-            vmResponse.setCreated(vm.getCreated());
-            if (vm.getState() != null) {
-                vmResponse.setState(vm.getState().toString());
-            }
-        }
-
-        // for console proxies, add the active sessions
-        if (systemVM instanceof ConsoleProxyVO) {
-            ConsoleProxyVO proxy = (ConsoleProxyVO) systemVM;
-            vmResponse.setActiveViewerSessions(proxy.getActiveSession());
-        }
-        vmResponse.setObjectName("systemvm");
-        return vmResponse;
-    }
-
-    @Override
-    public DomainRouterResponse createDomainRouterResponse(VirtualRouter router) {
-        if (router.getPrivateIpAddress() == null) {
-            return createDomainRouter2Response(router);
-        }
-        DomainRouterResponse routerResponse = new DomainRouterResponse();
-        routerResponse.setId(router.getId());
-
-        routerResponse.setZoneId(router.getDataCenterId());
-        routerResponse.setZoneName(ApiDBUtils.findZoneById(router.getDataCenterId()).getName());
-        routerResponse.setDns1(router.getDns1());
-        routerResponse.setDns2(router.getDns2());
-        routerResponse.setNetworkDomain(router.getDomain());
-        routerResponse.setGateway(router.getGateway());
-        routerResponse.setName(router.getHostName());
-        routerResponse.setPodId(router.getPodId());
-
-        if (router.getHostId() != null) {
-            routerResponse.setHostId(router.getHostId());
-            routerResponse.setHostName(ApiDBUtils.findHostById(router.getHostId()).getName());
-        }
-
-        routerResponse.setPrivateIp(router.getPrivateIpAddress());
-        routerResponse.setPrivateMacAddress(router.getPrivateMacAddress());
-        routerResponse.setPrivateNetmask(router.getPrivateNetmask());
-        routerResponse.setPublicIp(router.getPublicIpAddress());
-        routerResponse.setPublicMacAddress(router.getPublicMacAddress());
-        routerResponse.setPublicNetmask(router.getPublicNetmask());
-        routerResponse.setGuestIpAddress(router.getGuestIpAddress());
-        routerResponse.setGuestMacAddress(router.getGuestMacAddress());
-        routerResponse.setGuestNetmask(router.getGuestNetmask());
-        routerResponse.setTemplateId(router.getTemplateId());
-        routerResponse.setCreated(router.getCreated());
-        routerResponse.setState(router.getState());
-
-        Account accountTemp = ApiDBUtils.findAccountById(router.getAccountId());
-        if (accountTemp != null) {
-            routerResponse.setAccountName(accountTemp.getAccountName());
-            routerResponse.setDomainId(accountTemp.getDomainId());
-            routerResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-        }
-        routerResponse.setObjectName("domainrouter");
-        return routerResponse;
-    }
-
-    @Override
     public HostResponse createHostResponse(Host host) {
         HostResponse hostResponse = new HostResponse();
         hostResponse.setId(host.getId());
@@ -1114,7 +889,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public UserVmResponse createUserVm2Response(UserVm userVm) {
+    public UserVmResponse createUserVmResponse(UserVm userVm) {
         UserVmResponse userVmResponse = new UserVmResponse();
         Account acct = ApiDBUtils.findAccountById(Long.valueOf(userVm.getAccountId()));
         // FIXME - this check should be done in searchForUserVm method in
@@ -1266,7 +1041,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public DomainRouterResponse createDomainRouter2Response(VirtualRouter router) {
+    public DomainRouterResponse createDomainRouterResponse(VirtualRouter router) {
         DomainRouterResponse routerResponse = new DomainRouterResponse();
         routerResponse.setId(router.getId());
         routerResponse.setZoneId(router.getDataCenterId());
@@ -1332,7 +1107,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public SystemVmResponse createSystemVm2Response(VirtualMachine systemVM) {
+    public SystemVmResponse createSystemVmResponse(VirtualMachine systemVM) {
         SystemVmResponse vmResponse = new SystemVmResponse();
         if (systemVM instanceof SystemVm) {
             SystemVm vm = (SystemVm) systemVM;

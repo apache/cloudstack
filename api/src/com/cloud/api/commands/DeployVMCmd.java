@@ -219,7 +219,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         try {
             result = _userVmService.startVirtualMachine(this);
             if (result != null) {
-                UserVmResponse response = _responseGenerator.createUserVm2Response(result);
+                UserVmResponse response = _responseGenerator.createUserVmResponse(result);
                 response.setResponseName(getName());
                 this.setResponseObject(response);
             } else {
