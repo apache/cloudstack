@@ -99,6 +99,7 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
@@ -1065,36 +1066,24 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         List<? extends Nic> nics = ApiDBUtils.getNics(router);
-        List<NicResponse> nicResponses = new ArrayList<NicResponse>();
         for (Nic singleNic : nics) {
-            NicResponse nicResponse = new NicResponse();
-            nicResponse.setId(singleNic.getId());
-            nicResponse.setIpaddress(singleNic.getIp4Address());
-            nicResponse.setGateway(singleNic.getGateway());
-            nicResponse.setNetmask(singleNic.getNetmask());
-            nicResponse.setNetworkid(singleNic.getNetworkId());
-            if (singleNic.getBroadcastUri() != null) {
-                nicResponse.setBroadcastUri(singleNic.getBroadcastUri().toString());
-            }
-            if (singleNic.getIsolationUri() != null) {
-                nicResponse.setIsolationUri(singleNic.getIsolationUri().toString());
-            }
-            
-            //Set traffic type
-            Network network = ApiDBUtils.findNetworkById(singleNic.getNetworkId());
-            nicResponse.setTrafficType(network.getTrafficType().toString());
-            
-            //Set type
-            NetworkOffering networkOffering = ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
-            if (networkOffering.getGuestIpType() != null) {
-                nicResponse.setType(networkOffering.getGuestIpType().toString());
-            }
-            
-            nicResponse.setObjectName("nic"); 
-            nicResponses.add(nicResponse);
+           Network network = ApiDBUtils.findNetworkById(singleNic.getNetworkId());
+           if (network != null) {
+               if (network.getTrafficType() == TrafficType.Public) {
+                   routerResponse.setPublicIp(singleNic.getIp4Address());
+                   routerResponse.setPublicMacAddress(singleNic.getGateway());
+                   routerResponse.setPublicNetmask(singleNic.getNetmask());
+               } else if (network.getTrafficType() == TrafficType.Control) {
+                   routerResponse.setPrivateIp(singleNic.getIp4Address());
+                   routerResponse.setPrivateMacAddress(singleNic.getGateway());
+                   routerResponse.setPrivateNetmask(singleNic.getNetmask());
+               } else if (network.getTrafficType() == TrafficType.Guest) {
+                   routerResponse.setGuestIpAddress(singleNic.getIp4Address());
+                   routerResponse.setGuestIpAddress(singleNic.getGateway());
+                   routerResponse.setGuestNetmask(singleNic.getNetmask());
+               }
+           }
         }
-        routerResponse.setNics(nicResponses);
-        
         DataCenter zone = ApiDBUtils.findZoneById(router.getDataCenterId());
         if (zone != null) {
             routerResponse.setZoneName(zone.getName());
@@ -1156,35 +1145,20 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
 
             List<? extends Nic> nics = ApiDBUtils.getNics(systemVM);
-            List<NicResponse> nicResponses = new ArrayList<NicResponse>();
             for (Nic singleNic : nics) {
-                NicResponse nicResponse = new NicResponse();
-                nicResponse.setId(singleNic.getId());
-                nicResponse.setIpaddress(singleNic.getIp4Address());
-                nicResponse.setGateway(singleNic.getGateway());
-                nicResponse.setNetmask(singleNic.getNetmask());
-                nicResponse.setNetworkid(singleNic.getNetworkId());
-                if (singleNic.getBroadcastUri() != null) {
-                    nicResponse.setBroadcastUri(singleNic.getBroadcastUri().toString());
-                }
-                if (singleNic.getIsolationUri() != null) {
-                    nicResponse.setIsolationUri(singleNic.getIsolationUri().toString());
-                }
-                
-                //Set traffic type
-                Network network = ApiDBUtils.findNetworkById(singleNic.getNetworkId());
-                nicResponse.setTrafficType(network.getTrafficType().toString());
-                
-                //Set type
-                NetworkOffering networkOffering = ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
-                if (networkOffering.getGuestIpType() != null) {
-                    nicResponse.setType(networkOffering.getGuestIpType().toString());
-                }
-                
-                nicResponse.setObjectName("nic");
-                nicResponses.add(nicResponse);
+               Network network = ApiDBUtils.findNetworkById(singleNic.getNetworkId());
+               if (network != null) {
+                   if (network.getTrafficType() == TrafficType.Public) {
+                       vmResponse.setPublicIp(singleNic.getIp4Address());
+                       vmResponse.setPublicMacAddress(singleNic.getGateway());
+                       vmResponse.setPublicNetmask(singleNic.getNetmask());
+                   } else if (network.getTrafficType() == TrafficType.Control) {
+                       vmResponse.setPrivateIp(singleNic.getIp4Address());
+                       vmResponse.setPrivateMacAddress(singleNic.getGateway());
+                       vmResponse.setPrivateNetmask(singleNic.getNetmask());
+                   }
+               }
             }
-            vmResponse.setNics(nicResponses);
         }
         vmResponse.setObjectName("systemvm");
         return vmResponse;

@@ -18,7 +18,6 @@
 package com.cloud.api.response;
 
 import java.util.Date;
-import java.util.List;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
@@ -104,14 +103,10 @@ public class DomainRouterResponse extends BaseResponse {
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain associated with the router")
     private String domainName;
     
-    @SerializedName("nics")  @Param(description="the list of nics associated with domain router")
-    private List<NicResponse> nics;
     
     public Long getObjectId() {
     	return getId();
     }
-
-
 
     public Long getId() {
         return id;
@@ -319,13 +314,5 @@ public class DomainRouterResponse extends BaseResponse {
 
     public void setDomainName(String domainName) {
         this.domainName = domainName;
-    }
-
-    public List<NicResponse> getNics() {
-        return nics;
-    }
-
-    public void setNics(List<NicResponse> nics) {
-        this.nics = nics;
     }
 }

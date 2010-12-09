@@ -18,7 +18,6 @@
 package com.cloud.api.response;
 
 import java.util.Date;
-import java.util.List;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -99,9 +98,6 @@ public class SystemVmResponse extends BaseResponse {
     public Long getObjectId() {
     	return getId();
     }
-
-    @SerializedName("nics")  @Param(description="the list of nics associated with system vm")
-    private List<NicResponse> nics;
 
     public Long getId() {
         return id;
@@ -293,13 +289,5 @@ public class SystemVmResponse extends BaseResponse {
 
     public void setActiveViewerSessions(Integer activeViewerSessions) {
         this.activeViewerSessions = activeViewerSessions;
-    }
-
-    public List<NicResponse> getNics() {
-        return nics;
-    }
-
-    public void setNics(List<NicResponse> nics) {
-        this.nics = nics;
     }
 }
