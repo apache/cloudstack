@@ -40,24 +40,26 @@ function afterLoadNetworkJSP($leftmenuItem1) {
          
     //populate items into middle menu  
     var $midmenuContainer = $("#midmenu_container").empty();   
-        
-    $.ajax({
-        data: createURL("command=listNetworks&isSystem=true&zoneId="+zoneObj.id),
-        dataType: "json",
-        async: false,
-        success: function(json) {       
-            var items = json.listnetworksresponse.network;       
-            if(items != null && items.length > 0) {
-                var item = items[0];
-                var $midmenuItem1 = $("#midmenu_item").clone();                      
-                $midmenuItem1.data("toRightPanelFn", publicNetworkToRightPanel);                             
-                publicNetworkToMidmenu(item, $midmenuItem1);    
-                bindClickToMidMenu($midmenuItem1, publicNetworkToRightPanel, publicNetworkGetMidmenuId);   
-                $midmenuContainer.append($midmenuItem1.show());    
-                $midmenuItem1.click();  
+      
+    if(zoneObj.networktype == "Advanced") {
+        $.ajax({
+            data: createURL("command=listNetworks&isSystem=true&zoneId="+zoneObj.id),
+            dataType: "json",
+            async: false,
+            success: function(json) {       
+                var items = json.listnetworksresponse.network;       
+                if(items != null && items.length > 0) {
+                    var item = items[0];
+                    var $midmenuItem1 = $("#midmenu_item").clone();                      
+                    $midmenuItem1.data("toRightPanelFn", publicNetworkToRightPanel);                             
+                    publicNetworkToMidmenu(item, $midmenuItem1);    
+                    bindClickToMidMenu($midmenuItem1, publicNetworkToRightPanel, publicNetworkGetMidmenuId);   
+                    $midmenuContainer.append($midmenuItem1.show());    
+                    $midmenuItem1.click();  
+                }
             }
-        }
-    });   
+        });   
+    }
     
     $.ajax({
 		data: createURL("command=listNetworks&type=Direct&zoneId="+zoneObj.id),
