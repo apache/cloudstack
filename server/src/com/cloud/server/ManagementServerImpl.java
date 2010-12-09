@@ -4810,7 +4810,6 @@ public class ManagementServerImpl implements ManagementServer {
 			String certificate = cmd.getCertificate();
     		cert = _certDao.listAll().get(0); //always 1 record in db (from the deploydb time)
 			cert = _certDao.acquireInLockTable(cert.getId());
-			//assign mgmt server id to mark as processing under this ms
 			if(cert == null){
 				String msg = "Unable to obtain lock on the cert from uploadCertificate()";
 				s_logger.error(msg);
