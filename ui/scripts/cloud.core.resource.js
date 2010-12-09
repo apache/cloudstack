@@ -232,9 +232,12 @@ function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is eith
 		    });  
             afterLoadZoneJSP($midmenuItem1);               
         }        
-        else if(pageToShow == "jsp/network.jsp") {
-            $(this).data("onRefreshFn", function() {
-		        //directNetworkJsonToDetailsTab();
+        else if(pageToShow == "jsp/network.jsp") {            
+            $(this).data("onRefreshFn", function() {		        
+		        var zoneObj = $midmenuItem1.data("jsonObj");
+		        if(zoneObj == null)
+		            return;
+		        $("#zone_"+zoneObj.id).find("#network_header").click();
 		    }); 
             afterLoadNetworkJSP($midmenuItem1);   
         }
