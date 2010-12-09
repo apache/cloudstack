@@ -121,22 +121,25 @@ function publicNetworkJsonToDetailsTab() {
 	var $thisTab = $("#right_panel_content #public_network_page #tab_content_details");      
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
+	
+	$thisTab.find("#grid_header_title").text(fromdb(jsonObj.networkofferingdisplaytext));	
 		
-	$thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));	
-		
-	$thisTab.find("#id").text(fromdb(jsonObj.id));				
-	$thisTab.find("#name").text(fromdb(jsonObj.name));	
-	$thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
-	  	
-    $thisTab.find("#vlan").text(fromdb(jsonObj.vlan));
-    $thisTab.find("#gateway").text(fromdb(jsonObj.gateway));
-    $thisTab.find("#netmask").text(fromdb(jsonObj.netmask));
-    var ipRange = getIpRange(fromdb(jsonObj.startip), fromdb(jsonObj.endip));
-    $thisTab.find("#iprange").text(ipRange);        
-    
-    $thisTab.find("#domain").text(fromdb(jsonObj.domain));      //might be null
-    $thisTab.find("#account").text(fromdb(jsonObj.account));    //might be null
-        
+	$thisTab.find("#id").text(fromdb(jsonObj.id));		
+	$thisTab.find("#state").text(fromdb(jsonObj.state));		
+	$thisTab.find("#traffictype").text(fromdb(jsonObj.traffictype));	
+	$thisTab.find("#broadcastdomaintype").text(fromdb(jsonObj.broadcastdomaintype));	
+	setBooleanReadField(jsonObj.isshared, $thisTab.find("#isshared"));
+	setBooleanReadField(jsonObj.issystem, $thisTab.find("#issystem"));
+	$thisTab.find("#networkofferingname").text(fromdb(jsonObj.networkofferingname));	
+	$thisTab.find("#networkofferingdisplaytext").text(fromdb(jsonObj.networkofferingdisplaytext));	
+	$thisTab.find("#networkofferingid").text(fromdb(jsonObj.networkofferingid));	
+	$thisTab.find("#related").text(fromdb(jsonObj.related));	
+	$thisTab.find("#zoneid").text(fromdb(jsonObj.zoneid));	
+	$thisTab.find("#dns1").text(fromdb(jsonObj.dns1));	
+	$thisTab.find("#dns2").text(fromdb(jsonObj.dns2));	
+	$thisTab.find("#domainid").text(fromdb(jsonObj.domainid));	
+	$thisTab.find("#account").text(fromdb(jsonObj.account));	
+			        
     $thisTab.find("#tab_container").show(); 
     $thisTab.find("#tab_spinning_wheel").hide();   
 }

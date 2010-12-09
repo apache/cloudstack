@@ -71,73 +71,134 @@
 	                        </div>
 	                    </div>
 	                </div>
+	                
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("Name")%>:</div>
+	                            <%=t.t("state")%>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
-	                        <div class="row_celltitles" id="name">
-	                        </div>
-	                    </div>
-	                </div>	                
-	                <div class="grid_rows odd">
-	                    <div class="grid_row_cell" style="width: 20%;">
-	                        <div class="row_celltitles">
-	                            <%=t.t("displaytext")%>:</div>
-	                    </div>
-	                    <div class="grid_row_cell" style="width: 79%;">
-	                        <div class="row_celltitles" id="displaytext">
-	                        </div>
-	                    </div>
-	                </div>
-	                <div class="grid_rows even">
-	                    <div class="grid_row_cell" style="width: 20%;">
-	                        <div class="row_celltitles">
-	                            <%=t.t("vlan")%>:</div>
-	                    </div>
-	                    <div class="grid_row_cell" style="width: 79%;">
-	                        <div class="row_celltitles" id="vlan">
-	                        </div>
-	                    </div>
-	                </div>
-	                                    <div class="grid_rows odd">
-	                    <div class="grid_row_cell" style="width: 20%;">
-	                        <div class="row_celltitles">
-	                            <%=t.t("gateway")%>:</div>
-	                    </div>
-	                    <div class="grid_row_cell" style="width: 79%;">
-	                        <div class="row_celltitles" id="gateway">
-	                        </div>
-	                    </div>
-	                </div>
-	                <div class="grid_rows even">
-	                    <div class="grid_row_cell" style="width: 20%;">
-	                        <div class="row_celltitles">
-	                            <%=t.t("netmask")%>:</div>
-	                    </div>
-	                    <div class="grid_row_cell" style="width: 79%;">
-	                        <div class="row_celltitles" id="netmask">
+	                        <div class="row_celltitles" id="state">
 	                        </div>
 	                    </div>
 	                </div>
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("iprange")%>:</div>
+	                            <%=t.t("traffic.type")%>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
-	                        <div class="row_celltitles" id="iprange">
+	                        <div class="row_celltitles" id="traffictype">
 	                        </div>
 	                    </div>
 	                </div>
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("domain")%>:</div>
+	                            <%=t.t("broad.cast.domain.type")%>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
-	                        <div class="row_celltitles" id="domain">
+	                        <div class="row_celltitles" id="broadcastdomaintype">
+	                        </div>
+	                    </div>
+	                </div>
+	                <div class="grid_rows odd">
+	                    <div class="grid_row_cell" style="width: 20%;">
+	                        <div class="row_celltitles">
+	                            <%=t.t("is.shared")%>:</div>
+	                    </div>
+	                    <div class="grid_row_cell" style="width: 79%;">
+	                        <div class="row_celltitles" id="isshared">
+	                        </div>
+	                    </div>
+	                </div>
+	                <div class="grid_rows even">
+	                    <div class="grid_row_cell" style="width: 20%;">
+	                        <div class="row_celltitles">
+	                            <%=t.t("is.system")%>:</div>
+	                    </div>
+	                    <div class="grid_row_cell" style="width: 79%;">
+	                        <div class="row_celltitles" id="issystem">
+	                        </div>
+	                    </div>
+	                </div>
+	                <div class="grid_rows odd">
+	                    <div class="grid_row_cell" style="width: 20%;">
+	                        <div class="row_celltitles">
+	                            <%=t.t("network.offering.name")%>:</div>
+	                    </div>
+	                    <div class="grid_row_cell" style="width: 79%;">
+	                        <div class="row_celltitles" id="networkofferingname">
+	                        </div>
+	                    </div>
+	                </div>
+	                <div class="grid_rows even">
+	                    <div class="grid_row_cell" style="width: 20%;">
+	                        <div class="row_celltitles">
+	                            <%=t.t("network.offering.display.text")%>:</div>
+	                    </div>
+	                    <div class="grid_row_cell" style="width: 79%;">
+	                        <div class="row_celltitles" id="networkofferingdisplaytext">
+	                        </div>
+	                    </div>
+	                </div>
+	                <div class="grid_rows odd">
+	                    <div class="grid_row_cell" style="width: 20%;">
+	                        <div class="row_celltitles">
+	                            <%=t.t("network.offering.id")%>:</div>
+	                    </div>
+	                    <div class="grid_row_cell" style="width: 79%;">
+	                        <div class="row_celltitles" id="networkofferingid">
+	                        </div>
+	                    </div>
+	                </div>
+	                <div class="grid_rows even">
+	                    <div class="grid_row_cell" style="width: 20%;">
+	                        <div class="row_celltitles">
+	                            <%=t.t("related")%>:</div>
+	                    </div>
+	                    <div class="grid_row_cell" style="width: 79%;">
+	                        <div class="row_celltitles" id="related">
+	                        </div>
+	                    </div>
+	                </div>
+	                <div class="grid_rows odd">
+	                    <div class="grid_row_cell" style="width: 20%;">
+	                        <div class="row_celltitles">
+	                            <%=t.t("zone.id")%>:</div>
+	                    </div>
+	                    <div class="grid_row_cell" style="width: 79%;">
+	                        <div class="row_celltitles" id="zoneid">
+	                        </div>
+	                    </div>
+	                </div>
+	                <div class="grid_rows even">
+	                    <div class="grid_row_cell" style="width: 20%;">
+	                        <div class="row_celltitles">
+	                            <%=t.t("dns1")%>:</div>
+	                    </div>
+	                    <div class="grid_row_cell" style="width: 79%;">
+	                        <div class="row_celltitles" id="dns1">
+	                        </div>
+	                    </div>
+	                </div>
+	                <div class="grid_rows odd">
+	                    <div class="grid_row_cell" style="width: 20%;">
+	                        <div class="row_celltitles">
+	                            <%=t.t("dns2")%>:</div>
+	                    </div>
+	                    <div class="grid_row_cell" style="width: 79%;">
+	                        <div class="row_celltitles" id="dns2">
+	                        </div>
+	                    </div>
+	                </div>
+	                <div class="grid_rows even">
+	                    <div class="grid_row_cell" style="width: 20%;">
+	                        <div class="row_celltitles">
+	                            <%=t.t("domainid")%>:</div>
+	                    </div>
+	                    <div class="grid_row_cell" style="width: 79%;">
+	                        <div class="row_celltitles" id="domainid">
 	                        </div>
 	                    </div>
 	                </div>
@@ -150,7 +211,8 @@
 	                        <div class="row_celltitles" id="account">
 	                        </div>
 	                    </div>
-	                </div>	               
+	                </div>	                
+	                
 	            </div>
 	        </div>    
         </div>   
