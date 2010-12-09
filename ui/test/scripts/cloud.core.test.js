@@ -630,6 +630,7 @@ $(document).ready(function() {
 			//*** domain (end) *********************************************** 
 			
 			//*** API Test (begin) *******************************************
+			/*
 			$("#submenu_api_test").bind("click",function(event){
 				$(this).toggleClass("submenu_links_on").toggleClass("submenu_links_off");
 				currentSubMenu.toggleClass("submenu_links_off").toggleClass("submenu_links_on");
@@ -640,6 +641,7 @@ $(document).ready(function() {
 				
 				return false;
 			}); 
+			*/
 			
 			var responseText;
 			var responseIndent = 0;
