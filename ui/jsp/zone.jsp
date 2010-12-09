@@ -23,9 +23,11 @@
         <div class="content_tabs on" id="tab_details">
             <%=t.t("details")%></div>        
         <div class="content_tabs off" id="tab_secondarystorage">
-            <%=t.t("secondary.storage")%></div>        
+            <%=t.t("secondary.storage")%></div>   
+        <!--    
         <div class="content_tabs off" id="tab_network">
-            <%=t.t("network")%></div>        
+            Network </div>  
+        -->         
     </div>
     
     <!-- Details tab (start)-->
