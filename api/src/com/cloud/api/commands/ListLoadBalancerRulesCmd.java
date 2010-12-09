@@ -101,12 +101,13 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
         List<? extends LoadBalancer> loadBalancers = _lbService.searchForLoadBalancers(this);
         ListResponse<LoadBalancerResponse> response = new ListResponse<LoadBalancerResponse>();
         List<LoadBalancerResponse> lbResponses = new ArrayList<LoadBalancerResponse>();
-        for (LoadBalancer loadBalancer : loadBalancers) {
-            LoadBalancerResponse lbResponse = _responseGenerator.createLoadBalancerResponse(loadBalancer);
-            lbResponse.setObjectName("loadbalancerrule");
-            lbResponses.add(lbResponse);
+        if (loadBalancers != null) {
+            for (LoadBalancer loadBalancer : loadBalancers) {
+                LoadBalancerResponse lbResponse = _responseGenerator.createLoadBalancerResponse(loadBalancer);
+                lbResponse.setObjectName("loadbalancerrule");
+                lbResponses.add(lbResponse);
+            }
         }
-
         response.setResponses(lbResponses);
         response.setResponseName(getName());
         this.setResponseObject(response);
