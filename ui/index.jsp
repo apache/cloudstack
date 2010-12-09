@@ -772,7 +772,7 @@
                                             <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                             </div>
                                             
-                                            <div><fmt:message key="label.menu.virtual.routers"/></div>
+                                            <div><fmt:message key="label.menu.virtual.appliances"/></div>
                                         </div>
                                     </div>
                                 </div>
@@ -840,10 +840,12 @@
     <!-- Left Menu ends here-->
     </div>
     <div id="footer">
+	<!--
      <div class="footer_testprovisiongtool" id="launch_test" style="display:none">
      	<div class="footer_testprovisiongtool_icon"></div>
         <a href="#">Launch Test Provisioning Tool</a>
      </div>
+	-->
         <div class="poweredby_box">
         </div>
     </div>

@@ -106,8 +106,10 @@
             <%=t.t("Volumes")%></div>
         <div class="content_tabs off" id="tab_statistics">
             <%=t.t("Statistics")%></div>
+		<!--
         <div class="content_tabs off" id="tab_router" style="display:none">
             <%=t.t("Router")%></div>
+		-->
     </div>
     <!--Details tab (start)-->
     <div  id="tab_content_details">
@@ -150,12 +152,13 @@
 	                        <div class="vm_status_textline green" id="state">
 	                        </div>
 	                        <br />
+							<!--
 	                        <p id="ipAddress">
 	                        </p>
+							-->
 	                    </div>
 	                </div>
 	            </div>
-	            
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
@@ -189,6 +192,7 @@
 	                    <div id="vmname_edit_errormsg" style="display:none"></div>
 	                </div>
 	            </div>
+				<!--
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
@@ -198,8 +202,9 @@
 	                    <div class="row_celltitles" id="ipaddress">
 	                    </div>
 	                </div>
-	            </div>        
-	            <div class="grid_rows even">
+	            </div>
+				-->
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Template")%>:</div>
@@ -209,7 +214,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Service")%>:</div>
@@ -219,7 +224,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("HA.Enabled")%>:</div>
@@ -233,7 +238,7 @@
 	                    </select>
 	                </div>
 	            </div>
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Created")%>:</div>
@@ -243,7 +248,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Account")%>:</div>
@@ -253,7 +258,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Domain")%>:</div>
@@ -263,7 +268,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Host")%>:</div>
@@ -273,7 +278,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("ISO.attached")%>:</div>
@@ -283,7 +288,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Group")%>:</div>

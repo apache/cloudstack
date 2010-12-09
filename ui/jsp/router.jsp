@@ -16,7 +16,7 @@
         <img src="images/title_routersicon.gif" alt="Routers" /></div>
    
     <h1>
-        Router
+        Virtual Appliance
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -55,24 +55,24 @@
                     </div>
                 </div>          
                 <div class="grid_rows odd">
-                    <div class="vm_statusbox">   
-                        <div id="view_console_container">                       
-                    	    <div id="view_console_template" style="display:block">
-    						    <div class="vm_consolebox" id="box0">
-    						    </div>
-   							    <div class="vm_consolebox" id="box1" style="display: none">
-    						    </div>
-						    </div>   
-                        </div>
-                        <div class="vm_status_textbox">
-                            <div class="vm_status_textline green" id="state">
-                            </div>
-                            <br />
-                            <p id="ipAddress">
-                            </p>
-                        </div>
-                    </div>
-                </div>   
+	                <div class="vm_statusbox">
+	                    <div id="view_console_container" style="float: left;">
+	                        <div id="view_console_template" style="display: block">
+	                            <div class="vm_consolebox" id="box0">
+	                            </div>
+	                            <div class="vm_consolebox" id="box1" style="display: none">
+	                            </div>
+	                        </div>
+	                    </div>
+	                    <div class="vm_status_textbox">
+	                        <div class="vm_status_textline green" id="state">
+	                        </div>
+	                        <br />
+	                        <p id="ipAddress">
+	                        </p>
+	                    </div>
+	                </div>
+	            </div>  
                 <div class="grid_rows even">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
