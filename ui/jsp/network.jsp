@@ -591,15 +591,7 @@
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
-        <ol>
-            <li style="display: none" id="add_publicip_vlan_type_container">
-                <label for="add_publicip_vlan_type">
-                    Type:</label>
-                <select class="select" name="add_publicip_vlan_type" id="add_publicip_vlan_type">
-                    <option value="false">Direct</option>
-                    <option value="true">Virtual</option>
-                </select>
-            </li>
+        <ol>            
 			<li style="display: none" id="add_publicip_vlan_network_name_container">
                 <label for="user_name">
                     Network Name:</label>
@@ -618,9 +610,10 @@
                 <label for="add_publicip_vlan_tagged">
                     VLAN:</label>
                 <select class="select" name="add_publicip_vlan_tagged" id="add_publicip_vlan_tagged">
+                    <option value="tagged">tagged</option>
                 </select>
             </li>
-            <li style="display: none" id="add_publicip_vlan_vlan_container">
+            <li id="add_publicip_vlan_vlan_container">
                 <label for="user_name">
                     VLAN ID:</label>
                 <input class="text" type="text" name="add_publicip_vlan_vlan" id="add_publicip_vlan_vlan" />
