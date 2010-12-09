@@ -167,7 +167,7 @@ function initAddDiskOfferingDialog() {
 
 function doEditDiskOffering($actionLink, $detailsTab, $midmenuItem1) {       
     var $readonlyFields  = $detailsTab.find("#name, #displaytext, #tags, #domain");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #tags_edit, #domain_edit"); 
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #domain_edit"); 
              
     $readonlyFields.hide();
     $editFields.show();  
