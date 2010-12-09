@@ -453,6 +453,11 @@ function directNetworkToRightPanel($midmenuItem1) {
     $("#direct_network_page").find("#tab_details").click();     
 }
 	
+function directNetworkClearRightPanel() {
+    directNetworkJsonClearDetailsTab();
+    directNetworkJsonClearIpAllocationTab();
+}
+	
 function directNetworkJsonToDetailsTab() {	    
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     if($midmenuItem1 == null)
@@ -479,8 +484,36 @@ function directNetworkJsonToDetailsTab() {
     $thisTab.find("#domain").text(fromdb(jsonObj.domain));      //might be null
     $thisTab.find("#account").text(fromdb(jsonObj.account));    //might be null
         
+    //actions ***   
+    var $actionLink = $thisTab.find("#action_link"); 
+    $actionLink.bind("mouseover", function(event) {	    
+        $(this).find("#action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {       
+        $(this).find("#action_menu").hide();    
+        return false;
+    });	  
+    var $actionMenu = $actionLink.find("#action_menu");
+    $actionMenu.find("#action_list").empty();        
+    buildActionLinkForTab("Delete Network", directNetworkActionMap, $actionMenu, $midmenuItem1, $thisTab);	      
+        
     $thisTab.find("#tab_container").show(); 
     $thisTab.find("#tab_spinning_wheel").hide();   
+}
+
+function directNetworkJsonClearDetailsTab() {
+    var $thisTab = $("#right_panel_content #direct_network_page #tab_content_details");    
+	$thisTab.find("#grid_header_title").text("");			
+	$thisTab.find("#id").text("");				
+	$thisTab.find("#name").text("");	
+	$thisTab.find("#displaytext").text("");	  	
+    $thisTab.find("#vlan").text("");
+    $thisTab.find("#gateway").text("");
+    $thisTab.find("#netmask").text("");        
+    $thisTab.find("#domain").text("");      
+    $thisTab.find("#account").text("");       
+    $thisTab.find("#action_link #action_menu #action_list").empty(); //empty action menu
 }
 
 function directNetworkJsonToIpAllocationTab() {	    
@@ -514,6 +547,11 @@ function directNetworkJsonToIpAllocationTab() {
             $thisTab.find("#tab_spinning_wheel").hide();    
 		}
     });  
+}
+
+function directNetworkJsonClearIpAllocationTab() {
+    var $thisTab = $("#right_panel_content #direct_network_page #tab_content_ipallocation"); 
+    $thisTab.find("#tab_container").empty();     
 }
 
 function directNetworkIprangeJsonToTemplate(jsonObj, $template) {    
@@ -783,6 +821,21 @@ function initAddIpRangeToDirectNetworkButton($button, $midmenuItem1) {
         return false;
     });
 }
+
+var directNetworkActionMap = {       
+    "Delete Network": {              
+        api: "deleteVlanIpRange",     
+        isAsyncJob: false,           
+        inProcessText: "Deleting Network....",
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {   
+            $midmenuItem1.slideUp("slow", function() {
+                $(this).remove();
+            });    
+            clearRightPanel();
+            directNetworkClearRightPanel();
+        }
+    }    
+}  
 
 //***** Direct Network (end) ******************************************************************************************************
 
