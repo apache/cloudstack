@@ -172,6 +172,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -3798,6 +3799,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	
 	@Override
 	public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
+	    UserVmVO vo = profile.getVirtualMachine();
+	    VirtualMachineTemplate template = profile.getTemplate();
+	    if (template.getFormat() == ImageFormat.ISO && template.isBootable()) {
+	        
+	    }
 	    return true;
 	}
 	

@@ -17,17 +17,16 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.guru.NetworkGuru;
-import com.cloud.network.Network;
-import com.cloud.network.NetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
-import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -38,7 +37,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value={NetworkGuru.class})
-public class ControlNetworkGuru extends AdapterBase implements NetworkGuru {
+public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(ControlNetworkGuru.class);
     @Inject DataCenterDao _dcDao;
     String _cidr;
@@ -84,6 +83,10 @@ public class ControlNetworkGuru extends AdapterBase implements NetworkGuru {
             InsufficientAddressCapacityException {
         assert nic.getTrafficType() == TrafficType.Control;
         
+        if (dest.getHost().getHypervisorType() == HypervisorType.VmWare) {
+            super.reserve(nic, config, vm, dest, context);
+            return;
+        }
         String ip = _dcDao.allocateLinkLocalIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), vm.getId(), context.getReservationId());
         nic.setIp4Address(ip);
         nic.setMacAddress(NetUtils.long2Mac(NetUtils.ip2Long(ip) | (14l << 40)));
@@ -95,6 +98,10 @@ public class ControlNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
         assert nic.getTrafficType() == TrafficType.Control;
+        
+        if (vm.getHypervisorType() == HypervisorType.VmWare) {
+            return super.release(nic, vm, reservationId);
+        }
         
         _dcDao.releaseLinkLocalIpAddress(nic.getId(), reservationId);
         nic.setIp4Address(null);
