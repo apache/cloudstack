@@ -163,7 +163,7 @@ function publicNetworkJsonToIpAllocationTab() {
 		success: function(json) {		    
 		    var items = json.listvlaniprangesresponse.vlaniprange;		    
 		    var $container = $thisTab.find("#tab_container").empty();
-		    var $template = $("#directnetwork_iprange_template");
+		    var $template = $("#iprange_template");
 		    if(items != null && items.length > 0) {		        
 		        for(var i=0; i<items.length; i++) {
 		            var $newTemplate = $template.clone();
@@ -307,7 +307,7 @@ function directNetworkJsonToIpAllocationTab() {
 		success: function(json) {
 		    var items = json.listvlaniprangesresponse.vlaniprange;		    
 		    var $container = $thisTab.find("#tab_container").empty();
-		    var $template = $("#directnetwork_iprange_template");
+		    var $template = $("#iprange_template");
 		    if(items != null && items.length > 0) {		        
 		        for(var i=0; i<items.length; i++) {
 		            var $newTemplate = $template.clone();

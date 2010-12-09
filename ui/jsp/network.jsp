@@ -409,8 +409,8 @@
         
 </div>
 
-<!--  Direct Network - IP Allocation tab template (begin) -->
-<div class="grid_container" id="directnetwork_iprange_template" style="display: none">
+<!--  IP Range template (begin) -->
+<div class="grid_container" id="iprange_template" style="display: none">
     <div class="grid_header">
         <div class="grid_header_title" id="grid_header_title">
         </div>        
@@ -446,4 +446,4 @@
         </div>
     </div> 
 </div>
-<!--  Direct Network - IP Allocation tab template (end) -->
+<!--  IP Range template (end) -->
