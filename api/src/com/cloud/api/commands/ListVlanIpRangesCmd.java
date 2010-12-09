@@ -26,6 +26,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.dc.Vlan;
@@ -60,6 +61,9 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="network id of the VLAN IP range")
     private Long networkId;
+    
+    @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="true if VLAN is of Virtual type, false if Direct")
+    private Boolean forVirtualNetwork;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -92,13 +96,17 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
     public Long getNetworkId() {
         return networkId;
     }
+    
+    public Boolean getForVirtualNetwork() {
+		return forVirtualNetwork;
+	}
+    
    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-
-    @Override
+    
+	@Override
     public String getName() {
         return s_name;
     }

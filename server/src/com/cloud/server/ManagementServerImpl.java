@@ -1390,6 +1390,9 @@ public class ManagementServerImpl implements ManagementServer {
         Long domainId = cmd.getDomainId();
         Long accountId = null;
         Long networkId = cmd.getNetworkId();
+        Boolean forVirtual = cmd.getForVirtualNetwork();
+        String vlanType = null;
+        
         if (accountName != null && domainId != null) {
             Account account = _accountDao.findActiveAccount(accountName, domainId);
             if (account == null) {
@@ -1398,6 +1401,14 @@ public class ManagementServerImpl implements ManagementServer {
                 accountId = account.getId();
             }
         } 
+        
+        if (forVirtual != null) {
+        	if (forVirtual) {
+        		vlanType = VlanType.VirtualNetwork.toString();
+        	} else {
+        		vlanType = VlanType.DirectAttached.toString();
+        	}
+        }
 
         Filter searchFilter = new Filter(VlanVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
@@ -1411,7 +1422,9 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("vlan", sb.entity().getVlanId(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("vlan", sb.entity().getVlanId(), SearchCriteria.Op.EQ);
         sb.and("networkId", sb.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        sb.and("vlanType", sb.entity().getVlanType(), SearchCriteria.Op.EQ);
        
         if (accountId != null) {
         	SearchBuilder<AccountVlanMapVO> accountVlanMapSearch = _accountVlanMapDao.createSearchBuilder();
@@ -1454,6 +1467,9 @@ public class ManagementServerImpl implements ManagementServer {
         	
         	if (podId != null) {
         		sc.setJoinParameters("podVlanMapSearch", "podId", podId);
+        	}
+        	if (vlanType != null) {
+        		sc.setParameters("vlanType", vlanType);
         	}
         }
 
