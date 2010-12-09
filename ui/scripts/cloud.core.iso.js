@@ -310,12 +310,15 @@ function isoJsonToDetailsTab() {
     }
 		
 	// "Create VM" 
+	// Commenting this out for Beta2 as it does not support the new network.
+	/*
 	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == false) || (jsonObj.bootable == false)) {
 	}
     else {        
         buildActionLinkForTab("Create VM", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
         noAvailableActions = false;
     }
+	*/
     
 	// "Delete" 
 	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) || (jsonObj.isready == false && jsonObj.isostatus != null && jsonObj.isostatus.indexOf("% Downloaded") != -1)) {

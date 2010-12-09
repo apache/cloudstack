@@ -329,7 +329,8 @@ function templateJsonToDetailsTab() {
         buildActionLinkForTab("Edit Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);      
         //$("#edit_button").show();
         buildActionLinkForTab("Copy Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);			
-        buildActionLinkForTab("Create VM", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);	        
+        // For Beta2, this simply doesn't work without a network.
+		//buildActionLinkForTab("Create VM", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);	        
         buildActionLinkForTab("Download Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);
         noAvailableActions = false;		
     }
