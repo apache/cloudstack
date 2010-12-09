@@ -99,7 +99,7 @@ function publicNetworkToMidmenu(jsonObj, $midmenuItem1) {
     */
          
     $midmenuItem1.find("#first_row").text("Public Network"); 
-    $midmenuItem1.find("#second_row").text("VLAN: multiple");   
+    $midmenuItem1.find("#second_row").text("VLAN: Multiple");   
 }
 
 function publicNetworkToRightPanel($midmenuItem1) {      
@@ -551,9 +551,7 @@ function directNetworkJsonToDetailsTab() {
     $thisTab.find("#vlan").text(fromdb(jsonObj.vlan));
     $thisTab.find("#gateway").text(fromdb(jsonObj.gateway));
     $thisTab.find("#netmask").text(fromdb(jsonObj.netmask));
-    var ipRange = getIpRange(fromdb(jsonObj.startip), fromdb(jsonObj.endip));
-    $thisTab.find("#iprange").text(ipRange);        
-    
+        
     $thisTab.find("#domain").text(fromdb(jsonObj.domain));      //might be null
     $thisTab.find("#account").text(fromdb(jsonObj.account));    //might be null
         
