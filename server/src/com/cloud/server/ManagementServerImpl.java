@@ -605,11 +605,16 @@ public class ManagementServerImpl implements ManagementServer {
             return null;
         }
 
+        DomainVO domain = _domainDao.findById(domainId);
+        String domainName = null;
+        if(domain != null)
+        	domainName = domain.getName();
+        
         if (!userAccount.getState().equals("enabled") || !userAccount.getAccountState().equals("enabled")) {
             if (s_logger.isInfoEnabled()) {
-                s_logger.info("user " + username + " in domain " + domainId + " is disabled/locked (or account is disabled/locked), returning null");
+                s_logger.info("User " + username + " in domain " + domainName + " is disabled/locked (or account is disabled/locked)");
             }
-            throw new CloudAuthenticationException("user " + username + " in domain " + domainId + " is disabled/locked (or account is disabled/locked)");
+            throw new CloudAuthenticationException("User " + username + " in domain " + domainName + " is disabled/locked (or account is disabled/locked)");
             //return null;
         }
 

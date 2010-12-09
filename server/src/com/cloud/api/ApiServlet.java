@@ -180,8 +180,8 @@ public class ApiServlet extends HttpServlet {
                             try {
                                 session.invalidate();
                             }catch (IllegalStateException ise) {}
-                            auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + ex.getMessage() != null ? ex.getMessage() : "failed to authenticated user, check username/password are correct");
-                            resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, ex.getMessage() != null ? ex.getMessage() : "failed to authenticated user, check username/password are correct");
+                            auditTrailSb.append(" " + BaseCmd.ACCOUNT_ERROR + " " + ex.getMessage() != null ? ex.getMessage() : "failed to authenticate user, check if username/password are correct");
+                            resp.sendError(BaseCmd.ACCOUNT_ERROR, ex.getMessage() != null ? ex.getMessage() : "failed to authenticate user, check if username/password are correct");
                             return;
                         }
                     }
