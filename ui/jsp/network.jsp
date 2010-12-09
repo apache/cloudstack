@@ -446,33 +446,13 @@
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
-        <ol>
-            <li style="display: none" id="add_publicip_vlan_type_container">
-                <label for="add_publicip_vlan_type">
-                    Type:</label>
-                <select class="select" name="add_publicip_vlan_type" id="add_publicip_vlan_type">
-                    <option value="false">Direct</option>
-                    <option value="true">Virtual</option>
-                </select>
-            </li>
-			<li style="display: none" id="add_publicip_vlan_network_name_container">
-                <label for="user_name">
-                    Network Name:</label>
-                <input class="text" type="text" name="add_publicip_vlan_network_name" id="add_publicip_vlan_network_name" />
-                <div id="add_publicip_vlan_network_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                </div>
-            </li>
-			<li style="display: none" id="add_publicip_vlan_network_desc_container">
-                <label for="user_name">
-                    Network Desc:</label>
-                <input class="text" type="text" name="add_publicip_vlan_network_desc" id="add_publicip_vlan_network_desc" />
-                <div id="add_publicip_vlan_network_desc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                </div>
-            </li>
+        <ol>            
             <li id="add_publicip_vlan_container">
                 <label for="add_publicip_vlan_tagged">
                     VLAN:</label>
                 <select class="select" name="add_publicip_vlan_tagged" id="add_publicip_vlan_tagged">
+                    <option value="untagged">untagged</option>
+                    <option value="tagged">tagged</option>
                 </select>
             </li>
             <li style="display: none" id="add_publicip_vlan_vlan_container">

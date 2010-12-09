@@ -238,34 +238,14 @@ function initAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
     
     var $dialogAddIpRangeToPublicNetwork = $("#dialog_add_iprange_to_publicnetwork"); 
          
-    //***** binding Event Handler (begin) ******    
-    //direct VLAN shows only "tagged" option while public VLAN shows both "tagged" and "untagged" option. 
-	$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_type").change(function(event) {
-	    var addPublicipVlanTagged = $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged").empty();
-	   		
-		if ($(this).val() == "false") { //direct VLAN (only tagged option)		
-			addPublicipVlanTagged.append('<option value="tagged">tagged</option>');
-			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_network_name_container").show();	
-			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_network_desc_container").show();	
-			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_vlan_container").show();			
-			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_pod_container").hide();
-			
-		} 
-		else if ($(this).val() == "true") { //public VLAN	
-			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_network_name_container").hide();	
-			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_network_desc_container").hide();	
-			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_cidr_container").hide();	
-			addPublicipVlanTagged.append('<option value="untagged">untagged</option>').append('<option value="tagged">tagged</option>');	
-		} 
+    //***** binding Event Handler (begin) ******      	
+	$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_cidr_container").hide();	
+	  
+    $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged").change();
 		
-		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged").change();
-		
-		// default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 
-		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").change(); 			
-		
-		return false;
-	});
-	
+	// default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 
+	$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").change(); 	
+       
 	if (zoneObj.networktype == "Advanced") {
 		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged").change(function(event) {	
 			if ($(this).val() == "tagged") {
@@ -289,9 +269,6 @@ function initAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 		
 		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged").change();		
 	} 
-	else {
-		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_container").hide();
-	}
 	
 	$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").change(function(event) {	   
 	    if($(this).val() == "zone-wide") {
@@ -313,70 +290,66 @@ function initAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
         $dialogAddIpRangeToPublicNetwork.find("#zone_name").text(fromdb(zoneObj.name));         
 		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_vlan_container, #add_publicip_vlan_domain_container, #add_publicip_vlan_account_container").hide();
 		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged, #add_publicip_vlan_vlan, #add_publicip_vlan_gateway, #add_publicip_vlan_netmask, #add_publicip_vlan_startip, #add_publicip_vlan_endip, #add_publicip_vlan_account").val("");
-						
-		if (zoneObj.networktype == 'Basic') {
-			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_type_container").hide();
-		} else {	
-			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_pod_container").show();	
-			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_type").change();
-			$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_type_container").show();
-			var podSelect = $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_pod").empty();		
-			$.ajax({
-			    data: createURL("command=listPods&zoneId="+zoneObj.id),
-				dataType: "json",
-				async: false,
-				success: function(json) {
-					var pods = json.listpodsresponse.pod;						
-					if (pods != null && pods.length > 0) {
-						for (var i = 0; i < pods.length; i++) {
-							podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 
-						}
-					} else {
-						podSelect.append("<option value=''>No available pods</option>"); 
+		
+		
+		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_pod_container").show();	
+					
+		var podSelect = $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_pod").empty();		
+		$.ajax({
+		    data: createURL("command=listPods&zoneId="+zoneObj.id),
+			dataType: "json",
+			async: false,
+			success: function(json) {
+				var pods = json.listpodsresponse.pod;						
+				if (pods != null && pods.length > 0) {
+					for (var i = 0; i < pods.length; i++) {
+						podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 
 					}
+				} else {
+					podSelect.append("<option value=''>No available pods</option>"); 
 				}
-			});
-			
-			var domainSelect = $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_domain").empty();	
-			if(zoneObj.domainid != null) { //list only domains under zoneObj.domainid
-			    domainSelect.append("<option value='" + zoneObj.domainid + "'>" + fromdb(zoneObj.domain) + "</option>"); 	
-			        									
-			    function populateDomainDropdown(id) {					        
-                    $.ajax({
-	                    data: createURL("command=listDomainChildren&id="+id),
-	                    dataType: "json",
-	                    async: false,
-	                    success: function(json) {					        
-	                        var domains = json.listdomainchildrenresponse.domain;		                  		        	    
-		                    if (domains != null && domains.length > 0) {					    
-			                    for (var i = 0; i < domains.length; i++) {	
-				                    domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 	
-				                    if(domains[i].haschild == true) 
-		                                populateDomainDropdown(domains[i].id);				   
-			                    }
-		                    }				
-	                    }
-                    }); 
-                }	
-                
-                populateDomainDropdown(zoneObj.domainid);
-            }
-            else { //list all domains            
-                 $.ajax({
-                    data: createURL("command=listDomains"),
+			}
+		});
+		
+		var domainSelect = $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_domain").empty();	
+		if(zoneObj.domainid != null) { //list only domains under zoneObj.domainid
+		    domainSelect.append("<option value='" + zoneObj.domainid + "'>" + fromdb(zoneObj.domain) + "</option>"); 	
+		        									
+		    function populateDomainDropdown(id) {					        
+                $.ajax({
+                    data: createURL("command=listDomainChildren&id="+id),
                     dataType: "json",
-                    success: function(json) {           
-                        var items = json.listdomainsresponse.domain;
-                        if(items != null && items.length > 0) {
-                            for(var i=0; i<items.length; i++) {
-                                domainSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>"); 
-                            }		
-                        }
-                    }    
-                });  
-            }   
-		}
-
+                    async: false,
+                    success: function(json) {					        
+                        var domains = json.listdomainchildrenresponse.domain;		                  		        	    
+	                    if (domains != null && domains.length > 0) {					    
+		                    for (var i = 0; i < domains.length; i++) {	
+			                    domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 	
+			                    if(domains[i].haschild == true) 
+	                                populateDomainDropdown(domains[i].id);				   
+		                    }
+	                    }				
+                    }
+                }); 
+            }	
+            
+            populateDomainDropdown(zoneObj.domainid);
+        }
+        else { //list all domains            
+             $.ajax({
+                data: createURL("command=listDomains"),
+                dataType: "json",
+                success: function(json) {           
+                    var items = json.listdomainsresponse.domain;
+                    if(items != null && items.length > 0) {
+                        for(var i=0; i<items.length; i++) {
+                            domainSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>"); 
+                        }		
+                    }
+                }    
+            });  
+        }   
+		
 		$dialogAddIpRangeToPublicNetwork
 		.dialog('option', 'buttons', { 	
 			"Add": function() { 	
@@ -385,25 +358,23 @@ function initAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 				// validate values
 				var isValid = true;					
 				var isTagged = $thisDialog.find("#add_publicip_vlan_tagged").val() == "tagged";
-				var isDirect = $thisDialog.find("#add_publicip_vlan_type").val() == "false";
+				
 				
 				isValid &= validateString("Account", $thisDialog.find("#add_publicip_vlan_account"), $thisDialog.find("#add_publicip_vlan_account_errormsg"), true); //optional
 				
 				if (isTagged) {
 					isValid &= validateNumber("VLAN", $thisDialog.find("#add_publicip_vlan_vlan"), $thisDialog.find("#add_publicip_vlan_vlan_errormsg"), 2, 4095);
 				}
-				if (isDirect) {
-					isValid &= validateString("Network Name", $thisDialog.find("#add_publicip_vlan_network_name"), $thisDialog.find("#add_publicip_vlan_network_name_errormsg"));
-					isValid &= validateString("Network Description", $thisDialog.find("#add_publicip_vlan_network_desc"), $thisDialog.find("#add_publicip_vlan_network_desc_errormsg"));
-				}
+				
 				isValid &= validateIp("Gateway", $thisDialog.find("#add_publicip_vlan_gateway"), $thisDialog.find("#add_publicip_vlan_gateway_errormsg"));
 				isValid &= validateIp("Netmask", $thisDialog.find("#add_publicip_vlan_netmask"), $thisDialog.find("#add_publicip_vlan_netmask_errormsg"));
 				isValid &= validateIp("Start IP Range", $thisDialog.find("#add_publicip_vlan_startip"), $thisDialog.find("#add_publicip_vlan_startip_errormsg"));   //required
 				isValid &= validateIp("End IP Range", $thisDialog.find("#add_publicip_vlan_endip"), $thisDialog.find("#add_publicip_vlan_endip_errormsg"), true);  //optional
 				if (!isValid) 
 				    return;		
-				    
-				//$thisDialog.dialog("close"); 		//only close dialog when this action succeeds		
+				 
+				var isDirect = false;
+				    						
 				$thisDialog.find("#spinning_wheel").show()
 				
 				var vlan = trim($thisDialog.find("#add_publicip_vlan_vlan").val());
@@ -419,74 +390,34 @@ function initAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 				} else if (isDirect) {
 					scopeParams = "&isshared=true";
 				}
-								
-				var type = trim($thisDialog.find("#add_publicip_vlan_type").val());
+										
 				var gateway = trim($thisDialog.find("#add_publicip_vlan_gateway").val());
 				var netmask = trim($thisDialog.find("#add_publicip_vlan_netmask").val());
 				var startip = trim($thisDialog.find("#add_publicip_vlan_startip").val());
 				var endip = trim($thisDialog.find("#add_publicip_vlan_endip").val());					
 									
-				if (!isDirect) {
-					// Allocating ip ranges on a vlan for virtual networking
-					$.ajax({
-						data: createURL("command=createVlanIpRange&forVirtualNetwork="+type+"&zoneId="+zoneObj.id+vlan+scopeParams+"&gateway="+todb(gateway)+"&netmask="+todb(netmask)+"&startip="+todb(startip)+"&endip="+todb(endip)),
-						dataType: "json",
-						success: function(json) {	
-							$thisDialog.find("#spinning_wheel").hide();
-							$thisDialog.dialog("close");
-						
-						    var item = json.createvlaniprangeresponse.vlan;						    
-						    var $newTemplate = $("#iprange_template").clone();
-		                    publicNetworkIprangeJsonToTemplate(item, $newTemplate);
-		                    $("#public_network_page").find("#tab_content_ipallocation").find("#tab_container").append($newTemplate.show());						   
-						},
-						error: function(XMLHttpResponse) {
-							handleError(XMLHttpResponse, function() {
-								handleErrorInDialog(XMLHttpResponse, $thisDialog);	
-							});
-						}
-					});
-				} 
-				else {
-					// Creating network for the direct networking
-					var name = todb($thisDialog.find("#add_publicip_vlan_network_name").val());
-					var desc = todb($thisDialog.find("#add_publicip_vlan_network_desc").val());
-					$.ajax({
-						data: createURL("command=listNetworkOfferings"),
-						dataType: "json",
-						async: false,
-						success: function(json) {
-							var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
-							if (networkOfferings != null && networkOfferings.length > 0) {
-								for (var i = 0; i < networkOfferings.length; i++) {
-									if (networkOfferings[i].type == "Direct" && networkOfferings[i].isdefault) {
-										// Create a network from this.
-										$.ajax({
-											data: createURL("command=createNetwork&name="+name+"&displayText="+desc+"&networkOfferingId="+networkOfferings[i].id+"&zoneId="+zoneObj.id+vlan+scopeParams+"&gateway="+todb(gateway)+"&netmask="+todb(netmask)+"&startip="+todb(startip)+"&endip="+todb(endip)),
-											dataType: "json",
-											success: function(json) {	
-												$thisDialog.find("#spinning_wheel").hide();
-												$thisDialog.dialog("close");
-											
-											    var item = json.createnetworkresponse.network;
-											    var $midmenuItem1 = $("#midmenu_item").clone();                      
-                                                $midmenuItem1.data("toRightPanelFn", directNetworkToRightPanel);                             
-                                                directNetworkToMidmenu(item, $midmenuItem1);    
-                                                bindClickToMidMenu($midmenuItem1, directNetworkToRightPanel, directNetworkGetMidmenuId);   
-                                                $("#midmenu_container").append($midmenuItem1.show());  											    
-											},
-											error: function(XMLHttpResponse) {
-												handleError(XMLHttpResponse, function() {
-													handleErrorInDialog(XMLHttpResponse, $thisDialog);	
-												});
-											}
-										});
-									}
-								}
-							}
-						}
-					});
-				}
+				
+				// Allocating ip ranges on a vlan for virtual networking
+				$.ajax({
+					data: createURL("command=createVlanIpRange&forVirtualNetwork=true"+"&zoneId="+zoneObj.id+vlan+scopeParams+"&gateway="+todb(gateway)+"&netmask="+todb(netmask)+"&startip="+todb(startip)+"&endip="+todb(endip)),
+					dataType: "json",
+					success: function(json) {	
+						$thisDialog.find("#spinning_wheel").hide();
+						$thisDialog.dialog("close");
+					
+					    var item = json.createvlaniprangeresponse.vlan;						    
+					    var $newTemplate = $("#iprange_template").clone();
+	                    publicNetworkIprangeJsonToTemplate(item, $newTemplate);
+	                    $("#public_network_page").find("#tab_content_ipallocation").find("#tab_container").prepend($newTemplate.show());						   
+					},
+					error: function(XMLHttpResponse) {
+						handleError(XMLHttpResponse, function() {
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);	
+						});
+					}
+				});
+				
+				
 				
 			}, 
 			"Cancel": function() { 
