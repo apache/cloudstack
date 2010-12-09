@@ -292,8 +292,12 @@ function ipToMidmenu(jsonObj, $midmenuItem1) {
     var $iconContainer = $midmenuItem1.find("#icon_container").show();
     $iconContainer.find("#icon").attr("src", "images/midmenuicon_network_networkgroup.png");
     
-    $midmenuItem1.find("#first_row").text(jsonObj.ipaddress.substring(0,25)); 
-    $midmenuItem1.find("#second_row").text(fromdb(jsonObj.account).substring(0,25));    
+	var firstRow = jsonObj.ipaddress.substring(0,25);
+	if (jsonObj.issourcenat == true) {
+		firstRow+="[source nat]";
+	}
+    $midmenuItem1.find("#first_row").text(firstRow); 
+    $midmenuItem1.find("#second_row").text("owned by: "+fromdb(jsonObj.account).substring(0,25));    
 }
 
 function isIpManageable(domainid, account) {             
@@ -873,16 +877,15 @@ function ipJsonToDetailsTab() {
     
     if(isIpManageable(ipObj.domainid, ipObj.account) == true) {     
         if(ipObj.isstaticnat == true) {        
-            buildActionLinkForTab("Disable Static NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);	        
-            noAvailableActions = false;        
-        }
-        else { //ipObj.isstaticnat == false  
-            buildActionLinkForTab("Enable Static NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);	        
-            noAvailableActions = false;  
-            
-            if(ipObj.issourcenat != true)      
-                buildActionLinkForTab("Release IP", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);	                  
-        }   
+            buildActionLinkForTab("Disable Static NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+			noAvailableActions = false;
+        } else {  
+			if(ipObj.issourcenat != true) {    
+				buildActionLinkForTab("Enable Static NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);
+				buildActionLinkForTab("Release IP", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);
+				noAvailableActions = false;
+			}
+        }  
     }
        
     // no available actions 
