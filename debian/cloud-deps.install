@@ -16,3 +16,8 @@
 /usr/share/java/cloud-xmlrpc-common-3.*.jar
 /usr/share/java/cloud-xmlrpc-client-3.*.jar
 /usr/share/java/cloud-jstl-*.jar
+/usr/share/java/cloud-axis.jar
+/usr/share/java/cloud-commons-discovery.jar
+/usr/share/java/cloud-iControl.jar
+/usr/share/java/cloud-wsdl4j.jar
+

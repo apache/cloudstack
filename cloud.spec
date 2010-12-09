@@ -479,6 +479,11 @@ fi
 %{_javadir}/%{name}-xmlrpc-client-3.*.jar
 %{_javadir}/%{name}-jstl-1.2.jar
 
+%{_javadir}/%{name}-axis.jar
+%{_javadir}/%{name}-commons-discovery.jar
+%{_javadir}/%{name}-iControl.jar
+%{_javadir}/%{name}-wsdl4j.jar
+
 %files core
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-core.jar
