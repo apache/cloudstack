@@ -1277,6 +1277,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (domainId != null){
         	offering.setDomainId(domainId);
         }
+        
+//Note: tag editing commented out for now; keeping the code intact, might need to re-enable in next releases    	
 //        if (tags != null) 
 //        {
 //        	if (tags.trim().isEmpty() && offeringHandle.getTags() == null) 
@@ -1380,7 +1382,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	if (domainId != null){
     		diskOffering.setDomainId(domainId);
     	}
-    	
+  
+//Note: tag editing commented out for now;keeping the code intact, might need to re-enable in next releases    	
 //        if (tags != null) 
 //        {
 //        	if (tags.trim().isEmpty() && diskOfferingHandle.getTags() == null) 
