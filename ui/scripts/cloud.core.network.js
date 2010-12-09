@@ -238,14 +238,7 @@ function initAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
     
     var $dialogAddIpRangeToPublicNetwork = $("#dialog_add_iprange_to_publicnetwork"); 
          
-    //***** binding Event Handler (begin) ******      	
-	$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_cidr_container").hide();	
-	  
-    $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged").change();
-		
-	// default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 
-	$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").change(); 	
-       
+    //***** binding Event Handler (begin) ******   
 	if (zoneObj.networktype == "Advanced") {
 		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged").change(function(event) {	
 			if ($(this).val() == "tagged") {
@@ -266,8 +259,6 @@ function initAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 			
 			return false;
 		});
-		
-		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged").change();		
 	} 
 	
 	$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").change(function(event) {	   
@@ -283,17 +274,19 @@ function initAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 	});
 	//***** binding Event Handler (end) ******   
     $button.show();   
-    $button.unbind("click").bind("click", function(event) {           
-        $("#public_network_page").find("#tab_ipallocation").click();
-    
+    $button.unbind("click").bind("click", function(event) {  
+        if($("#public_network_page").find("#tab_content_ipallocation").css("display") == "none")         
+            $("#public_network_page").find("#tab_ipallocation").click();
+                          
         $dialogAddIpRangeToPublicNetwork.find("#info_container").hide();
         $dialogAddIpRangeToPublicNetwork.find("#zone_name").text(fromdb(zoneObj.name));         
 		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_vlan_container, #add_publicip_vlan_domain_container, #add_publicip_vlan_account_container").hide();
 		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged, #add_publicip_vlan_vlan, #add_publicip_vlan_gateway, #add_publicip_vlan_netmask, #add_publicip_vlan_startip, #add_publicip_vlan_endip, #add_publicip_vlan_account").val("");
-		
-		
 		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_pod_container").show();	
-					
+		
+		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged").change();            		
+	    $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").change(); // default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 	
+            					
 		var podSelect = $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_pod").empty();		
 		$.ajax({
 		    data: createURL("command=listPods&zoneId="+zoneObj.id),
