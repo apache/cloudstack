@@ -571,6 +571,7 @@ function clearAddButtonsOnTop() {
     $("#midmenu_add_pod_button").unbind("click").hide(); 
     $("#midmenu_add_vlan_button").unbind("click").hide(); 
     $("#midmenu_add_network_button").unbind("click").hide(); 
+    $("#midmenu_add_iprange_button").unbind("click").hide(); 
     $("#midmenu_add_directIpRange_button").unbind("click").hide(); 
     $("#midmenu_Update_SSL_Certificate_button").unbind("click").hide();   
          

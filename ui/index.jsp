@@ -261,6 +261,16 @@
                             </div>
                         </div>
                         
+                        <div class="actionpanel_button_wrapper" id="midmenu_add_iprange_button" style="display: none;">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/addvm_actionicon.png" alt="Add IP Range" /></div>
+                                <div class="actionpanel_button_links" id="Div8">
+									Add IP Range
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="actionpanel_button_wrapper" id="midmenu_add_directIpRange_button" style="display: none;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">

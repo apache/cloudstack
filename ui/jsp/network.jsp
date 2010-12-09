@@ -448,6 +448,131 @@
 </div>
 <!--  IP Range template (end) -->
 
+
+<!-- Add IP Range for public netework dialog (begin) -->
+<div id="dialog_add_iprange_to_publicnetwork" title="Add IP Range to Public Network" style="display: none">
+    <p>
+        Add an IP range to public network in zone: <b><span id="zone_name"></span></b>
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li style="display: none" id="add_publicip_vlan_type_container">
+                <label for="add_publicip_vlan_type">
+                    Type:</label>
+                <select class="select" name="add_publicip_vlan_type" id="add_publicip_vlan_type">
+                    <option value="false">Direct</option>
+                    <option value="true">Virtual</option>
+                </select>
+            </li>
+			<li style="display: none" id="add_publicip_vlan_network_name_container">
+                <label for="user_name">
+                    Network Name:</label>
+                <input class="text" type="text" name="add_publicip_vlan_network_name" id="add_publicip_vlan_network_name" />
+                <div id="add_publicip_vlan_network_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+			<li style="display: none" id="add_publicip_vlan_network_desc_container">
+                <label for="user_name">
+                    Network Desc:</label>
+                <input class="text" type="text" name="add_publicip_vlan_network_desc" id="add_publicip_vlan_network_desc" />
+                <div id="add_publicip_vlan_network_desc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li id="add_publicip_vlan_container">
+                <label for="add_publicip_vlan_tagged">
+                    VLAN:</label>
+                <select class="select" name="add_publicip_vlan_tagged" id="add_publicip_vlan_tagged">
+                </select>
+            </li>
+            <li style="display: none" id="add_publicip_vlan_vlan_container">
+                <label for="user_name">
+                    VLAN ID:</label>
+                <input class="text" type="text" name="add_publicip_vlan_vlan" id="add_publicip_vlan_vlan" />
+                <div id="add_publicip_vlan_vlan_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li id="add_publicip_vlan_scope_container">
+                <label for="add_publicip_vlan_scope">
+                    Scope:</label>
+                <select class="select" name="add_publicip_vlan_scope" id="add_publicip_vlan_scope">
+                    <!--  
+                    <option value="zone-wide">zone-wide</option>
+                    <option value="account-specific">account-specific</option>
+                    -->
+                </select>
+            </li>
+            <li style="display: none" id="add_publicip_vlan_pod_container">
+                <label for="user_name">
+                    Pod:</label>
+                <select class="select" name="add_publicip_vlan_pod" id="add_publicip_vlan_pod">
+                </select>
+            </li>
+            <li style="display: none" id="add_publicip_vlan_domain_container">
+                <label for="user_name">
+                    Domain:</label>
+                <select class="select" name="add_publicip_vlan_domain" id="add_publicip_vlan_domain">
+                </select>
+            </li>
+            <li style="display: none" id="add_publicip_vlan_account_container">
+                <label for="user_name">
+                    Account:</label>
+                <input class="text" type="text" name="add_publicip_vlan_account" id="add_publicip_vlan_account" />
+                <div id="add_publicip_vlan_account_errormsg" class="dialog_formcontent_errormsg"
+                    style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label for="user_name">
+                    Gateway:</label>
+                <input class="text" type="text" name="add_publicip_vlan_gateway" id="add_publicip_vlan_gateway" />
+                <div id="add_publicip_vlan_gateway_errormsg" class="dialog_formcontent_errormsg"
+                    style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label for="user_name">
+                    Netmask:</label>
+                <input class="text" type="text" name="add_publicip_vlan_netmask" id="add_publicip_vlan_netmask" />
+                <div id="add_publicip_vlan_netmask_errormsg" class="dialog_formcontent_errormsg"
+                    style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label for="user_name">
+                    IP Range:</label>
+                <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_startip"
+                    id="add_publicip_vlan_startip" /><span>-</span>
+                <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_endip"
+                    id="add_publicip_vlan_endip" />
+                <div id="add_publicip_vlan_startip_errormsg" class="dialog_formcontent_errormsg"
+                    style="display: none;">
+                </div>
+                <div id="add_publicip_vlan_endip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+        </ol>
+        </form>
+    </div>
+    <!--Loading box-->
+    <div id="spinning_wheel" class="ui_dialog_loaderbox" style="display: none;">
+        <div class="ui_dialog_loader">
+        </div>
+        <p>
+            Adding....</p>
+    </div>
+    <!--Confirmation msg box-->
+    <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+    <div id="info_container" class="ui_dialog_messagebox error" style="display: none;">
+        <div id="icon" class="ui_dialog_msgicon error">
+        </div>
+        <div id="info" class="ui_dialog_messagebox_text error">
+            (info)</div>
+    </div>
+</div>
+<!-- Add IP Range for public netework dialog (end) -->
+
+
 <!-- Add network dialog for zone (begin) -->
 <div id="dialog_add_network_for_zone" title="Add Network" style="display: none">
     <p>
