@@ -183,6 +183,7 @@ function publicNetworkJsonToIpAllocationTab() {
 }
 
 function publicNetworkIprangeJsonToTemplate(jsonObj, $template) {    
+    $template.data("jsonObj", jsonObj);
     $template.attr("id", "publicNetworkIprange_" + jsonObj.id);
     
     var ipRange = getIpRange(fromdb(jsonObj.startip), fromdb(jsonObj.endip));
@@ -191,6 +192,21 @@ function publicNetworkIprangeJsonToTemplate(jsonObj, $template) {
     $template.find("#vlan").text(jsonObj.vlan)
     $template.find("#startip").text(fromdb(jsonObj.startip));
     $template.find("#endip").text(fromdb(jsonObj.endip));
+   
+    var $actionLink = $template.find("#iprange_action_link");		
+	$actionLink.bind("mouseover", function(event) {
+        $(this).find("#iprange_action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {
+        $(this).find("#iprange_action_menu").hide();    
+        return false;
+    });		
+	
+	var $actionMenu = $actionLink.find("#iprange_action_menu");
+    $actionMenu.find("#action_list").empty();	
+       
+    buildActionLinkForSubgridItem("Delete IP Range", publicNetworkIpRangeActionMap, $actionMenu, $template);	
 }
 
 function publicNetworkJsonToFirewallTab() {  
@@ -420,6 +436,19 @@ function initAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
         return false;
     });
 }
+
+var publicNetworkIpRangeActionMap = {     
+    "Delete IP Range": {              
+        api: "deleteVlanIpRange",     
+        isAsyncJob: false,   
+        inProcessText: "Deleting IP Range....",
+        afterActionSeccessFn: function(json, id, $subgridItem) {                 
+            $subgridItem.slideUp("slow", function() {
+                $(this).remove();
+            });
+        }
+    }    
+}  
 //***** Public Network (end) ******************************************************************************************************
 
 
