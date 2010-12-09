@@ -158,7 +158,7 @@ function publicNetworkJsonToIpAllocationTab() {
     $thisTab.find("#tab_spinning_wheel").show();   
          
     $.ajax({
-		data: createURL("command=listVlanIpRanges&zoneid="+ jsonObj.zoneid + "&networkid="+jsonObj.id),
+		data: createURL("command=listVlanIpRanges&zoneid="+ jsonObj.zoneid), //don't need networkid because one zone has only one public network
 		dataType: "json",		
 		success: function(json) {		    
 		    var items = json.listvlaniprangesresponse.vlaniprange;		    
