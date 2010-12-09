@@ -95,7 +95,8 @@ public class NetworkResponse extends BaseResponse{
     @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id associated with the network")
     private Long domainId;
     
-
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain associated with the network")
+    private String domain;
 
     public Long getId() {
         return id;
@@ -288,4 +289,14 @@ public class NetworkResponse extends BaseResponse{
     public void setIsSystem(Boolean isSystem) {
         this.isSystem = isSystem;
     }
+
+	public String getDomain() {
+		return domain;
+	}
+
+	public void setDomain(String domain) {
+		this.domain = domain;
+	}
+    
+    
 }

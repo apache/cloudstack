@@ -2412,7 +2412,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         Account account = ApiDBUtils.findAccountById(network.getAccountId());
         if (account != null) {
             response.setAccountName(account.getAccountName());
-            response.setDomainId(account.getDomainId());
+            Domain domain = ApiDBUtils.findDomainById(account.getDomainId());
+            response.setDomainId(domain.getId());
+            response.setDomain(domain.getName());
         }
         response.setObjectName("network");
         return response;
