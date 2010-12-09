@@ -276,8 +276,7 @@ function initAddNetworkButton($button, $leftmenuItem1) {
 				var netmask = trim($thisDialog.find("#add_publicip_vlan_netmask").val());
 				var startip = trim($thisDialog.find("#add_publicip_vlan_startip").val());
 				var endip = trim($thisDialog.find("#add_publicip_vlan_endip").val());					
-				
-				debugger;
+							
 				if (!isDirect) {
 					// Allocating ip ranges on a vlan for virtual networking
 					$.ajax({
@@ -325,15 +324,12 @@ function initAddNetworkButton($button, $leftmenuItem1) {
 												$thisDialog.find("#spinning_wheel").hide();
 												$thisDialog.dialog("close");
 											
-											    /*
-												var $template1 = $("#vlan_template").clone(); 							   
-												$template1.find("#vlan_type_icon").removeClass("virtual").addClass("direct");
-												
-												var item = json.createnetworkresponse.network;
-												vlanJsonToTemplate(item, $template1, true);	        				
-												$vlanContainer.prepend($template1);	
-												$template1.fadeIn("slow");
-												*/
+											    var item = json.createnetworkresponse.network;
+											    var $midmenuItem1 = $("#midmenu_item").clone();                      
+                                                $midmenuItem1.data("toRightPanelFn", directNetworkToRightPanel);                             
+                                                directNetworkToMidmenu(item, $midmenuItem1);    
+                                                bindClickToMidMenu($midmenuItem1, directNetworkToRightPanel, directNetworkGetMidmenuId);   
+                                                $("#midmenu_container").append($midmenuItem1.show());  											    
 											},
 											error: function(XMLHttpResponse) {
 												handleError(XMLHttpResponse, function() {
