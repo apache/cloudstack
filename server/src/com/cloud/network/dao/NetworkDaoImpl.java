@@ -50,6 +50,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     final SearchBuilder<NetworkVO> AccountSearch;
     final SearchBuilder<NetworkVO> RelatedConfigSearch;
     final SearchBuilder<NetworkVO> AccountNetworkSearch;
+    final SearchBuilder<NetworkVO> ZoneBroadcastUriSearch;
     
     NetworkAccountDaoImpl _accountsDao = new NetworkAccountDaoImpl();
     final TableGenerator _tgMacAddress;
@@ -92,6 +93,12 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         mapJoin.and("accountId", mapJoin.entity().getAccountId(), Op.EQ);
         AccountNetworkSearch.join("networkSearch", mapJoin, AccountNetworkSearch.entity().getId(), mapJoin.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
         AccountNetworkSearch.done();
+        
+        
+        ZoneBroadcastUriSearch = createSearchBuilder();
+        ZoneBroadcastUriSearch.and("dataCenterId", ZoneBroadcastUriSearch.entity().getDataCenterId(), Op.EQ);
+        ZoneBroadcastUriSearch.and("broadcastUri", ZoneBroadcastUriSearch.entity().getBroadcastUri(), Op.EQ);
+        ZoneBroadcastUriSearch.done();
         
         _tgMacAddress = _tgs.get("macAddress");
     }
@@ -199,5 +206,12 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         sc.setParameters("networkId", networkId);
         sc.setJoinParameters("networkSearch", "accountId", accountId);
         return listBy(sc);
+    }
+    
+    public List<NetworkVO> listBy(long zoneId, String broadcastUri) {
+        SearchCriteria<NetworkVO> sc = ZoneBroadcastUriSearch.create();
+        sc.setParameters("dataCenterId", zoneId);
+        sc.setParameters("broadcastUri", broadcastUri);
+        return search(sc, null);
     }
 }

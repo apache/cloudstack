@@ -1507,6 +1507,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Gateway, netmask and zoneId have to be passed in for virtual network");
         }
         
+        //if end ip is not specified, default it to startIp 
+        if (endIP == null && startIP != null) {
+            endIP = startIP;
+        }
+        
         //Verify that network is valid, and ip range matches network's cidr
         if (networkId != null) {
             NetworkVO network = _networkDao.findById(networkId);
@@ -2455,9 +2460,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Please specify a valid IP range id.");
         }
     	
-    	if (vlan.getNetworkId() != null) {
-            throw new InvalidParameterValueException("Fail to delete a vlan range as there are networks associated with it");
-        }
+//    	if (vlan.getNetworkId() != null) {
+//            throw new InvalidParameterValueException("Fail to delete a vlan range as there are networks associated with it");
+//        }
 
     	return deleteVlanAndPublicIpRange(userId, vlanDbId);
 		

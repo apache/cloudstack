@@ -44,4 +44,6 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     String getNextAvailableMacAddress(long networkConfigId);
     
     List<NetworkVO> listBy(long accountId, long networkId);
+    
+    List<NetworkVO> listBy(long zoneId, String broadcastUri);
 }

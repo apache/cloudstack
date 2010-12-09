@@ -19,6 +19,7 @@ package com.cloud.network;
 
 import java.util.List;
 
+import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
@@ -112,4 +113,6 @@ public interface NetworkManager extends NetworkService {
 	String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 
 	boolean applyRules(Ip ip, List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
+	
+	PublicIp fetchNewPublicIp(long dcId, VlanType vlanUse, Account owner, Long networkId, boolean sourceNat) throws InsufficientAddressCapacityException;
 }

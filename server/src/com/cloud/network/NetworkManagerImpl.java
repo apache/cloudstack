@@ -192,14 +192,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     private Map<String, String> _configs;
 
-    @DB
-    protected PublicIp fetchNewPublicIp(long dcId, VlanType vlanUse, Account owner, Long networkId, boolean sourceNat) throws InsufficientAddressCapacityException {
+    @Override @DB 
+    public PublicIp fetchNewPublicIp(long dcId, VlanType vlanUse, Account owner, Long networkId, boolean sourceNat) throws InsufficientAddressCapacityException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         SearchCriteria<IPAddressVO> sc = AssignIpAddressSearch.create();
         sc.setParameters("dc", dcId);
-        sc.setJoinParameters("vlan", "type", vlanUse);
         
+        //for direct network take ip addresses only from the vlans belonging to the network
+        if (vlanUse == VlanType.DirectAttached) {
+            sc.setJoinParameters("vlan", "networkId", networkId);
+        }
+        sc.setJoinParameters("vlan", "type", vlanUse);
+         
         Filter filter = new Filter(IPAddressVO.class, "vlanId", true, 0l, 1l);
         
         List<IPAddressVO> addrs = _ipAddressDao.lockRows(sc, filter, true);
@@ -214,7 +219,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         addr.setAllocatedTime(new Date());
         addr.setAllocatedInDomainId(owner.getDomainId());
         addr.setAllocatedToAccountId(owner.getId());
-        addr.setAssociatedNetworkId(networkId);
+        addr.setState(IpAddress.State.Allocating);
+        
+        if (vlanUse == VlanType.DirectAttached) {
+            addr.setState(IpAddress.State.Allocated);
+        }
         
         if (!_ipAddressDao.update(addr.getAddress(), addr)) {
             throw new CloudRuntimeException("Found address to allocate but unable to update: " + addr);
@@ -445,6 +454,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             for (IPAddressVO addr : userIps) {
                 if (addr.getState() == IpAddress.State.Allocating) {
                     addr.setState(IpAddress.State.Allocated);
+                    addr.setAssociatedNetworkId(network.getId());
                     _ipAddressDao.update(addr.getAddress(), addr);
                 } else if (addr.getState() == IpAddress.State.Releasing) {
                     _ipAddressDao.unassignIpAddress(addr.getAddress());
@@ -531,7 +541,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             _accountMgr.incrementResourceCount(ownerId, ResourceType.public_ip);
 
             String ipAddress = ip.getAddress();
-            
             event.setParameters("address=" + ipAddress + "\nsourceNat=" + false + "\ndcId=" + zoneId);
             event.setDescription("Assigned a public IP address: " + ipAddress);
             _eventDao.persist(event);
@@ -714,6 +723,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         AssignIpAddressSearch.and("allocated", AssignIpAddressSearch.entity().getAllocatedTime(), Op.NULL);
         AssignIpAddressSearch.join("vlan", vlanSearch, vlanSearch.entity().getId(), AssignIpAddressSearch.entity().getVlanId(), JoinType.INNER);
         vlanSearch.and("type", vlanSearch.entity().getVlanType(), Op.EQ);
+        vlanSearch.and("networkId", vlanSearch.entity().getNetworkId(), Op.EQ);
         AssignIpAddressSearch.done();
         
         IpAddressSearch = _ipAddressDao.createSearchBuilder();
@@ -773,17 +783,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new ConcurrentOperationException("Unable to acquire lock on " + owner);
         }
         try {
-            List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
+            
             if (predefined == null || (predefined.getBroadcastUri() == null && predefined.getBroadcastDomainType() != BroadcastDomainType.Vlan)) {
+                List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
                 if (configs.size() > 0) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
                     }
                     return configs;
                 }
+            } else if (predefined != null && predefined.getBroadcastUri() != null) {
+                //don't allow duplicated vlans in the same zone
+                List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
             }
     
-            configs = new ArrayList<NetworkVO>();
+            List<NetworkVO> configs = new ArrayList<NetworkVO>();
     
             long related = -1;
     
@@ -1047,15 +1061,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 nic.setNetmask(profile.getNetmask());
                 nic.setGateway(profile.getGateway());
                 nic.setAddressFormat(profile.getFormat());
-                _nicDao.update(nic.getId(), nic);
-                for (NetworkElement element : _networkElements) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
-                    }
-                    element.prepare(config, profile, vmProfile, dest, context);
-                }
+                _nicDao.update(nic.getId(), nic);      
             } else {
                 profile = new NicProfile(nic, config, nic.getBroadcastUri(), nic.getIsolationUri());
+            }
+            
+            for (NetworkElement element : _networkElements) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
+                }
+                element.prepare(config, profile, vmProfile, dest, context);
             }
 
             vmProfile.addNic(profile);
@@ -1587,6 +1602,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Boolean isShared = cmd.getIsShared();
         Account owner = null;
         
+        //if end ip is not specified, default it to startIp 
+        if (endIP == null && startIP != null) {
+            endIP = startIP;
+        }
+        
         //Check if network offering exists
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
         if (networkOffering == null || networkOffering.isSystemOnly()) {
@@ -1615,6 +1635,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         } else {
             owner = ctxAccount;
+        }
+        
+        //Don't allow to create network with vlan that already exists in the system
+        if (networkOffering.getGuestIpType() == GuestIpType.Direct && vlanId != null) {
+            String uri ="vlan://" + vlanId;
+            List<NetworkVO> networks = _networksDao.listBy(zoneId, uri);
+            if ((networks != null && !networks.isEmpty())) {
+                throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists in zone " + zoneId);
+            }
         }
         
        //if VlanId is Direct untagged, verify if there is already network of this type in the zone

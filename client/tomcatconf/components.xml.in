@@ -44,6 +44,7 @@
             <adapter name="PublicNetworkGuru" class="com.cloud.network.guru.PublicNetworkGuru"/>
             <adapter name="PodBasedNetworkGuru" class="com.cloud.network.guru.PodBasedNetworkGuru"/>
             <adapter name="ControlNetworkGuru" class="com.cloud.network.guru.ControlNetworkGuru"/>
+            <adapter name="DirectNetworkGuru" class="com.cloud.network.guru.DirectNetworkGuru"/>
         </adapters>
         <adapters key="com.cloud.storage.secondary.SecondaryStorageVmAllocator">
             <adapter name="Balance" class="com.cloud.storage.secondary.SecondaryStorageVmDefaultAllocator"/>
