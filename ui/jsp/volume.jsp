@@ -272,8 +272,8 @@
                     <select class="snapselect" id="snapshot_interval">
 						<option value="-1">Disabled</option>
 						<option value="0">Hourly</option>
-						<option value="1">Weekly</option>
-						<option value="2">Daily</option>
+						<option value="1">Daily</option>
+						<option value="2">Weekly</option>
 						<option value="3">Monthly</option>
 					</select>
                 </div>
