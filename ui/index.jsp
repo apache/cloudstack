@@ -251,6 +251,16 @@
                             </div>
                         </div>
                         
+                        <div class="actionpanel_button_wrapper" id="midmenu_add_network_button" style="display: none;">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/addvm_actionicon.png" alt="Add Network" /></div>
+                                <div class="actionpanel_button_links" id="Div8">
+									Add Network
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="actionpanel_button_wrapper" id="midmenu_add_directIpRange_button" style="display: none;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
