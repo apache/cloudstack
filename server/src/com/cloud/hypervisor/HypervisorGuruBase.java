@@ -70,6 +70,11 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setNics(nics);
         to.setDisks(vmProfile.getDisks().toArray(new VolumeTO[vmProfile.getDisks().size()]));
         
+        if(vmProfile.getTemplate().getBits() == 32)
+        	to.setArch("i686");
+        else
+        	to.setArch("x86_64");
+        
         return to;
     }
     

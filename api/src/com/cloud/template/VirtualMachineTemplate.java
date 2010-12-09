@@ -75,4 +75,6 @@ public interface VirtualMachineTemplate extends ControlledEntity {
     TemplateType getTemplateType();
     
     HypervisorType getHypervisorType();
+    
+    int getBits();
 }
