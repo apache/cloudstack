@@ -51,7 +51,7 @@ function initAddDiskOfferingDialog() {
     
     var $dialogAddDisk = $("#dialog_add_disk");
     $dialogAddDisk.find("#customized").bind("change", function(event) {     
-        if($(this).val() == false) {
+        if($(this).val() == 'false') {
             $dialogAddDisk.find("#add_disk_disksize_container").show();
         }
         else {
