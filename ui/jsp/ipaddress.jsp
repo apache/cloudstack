@@ -24,8 +24,11 @@
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
             <%=t.t("Details")%></div>
-        <div class="content_tabs off" id="tab_port_forwarding">
+		<!-- NOTE: Reenable this tab after 2.2 Beta 2 -->
+        <!--
+		<div class="content_tabs off" id="tab_port_forwarding">
             <%=t.t("Port Forwarding")%></div>
+		-->
         <div class="content_tabs off" id="tab_load_balancer">
             <%=t.t("Load Balancer")%></div>
 		<div class="content_tabs off" id="tab_vpn">
