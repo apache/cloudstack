@@ -18,6 +18,7 @@
 package com.cloud.agent;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.cloud.agent.api.Answer;
@@ -34,8 +35,10 @@ import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.Host.Type;
 import com.cloud.host.Status.Event;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.resource.ServerResource;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
@@ -159,6 +162,16 @@ public interface AgentManager extends Manager {
 	List<PodCluster> listByDataCenter(long dcId);
 	List<PodCluster> listByPod(long podId);
 
+	/**
+	 * Adds a new host
+	 * @param zoneId
+	 * @param resource
+	 * @param hostType
+	 * @param hostDetails
+	 * @return new Host
+	 */
+	public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails);
+	
 	/**
      * Deletes a host
      * 

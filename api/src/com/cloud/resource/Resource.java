@@ -78,7 +78,8 @@ public interface Resource {
     enum ReservationStrategy {
         UserSpecified,
         Create,
-        Start
+        Start,
+        PlaceHolder;
     }
     
     /**

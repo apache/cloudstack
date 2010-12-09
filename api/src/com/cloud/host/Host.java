@@ -31,7 +31,9 @@ public interface Host {
         Storage(false),
         Routing(false),
         SecondaryStorage(false),
-        ConsoleProxy(true);
+        ConsoleProxy(true),
+        ExternalFirewall(false),
+        ExternalLoadBalancer(false);
         
         boolean _virtual;
         private Type(boolean virtual) {

@@ -108,6 +108,11 @@ public class AgentMonitor extends Thread implements Listener {
                 }
                 
                 for (HostVO host : hosts) {
+                	if (host.getType().equals(Host.Type.ExternalFirewall) ||
+                		host.getType().equals(Host.Type.ExternalLoadBalancer)) {
+                		continue;
+                	}
+                	
                 	if (host.getManagementServerId() == null || host.getManagementServerId() == _msId) {
 	                    if (s_logger.isInfoEnabled()) {
 	                        s_logger.info("Asking agent mgr to investgate why host " + host.getId() + " is behind on ping. last ping time: " + host.getLastPinged());

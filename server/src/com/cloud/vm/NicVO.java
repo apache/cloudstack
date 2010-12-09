@@ -45,7 +45,7 @@ public class NicVO implements Nic {
     long id;
     
     @Column(name="instance_id")
-    long instanceId;
+    Long instanceId;
     
     @Column(name="ip4_address")
     String ip4Address;
@@ -107,7 +107,7 @@ public class NicVO implements Nic {
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
 
-    public NicVO(String reserver, long instanceId, long configurationId) {
+    public NicVO(String reserver, Long instanceId, long configurationId) {
         this.reserver = reserver;
         this.instanceId = instanceId;
         this.networkId = configurationId;

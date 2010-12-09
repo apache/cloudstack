@@ -60,6 +60,8 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.ShutdownCommand;
 import com.cloud.agent.api.StartupAnswer;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupExternalFirewallCommand;
+import com.cloud.agent.api.StartupExternalLoadBalancerCommand;
 import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
@@ -1616,15 +1618,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             for (final VMInstanceVO vm : vms) {
                 _haMgr.scheduleMigration(vm);
             }
-        } else {
-            final List<Long> ids = _volDao.findVmsStoredOnHost(hostId);
-            for (final Long id : ids) {
-                final VMInstanceVO instance = _vmDao.findById(id);
-                if (instance != null && (instance.getState() == State.Running || instance.getState() == State.Starting)) {
-                    _haMgr.scheduleStop(instance, host.getId(), false);
-                }
-            }
-        }
+        } 
 
         return true;
     }
@@ -1755,6 +1749,25 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             }
         }
     }
+    
+    public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails) {
+    	// Check if the zone exists in the system
+        if (_dcDao.findById(zoneId) == null ){
+        	throw new InvalidParameterValueException("Can't find zone with id " + zoneId);
+        }
+        
+        Map<String, String> details = hostDetails;
+        String guid = (String) details.get("guid");
+        List<HostVO> currentHosts = _hostDao.listBy(hostType, zoneId);
+        for (HostVO currentHost : currentHosts) {
+        	if (currentHost.getGuid().equals(guid)) {
+        		return currentHost;
+        	}
+        }
+        
+        AgentAttache attache = simulateStart(resource, hostDetails, true);
+        return _hostDao.findById(attache.getId());
+    }
 
     public HostVO createHost(final StartupCommand startup, ServerResource resource, Map<String, String> details, boolean directFirst) throws IllegalArgumentException {
         Host.Type type = null;
@@ -1793,6 +1806,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             type = Host.Type.ConsoleProxy;
         } else if (startup instanceof StartupRoutingCommand) {
             type = Host.Type.Routing;
+        } else if (startup instanceof StartupExternalFirewallCommand) {
+        	type = Host.Type.ExternalFirewall;
+        } else if (startup instanceof StartupExternalLoadBalancerCommand) {
+        	type = Host.Type.ExternalLoadBalancer;
         } else {
             assert false : "Did someone add a new Startup command?";
         }
@@ -1842,17 +1859,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
              * startup.getStorageIpAddress()); } }
              */
 
-            if (startup instanceof StartupStorageCommand) {
-                server = _hostDao.persist(server);
-                id = server.getId();
-            } else if (startup instanceof StartupProxyCommand) {
+            if (startup instanceof StartupProxyCommand) {
                 server.setProxyPort(((StartupProxyCommand) startup).getProxyPort());
-                server = _hostDao.persist(server);
-                id = server.getId();
-            } else if (startup instanceof StartupRoutingCommand) {
-                server = _hostDao.persist(server);
-                id = server.getId();
-            }
+            } 
+            
+            server = _hostDao.persist(server);
+            id = server.getId();
 
             s_logger.info("New " + server.getType().toString() + " host connected w/ guid " + startup.getGuid() + " and id is " + id);
         } else {
@@ -2020,7 +2032,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         }
         Long podId = null;
         if (p == null) {
-            if (type != Host.Type.SecondaryStorage) {
+            if (type != Host.Type.SecondaryStorage &&
+            	type != Host.Type.ExternalFirewall &&
+            	type != Host.Type.ExternalLoadBalancer) {
 
                 /*
                  * s_logger.info("Unable to find the pod so we are creating one."

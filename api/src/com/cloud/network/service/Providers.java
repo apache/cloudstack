@@ -19,4 +19,6 @@ package com.cloud.network.service;
 
 public class Providers {
     public final static String VirtualRouter = "VirtualRouter";
+    public final static String ExternalFirewall = "ExternalFirewall";
+    public final static String ExternalLoadBalancer = "ExternalLoadBalancer";
 }

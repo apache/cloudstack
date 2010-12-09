@@ -167,7 +167,7 @@ INSERT INTO `cloud`.`certificate` (id,certificate,updated) VALUES ('1',null,'N')
 
 CREATE TABLE `cloud`.`nics` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
-  `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance id',
+  `instance_id` bigint unsigned COMMENT 'vm instance id',
   `mac_address` varchar(17) COMMENT 'mac address',
   `ip4_address` varchar(15) COMMENT 'ip4 address',
   `netmask` varchar(15) COMMENT 'netmask for ip4 address',
