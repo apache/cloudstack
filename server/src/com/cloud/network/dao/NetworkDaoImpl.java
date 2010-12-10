@@ -30,6 +30,7 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering.GuestIpType;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder;
@@ -49,8 +50,8 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     final SearchBuilder<NetworkVO> AccountNetworkSearch;
     final SearchBuilder<NetworkVO> ZoneBroadcastUriSearch;
     
-    NetworkAccountDaoImpl _accountsDao = new NetworkAccountDaoImpl();
-    NetworkOpDaoImpl _opDao = new NetworkOpDaoImpl();
+    NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
+    NetworkOpDaoImpl _opDao = ComponentLocator.inject(NetworkOpDaoImpl.class);
     final TableGenerator _tgMacAddress;
     Random _rand = new Random(System.currentTimeMillis());
     long _prefix = 0x2;

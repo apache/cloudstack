@@ -215,7 +215,7 @@ public class SearchCriteria<K> {
     }
     
     public Pair<GroupBy<?, ?>, List<Object>> getGroupBy() {
-    	return new Pair<GroupBy<?, ?>, List<Object>>(_groupBy, _groupByValues);
+        return _groupBy == null ? null : new Pair<GroupBy<?, ?>, List<Object>>(_groupBy, _groupByValues);
     }
     
     public void setGroupByValues(Object... values) {

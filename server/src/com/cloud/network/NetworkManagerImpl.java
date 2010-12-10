@@ -248,7 +248,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     @Override
     public PublicIp assignSourceNatIpAddress(Account owner, Network network, long callerId) throws ConcurrentOperationException, InsufficientAddressCapacityException {
-        assert ((network.getTrafficType() == TrafficType.Public) || (network.getTrafficType() == TrafficType.Guest && network.getGuestType() == GuestIpType.Direct)) : "You're asking for a source nat but your network can't participate in source nat.  What do you have to say for yourself?";
+        assert (network.getTrafficType() != null) : "You're asking for a source nat but your network can't participate in source nat.  What do you have to say for yourself?";
         
         long dcId = network.getDataCenterId();
         long ownerId = owner.getId();
@@ -880,7 +880,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 } 
     
                 NetworkVO vo = new NetworkVO(id, config, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isShared);
-                configs.add(_networksDao.persist(vo));
+                configs.add(_networksDao.persist(vo, vo.getGuestType() != null));
             }
     
             if (configs.size() < 1) {

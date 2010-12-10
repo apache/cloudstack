@@ -34,6 +34,9 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     SearchBuilder<NetworkAccountVO> createSearchBuilderForAccount();
     List<NetworkVO> getNetworksForOffering(long offeringId, long dataCenterId, long accountId);
     List<NetworkVO> getRelatedNetworks(long related);
+
+    @Override @Deprecated
+    NetworkVO persist(NetworkVO vo);
     
     /**
      * Retrieves the next available mac address in this network configuration.
