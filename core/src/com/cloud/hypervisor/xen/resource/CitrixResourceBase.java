@@ -721,7 +721,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
     
-    protected VBD createVbd(Connection conn, VolumeTO volume, String vmName, VM vm) throws XmlRpcException, XenAPIException {
+    protected VBD createVbd(Connection conn, VolumeTO volume, String vmName, VM vm, BootloaderType bootLoaderType) throws XmlRpcException, XenAPIException {
         VolumeType type = volume.getType();
         
         VDI vdi = mount(conn, vmName, volume);
@@ -733,17 +733,19 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         else {
         	vbdr.empty = true;
         }
-        if (type == VolumeType.ROOT) {
+        if (type == VolumeType.ROOT && bootLoaderType == BootloaderType.PyGrub) {
             vbdr.bootable = true;
+        }else if(type == VolumeType.ISO && bootLoaderType == BootloaderType.CD) {
+        	vbdr.bootable = true;
         }
+        
         vbdr.userdevice = Long.toString(volume.getDeviceId());
         if (volume.getType() == VolumeType.ISO) {
             vbdr.mode = Types.VbdMode.RO;
             vbdr.type = Types.VbdType.CD;
         } else {
             vbdr.mode = Types.VbdMode.RW;
-            vbdr.type = Types.VbdType.DISK;
-            
+            vbdr.type = Types.VbdType.DISK;           
         }
         
         VBD vbd = VBD.create(conn, vbdr);
@@ -969,7 +971,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             vm = createVmFromTemplate(conn, vmSpec, host);
             
             for (VolumeTO disk : vmSpec.getDisks()) {
-                createVbd(conn, disk, vmName, vm);
+                createVbd(conn, disk, vmName, vm, vmSpec.getBootloader());
             }
             
             if (vmSpec.getType() != VirtualMachine.Type.User) {
