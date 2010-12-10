@@ -482,10 +482,10 @@ function initAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 					isValid &= validateNumber("VLAN", $thisDialog.find("#add_publicip_vlan_vlan"), $thisDialog.find("#add_publicip_vlan_vlan_errormsg"), 2, 4095);
 				}
 				
-				isValid &= validateIp("Gateway", $thisDialog.find("#add_publicip_vlan_gateway"), $thisDialog.find("#add_publicip_vlan_gateway_errormsg"));
-				isValid &= validateIp("Netmask", $thisDialog.find("#add_publicip_vlan_netmask"), $thisDialog.find("#add_publicip_vlan_netmask_errormsg"));
-				isValid &= validateIp("Start IP Range", $thisDialog.find("#add_publicip_vlan_startip"), $thisDialog.find("#add_publicip_vlan_startip_errormsg"));   //required
-				isValid &= validateIp("End IP Range", $thisDialog.find("#add_publicip_vlan_endip"), $thisDialog.find("#add_publicip_vlan_endip_errormsg"), true);  //optional
+				isValid &= validateIp("Gateway", $thisDialog.find("#add_publicip_vlan_gateway"), $thisDialog.find("#add_publicip_vlan_gateway_errormsg"), false); //required
+				isValid &= validateIp("Netmask", $thisDialog.find("#add_publicip_vlan_netmask"), $thisDialog.find("#add_publicip_vlan_netmask_errormsg"), false); //required
+				isValid &= validateIp("Start IP Range", $thisDialog.find("#add_publicip_vlan_startip"), $thisDialog.find("#add_publicip_vlan_startip_errormsg"), false); //required
+				isValid &= validateIp("End IP Range", $thisDialog.find("#add_publicip_vlan_endip"), $thisDialog.find("#add_publicip_vlan_endip_errormsg"), true); //optional
 				if (!isValid) 
 				    return;		
 				 
@@ -506,16 +506,24 @@ function initAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 				} else if (isDirect) {
 					scopeParams = "&isshared=true";
 				}
-										
-				var gateway = trim($thisDialog.find("#add_publicip_vlan_gateway").val());
-				var netmask = trim($thisDialog.find("#add_publicip_vlan_netmask").val());
-				var startip = trim($thisDialog.find("#add_publicip_vlan_startip").val());
-				var endip = trim($thisDialog.find("#add_publicip_vlan_endip").val());					
-									
 				
+				var array1 = [];						
+				var gateway = $thisDialog.find("#add_publicip_vlan_gateway").val();
+				array1.push("&gateway="+todb(gateway));
+				
+				var netmask = $thisDialog.find("#add_publicip_vlan_netmask").val();
+				array1.push("&netmask="+todb(netmask));
+				
+				var startip = $thisDialog.find("#add_publicip_vlan_startip").val();
+				array1.push("&startip="+todb(startip));
+				
+				var endip = $thisDialog.find("#add_publicip_vlan_endip").val();	//optional field (might be empty)
+				if(endip != null && endip.length > 0)
+				    array1.push("&endip="+todb(endip));			
+													
 				// Allocating ip ranges on a vlan for virtual networking
 				$.ajax({
-					data: createURL("command=createVlanIpRange&forVirtualNetwork=true"+"&zoneId="+zoneObj.id+vlan+scopeParams+"&gateway="+todb(gateway)+"&netmask="+todb(netmask)+"&startip="+todb(startip)+"&endip="+todb(endip)),
+					data: createURL("command=createVlanIpRange&forVirtualNetwork=true&zoneId="+zoneObj.id+vlan+scopeParams+array1.join("")),
 					dataType: "json",
 					success: function(json) {	
 						$thisDialog.find("#spinning_wheel").hide();
