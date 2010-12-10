@@ -1809,6 +1809,11 @@ public class StorageManagerImpl implements StorageManager {
         for (VolumeVO vol : vols) {
             try {
                 Long poolId = vol.getPoolId();
+                if (poolId == null) {
+                	vol.setDestroyed(true);
+                	_volsDao.update(vol.getId(), vol);
+                	continue;
+                } 
                 Answer answer = null;
                 StoragePoolVO pool = _storagePoolDao.findById(poolId);
                 final DestroyCommand cmd = new DestroyCommand(pool, vol);
