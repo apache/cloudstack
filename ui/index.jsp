@@ -240,7 +240,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+                        <!--  
                         <div class="actionpanel_button_wrapper" id="midmenu_add_vlan_button" style="display: none;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
@@ -250,7 +250,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+                        -->
                         <div class="actionpanel_button_wrapper" id="midmenu_add_network_button" style="display: none;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
