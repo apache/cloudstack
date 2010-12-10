@@ -325,20 +325,20 @@ function publicNetworkLoadBalancerJsonToTemplate(jsonObj, $template) {
     $template.find("#type").text(fromdb(jsonObj.type));
     $template.find("#url").text(fromdb(jsonObj.url));   
    
-    var $actionLink = $template.find("#firewall_action_link");		
+    var $actionLink = $template.find("#loadbalancer_action_link");		
 	$actionLink.bind("mouseover", function(event) {
-        $(this).find("#firewall_action_menu").show();    
+        $(this).find("#loadbalancer_action_menu").show();    
         return false;
     });
     $actionLink.bind("mouseout", function(event) {
-        $(this).find("#firewall_action_menu").hide();    
+        $(this).find("#loadbalancer_action_menu").hide();    
         return false;
     });		
 	
-	var $actionMenu = $actionLink.find("#firewall_action_menu");
+	var $actionMenu = $actionLink.find("#loadbalancer_action_menu");
     $actionMenu.find("#action_list").empty();	
        
-    buildActionLinkForSubgridItem("Delete Firewall", publicNetworkFirewallActionMap, $actionMenu, $template);	
+    buildActionLinkForSubgridItem("Delete Load Balancer", publicNetworkLoadBalancerActionMap, $actionMenu, $template);	
 }
 
 var publicNetworkLoadBalancerActionMap = {     
@@ -777,13 +777,11 @@ function initAddLoadBalancerButton($button, $midmenuItem1) {
 					success: function(json) {	
 						$thisDialog.find("#spinning_wheel").hide();
 						$thisDialog.dialog("close");
-					   				    
-					    /*
-					    var item = json.createvlaniprangeresponse.vlan;						    
-					    var $newTemplate = $("#iprange_template").clone();
-	                    publicNetworkIprangeJsonToTemplate(item, $newTemplate);
-	                    $("#public_network_page").find("#tab_content_ipallocation").find("#tab_container").prepend($newTemplate.show());	
-	                    */					   
+					   	
+					   	var item = json.addexternalloadbalancerresponse.externalloadbalancer;			    
+					    var $newTemplate = $("#loadbalancer_template").clone();
+		                publicNetworkLoadBalancerJsonToTemplate(item, $newTemplate);
+		                $("#right_panel_content #public_network_page #tab_content_loadbalancer").find("#tab_container").append($newTemplate.show());
 					},
 					error: function(XMLHttpResponse) {
 						handleError(XMLHttpResponse, function() {
