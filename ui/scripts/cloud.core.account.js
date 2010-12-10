@@ -215,6 +215,10 @@ function initAddAccountDialog() {
 					dataType: "json",
 					async: false,
 					success: function(json) {						    
+					    $("#leftmenu_account_all_accounts").click();
+					    
+					    //comment the following section for fixing Bug 7452 ("Adding an account under My Account will result in a duplicate") 
+					    /*					    
 					    var user = json.createuserresponse.user;	
 					    var item;					    
 					    $.ajax({
@@ -229,7 +233,8 @@ function initAddAccountDialog() {
 					    });					    			    		
 						accountToMidmenu(item, $midmenuItem1);
 	                    bindClickToMidMenu($midmenuItem1, accountToRightPanel, getMidmenuId);  
-	                    afterAddingMidMenuItem($midmenuItem1, true);								
+	                    afterAddingMidMenuItem($midmenuItem1, true);
+	                    */								
 					},			
                     error: function(XMLHttpResponse) {	                        
                         afterAddingMidMenuItem($midmenuItem1, false, parseXMLHttpResponse(XMLHttpResponse));        
