@@ -1009,7 +1009,7 @@ function initVMWizard() {
 				                            
 				                            if (item.passwordenabled == true) {							                                									        
 										        var extraMessage = "New password: " + item.password;
-										        afterAddingMidMenuItem($midmenuItem1, true, extraMessage);
+										        afterAddingMidMenuItem($midmenuItem1, true, extraMessage, true);
 										        var afterActionInfo = "Instance " + getVmName(item.name, item.displayname) + " has been created successfully.  New password is: " + item.password;
 										        $midmenuItem1.data("afterActionInfo", afterActionInfo); 
 										        
@@ -1022,7 +1022,7 @@ function initVMWizard() {
 	                                            }).dialog("open");											        
 									        } 	
 									        else {
-									            afterAddingMidMenuItem($midmenuItem1, true);
+									            afterAddingMidMenuItem($midmenuItem1, true, null, true);
 									        }							                        
 									    } else if (result.jobstatus == 2) {
 										    // Failed										    

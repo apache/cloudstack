@@ -667,7 +667,7 @@ function beforeAddingMidMenuItem() {
 	$("#midmenu_container").append($midmenuItem1.show());
 	return $midmenuItem1;
 }
-function afterAddingMidMenuItem($midmenuItem1, isSuccessful, extraMessage) {
+function afterAddingMidMenuItem($midmenuItem1, isSuccessful, extraMessage, hasMultipleSelectionSubContainer) {
     $midmenuItem1.find("#content").removeClass("inaction"); 
 	$midmenuItem1.find("#spinning_wheel").hide();	
 
@@ -675,7 +675,13 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, extraMessage) {
         $midmenuItem1.find("#info_icon").removeClass("error").show();
 	    $midmenuItem1.data("afterActionInfo", ("Adding succeeded.")); 
 	    
-		var $noItemsAvailable = $("#midmenu_container").find("#midmenu_container_no_items_available");
+	    var $container = $("#midmenu_container");
+	    if(hasMultipleSelectionSubContainer) {
+	        $container = $("#midmenu_container").find("#multiple_selection_sub_container");
+	        $midmenuItem1.appendTo("#midmenu_container #multiple_selection_sub_container"); 
+	    }
+	    	        
+		var $noItemsAvailable = $container.find("#midmenu_container_no_items_available");
         if($noItemsAvailable.length > 0) {
             $noItemsAvailable.slideUp("slow", function() {
                 $(this).remove();
@@ -883,11 +889,11 @@ function initDialogWithOK(elementId, width1, addToActive) {
     }
 } 
 
-function disableMultipleSelectionInMidMenu() {    
-    $("#midmenu_container").selectable("destroy"); //Most pages don't need multiple selection in middle menu.
-}
-function enableMultipleSelectionInMidMenu() {    
-    $("#midmenu_container").selectable({
+function createMultipleSelectionSubContainer() {      
+    var $multipleSelectionSubContainer = $("<div id='multiple_selection_sub_container'></div>"); 
+    $("#midmenu_container").append($multipleSelectionSubContainer);    
+  
+    $multipleSelectionSubContainer.selectable({
         selecting: function(event, ui) {	 	                               
             if(ui.selecting.id.indexOf("midmenuItem") != -1) {                     
                 var $midmenuItem1 = $("#"+ui.selecting.id);
@@ -911,7 +917,9 @@ function enableMultipleSelectionInMidMenu() {
                 }
             }             
         }
-    });    
+    }); 
+    
+    return $multipleSelectionSubContainer;   
 }
 
 function getMidmenuId(jsonObj) {
@@ -935,11 +943,10 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
 	
 	(page > 1)? $("#midmenu_prevbutton").show(): $("#midmenu_prevbutton").hide();
 	
+	var $container = $("#midmenu_container").empty(); 
 	if(isMultipleSelectionInMidMenu == true)
-        enableMultipleSelectionInMidMenu();
-    else
-        disableMultipleSelectionInMidMenu();
-   
+        $container = createMultipleSelectionSubContainer();
+       
     var count = 0;    
     $.ajax({
         cache: false,
@@ -947,8 +954,7 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
         dataType: "json",
         async: false,
         success: function(json) {   
-            selectedItemsInMidMenu = {};    
-            $("#midmenu_container").empty();	                
+            selectedItemsInMidMenu = {};                           
             var items = json[jsonResponse1][jsonResponse2];      
             if(items != null && items.length > 0) {
                 (items.length == midmenuItemCount)? $("#midmenu_nextbutton").show(): $("#midmenu_nextbutton").hide();
@@ -958,7 +964,7 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
                     toMidmenuFn(items[i], $midmenuItem1);    
                     bindClickToMidMenu($midmenuItem1, toRightPanelFn, getMidmenuIdFn);             
                       
-                    $("#midmenu_container").append($midmenuItem1.show());   
+                    $container.append($midmenuItem1.show());   
                     if(i == 0)  { //click the 1st item in middle menu as default                        
                         $midmenuItem1.click();                           
                         if(isMultipleSelectionInMidMenu == true) {                           
@@ -970,7 +976,7 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
                 count = items.length;
             }  
             else {
-                $("#midmenu_container").append($("#midmenu_container_no_items_available").clone().show());  
+                $container.append($("#midmenu_container_no_items_available").clone().show());  
             }
             $("#midmenu_container").show();
 	        $("#midmenu_spinning_wheel").hide();           

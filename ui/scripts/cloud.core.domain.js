@@ -120,8 +120,7 @@ function domainAccountJSONToTemplate(jsonObj, $template) {
 }
 
 function afterLoadDomainJSP() {
-    hideMiddleMenu();		
-	disableMultipleSelectionInMidMenu();      
+    hideMiddleMenu();   
 	clearMiddleMenu();
 	   
     if(isAdmin()) {

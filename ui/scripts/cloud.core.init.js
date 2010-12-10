@@ -152,7 +152,6 @@ $(document).ready(function() {
 		
 		$("#leftmenu_physical_resource").bind("click", function(event) {
 			showMiddleMenu();
-			disableMultipleSelectionInMidMenu();  
 			clearMiddleMenu();
 		   
 			expandOrCollapseZoneTree();

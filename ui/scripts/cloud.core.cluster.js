@@ -30,9 +30,7 @@ function afterLoadClusterJSP($leftmenuItem1) {
 	clusterJsonToRightPanel($leftmenuItem1);	
 	var clusterId = $leftmenuItem1.data("jsonObj").id;            
     var $midmenuContainer = $("#midmenu_container").empty();	
-     
-    disableMultipleSelectionInMidMenu();     
-       
+            
     var $container_host = $("<div id='midmenu_host_container'></div>"); 
     $midmenuContainer.append($container_host);        
     var $header1 = $("#midmenu_itemheader_without_margin").clone().show();  //without margin on top

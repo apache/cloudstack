@@ -22,8 +22,7 @@ function afterLoadNetworkJSP($leftmenuItem1) {
     if(zoneObj == null) 
 	    return;	  
     
-    showMiddleMenu();
-    disableMultipleSelectionInMidMenu();     
+    showMiddleMenu();    
     
     initAddNetworkButton($("#midmenu_add_network_button"));
     
