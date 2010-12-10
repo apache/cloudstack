@@ -935,6 +935,7 @@ function directNetworkJsonClearIpAllocationTab() {
 }
 
 function directNetworkIprangeJsonToTemplate(jsonObj, $template) {    
+    $template.data("jsonObj", jsonObj);
     $template.attr("id", "directNetworkIprange_" + jsonObj.id);
     
     var ipRange = getIpRange(fromdb(jsonObj.startip), fromdb(jsonObj.endip));
@@ -943,7 +944,35 @@ function directNetworkIprangeJsonToTemplate(jsonObj, $template) {
     $template.find("#vlan").text(jsonObj.vlan)
     $template.find("#startip").text(fromdb(jsonObj.startip));
     $template.find("#endip").text(fromdb(jsonObj.endip));
+    
+    var $actionLink = $template.find("#iprange_action_link");		
+	$actionLink.bind("mouseover", function(event) {
+        $(this).find("#iprange_action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {
+        $(this).find("#iprange_action_menu").hide();    
+        return false;
+    });		
+	
+	var $actionMenu = $actionLink.find("#iprange_action_menu");
+    $actionMenu.find("#action_list").empty();	
+       
+    buildActionLinkForSubgridItem("Delete IP Range", directNetworkIpRangeActionMap, $actionMenu, $template);
 }
+
+var directNetworkIpRangeActionMap = {     
+    "Delete IP Range": {              
+        api: "deleteVlanIpRange",     
+        isAsyncJob: false,   
+        inProcessText: "Deleting IP Range....",
+        afterActionSeccessFn: function(json, id, $subgridItem) {                 
+            $subgridItem.slideUp("slow", function() {
+                $(this).remove();
+            });
+        }
+    }    
+}  
 
 function initAddNetworkButton($button) {   
     if(zoneObj == null)
