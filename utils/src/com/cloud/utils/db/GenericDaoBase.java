@@ -331,7 +331,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             }
         }
         
-        addGroupBy(str, sc);
+        List<Object> groupByValues = addGroupBy(str, sc);
         addFilter(str, filter);
 
         final Transaction txn = Transaction.currentTxn();
@@ -355,6 +355,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
             if (joins != null) {
                 i = addJoinAttributes(i, pstmt, joins);
+            }
+            
+            if (groupByValues != null) {
+                for (Object value : groupByValues) {
+                    pstmt.setObject(i++, value);
+                }
             }
 
             if (s_logger.isDebugEnabled() && lock != null) {
@@ -392,7 +398,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             }
         }
         
-        addGroupBy(str, sc);
+        List<Object> groupByValues = addGroupBy(str, sc);
         addFilter(str, filter);
 
         final String sql = str.toString();
@@ -410,6 +416,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
 
             if (joins != null) {
                 i = addJoinAttributes(i, pstmt, joins);
+            }
+            
+            if (groupByValues != null) {
+                for (Object value : groupByValues) {
+                    pstmt.setObject(i++, value);
+                }
             }
             
             ResultSet rs = pstmt.executeQuery();
@@ -918,17 +930,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @DB(txn=false)
-    protected void addGroupBy(final StringBuilder sql, SearchCriteria<?> sc) {
-    	List<Attribute> groupBys = sc.getGroupBy();
-    	if(groupBys != null) {
-    		sql.append(" GROUP BY ");
-    		for(int i = 0; i < groupBys.size(); i++) {
-    			Attribute attr = groupBys.get(i);
-    			sql.append(attr.table).append(".").append(attr.columnName);
-    			if(i < groupBys.size() - 1) {
-                    sql.append(", ");
-                }
-    		}
+    protected List<Object> addGroupBy(final StringBuilder sql, SearchCriteria<?> sc) {
+    	Pair<GroupBy<?, ?>, List<Object>> groupBys = sc.getGroupBy();
+    	if (groupBys != null) {
+    	    groupBys.first().toSql(sql);
+    	    return groupBys.second();
+    	} else {
+    	    return null;
     	}
     }
     

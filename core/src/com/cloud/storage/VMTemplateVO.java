@@ -23,6 +23,8 @@ import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
@@ -104,7 +106,8 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     private boolean crossZones = false;
     
     @Column(name="hypervisor_type")
-    private String hypervisorType;
+    @Enumerated(value=EnumType.STRING)
+    private HypervisorType hypervisorType;
     
     @Column(name="extractable")
     private boolean extractable = true;
@@ -145,7 +148,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	    this.created = created;
 	    this.guestOSId = guestOSId;
 	    this.bootable = bootable;
-	    this.hypervisorType = hyperType.toString();
+	    this.hypervisorType = hyperType;
     }
 		
 	// Has an extra attribute - isExtractable
@@ -168,7 +171,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	    this.created = created;
 	    this.guestOSId = guestOSId;
 	    this.bootable = bootable;
-	    this.hypervisorType = hyperType.toString();
+	    this.hypervisorType = hyperType;
     }
 
 	@Override
@@ -217,7 +220,8 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	    return requiresHvm;
 	}
 	
-	public int getBits() {
+	@Override
+    public int getBits() {
 	    return bits;
 	}
 	
@@ -247,6 +251,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     	this.publicTemplate = publicTemplate;
     }
     
+    @Override
     public boolean isFeatured() {
     	return featured;
     }
@@ -332,11 +337,11 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	
 	@Override
     public HypervisorType getHypervisorType() {
-		return HypervisorType.getType(hypervisorType);
+		return hypervisorType;
 	}
 	
 	public void setHypervisorType(HypervisorType hyperType) {
-		hypervisorType = hyperType.toString();
+		hypervisorType = hyperType;
 	}
 	
 	@Override
@@ -355,8 +360,9 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
 	@Override
 	public boolean equals(Object that) {
-		if (this == that )
-			return true;
+		if (this == that ) {
+            return true;
+        }
 		if (!(that instanceof VMTemplateVO)){
 			return false;
 		}

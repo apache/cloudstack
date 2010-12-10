@@ -118,7 +118,8 @@ public class SearchCriteria<K> {
     private int _counter;
     private HashMap<String, JoinBuilder<SearchCriteria<?>>> _joins;
     private final ArrayList<Select> _selects;
-    private final ArrayList<Attribute> _groupBys;
+    private final GroupBy<?, K> _groupBy;
+    private final List<Object> _groupByValues;
     private final Class<K> _resultType;
     private final SelectType _selectType;
     
@@ -136,7 +137,12 @@ public class SearchCriteria<K> {
             }
         }
         _selects = sb._selects;
-        _groupBys = sb._groupBys;
+        _groupBy = sb._groupBy;
+        if (_groupBy != null) {
+            _groupByValues = new ArrayList<Object>();
+        } else {
+            _groupByValues = null;
+        }
         _resultType = sb._resultType;
         _selectType = sb._selectType;
     }
@@ -204,12 +210,18 @@ public class SearchCriteria<K> {
         join.getT().addOr(field, op, values);
     }
     
-    public SearchCriteria getJoin(String joinName) {
+    public SearchCriteria<?> getJoin(String joinName) {
     	return _joins.get(joinName).getT();
     }
     
-    public List<Attribute> getGroupBy() {
-    	return _groupBys;
+    public Pair<GroupBy<?, ?>, List<Object>> getGroupBy() {
+    	return new Pair<GroupBy<?, ?>, List<Object>>(_groupBy, _groupByValues);
+    }
+    
+    public void setGroupByValues(Object... values) {
+        for (Object value : values) {
+            _groupByValues.add(value);
+        }
     }
     
     public Class<K> getResultType() {

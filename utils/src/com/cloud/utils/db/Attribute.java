@@ -221,4 +221,9 @@ public class Attribute {
     	
     	return columnName.equals(that.columnName) && table.equals(that.table);
     }
+    
+    @Override
+    public String toString() {
+        return table + "." + columnName;
+    }
 }

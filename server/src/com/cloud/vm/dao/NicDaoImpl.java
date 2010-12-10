@@ -12,6 +12,7 @@ import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.vm.NicVO;
 
 @Local(value=NicDao.class)
@@ -19,23 +20,30 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     private final SearchBuilder<NicVO> InstanceSearch;
     private final GenericSearchBuilder<NicVO, String> IpSearch;
     private final SearchBuilder<NicVO> NetworkSearch;
+    private final GenericSearchBuilder<NicVO, Long> GarbageCollectSearch;
     
     protected NicDaoImpl() {
         super();
         
         InstanceSearch = createSearchBuilder();
-        InstanceSearch.and("instance", InstanceSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
+        InstanceSearch.and("instance", InstanceSearch.entity().getInstanceId(), Op.EQ);
         InstanceSearch.done();
         
         IpSearch = createSearchBuilder(String.class);
         IpSearch.select(null, Func.DISTINCT, IpSearch.entity().getIp4Address());
-        IpSearch.and("nc", IpSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
-        IpSearch.and("address", IpSearch.entity().getIp4Address(), SearchCriteria.Op.NNULL);
+        IpSearch.and("nc", IpSearch.entity().getNetworkId(), Op.EQ);
+        IpSearch.and("address", IpSearch.entity().getIp4Address(), Op.NNULL);
         IpSearch.done();
         
         NetworkSearch = createSearchBuilder();
-        NetworkSearch.and("networkId", NetworkSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        NetworkSearch.and("networkId", NetworkSearch.entity().getNetworkId(), Op.EQ);
         NetworkSearch.done();
+        
+        GarbageCollectSearch = createSearchBuilder(Long.class);
+        GarbageCollectSearch.select(null, Func.DISTINCT, GarbageCollectSearch.entity().getNetworkId());
+        GarbageCollectSearch.and("reservation", GarbageCollectSearch.entity().getReservationId(), Op.NULL);
+        GarbageCollectSearch.groupBy(GarbageCollectSearch.entity().getNetworkId()).having(Func.COUNT, GarbageCollectSearch.entity().getId(), Op.EQ, null);
+        GarbageCollectSearch.done();
     }
     
     @Override
@@ -57,5 +65,12 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         SearchCriteria<NicVO> sc = NetworkSearch.create();
         sc.setParameters("networkId", networkId);
         return listBy(sc);
+    }
+    
+    @Override
+    public List<Long> listNetworksWithNoActiveNics() {
+        SearchCriteria<Long> sc = GarbageCollectSearch.create();
+        
+        return customSearch(sc, null);
     }
 }

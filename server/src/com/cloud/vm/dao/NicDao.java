@@ -14,4 +14,6 @@ public interface NicDao extends GenericDao<NicVO, Long> {
     List<String> listIpAddressInNetworkConfiguration(long networkConfigId);
     
     List<NicVO> listByNetworkId(long networkId);
+    
+    List<Long> listNetworksWithNoActiveNics(); 
 }

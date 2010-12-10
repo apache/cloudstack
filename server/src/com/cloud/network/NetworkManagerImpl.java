@@ -191,6 +191,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     SearchBuilder<IPAddressVO> IpAddressSearch;
 
     private Map<String, String> _configs;
+    
+    HashMap<Long, Long> _lastNetworkIdsToFree = new HashMap<Long, Long>();
 
     @Override @DB 
     public PublicIp fetchNewPublicIp(long dcId, VlanType vlanUse, Account owner, Long networkId, boolean sourceNat) throws InsufficientAddressCapacityException {
@@ -761,7 +763,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkOfferingVO defaultGuestDirectPodBasedNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectPodBasedNetworkOffering, "DirectPodBased", TrafficType.Public, GuestIpType.DirectPodBased, true, false, rateMbps, multicastRateMbps, null, true);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectPodBasedNetworkOffering);
         
-
         AccountsUsingNetworkSearch = _accountDao.createSearchBuilder();
         SearchBuilder<NetworkAccountVO> networkAccountSearch = _networksDao.createSearchBuilderForAccount();
         AccountsUsingNetworkSearch.join("nc", networkAccountSearch, AccountsUsingNetworkSearch.entity().getId(), networkAccountSearch.entity().getAccountId(), JoinType.INNER);
@@ -1944,6 +1945,55 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
     }
     
+    @DB 
+    public void shutdownNetwork(long networkId) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        NetworkVO network = _networksDao.lockRow(networkId, true);
+        if (network == null) {
+            s_logger.debug("Unable to find network with id: " + networkId);
+            return;
+        }
+        if (network.getState() != Network.State.Implemented && network.getState() != Network.State.Destroying) {
+            s_logger.debug("Network is not implemented: " + network);
+            return;
+        }
+        network.setState(Network.State.Destroying);
+        _networksDao.update(network.getId(), network);
+        txn.commit();
+        
+        boolean success = true;
+        for (NetworkElement element : _networkElements) {
+            try {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Sending network shutdown to " + element);
+                }
+                element.shutdown(network, null);
+            } catch (ResourceUnavailableException e) {
+                s_logger.warn("Unable to complete shutdown of the network due to element: " + element.getName(), e);
+                success = false;
+            } catch (ConcurrentOperationException e) {
+                s_logger.warn("Unable to complete shutdown of the network due to element: " + element.getName(), e);
+                success = false;
+            } catch (Exception e) {
+                s_logger.warn("Unable to complete shutdown of the network due to element: " + element.getName(), e);
+                success = false;
+            }
+        }
+        
+        if (success) {
+            NetworkGuru guru = _networkGurus.get(network.getGuruName());
+            guru.destroy(network, _networkOfferingDao.findById(network.getNetworkOfferingId()));
+            network.setState(Network.State.Allocated);
+            _networksDao.update(network.getId(), network);
+        } else {
+            network.setState(Network.State.Implemented);
+            _networksDao.update(network.getId(), network);
+        }
+        
+        
+    }
+    
     @Override
     public boolean applyRules(Ip ip, List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException {
         if (rules.size() == 0) {
@@ -1967,5 +2017,40 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         return success;
+    }
+    
+    public class NetworkGarbageCollector implements Runnable {
+
+        @Override
+        public void run() {
+            List<Long> shutdownList = new ArrayList<Long>();
+            long currentTime = System.currentTimeMillis() >> 10;
+            HashMap<Long, Long> stillFree = new HashMap<Long, Long>();
+            
+            List<Long> networkIds = _nicDao.listNetworksWithNoActiveNics();
+            for (Long networkId : networkIds) {
+                Long time = _lastNetworkIdsToFree.remove(networkId);
+                if (time == null) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("We found network " + networkId + " to be free for the first time.  Adding it to the list: " + currentTime);
+                    }
+                    stillFree.put(networkId, currentTime);
+                } else if (time < (currentTime + 600)) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Network " + networkId + " is still free but it's not time to shutdown yet: " + time);
+                    }
+                    stillFree.put(networkId, time);
+                } else {
+                    shutdownList.add(networkId);
+                }
+            }
+            
+            _lastNetworkIdsToFree = stillFree;
+            
+            for (Long networkId : shutdownList) {
+                shutdownNetwork(networkId);
+            }
+        }
+        
     }
 }

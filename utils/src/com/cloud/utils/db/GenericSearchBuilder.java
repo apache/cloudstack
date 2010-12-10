@@ -21,6 +21,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import net.sf.cglib.proxy.Factory;
@@ -48,7 +49,7 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
     protected ArrayList<Condition> _conditions;
     protected HashMap<String, JoinBuilder<GenericSearchBuilder<?, ?>>> _joins;
     protected ArrayList<Select> _selects;
-    protected ArrayList<Attribute> _groupBys;
+    protected GroupBy<T, K> _groupBy = null;
     protected Class<T> _entityBeanType;
     protected Class<K> _resultType;
     protected SelectType _selectType;
@@ -210,18 +211,15 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
         return left(name, useless, op);
     }
     
-    public GenericSearchBuilder<T, K> groupBy(Object... useless) {
-        if(_groupBys == null) {
-            _groupBys = new ArrayList<Attribute>();
-        }
+    public GroupBy<T, K> groupBy(Object... useless) {
+        assert _groupBy == null : "Can't do more than one group bys";
+        _groupBy = new GroupBy<T, K>(this);
         
-        Attribute[] attrs = _specifiedAttrs.toArray(new Attribute[_specifiedAttrs.size()]);
-        for(Attribute attr : attrs) {
-            _groupBys.add(attr);
-        }
-        
-        _specifiedAttrs.clear();
-        return this;
+        return _groupBy;
+    }
+    
+    protected List<Attribute> getSpecifiedAttributes() {
+        return _specifiedAttrs;
     }
     
     /**
