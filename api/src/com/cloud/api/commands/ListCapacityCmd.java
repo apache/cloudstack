@@ -81,7 +81,7 @@ public class ListCapacityCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -103,7 +103,7 @@ public class ListCapacityCmd extends BaseListCmd {
         ListResponse<CapacityResponse> response = new ListResponse<CapacityResponse>();
         List<CapacityResponse> capacityResponses = _responseGenerator.createCapacityResponse(result, s_percentFormat);
         response.setResponses(capacityResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

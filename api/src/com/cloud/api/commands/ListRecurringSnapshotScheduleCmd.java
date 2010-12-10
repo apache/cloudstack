@@ -59,7 +59,7 @@ public class ListRecurringSnapshotScheduleCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -80,7 +80,7 @@ public class ListRecurringSnapshotScheduleCmd extends BaseListCmd {
         }
 
         response.setResponses(snapshotScheduleResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

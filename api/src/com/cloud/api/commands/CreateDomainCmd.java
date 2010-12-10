@@ -62,7 +62,7 @@ public class CreateDomainCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -71,7 +71,7 @@ public class CreateDomainCmd extends BaseCmd {
         Domain domain = _mgr.createDomain(this);
         if (domain != null) {
             DomainResponse response = _responseGenerator.createDomainResponse(domain);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create domain");

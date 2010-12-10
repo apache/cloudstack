@@ -130,7 +130,7 @@ public class ListVMsCmd extends BaseListCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
-	public String getName() {
+	public String getCommandName() {
         return s_name;
     }
     
@@ -151,7 +151,7 @@ public class ListVMsCmd extends BaseListCmd {
             }
         }
         response.setResponses(vmResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
     

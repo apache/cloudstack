@@ -99,7 +99,7 @@ public class ListSystemVMsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -119,7 +119,7 @@ public class ListSystemVMsCmd extends BaseListCmd {
         }
 
         response.setResponses(vmResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

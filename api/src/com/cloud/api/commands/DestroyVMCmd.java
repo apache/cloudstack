@@ -59,7 +59,7 @@ public class DestroyVMCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 

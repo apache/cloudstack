@@ -52,7 +52,7 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -60,7 +60,7 @@ public class DeleteDiskOfferingCmd extends BaseCmd {
     public void execute(){
         boolean result = _configService.deleteDiskOffering(this);
         if (result) {
-            SuccessResponse response = new SuccessResponse(getName());
+            SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete disk offering");

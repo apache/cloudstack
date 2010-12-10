@@ -99,7 +99,7 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -115,7 +115,7 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
         }
 
         response.setResponses(ipAddrResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

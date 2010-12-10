@@ -57,7 +57,7 @@ public class ListAlertsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -78,7 +78,7 @@ public class ListAlertsCmd extends BaseListCmd {
         }
 
         response.setResponses(alertResponseList);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

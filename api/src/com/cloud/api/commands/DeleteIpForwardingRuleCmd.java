@@ -57,7 +57,7 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -65,7 +65,7 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     public void execute(){
     	PortForwardingRule rule = _rulesService.revokePortForwardingRule(id, true);
         if (rule != null) {
-            SuccessResponse response = new SuccessResponse(getName());
+            SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete ip forwarding rule");

@@ -84,7 +84,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -130,7 +130,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
             Snapshot snapshot = _snapshotMgr.createSnapshot(this);
             if (snapshot != null) {
                 SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
-                response.setResponseName(getName());
+                response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + volumeId);

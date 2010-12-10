@@ -32,7 +32,7 @@ import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 
 @Entity
-@Table(name=("load_balancer"))
+@Table(name=("load_balancing_rules"))
 @DiscriminatorValue(value="LoadBalancing")
 @PrimaryKeyJoinColumn(name="id")
 public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
@@ -46,10 +46,10 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
     @Column(name="algorithm")
     private String algorithm;
 
-    @Column(name="dest_port_start")
+    @Column(name="default_port_start")
     private int defaultPortStart;
     
-    @Column(name="dest_port_end")
+    @Column(name="default_port_end")
     private int defaultPortEnd;
     
     public LoadBalancerVO() { 

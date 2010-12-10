@@ -71,7 +71,7 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 

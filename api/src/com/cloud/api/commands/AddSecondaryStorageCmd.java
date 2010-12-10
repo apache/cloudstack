@@ -63,7 +63,7 @@ public class AddSecondaryStorageCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
     	return s_name;
     }
     
@@ -76,7 +76,7 @@ public class AddSecondaryStorageCmd extends BaseCmd {
                 for (Host host : result) {
                     // There should only be one secondary storage host per add
                     hostResponse = _responseGenerator.createHostResponse(host);
-                    hostResponse.setResponseName(getName());
+                    hostResponse.setResponseName(getCommandName());
                     hostResponse.setObjectName("secondarystorage");
                     this.setResponseObject(hostResponse);
                 }

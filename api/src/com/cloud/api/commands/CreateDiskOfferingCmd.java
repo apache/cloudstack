@@ -88,7 +88,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -97,7 +97,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         DiskOffering offering = _configService.createDiskOffering(this);
         if (offering != null) {
             DiskOfferingResponse response = _responseGenerator.createDiskOfferingResponse(offering);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create disk offering");

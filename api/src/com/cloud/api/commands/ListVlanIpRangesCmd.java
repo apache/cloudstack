@@ -107,7 +107,7 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     
 	@Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -123,7 +123,7 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
         }
 
         response.setResponses(vlanResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

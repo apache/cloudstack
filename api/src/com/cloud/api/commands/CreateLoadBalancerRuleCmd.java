@@ -23,20 +23,19 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.LoadBalancerResponse;
-import com.cloud.event.EventTypes;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.user.UserContext;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 
 @Implementation(description="Creates a load balancer rule", responseObject=LoadBalancerResponse.class)
-public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  implements LoadBalancer {
+public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer {
     public static final Logger s_logger = Logger.getLogger(CreateLoadBalancerRuleCmd.class.getName());
 
     private static final String s_name = "createloadbalancerruleresponse";
@@ -93,14 +92,17 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  implements Lo
     public String getPublicPort() {
         return publicPort;
     }
-
+    
+    public String getName() {
+        return loadBalancerRuleName;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -114,7 +116,7 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  implements Lo
             throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         }
         LoadBalancerResponse response = _responseGenerator.createLoadBalancerResponse(result);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 
@@ -166,12 +168,12 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  implements Lo
 
     @Override
     public long getAccountId() {
-        throw new UnsupportedOperationException("not supported");
+        return UserContext.current().getAccount().getId();
     }
 
     @Override
     public long getDomainId() {
-        throw new UnsupportedOperationException("not supported");
+        return UserContext.current().getAccount().getDomainId();
     }
 
     @Override
@@ -189,24 +191,4 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  implements Lo
         throw new UnsupportedOperationException("not supported");
     }
 
-    @Override
-    public void create() {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public long getEntityOwnerId() {
-        return _entityMgr.findById(LoadBalancer.class, getEntityId()).getAccountId();
-    }
-
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_LOAD_BALANCER_CREATE;
-    }
-
-    @Override
-    public String getEventDescription() {
-        return "Create load balancer";
-    }
 }

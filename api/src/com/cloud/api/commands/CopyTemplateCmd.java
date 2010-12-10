@@ -73,7 +73,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -115,7 +115,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
         try {
             VirtualMachineTemplate template = _templateService.copyTemplate(this);
             TemplateResponse templateResponse = _responseGenerator.createTemplateResponse(template, destZoneId);
-            templateResponse.setResponseName(getName());
+            templateResponse.setResponseName(getCommandName());
             
             this.setResponseObject(templateResponse);
         } catch (StorageUnavailableException ex) {

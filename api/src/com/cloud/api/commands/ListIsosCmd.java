@@ -129,7 +129,7 @@ public class ListIsosCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -160,7 +160,7 @@ public class ListIsosCmd extends BaseListCmd {
         }
 
        ListResponse<TemplateResponse> response = _responseGenerator.createIsoResponse(isoZonePairSet, isAdmin, account);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

@@ -113,7 +113,7 @@ public class ListVolumesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -134,7 +134,7 @@ public class ListVolumesCmd extends BaseListCmd {
         }
 
         response.setResponses(volResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

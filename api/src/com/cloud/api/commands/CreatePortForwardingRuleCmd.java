@@ -91,7 +91,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -109,7 +109,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
             }
         }
         FirewallRuleResponse fwResponse = _responseGenerator.createFirewallRuleResponse(rule);
-        fwResponse.setResponseName(getName());
+        fwResponse.setResponseName(getCommandName());
         setResponseObject(fwResponse);
     }
 

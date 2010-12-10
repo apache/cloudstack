@@ -33,6 +33,8 @@ import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
@@ -49,14 +51,21 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
@@ -91,6 +100,8 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     @Inject
     LoadBalancerVMMapDao _lb2VmMapDao;
     @Inject UserVmDao _vmDao;
+    @Inject AccountDao _accountDao;
+    @Inject DomainDao _domainDao;
 
     @Override @DB
     public boolean assignToLoadBalancer(long loadBalancerId, List<Long> instanceIds) {
@@ -207,7 +218,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
         // make sure ip address exists
         IPAddressVO ipAddr = _ipAddressDao.findById(srcIp.addr());
-        if (ipAddr == null || ipAddr.getAllocatedTime() == null || ipAddr.getAllocatedToAccountId() == null) {
+        if (ipAddr == null || !ipAddr.readyToUse()) {
             throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address " + srcIp);
         }
 
@@ -237,9 +248,14 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         if ((lb.getAlgorithm() == null) || !NetUtils.isValidAlgorithm(lb.getAlgorithm())) {
             throw new InvalidParameterValueException("Invalid algorithm: " + lb.getAlgorithm());
         }
-
+        
+        Long networkId = lb.getNetworkId();
+        if (networkId == -1 ) {
+            networkId = ipAddr.getAssociatedNetworkId();
+        }
+        _accountMgr.checkAccess(caller.getAccount(), ipAddr);
         LoadBalancerVO newRule = new LoadBalancerVO(lb.getXid(), lb.getName(), lb.getDescription(), lb.getSourceIpAddress(), lb.getSourcePortEnd(),
-                lb.getDefaultPortStart(), lb.getAlgorithm(), lb.getNetworkId(), lb.getAccountId(), lb.getDomainId());
+                lb.getDefaultPortStart(), lb.getAlgorithm(), networkId, ipAddr.getAccountId(), ipAddr.getDomainId());
 
         newRule = _lbDao.persist(newRule);
 
@@ -1001,181 +1017,152 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
     @Override
     public List<UserVmVO> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd) throws PermissionDeniedException {
-//        Account account = UserContext.current().getAccount();
-//        Long loadBalancerId = cmd.getId();
-//        Boolean applied = cmd.isApplied();
-//
-//        if (applied == null) {
-//            applied = Boolean.TRUE;
-//        }
-//
-//        LoadBalancerVO loadBalancer = _loadBalancerDao.findById(loadBalancerId);
-//        if (loadBalancer == null) {
-//            return null;
-//        }
-//
-//        if (account != null) {
-//            long lbAcctId = loadBalancer.getAccountId();
-//            if (isAdmin(account.getType())) {
-//                Account userAccount = _accountDao.findById(lbAcctId);
-//                if (!_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
-//                    throw new PermissionDeniedException("Invalid load balancer rule id (" + loadBalancerId + ") given, unable to list load balancer instances.");
-//                }
-//            } else if (account.getId() != lbAcctId) {
-//                throw new PermissionDeniedException("Unable to list load balancer instances, account " + account.getAccountName() + " does not own load balancer rule " + loadBalancer.getName());
-//            }
-//        }
-//
-//        List<UserVmVO> loadBalancerInstances = new ArrayList<UserVmVO>();
-//        List<LoadBalancerVMMapVO> vmLoadBalancerMappings = null;
-//        if (applied) {
-//            // List only the instances that have actually been applied to the load balancer (pending is false).
-//            vmLoadBalancerMappings = _loadBalancerVMMapDao.listByLoadBalancerId(loadBalancerId, false);
-//        } else {
-//            // List all instances applied, even pending ones that are currently being assigned, so that the semantics
-//            // of "what instances can I apply to this load balancer" are maintained.
-//            vmLoadBalancerMappings = _loadBalancerVMMapDao.listByLoadBalancerId(loadBalancerId);
-//        }
-//        List<Long> appliedInstanceIdList = new ArrayList<Long>();
-//        if ((vmLoadBalancerMappings != null) && !vmLoadBalancerMappings.isEmpty()) {
-//            for (LoadBalancerVMMapVO vmLoadBalancerMapping : vmLoadBalancerMappings) {
-//                appliedInstanceIdList.add(vmLoadBalancerMapping.getInstanceId());
-//            }
-//        }
-//
-//        IPAddressVO addr = _publicIpAddressDao.findById(loadBalancer.getIpAddress());
-//        List<UserVmVO> userVms = _userVmDao.listVirtualNetworkInstancesByAcctAndZone(loadBalancer.getAccountId(), addr.getDataCenterId());
-//
-//        for (UserVmVO userVm : userVms) {
-//            // if the VM is destroyed, being expunged, in an error state, or in an unknown state, skip it
-//            switch (userVm.getState()) {
-//            case Destroyed:
-//            case Expunging:
-//            case Error:
-//            case Unknown:
-//                continue;
-//            }
-//
-//            boolean isApplied = appliedInstanceIdList.contains(userVm.getId());
-//            if (!applied && !isApplied) {
-//                loadBalancerInstances.add(userVm);
-//            } else if (applied && isApplied) {
-//                loadBalancerInstances.add(userVm);
-//            }
-//        }
-//
-//        return loadBalancerInstances;
-        return null;
+        Account account = UserContext.current().getAccount();
+        Long loadBalancerId = cmd.getId();
+        Boolean applied = cmd.isApplied();
+
+        if (applied == null) {
+            applied = Boolean.TRUE;
+        }
+
+        LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
+        if (loadBalancer == null) {
+            return null;
+        }
+
+        if (account != null) {
+            long lbAcctId = loadBalancer.getAccountId();
+            if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+                Account userAccount = _accountDao.findById(lbAcctId);
+                if (!_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
+                    throw new PermissionDeniedException("Invalid load balancer rule id (" + loadBalancerId + ") given, unable to list load balancer instances.");
+                }
+            } else if (account.getId() != lbAcctId) {
+                throw new PermissionDeniedException("Unable to list load balancer instances, account " + account.getAccountName() + " does not own load balancer rule " + loadBalancer.getName());
+            }
+        }
+
+        List<UserVmVO> loadBalancerInstances = new ArrayList<UserVmVO>();
+        List<LoadBalancerVMMapVO> vmLoadBalancerMappings = null;
+        if (applied) {
+            // List only the instances that have actually been applied to the load balancer (pending is false).
+            vmLoadBalancerMappings = _lb2VmMapDao.listByLoadBalancerId(loadBalancerId, false);
+        } else {
+            // List all instances applied, even pending ones that are currently being assigned, so that the semantics
+            // of "what instances can I apply to this load balancer" are maintained.
+            vmLoadBalancerMappings = _lb2VmMapDao.listByLoadBalancerId(loadBalancerId);
+        }
+        List<Long> appliedInstanceIdList = new ArrayList<Long>();
+        if ((vmLoadBalancerMappings != null) && !vmLoadBalancerMappings.isEmpty()) {
+            for (LoadBalancerVMMapVO vmLoadBalancerMapping : vmLoadBalancerMappings) {
+                appliedInstanceIdList.add(vmLoadBalancerMapping.getInstanceId());
+            }
+        }
+
+        IPAddressVO addr = _ipAddressDao.findById(loadBalancer.getSourceIpAddress().toString());
+        List<UserVmVO> userVms = _vmDao.listVirtualNetworkInstancesByAcctAndZone(loadBalancer.getAccountId(), addr.getDataCenterId());
+
+        for (UserVmVO userVm : userVms) {
+            // if the VM is destroyed, being expunged, in an error state, or in an unknown state, skip it
+            switch (userVm.getState()) {
+            case Destroyed:
+            case Expunging:
+            case Error:
+            case Unknown:
+                continue;
+            }
+
+            boolean isApplied = appliedInstanceIdList.contains(userVm.getId());
+            if (!applied && !isApplied) {
+                loadBalancerInstances.add(userVm);
+            } else if (applied && isApplied) {
+                loadBalancerInstances.add(userVm);
+            }
+        }
+
+        return loadBalancerInstances;
     }
 
     @Override
     public List<LoadBalancerVO> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        // do some parameter validation
-//        Account account = UserContext.current().getAccount();
-//        String accountName = cmd.getAccountName();
-//        Long domainId = cmd.getDomainId();
-//        Long accountId = null;
-//        Account ipAddressOwner = null;
-//        String ipAddress = cmd.getPublicIp();
-//
-//        if (ipAddress != null) {
-//            IPAddressVO ipAddressVO = _publicIpAddressDao.findById(ipAddress);
-//            if (ipAddressVO == null) {
-//                throw new InvalidParameterValueException("Unable to list load balancers, IP address " + ipAddress + " not found.");
-//            } else {
-//                Long ipAddrAcctId = ipAddressVO.getAccountId();
-//                if (ipAddrAcctId == null) {
-//                    throw new InvalidParameterValueException("Unable to list load balancers, IP address " + ipAddress + " is not associated with an account.");
-//                }
-//                ipAddressOwner = _accountDao.findById(ipAddrAcctId);
-//            }
-//        }
-//
-//        if ((account == null) || isAdmin(account.getType())) {
-//            // validate domainId before proceeding
-//            if (domainId != null) {
-//                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-//                    throw new PermissionDeniedException("Unable to list load balancers for domain id " + domainId + ", permission denied.");
-//                }
-//                if (accountName != null) {
-//                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
-//                    if (userAccount != null) {
-//                        accountId = userAccount.getId();
-//                    } else {
-//                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-//                    }
-//                }
-//            } else if (ipAddressOwner != null) {
-//                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), ipAddressOwner.getDomainId())) {
-//                    throw new PermissionDeniedException("Unable to list load balancer rules for IP address " + ipAddress + ", permission denied.");
-//                }
-//            } else {
-//                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
-//            }
-//        } else {
-//            accountId = account.getId();
-//        }
-//
-//        Filter searchFilter = new Filter(LoadBalancerVO.class, "ipAddress", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-//
-//        Object id = cmd.getId();
-//        Object name = cmd.getLoadBalancerRuleName();
-//        Object keyword = cmd.getKeyword();
-//        Object instanceId = cmd.getVirtualMachineId();
-//
-//        SearchBuilder<LoadBalancerVO> sb = _loadBalancerDao.createSearchBuilder();
-//        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-//        sb.and("nameEQ", sb.entity().getName(), SearchCriteria.Op.EQ);
-//        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-//        sb.and("ipAddress", sb.entity().getIpAddress(), SearchCriteria.Op.EQ);
-//
-//        if ((accountId == null) && (domainId != null)) {
-//            // if accountId isn't specified, we can do a domain match for the admin case
-//            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-//            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-//            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-//        }
-//
-//        if (instanceId != null) {
-//            SearchBuilder<LoadBalancerVMMapVO> lbVMSearch = _loadBalancerVMMapDao.createSearchBuilder();
-//            lbVMSearch.and("instanceId", lbVMSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
-//            sb.join("lbVMSearch", lbVMSearch, sb.entity().getId(), lbVMSearch.entity().getLoadBalancerId(), JoinBuilder.JoinType.INNER);
-//        }
-//
-//        SearchCriteria<LoadBalancerVO> sc = sb.create();
-//        if (keyword != null) {
-//            SearchCriteria<LoadBalancerVO> ssc = _loadBalancerDao.createSearchCriteria();
-//            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-//            ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-//
-//            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-//        }
-//
-//        if (name != null) {
-//            sc.setParameters("nameEQ", name);
-//        }
-//
-//        if (id != null) {
-//            sc.setParameters("id", id);
-//        }
-//
-//        if (ipAddress != null) {
-//            sc.setParameters("ipAddress", ipAddress);
-//        }
-//
-//        if (accountId != null) {
-//            sc.setParameters("accountId", accountId);
-//        } else if (domainId != null) {
-//            DomainVO domain = _domainDao.findById(domainId);
-//            sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-//        }
-//
-//        if (instanceId != null) {
-//            sc.setJoinParameters("lbVMSearch", "instanceId", instanceId);
-//        }
-//
-//        return _loadBalancerDao.search(sc, searchFilter);
-        return null;
+        Account caller = UserContext.current().getAccount();
+        Account owner = null;
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Long accountId = null;
+        String ipString = cmd.getPublicIp();
+        Ip ipAddress = null;
+        if (ipString != null) {
+            ipAddress = new Ip(cmd.getPublicIp());
+        }
+        
+        if (accountName != null && domainId != null) {
+            owner = _accountDao.findActiveAccount(accountName, domainId);
+            if (owner == null) {
+               accountId = -1L;
+            }
+        }
+        
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            accountId = caller.getAccountId();
+        } else if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && owner != null) {
+            accountId = owner.getId();
+        } else if (owner != null && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN){
+            _accountMgr.checkAccess(caller, owner);
+        }
+
+        Filter searchFilter = new Filter(LoadBalancerVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        Object id = cmd.getId();
+        Object name = cmd.getLoadBalancerRuleName();
+        Object keyword = cmd.getKeyword();
+        Object instanceId = cmd.getVirtualMachineId();
+
+        SearchBuilder<LoadBalancerVO> sb = _lbDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("sourceIpAddress", sb.entity().getSourceIpAddress(), SearchCriteria.Op.EQ);
+        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
+
+        if (instanceId != null) {
+            SearchBuilder<LoadBalancerVMMapVO> lbVMSearch = _lb2VmMapDao.createSearchBuilder();
+            lbVMSearch.and("instanceId", lbVMSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
+            sb.join("lbVMSearch", lbVMSearch, sb.entity().getId(), lbVMSearch.entity().getLoadBalancerId(), JoinBuilder.JoinType.INNER);
+        }
+
+        SearchCriteria<LoadBalancerVO> sc = sb.create();
+        if (keyword != null) {
+            SearchCriteria<LoadBalancerVO> ssc = _lbDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (name != null) {
+            sc.setParameters("name", "%" + name + "%");
+        }
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (ipAddress != null) {
+            sc.setParameters("sourceIpAddress", ipAddress);
+        }
+
+        if (instanceId != null) {
+            sc.setJoinParameters("lbVMSearch", "instanceId", instanceId);
+        }
+        
+        if (accountId != null) {
+            sc.setParameters("accountId", accountId);
+        } else if (domainId != null) {
+            sc.setParameters("domainId", domainId);
+        }
+
+        return _lbDao.search(sc, searchFilter);
     }
 
 //    @Override

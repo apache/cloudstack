@@ -139,7 +139,7 @@ public abstract class BaseCmd {
         this.responseType = responseType;
     }
 
-    public abstract String getName();
+    public abstract String getCommandName();
 
     public Object getResponseObject() {
         return _responseObject;
@@ -342,14 +342,14 @@ public abstract class BaseCmd {
         StringBuffer sb = new StringBuffer();
         if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             // JSON response
-            sb.append("{ \"" + getName() + "\" : { " + "\"@attributes\":{\"cloud-stack-version\":\""+_mgr.getVersion()+"\"},");
+            sb.append("{ \"" + getCommandName() + "\" : { " + "\"@attributes\":{\"cloud-stack-version\":\""+_mgr.getVersion()+"\"},");
             sb.append("\"errorcode\" : \"" + apiException.getErrorCode() + "\", \"description\" : \"" + apiException.getDescription() + "\" } }");
         } else {
             sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            sb.append("<" + getName() + ">");
+            sb.append("<" + getCommandName() + ">");
             sb.append("<errorcode>" + apiException.getErrorCode() + "</errorcode>");
             sb.append("<description>" + escapeXml(apiException.getDescription()) + "</description>");
-            sb.append("</" + getName() + " cloud-stack-version=\""+_mgr.getVersion()+ "\">");
+            sb.append("</" + getCommandName() + " cloud-stack-version=\""+_mgr.getVersion()+ "\">");
         }
         return sb.toString();
     }
@@ -360,10 +360,10 @@ public abstract class BaseCmd {
 
         // set up the return value with the name of the response
         if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-            prefixSb.append("{ \"" + getName() + "\" : { \"@attributes\":{\"cloud-stack-version\":\""+ _mgr.getVersion()+"\"},");
+            prefixSb.append("{ \"" + getCommandName() + "\" : { \"@attributes\":{\"cloud-stack-version\":\""+ _mgr.getVersion()+"\"},");
         } else {
             prefixSb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            prefixSb.append("<" + getName() + " cloud-stack-version=\""+_mgr.getVersion()+ "\">");
+            prefixSb.append("<" + getCommandName() + " cloud-stack-version=\""+_mgr.getVersion()+ "\">");
         }
 
         int i = 0;
@@ -391,7 +391,7 @@ public abstract class BaseCmd {
         if (RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             prefixSb.append("} }");
         } else {
-            prefixSb.append("</" + getName() + ">");
+            prefixSb.append("</" + getCommandName() + ">");
         }
         return prefixSb.toString();
     }

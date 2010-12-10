@@ -102,7 +102,7 @@ public class ListHostsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -123,7 +123,7 @@ public class ListHostsCmd extends BaseListCmd {
         }
 
         response.setResponses(hostResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

@@ -97,7 +97,7 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 
 
 	@Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -108,7 +108,7 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
         ServiceOffering result = _configService.updateServiceOffering(this);
         if (result != null){
             ServiceOfferingResponse response = _responseGenerator.createServiceOfferingResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update service offering");

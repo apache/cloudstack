@@ -101,7 +101,7 @@ public class AddHostCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
     	return s_name;
     }
     
@@ -121,7 +121,7 @@ public class AddHostCmd extends BaseCmd {
             }
 
             response.setResponses(hostResponses);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             
             this.setResponseObject(response);
         } catch (DiscoveryException ex) {

@@ -76,7 +76,7 @@ public class ListNetworkGroupsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -85,7 +85,7 @@ public class ListNetworkGroupsCmd extends BaseListCmd {
         List<? extends NetworkGroupRules> networkGroups = _networkGroupMgr.searchForNetworkGroupRules(this);
 
         ListResponse<NetworkGroupResponse> response = _responseGenerator.createNetworkGroupResponses(networkGroups);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

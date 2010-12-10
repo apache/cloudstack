@@ -68,7 +68,7 @@ public class ListZonesByCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -84,7 +84,7 @@ public class ListZonesByCmd extends BaseListCmd {
         }
 
         response.setResponses(zoneResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

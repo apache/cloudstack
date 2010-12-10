@@ -62,7 +62,7 @@ public class StartVMCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -104,7 +104,7 @@ public class StartVMCmd extends BaseAsyncCmd {
             UserVm result = _userVmService.startVirtualMachine(this);
             if (result != null){
                 UserVmResponse response = _responseGenerator.createUserVmResponse(result);
-                response.setResponseName(getName());
+                response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to start a vm");

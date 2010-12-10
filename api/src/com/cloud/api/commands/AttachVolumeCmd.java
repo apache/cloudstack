@@ -83,7 +83,7 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -124,7 +124,7 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
         Volume result = _userVmService.attachVolumeToVM(this);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to attach volume");

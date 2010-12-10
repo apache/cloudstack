@@ -56,7 +56,7 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -72,7 +72,7 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
             fwResponses.add(ruleData);
         }
         response.setResponses(fwResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response); 
     }
 }

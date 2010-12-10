@@ -71,7 +71,7 @@ public class ApiDispatcher {
                 s_logger.info(t.getMessage());
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
             }else if (t instanceof PermissionDeniedException) {
-                s_logger.info(t.getMessage());
+                s_logger.info("PermissionDenied: " + t.getMessage());
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, t.getMessage());
             }else if (t instanceof AccountLimitException) {
                 s_logger.info(t.getMessage());
@@ -109,7 +109,7 @@ public class ApiDispatcher {
                 s_logger.info(t.getMessage());
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, t.getMessage());
             }else if (t instanceof PermissionDeniedException) {
-                s_logger.info(t.getMessage());
+                s_logger.info("PermissionDenied: " + t.getMessage());
                 throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, t.getMessage());
             }else if (t instanceof AccountLimitException) {
                 s_logger.info(t.getMessage());
@@ -171,7 +171,7 @@ public class ApiDispatcher {
             Object paramObj = unpackedParams.get(parameterAnnotation.name());
             if (paramObj == null) {
                 if (parameterAnnotation.required()) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getName() + " due to missing parameter " + parameterAnnotation.name());
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName() + " due to missing parameter " + parameterAnnotation.name());
                 }
                 continue;
             }
@@ -181,19 +181,19 @@ public class ApiDispatcher {
                 setFieldValue(field, cmd, paramObj, parameterAnnotation);
             } catch (IllegalArgumentException argEx) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to execute API command " + cmd.getName() + " due to invalid value " + paramObj + " for parameter " + parameterAnnotation.name());
+                    s_logger.debug("Unable to execute API command " + cmd.getCommandName() + " due to invalid value " + paramObj + " for parameter " + parameterAnnotation.name());
                 }
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getName() + " due to invalid value " + paramObj + " for parameter " + parameterAnnotation.name());
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName() + " due to invalid value " + paramObj + " for parameter " + parameterAnnotation.name());
             } catch (ParseException parseEx) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Invalid date parameter " + paramObj + " passed to command " + cmd.getName());
+                    s_logger.debug("Invalid date parameter " + paramObj + " passed to command " + cmd.getCommandName());
                 }
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to parse date " + paramObj + " for command " + cmd.getName() + ", please pass dates in the format yyyy-MM-dd");
+                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to parse date " + paramObj + " for command " + cmd.getCommandName() + ", please pass dates in the format yyyy-MM-dd");
             } catch (CloudRuntimeException cloudEx) {
                 // FIXME: Better error message? This only happens if the API command is not executable, which typically means
                 // there was
                 // and IllegalAccessException setting one of the parameters.
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error executing API command " + cmd.getName());
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Internal error executing API command " + cmd.getCommandName());
             }
         }
     }
@@ -254,8 +254,8 @@ public class ApiDispatcher {
                 break;
             }
         } catch (IllegalAccessException ex) {
-            s_logger.error("Error initializing command " + cmdObj.getName() + ", field " + field.getName() + " is not accessible.");
-            throw new CloudRuntimeException("Internal error initializing parameters for command " + cmdObj.getName() + " [field " + field.getName() + " is not accessible]");
+            s_logger.error("Error initializing command " + cmdObj.getCommandName() + ", field " + field.getName() + " is not accessible.");
+            throw new CloudRuntimeException("Internal error initializing parameters for command " + cmdObj.getCommandName() + " [field " + field.getName() + " is not accessible]");
         }
     }
 }

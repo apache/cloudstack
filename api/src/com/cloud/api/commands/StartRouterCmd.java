@@ -63,7 +63,7 @@ public class StartRouterCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -104,7 +104,7 @@ public class StartRouterCmd extends BaseAsyncCmd {
         VirtualRouter result = _routerService.startRouter(this);
         if (result != null){
             DomainRouterResponse routerResponse = _responseGenerator.createDomainRouterResponse(result);
-            routerResponse.setResponseName(getName());
+            routerResponse.setResponseName(getCommandName());
             this.setResponseObject(routerResponse);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to start router");

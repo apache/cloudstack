@@ -62,7 +62,7 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }    
     

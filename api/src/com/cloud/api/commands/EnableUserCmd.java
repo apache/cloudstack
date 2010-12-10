@@ -54,7 +54,7 @@ public class EnableUserCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -63,7 +63,7 @@ public class EnableUserCmd extends BaseCmd {
         UserAccount user = _accountService.enableUser(this);
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);
-            response.setResponseName(getName());   
+            response.setResponseName(getCommandName());   
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to enable user");

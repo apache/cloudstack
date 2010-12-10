@@ -56,7 +56,7 @@ public class DisableUserCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -86,7 +86,7 @@ public class DisableUserCmd extends BaseAsyncCmd {
         UserAccount user = _accountService.disableUser(this);
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);
-            response.setResponseName(getName()); 
+            response.setResponseName(getCommandName()); 
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to disable user");

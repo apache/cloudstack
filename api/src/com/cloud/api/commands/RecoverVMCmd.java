@@ -55,7 +55,7 @@ public class RecoverVMCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -65,7 +65,7 @@ public class RecoverVMCmd extends BaseCmd {
             UserVm result = _userVmService.recoverVirtualMachine(this);
             if (result != null){
                 UserVmResponse recoverVmResponse = _responseGenerator.createUserVmResponse(result);
-                recoverVmResponse.setResponseName(getName());
+                recoverVmResponse.setResponseName(getCommandName());
                 this.setResponseObject(recoverVmResponse);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to recover vm");

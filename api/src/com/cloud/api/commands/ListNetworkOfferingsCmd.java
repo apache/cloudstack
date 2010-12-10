@@ -104,7 +104,7 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
-    public String getName() {
+    public String getCommandName() {
         return _name;
     }
 
@@ -119,7 +119,7 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
         }
 
         response.setResponses(offeringResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

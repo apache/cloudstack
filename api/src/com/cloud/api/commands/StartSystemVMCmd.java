@@ -59,7 +59,7 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -100,7 +100,7 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
         VirtualMachine instance = _mgr.startSystemVM(this);
         if (instance != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(instance);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Fail to start system vm");

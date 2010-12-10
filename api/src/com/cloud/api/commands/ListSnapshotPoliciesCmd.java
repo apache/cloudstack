@@ -71,7 +71,7 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -86,7 +86,7 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
             policyResponses.add(policyResponse);
         }
         response.setResponses(policyResponses);
-        response.setResponseName(getName());   
+        response.setResponseName(getCommandName());   
         this.setResponseObject(response);
     }
 }

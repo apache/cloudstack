@@ -72,7 +72,7 @@ public class CopyIsoCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -114,7 +114,7 @@ public class CopyIsoCmd extends BaseAsyncCmd {
         try {
             VirtualMachineTemplate iso = _templateService.copyIso(this);
             TemplateResponse isoResponse = _responseGenerator.createIsoResponse3(iso, destZoneId);
-            isoResponse.setResponseName(getName());
+            isoResponse.setResponseName(getCommandName());
             this.setResponseObject(isoResponse);
         } catch (StorageUnavailableException ex) {
             s_logger.warn("Exception: ", ex);

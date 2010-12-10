@@ -73,7 +73,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-	public String getName() {
+	public String getCommandName() {
 		return s_name;
 	}
 
@@ -112,7 +112,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd {
         UserVm result = _userVmService.resetVMPassword(this, password);
         if (result != null){
             UserVmResponse response = _responseGenerator.createUserVmResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to reset vm password");

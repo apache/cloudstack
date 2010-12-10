@@ -61,7 +61,7 @@ public class StopRouterCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -98,7 +98,7 @@ public class StopRouterCmd extends BaseAsyncCmd {
         VirtualRouter result = _routerService.stopRouter(this);
         if (result != null){
             DomainRouterResponse response =_responseGenerator.createDomainRouterResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to stop router");

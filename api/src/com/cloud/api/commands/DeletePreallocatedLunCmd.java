@@ -48,7 +48,7 @@ public class DeletePreallocatedLunCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -56,7 +56,7 @@ public class DeletePreallocatedLunCmd extends BaseCmd {
     public void execute(){
         boolean result = _mgr.unregisterPreallocatedLun(this);
         if (result) {
-            SuccessResponse response = new SuccessResponse(getName());
+            SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete preallocated lun");

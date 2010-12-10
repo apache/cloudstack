@@ -60,7 +60,7 @@ public class LockAccountCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -69,7 +69,7 @@ public class LockAccountCmd extends BaseCmd {
         Account result = _accountService.lockAccount(this);
         if (result != null){
             AccountResponse response = _responseGenerator.createAccountResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to lock account");

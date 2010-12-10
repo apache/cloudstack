@@ -32,7 +32,7 @@ public class ListHypervisorsCmd extends BaseCmd {
 	private static final String s_name = "listhypervisorsresponse";
 
 	@Override
-	public String getName() {
+	public String getCommandName() {
 		return s_name;
 	}
 	
@@ -49,7 +49,7 @@ public class ListHypervisorsCmd extends BaseCmd {
         }
 
         response.setResponses(responses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

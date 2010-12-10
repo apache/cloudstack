@@ -59,7 +59,7 @@ public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -87,7 +87,7 @@ public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
     public void execute(){
         boolean result = _consoleProxyMgr.destroyConsoleProxy(this);
         if (result) {
-            SuccessResponse response = new SuccessResponse(getName());
+            SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to destroy console proxy");

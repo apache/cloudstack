@@ -49,7 +49,7 @@ public class UpdateIsoCmd extends UpdateTemplateOrIsoCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -58,7 +58,7 @@ public class UpdateIsoCmd extends UpdateTemplateOrIsoCmd {
         VirtualMachineTemplate result = _mgr.updateTemplate(this);
         if (result != null) {
             TemplateResponse response = _responseGenerator.createIsoResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update iso");

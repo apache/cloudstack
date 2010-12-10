@@ -81,7 +81,7 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
     /////////////////////////////////////////////////////
     
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -90,7 +90,7 @@ public class UpdateDiskOfferingCmd extends BaseCmd{
         DiskOffering result = _configService.updateDiskOffering(this);
         if (result != null){
             DiskOfferingResponse response = _responseGenerator.createDiskOfferingResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update disk offering");

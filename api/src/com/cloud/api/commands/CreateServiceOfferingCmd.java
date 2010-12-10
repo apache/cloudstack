@@ -117,7 +117,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
 	@Override
-    public String getName() {
+    public String getCommandName() {
 		return _name;
 	}
 
@@ -126,7 +126,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         ServiceOffering result = _configService.createServiceOffering(this);
         if (result != null) {
             ServiceOfferingResponse response = _responseGenerator.createServiceOfferingResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create service offering");

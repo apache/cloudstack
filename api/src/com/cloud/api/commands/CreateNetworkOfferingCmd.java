@@ -94,7 +94,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
-    public String getName() {
+    public String getCommandName() {
         return _name;
     }
 
@@ -103,7 +103,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         NetworkOffering result = _configService.createNetworkOffering(this);
         if (result != null) {
             NetworkOfferingResponse response = _responseGenerator.createNetworkOfferingResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create network offering");

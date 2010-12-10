@@ -44,7 +44,7 @@ public class UpdateTemplateCmd extends UpdateTemplateOrIsoCmd {
     /////////////////////////////////////////////////////
     
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -59,7 +59,7 @@ public class UpdateTemplateCmd extends UpdateTemplateOrIsoCmd {
         if (result != null) {
             TemplateResponse response = _responseGenerator.createIsoResponse(result);
             response.setObjectName("template");
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update template");

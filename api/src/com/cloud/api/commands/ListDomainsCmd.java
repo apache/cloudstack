@@ -70,7 +70,7 @@ public class ListDomainsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -86,7 +86,7 @@ public class ListDomainsCmd extends BaseListCmd {
         }
 
         response.setResponses(domainResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

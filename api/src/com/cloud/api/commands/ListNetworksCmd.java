@@ -90,7 +90,7 @@ public class ListNetworksCmd extends BaseListCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
-    public String getName() {
+    public String getCommandName() {
         return _name;
     }
 
@@ -105,7 +105,7 @@ public class ListNetworksCmd extends BaseListCmd {
         }
 
         response.setResponses(networkResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

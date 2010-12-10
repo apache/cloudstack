@@ -223,6 +223,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         if (vlanUse == VlanType.DirectAttached) {
             addr.setState(IpAddress.State.Allocated);
+        } else {
+            addr.setAssociatedNetworkId(networkId);
         }
         
         if (!_ipAddressDao.update(addr.getAddress(), addr)) {
@@ -582,11 +584,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             txn.start();
-
             ip = fetchNewPublicIp(zoneId, VlanType.VirtualNetwork, owner, network.getId(), false);
+           
             if (ip == null) {
                 throw new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zoneId);
             } 
+            
             _accountMgr.incrementResourceCount(ownerId, ResourceType.public_ip);
 
             String ipAddress = ip.getAddress();
@@ -841,10 +844,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     }
                     return configs;
                 }
-            } else if (predefined != null && predefined.getBroadcastUri() != null) {
-                //don't allow duplicated vlans in the same zone
-                List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
-            }
+            } 
     
             List<NetworkVO> configs = new ArrayList<NetworkVO>();
     

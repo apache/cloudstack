@@ -60,7 +60,7 @@ public class UpdateHostCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
    
@@ -73,7 +73,7 @@ public class UpdateHostCmd extends BaseCmd {
         Host result = _resourceService.updateHost(this);
         if (result != null) {
             HostResponse hostResponse = _responseGenerator.createHostResponse(result);
-            hostResponse.setResponseName(getName());
+            hostResponse.setResponseName(getCommandName());
             this.setResponseObject(hostResponse);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update host");

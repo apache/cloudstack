@@ -59,7 +59,7 @@ public class UpgradeRouterCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
 	@Override
-	public String getName() {
+	public String getCommandName() {
 		 return s_name;
 	}
 	
@@ -68,7 +68,7 @@ public class UpgradeRouterCmd extends BaseCmd {
         VirtualRouter router = _routerService.upgradeRouter(this);
         if (router != null){
             DomainRouterResponse routerResponse = _responseGenerator.createDomainRouterResponse(router);
-            routerResponse.setResponseName(getName());
+            routerResponse.setResponseName(getCommandName());
             this.setResponseObject(routerResponse);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to upgrade router");

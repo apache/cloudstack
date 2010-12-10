@@ -59,7 +59,7 @@ public class UpdateDomainCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -68,7 +68,7 @@ public class UpdateDomainCmd extends BaseCmd {
         Domain domain = _mgr.updateDomain(this);
         if (domain != null) {
             DomainResponse response = _responseGenerator.createDomainResponse(domain);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update domain");

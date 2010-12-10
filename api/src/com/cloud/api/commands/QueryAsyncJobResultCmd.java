@@ -52,14 +52,14 @@ public class QueryAsyncJobResultCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
     @Override
     public void execute(){
         AsyncJobResponse response = _responseGenerator.queryJobResult(this);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

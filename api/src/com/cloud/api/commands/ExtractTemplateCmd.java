@@ -79,7 +79,7 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
 	@Override
-	public String getName() {
+	public String getCommandName() {
 		return s_name;
 	}
 	
@@ -122,7 +122,7 @@ public class ExtractTemplateCmd extends BaseAsyncCmd {
             Long uploadId = _templateService.extract(this);
             if (uploadId != null){
                 ExtractResponse response = _responseGenerator.createExtractResponse(uploadId, id, zoneId, getEntityOwnerId(), mode);
-                response.setResponseName(getName());
+                response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to extract template");

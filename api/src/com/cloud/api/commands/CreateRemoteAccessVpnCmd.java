@@ -100,7 +100,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
    
 
 	@Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -160,7 +160,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
                 response.setDomainId(result.getDomainId());
                 response.setDomainName(_entityMgr.findById(Domain.class, result.getDomainId()).getName());
                 response.setObjectName("remoteaccessvpn");
-                response.setResponseName(getName());
+                response.setResponseName(getCommandName());
                 response.setPresharedKey(result.getIpsecPresharedKey());
                 this.setResponseObject(response);
             } else {

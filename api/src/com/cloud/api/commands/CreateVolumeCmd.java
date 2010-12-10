@@ -102,7 +102,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -165,7 +165,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
             VolumeResponse response = _responseGenerator.createVolumeResponse(volume);
             //FIXME - have to be moved to ApiResponseHelper
             response.setSnapshotId(getSnapshotId());  // if the volume was created from a snapshot, snapshotId will be set so we pass it back in the response
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a volume");

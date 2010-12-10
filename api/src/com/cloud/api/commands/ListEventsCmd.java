@@ -106,7 +106,7 @@ public class ListEventsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -120,7 +120,7 @@ public class ListEventsCmd extends BaseListCmd {
         }
 
         response.setResponses(eventResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

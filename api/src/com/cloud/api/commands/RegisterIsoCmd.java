@@ -118,7 +118,7 @@ public class RegisterIsoCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
 	@Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 	
@@ -128,7 +128,7 @@ public class RegisterIsoCmd extends BaseCmd {
             VirtualMachineTemplate template = _templateService.registerIso(this);
                 if (template != null) {
                 ListResponse<TemplateResponse> response = _responseGenerator.createIsoResponses(template, zoneId);
-                response.setResponseName(getName());
+                response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to register iso");

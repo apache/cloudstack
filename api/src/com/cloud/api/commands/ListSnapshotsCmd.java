@@ -99,7 +99,7 @@ public class ListSnapshotsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -118,7 +118,7 @@ public class ListSnapshotsCmd extends BaseListCmd {
             snapshotResponses.add(snapshotResponse);
         }
         response.setResponses(snapshotResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         
         this.setResponseObject(response);
     }

@@ -66,7 +66,7 @@ public class ListCfgsByCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -82,7 +82,7 @@ public class ListCfgsByCmd extends BaseListCmd {
         }
 
         response.setResponses(configResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

@@ -58,7 +58,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     public ResponseObject getResponse(long jobId) {
         AsyncJobResponse response = new AsyncJobResponse();
         response.setId(jobId);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         return response;
     }
 

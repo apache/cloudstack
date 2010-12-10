@@ -88,7 +88,7 @@ public class AddVpnUserCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
 	@Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -139,7 +139,7 @@ public class AddVpnUserCmd extends BaseAsyncCmd {
                     vpnResponse.setDomainName(_entityMgr.findById(Domain.class, accountTemp.getDomainId()).getName());
                 }
                 
-                vpnResponse.setResponseName(getName());
+                vpnResponse.setResponseName(getCommandName());
                 vpnResponse.setObjectName("vpnuser");
                 this.setResponseObject(vpnResponse);
             } else {

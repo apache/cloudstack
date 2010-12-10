@@ -172,7 +172,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -221,7 +221,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             result = _userVmService.startVirtualMachine(this);
             if (result != null) {
                 UserVmResponse response = _responseGenerator.createUserVmResponse(result);
-                response.setResponseName(getName());
+                response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");

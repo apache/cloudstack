@@ -130,7 +130,7 @@ public class CreateNetworkCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -139,7 +139,7 @@ public class CreateNetworkCmd extends BaseCmd {
         Network result = _networkService.createNetwork(this);
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         }else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create network");

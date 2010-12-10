@@ -85,7 +85,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-	public String getName() {
+	public String getCommandName() {
 		return s_name;
 	}
     
@@ -129,7 +129,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
             if (uploadId != null){
                 Upload uploadInfo = _entityMgr.findById(Upload.class, uploadId);
                 ExtractResponse response = new ExtractResponse();
-                response.setResponseName(getName());
+                response.setResponseName(getCommandName());
                 response.setObjectName("volume");
                 response.setId(id);
                 response.setName(_entityMgr.findById(Volume.class, id).getName());        

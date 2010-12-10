@@ -58,7 +58,7 @@ public class StopVMCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -99,7 +99,7 @@ public class StopVMCmd extends BaseAsyncCmd {
         UserVm result = _userVmService.stopVirtualMachine(this);
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to stop vm");

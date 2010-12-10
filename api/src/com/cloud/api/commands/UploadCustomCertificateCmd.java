@@ -53,7 +53,7 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     }
     
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -71,7 +71,7 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
         String result = _mgr.uploadCertificate(this);
         if (result != null){
             CustomCertificateResponse response = new CustomCertificateResponse();
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             response.setUpdatedConsoleProxyIdList(result);
             response.setObjectName("customcertificate");
             this.setResponseObject(response);

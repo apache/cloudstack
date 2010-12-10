@@ -80,7 +80,7 @@ public class UpdateResourceLimitCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -89,7 +89,7 @@ public class UpdateResourceLimitCmd extends BaseCmd {
         ResourceLimit result = _accountService.updateResourceLimit(this);
         if (result != null){
             ResourceLimitResponse response = _responseGenerator.createResourceLimitResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update resource limit");

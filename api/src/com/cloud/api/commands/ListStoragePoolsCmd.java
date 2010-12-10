@@ -93,7 +93,7 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -113,7 +113,7 @@ public class ListStoragePoolsCmd extends BaseListCmd {
         }
 
         response.setResponses(poolResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

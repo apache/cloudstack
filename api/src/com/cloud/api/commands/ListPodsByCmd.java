@@ -72,7 +72,7 @@ public class ListPodsByCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -88,7 +88,7 @@ public class ListPodsByCmd extends BaseListCmd {
         }
 
         response.setResponses(podResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

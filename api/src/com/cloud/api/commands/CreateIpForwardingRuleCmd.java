@@ -69,7 +69,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -86,7 +86,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
         if (result) {
             PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
             FirewallRuleResponse fwResponse = _responseGenerator.createFirewallRuleResponse(rule);
-            fwResponse.setResponseName(getName());
+            fwResponse.setResponseName(getCommandName());
             this.setResponseObject(fwResponse);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Error in creating ip forwarding rule on the domr");

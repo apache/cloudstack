@@ -32,7 +32,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
     private static final String s_name = "listcapabilitiesresponse";
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -43,7 +43,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setNetworkGroupsEnabled(capabilities.get("networkGroupsEnabled"));
         response.setCloudStackVersion(capabilities.get("cloudStackVersion"));
         response.setObjectName("capability");
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

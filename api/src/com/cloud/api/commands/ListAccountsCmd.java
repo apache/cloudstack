@@ -91,7 +91,7 @@ public class ListAccountsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -106,7 +106,7 @@ public class ListAccountsCmd extends BaseListCmd {
             accountResponses.add(acctResponse);
         }
         response.setResponses(accountResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         
         this.setResponseObject(response);
     }

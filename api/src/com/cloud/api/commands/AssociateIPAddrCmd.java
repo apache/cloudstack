@@ -100,7 +100,7 @@ public class AssociateIPAddrCmd extends BaseCmd {
 
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -114,7 +114,7 @@ public class AssociateIPAddrCmd extends BaseCmd {
             IpAddress result = _networkService.associateIP(this);
             if (result != null) {
                 IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(result);
-                ipResponse.setResponseName(getName());
+                ipResponse.setResponseName(getCommandName());
                 this.setResponseObject(ipResponse);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to assign ip address");

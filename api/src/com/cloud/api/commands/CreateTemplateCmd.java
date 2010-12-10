@@ -125,7 +125,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -182,7 +182,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
         VirtualMachineTemplate template = _userVmService.createPrivateTemplate(this);
         if (template != null) {
             TemplateResponse response = _responseGenerator.createTemplateResponse(template, snapshotId, volumeId);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             
             this.setResponseObject(response);
         } else {

@@ -51,7 +51,7 @@ public class DeleteNetworkGroupCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 	
@@ -60,7 +60,7 @@ public class DeleteNetworkGroupCmd extends BaseCmd {
         try{
             boolean result = _networkGroupMgr.deleteNetworkGroup(this);
             if (result) {
-                SuccessResponse response = new SuccessResponse(getName());
+                SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete network group");

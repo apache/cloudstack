@@ -59,7 +59,7 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -96,7 +96,7 @@ public class RebootSystemVmCmd extends BaseAsyncCmd {
         VirtualMachine result = _mgr.rebootSystemVM(this);
         if (result != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Fail to reboot system vm");

@@ -74,7 +74,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -111,7 +111,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
         }
         boolean result = _lbService.assignToLoadBalancer(getLoadBalancerId(), virtualMachineIds);
         if (result) {
-            SuccessResponse response = new SuccessResponse(getName());
+            SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to assign load balancer rule");

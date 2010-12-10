@@ -55,7 +55,7 @@ public class GetCloudIdentifierCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -67,7 +67,7 @@ public class GetCloudIdentifierCmd extends BaseCmd {
             response.setCloudIdentifier(result.get(0));
             response.setSignature(result.get(1));
             response.setObjectName("cloudidentifier");
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to get cloud identifier");

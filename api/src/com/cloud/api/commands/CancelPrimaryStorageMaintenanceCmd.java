@@ -61,7 +61,7 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -102,7 +102,7 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
         StoragePool result = _storageMgr.cancelPrimaryStorageForMaintenance(this);
         if (result != null) {
             StoragePoolResponse response = _responseGenerator.createStoragePoolResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to cancel primary storage maintenance");

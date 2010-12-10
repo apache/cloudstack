@@ -88,7 +88,7 @@ public class RegisterPreallocatedLunCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -97,7 +97,7 @@ public class RegisterPreallocatedLunCmd extends BaseCmd {
         Object result = _mgr.registerPreallocatedLun(this);
         if (result != null){
             PreallocatedLunResponse response = _responseGenerator.createPreallocatedLunResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to register preallocated lun");

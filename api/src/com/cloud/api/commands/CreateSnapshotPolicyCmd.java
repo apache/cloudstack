@@ -103,7 +103,7 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -112,7 +112,7 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
         SnapshotPolicy result = _snapshotMgr.createPolicy(this);
         if (result != null) {
             SnapshotPolicyResponse response = _responseGenerator.createSnapshotPolicyResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create snapshot policy");

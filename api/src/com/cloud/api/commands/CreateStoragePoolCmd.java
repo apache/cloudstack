@@ -102,7 +102,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -112,7 +112,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
             StoragePool result = _storageMgr.createPool(this);
             if (result != null) {
                 StoragePoolResponse response = _responseGenerator.createStoragePoolResponse(result);
-                response.setResponseName(getName());
+                response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add storage pool");

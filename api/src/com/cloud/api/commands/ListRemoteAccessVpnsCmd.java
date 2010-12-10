@@ -90,7 +90,7 @@ public class ListRemoteAccessVpnsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -104,7 +104,7 @@ public class ListRemoteAccessVpnsCmd extends BaseListCmd {
         }
 
         response.setResponses(vpnResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

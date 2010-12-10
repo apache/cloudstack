@@ -67,7 +67,7 @@ public class ListAsyncJobsCmd extends BaseListCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -81,7 +81,7 @@ public class ListAsyncJobsCmd extends BaseListCmd {
         }
 
         response.setResponses(jobResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

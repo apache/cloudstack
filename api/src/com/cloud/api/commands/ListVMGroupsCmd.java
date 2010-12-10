@@ -77,7 +77,7 @@ public class ListVMGroupsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-	public String getName() {
+	public String getCommandName() {
         return s_name;
     }
 
@@ -93,7 +93,7 @@ public class ListVMGroupsCmd extends BaseListCmd {
         }
 
         response.setResponses(responses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

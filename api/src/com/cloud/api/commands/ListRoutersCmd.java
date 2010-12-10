@@ -100,7 +100,7 @@ public class ListRoutersCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -120,7 +120,7 @@ public class ListRoutersCmd extends BaseListCmd {
         }
 
         response.setResponses(routerResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

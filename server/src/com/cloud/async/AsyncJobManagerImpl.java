@@ -412,7 +412,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
                         ExceptionResponse response = new ExceptionResponse();
                         response.setErrorCode(errorCode);
                         response.setErrorText(errorMsg);
-                        response.setResponseName((cmdObj == null) ? "unknowncommandresponse" : cmdObj.getName());
+                        response.setResponseName((cmdObj == null) ? "unknowncommandresponse" : cmdObj.getCommandName());
 
                         // FIXME:  setting resultCode to BaseCmd.INTERNAL_ERROR is not right, usually executors have their exception handling
                         //         and we need to preserve that as much as possible here

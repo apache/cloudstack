@@ -156,7 +156,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
 	@Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 	
@@ -170,7 +170,7 @@ public class RegisterTemplateCmd extends BaseCmd {
             VirtualMachineTemplate template = _templateService.registerTemplate(this);
             if (template != null){
                 ListResponse<TemplateResponse> response = _responseGenerator.createTemplateResponse2(template, zoneId);
-                response.setResponseName(getName());
+                response.setResponseName(getCommandName());
                 
                 this.setResponseObject(response);
             } else {

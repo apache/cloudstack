@@ -51,7 +51,7 @@ public class RegisterCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -62,7 +62,7 @@ public class RegisterCmd extends BaseCmd {
         response.setApiKey(keys[0]);
         response.setSecretKey(keys[1]);
         response.setObjectName("userkeys");
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

@@ -69,7 +69,7 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -93,7 +93,7 @@ public class ListTemplateOrIsoPermissionsCmd extends BaseCmd {
         boolean isAdmin = ((account == null) || isAdmin(account.getType()));
 
         TemplatePermissionsResponse response = _responseGenerator.createTemplatePermissionsResponse(accountNames, id, isAdmin);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

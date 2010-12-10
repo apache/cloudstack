@@ -60,7 +60,7 @@ public class ListIpForwardingRulesCmd extends BaseListCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
-	public String getName() {
+	public String getCommandName() {
         return s_name;
     }
     
@@ -92,7 +92,7 @@ public class ListIpForwardingRulesCmd extends BaseListCmd {
             }
         }
         response.setResponses(ipForwardingResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
     

@@ -58,7 +58,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -94,7 +94,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
     public void execute(){
         boolean result = _snapshotMgr.deleteSnapshot(this);
         if (result) {
-            SuccessResponse response = new SuccessResponse(getName());
+            SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete snapshot");

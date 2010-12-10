@@ -64,7 +64,7 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -72,7 +72,7 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     public void execute(){
         boolean result = _snapshotMgr.deleteSnapshotPolicies(this);
         if (result) {
-            SuccessResponse response = new SuccessResponse(getName());
+            SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete snapshot policy");

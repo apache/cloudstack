@@ -66,7 +66,7 @@ public class UpdateAccountCmd extends BaseCmd{
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -75,7 +75,7 @@ public class UpdateAccountCmd extends BaseCmd{
         Account result = _accountService.updateAccount(this);
         if (result != null){
             AccountResponse response = _responseGenerator.createAccountResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update account");

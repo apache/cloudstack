@@ -60,7 +60,7 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -102,7 +102,7 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
             Host result = _resourceService.reconnectHost(this);
             if (result != null){
                 HostResponse response = _responseGenerator.createHostResponse(result);
-                response.setResponseName(getName());
+                response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to reconnect host");

@@ -76,7 +76,7 @@ public class ListGuestOsCmd extends BaseListCmd {
     }
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -96,7 +96,7 @@ public class ListGuestOsCmd extends BaseListCmd {
         }
 
         response.setResponses(osResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

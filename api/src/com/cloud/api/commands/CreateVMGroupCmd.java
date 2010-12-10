@@ -67,7 +67,7 @@ public class CreateVMGroupCmd extends BaseCmd{
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -76,7 +76,7 @@ public class CreateVMGroupCmd extends BaseCmd{
         InstanceGroup result = _userVmService.createVmGroup(this);
         if (result != null) {
             InstanceGroupResponse response = _responseGenerator.createInstanceGroupResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create vm instance group");

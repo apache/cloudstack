@@ -59,7 +59,7 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -78,7 +78,7 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
         }
 
         response.setResponses(osCatResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }

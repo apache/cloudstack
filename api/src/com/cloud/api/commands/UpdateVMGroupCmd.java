@@ -60,7 +60,7 @@ public class UpdateVMGroupCmd extends BaseCmd{
     /////////////////////////////////////////////////////
 
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
 
@@ -69,7 +69,7 @@ public class UpdateVMGroupCmd extends BaseCmd{
         InstanceGroup result = _mgr.updateVmGroup(this);
         if (result != null){
             InstanceGroupResponse response = _responseGenerator.createInstanceGroupResponse(result);
-            response.setResponseName(getName());
+            response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update vm instance group");

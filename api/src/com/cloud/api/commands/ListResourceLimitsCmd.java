@@ -82,7 +82,7 @@ public class ListResourceLimitsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     
     @Override
-    public String getName() {
+    public String getCommandName() {
         return s_name;
     }
     
@@ -98,7 +98,7 @@ public class ListResourceLimitsCmd extends BaseListCmd {
         }
 
         response.setResponses(limitResponses);
-        response.setResponseName(getName());
+        response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
 }
