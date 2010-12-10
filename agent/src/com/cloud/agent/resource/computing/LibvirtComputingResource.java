@@ -2756,7 +2756,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 	
 	private String getVolumePath(VolumeTO volume) throws LibvirtException, URISyntaxException {
-		if (volume.getType() == Volume.VolumeType.ISO) {
+		if (volume.getType() == Volume.VolumeType.ISO && volume.getPath() != null) {
 			StorageVol vol = getVolume(_conn, volume.getPath());
 			return vol.getPath();
 		} else {
@@ -2772,8 +2772,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			DiskDef.diskBus diskBusType = getGuestDiskModel(vmSpec.getOs());
 			DiskDef disk = new DiskDef();
 			if (volume.getType() == VolumeType.ISO) {
-				foundISO = true;
-				disk.defISODisk(volPath);
+				if (volPath == null) {
+					/*Add iso as placeholder*/					
+					disk.defISODisk(null);					
+				} else {
+					disk.defISODisk(volPath);
+				}
 			} else {
 				int devId = 0;
 				if (volume.getType() == VolumeType.ROOT) {
@@ -2794,14 +2798,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			}
 		}
 		
-		if (vmSpec.getType() == VirtualMachine.Type.User) {
-			if (!foundISO) {
-				/*Add iso as placeholder*/
-				DiskDef iso = new DiskDef();
-				iso.defISODisk(null);
-				vm.getDevices().addDevice(iso);
-			}
-		} else {
+		if (vmSpec.getType() != VirtualMachine.Type.User) {
 			DiskDef iso = new DiskDef();
 			iso.defISODisk(_sysvmISOPath);
 			vm.getDevices().addDevice(iso);

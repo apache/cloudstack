@@ -51,6 +51,8 @@ import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -61,8 +63,10 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Status;
 import com.cloud.storage.Snapshot.Type;
@@ -132,6 +136,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     @Inject protected SnapshotScheduler _snapSchedMgr;
     @Inject protected AsyncJobManager _asyncMgr;
     @Inject protected AccountManager _accountMgr;
+    @Inject protected ClusterDao _clusterDao;
     String _name;
     private int _totalRetries;
     private int _pauseInterval;
@@ -327,6 +332,21 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             } else {
                 throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " is being used, try it later ");
             }
+        }
+        if (_volsDao.getHypervisorType(volume.getId()).equals(HypervisorType.KVM)) {
+        	/*for kvm, only Fedora supports snapshot, currently*/
+        	StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
+        	ClusterVO cluster = _clusterDao.findById(storagePool.getClusterId());
+        	List<HostVO> hosts = _hostDao.listByCluster(cluster.getId());
+        	if (hosts != null && !hosts.isEmpty()) {
+        		HostVO host = hosts.get(0);
+        		_hostDao.loadDetails(host);
+        		String hostOS = host.getDetail("Host.OS");
+        		String hostOSVersion = host.getDetail("Host.OS.Version");
+        		if (! (hostOS != null && hostOS.equalsIgnoreCase("Fedora") && hostOSVersion != null && Integer.parseInt(hostOSVersion) >= 13)) {
+        			throw new CloudRuntimeException("KVM Snapshot is not supported on:" + hostOS + ": " + hostOSVersion + ". Please install Fedora 13 and above to enable snapshot");
+        		}
+        	}
         }
         SnapshotVO snapshot = null;
         boolean backedUp = false;
