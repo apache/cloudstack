@@ -18,8 +18,6 @@
 
 package com.cloud.network;
 
-import java.util.List;
-
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -89,9 +87,15 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
         return defaultPortEnd;
     }
 
-    @Override
-    public List<? extends Destination> getDestinations() {
-        // TODO Auto-generated method stub
-        return null;
+    public void setName(String name) {
+        this.name = name;
     }
+
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }  
 }

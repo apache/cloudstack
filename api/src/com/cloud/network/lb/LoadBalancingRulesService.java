@@ -46,7 +46,7 @@ public interface LoadBalancingRulesService {
 
     boolean removeFromLoadBalancer(long lbRuleId, List<Long> vmIds);
     
-    boolean applyLoadBalancerConfig(long id) throws ResourceUnavailableException;
+    boolean applyLoadBalancerConfig(long lbRuleId) throws ResourceUnavailableException;
     /**
      * List instances that have either been applied to a load balancer or are eligible to be assigned to a load balancer.
      * @param cmd

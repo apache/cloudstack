@@ -38,12 +38,12 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
     }
 
     @Override
-    public void remove(long loadBalancerId, List<Long> instanceIds, Boolean pending) {
+    public void remove(long loadBalancerId, List<Long> instanceIds, Boolean revoke) {
         SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
         sc.addAnd("instanceId", SearchCriteria.Op.IN, instanceIds.toArray());
-        if (pending != null) {
-            sc.addAnd("pending", SearchCriteria.Op.EQ, pending);
+        if (revoke != null) {
+            sc.addAnd("revoke", SearchCriteria.Op.EQ, revoke);
         }
 
         expunge(sc);
@@ -69,8 +69,18 @@ public class LoadBalancerVMMapDaoImpl extends GenericDaoBase<LoadBalancerVMMapVO
     public List<LoadBalancerVMMapVO> listByLoadBalancerId(long loadBalancerId, boolean pending) {
         SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
-        sc.addAnd("pending", SearchCriteria.Op.EQ, pending);
+        sc.addAnd("revoke", SearchCriteria.Op.EQ, pending);
 
         return listBy(sc);
     }
+    
+    @Override
+    public LoadBalancerVMMapVO findByLoadBalancerIdAndVmId(long loadBalancerId, long instanceId) {
+        SearchCriteria<LoadBalancerVMMapVO> sc = createSearchCriteria();
+        sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
+        sc.addAnd("instanceId", SearchCriteria.Op.EQ, instanceId);
+        return findOneBy(sc);
+    }
+
+    
 }

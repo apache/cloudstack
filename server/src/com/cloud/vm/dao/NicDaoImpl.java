@@ -7,6 +7,7 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import com.cloud.domain.DomainVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -72,5 +73,12 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         SearchCriteria<Long> sc = GarbageCollectSearch.create();
         
         return customSearch(sc, null);
+    }
+    
+    public NicVO findByInstanceIdAndNetworkId(long networkId, long instanceId) {
+        SearchCriteria<NicVO> sc = createSearchCriteria();
+        sc.addAnd("networkId", SearchCriteria.Op.EQ, networkId);
+        sc.addAnd("instanceId", SearchCriteria.Op.EQ, instanceId);
+        return findOneBy(sc);
     }
 }

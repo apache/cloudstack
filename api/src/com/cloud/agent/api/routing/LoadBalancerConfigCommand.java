@@ -19,8 +19,7 @@ package com.cloud.agent.api.routing;
 
 import java.util.List;
 
-import com.cloud.network.rules.LoadBalancer;
-import com.cloud.network.rules.LoadBalancer.Destination;
+import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 
 /**
  * LoadBalancerConfigCommand sends the load balancer configuration
@@ -35,7 +34,7 @@ public class LoadBalancerConfigCommand extends RoutingCommand {
     boolean alreadyAdded;
     DestinationTO[] destinations;
     
-    public LoadBalancerConfigCommand(String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, List<? extends Destination> destinations) {
+    public LoadBalancerConfigCommand(String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, List<LbDestination> destinations) {
     	this.srcIp = srcIp;
     	this.srcPort = srcPort;
     	this.protocol = protocol;
@@ -44,8 +43,8 @@ public class LoadBalancerConfigCommand extends RoutingCommand {
     	this.alreadyAdded = alreadyAdded;
     	this.destinations = new DestinationTO[destinations.size()];
     	int i = 0;
-    	for (Destination destination : destinations) {
-    		this.destinations[i++] = new DestinationTO(destination.getIpAddress(), destination.getDestinationPortStart(), destination.getRevoked(), destination.getAlreadyAdded());
+    	for (LbDestination destination : destinations) {
+    		this.destinations[i++] = new DestinationTO(destination.getIpAddress(), destination.getDestinationPortStart(), destination.isRevoked(), false);
     	}
     }
     

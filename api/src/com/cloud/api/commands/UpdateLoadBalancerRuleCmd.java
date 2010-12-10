@@ -51,8 +51,8 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the load balancer rule")
     private String loadBalancerName;
 
-    @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.STRING, description="the private port of the private ip address/virtual machine where the network traffic will be load balanced to")
-    private String privatePort;
+//    @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.STRING, description="the private port of the private ip address/virtual machine where the network traffic will be load balanced to")
+//    private String privatePort;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -74,9 +74,9 @@ public class UpdateLoadBalancerRuleCmd extends BaseAsyncCmd {
         return loadBalancerName;
     }
 
-    public String getPrivatePort() {
-        return privatePort;
-    }
+//    public String getPrivatePort() {
+//        return privatePort;
+//    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

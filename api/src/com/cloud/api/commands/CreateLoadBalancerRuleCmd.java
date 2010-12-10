@@ -18,8 +18,6 @@
 
 package com.cloud.api.commands;
 
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -184,11 +182,6 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
     @Override
     public int getDefaultPortEnd() {
         return Integer.parseInt(privatePort);
-    }
-
-    @Override
-    public List<? extends Destination> getDestinations() {
-        throw new UnsupportedOperationException("not supported");
     }
 
 }

@@ -17,7 +17,6 @@
  */
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -30,7 +29,6 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 import com.cloud.utils.StringUtils;
@@ -48,10 +46,7 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the load balancer rule")
     private Long id;
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="the ID of the virtual machine that is being removed from the load balancer rule")
-    private Long virtualMachineId;
-
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="the list of IDs of the virtual machines that are being removed from the load balancer rule (i.e. virtualMachineIds=1,2,3)")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_IDS, type=CommandType.LIST, required = true, collectionType=CommandType.LONG, description="the list of IDs of the virtual machines that are being removed from the load balancer rule (i.e. virtualMachineIds=1,2,3)")
     private List<Long> virtualMachineIds;
 
     /////////////////////////////////////////////////////
@@ -60,10 +55,6 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     public Long getId() {
         return id;
-    }
-
-    public Long getVirtualMachineId() {
-        return virtualMachineId;
     }
 
     public List<Long> getVirtualMachineIds() {
@@ -95,28 +86,11 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        List<Long> vmIds = getVirtualMachineIds();
-        if ((vmIds == null) || vmIds.isEmpty()) {
-            vmIds = new ArrayList<Long>();
-            vmIds.add(getVirtualMachineId());
-        }
-
-        return  "removing instances from load balancer: " + getId() + " (ids: " + StringUtils.join(vmIds, ",") + ")";
+        return  "removing instances from load balancer: " + getId() + " (ids: " + StringUtils.join(getVirtualMachineIds(), ",") + ")";
     }
 
     @Override
-    public void execute(){
-        if (virtualMachineIds == null && virtualMachineId == null) {
-            throw new InvalidParameterValueException("Must specify virtual machine id");
-        } 
-        if (virtualMachineIds == null) {
-            virtualMachineIds = new ArrayList<Long>();
-        }
-        
-        if (virtualMachineId != null) {
-            virtualMachineIds.add(virtualMachineId);
-        }
-        
+    public void execute(){   
         boolean result = _lbService.removeFromLoadBalancer(id, virtualMachineIds);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

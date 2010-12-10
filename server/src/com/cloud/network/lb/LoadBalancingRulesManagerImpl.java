@@ -33,7 +33,6 @@ import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
 import com.cloud.dc.dao.VlanDao;
-import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
@@ -50,7 +49,9 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.RulesManager;
@@ -73,6 +74,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value = { LoadBalancingRulesManager.class, LoadBalancingRulesService.class })
@@ -102,6 +104,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     @Inject UserVmDao _vmDao;
     @Inject AccountDao _accountDao;
     @Inject DomainDao _domainDao;
+    @Inject NicDao _nicDao;
 
     @Override @DB
     public boolean assignToLoadBalancer(long loadBalancerId, List<Long> instanceIds) {
@@ -161,12 +164,22 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
+        
         for (UserVm vm : vmsToAdd) {
-            LoadBalancerVMMapVO map = new LoadBalancerVMMapVO(loadBalancer.getId(), vm.getId(), true);
+            LoadBalancerVMMapVO map = new LoadBalancerVMMapVO(loadBalancer.getId(), vm.getId(), false);
             map = _lb2VmMapDao.persist(map);
         }
-
         txn.commit();
+        
+        try {
+            loadBalancer.setState(FirewallRule.State.Add);
+            _lbDao.persist(loadBalancer);
+            applyLoadBalancerConfig(loadBalancerId);
+        } catch (ResourceUnavailableException e) {
+            s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+            return false;
+        }
+       
         return true;
     }
     
@@ -181,8 +194,26 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         } 
         
         _accountMgr.checkAccess(caller.getAccount(), loadBalancer);
-        
-        _lb2VmMapDao.remove(loadBalancerId, instanceIds, null);
+       
+        try {
+            loadBalancer.setState(FirewallRule.State.Add);
+            _lbDao.persist(loadBalancer);
+            
+            for (long instanceId : instanceIds) {
+                LoadBalancerVMMapVO map = _lb2VmMapDao.findByLoadBalancerIdAndVmId(loadBalancerId, instanceId);
+                map.setRevoke(true);
+                _lb2VmMapDao.persist(map);
+                s_logger.debug("Set load balancer rule for revoke: rule id " + loadBalancerId + ", vmId " + instanceId);
+            }
+
+            applyLoadBalancerConfig(loadBalancerId);
+            _lb2VmMapDao.remove(loadBalancerId, instanceIds, null);
+            s_logger.debug("Load balancer rule id " + loadBalancerId + " is removed for vms " + instanceIds);
+        } catch (ResourceUnavailableException e) {
+            s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+            return false;
+        }
+       
         return true;
     }
 
@@ -198,6 +229,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         _accountMgr.checkAccess(caller.getAccount(), lb);
         
         lb.setState(FirewallRule.State.Revoke);
+        _lbDao.persist(lb);
         
         if (apply) {
             try {
@@ -207,6 +239,9 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
                 return false;
             }
         }
+        
+        _rulesDao.remove(lb.getId());
+        s_logger.debug("Load balancer with id " + lb.getId() + " is removed successfully");
         return true;
     }
 
@@ -265,7 +300,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             if (!_rulesDao.setStateToAdd(newRule)) {
                 throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
             }
-
+            s_logger.debug("Load balancer " + newRule.getId() + " for Ip address " +  srcIp + ", public port " + srcPortStart + ", private port " + defPortStart+ " is added successfully.");
             success = true;
             return newRule;
         } catch (Exception e) {
@@ -273,7 +308,6 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             if (e instanceof NetworkRuleConflictException) {
                 throw (NetworkRuleConflictException) e;
             }
-
             throw new CloudRuntimeException("Unable to add rule for " + newRule.getSourceIpAddress(), e);
         } finally {
             long userId = caller.getUserId();
@@ -300,13 +334,61 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
     @Override
     public boolean applyLoadBalancerConfig(long lbRuleId) throws ResourceUnavailableException {
-        return false;
+        
+        List<LoadBalancingRule> rules = new ArrayList<LoadBalancingRule>();
+        LoadBalancerVO lb = _lbDao.findById(lbRuleId);
+        List<LbDestination> dstList = getExistingDestinations(lb.getId());
+        
+        if (dstList != null && !dstList.isEmpty()) {
+            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
+            rules.add(loadBalancing);
+
+            if (!_networkMgr.applyRules(lb.getSourceIpAddress(), rules, false)) {
+                s_logger.debug("LB rules are not completely applied");
+                return false;
+            } 
+            
+            if (lb.getState() == FirewallRule.State.Revoke) {
+                _lbDao.remove(lb.getId());
+                s_logger.debug("LB " + lb.getId() + " is successfully removed");
+            } else if (lb.getState() == FirewallRule.State.Add) {
+                lb.setState(FirewallRule.State.Active);
+                s_logger.debug("LB rule " + lbRuleId + " state is set to Active");
+                _lbDao.persist(lb);
+            }
+        }
+        return true;
     }
 
     @Override
-    public boolean removeAllLoadBalanacers(Ip ip) {
-        // TODO Auto-generated method stub
-        return false;
+    public boolean removeAllLoadBalanacers(Ip ip) {   
+        List<FirewallRuleVO> rules = _rulesDao.listByIpAndNotRevoked(ip);
+        for (FirewallRule rule : rules) {
+            if (rule.getPurpose() == Purpose.LoadBalancing) {
+                boolean result = deleteLoadBalancerRule(rule.getId(), true);
+                if (result == false) {
+                    s_logger.warn("Unable to remove load balancer rule " + rule.getId());
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    private List<LbDestination> getExistingDestinations(long lbId) {
+        List<LbDestination> dstList = new ArrayList<LbDestination>();
+        List<LoadBalancerVMMapVO> lbVmMaps = _lb2VmMapDao.listByLoadBalancerId(lbId);
+        LoadBalancerVO lb = _lbDao.findById(lbId);
+        
+        String dstIp = null;
+        for (LoadBalancerVMMapVO lbVmMap : lbVmMaps) {
+            UserVm vm = _vmDao.findById(lbVmMap.getInstanceId());
+            Nic nic = _nicDao.findByInstanceIdAndNetworkId(lb.getNetworkId(), vm.getId());
+            dstIp = nic.getIp4Address();
+            LbDestination lbDst = new LbDestination(lb.getDefaultPortStart(), lb.getDefaultPortEnd(), dstIp, lbVmMap.isRevoke());
+            dstList.add(lbDst);
+        } 
+        return dstList;
     }
 
     @Override
@@ -332,8 +414,39 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
     @Override
     public LoadBalancer updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd) {
-        // TODO Auto-generated method stub
-        return null;
+        Long lbRuleId = cmd.getId();
+        String name = cmd.getLoadBalancerName();
+        String description = cmd.getDescription();
+        String algorithm = cmd.getAlgorithm();
+        LoadBalancerVO lb = _lbDao.findById(lbRuleId);
+        
+        
+        if (name != null) {
+            lb.setName(name);
+        }
+         
+        if (description != null) {
+            lb.setDescription(description);
+        }
+        
+        if (algorithm != null) {
+            lb.setAlgorithm(algorithm);
+        }
+        
+        _lbDao.update(lbRuleId, lb);
+        
+        //If algorithm is changed, have to reapply the lb config
+        if (algorithm != null) {
+            try {
+                lb.setState(FirewallRule.State.Add);
+                _lbDao.persist(lb);
+                applyLoadBalancerConfig(lbRuleId);
+            } catch (ResourceUnavailableException e) {
+                s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
+            }
+        }
+        
+        return lb;
     }
     
 //  @Override @DB

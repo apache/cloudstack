@@ -39,8 +39,8 @@ public class LoadBalancerVMMapVO {
     @Column(name="instance_id")
     private long instanceId;
 
-    @Column(name="pending")
-    private boolean pending = false;
+    @Column(name="revoke")
+    private boolean revoke = false;
 
     public LoadBalancerVMMapVO() { }
 
@@ -49,10 +49,10 @@ public class LoadBalancerVMMapVO {
         this.instanceId = instanceId;
     }
 
-    public LoadBalancerVMMapVO(long loadBalancerId, long instanceId, boolean pending) {
+    public LoadBalancerVMMapVO(long loadBalancerId, long instanceId, boolean revoke) {
         this.loadBalancerId = loadBalancerId;
         this.instanceId = instanceId;
-        this.pending = pending;
+        this.revoke = revoke;
     }
 
     public long getId() {
@@ -67,11 +67,11 @@ public class LoadBalancerVMMapVO {
         return instanceId;
     }
 
-    public boolean isPending() {
-        return pending;
+    public boolean isRevoke() {
+        return revoke;
     }
 
-    public void setPending(boolean pending) {
-        this.pending = pending;
+    public void setRevoke(boolean revoke) {
+        this.revoke = revoke;
     }
 }

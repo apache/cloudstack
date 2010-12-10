@@ -17,7 +17,6 @@
  */
 package com.cloud.api.commands;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -30,9 +29,9 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
+import com.cloud.utils.StringUtils;
 
 @Implementation(description="Assigns virtual machine or a list of virtual machines to a load balancer rule.", responseObject=SuccessResponse.class)
 public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
@@ -47,9 +46,6 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the load balancer rule")
     private Long id;
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=false, description="the ID of the virtual machine that is being assigned to the load balancer rule")
-    private Long virtualMachineId;
-
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, required=false, description="the list of IDs of the virtual machine that are being assigned to the load balancer rule(i.e. virtualMachineIds=1,2,3)")
     private List<Long> virtualMachineIds;
 
@@ -59,10 +55,6 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     public Long getLoadBalancerId() {
         return id;
-    }
-
-    public Long getVirtualMachineId() {
-        return virtualMachineId;
     }
 
     public List<Long> getVirtualMachineIds() {
@@ -94,21 +86,11 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "applying port forwarding service for vm with id: " + getVirtualMachineId();
+        return "applying instances for load balancer: " + getLoadBalancerId() + " (ids: " + StringUtils.join(getVirtualMachineIds(), ",") + ")";
     }
     
     @Override
     public void execute(){
-        if (virtualMachineIds == null && virtualMachineId == null) {
-            throw new InvalidParameterValueException("Must specify virtual machine id");
-        } 
-        if (virtualMachineIds == null) {
-            virtualMachineIds = new ArrayList<Long>();
-        }
-        
-        if (virtualMachineId != null) {
-            virtualMachineIds.add(virtualMachineId);
-        }
         boolean result = _lbService.assignToLoadBalancer(getLoadBalancerId(), virtualMachineIds);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
