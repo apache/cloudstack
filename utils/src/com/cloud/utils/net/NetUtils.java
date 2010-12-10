@@ -613,15 +613,16 @@ public class NetUtils {
     }
     
     public static boolean isNetworkAWithinNetworkB(String cidrA, String cidrB) {
-    	Long cidrALong = cidrToLong(cidrA);
-    	Long cidrBLong = cidrToLong(cidrB);
+    	Long[] cidrALong = cidrToLong(cidrA);
+    	Long[] cidrBLong = cidrToLong(cidrB);
     	if (cidrALong == null || cidrBLong == null) {
     		return false;
     	}
-    	return (cidrALong.longValue() & cidrBLong.longValue()) == cidrBLong.longValue();
+    	long shift = 32 - cidrBLong[1];
+    	return ((cidrALong[0]>>shift) == (cidrBLong[0]>>shift));
     }
     
-    public static Long cidrToLong(String cidr) {
+    public static Long[] cidrToLong(String cidr) {
     	if (cidr == null || cidr.isEmpty()) {
             return null;
         }
@@ -643,7 +644,9 @@ public class NetUtils {
         }
     	long numericNetmask = (0xffffffff >> (32 - cidrSizeNum)) << (32 - cidrSizeNum);
     	long ipAddr = ip2Long(cidrAddress);
-    	return ipAddr & numericNetmask;
+    	Long[] cidrlong = {ipAddr & numericNetmask, (long)cidrSizeNum};
+    	return cidrlong;
+
     }
     
     public static String getCidrSubNet(String cidr) {
