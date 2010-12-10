@@ -126,6 +126,12 @@ function afterLoadDomainJSP() {
     if(isAdmin()) {
         initAddDomainDialog();
     }
+    
+    //switch between different tabs 
+    var tabArray = [$("#tab_details"), $("#tab_admin_account"), $("#tab_resource_limits")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_admin_account"), $("#tab_content_resource_limits")];
+    var afterSwitchFnArray = [domainJsonToDetailsTab, domainJsonToAdminAccountTab ,domainJsonToResourceLimitsTab ];
+    switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);   
 }
 
 function initAddDomainDialog() {
@@ -224,9 +230,7 @@ function domainToRightPanel($leftmenuItem1) {
 
 function domainToRightPanel2($leftmenuItem1) {
     $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);   
-    domainJsonToDetailsTab();
-    domainJsonToAdminAccountTab();
-    domainJsonToResourceLimitsTab();  
+    $("#tab_details").click();   
 }
 
 function domainJsonToDetailsTab() {
