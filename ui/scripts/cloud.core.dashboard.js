@@ -20,9 +20,8 @@ function afterLoadDashboardJSP() {
     var $alertTemplate = $("#alert_template");
     
     if (isAdmin()) {
-        showDashboard("dashboard_admin");
-        $thisSection = $("#dashboard_admin");
-                
+        var $thisTab = showDashboard("dashboard_admin");
+                        
 		var sessionExpired = false;
 		var zones = null;
 		var noZones = false;
@@ -35,7 +34,7 @@ function afterLoadDashboardJSP() {
 			async: false,
 			success: function(json) {
 				zones = json.listzonesresponse.zone;
-				var zoneSelect = $thisSection.find("#capacity_zone_select").empty();	
+				var zoneSelect = $thisTab.find("#capacity_zone_select").empty();	
 				if (zones != null && zones.length > 0) {
 					for (var i = 0; i < zones.length; i++) {
 						zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 								
@@ -82,13 +81,13 @@ function afterLoadDashboardJSP() {
 			}
 		});
 		
-		$thisSection.find("#capacity_pod_select").bind("change", function(event) {		    
+		$thisTab.find("#capacity_pod_select").bind("change", function(event) {		    
 		    event.stopPropagation();		    
-		    var selectedZone = $thisSection.find("#capacity_zone_select option:selected").text();
-			var selectedPod = $thisSection.find("#capacity_pod_select").val();
+		    var selectedZone = $thisTab.find("#capacity_zone_select option:selected").text();
+			var selectedPod = $thisTab.find("#capacity_pod_select").val();
 			
 			// Reset to Defaults			
-			var $capacityContainer = $thisSection.find("#system_wide_capacity_container");
+			var $capacityContainer = $thisTab.find("#system_wide_capacity_container");
 			$capacityContainer.find("#capacityused").text("N");
 		    $capacityContainer.find("#capacitytotal").text("A");
 		    $capacityContainer.find("#percentused").text("");		
@@ -162,7 +161,7 @@ function afterLoadDashboardJSP() {
 			}
 		});	
 				
-        $thisSection.find("#capacity_zone_select").bind("change", function(event) {
+        $thisTab.find("#capacity_zone_select").bind("change", function(event) {
 			var zoneId = $(this).val();
 			$.ajax({
 			    data: createURL("command=listPods&zoneId="+zoneId),
@@ -170,18 +169,18 @@ function afterLoadDashboardJSP() {
 				async: false,
 				success: function(json) {
 					var pods = json.listpodsresponse.pod;
-					var podSelect = $thisSection.find("#capacity_pod_select").empty();	
+					var podSelect = $thisTab.find("#capacity_pod_select").empty();	
 					if (pods != null && pods.length > 0) {
 						podSelect.append("<option value='All'>All pods</option>"); 
 					    for (var i = 0; i < pods.length; i++) {
 						    podSelect.append("<option value='" + pods[i].name + "'>" + fromdb(pods[i].name) + "</option>"); 
 					    }
 					}
-					$thisSection.find("#capacity_pod_select").change();
+					$thisTab.find("#capacity_pod_select").change();
 				}
 			});
 		});
-		$thisSection.find("#capacity_zone_select").change();
+		$thisTab.find("#capacity_zone_select").change();
 					
 		$.ajax({
 		    data: createURL("command=listAlerts"),
@@ -189,10 +188,10 @@ function afterLoadDashboardJSP() {
 			success: function(json) {
 				var alerts = json.listalertsresponse.alert;
 				if (alerts != null && alerts.length > 0) {
-					var alertGrid = $thisSection.find("#alert_grid_content").empty();
+					var alertGrid = $thisTab.find("#alert_grid_content").empty();
 					var length = (alerts.length>=5) ? 5 : alerts.length;					
 					for (var i = 0; i < length; i++) {
-						var template = $alertTemplate.clone(true);
+						var template = $alertTemplate.clone(true).attr("id", "alert_template_clone");
 						template.find("#type").text(toAlertType(alerts[i].type));
 						template.find("#description").append(fromdb(alerts[i].description));											
 						setDateField(alerts[i].sent, template.find("#date"));															
@@ -209,10 +208,10 @@ function afterLoadDashboardJSP() {
 			success: function(json) {
 				var alerts = json.listhostsresponse.host;
 				if (alerts != null && alerts.length > 0) {
-					var alertGrid = $thisSection.find("#host_alert_grid_content").empty();
+					var alertGrid = $thisTab.find("#host_alert_grid_content").empty();
 					var length = (alerts.length>=4) ? 4 : alerts.length;
 					for (var i = 0; i < length; i++) {
-						var template = $alertTemplate.clone(true);
+						var template = $alertTemplate.clone(true).attr("id", "alert_template_clone");
 						template.find("#type").text("Host - Alert State");
 						template.find("#description").append("Host - <b>" + fromdb(alerts[i].name) + "</b> has been detected in Alert state.");								
 						setDateField(alerts[i].disconnected, template.find("#date"));											
@@ -260,13 +259,32 @@ function afterLoadDashboardJSP() {
 				if (json.listaccountsresponse.account)
 					$thisTab.find("#account_total").text(json.listaccountsresponse.account.length);
 			}
-		});  
+		}); 
+				
+		// Recent Errors
+		$.ajax({
+		    data: createURL("command=listEvents&level=ERROR"),
+			dataType: "json",
+			success: function(json) {
+				var items = json.listeventsresponse.event;
+				if (items != null && items.length > 0) {
+					var $grid = $thisTab.find("#alert_grid_content").empty();
+					var length = (items.length>=3) ? 3 : items.length;
+					for (var i = 0; i < length; i++) {							    
+					    var $template = $alertTemplate.clone(true).attr("id", "alert_template_clone");
+				        $template.find("#type").text(items[i].type);
+				        $template.find("#description").append(fromdb(items[i].description));											
+				        setDateField(items[i].created, $template.find("#date"));															
+				        $grid.append($template.show());							    
+					}
+				}
+			}
+		});
 	} 
 	else if(isUser()) {	
-	    showDashboard("dashboard_user");
-	    $thisSection = $("#dashboard_user");
-	    	    
-	    //$thisSection.find("#launch_test").hide();
+	    var $thisTab = showDashboard("dashboard_user");
+	    	    	    
+	    //$thisTab.find("#launch_test").hide();
 		$.ajax({
 			cache: false,
 			data: createURL("command=listAccounts"),
@@ -280,9 +298,9 @@ function afterLoadDashboardJSP() {
 				    var rec = parseInt(statJSON.receivedbytes);
 					
 					if(sent==0 && rec==0)
-					    $thisSection.find("#network_bandwidth_panel").hide();
+					    $thisTab.find("#network_bandwidth_panel").hide();
 					else
-					    $thisSection.find("#network_bandwidth_panel").show();
+					    $thisTab.find("#network_bandwidth_panel").show();
 					
 				    $("#menutab_role_user").show();
 				    $("#menutab_role_root").hide();
@@ -293,32 +311,32 @@ function afterLoadDashboardJSP() {
 				    // This is in bytes, so let's change to KB
 				    sent = Math.round(sent / 1024);
 				    rec = Math.round(rec / 1024);
-				    $thisSection.find("#db_sent").text(sent + "KB");
-				    $thisSection.find("#db_received").text(rec + "KB");
+				    $thisTab.find("#db_sent").text(sent + "KB");
+				    $thisTab.find("#db_received").text(rec + "KB");
 				    */
-				    $thisSection.find("#db_available_public_ips").text(statJSON.ipavailable);
-				    $thisSection.find("#db_owned_public_ips").text(statJSON.iptotal);				    
-				    $thisSection.find("#db_running_vms").text(statJSON.vmrunning);
-				    $thisSection.find("#db_stopped_vms").text(statJSON.vmstopped);
-				    $thisSection.find("#db_total_vms").text(statJSON.vmtotal);
-				    //$thisSection.find("#db_avail_vms").text(statJSON.vmavailable);						   
-				    $thisSection.find("#db_account_id").text(statJSON.id);
-				    $thisSection.find("#db_account").text(statJSON.name);						    
-				    $thisSection.find("#db_type").text(toRole(statJSON.accounttype));
-				    $thisSection.find("#db_domain").text(statJSON.domain);						    			   
+				    $thisTab.find("#db_available_public_ips").text(statJSON.ipavailable);
+				    $thisTab.find("#db_owned_public_ips").text(statJSON.iptotal);				    
+				    $thisTab.find("#db_running_vms").text(statJSON.vmrunning);
+				    $thisTab.find("#db_stopped_vms").text(statJSON.vmstopped);
+				    $thisTab.find("#db_total_vms").text(statJSON.vmtotal);
+				    //$thisTab.find("#db_avail_vms").text(statJSON.vmavailable);						   
+				    $thisTab.find("#db_account_id").text(statJSON.id);
+				    $thisTab.find("#db_account").text(statJSON.name);						    
+				    $thisTab.find("#db_type").text(toRole(statJSON.accounttype));
+				    $thisTab.find("#db_domain").text(statJSON.domain);						    			   
 				}
 				
-				// Events
+				// Recent Errors
 				$.ajax({
 				    data: createURL("command=listEvents&level=ERROR"),
 					dataType: "json",
 					success: function(json) {
 						var items = json.listeventsresponse.event;
 						if (items != null && items.length > 0) {
-							var $grid = $thisSection.find("#alert_grid_content").empty();
+							var $grid = $thisTab.find("#alert_grid_content").empty();
 							var length = (items.length>=3) ? 3 : items.length;
 							for (var i = 0; i < length; i++) {							    
-							    var $template = $alertTemplate.clone(true);
+							    var $template = $alertTemplate.clone(true).attr("id", "alert_template_clone");
 						        $template.find("#type").text(items[i].type);
 						        $template.find("#description").append(fromdb(items[i].description));											
 						        setDateField(items[i].created, $template.find("#date"));															

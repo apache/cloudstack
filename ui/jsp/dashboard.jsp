@@ -311,118 +311,24 @@
                 </div>
             </div>
         </div>
-        <!--Recents Instance-->
-        <div class="grid_container" style="width: 49%; float: right;">
-            <div class="grid_header">
-                <div class="grid_header_cell" style="width: 60%; border: none;">
-                    <div class="grid_header_title">
-                        Recent Instances</div>
-                </div>
-                <div class="grid_header_cell" style="width: 40%; border: none;">
-                    <div class="grid_header_formbox">
-                        <div class="gridheader_morebutt">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div id="instance_grid_content">
-                <div class="grid_rows">
-                    <div class="grid_row_cell" style="width: 10%;">
-                        <div class="row_celltitles">
-                            <img src="images/instance_leftmenuicon.png" /></div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 63%;">
-                        <div class="row_celltitles">
-                            <strong>Instance Name</strong>
-                        </div>
-                        <div class="row_celltitles">
-                            IP Address
-                        </div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 26%;">
-                        <div class="row_celltitles">
-                            12/06/2010 03:51:46
-                        </div>
-                    </div>
-                </div>
-                <div class="grid_rows">
-                    <div class="grid_row_cell" style="width: 10%;">
-                        <div class="row_celltitles">
-                            <img src="images/instance_leftmenuicon.png" /></div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 63%;">
-                        <div class="row_celltitles">
-                            <strong>Instance Name</strong>
-                        </div>
-                        <div class="row_celltitles">
-                            IP Address
-                        </div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 26%;">
-                        <div class="row_celltitles">
-                            12/06/2010 03:51:46
-                        </div>
-                    </div>
-                </div>
-                <div class="grid_rows">
-                    <div class="grid_row_cell" style="width: 10%;">
-                        <div class="row_celltitles">
-                            <img src="images/instance_leftmenuicon.png" /></div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 63%;">
-                        <div class="row_celltitles">
-                            <strong>Instance Name</strong>
-                        </div>
-                        <div class="row_celltitles">
-                            IP Address
-                        </div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 26%;">
-                        <div class="row_celltitles">
-                            12/06/2010 03:51:46
-                        </div>
-                    </div>
-                </div>
-                <div class="grid_rows">
-                    <div class="grid_row_cell" style="width: 10%;">
-                        <div class="row_celltitles">
-                            <img src="images/instance_leftmenuicon.png" /></div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 63%;">
-                        <div class="row_celltitles">
-                            <strong>Instance Name</strong>
-                        </div>
-                        <div class="row_celltitles">
-                            IP Address
-                        </div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 26%;">
-                        <div class="row_celltitles">
-                            12/06/2010 03:51:46
-                        </div>
-                    </div>
-                </div>
-                <div class="grid_rows">
-                    <div class="grid_row_cell" style="width: 10%;">
-                        <div class="row_celltitles">
-                            <img src="images/instance_leftmenuicon.png" /></div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 63%;">
-                        <div class="row_celltitles">
-                            <strong>Instance Name</strong>
-                        </div>
-                        <div class="row_celltitles">
-                            IP Address
-                        </div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 26%;">
-                        <div class="row_celltitles">
-                            12/06/2010 03:51:46
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+                
+        <!--Recent errors-->
+	    <div class="grid_container" style="width: 49%; float: right;">
+	        <div class="grid_header">
+	            <div class="grid_header_cell" style="width: 60%; border: none;">
+	                <div class="grid_header_title">
+	                    Recent Errors</div>
+	            </div>
+	            <div class="grid_header_cell" style="width: 40%; border: none;">
+	            </div>
+	        </div>
+	        <div id="alert_grid_content">
+	            <div style="height: 310px; text-align: center;">
+	                <i>No Recent Alerts</i>
+	            </div>
+	        </div>
+	    </div>    
+	    
     </div>
 </div>
 <!--Dashboard DomainAdmin (end) here-->
