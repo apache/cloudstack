@@ -15,6 +15,7 @@ import com.cloud.resource.Resource.ReservationStrategy;
 
 public class NicProfile {
     long id;
+    long networkId;
     BroadcastDomainType broadcastType;
     Mode mode;
     long vmId;
@@ -131,7 +132,7 @@ public class NicProfile {
     }
     
     public long getNetworkId() {
-        return id;
+        return networkId;
     }
     
     public long getVirtualMachineId() {
@@ -184,6 +185,7 @@ public class NicProfile {
 
     public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri) {
         this.id = nic.getId();
+        this.networkId = network.getId();
         this.gateway = nic.getGateway();
         this.mode = network.getMode();
         this.format = null;
