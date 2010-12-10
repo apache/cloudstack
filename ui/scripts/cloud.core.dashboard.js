@@ -224,7 +224,43 @@ function afterLoadDashboardJSP() {
 		
 	} 
 	else if (isDomainAdmin()) {
-	    showDashboard("dashboard_domainadmin");
+	    var $thisTab = showDashboard("dashboard_domainadmin");
+	      
+	    $.ajax({
+		    data: createURL("command=listVirtualMachines"),
+			dataType: "json",
+			success: function(json) {
+				if (json.listvirtualmachinesresponse.virtualmachine != undefined)
+					$thisTab.find("#instance_total").text(json.listvirtualmachinesresponse.virtualmachine.length);
+			}
+		});
+		
+		$.ajax({
+		    data: createURL("command=listVolumes"),
+			dataType: "json",
+			success: function(json) {
+				if (json.listvolumesresponse.volume)
+					$thisTab.find("#volume_total").text(json.listvolumesresponse.volume.length);
+			}
+		});
+		
+		$.ajax({
+		    data: createURL("command=listSnapshots"),
+			dataType: "json",
+			success: function(json) {
+				if (json.listsnapshotsresponse.snapshot)
+					$thisTab.find("#snapshot_total").text(json.listsnapshotsresponse.snapshot.length);
+			}
+		});
+		
+		$.ajax({
+		    data: createURL("command=listAccounts"),
+			dataType: "json",
+			success: function(json) {
+				if (json.listaccountsresponse.account)
+					$thisTab.find("#account_total").text(json.listaccountsresponse.account.length);
+			}
+		});  
 	} 
 	else if(isUser()) {	
 	    showDashboard("dashboard_user");
@@ -303,14 +339,16 @@ function afterLoadDashboardJSP() {
 }
 
 function showDashboard(dashboardToShow) {
+    var $thisTab;
     var allDashboards = ["dashboard_admin", "dashboard_domainadmin", "dashboard_user"];
     for(var i=0; i < allDashboards.length; i++) {
         dashboard = allDashboards[i];
         if(dashboard == dashboardToShow)
-            $("#"+dashboard).show();
+            $thisTab = $("#"+dashboard).show();
         else
             $("#"+dashboard).hide();        
     }    
+    return $thisTab;
 }
 
 //*** dashboard admin (begin) ***

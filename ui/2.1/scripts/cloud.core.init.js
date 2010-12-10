@@ -352,7 +352,7 @@ $(document).ready(function() {
 				var noPods = true;
 				$("#menutab_dashboard_root, #menutab_vm, #menutab_networking_old, #menutab_networking, #menutab_templates, #menutab_events, #menutab_hosts, #menutab_storage, #menutab_accounts, #menutab_domain").hide();							
 				$.ajax({
-				        data: createURL("command=listZones&available=true&response=json"+maxPageSize),
+				        data: createURL("command=listZones&available=true&response=json"),
 					dataType: "json",
 					async: false,
 					success: function(json) {
@@ -536,7 +536,7 @@ $(document).ready(function() {
 				$("#capacity_zone_select").bind("change", function(event) {
 					var zoneId = $(this).val();
 					$.ajax({
-					        data: createURL("command=listPods&zoneId="+zoneId+"&response=json"+maxPageSize),
+					        data: createURL("command=listPods&zoneId="+zoneId+"&response=json"),
 						dataType: "json",
 						async: false,
 						success: function(json) {
@@ -622,7 +622,7 @@ $(document).ready(function() {
 				// Need to use/create better API for this as there is a limit of pageSize
 				// to list count.
 				$.ajax({
-				        data: createURL("command=listVirtualMachines&response=json"+maxPageSize),
+				        data: createURL("command=listVirtualMachines&response=json"),
 					dataType: "json",
 					success: function(json) {
 						if (json.listvirtualmachinesresponse.virtualmachine != undefined)
@@ -630,7 +630,7 @@ $(document).ready(function() {
 					}
 				});
 				$.ajax({
-				        data: createURL("command=listVolumes&response=json"+maxPageSize),
+				        data: createURL("command=listVolumes&response=json"),
 					dataType: "json",
 					success: function(json) {
 						if (json.listvolumesresponse.volume)
@@ -638,7 +638,7 @@ $(document).ready(function() {
 					}
 				});
 				$.ajax({
-				        data: createURL("command=listSnapshots&response=json"+maxPageSize),
+				        data: createURL("command=listSnapshots&response=json"),
 					dataType: "json",
 					success: function(json) {
 						if (json.listsnapshotsresponse.snapshot)
@@ -646,7 +646,7 @@ $(document).ready(function() {
 					}
 				});
 				$.ajax({
-				        data: createURL("command=listAccounts&response=json"+maxPageSize),
+				        data: createURL("command=listAccounts&response=json"),
 					dataType: "json",
 					success: function(json) {
 						if (json.listaccountsresponse.account)

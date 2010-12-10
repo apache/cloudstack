@@ -257,7 +257,7 @@
                 </div>
                 <div class="dbrow_cell" style="width: 25%; border: none; background: #cacaca repeat top left;">
                     <div class="domain_resources_totalbg">
-                        <p id="zone_total">
+                        <p id="instance_total">
                             0</p>
                     </div>
                 </div>
@@ -273,7 +273,7 @@
                 </div>
                 <div class="dbrow_cell" style="width: 25%; border: none; background: #cacaca repeat top left;">
                     <div class="domain_resources_totalbg">
-                        <p id="pod_total">
+                        <p id="volume_total">
                             0</p>
                     </div>
                 </div>
@@ -289,7 +289,7 @@
                 </div>
                 <div class="dbrow_cell" style="width: 25%; border: none; background: #cacaca repeat top left;">
                     <div class="domain_resources_totalbg">
-                        <p id="host_total">
+                        <p id="snapshot_total">
                             0</p>
                     </div>
                 </div>
@@ -305,7 +305,7 @@
                 </div>
                 <div class="dbrow_cell" style="width: 25%; border: none; background: #cacaca repeat top left;">
                     <div class="domain_resources_totalbg">
-                        <p id="primarystorage_total">
+                        <p id="account_total">
                             0</p>
                     </div>
                 </div>
