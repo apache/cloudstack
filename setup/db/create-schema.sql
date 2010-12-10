@@ -410,7 +410,6 @@ CREATE TABLE `cloud`.`op_dc_ip_address_alloc` (
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center it belongs to',
   `pod_id` bigint unsigned NOT NULL COMMENT 'pod it belongs to',
   `instance_id` bigint unsigned NULL COMMENT 'instance id',
-  `mac_address` bigint unsigned NOT NULL COMMENT 'mac_address',
   `reservation_id` char(40) NULL COMMENT 'reservation id',
   `taken` datetime COMMENT 'Date taken',
   PRIMARY KEY (`id`)
