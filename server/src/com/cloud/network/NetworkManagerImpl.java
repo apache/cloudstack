@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 
 import javax.ejb.Local;
@@ -183,6 +184,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     Adapters<NetworkElement> _networkElements;
 
     private HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
+    Random _rand = new Random(System.currentTimeMillis());
 
     ScheduledExecutorService _executor;
 
@@ -194,8 +196,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     HashMap<Long, Long> _lastNetworkIdsToFree = new HashMap<Long, Long>();
 
-    @Override @DB 
-    public PublicIp fetchNewPublicIp(long dcId, VlanType vlanUse, Account owner, Long networkId, boolean sourceNat) throws InsufficientAddressCapacityException {
+    @Override
+    public PublicIp assignPublicIpAddress(long dcId, Account owner, VlanType type, Long networkId) throws InsufficientAddressCapacityException {
+        return fetchNewPublicIp(dcId, owner, type, networkId, false, true); 
+    }
+    
+    @DB 
+    public PublicIp fetchNewPublicIp(long dcId, Account owner, VlanType vlanUse, Long networkId, boolean sourceNat, boolean assign) throws InsufficientAddressCapacityException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         SearchCriteria<IPAddressVO> sc = AssignIpAddressSearch.create();
@@ -221,7 +228,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         addr.setAllocatedTime(new Date());
         addr.setAllocatedInDomainId(owner.getDomainId());
         addr.setAllocatedToAccountId(owner.getId());
-        addr.setState(IpAddress.State.Allocating);
+        addr.setState(assign ? IpAddress.State.Allocated : IpAddress.State.Allocating);
         
         if (vlanUse == VlanType.DirectAttached) {
             addr.setState(IpAddress.State.Allocated);
@@ -234,7 +241,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         txn.commit();
-        return new PublicIp(addr, _vlanDao.findById(addr.getVlanId()));
+        long macAddress = addr.getMacAddress() | 0x060000000000l | (((long)_rand.nextInt(32768) << 25) & 0x00fffe000000l);
+
+        return new PublicIp(addr, _vlanDao.findById(addr.getVlanId()), macAddress);
     }
     
     @Override
@@ -275,7 +284,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     s_logger.debug("assigning a new ip address in " + dcId + " to " + owner);
                 }                
                 
-                ip = fetchNewPublicIp(dcId, VlanType.VirtualNetwork, owner, network.getId(), true);
+                ip = fetchNewPublicIp(dcId, owner, VlanType.VirtualNetwork, network.getId(), true, false);
                 sourceNat = ip.ip();
                 sourceNat.setState(IpAddress.State.Allocated);
                 _ipAddressDao.update(sourceNat.getAddress(), sourceNat);
@@ -296,7 +305,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
                 
                 assert(sourceNat != null) : "How do we get a bunch of ip addresses but none of them are source nat? account=" + ownerId + "; dc=" + dcId;
-                ip = new PublicIp(sourceNat, _vlanDao.findById(sourceNat.getVlanId()));
+                ip = new PublicIp(sourceNat, _vlanDao.findById(sourceNat.getVlanId()), sourceNat.getMacAddress() | 0x060000000000l | (((long)_rand.nextInt(32768) << 25) & 0x00fffe000000l));
             }
             
             UserStatisticsVO stats = _userStatsDao.findBy(ownerId, dcId);
@@ -586,7 +595,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             txn.start();
-            ip = fetchNewPublicIp(zoneId, VlanType.VirtualNetwork, owner, network.getId(), false);
+            ip = fetchNewPublicIp(zoneId, owner, VlanType.VirtualNetwork, network.getId(), false, false);
            
             if (ip == null) {
                 throw new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zoneId);
@@ -738,7 +747,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         validateRemoteAccessVpnConfiguration();
         Integer rateMbps = getIntegerConfigValue(Config.NetworkThrottlingRate.key(), null);  
         Integer multicastRateMbps = getIntegerConfigValue(Config.MulticastThrottlingRate.key(), null);
-
 
         NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);
         publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
@@ -1031,51 +1039,51 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Transaction.currentTxn();
         Pair<NetworkGuru, NetworkVO> implemented = new Pair<NetworkGuru, NetworkVO>(null, null);
 
-        NetworkVO config = _networksDao.acquireInLockTable(networkId);
-        if (config == null) {
+        NetworkVO network = _networksDao.acquireInLockTable(networkId);
+        if (network == null) {
             throw new ConcurrentOperationException("Unable to acquire network configuration: " + networkId);
         }
 
         try {
-            NetworkGuru guru = _networkGurus.get(config.getGuruName());
-            Network.State state = config.getState();
+            NetworkGuru guru = _networkGurus.get(network.getGuruName());
+            Network.State state = network.getState();
             if (state == Network.State.Implemented || state == Network.State.Setup) {
-                implemented.set(guru, config);
+                implemented.set(guru, network);
                 return implemented;
             }
 
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Asking " + guru + " to implement " + config);
+                s_logger.debug("Asking " + guru + " to implement " + network);
             }
 
-            NetworkOfferingVO offering = _networkOfferingDao.findById(config.getNetworkOfferingId());
+            NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
 
-            Network result = guru.implement(config, offering, dest, context);
-            config.setCidr(result.getCidr());
-            config.setBroadcastUri(result.getBroadcastUri());
-            config.setGateway(result.getGateway());
-            config.setDns1(result.getDns1());
-            config.setDns2(result.getDns2());
-            config.setMode(result.getMode());
-            config.setState(Network.State.Implemented);
-            _networksDao.update(networkId, config);
+            Network result = guru.implement(network, offering, dest, context);
+            network.setCidr(result.getCidr());
+            network.setBroadcastUri(result.getBroadcastUri());
+            network.setGateway(result.getGateway());
+            network.setDns1(result.getDns1());
+            network.setDns2(result.getDns2());
+            network.setMode(result.getMode());
+            network.setState(Network.State.Implemented);
+            _networksDao.update(networkId, network);
 
             for (NetworkElement element : _networkElements) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Asking " + element.getName() + " to implmenet " + config);
+                    s_logger.debug("Asking " + element.getName() + " to implmenet " + network);
                 }
                 try {
-                    element.implement(config, offering, dest, context);
+                    element.implement(network, offering, dest, context);
                 } catch (InsufficientCapacityException e) {
                     throw new ResourceUnavailableException("Unable to start domain router for this VM", e);
                 }
             }
 
-            implemented.set(guru, config);
+            implemented.set(guru, network);
             return implemented;
         } finally {
             if (implemented.first() == null) {
-                s_logger.debug("Cleaning up because we're unable to implement network " + config);
+                s_logger.debug("Cleaning up because we're unable to implement network " + network);
             }
             _networksDao.releaseFromLockTable(networkId);
         }
@@ -1087,20 +1095,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         for (NicVO nic : nics) {
             Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context);
             NetworkGuru concierge = implemented.first();
-            NetworkVO config = implemented.second();
+            NetworkVO network = implemented.second();
             NicProfile profile = null;
             if (nic.getReservationStrategy() == ReservationStrategy.Start) {
                 nic.setState(Resource.State.Reserving);
                 _nicDao.update(nic.getId(), nic);
                 URI broadcastUri = nic.getBroadcastUri();
                 if (broadcastUri == null) {
-                    config.getBroadcastUri();
+                    network.getBroadcastUri();
                 }
 
                 URI isolationUri = nic.getIsolationUri();
 
-                profile = new NicProfile(nic, config, broadcastUri, isolationUri);
-                concierge.reserve(profile, config, vmProfile, dest, context);
+                profile = new NicProfile(nic, network, broadcastUri, isolationUri);
+                concierge.reserve(profile, network, vmProfile, dest, context);
                 nic.setIp4Address(profile.getIp4Address());
                 nic.setIp6Address(profile.getIp6Address());
                 nic.setMacAddress(profile.getMacAddress());
@@ -1113,17 +1121,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 nic.setAddressFormat(profile.getFormat());
                 _nicDao.update(nic.getId(), nic);      
             } else {
-                profile = new NicProfile(nic, config, nic.getBroadcastUri(), nic.getIsolationUri());
+                profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri());
             }
             
             for (NetworkElement element : _networkElements) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
                 }
-                element.prepare(config, profile, vmProfile, dest, context);
+                element.prepare(network, profile, vmProfile, dest, context);
             }
 
             vmProfile.addNic(profile);
+            _networksDao.changeActiveNicsBy(network.getId(), 1);
         }
     }
 
@@ -1131,17 +1140,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile) {
         List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
         for (NicVO nic : nics) {
-            NetworkVO config = _networksDao.findById(nic.getNetworkId());
+            NetworkVO network = _networksDao.findById(nic.getNetworkId());
             if (nic.getReservationStrategy() == ReservationStrategy.Start) {
-                NetworkGuru concierge = _networkGurus.get(config.getGuruName());
+                NetworkGuru concierge = _networkGurus.get(network.getGuruName());
                 nic.setState(Resource.State.Releasing);
                 _nicDao.update(nic.getId(), nic);
-                NicProfile profile = new NicProfile(nic, config, null, null);
+                NicProfile profile = new NicProfile(nic, network, null, null);
                 if (!concierge.release(profile, vmProfile, nic.getReservationId())) {
                     nic.setState(Resource.State.Allocated);
                     _nicDao.update(nic.getId(), nic);
                 }
             }
+            _networksDao.changeActiveNicsBy(network.getId(), -1);
         }
     }
 
@@ -1149,8 +1159,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public List<? extends Nic> getNics(VirtualMachine vm) {
         return _nicDao.listBy(vm.getId());
     }
-
-
 
     public static boolean isAdmin(short accountType) {
         return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
@@ -1177,7 +1185,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // Verify input parameters
         Account accountByIp = findAccountByIpAddress(ipAddress);
-        if(accountByIp == null) {
+        if(accountByIp == null) { 
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account owner for ip " + ipAddress);
         }
 
@@ -1622,6 +1630,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (mac == null) {
             throw new InsufficientAddressCapacityException("Unable to create another mac address", Network.class, networkId);
         }
+        
         return mac;
     }
 
@@ -1759,6 +1768,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                throw new CloudRuntimeException("Fail to create a network");
            } else {
                networkId = networks.get(0).getId();
+           }
+
+           for (Network network : networks) {
+               if (network.getGuestType() == GuestIpType.Virtual) {
+                   s_logger.debug("Creating a source natp ip for " + network);
+                   PublicIp ip = assignSourceNatIpAddress(owner, network, userId);
+                   if (ip == null) {
+                       throw new InsufficientAddressCapacityException("Unable to assign source nat ip address to owner for this network", DataCenter.class, zoneId);
+                   }
+               }
            }
            
            //Don't pass owner to create vlan when network offering is of type Direct

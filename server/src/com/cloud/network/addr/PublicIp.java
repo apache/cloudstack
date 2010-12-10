@@ -22,6 +22,7 @@ import java.util.Date;
 import com.cloud.dc.VlanVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
+import com.cloud.utils.net.NetUtils;
 
 /**
  * PublicIp is a combo object of IPAddressVO and VLAN information.
@@ -29,19 +30,17 @@ import com.cloud.network.IpAddress;
 public class PublicIp implements IpAddress {
     IPAddressVO _addr;
     VlanVO _vlan;
+    String macAddress;
 
-    public PublicIp(IPAddressVO addr, VlanVO vlan) {
+    public PublicIp(IPAddressVO addr, VlanVO vlan, long macAddress) {
         _addr = addr;
         _vlan = vlan;
+        this.macAddress = NetUtils.long2Mac(macAddress);
     }
     
     @Override
     public String getAddress() {
         return _addr.getAddress();
-    }
-    
-    public long getMacAddress() {
-        return _addr.getMacAddress();
     }
     
     public String getNetmask() {
@@ -117,5 +116,9 @@ public class PublicIp implements IpAddress {
     
     public VlanVO vlan() {
         return _vlan;
+    }
+    
+    public String getMacAddress() {
+        return macAddress;
     }
 }

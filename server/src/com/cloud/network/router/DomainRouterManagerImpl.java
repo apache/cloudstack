@@ -115,10 +115,13 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.SshKeysDistriMonitor;
 import com.cloud.network.VpnUserVO;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -2091,7 +2094,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                 s_logger.debug("Creating the router " + id);
             }
             
-            //String sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, dest.getDataCenter());
+            PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, guestConfig, _accountService.getSystemUser().getId());
         
             List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork);
             NetworkOfferingVO controlOffering = offerings.get(0);
@@ -2102,7 +2105,18 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             List<NetworkVO> publicConfigs = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
             NicProfile defaultNic = new NicProfile();
             defaultNic.setDefaultNic(true);
-            //defaultNic.setIp4Address(sourceNatIp);
+            defaultNic.setIp4Address(sourceNatIp.getAddress());
+            defaultNic.setGateway(sourceNatIp.getGateway());
+            defaultNic.setNetmask(sourceNatIp.getNetmask());
+            defaultNic.setTrafficType(TrafficType.Public);
+            defaultNic.setMacAddress(sourceNatIp.getMacAddress());
+            if (sourceNatIp.getVlanTag().equals("untagged")) {
+                defaultNic.setBroadcastType(BroadcastDomainType.Native);
+            } else {
+                defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
+                defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
+                defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
+            }
             defaultNic.setDeviceId(2);
             networks.add(new Pair<NetworkVO, NicProfile>(publicConfigs.get(0), defaultNic));
             NicProfile gatewayNic = new NicProfile();

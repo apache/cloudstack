@@ -3,8 +3,6 @@
  */
 package com.cloud.network.guru;
 
-import java.util.Random;
-
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -21,9 +19,9 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
+import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.Network.State;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
@@ -37,7 +35,6 @@ import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -51,7 +48,6 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject VlanDao _vlanDao;
     @Inject NetworkManager _networkMgr;
     @Inject IPAddressDao _ipAddressDao;
-    Random _rand = new Random(System.currentTimeMillis());
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
@@ -92,7 +88,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     
     protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null) {
-            PublicIp ip = _networkMgr.fetchNewPublicIp(dc.getId(), VlanType.DirectAttached, vm.getOwner(), network.getId(), false);
+            PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId());
             nic.setIp4Address(ip.getAddress());
             nic.setGateway(ip.getGateway());
             nic.setNetmask(ip.getNetmask());
@@ -101,7 +97,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
             nic.setFormat(AddressFormat.Ip4);
             nic.setReservationId(ip.getVlanTag());
-            nic.setMacAddress(NetUtils.long2Mac(ip.getMacAddress() | 0x060000000000l | (((long)_rand.nextInt(32768) << 25) & 0x00fffe000000l)));
+            nic.setMacAddress(ip.getMacAddress());
         }
         nic.setDns1(dc.getDns1());
         nic.setDns2(dc.getDns2());

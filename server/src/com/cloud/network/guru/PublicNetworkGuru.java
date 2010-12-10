@@ -3,14 +3,13 @@
  */
 package com.cloud.network.guru;
 
-import java.util.Random;
-
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
@@ -32,10 +31,8 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -49,7 +46,6 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject VlanDao _vlanDao;
     @Inject NetworkManager _networkMgr;
     @Inject IPAddressDao _ipAddressDao;
-    Random _rand = new Random(System.currentTimeMillis());
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network network, Account owner) {
@@ -75,7 +71,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     
     protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null) {
-            PublicIp ip = _networkMgr.assignSourceNatIpAddress(vm.getOwner(), network, UserContext.current().getUserId());
+            PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), vm.getOwner(), VlanType.VirtualNetwork, null);
             nic.setIp4Address(ip.getAddress());
             nic.setGateway(ip.getGateway());
             nic.setNetmask(ip.getNetmask());
@@ -84,7 +80,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
             nic.setFormat(AddressFormat.Ip4);
             nic.setReservationId(ip.getVlanTag());
-            nic.setMacAddress(NetUtils.long2Mac(ip.getMacAddress() | 0x060000000000l | (((long)_rand.nextInt(32768) << 25) & 0x00fffe000000l)));
+            nic.setMacAddress(ip.getMacAddress());
         }
         nic.setDns1(dc.getDns1());
         nic.setDns2(dc.getDns2());
@@ -122,7 +118,6 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
-        _ipAddressDao.unassignIpAddress(reservationId);
         return true;
     }
 
@@ -133,6 +128,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     
     @Override
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
+        _ipAddressDao.unassignIpAddress(nic.getIp4Address());
+        nic.deallocate();
     }
     
     @Override

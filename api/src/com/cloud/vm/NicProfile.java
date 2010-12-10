@@ -5,11 +5,11 @@ package com.cloud.vm;
 
 import java.net.URI;
 
+import com.cloud.network.Network;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.Network;
 import com.cloud.resource.Resource;
 import com.cloud.resource.Resource.ReservationStrategy;
 
@@ -234,5 +234,24 @@ public class NicProfile {
     
     public void setReservationId(String reservationId) {
         this.reservationId = reservationId;
+    }
+    
+    public void deallocate() {
+        this.gateway = null;
+        this.mode = null;
+        this.format = null;
+        this.broadcastType = null;
+        this.trafficType = null;
+        this.ip4Address = null;
+        this.ip6Address = null;
+        this.macAddress = null;
+        this.reservationId = null;
+        this.strategy = null;
+        this.deviceId = null;
+        this.broadcastUri = null;
+        this.isolationUri = null;
+        this.netmask = null;
+        this.dns1 = null;
+        this.dns2 = null;
     }
 }

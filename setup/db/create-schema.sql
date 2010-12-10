@@ -113,6 +113,8 @@ CREATE TABLE `cloud`.`hypervsior_properties` (
 CREATE TABLE `cloud`.`op_networks`(
   `id` bigint unsigned NOT NULL UNIQUE KEY,
   `mac_address_seq` bigint unsigned NOT NULL DEFAULT 1 COMMENT 'mac address',
+  `nics_count` int unsigned NOT NULL DEFAULT 0 COMMENT '# of nics',
+  `gc` tinyint unsigned NOT NULL DEFAULT 1 COMMENT 'gc this network or not',
   PRIMARY KEY(`id`),
   CONSTRAINT `fk_op_networks__id` FOREIGN KEY (`id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

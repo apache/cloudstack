@@ -52,6 +52,18 @@ public interface NetworkManager extends NetworkService {
     public static final boolean USE_POD_VLAN = false;
 
     /**
+     * Assigns a new public ip address.
+     * 
+     * @param dcId
+     * @param owner
+     * @param type
+     * @param networkId
+     * @return
+     * @throws InsufficientAddressCapacityException
+     */
+    PublicIp assignPublicIpAddress(long dcId, Account owner, VlanType type, Long networkId) throws InsufficientAddressCapacityException;
+    
+    /**
      * assigns a source nat ip address to an account within a network.
      * 
      * @param owner
@@ -115,8 +127,6 @@ public interface NetworkManager extends NetworkService {
 
 	boolean applyRules(Ip ip, List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
 	
-	PublicIp fetchNewPublicIp(long dcId, VlanType vlanUse, Account owner, Long networkId, boolean sourceNat) throws InsufficientAddressCapacityException;
-
 	Commands getAssociateIPCommands(DomainRouterVO router,
 			List<String> ipAddrList, boolean add, long vmId, Commands cmds);
 }

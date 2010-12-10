@@ -410,6 +410,4 @@ public class NetworkVO implements Network {
         buf.append(id).append("|").append(trafficType.toString()).append("|").append(networkOfferingId).append("]");
         return buf.toString();
     }
-    
-    
 }

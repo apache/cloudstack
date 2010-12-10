@@ -29,8 +29,7 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     List<NetworkVO> listBy(long accountId);
     List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId);
     List<NetworkVO> listBy(long accountId, long dataCenterId, GuestIpType type);
-    @Override
-    NetworkVO persist(NetworkVO network);
+    NetworkVO persist(NetworkVO network, boolean gc);
     void addAccountToNetwork(long networkId, long accountId);
     SearchBuilder<NetworkAccountVO> createSearchBuilderForAccount();
     List<NetworkVO> getNetworksForOffering(long offeringId, long dataCenterId, long accountId);
@@ -46,4 +45,8 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     List<NetworkVO> listBy(long accountId, long networkId);
     
     List<NetworkVO> listBy(long zoneId, String broadcastUri);
+    
+    void changeActiveNicsBy(long networkId, int nicsCount);
+    
+    int getActiveNicsIn(long networkId);
 }

@@ -17,8 +17,6 @@
  */
 package com.cloud.network.dao;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Random;
 
@@ -41,7 +39,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SequenceFetcher;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @Local(value=NetworkDao.class) @DB(txn=false)
@@ -53,6 +50,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     final SearchBuilder<NetworkVO> ZoneBroadcastUriSearch;
     
     NetworkAccountDaoImpl _accountsDao = new NetworkAccountDaoImpl();
+    NetworkOpDaoImpl _opDao = new NetworkOpDaoImpl();
     final TableGenerator _tgMacAddress;
     Random _rand = new Random(System.currentTimeMillis());
     long _prefix = 0x2;
@@ -144,18 +142,13 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
     
     @Override @DB
-    public NetworkVO persist(NetworkVO config) {
+    public NetworkVO persist(NetworkVO config, boolean gc) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         config = super.persist(config);
         addAccountToNetworkConfiguration(config.getId(), config.getAccountId(), true);
-        try {
-            PreparedStatement pstmt = txn.prepareAutoCloseStatement("INSERT INTO op_networks (id) VALUES(?)");
-            pstmt.setLong(1, config.getId());
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Problem inserting into the op_network_configurations");
-        }
+        NetworkOpVO op = new NetworkOpVO(config.getId(), gc);
+        _opDao.persist(op);
         txn.commit();
         return config;
     }
@@ -208,10 +201,21 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         return listBy(sc);
     }
     
+    @Override
     public List<NetworkVO> listBy(long zoneId, String broadcastUri) {
         SearchCriteria<NetworkVO> sc = ZoneBroadcastUriSearch.create();
         sc.setParameters("dataCenterId", zoneId);
         sc.setParameters("broadcastUri", broadcastUri);
         return search(sc, null);
+    }
+    
+    @Override
+    public void changeActiveNicsBy(long networkId, int count) {
+        _opDao.changeActiveNicsBy(networkId, count);
+    }
+    
+    @Override
+    public int getActiveNicsIn(long networkId) {
+        return _opDao.getActiveNics(networkId);
     }
 }
