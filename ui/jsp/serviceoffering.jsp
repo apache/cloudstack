@@ -135,20 +135,6 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("network.type")%>:</div>
-	                </div>
-	                <div class="grid_row_cell" style="width: 79%;">
-	                    <div class="row_celltitles" id="networktype">
-	                    </div>	                    
-	                    <select class="select" id="networktype_edit" style="width: 202px; display: none;">
-	                        <option value="Direct">Direct</option>
-							<option value="Public">Public</option>	
-	                    </select>	
-	                </div>
-	            </div>
-	            <div class="grid_rows odd">
-	                <div class="grid_row_cell" style="width: 20%;">
-	                    <div class="row_celltitles">
 	                        <%=t.t("tags")%>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
@@ -159,7 +145,7 @@
 	                </div>
 	            </div>
 	            
-	            <div class="grid_rows even">
+	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("domain")%>:</div>
@@ -172,7 +158,7 @@
 	                </div>
 	            </div>
 	            
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("created")%>:</div>
@@ -234,13 +220,6 @@
 					<select class="select" id="add_service_offerha">						
 						<option value="false">No</option>
 						<option value="true">Yes</option>
-					</select>
-				</li>	
-				<li>
-					<label>Network Type</label>
-					<select class="select" id="add_service_networktype">						
-						<option value="Direct">Direct</option>
-						<option value="Public">Public</option>
 					</select>
 				</li>	
 				<li id="add_service_tags_container">

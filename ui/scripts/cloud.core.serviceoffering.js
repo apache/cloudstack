@@ -130,10 +130,6 @@ function initAddServiceOfferingDialog() {
 				var offerha = thisDialog.find("#add_service_offerha").val();	
 				array1.push("&offerha="+offerha);								
 									
-				var networkType = thisDialog.find("#add_service_networktype").val();
-				var useVirtualNetwork = (networkType=="Direct")? false:true;
-				array1.push("&usevirtualnetwork="+useVirtualNetwork);		
-				
 				var tags = thisDialog.find("#add_service_tags").val();
 				if(tags != null && tags.length > 0)
 				    array1.push("&tags="+todb(tags));	
@@ -207,12 +203,6 @@ function doEditServiceOffering2($actionLink, $detailsTab, $midmenuItem1, $readon
     var offerha = $detailsTab.find("#offerha_edit").val();   
     array1.push("&offerha="+offerha);		
 
-    /*
-	var networkType = $detailsTab.find("#networktype_edit").val();
-	var useVirtualNetwork = (networkType=="Direct")? false:true;
-	array1.push("&usevirtualnetwork="+useVirtualNetwork);
-	*/		
-	
 	var tags = $detailsTab.find("#tags_edit").val();
 	array1.push("&tags="+todb(tags));	
 	
@@ -295,9 +285,6 @@ function serviceOfferingJsonToDetailsTab() {
     setBooleanReadField(jsonObj.offerha, $thisTab.find("#offerha"));	
     setBooleanEditField(jsonObj.offerha, $thisTab.find("#offerha_edit"));
     
-    $thisTab.find("#networktype").text(toNetworkType(jsonObj.usevirtualnetwork));
-    $thisTab.find("#networktype").val(toNetworkType(jsonObj.usevirtualnetwork));
-    
     $thisTab.find("#tags").text(fromdb(jsonObj.tags)); 
     $thisTab.find("#tags_edit").val(fromdb(jsonObj.tags));
     
@@ -333,7 +320,6 @@ function serviceOfferingClearDetailsTab() {
     $thisTab.find("#memory").text("");    
     $thisTab.find("#offerha").text("");
     $thisTab.find("#offerha_edit").val("");    
-    $thisTab.find("#networktype").text("");
     $thisTab.find("#tags").text("");  
     $thisTab.find("#created").text(""); 
     
