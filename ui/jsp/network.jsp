@@ -459,6 +459,67 @@
 </div>
 <!--  External Firewall template (end) -->
 
+
+<!--  Load Balancer template (begin) -->
+<div class="grid_container" id="loadbalancer_template" style="display: none">    
+	<div class="grid_header">
+        <div class="grid_header_title" id="grid_header_title">
+        </div>
+        <div class="grid_actionbox" id="firewall_action_link">
+            <div class="grid_actionsdropdown_box" id="firewall_action_menu" style="display: none;">
+                <ul class="actionsdropdown_boxlist" id="action_list">
+                </ul>
+            </div>
+        </div>
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; height: 18px;">
+            <div class="gridheader_loader" id="icon">
+            </div>
+            <p id="description">
+                Waiting &hellip;
+            </p>
+        </div>       
+    </div>
+    
+    <div class="grid_rows" id="after_action_info_container" style="display:none">
+        <div class="grid_row_cell" style="width: 90%; border: none;">
+            <div class="row_celltitles">
+                <strong id="after_action_info">Message will appear here</strong></div>
+        </div>
+    </div>        
+ 
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                ID:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="id">
+            </div>
+        </div>
+    </div>   
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                URL:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="url">
+            </div>
+        </div>
+    </div>    
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Type:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="type">
+            </div>
+        </div>
+    </div> 
+</div>
+<!--  Load Balancer template (end) -->
+
 <!--  IP Range template (begin) -->
 <div class="grid_container" id="iprange_template" style="display: none">    
 	<div class="grid_header">

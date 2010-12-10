@@ -282,6 +282,7 @@ var publicNetworkFirewallActionMap = {
     }     
 }  
 
+
 function publicNetworkJsonToLoadBalancerTab() {  
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     if($midmenuItem1 == null)
@@ -294,12 +295,64 @@ function publicNetworkJsonToLoadBalancerTab() {
 	var $thisTab = $("#right_panel_content #public_network_page #tab_content_loadbalancer");      
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
-    
-         
-     
-    $thisTab.find("#tab_container").show(); 
-    $thisTab.find("#tab_spinning_wheel").hide();   
+        
+    $.ajax({
+        data: createURL("command=listExternalLoadBalancers&zoneid="+zoneObj.id),
+        dataType: "json",
+        success: function(json) {                 
+            var items = json.listexternalloadbalancersresponse.externalloadbalancer;
+		    var $container = $thisTab.find("#tab_container").empty();
+		    var $template = $("#loadbalancer_template");
+		    if(items != null && items.length > 0) {		        
+		        for(var i=0; i<items.length; i++) {
+		            var $newTemplate = $template.clone();
+		            publicNetworkLoadBalancerJsonToTemplate(items[i], $newTemplate);
+		            $container.append($newTemplate.show());
+		        }
+		    }		    
+		    $thisTab.find("#tab_container").show(); 
+            $thisTab.find("#tab_spinning_wheel").hide();   
+        }
+    });       
 }
+
+function publicNetworkLoadBalancerJsonToTemplate(jsonObj, $template) {    
+    $template.data("jsonObj", jsonObj);
+    $template.attr("id", "publicNetworkLoadBalancer_" + jsonObj.id);
+        
+    $template.find("#grid_header_title").text(fromdb(jsonObj.url));    
+    $template.find("#id").text(fromdb(jsonObj.id));
+    $template.find("#type").text(fromdb(jsonObj.type));
+    $template.find("#url").text(fromdb(jsonObj.url));   
+   
+    var $actionLink = $template.find("#firewall_action_link");		
+	$actionLink.bind("mouseover", function(event) {
+        $(this).find("#firewall_action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {
+        $(this).find("#firewall_action_menu").hide();    
+        return false;
+    });		
+	
+	var $actionMenu = $actionLink.find("#firewall_action_menu");
+    $actionMenu.find("#action_list").empty();	
+       
+    buildActionLinkForSubgridItem("Delete Firewall", publicNetworkFirewallActionMap, $actionMenu, $template);	
+}
+
+var publicNetworkLoadBalancerActionMap = {     
+    "Delete Load Balancer": {              
+        api: "deleteExternalLoadBalancer",     
+        isAsyncJob: false,      
+        inProcessText: "Deleting Load Balancer....",
+        afterActionSeccessFn: function(json, id, $subgridItem) {                 
+            $subgridItem.slideUp("slow", function() {
+                $(this).remove();
+            });
+        }
+    }     
+}  
 
 function initAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {   
     var jsonObj = $midmenuItem1.data("jsonObj");      
