@@ -82,7 +82,8 @@ public class Storage {
     public static enum TemplateType {
     	SYSTEM, /*routing, system vm template*/
     	BUILTIN, /*buildin template*/
-    	PERHOST /* every host has this template, don't need to install it in secondary storage */
+    	PERHOST, /* every host has this template, don't need to install it in secondary storage */
+    	USER /* User supplied template/iso */
     }
     
     public static enum StoragePoolType {

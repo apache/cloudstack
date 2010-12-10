@@ -251,7 +251,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "File:// type urls are currently unsupported");
         }
         
-        return createTemplateOrIso(userId, accountId, zoneId, name, displayText, isPublic.booleanValue(), featured.booleanValue(), true, ImageFormat.ISO.toString(), null, url, null, true, 64 /*bits*/, false, guestOSId, bootable, HypervisorType.None);
+        return createTemplateOrIso(userId, accountId, zoneId, name, displayText, isPublic.booleanValue(), featured.booleanValue(), true, ImageFormat.ISO.toString(), TemplateType.USER, url, null, true, 64 /*bits*/, false, guestOSId, bootable, HypervisorType.None);
     }
 
     @Override
@@ -360,11 +360,11 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             userId = Long.valueOf(1);
         }
         
-        return createTemplateOrIso(userId, accountId, zoneId, name, displayText, isPublic, featured, isExtractable, format, "ext3", url, null, requiresHVM, bits, passwordEnabled, guestOSId, true, hypervisorType);
+        return createTemplateOrIso(userId, accountId, zoneId, name, displayText, isPublic, featured, isExtractable, format, TemplateType.USER, url, null, requiresHVM, bits, passwordEnabled, guestOSId, true, hypervisorType);
     	
     }
     
-    private VMTemplateVO createTemplateOrIso(long userId, Long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, boolean isExtractable, String format, String diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hypervisorType) throws IllegalArgumentException, ResourceAllocationException {
+    private VMTemplateVO createTemplateOrIso(long userId, Long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, boolean isExtractable, String format, TemplateType diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hypervisorType) throws IllegalArgumentException, ResourceAllocationException {
         try
         {
             if (name.length() > 32)
@@ -426,7 +426,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             	throw new IllegalArgumentException("Cannot use reserved names for templates");
             }
             
-            return create(userId, accountId, zoneId, name, displayText, isPublic, featured, isExtractable, imgfmt, null, uri, chksum, requiresHvm, bits, enablePassword, guestOSId, bootable, hypervisorType);
+            return create(userId, accountId, zoneId, name, displayText, isPublic, featured, isExtractable, imgfmt, diskType, uri, chksum, requiresHvm, bits, enablePassword, guestOSId, bootable, hypervisorType);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Invalid URL " + url);
         }
