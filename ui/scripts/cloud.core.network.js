@@ -191,9 +191,9 @@ function publicNetworkIprangeJsonToTemplate(jsonObj, $template) {
     var ipRange = getIpRange(fromdb(jsonObj.startip), fromdb(jsonObj.endip));
     $template.find("#grid_header_title").text(ipRange);
     
-    $template.find("#vlan").text(jsonObj.vlan)
-    $template.find("#startip").text(fromdb(jsonObj.startip));
-    $template.find("#endip").text(fromdb(jsonObj.endip));
+    $template.find("#id").text(jsonObj.id);
+    $template.find("#vlan").text(jsonObj.vlan);
+    $template.find("#iprange").text(ipRange);   
    
     var $actionLink = $template.find("#iprange_action_link");		
 	$actionLink.bind("mouseover", function(event) {
@@ -941,10 +941,10 @@ function directNetworkIprangeJsonToTemplate(jsonObj, $template) {
     var ipRange = getIpRange(fromdb(jsonObj.startip), fromdb(jsonObj.endip));
     $template.find("#grid_header_title").text(ipRange);
     
-    $template.find("#vlan").text(jsonObj.vlan)
-    $template.find("#startip").text(fromdb(jsonObj.startip));
-    $template.find("#endip").text(fromdb(jsonObj.endip));
-    
+    $template.find("#id").text(jsonObj.id)
+    $template.find("#vlan").text(jsonObj.vlan);
+    $template.find("#iprange").text(ipRange);
+        
     var $actionLink = $template.find("#iprange_action_link");		
 	$actionLink.bind("mouseover", function(event) {
         $(this).find("#iprange_action_menu").show();    
