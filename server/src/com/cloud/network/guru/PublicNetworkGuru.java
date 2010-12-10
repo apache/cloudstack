@@ -53,8 +53,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network network, Account owner) {
-        if (offering.getTrafficType() != TrafficType.Public || (offering.getTrafficType() == TrafficType.Guest && offering.getGuestIpType() != GuestIpType.Direct)) {
-            s_logger.trace("We only take care of two types of networks.  Public or Guest direct so this is no ours");
+        if (offering.getTrafficType() != TrafficType.Public || (offering.getGuestIpType() != null && offering.getGuestIpType() != GuestIpType.Virtual)) {
+            s_logger.trace("We only take care of Public Virtual Network");
             return null;
         }
         

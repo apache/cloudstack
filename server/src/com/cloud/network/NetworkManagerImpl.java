@@ -756,9 +756,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, GuestIpType.Virtual, false, false, rateMbps, multicastRateMbps, null, true);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
-        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Guest, GuestIpType.Direct, false, false, rateMbps, multicastRateMbps, null, true);
+        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Public, GuestIpType.Direct, false, false, rateMbps, multicastRateMbps, null, true);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
-        NetworkOfferingVO defaultGuestDirectPodBasedNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectPodBasedNetworkOffering, "DirectPodBased", TrafficType.Guest, GuestIpType.DirectPodBased, true, false, rateMbps, multicastRateMbps, null, true);
+        NetworkOfferingVO defaultGuestDirectPodBasedNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectPodBasedNetworkOffering, "DirectPodBased", TrafficType.Public, GuestIpType.DirectPodBased, true, false, rateMbps, multicastRateMbps, null, true);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectPodBasedNetworkOffering);
         
 

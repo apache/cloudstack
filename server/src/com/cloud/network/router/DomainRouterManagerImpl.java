@@ -2131,7 +2131,6 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	            s_logger.debug("Starting a dhcp for network configurations: dhcp="  + guestConfig + " in " + dest);
 	        }
 	        assert guestConfig.getState() == Network.State.Implemented || guestConfig.getState() == Network.State.Setup : "Network is not yet fully implemented: " + guestConfig;
-	        assert guestConfig.getTrafficType() == TrafficType.Guest;
 	        
 	        DataCenterDeployment plan = new DataCenterDeployment(dcId);
 	        

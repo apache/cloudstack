@@ -55,8 +55,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
-        //Change traffic type to Public after Alex's fix
-        if (!(offering.getTrafficType() == TrafficType.Guest && offering.getGuestIpType() == GuestIpType.Direct)) {
+        if (!(offering.getTrafficType() == TrafficType.Public && offering.getGuestIpType() == GuestIpType.Direct)) {
             s_logger.trace("We only take care of public direct network, so this is no ours");
             return null;
         }

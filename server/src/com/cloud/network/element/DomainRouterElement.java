@@ -32,14 +32,12 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.DomainRouterManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.service.Providers;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
@@ -49,7 +47,6 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -90,11 +87,7 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     @Override
     public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
         if (canHandle(config.getGuestType(), dest)) {
-            if (config.getTrafficType() != TrafficType.Guest || vm.getType() != Type.User) {
-                s_logger.trace("Domain Router only cares about guest network and User VMs");
-                return false;
-            }
-            
+           
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
@@ -111,19 +104,11 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
 
     @Override
     public boolean release(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) {
-        if (config.getTrafficType() != TrafficType.Guest || vm.getType() != Type.User) {
-            s_logger.trace("Domain Router only cares about guest network and User VMs");
-            return false;
-        }
         return true;
     }
 
     @Override
     public boolean shutdown(Network config, ReservationContext context) throws ConcurrentOperationException {
-        if (config.getTrafficType() != TrafficType.Guest) {
-            s_logger.trace("Domain Router only cares about guet network.");
-            return false;
-        }
         DomainRouterVO router = _routerDao.findByNetworkConfiguration(config.getId());
         if (router == null) {
             return true;
@@ -137,7 +122,6 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
 
     @Override
     public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-        
         return false;
     }
 
