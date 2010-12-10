@@ -26,11 +26,11 @@
             <div class="content_tabs on" id="tab_details">
                 <%=t.t("details")%></div>
             <div class="content_tabs off" id="tab_ipallocation">
-                <%=t.t("IP.allocation")%></div>
+                IP Allocation</div>
             <div class="content_tabs off" id="tab_firewall">
-                <%=t.t("firewall")%></div>
+                Firewall</div>
             <div class="content_tabs off" id="tab_loadbalancer">
-                <%=t.t("load.balancer")%></div>
+                Load Balancer</div>
         </div>    
         <!-- Details tab (end)-->
         <div id="tab_content_details">  
@@ -75,7 +75,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("state")%>:</div>
+	                            State:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="state">
@@ -85,7 +85,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("traffic.type")%>:</div>
+	                            Traffic Type:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="traffictype">
@@ -95,7 +95,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("broad.cast.domain.type")%>:</div>
+	                            Broadcast Domain Type:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="broadcastdomaintype">
@@ -105,7 +105,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("is.shared")%>:</div>
+	                            Is Shared:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="isshared">
@@ -115,7 +115,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("is.system")%>:</div>
+	                            Is System:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="issystem">
@@ -125,7 +125,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("network.offering.name")%>:</div>
+	                            Network Offering Name:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="networkofferingname">
@@ -135,7 +135,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("network.offering.display.text")%>:</div>
+	                            Network Offering Display Text:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="networkofferingdisplaytext">
@@ -145,7 +145,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("network.offering.id")%>:</div>
+	                            Network Offering ID:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="networkofferingid">
@@ -155,7 +155,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("related")%>:</div>
+	                            Related:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="related">
@@ -165,7 +165,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("zone.id")%>:</div>
+	                            Zone ID:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="zoneid">
@@ -175,7 +175,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("dns1")%>:</div>
+	                            DNS1:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="dns1">
@@ -185,7 +185,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("dns2")%>:</div>
+	                            DNS2:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="dns2">
@@ -195,7 +195,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("domainid")%>:</div>
+	                            Domain ID:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="domainid">
@@ -205,7 +205,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("account")%>:</div>
+	                            Account:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="account">
@@ -265,7 +265,7 @@
             <div class="content_tabs on" id="tab_details">
                 <%=t.t("Details")%></div>
             <div class="content_tabs off" id="tab_ipallocation">
-                <%=t.t("IP Allocation")%></div>
+                IP Allocation</div>
         </div>    
         <!-- Details tab (end)-->
         <div id="tab_content_details">  
@@ -319,7 +319,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("displaytext")%>:</div>
+	                            <%=t.t("display.text")%>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="displaytext">
@@ -336,7 +336,7 @@
 	                        </div>
 	                    </div>
 	                </div>
-	                                    <div class="grid_rows odd">
+	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
 	                            <%=t.t("gateway")%>:</div>
@@ -349,7 +349,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("netmask")%>:</div>
+	                            Netmask:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="netmask">
@@ -359,7 +359,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("domain")%>:</div>
+	                            Domain:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="domain">
@@ -369,7 +369,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("account")%>:</div>
+	                            Account:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="account">
