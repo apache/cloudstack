@@ -1143,16 +1143,14 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             return null;
         }
 
-        if (account != null) {
-            long lbAcctId = loadBalancer.getAccountId();
-            if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-                Account userAccount = _accountDao.findById(lbAcctId);
-                if (!_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
-                    throw new PermissionDeniedException("Invalid load balancer rule id (" + loadBalancerId + ") given, unable to list load balancer instances.");
-                }
-            } else if (account.getId() != lbAcctId) {
-                throw new PermissionDeniedException("Unable to list load balancer instances, account " + account.getAccountName() + " does not own load balancer rule " + loadBalancer.getName());
+        long lbAcctId = loadBalancer.getAccountId();
+        if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            Account userAccount = _accountDao.findById(lbAcctId);
+            if (!_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
+                throw new PermissionDeniedException("Invalid load balancer rule id (" + loadBalancerId + ") given, unable to list load balancer instances.");
             }
+        } else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL && account.getId() != lbAcctId) {
+            throw new PermissionDeniedException("Unable to list load balancer instances, account " + account.getAccountName() + " does not own load balancer rule " + loadBalancer.getName());
         }
 
         List<UserVmVO> loadBalancerInstances = new ArrayList<UserVmVO>();
