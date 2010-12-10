@@ -19,6 +19,7 @@ package com.cloud.network;
 
 import java.util.List;
 
+import com.cloud.agent.manager.Commands;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -115,4 +116,7 @@ public interface NetworkManager extends NetworkService {
 	boolean applyRules(Ip ip, List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
 	
 	PublicIp fetchNewPublicIp(long dcId, VlanType vlanUse, Account owner, Long networkId, boolean sourceNat) throws InsufficientAddressCapacityException;
+
+	Commands getAssociateIPCommands(DomainRouterVO router,
+			List<String> ipAddrList, boolean add, long vmId, Commands cmds);
 }

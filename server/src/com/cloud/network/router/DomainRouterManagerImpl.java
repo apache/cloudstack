@@ -2244,19 +2244,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         NicProfile controlNic = (NicProfile)profile.getParameter("control.nic");
         cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20));
         
-        
-        return true;
-    }
-
-    @Override
-    public boolean finalizeStart(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
-        CheckSshAnswer answer = (CheckSshAnswer)cmds.getAnswer("checkSsh");
-        if (!answer.getResult()) {
-            s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
-            return false;
-        }
-        
         DomainRouterVO router = profile.getVirtualMachine();
+        
         List<NicVO> nics = _nicDao.listBy(router.getId());
         for (NicVO nic : nics) {
         	NetworkVO network = _networkDao.findById(nic.getNetworkId());
@@ -2273,6 +2262,28 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         		router.setPrivateMacAddress(nic.getMacAddress());
         	}
         }
+      //source NAT address is stored in /proc/cmdline of the domR and gets
+		//reassigned upon powerup. Source NAT rule gets configured in StartRouter command
+    	final List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(router.getAccountId(), router.getDataCenterId(), null);
+		final List<String> ipAddrList = new ArrayList<String>();
+		for (final IPAddressVO ipVO : ipAddrs) {
+			ipAddrList.add(ipVO.getAddress());
+		}
+		if (!ipAddrList.isEmpty()) {	  
+			_networkMgr.getAssociateIPCommands(router, ipAddrList, true, 0, cmds);               
+		}
+        return true;
+    }
+
+    @Override
+    public boolean finalizeStart(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
+        CheckSshAnswer answer = (CheckSshAnswer)cmds.getAnswer("checkSsh");
+        if (!answer.getResult()) {
+            s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
+            return false;
+        }
+        
+      
         return true;
     }
     

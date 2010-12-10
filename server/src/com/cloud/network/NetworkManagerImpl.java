@@ -325,6 +325,55 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
+    public Commands getAssociateIPCommands(final DomainRouterVO router, final List<String> ipAddrList, final boolean add, long vmId, Commands cmds) {   	 
+         boolean sourceNat = false;
+         Map<VlanVO, ArrayList<IPAddressVO>> vlanIpMap = new HashMap<VlanVO, ArrayList<IPAddressVO>>();
+         for (final String ipAddress: ipAddrList) {
+             IPAddressVO ip = _ipAddressDao.findById(ipAddress);
+
+             VlanVO vlan = _vlanDao.findById(ip.getVlanId());
+             ArrayList<IPAddressVO> ipList = vlanIpMap.get(vlan.getId());
+             if (ipList == null) {
+                 ipList = new ArrayList<IPAddressVO>();
+             }
+             ipList.add(ip);
+             vlanIpMap.put(vlan, ipList);
+         }
+         for (Map.Entry<VlanVO, ArrayList<IPAddressVO>> vlanAndIp: vlanIpMap.entrySet()) {
+             boolean firstIP = true;
+             ArrayList<IPAddressVO> ipList = vlanAndIp.getValue();
+             Collections.sort(ipList, new Comparator<IPAddressVO>() {
+                 @Override
+                 public int compare(IPAddressVO o1, IPAddressVO o2) {
+                     return o1.getAddress().compareTo(o2.getAddress());
+                 } });
+
+             for (final IPAddressVO ip: ipList) {
+                 sourceNat = ip.isSourceNat();
+                 VlanVO vlan = vlanAndIp.getKey();
+                 String vlanId = vlan.getVlanId();
+                 String vlanGateway = vlan.getVlanGateway();
+                 String vlanNetmask = vlan.getVlanNetmask();
+
+                 String vifMacAddress = null;
+                 if (firstIP && add) {
+                     String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(ip.getDataCenterId());
+                     vifMacAddress = macAddresses[1];
+                 }
+                 String vmGuestAddress = null;
+                 if(vmId!=0){
+                     vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
+                 }
+
+                 cmds.addCommand(new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ip.getAddress(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress));
+
+                 firstIP = false;
+             }
+         }
+         return cmds;
+    }
+    
+    @Override
     public boolean associateIP(final DomainRouterVO router, final List<String> ipAddrList, final boolean add, long vmId) {
         Commands cmds = new Commands(OnError.Continue);
         boolean sourceNat = false;
