@@ -319,7 +319,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 				templateZonePairList.add(templateZonePair);    		
             }
             
-           if(isIso && templateZonePairList.size() < pageSize && templateFilter != TemplateFilter.community){
+           //for now, defaulting pageSize to a large val if null; may need to revisit post 2.2RC2 
+           if(isIso && templateZonePairList.size() < (pageSize != null ? pageSize : 500) && templateFilter != TemplateFilter.community){
             	List<VMTemplateVO> publicIsos = publicIsoSearch();            	
             	for( int i=0; i < publicIsos.size(); i++){
             		templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getId(), null));
