@@ -57,12 +57,10 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -377,6 +375,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
             throw new ConcurrentOperationException("Unable to start vm "  + vm + " due to concurrent operations");
         }
 
+        VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, null, params, hyperType);
+        
         ExcludeList avoids = new ExcludeList();
         int retry = _retry;
         DeployDestination dest = null;
@@ -386,8 +386,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
         		stateTransitTo(vm, Event.OperationRetry, dest.getHost().getId());
         	}
         	
-            VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, null, params, hyperType);
-            
             for (DeploymentPlanner planner : _planners) {
                 dest = planner.plan(vmProfile, plan, avoids);
                 if (dest != null) {
@@ -407,15 +405,18 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
 
             try {
                 _storageMgr.prepare(vmProfile, dest);
+                _networkMgr.prepare(vmProfile, dest, context);
             } catch (ConcurrentOperationException e) {
             	stateTransitTo(vm, Event.OperationFailed, dest.getHost().getId());
                 throw e;
-            } catch (StorageUnavailableException e) {
+            } catch (ResourceUnavailableException e) {
                 s_logger.warn("Unable to contact storage.", e);
                 avoids.addCluster(dest.getCluster().getId());
                 continue;
+            } catch (InsufficientCapacityException e) {
+                s_logger.warn("Insufficient capacity ", e);
+                avoids.add(e);
             }
-            _networkMgr.prepare(vmProfile, dest, context);
             
             vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, context);
             

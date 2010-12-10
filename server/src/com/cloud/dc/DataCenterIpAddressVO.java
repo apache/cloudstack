@@ -56,6 +56,9 @@ public class DataCenterIpAddressVO {
     @Column(name="instance_id")
     private Long instanceId;
     
+    @Column(name="mac_address")
+    private long macAddress;
+    
     protected DataCenterIpAddressVO() {
     }
     
@@ -67,10 +70,15 @@ public class DataCenterIpAddressVO {
         this.reservationId = reservationId;
     }
 
-    public DataCenterIpAddressVO(String ipAddress, long dataCenterId, long podId) {
+    public DataCenterIpAddressVO(String ipAddress, long dataCenterId, long podId, long macAddress) {
         this.ipAddress = ipAddress;
         this.dataCenterId = dataCenterId;
         this.podId = podId;
+        this.macAddress = macAddress;
+    }
+    
+    public long getMacAddress() {
+        return macAddress;
     }
     
     public Long getId() {

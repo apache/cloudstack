@@ -2110,30 +2110,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	
 	@DB
 	protected List<String> savePrivateIPRange(String startIP, String endIP, long podId, long zoneId) {
-		long startIPLong = NetUtils.ip2Long(startIP);
-		long endIPLong = NetUtils.ip2Long(endIP);
 		Transaction txn = Transaction.currentTxn();
-		String insertSql = "INSERT INTO `cloud`.`op_dc_ip_address_alloc` (ip_address, data_center_id, pod_id) VALUES (?, ?, ?)";
-		List<String> problemIPs = new ArrayList<String>();
-		
+		IPRangeConfig config = new IPRangeConfig();
 		txn.start();
-		PreparedStatement stmt = null;
-        while (startIPLong <= endIPLong) {
-        	try {
-        		stmt = txn.prepareAutoCloseStatement(insertSql);
-        		stmt.setString(1, NetUtils.long2Ip(startIPLong));
-        		stmt.setLong(2, zoneId);
-        		stmt.setLong(3, podId);
-        		stmt.executeUpdate();
-        		stmt.close();
-        	} catch (Exception ex) {
-        		 problemIPs.add(NetUtils.long2Ip(startIPLong));
-        	}
-        	startIPLong += 1;
-        }
-        txn.commit();
-        
-        return problemIPs;
+		List<String> ips = config.savePrivateIPRange(txn, NetUtils.ip2Long(startIP), NetUtils.ip2Long(endIP), podId, zoneId);
+		txn.commit();
+		return ips;
 	}
     
 	private String genChangeRangeSuccessString(List<String> problemIPs, boolean add) {

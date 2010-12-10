@@ -15,30 +15,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.exception;
+package com.cloud.agent.api;
 
-import com.cloud.utils.SerialVersionUID;
-import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.agent.api.to.VirtualMachineTO;
 
-public class ResourceUnavailableException extends CloudRuntimeException {
-    private static final long serialVersionUID = SerialVersionUID.ResourceUnavailableException;
-
-    Class<?> _scope;
-    long _id;
+/**
+ * This command carries information to start a VM.
+ */
+public class Start2Command extends Command {
+    VirtualMachineTO vm;
     
-    public ResourceUnavailableException(String msg) {
-        super(msg);
+    public VirtualMachineTO getVirtualMachine() {
+        return vm;
     }
     
-    public ResourceUnavailableException(String msg, Throwable cause) {
-        super(msg, cause);
+    @Override
+    public boolean executeInSequence() {
+        return true;
     }
     
-    public Class<?> getScope() {
-        return _scope;
+    protected Start2Command() {
     }
     
-    public long getScopeId() {
-        return _id;
+    public Start2Command(VirtualMachineTO vm) {
+        this.vm = vm;
     }
 }
