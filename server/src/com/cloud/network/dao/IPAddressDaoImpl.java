@@ -50,7 +50,10 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
     protected final SearchBuilder<IPAddressVO> VlanDbIdSearchUnallocated;
     protected final GenericSearchBuilder<IPAddressVO, Integer> AllIpCount;
     protected final GenericSearchBuilder<IPAddressVO, Integer> AllocatedIpCount;
-
+    protected final GenericSearchBuilder<IPAddressVO, Integer> AllIpCountForDashboard;
+    protected final GenericSearchBuilder<IPAddressVO, Integer> AllocatedIpCountForDashboard;
+    
+    
     // make it public for JUnit test
     public IPAddressDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -79,6 +82,17 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
         AllocatedIpCount.and("vlan", AllocatedIpCount.entity().getVlanId(), Op.EQ);
         AllocatedIpCount.and("allocated", AllocatedIpCount.entity().getAllocatedTime(), Op.NNULL);
         AllocatedIpCount.done();
+        
+        AllIpCountForDashboard = createSearchBuilder(Integer.class);
+        AllIpCountForDashboard.select(null, Func.COUNT, AllIpCountForDashboard.entity().getAddress());
+        AllIpCountForDashboard.and("dc", AllIpCountForDashboard.entity().getDataCenterId(), Op.EQ);
+        AllIpCountForDashboard.done();
+
+        AllocatedIpCountForDashboard = createSearchBuilder(Integer.class);
+        AllocatedIpCountForDashboard.select(null, Func.COUNT, AllocatedIpCountForDashboard.entity().getAddress());
+        AllocatedIpCountForDashboard.and("dc", AllocatedIpCountForDashboard.entity().getDataCenterId(), Op.EQ);
+        AllocatedIpCountForDashboard.and("allocated", AllocatedIpCountForDashboard.entity().getAllocatedTime(), Op.NNULL);
+        AllocatedIpCountForDashboard.done();
     }
 
     @Override
@@ -200,6 +214,14 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
         SearchCriteria<Integer> sc = onlyCountAllocated ? AllocatedIpCount.create() : AllIpCount.create();
         sc.setParameters("dc", dcId);
         sc.setParameters("vlan", vlanId);
+
+        return customSearch(sc, null).get(0);
+    }
+
+    @Override
+    public int countIPsForDashboard(long dcId, boolean onlyCountAllocated) {
+        SearchCriteria<Integer> sc = onlyCountAllocated ? AllocatedIpCountForDashboard.create() : AllIpCountForDashboard.create();
+        sc.setParameters("dc", dcId);
 
         return customSearch(sc, null).get(0);
     }

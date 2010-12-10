@@ -50,6 +50,7 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -333,8 +334,13 @@ public class AlertManagerImpl implements AlertManager {
         for (DataCenterVO datacenter : datacenters) {
             long dcId = datacenter.getId();
 
-            int totalPublicIPs = _publicIPAddressDao.countIPs(dcId, -1, false);
-            int allocatedPublicIPs = _publicIPAddressDao.countIPs(dcId, -1, true);
+            //NOTE
+            //What happens if we have multiple vlans? Dashboard currently shows stats 
+            //with no filter based on a vlan
+            //ideal way would be to remove out the vlan param, and filter only on dcId
+            //implementing the same
+            int totalPublicIPs = _publicIPAddressDao.countIPsForDashboard(dcId, false);
+            int allocatedPublicIPs = _publicIPAddressDao.countIPsForDashboard(dcId, true);
 
             CapacityVO newPublicIPCapacity = new CapacityVO(null, dcId, null, allocatedPublicIPs, totalPublicIPs, CapacityVO.CAPACITY_TYPE_PUBLIC_IP);
             newCapacities.add(newPublicIPCapacity);

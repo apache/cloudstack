@@ -42,4 +42,6 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, String> {
 	boolean mark(long dcId, String ip);
 	
 	List<String> assignAcccountSpecificIps(long accountId, long longValue, Long vlanDbId, boolean sourceNat);
+
+	int countIPsForDashboard(long dcId, boolean onlyCountAllocated);
 }
