@@ -563,6 +563,87 @@
 </div>
 <!-- Add IP Range for public netework dialog (end) -->
 
+
+<!-- Add External Firewall (begin) -->
+<div id="dialog_add_external_firewall" title="Add Firewall" style="display: none">   
+    <p>
+        Add firewall for zone: <b><span id="zone_name"></span></b>
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>   
+            <li>
+                <label>
+                    IP:</label>
+                <input class="text" type="text" id="ip" />
+                <div id="ip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label>
+                    User name:</label>
+                <input class="text" type="text" id="username" />
+                <div id="username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label>
+                    Password:</label>
+                <input class="text" type="password" id="password" autocomplete="off" />
+                <div id="password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>  
+            
+            <li>
+                <label>
+                    Public Interface:</label>
+                <input class="text" type="text" id="public_interface" />
+                <div id="public_interface_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>         
+            <li>
+                <label>
+                    Private Interface:</label>
+                <input class="text" type="text" id="private_interface" />
+                <div id="private_interface_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>       
+            <li>
+                <label>
+                    Public Zone:</label>
+                <input class="text" type="text" id="public_zone" />
+                <div id="public_zone_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>       
+            <li>
+                <label>
+                    Private Zone:</label>
+                <input class="text" type="text" id="private_zone" />
+                <div id="private_zone_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>        
+        </ol>
+        </form>
+    </div>
+    <!--Loading box-->
+    <div id="spinning_wheel" class="ui_dialog_loaderbox" style="display: none;">
+        <div class="ui_dialog_loader">
+        </div>
+        <p>
+            Adding....</p>
+    </div>
+    <!--Confirmation msg box-->
+    <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+    <div id="info_container" class="ui_dialog_messagebox error" style="display: none;">
+        <div id="icon" class="ui_dialog_msgicon error">
+        </div>
+        <div id="info" class="ui_dialog_messagebox_text error">
+            (info)</div>
+    </div>
+</div>
+<!-- Add External Firewall (end) -->
+
+
 <!-- Add IP Range for direct netework dialog (begin) -->
 <div id="dialog_add_iprange_to_directnetwork" title="Add IP Range to Direct Network" style="display: none">
     <p>

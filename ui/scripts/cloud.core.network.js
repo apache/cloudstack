@@ -108,6 +108,7 @@ function publicNetworkToRightPanel($midmenuItem1) {
             
     $("#public_network_page").show();    
     initAddIpRangeToPublicNetworkButton($("#midmenu_add_iprange_button"), $midmenuItem1);
+    initAddExternalFirewallButton($("#midmenu_add_external_firewall_button"), $midmenuItem1);
     
     $("#direct_network_page").hide();
     
@@ -437,6 +438,141 @@ function initAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
     });
 }
 
+function initAddExternalFirewallButton($button, $midmenuItem1) {         
+    var jsonObj = $midmenuItem1.data("jsonObj");      
+    
+    initDialog("dialog_add_external_firewall");    
+    
+    var $dialogAddExternalFirewall = $("#dialog_add_external_firewall"); 
+          
+    $button.show();   
+    $button.unbind("click").bind("click", function(event) {         
+        if($("#public_network_page").find("#tab_content_firewall").css("display") == "none")         
+            $("#public_network_page").find("#tab_firewall").click();
+                          
+        $dialogAddExternalFirewall.find("#info_container").hide();
+        $dialogAddExternalFirewall.find("#zone_name").text(fromdb(zoneObj.name));         
+					
+		$dialogAddExternalFirewall
+		.dialog('option', 'buttons', { 	
+			"Add": function() { 	
+			    var $thisDialog = $(this);		
+			    			
+				// validate values
+				var isValid = true;		
+				isValid &= validateString("IP", $thisDialog.find("#ip"), $thisDialog.find("#ip_errormsg"), false); //required
+				isValid &= validateString("User Name", $thisDialog.find("#username"), $thisDialog.find("#username_errormsg"), false); //required
+				isValid &= validateString("Password", $thisDialog.find("#password"), $thisDialog.find("#password_errormsg"), false);  //required				
+				isValid &= validateString("Public Interface", $thisDialog.find("#public_interface"), $thisDialog.find("#public_interface_errormsg"), true);  //optinal
+				isValid &= validateString("Private Interface", $thisDialog.find("#private_interface"), $thisDialog.find("#private_interface_errormsg"), true);  //optinal
+				isValid &= validateString("Public Zone", $thisDialog.find("#public_zone"), $thisDialog.find("#public_zone_errormsg"), true);  //optinal
+				isValid &= validateString("Private Zone", $thisDialog.find("#private_zone"), $thisDialog.find("#private_zone_errormsg"), true);  //optinal
+				if (!isValid) 
+				    return;		
+				 			    						
+				$thisDialog.find("#spinning_wheel").show()
+				
+				var array1 = [];
+			
+				array1.push("&zoneid=" + zoneObj.id);
+											
+				var username = $thisDialog.find("#username").val();
+				array1.push("&username="+username);
+				
+				var password = $thisDialog.find("#password").val();
+				array1.push("&password="+password);
+				
+				//*** construct URL (begin)	***	
+				var url = [];
+				
+				var ip = $thisDialog.find("#ip").val();
+		        if(ip.indexOf("http://")==-1)
+		            url.push(todb("http://"+ip));		            
+		        else
+		            url.push(todb(ip));		                   
+				
+				var isQuestionMarkAdded = false;
+				
+				var publicInterface = $thisDialog.find("#public_interface").val();
+				if(publicInterface != null && publicInterface.length > 0) {
+				    if(isQuestionMarkAdded == false) {
+				        url.push("?");
+				        isQuestionMarkAdded = true;
+				    }
+				    else {
+				        url.push("&");
+				    }  				    
+				    url.push("publicInterface="+todb(publicInterface)); 
+				}
+				    
+				var privateInterface = $thisDialog.find("#private_interface").val();
+				if(privateInterface != null && privateInterface.length > 0) {
+				    if(isQuestionMarkAdded == false) {
+				        url.push("?");
+				        isQuestionMarkAdded = true;
+				    }
+				    else {
+				        url.push("&");
+				    }  		
+				    url.push("privateInterface="+todb(privateInterface)); 
+				}
+				    
+				var publicZone = $thisDialog.find("#public_zone").val();
+				if(publicZone != null && publicZone.length > 0) {
+				    if(isQuestionMarkAdded == false) {
+				        url.push("?");
+				        isQuestionMarkAdded = true;
+				    }
+				    else {
+				        url.push("&");
+				    }  		
+				    url.push("publicZone="+todb(publicZone)); 
+				}
+				
+				var privateZone = $thisDialog.find("#private_zone").val();
+				if(privateZone != null && privateZone.length > 0) {
+				    if(isQuestionMarkAdded == false) {
+				        url.push("?");
+				        isQuestionMarkAdded = true;
+				    }
+				    else {
+				        url.push("&");
+				    }  		
+				    url.push("privateZone="+todb(privateZone)); 	
+				}			
+				
+				array1.push("&url="+url.join(""));		
+				//*** construct URL (end)	***					
+										
+				$.ajax({
+					data: createURL("command=addExternalFirewall"+array1.join("")),
+					dataType: "json",
+					success: function(json) {	
+						$thisDialog.find("#spinning_wheel").hide();
+						$thisDialog.dialog("close");
+					    					    
+					    /*
+					    var item = json.createvlaniprangeresponse.vlan;						    
+					    var $newTemplate = $("#iprange_template").clone();
+	                    publicNetworkIprangeJsonToTemplate(item, $newTemplate);
+	                    $("#public_network_page").find("#tab_content_ipallocation").find("#tab_container").prepend($newTemplate.show());	
+	                    */					   
+					},
+					error: function(XMLHttpResponse) {
+						handleError(XMLHttpResponse, function() {
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);	
+						});
+					}
+				});
+			}, 
+			"Cancel": function() { 
+				$(this).dialog("close"); 
+			} 
+		}).dialog("open");           
+        return false;
+    });
+}
+
 var publicNetworkIpRangeActionMap = {     
     "Delete IP Range": {              
         api: "deleteVlanIpRange",     
@@ -476,6 +612,7 @@ function directNetworkToRightPanel($midmenuItem1) {
             
     $("#direct_network_page").show();
     initAddIpRangeToDirectNetworkButton($("#midmenu_add_iprange_button"), $midmenuItem1);
+    $("#midmenu_add_external_firewall_button").unbind("click").hide(); 
     
     $("#public_network_page").hide();
     
