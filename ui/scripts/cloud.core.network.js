@@ -1204,7 +1204,7 @@ function initAddIpRangeToDirectNetworkButton($button, $midmenuItem1) {
 
 var directNetworkActionMap = {       
     "Delete Network": {              
-        api: "deleteVlanIpRange",     
+        api: "deleteNetwork",     
         isAsyncJob: false,           
         inProcessText: "Deleting Network....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
