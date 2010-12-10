@@ -40,5 +40,7 @@ public interface LoadBalancer extends FirewallRule {
         String getIpAddress();
         int getDestinationPortStart();
         int getDestinationPortEnd();
+        boolean getRevoked();
+        boolean getAlreadyAdded();
     }
 }

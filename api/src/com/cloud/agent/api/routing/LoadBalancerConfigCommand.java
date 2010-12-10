@@ -17,6 +17,11 @@
  */
 package com.cloud.agent.api.routing;
 
+import java.util.List;
+
+import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.LoadBalancer.Destination;
+
 /**
  * LoadBalancerConfigCommand sends the load balancer configuration
  * to the load balancer.  Isn't that kinda obvious?
@@ -25,8 +30,24 @@ public class LoadBalancerConfigCommand extends RoutingCommand {
     String srcIp;
     int srcPort;
     String protocol;
+    String algorithm;    
     boolean revoked;
     boolean alreadyAdded;
+    DestinationTO[] destinations;
+    
+    public LoadBalancerConfigCommand(String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, List<? extends Destination> destinations) {
+    	this.srcIp = srcIp;
+    	this.srcPort = srcPort;
+    	this.protocol = protocol;
+    	this.algorithm = algorithm;    	
+    	this.revoked = revoked;
+    	this.alreadyAdded = alreadyAdded;
+    	this.destinations = new DestinationTO[destinations.size()];
+    	int i = 0;
+    	for (Destination destination : destinations) {
+    		this.destinations[i++] = new DestinationTO(destination.getIpAddress(), destination.getDestinationPortStart(), destination.getRevoked(), destination.getAlreadyAdded());
+    	}
+    }
     
     public String getSrcIp() {
         return srcIp;
@@ -34,6 +55,10 @@ public class LoadBalancerConfigCommand extends RoutingCommand {
 
     public int getSrcPort() {
         return srcPort;
+    }
+    
+    public String getAlgorithm() {
+    	return algorithm;
     }
 
     public String getProtocol() {
@@ -46,6 +71,10 @@ public class LoadBalancerConfigCommand extends RoutingCommand {
 
     public boolean isAlreadyAdded() {
         return alreadyAdded;
+    }
+    
+    public DestinationTO[] getDestinations() {
+    	return destinations;
     }
 
     public class DestinationTO {
