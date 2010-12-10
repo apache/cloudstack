@@ -986,6 +986,7 @@ public class StorageManagerImpl implements StorageManager {
         PoolsUsedByVmSearch.join("volumes", volSearch, volSearch.entity().getPoolId(), PoolsUsedByVmSearch.entity().getId());
         volSearch.and("vm", volSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
         volSearch.and("status", volSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        volSearch.and("removed", volSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         volSearch.done();
         PoolsUsedByVmSearch.done();
         
