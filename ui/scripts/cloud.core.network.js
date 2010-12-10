@@ -1191,9 +1191,9 @@ function initAddIpRangeToDirectNetworkButton($button, $midmenuItem1) {
     $dialogAddIpRangeToDirectNetwork.find("#zone_name").text(fromdb(zoneObj.name));
     
     $button.show();   
-    $button.unbind("click").bind("click", function(event) {           
-        $("#direct_network_page").find("#tab_ipallocation").click();    
-        //$dialogAddIpRangeToDirectNetwork.find("#add_publicip_vlan_startip, #add_publicip_vlan_endip").val("");
+    $button.unbind("click").bind("click", function(event) {    
+        if($("#direct_network_page").find("#tab_content_ipallocation").css("display") == "none")       
+            $("#direct_network_page").find("#tab_ipallocation").click();    
         
 		$dialogAddIpRangeToDirectNetwork
 		.dialog('option', 'buttons', { 	
@@ -1227,7 +1227,7 @@ function initAddIpRangeToDirectNetworkButton($button, $midmenuItem1) {
 					    var item = json.createvlaniprangeresponse.vlan;	
 					    var $newTemplate = $("#iprange_template").clone();
 		                directNetworkIprangeJsonToTemplate(item, $newTemplate);
-		                $("#right_panel_content #direct_network_page #tab_content_ipallocation").find("#tab_container").append($newTemplate.show());					    			   
+		                $("#right_panel_content #direct_network_page #tab_content_ipallocation").find("#tab_container").prepend($newTemplate.show());					    			   
 					},
 					error: function(XMLHttpResponse) {
 						handleError(XMLHttpResponse, function() {
