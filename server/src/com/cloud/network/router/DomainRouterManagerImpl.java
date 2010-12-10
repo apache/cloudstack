@@ -2192,6 +2192,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         buf.append(" template=domP type=" + type);
         buf.append(" name=").append(profile.getHostName());
         NicProfile controlNic = null;
+        NicProfile managementNic = null;
+        
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
             buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp4Address());
@@ -2205,7 +2207,14 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             }
             if (nic.getTrafficType() == TrafficType.Management) {
                 buf.append(" localgw=").append(dest.getPod().getGateway());
+                managementNic = nic;
             } else if (nic.getTrafficType() == TrafficType.Control) {
+            	// DOMR control command is sent over management server in VMware
+            	if(dest.getHost().getHypervisorType() == HypervisorType.VmWare) {
+            		buf.append(" mgmtcidr=").append(_mgmt_host);
+            		buf.append(" localgw=").append(dest.getPod().getGateway());
+            	}
+                
                 controlNic = nic;
             }
         }

@@ -68,9 +68,13 @@
             <adapter name="VMwareGuru" class="com.cloud.hypervisor.VMwareGuru"/>
         </adapters>
         <adapters key="com.cloud.resource.Discoverer">
+<!--
             <adapter name="XCP Agent" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer"/>
+-->
             <adapter name="SecondaryStorage" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer"/>
+<!--
             <adapter name="KVM Agent" class="com.cloud.hypervisor.kvm.discoverer.KvmServerDiscoverer"/>
+-->
         </adapters>
         <adapters key="com.cloud.deploy.DeploymentPlanner">
             <adapter name="First Fit" class="com.cloud.deploy.FirstFitPlanner"/>

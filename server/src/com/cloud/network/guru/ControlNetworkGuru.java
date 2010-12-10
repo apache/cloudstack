@@ -63,8 +63,16 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     @Override
     public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
+    	
         if (config.getTrafficType() != TrafficType.Control) {
-            return null;
+        	return null;
+        }
+
+        if(vm.getHypervisorType() == HypervisorType.VmWare && vm.getType() != VirtualMachine.Type.DomainRouter) {
+        	NicProfile nicProf = new NicProfile(ReservationStrategy.Create, null, null, null, null);
+            String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
+            nicProf.setMacAddress(mac);
+            return nicProf;
         }
         
         if (nic != null) {
@@ -82,11 +90,15 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     public void reserve(NicProfile nic, Network config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         assert nic.getTrafficType() == TrafficType.Control;
-        
-        if (dest.getHost().getHypervisorType() == HypervisorType.VmWare) {
+
+        if (dest.getHost().getHypervisorType() == HypervisorType.VmWare && vm.getType() == VirtualMachine.Type.DomainRouter) {
             super.reserve(nic, config, vm, dest, context);
+            
+            String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
+            nic.setMacAddress(mac);
             return;
         }
+        
         String ip = _dcDao.allocateLinkLocalIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), vm.getId(), context.getReservationId());
         nic.setIp4Address(ip);
         nic.setMacAddress(NetUtils.long2Mac(NetUtils.ip2Long(ip) | (14l << 40)));
@@ -98,9 +110,10 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     @Override
     public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
         assert nic.getTrafficType() == TrafficType.Control;
-        
-        if (vm.getHypervisorType() == HypervisorType.VmWare) {
-            return super.release(nic, vm, reservationId);
+
+        if (vm.getHypervisorType() == HypervisorType.VmWare && vm.getType() == VirtualMachine.Type.DomainRouter) {
+        	super.release(nic, vm, reservationId);
+        	return true;
         }
         
         _dcDao.releaseLinkLocalIpAddress(nic.getId(), reservationId);

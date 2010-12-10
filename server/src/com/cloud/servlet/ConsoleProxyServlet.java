@@ -94,9 +94,12 @@ public class ConsoleProxyServlet extends HttpServlet {
             	}
             } else {
             	// adjust to latest API refactoring changes
-                userId = ((Long)session.getAttribute("userid")).toString();
-                accountObj = (Account)session.getAttribute("accountobj");
-                account = "" + accountObj.getId();
+            	if(session.getAttribute("userid") != null)
+            		userId = ((Long)session.getAttribute("userid")).toString();
+                
+            	accountObj = (Account)session.getAttribute("accountobj");
+                if(accountObj != null)
+                	account = "" + accountObj.getId();
             }
 
             // Do a sanity check here to make sure the user hasn't already been deleted

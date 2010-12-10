@@ -2495,7 +2495,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
-        StringBuilder buf = profile.getBootArgsBuilder();
+    	StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=consoleproxy");
         buf.append(" host=").append(_mgmt_host);
         buf.append(" port=").append(_mgmt_port);
@@ -2507,11 +2507,24 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         buf.append(" pod=").append(dest.getPod().getId());
         buf.append(" guid=Proxy.").append(profile.getId());
         buf.append(" proxy_vm=").append(profile.getId());
+
+        boolean externalDhcp = false;
+        String externalDhcpStr = _configDao.getValue("direct.attach.network.externalIpAllocator.enabled");
+        if(externalDhcpStr != null && externalDhcpStr.equalsIgnoreCase("true"))
+        	externalDhcp = true;
+        
         NicProfile controlNic = null;
+        NicProfile managementNic = null;
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
-            buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp4Address());
-            buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
+            if(nic.getIp4Address() == null) {
+	            buf.append(" eth").append(deviceId).append("ip=").append("0.0.0.0");
+	            buf.append(" eth").append(deviceId).append("mask=").append("0.0.0.0");
+            } else {
+	            buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp4Address());
+	            buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
+            }
+            
             if (nic.isDefaultNic()) {
                 buf.append(" gateway=").append(nic.getGateway());
                 buf.append(" dns1=").append(nic.getDns1());
@@ -2519,14 +2532,25 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                     buf.append(" dns2=").append(nic.getDns2());
                 }
             }
+            
             if (nic.getTrafficType() == TrafficType.Management) {
                 buf.append(" localgw=").append(dest.getPod().getGateway());
+                managementNic = nic;
             } else if (nic.getTrafficType() == TrafficType.Control) {
-                controlNic = nic;
+                if(nic.getIp4Address() != null)
+                	controlNic = nic;
             }
-            
         }
-  
+
+		/*External DHCP mode*/
+		if(externalDhcp)
+			buf.append(" bootproto=dhcp");
+        
+        if(controlNic == null) {
+        	assert(managementNic != null);
+        	controlNic = managementNic;
+        }
+        
         String bootArgs = buf.toString();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + bootArgs);
@@ -2543,7 +2567,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     @Override
     public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
-        NicProfile controlNic = (NicProfile)profile.getParameter("control.nic");
+    	NicProfile controlNic = (NicProfile)profile.getParameter("control.nic");
         CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20);
         cmds.addCommand("checkSsh", check);
         return true;

@@ -2080,7 +2080,10 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	public boolean finalizeVirtualMachineProfile(
 			VirtualMachineProfile<SecondaryStorageVmVO> profile,
 			DeployDestination dest, ReservationContext context) {
-		
+
+		HostVO secHost = _hostDao.findSecondaryStorageHost(dest.getDataCenter().getId());
+		assert(secHost != null);
+	        
 		StringBuilder buf = profile.getBootArgsBuilder();
 		buf.append(" template=domP type=secstorage");
 		buf.append(" host=").append(_mgmt_host);
@@ -2089,12 +2092,11 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 		buf.append(" zone=").append(dest.getDataCenter().getId());
 		buf.append(" pod=").append(dest.getPod().getId());
-		buf.append(" guid=").append(_secHostUuid);
+		buf.append(" guid=").append(secHost.getGuid());
 		String nfsMountPoint = null;
 		try {
-			nfsMountPoint = NfsUtils.url2Mount(_nfsShare);
+			nfsMountPoint = NfsUtils.url2Mount(secHost.getStorageUrl());
 		} catch (Exception e) {
-			
 		}
 		
 		buf.append(" mount.path=").append(nfsMountPoint);
@@ -2103,14 +2105,21 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		buf.append(" sslcopy=").append(Boolean.toString(_useSSlCopy));
 
 		NicProfile controlNic = null;
+        NicProfile managementNic = null;
+        
+        boolean externalDhcp = false;
+        String externalDhcpStr = _configDao.getValue("direct.attach.network.externalIpAllocator.enabled");
+        if(externalDhcpStr != null && externalDhcpStr.equalsIgnoreCase("true"))
+        	externalDhcp = true;
+		
 		for (NicProfile nic : profile.getNics()) {
 			int deviceId = nic.getDeviceId();
 			if (nic.getIp4Address() == null) {
-				/*External DHCP mode*/
+	            buf.append(" eth").append(deviceId).append("mask=").append("0.0.0.0");
 				buf.append(" eth").append(deviceId).append("ip=").append("0.0.0.0");
-				buf.append(" bootproto=dhcp");
 			} else {
 				buf.append(" eth").append(deviceId).append("ip=").append(nic.getIp4Address());
+	            buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
 			}
 			
 			buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
@@ -2119,11 +2128,24 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			}
 			if (nic.getTrafficType() == TrafficType.Management) {
 				buf.append(" localgw=").append(dest.getPod().getGateway());
+				managementNic = nic;
+				buf.append(" private.network.device=").append("eth").append(deviceId);
 			} else if (nic.getTrafficType() == TrafficType.Control) {
-				controlNic = nic;
+				if(nic.getIp4Address() != null)
+					controlNic = nic;
+			} else if(nic.getTrafficType() == TrafficType.Public) {
+				buf.append(" public.network.device=").append("eth").append(deviceId);
 			}
-
 		}
+		
+		/*External DHCP mode*/
+		if(externalDhcp)
+			buf.append(" bootproto=dhcp");
+		
+        if(controlNic == null) {
+        	assert(managementNic != null);
+        	controlNic = managementNic;
+        }
 		
 		DataCenterVO dc = _dcDao.findById(profile.getVirtualMachine().getDataCenterId());
 		buf.append(" dns1=").append(dc.getInternalDns1());
