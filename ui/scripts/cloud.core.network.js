@@ -1194,18 +1194,23 @@ function initAddIpRangeToDirectNetworkButton($button, $midmenuItem1) {
 			    					
 				// validate values
 				var isValid = true;		
-				isValid &= validateIp("Start IP Range", $thisDialog.find("#add_publicip_vlan_startip"), $thisDialog.find("#add_publicip_vlan_startip_errormsg"));   //required
+				isValid &= validateIp("Start IP Range", $thisDialog.find("#add_publicip_vlan_startip"), $thisDialog.find("#add_publicip_vlan_startip_errormsg"), false);   //required
 				isValid &= validateIp("End IP Range", $thisDialog.find("#add_publicip_vlan_endip"), $thisDialog.find("#add_publicip_vlan_endip_errormsg"), true);  //optional
 				if (!isValid) 
 				    return;						    
 				
 				$thisDialog.find("#spinning_wheel").show()
-											
-				var startip = trim($thisDialog.find("#add_publicip_vlan_startip").val());
-				var endip = trim($thisDialog.find("#add_publicip_vlan_endip").val());										
+						
+				var array1 = [];							
+				var startip = $thisDialog.find("#add_publicip_vlan_startip").val();
+				array1.push("&startip="+todb(startip));
+				
+				var endip = $thisDialog.find("#add_publicip_vlan_endip").val();	
+				if(endip != null && endip.length > 0)
+				    array1.push("&endip="+todb(endip));								
 						
 				$.ajax({
-					data: createURL("command=createVlanIpRange&forVirtualNetwork=false&networkid="+todb(jsonObj.id)+"&startip="+todb(startip)+"&endip="+todb(endip)),
+					data: createURL("command=createVlanIpRange&forVirtualNetwork=false&networkid="+todb(jsonObj.id)+array1.join("")),
 					dataType: "json",
 					success: function(json) {	
 						$thisDialog.find("#spinning_wheel").hide();
