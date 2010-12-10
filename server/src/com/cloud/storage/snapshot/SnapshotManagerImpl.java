@@ -107,6 +107,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -323,7 +324,18 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     }
     
     @Override @DB
-    public SnapshotVO createSnapshotImpl(Long volumeId, Long policyId, Long snapshotId, Long startEventId) throws ResourceAllocationException {    
+    public SnapshotVO createSnapshotImpl(Long volumeId, Long policyId, Long snapshotId, Long startEventId) throws ResourceAllocationException {
+    	VolumeVO v = _volsDao.findById(volumeId);
+    	if ( v != null && _volsDao.getHypervisorType(v.getId()).equals(HypervisorType.KVM)) {
+    		/*KVM needs to lock on the vm of volume, because it takes snapshot on behalf of vm, not volume*/
+    		UserVmVO uservm = _vmDao.findById(v.getInstanceId());
+    		if (uservm != null) {
+    			UserVmVO vm = _vmDao.acquireInLockTable(uservm.getId(), 10);
+    			if (vm == null) {
+    				throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " is being used, try it later ");
+    			}
+    		}
+    	}
         VolumeVO volume = _volsDao.acquireInLockTable(volumeId, 10);       
         if( volume == null ) {
             volume = _volsDao.findById(volumeId);

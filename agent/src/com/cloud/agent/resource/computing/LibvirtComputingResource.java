@@ -1445,7 +1445,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			StoragePool secondaryStoragePool = getNfsSPbyURI(_conn, new URI(secondaryStoragePoolURL));
 			String ssPmountPath = _mountPoint + File.separator + secondaryStoragePool.getUUIDString();
 			snapshotDestPath = ssPmountPath + File.separator + "snapshots" + File.separator +  dcId + File.separator + accountId + File.separator + volumeId; 
-			Script command = new Script(_manageSnapshotPath, _timeout, s_logger);
+			Script command = new Script(_manageSnapshotPath, 1800000, s_logger);
 			command.add("-b", snapshotPath);
 			command.add("-n", snapshotName);
 			command.add("-p", snapshotDestPath);
