@@ -6,9 +6,7 @@
     Locale browserLocale = request.getLocale();
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
-<!--Loading-->
-    
-   
+
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
         <img src="images/title_dashboardicon.gif" alt="Dashboard" /></div>
@@ -17,195 +15,16 @@
     </h1>
 </div>
 
-<!--Dashboard Domain (begin)-->
-<div id="dashboard_domain" style="display: none">
-    <div class="contentbox">
-    	<div class="rightpanel_mainloaderbox" style="display:none;">
-               <div class="rightpanel_mainloader_animatedicon"></div>
-               <p>Loading &hellip; </p>
-        </div> 
-	<div class="grid_container" style="width:49%; border:none;">
-            
-            <div class="dbrow even" style="border:1px solid #CCC;">
-                <div class="dbrow_cell" style="width: 74%; border: none;">
-                    <div class="resource_titlebox">
-                    	<div class="domain_dbicons"><img src="images/instance_dbdomain.png" /></div>
-                        <h2>Instance</h2>
-					</div>
-                </div>
-                <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
-                    <div class="domain_resources_totalbg">
-                    	<p id="zone_total">0</p>
-                    </div>
-                </div>
-               
-            </div>
-            <div class="dbrow odd" style="margin-top:8px; border:1px solid #CCC;">
-                <div class="dbrow_cell" style="width: 74%; border: none; ">
-                    <div class="resource_titlebox">
-                    	<div class="domain_dbicons"><img src="images/diskvolume_dbdomain.png" /></div>
-                        <h2>Disk Volume</h2>
-					</div>
-                </div>
-                <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
-                     <div class="domain_resources_totalbg">
-                    	<p id="pod_total">0</p>
-                    </div>
-                </div>
-                
-            </div>
-            
-            <div class="dbrow even" style="margin-top:8px; border:1px solid #CCC;">
-                <div class="dbrow_cell" style="width: 74%; border: none;">
-                     <div class="resource_titlebox">
-                     	<div class="domain_dbicons"><img src="images/snapshots_dbdomain.png" /></div>
-                        <h2>Snapshots</h2>
-                         
-                    </div>
-                </div>
-                <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
-                     <div class="domain_resources_totalbg">
-                    	<p id="host_total">0</p>
-                    </div>
-                </div>
-            
-            </div>
-            
-            <div class="dbrow odd" style="margin-top:8px; border:1px solid #CCC;">
-                <div class="dbrow_cell" style="width: 74%; border: none;">
-                     <div class="resource_titlebox">
-                     	<div class="domain_dbicons"><img src="images/users_dbdomain.png" /></div>
-                        <h2> Accounts</h2>
-                      
-                    </div>
-                </div>
-                 <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
-                     <div class="domain_resources_totalbg">
-                    	<p id="primarystorage_total">0</p>
-                    </div>
-                </div>
-                
-            </div>
-       
-
-    </div>
-    
-     <!--Recents Instance-->
-        <div class="grid_container" style="width: 49%; float:right;">
-            <div class="grid_header">
-                <div class="grid_header_cell" style="width: 60%; border: none;">
-                    <div class="grid_header_title">
-                        Recent Instances</div>
-                </div>
-                <div class="grid_header_cell" style="width: 40%; border: none;">
-                    <div class="grid_header_formbox">
-                        <div class="gridheader_morebutt">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div id="instance_grid_content">
-                <div class="grid_rows">
-                    <div class="grid_row_cell" style="width: 10%;">
-                        <div class="row_celltitles">
-                            <img src="images/instance_leftmenuicon.png" /></div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 63%;">
-                        <div class="row_celltitles"> <strong>Instance Name</strong>
-                        </div>
-                        <div class="row_celltitles">
-                        IP Address
-                        </div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 26%;">
-                        <div class="row_celltitles">
-                        	12/06/2010 03:51:46  </div>
-                    </div>
-                </div>
-                
-                <div class="grid_rows">
-                    <div class="grid_row_cell" style="width: 10%;">
-                        <div class="row_celltitles">
-                            <img src="images/instance_leftmenuicon.png" /></div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 63%;">
-                        <div class="row_celltitles"> <strong>Instance Name</strong>
-                        </div>
-                        <div class="row_celltitles">
-                        IP Address
-                        </div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 26%;">
-                        <div class="row_celltitles">
-                        	12/06/2010 03:51:46  </div>
-                    </div>
-                </div>
-                
-                            <div class="grid_rows">
-                    <div class="grid_row_cell" style="width: 10%;">
-                        <div class="row_celltitles">
-                            <img src="images/instance_leftmenuicon.png" /></div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 63%;">
-                        <div class="row_celltitles"> <strong>Instance Name</strong>
-                        </div>
-                        <div class="row_celltitles">
-                        IP Address
-                        </div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 26%;">
-                        <div class="row_celltitles">
-                        	12/06/2010 03:51:46  </div>
-                    </div>
-                </div>
-                
-                <div class="grid_rows">
-                    <div class="grid_row_cell" style="width: 10%;">
-                        <div class="row_celltitles">
-                            <img src="images/instance_leftmenuicon.png" /></div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 63%;">
-                        <div class="row_celltitles"> <strong>Instance Name</strong>
-                        </div>
-                        <div class="row_celltitles">
-                        IP Address
-                        </div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 26%;">
-                        <div class="row_celltitles">
-                        	12/06/2010 03:51:46  </div>
-                    </div>
-                </div>
-                            <div class="grid_rows">
-                    <div class="grid_row_cell" style="width: 10%;">
-                        <div class="row_celltitles">
-                            <img src="images/instance_leftmenuicon.png" /></div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 63%;">
-                        <div class="row_celltitles"> <strong>Instance Name</strong>
-                        </div>
-                        <div class="row_celltitles">
-                        IP Address
-                        </div>
-                    </div>
-                    <div class="grid_row_cell" style="width: 26%;">
-                        <div class="row_celltitles">
-                        	12/06/2010 03:51:46  </div>
-                    </div>
-                </div>
-                
-                
-            </div>
-        </div>
- </div>
- </div>
 <!--Dashboard Admin (begin)-->
 <div id="dashboard_admin" style="display: none">
     <div class="contentbox">
-    	<div class="rightpanel_mainloaderbox" style="display:none;">
-               <div class="rightpanel_mainloader_animatedicon"></div>
-               <p>Loading &hellip; </p>
-        </div>  
+        <div class="rightpanel_mainloaderbox" style="display: none;">
+            <div class="rightpanel_mainloader_animatedicon">
+            </div>
+            <p>
+                Loading &hellip;
+            </p>
+        </div>
         <div class="grid_container" id="system_wide_capacity_container">
             <div class="grid_header">
                 <div class="grid_header_cell" style="width: 60%; border: none;">
@@ -214,10 +33,12 @@
                 </div>
                 <div class="grid_header_cell" style="width: 40%; border: none;">
                     <div class="grid_header_formbox">
-                    	<label for="zone" class="label">Zone:</label> 
+                        <label for="zone" class="label">
+                            Zone:</label>
                         <select id="capacity_zone_select" class="select" style="width: 110px;">
                         </select>
-                        <label for="pod" class="label">Pod:</label> 
+                        <label for="pod" class="label">
+                            Pod:</label>
                         <select id="capacity_pod_select" class="select" style="width: 110px;">
                         </select>
                     </div>
@@ -278,7 +99,7 @@
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 58%; border: none;">
-                    <div class="db_barbox mid" id="bar_chart" >
+                    <div class="db_barbox mid" id="bar_chart">
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 12%; border: none;">
@@ -411,12 +232,198 @@
                 </div>
             </div>
         </div>
-    </div>    
+    </div>
 </div>
 <!--Dashboard Admin (end)-->
-
 <!--Dashboard DomainAdmin (begin)-->
 <div id="dashboard_domainadmin" style="display: none">
+    <div class="contentbox">
+        <div class="rightpanel_mainloaderbox" style="display: none;">
+            <div class="rightpanel_mainloader_animatedicon">
+            </div>
+            <p>
+                Loading &hellip;
+            </p>
+        </div>
+        <div class="grid_container" style="width: 49%; border: none;">
+            <div class="dbrow even" style="border: 1px solid #CCC;">
+                <div class="dbrow_cell" style="width: 74%; border: none;">
+                    <div class="resource_titlebox">
+                        <div class="domain_dbicons">
+                            <img src="images/instance_dbdomain.png" /></div>
+                        <h2>
+                            Instance</h2>
+                    </div>
+                </div>
+                <div class="dbrow_cell" style="width: 25%; border: none; background: #cacaca repeat top left;">
+                    <div class="domain_resources_totalbg">
+                        <p id="zone_total">
+                            0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="dbrow odd" style="margin-top: 8px; border: 1px solid #CCC;">
+                <div class="dbrow_cell" style="width: 74%; border: none;">
+                    <div class="resource_titlebox">
+                        <div class="domain_dbicons">
+                            <img src="images/diskvolume_dbdomain.png" /></div>
+                        <h2>
+                            Disk Volume</h2>
+                    </div>
+                </div>
+                <div class="dbrow_cell" style="width: 25%; border: none; background: #cacaca repeat top left;">
+                    <div class="domain_resources_totalbg">
+                        <p id="pod_total">
+                            0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="dbrow even" style="margin-top: 8px; border: 1px solid #CCC;">
+                <div class="dbrow_cell" style="width: 74%; border: none;">
+                    <div class="resource_titlebox">
+                        <div class="domain_dbicons">
+                            <img src="images/snapshots_dbdomain.png" /></div>
+                        <h2>
+                            Snapshots</h2>
+                    </div>
+                </div>
+                <div class="dbrow_cell" style="width: 25%; border: none; background: #cacaca repeat top left;">
+                    <div class="domain_resources_totalbg">
+                        <p id="host_total">
+                            0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="dbrow odd" style="margin-top: 8px; border: 1px solid #CCC;">
+                <div class="dbrow_cell" style="width: 74%; border: none;">
+                    <div class="resource_titlebox">
+                        <div class="domain_dbicons">
+                            <img src="images/users_dbdomain.png" /></div>
+                        <h2>
+                            Accounts</h2>
+                    </div>
+                </div>
+                <div class="dbrow_cell" style="width: 25%; border: none; background: #cacaca repeat top left;">
+                    <div class="domain_resources_totalbg">
+                        <p id="primarystorage_total">
+                            0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--Recents Instance-->
+        <div class="grid_container" style="width: 49%; float: right;">
+            <div class="grid_header">
+                <div class="grid_header_cell" style="width: 60%; border: none;">
+                    <div class="grid_header_title">
+                        Recent Instances</div>
+                </div>
+                <div class="grid_header_cell" style="width: 40%; border: none;">
+                    <div class="grid_header_formbox">
+                        <div class="gridheader_morebutt">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="instance_grid_content">
+                <div class="grid_rows">
+                    <div class="grid_row_cell" style="width: 10%;">
+                        <div class="row_celltitles">
+                            <img src="images/instance_leftmenuicon.png" /></div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 63%;">
+                        <div class="row_celltitles">
+                            <strong>Instance Name</strong>
+                        </div>
+                        <div class="row_celltitles">
+                            IP Address
+                        </div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 26%;">
+                        <div class="row_celltitles">
+                            12/06/2010 03:51:46
+                        </div>
+                    </div>
+                </div>
+                <div class="grid_rows">
+                    <div class="grid_row_cell" style="width: 10%;">
+                        <div class="row_celltitles">
+                            <img src="images/instance_leftmenuicon.png" /></div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 63%;">
+                        <div class="row_celltitles">
+                            <strong>Instance Name</strong>
+                        </div>
+                        <div class="row_celltitles">
+                            IP Address
+                        </div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 26%;">
+                        <div class="row_celltitles">
+                            12/06/2010 03:51:46
+                        </div>
+                    </div>
+                </div>
+                <div class="grid_rows">
+                    <div class="grid_row_cell" style="width: 10%;">
+                        <div class="row_celltitles">
+                            <img src="images/instance_leftmenuicon.png" /></div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 63%;">
+                        <div class="row_celltitles">
+                            <strong>Instance Name</strong>
+                        </div>
+                        <div class="row_celltitles">
+                            IP Address
+                        </div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 26%;">
+                        <div class="row_celltitles">
+                            12/06/2010 03:51:46
+                        </div>
+                    </div>
+                </div>
+                <div class="grid_rows">
+                    <div class="grid_row_cell" style="width: 10%;">
+                        <div class="row_celltitles">
+                            <img src="images/instance_leftmenuicon.png" /></div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 63%;">
+                        <div class="row_celltitles">
+                            <strong>Instance Name</strong>
+                        </div>
+                        <div class="row_celltitles">
+                            IP Address
+                        </div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 26%;">
+                        <div class="row_celltitles">
+                            12/06/2010 03:51:46
+                        </div>
+                    </div>
+                </div>
+                <div class="grid_rows">
+                    <div class="grid_row_cell" style="width: 10%;">
+                        <div class="row_celltitles">
+                            <img src="images/instance_leftmenuicon.png" /></div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 63%;">
+                        <div class="row_celltitles">
+                            <strong>Instance Name</strong>
+                        </div>
+                        <div class="row_celltitles">
+                            IP Address
+                        </div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 26%;">
+                        <div class="row_celltitles">
+                            12/06/2010 03:51:46
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 <!--Dashboard DomainAdmin (end) here-->
 
@@ -502,7 +509,8 @@
             </div>
             <div class="grid_row_cell" style="width: 59%; border: none;">
                 <div class="row_celltitles">
-                    <strong id="db_available_public_ips"></strong></div>
+                    <strong id="db_available_public_ips"></strong>
+                </div>
             </div>
         </div>
         <div class="grid_rows odd" style="width: 50%;">
@@ -513,10 +521,11 @@
             </div>
             <div class="grid_row_cell" style="width: 59%; border: none;">
                 <div class="row_celltitles">
-                    <strong id="db_owned_public_ips"></strong></div>
+                    <strong id="db_owned_public_ips"></strong>
+                </div>
             </div>
         </div>
-    </div>      
+    </div>
     <!--Recent errors-->
     <div class="grid_container" style="width: 49%; margin-top: 15px;">
         <div class="grid_header">
@@ -532,7 +541,7 @@
                 <i>No Recent Alerts</i>
             </div>
         </div>
-    </div>  
+    </div>
     <!--Accounts-->
     <div class="grid_container" style="width: 49%; margin-top: 15px; float: right; background: #fff8c8 repeat top left;">
         <div class="grid_header" style="background: url(images/dbaccounts_headerbg.gif) repeat-x top left;">
@@ -552,7 +561,8 @@
             </div>
             <div class="grid_row_cell" style="width: 60%; border: none;">
                 <div class="row_celltitles">
-                    <strong id="db_account_id"></strong></div>
+                    <strong id="db_account_id"></strong>
+                </div>
             </div>
         </div>
         <div class="dbaccounts_rows">
@@ -562,7 +572,8 @@
             </div>
             <div class="grid_row_cell" style="width: 60%; border: none;">
                 <div class="row_celltitles">
-                    <strong id="db_account"></strong></div>
+                    <strong id="db_account"></strong>
+                </div>
             </div>
         </div>
         <div class="dbaccounts_rows">
@@ -572,7 +583,8 @@
             </div>
             <div class="grid_row_cell" style="width: 60%; border: none;">
                 <div class="row_celltitles">
-                    <strong id="db_type"></strong></div>
+                    <strong id="db_type"></strong>
+                </div>
             </div>
         </div>
         <div class="dbaccounts_rows">
@@ -582,7 +594,8 @@
             </div>
             <div class="grid_row_cell" style="width: 60%; border: none;">
                 <div class="row_celltitles">
-                    <strong id="db_domain"></strong></div>
+                    <strong id="db_domain"></strong>
+                </div>
             </div>
         </div>
     </div>
@@ -607,3 +620,4 @@
     </div>
 </div>
 <!-- alert template (end) -->
+
