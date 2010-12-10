@@ -2,6 +2,9 @@
 
 import sys
 import base64
+import string 
+import os
+import tempfile
 
 def vm_data(args):
 
@@ -30,8 +33,9 @@ def vm_data(args):
                 cmd.append("-d")
                 cmd.append(tmp_path)
             except:
-                os.close(fd)
-                os.remove(tmp_path)
+		if (fd !=None):
+                	os.close(fd)
+                	os.remove(tmp_path)
                 return ''
 
         try:
@@ -47,14 +51,18 @@ def vm_data(args):
     return txt
 
 def parseFileData(fileName):
-	args = []
+	args = {} 
 	fd = open(fileName)
 	
 	line = fd.readline()
 	while (line != ""):
-		args.append(line)
-		line = fd.readline()
-	
+		key=string.strip(line[:], '\n')
+		line=fd.readline()
+                val=string.strip(line[:], '\n')
+		args[key]=val
+		line=fd.readline()
 	return args
-	
-vmdata(parseFileData("/tmp/" + sys.argv[1]))
+
+if __name__ == "__main__":
+	vm_data(parseFileData("/tmp/" + sys.argv[1]))
+
