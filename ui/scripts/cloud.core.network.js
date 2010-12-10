@@ -222,12 +222,64 @@ function publicNetworkJsonToFirewallTab() {
 	var $thisTab = $("#right_panel_content #public_network_page #tab_content_firewall");      
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
-    
-         
-     
-    $thisTab.find("#tab_container").show(); 
-    $thisTab.find("#tab_spinning_wheel").hide();   
+        
+    $.ajax({
+        data: createURL("command=listExternalFirewalls&zoneid="+zoneObj.id),
+        dataType: "json",
+        success: function(json) {            
+            var items = json.listexternalfirewallsresponse.externalfirewall;
+		    var $container = $thisTab.find("#tab_container").empty();
+		    var $template = $("#externalfirewall_template");
+		    if(items != null && items.length > 0) {		        
+		        for(var i=0; i<items.length; i++) {
+		            var $newTemplate = $template.clone();
+		            publicNetworkFirewallJsonToTemplate(items[i], $newTemplate);
+		            $container.append($newTemplate.show());
+		        }
+		    }		    
+		    $thisTab.find("#tab_container").show(); 
+            $thisTab.find("#tab_spinning_wheel").hide();   
+        }
+    });       
 }
+
+function publicNetworkFirewallJsonToTemplate(jsonObj, $template) {    
+    $template.data("jsonObj", jsonObj);
+    $template.attr("id", "publicNetworkFirewall_" + jsonObj.id);
+        
+    $template.find("#grid_header_title").text(fromdb(jsonObj.url));    
+    $template.find("#id").text(fromdb(jsonObj.id));
+    $template.find("#type").text(fromdb(jsonObj.type));
+    $template.find("#url").text(fromdb(jsonObj.url));   
+   
+    var $actionLink = $template.find("#firewall_action_link");		
+	$actionLink.bind("mouseover", function(event) {
+        $(this).find("#firewall_action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {
+        $(this).find("#firewall_action_menu").hide();    
+        return false;
+    });		
+	
+	var $actionMenu = $actionLink.find("#firewall_action_menu");
+    $actionMenu.find("#action_list").empty();	
+       
+    buildActionLinkForSubgridItem("Delete Firewall", publicNetworkFirewallActionMap, $actionMenu, $template);	
+}
+
+var publicNetworkFirewallActionMap = {     
+    "Delete Firewall": {              
+        api: "deleteExternalFirewall",     
+        isAsyncJob: false,      
+        inProcessText: "Deleting Firewall....",
+        afterActionSeccessFn: function(json, id, $subgridItem) {                 
+            $subgridItem.slideUp("slow", function() {
+                $(this).remove();
+            });
+        }
+    }     
+}  
 
 function publicNetworkJsonToLoadBalancerTab() {  
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
