@@ -657,12 +657,10 @@ function initAddExternalFirewallButton($button, $midmenuItem1) {
 						$thisDialog.find("#spinning_wheel").hide();
 						$thisDialog.dialog("close");
 					    					    
-					    /*
-					    var item = json.createvlaniprangeresponse.vlan;						    
-					    var $newTemplate = $("#iprange_template").clone();
-	                    publicNetworkIprangeJsonToTemplate(item, $newTemplate);
-	                    $("#public_network_page").find("#tab_content_ipallocation").find("#tab_container").prepend($newTemplate.show());	
-	                    */					   
+					    var item = json.addexternalfirewallresponse.externalfirewall;
+					    var $newTemplate = $("#externalfirewall_template").clone();
+		                publicNetworkFirewallJsonToTemplate(item, $newTemplate);
+		                $("#right_panel_content #public_network_page #tab_content_firewall").find("#tab_container").append($newTemplate.show());					    	               				   
 					},
 					error: function(XMLHttpResponse) {
 						handleError(XMLHttpResponse, function() {
