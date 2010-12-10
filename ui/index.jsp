@@ -274,9 +274,19 @@
                         <div class="actionpanel_button_wrapper" id="midmenu_add_external_firewall_button" style="display: none;">
                             <div class="actionpanel_button">
                                 <div class="actionpanel_button_icons">
-                                    <img src="images/addvm_actionicon.png" alt="Add Direct IP Range" /></div>
+                                    <img src="images/addvm_actionicon.png" alt="Add Firewall" /></div>
                                 <div class="actionpanel_button_links" id="Div10">
 									Add Firewall
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="actionpanel_button_wrapper" id="midmenu_add_load_balancer_button" style="display: none;">
+                            <div class="actionpanel_button">
+                                <div class="actionpanel_button_icons">
+                                    <img src="images/addvm_actionicon.png" alt="Add Load Balancer" /></div>
+                                <div class="actionpanel_button_links" id="Div10">
+									Add Load Balancer
                                 </div>
                             </div>
                         </div>

@@ -573,6 +573,7 @@ function clearAddButtonsOnTop() {
     $("#midmenu_add_network_button").unbind("click").hide(); 
     $("#midmenu_add_iprange_button").unbind("click").hide(); 
     $("#midmenu_add_external_firewall_button").unbind("click").hide(); 
+    $("#midmenu_add_load_balancer_button").unbind("click").hide(); 
     $("#midmenu_Update_SSL_Certificate_button").unbind("click").hide();   
          
     $("#midmenu_startvm_link").unbind("click").hide();     
