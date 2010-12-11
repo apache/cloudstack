@@ -1277,7 +1277,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
     $template.find("#row_container_edit #public_port").text(fromdb(jsonObj.publicport));
     
     $template.find("#row_container #private_port").text(fromdb(jsonObj.privateport));
-    $template.find("#row_container_edit #private_port").val(fromdb(jsonObj.privateport));
+    $template.find("#row_container_edit #private_port").text(fromdb(jsonObj.privateport));
     
     $template.find("#row_container #algorithm").text(fromdb(jsonObj.algorithm));	
     $template.find("#row_container_edit #algorithm").val(fromdb(jsonObj.algorithm));			    	    
@@ -1382,8 +1382,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
     
     $template.find("#save_link").unbind("click").bind("click", function(event){   
 	    var isValid = true;		
-	    isValid &= validateString("Name", $rowContainerEdit.find("#name"), $rowContainerEdit.find("#name_errormsg"));					    
-	    isValid &= validateNumber("Private Port", $rowContainerEdit.find("#private_port"), $rowContainerEdit.find("#private_port_errormsg"), 1, 65535);				
+	    isValid &= validateString("Name", $rowContainerEdit.find("#name"), $rowContainerEdit.find("#name_errormsg"));	
 	    if (!isValid) 
 	        return;		    		        
 	    
@@ -1391,14 +1390,12 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 	    $spinningWheel.find("#description").text("Saving load balancer rule....");	
         $spinningWheel.show();     
 	        		    	       
-        var name = $rowContainerEdit.find("#name").val();  		        
-        var privatePort = $rowContainerEdit.find("#private_port").val();
+        var name = $rowContainerEdit.find("#name").val();  	
         var algorithm = $rowContainerEdit.find("#algorithm_select").val();  
 	    		    
         var array1 = [];
         array1.push("&id=" + loadBalancerId);                
-        array1.push("&name=" + name);                  
-        array1.push("&privateport=" + privatePort);
+        array1.push("&name=" + name);   
         array1.push("&algorithm=" + algorithm);
                                                       
         $.ajax({

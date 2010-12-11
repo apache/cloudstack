@@ -388,11 +388,10 @@
             <div id="name_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
         </div>
         <div class="grid_row_cell" style="width: 15%;">
-            <div class="row_celltitles" id="public_port">8080</div>
+            <div class="row_celltitles" id="public_port"></div>
         </div>
         <div class="grid_row_cell" style="width: 15%;">
-            <input id="private_port" class="text" style="width: 70%;" type="text" />
-            <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+            <div class="row_celltitles" id="private_port"></div>
         </div>
         <div class="grid_row_cell" style="width: 15%;">
             <select id="algorithm_select" class="select" style="width: 70%;">                       
