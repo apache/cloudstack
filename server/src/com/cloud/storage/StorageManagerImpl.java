@@ -1387,6 +1387,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 port = 2049;
             }
             pool = new StoragePoolVO(StoragePoolType.ISO, storageHost, port, hostPath);
+        } else if (scheme.equalsIgnoreCase("vmfs")) {
+        	pool = new StoragePoolVO(StoragePoolType.VMFS, storageHost, 0, hostPath);
         } else {
             s_logger.warn("Unable to figure out the scheme for URI: " + uri);
             throw new IllegalArgumentException("Unable to figure out the scheme for URI: " + uri);
@@ -1572,9 +1574,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Override
     public boolean addPoolToHost(long hostId, StoragePoolVO pool) {
         s_logger.debug("Adding pool " + pool.getName() + " to  host " + hostId);
-        if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem && pool.getPoolType() != StoragePoolType.IscsiLUN && pool.getPoolType() != StoragePoolType.Iscsi) {
-            return true;
+        if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem 
+        	&& pool.getPoolType() != StoragePoolType.IscsiLUN && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS) {
+
+        	return true;
         }
+        
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, pool);
         final Answer answer = _agentMgr.easySend(hostId, cmd);
 
