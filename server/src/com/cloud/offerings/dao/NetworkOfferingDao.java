@@ -37,5 +37,7 @@ public interface NetworkOfferingDao extends GenericDao<NetworkOfferingVO, Long> 
     
     List<NetworkOfferingVO> listNonSystemNetworkOfferings();
     
+    List<NetworkOfferingVO> listSystemNetworkOfferings();
+    
     List<NetworkOfferingVO> findByType(GuestIpType type);
 }

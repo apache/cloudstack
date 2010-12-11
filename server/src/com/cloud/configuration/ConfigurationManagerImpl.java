@@ -1019,7 +1019,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }           
             
     	}
-
     	
     	saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_EDIT, "Successfully edited zone with name: " + zone.getName() + ".", "dcId=" + zone.getId(), "dns1=" + dns1, "dns2=" + dns2, "internalDns1=" + internalDns1, "internalDns2=" + internalDns2, "vnetRange=" + vnetRange, "guestCidr=" + guestCidr);
     	
@@ -1063,27 +1062,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 _zoneDao.addVnet(zone.getId(), vnetStart, vnetEnd);
             }
             
-            //if zone is basic, create a untagged network
-            if (zone != null && zone.getNetworkType() == NetworkType.Basic) {
-                //Create network
-                DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null);
-                NetworkVO userNetwork = new NetworkVO();
-                userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
-                
-                Account systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
-                
-                List<NetworkOfferingVO> networkOffering = _networkOfferingDao.findByType(GuestIpType.DirectPodBased);
-                if (networkOffering == null || networkOffering.isEmpty()) {
-                    throw new CloudRuntimeException("No default DirectPodBased network offering is found");
-                }
-                
-                List<NetworkVO> networks = _networkMgr.setupNetwork(systemAccount, networkOffering.get(0), userNetwork, plan, null, null, true);
-                
-                if (networks == null || networks.isEmpty()) {
-                    txn.rollback();
-                    throw new CloudRuntimeException("Fail to create a network");
-                } 
-            }
+            //Create deafult networks
+            createDefaultNetworks(zone.getId());
             
             if (vnetRange != null) {
                 saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_CREATE, "Successfully created new zone with name: " + zoneName + ".", "dcId=" + zone.getId(), "dns1=" + dns1, "dns2=" + dns2, "internalDns1=" + internalDns1, "internalDns2=" + internalDns2, "vnetRange=" + vnetRange, "guestCidr=" + guestCidr);
@@ -1100,7 +1080,52 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }finally {
             txn.close();
         }
-  
+    }
+    
+    @Override
+    public void createDefaultNetworks(long zoneId) throws ConcurrentOperationException{
+        DataCenterVO zone = _zoneDao.findById(zoneId);
+        //Create public, management, control and storage networks as a part of the zone creation 
+        if (zone != null) {
+            List<NetworkOfferingVO> ntwkOff = _networkOfferingDao.listSystemNetworkOfferings();
+            
+            for (NetworkOfferingVO offering : ntwkOff) {
+                DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null);
+                NetworkVO userNetwork = new NetworkVO();
+
+                Account systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
+                
+                BroadcastDomainType broadcastDomainType = null;
+                if (offering.getGuestIpType() != GuestIpType.DirectPodBased) {
+                    if (offering.getTrafficType() == TrafficType.Management) {
+                        broadcastDomainType = BroadcastDomainType.Native;
+                    } else if (offering.getTrafficType() == TrafficType.Public) {
+                        broadcastDomainType = BroadcastDomainType.Vlan;
+                    } else if (offering.getTrafficType() == TrafficType.Control) {
+                        broadcastDomainType = BroadcastDomainType.LinkLocal;
+                    }  
+                    userNetwork.setBroadcastDomainType(broadcastDomainType);
+                    _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, true); 
+                }  
+            }
+        }
+        
+        //if zone is basic, create a untagged network
+        if (zone != null && zone.getNetworkType() == NetworkType.Basic) {
+            //Create network
+            DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null);
+            NetworkVO userNetwork = new NetworkVO();
+            userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
+            
+            Account systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
+            
+            List<NetworkOfferingVO> networkOffering = _networkOfferingDao.findByType(GuestIpType.DirectPodBased);
+            if (networkOffering == null || networkOffering.isEmpty()) {
+                throw new CloudRuntimeException("No default DirectPodBased network offering is found");
+            }
+           
+            _networkMgr.setupNetwork(systemAccount, networkOffering.get(0), userNetwork, plan, null, null, true);
+        }
     }
 
     @Override

@@ -107,9 +107,17 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         return this.listIncludingRemovedBy(sc, null);
     }
     
+    @Override
     public List<NetworkOfferingVO> findByType(GuestIpType type) {
         SearchCriteria<NetworkOfferingVO> sc = TypeSearch.create();
         sc.setParameters("guestIpType", type);
         return listBy(sc);
+    }
+    
+    @Override
+    public List<NetworkOfferingVO> listSystemNetworkOfferings() {
+        SearchCriteria<NetworkOfferingVO> sc = SystemOfferingSearch.create();
+        sc.setParameters("system", true);
+        return this.listIncludingRemovedBy(sc, null);
     }
 }
