@@ -860,6 +860,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	try {
     	    // Delete vNet
             _zoneDao.deleteVnet(zoneId);
+            
+            //Delete networks
+            List<NetworkVO> networks = _networkDao.listByZone(zoneId);
+            if (networks != null && !networks.isEmpty()) {
+                for (NetworkVO network : networks) {
+                    _networkDao.remove(network.getId());
+                }
+            }
     	} catch (Exception ex) {
     	    s_logger.error("Failed to delete zone " + zoneId);
     	    throw new CloudRuntimeException("Failed to delete zone " + zoneId);

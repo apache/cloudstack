@@ -211,6 +211,13 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
     
     @Override
+    public List<NetworkVO> listByZone(long zoneId) {
+        SearchCriteria<NetworkVO> sc = ZoneBroadcastUriSearch.create();
+        sc.setParameters("dataCenterId", zoneId);
+        return search(sc, null);
+    }
+    
+    @Override
     public void changeActiveNicsBy(long networkId, int count) {
         _opDao.changeActiveNicsBy(networkId, count);
     }

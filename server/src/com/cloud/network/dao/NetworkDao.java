@@ -49,6 +49,8 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     
     List<NetworkVO> listBy(long zoneId, String broadcastUri);
     
+    List<NetworkVO> listByZone(long zoneId);
+    
     void changeActiveNicsBy(long networkId, int nicsCount);
     
     int getActiveNicsIn(long networkId);
