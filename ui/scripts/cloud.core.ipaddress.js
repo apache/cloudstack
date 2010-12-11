@@ -1289,7 +1289,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
             $vmSubgrid.empty();         
             $.ajax({
 			    cache: false,
-		        data: createURL("command=listLoadBalancerRuleInstances&id="+loadBalancerId),
+		        data: createURL("command=listLoadBalancerRuleInstances&id="+loadBalancerId+"&applied=true"),
 			    dataType: "json",
 			    success: function(json) {					        
 				    var instances = json.listloadbalancerruleinstancesresponse.loadbalancerruleinstance;						
