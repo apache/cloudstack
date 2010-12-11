@@ -608,7 +608,7 @@ function initAddSecondaryStorageButton($button, $leftmenuItem1) {
 				        secondaryStorageJSONToTemplate(json.addsecondarystorageresponse.secondarystorage, $subgridItem);	
 	                    $subgridItem.find("#after_action_info").text("Secondary storage was added successfully.");
                         $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
-                        $("#tab_content_secondarystorage").append($subgridItem.show());  
+                        $("#tab_content_secondarystorage").find("#tab_container").append($subgridItem.show());  
 				    },			
                     error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {
