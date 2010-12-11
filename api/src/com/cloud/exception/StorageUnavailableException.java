@@ -17,6 +17,7 @@
  */
 package com.cloud.exception;
 
+import com.cloud.storage.StoragePool;
 import com.cloud.utils.SerialVersionUID;
 
 /**
@@ -27,32 +28,17 @@ import com.cloud.utils.SerialVersionUID;
  * 
  */
 public class StorageUnavailableException extends ResourceUnavailableException {
-    Object _obj;
-
     private static final long serialVersionUID = SerialVersionUID.StorageUnavailableException;
-    
-	public StorageUnavailableException(String msg) {
-		super(msg);
-	}
-	
-	public StorageUnavailableException(String msg, Throwable cause) {
-	    super(msg, cause);
-	}
-	
-	public StorageUnavailableException(String msg, Object cause) {
-	    super(msg);
-	    _obj = cause;
-	}
-	
-    public StorageUnavailableException(String msg, Object obj, Throwable cause) {
-        super(msg, cause);
-        _obj = obj;
+
+    public StorageUnavailableException(String msg) {
+        super(msg);
     }
     
-	/**
-	 * @return object that caused this problem.  It can either be a StoragePool or volume.
-	 */
-	public Object getOffendingObject() {
-	    return _obj;
-	}
+    public StorageUnavailableException(String msg, long poolId) {
+        this(msg, poolId, null);
+    }
+    public StorageUnavailableException(String msg, long poolId, Throwable cause) {
+        super(msg, StoragePool.class, poolId, cause);
+    }
+    
 }

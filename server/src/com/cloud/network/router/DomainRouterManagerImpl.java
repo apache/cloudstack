@@ -940,7 +940,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	                	privateIpAddress = _dcDao.allocateLinkLocalIpAddress(router.getDataCenterId(), routingHost.getPodId(), router.getId(), null);
 	                	privateNetMask = NetUtils.getLinkLocalNetMask();
 	                } else {
-	                	privateIpAddress = _dcDao.allocatePrivateIpAddress(router.getDataCenterId(), routingHost.getPodId(), router.getId(), null);
+	                	privateIpAddress = _dcDao.allocatePrivateIpAddress(router.getDataCenterId(), routingHost.getPodId(), router.getId(), null).first();
 	                	privateNetMask = NetUtils.getCidrNetmask(pod.getCidrSize());
 	                }
 	                
@@ -1805,7 +1805,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 
             if( ! _storageMgr.share(router, vols, routingHost, false) ) {
                 s_logger.warn("Can not share " + vol.getPath() + " to " + router.getHostName() );
-                throw new StorageUnavailableException("Can not share " + vol.getPath() + " to " + router.getHostName(), vol);
+                throw new StorageUnavailableException("Can not share " + vol.getPath() + " to " + router.getHostName(), sp.getId());
             }
 
             final Answer answer = _agentMgr.easySend(routingHost.getId(), cmd);

@@ -20,7 +20,6 @@ package com.cloud.storage.download;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,13 +30,13 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
-import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -178,7 +177,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		return (downloadsInProgress.size() == 0);
 	}
 	
-	public void copyTemplate(VMTemplateVO template, HostVO sourceServer, HostVO destServer) throws InvalidParameterValueException, StorageUnavailableException{
+	@Override
+    public void copyTemplate(VMTemplateVO template, HostVO sourceServer, HostVO destServer) throws InvalidParameterValueException, StorageUnavailableException{
 
 		boolean downloadJobExists = false;
         VMTemplateHostVO destTmpltHost = null;
@@ -191,7 +191,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         String url = generateCopyUrl(sourceServer, srcTmpltHost);
 	    if (url == null) {
 			s_logger.warn("Unable to start/resume copy of template " + template.getUniqueName() + " to " + destServer.getName() + ", no secondary storage vm in running state in source zone");
-			throw new StorageUnavailableException("No secondary VM in running state in zone " + sourceServer.getDataCenterId());
+			throw new StorageUnavailableException("No secondary VM in running state in zone " + sourceServer.getDataCenterId(), srcTmpltHost.getPoolId());
 	    }
         destTmpltHost = _vmTemplateHostDao.findByHostTemplate(destServer.getId(), template.getId());
         if (destTmpltHost == null) {
@@ -424,8 +424,9 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 
 		if (rtngTmplts != null) {
 			for (VMTemplateVO rtngTmplt : rtngTmplts) {
-				if (!allTemplates.contains(rtngTmplt))
-					allTemplates.add(rtngTmplt);
+				if (!allTemplates.contains(rtngTmplt)) {
+                    allTemplates.add(rtngTmplt);
+                }
 			}
 		}
 		

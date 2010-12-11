@@ -158,9 +158,9 @@ import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineGuru;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -1202,7 +1202,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         if (_IpAllocator != null && _IpAllocator.exteralIpAddressAllocatorEnabled()) {
             return _IpAllocator.getPrivateIpAddress(macAddr, dcId, podId).ipaddr;
         } else {
-            return _dcDao.allocatePrivateIpAddress(dcId, podId, proxyId, null);
+            return _dcDao.allocatePrivateIpAddress(dcId, podId, proxyId, null).first();
         }
     }
 
@@ -2300,7 +2300,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
             if (!_storageMgr.share(proxy, vols, routingHost, false)) {
                 s_logger.warn("Can not share " + proxy.getHostName());
-                throw new StorageUnavailableException("Can not share " + proxy.getHostName(), vol);
+                throw new StorageUnavailableException("Can not share " + proxy.getHostName(), vol.getPoolId());
             }
 
             Answer answer = _agentMgr.easySend(routingHost.getId(), cmd);
@@ -2510,8 +2510,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         boolean externalDhcp = false;
         String externalDhcpStr = _configDao.getValue("direct.attach.network.externalIpAllocator.enabled");
-        if(externalDhcpStr != null && externalDhcpStr.equalsIgnoreCase("true"))
-        	externalDhcp = true;
+        if(externalDhcpStr != null && externalDhcpStr.equalsIgnoreCase("true")) {
+            externalDhcp = true;
+        }
         
         NicProfile controlNic = null;
         NicProfile managementNic = null;
@@ -2537,14 +2538,16 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 buf.append(" localgw=").append(dest.getPod().getGateway());
                 managementNic = nic;
             } else if (nic.getTrafficType() == TrafficType.Control) {
-                if(nic.getIp4Address() != null)
-                	controlNic = nic;
+                if(nic.getIp4Address() != null) {
+                    controlNic = nic;
+                }
             }
         }
 
 		/*External DHCP mode*/
-		if(externalDhcp)
-			buf.append(" bootproto=dhcp");
+		if(externalDhcp) {
+            buf.append(" bootproto=dhcp");
+        }
         
         if(controlNic == null) {
         	assert(managementNic != null);

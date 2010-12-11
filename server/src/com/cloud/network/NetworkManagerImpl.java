@@ -241,7 +241,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         txn.commit();
-        long macAddress = addr.getMacAddress() | 0x060000000000l | (((long)_rand.nextInt(32768) << 25) & 0x00fffe000000l);
+        long macAddress = NetUtils.createSequenceBasedMacAddress(addr.getMacAddress());
 
         return new PublicIp(addr, _vlanDao.findById(addr.getVlanId()), macAddress);
     }
@@ -1099,6 +1099,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             NicProfile profile = null;
             if (nic.getReservationStrategy() == ReservationStrategy.Start) {
                 nic.setState(Resource.State.Reserving);
+                nic.setReservationId(context.getReservationId());
                 _nicDao.update(nic.getId(), nic);
                 URI broadcastUri = nic.getBroadcastUri();
                 if (broadcastUri == null) {

@@ -3,6 +3,8 @@
  */
 package com.cloud.network.guru;
 
+import java.util.Random;
+
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -24,6 +26,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.net.NetUtils;
@@ -37,6 +40,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(PodBasedNetworkGuru.class);
     @Inject DataCenterDao _dcDao;
     @Inject NetworkManager _networkMgr;
+    Random _rand = new Random(System.currentTimeMillis());
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
@@ -68,13 +72,10 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         assert (trafficType == TrafficType.Storage || trafficType == TrafficType.Management) : "Well, I can't take care of this config now can I? " + config; 
         
         if (nic != null) {
-            nic.setStrategy(ReservationStrategy.Start);
+            nic.setStrategy(nic.getIp4Address() != null ? ReservationStrategy.Create : ReservationStrategy.Start);
         } else {
             nic  = new NicProfile(ReservationStrategy.Start, null, null, null, null);
         } 
-        
-        String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
-        nic.setMacAddress(mac);
         
         return nic;
     }
@@ -84,21 +85,30 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
             InsufficientAddressCapacityException {
         Pod pod = dest.getPod();
         
-        String ip = _dcDao.allocatePrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), nic.getId(), context.getReservationId());
+        Pair<String, Long> ip = _dcDao.allocatePrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), nic.getId(), context.getReservationId());
         if (ip == null) {
             throw new InsufficientAddressCapacityException("Unable to get a management ip address", Pod.class, pod.getId());
         }
         
-        nic.setIp4Address(ip);
+        nic.setIp4Address(ip.first());
+        nic.setMacAddress(NetUtils.long2Mac(ip.second()));
         nic.setGateway(pod.getGateway());
         nic.setFormat(AddressFormat.Ip4);
         String netmask = NetUtils.getCidrSubNet(pod.getCidrAddress(), pod.getCidrSize());
         nic.setNetmask(netmask);
+        nic.setBroadcastType(BroadcastDomainType.Native);
+        nic.setBroadcastUri(null);
+        nic.setIsolationUri(null);
+        nic.setFormat(AddressFormat.Ip4);
+        
+        s_logger.debug("Allocated a nic " + nic + " for " + vm);
     }
 
     @Override
     public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
-        _dcDao.releasePrivateIpAddress(nic.getId(), reservationId);
+        _dcDao.releasePrivateIpAddress(nic.getId(), nic.getReservationId());
+        
+        nic.deallocate();
         
         return true;
     }

@@ -34,6 +34,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.dc.PodVlanVO;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -172,12 +173,12 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public String allocatePrivateIpAddress(long dcId, long podId, long instanceId, String reservationId) {
+    public Pair<String, Long> allocatePrivateIpAddress(long dcId, long podId, long instanceId, String reservationId) {
         DataCenterIpAddressVO vo = _ipAllocDao.takeIpAddress(dcId, podId, instanceId, reservationId);
         if (vo == null) {
             return null;
         }
-        return vo.getIpAddress();
+        return new Pair<String, Long>(vo.getIpAddress(), vo.getMacAddress());
     }
     
     @Override

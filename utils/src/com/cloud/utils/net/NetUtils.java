@@ -29,6 +29,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
@@ -51,7 +52,12 @@ public class NetUtils {
     public final static String TCP_PROTO = "tcp";
     public final static String ICMP_PROTO = "icmp";
     public final static String NAT_PROTO = "nat"; //special value for one-to-one NAT
+    
+    private final static Random _rand = new Random(System.currentTimeMillis());
 
+    public static long createSequenceBasedMacAddress(long macAddress) {
+        return macAddress | 0x060000000000l | (((long)_rand.nextInt(32768) << 25) & 0x00fffe000000l);
+    }
     
 	public static String getHostName() {
         try {

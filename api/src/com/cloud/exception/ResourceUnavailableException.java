@@ -34,11 +34,21 @@ public class ResourceUnavailableException extends CloudRuntimeException {
         super(msg, cause);
     }
     
+    public ResourceUnavailableException(String msg, Class<?> scope, long resourceId) {
+        this(msg, scope, resourceId, null);
+    }
+    
+    public ResourceUnavailableException(String msg, Class<?> scope, long resourceId, Throwable cause) {
+        super(msg, cause);
+        _scope = scope;
+        _id = resourceId;
+    }
+    
     public Class<?> getScope() {
         return _scope;
     }
     
-    public long getScopeId() {
+    public long getResourceId() {
         return _id;
     }
 }

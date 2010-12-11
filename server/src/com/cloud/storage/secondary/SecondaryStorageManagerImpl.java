@@ -137,9 +137,9 @@ import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineGuru;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -957,7 +957,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		if (_IpAllocator != null && _IpAllocator.exteralIpAddressAllocatorEnabled()) {
 			return _IpAllocator.getPrivateIpAddress(macAddr, dcId, podId).ipaddr;
 		} else {
-		return _dcDao.allocatePrivateIpAddress(dcId, podId, proxyId, null);
+		return _dcDao.allocatePrivateIpAddress(dcId, podId, proxyId, null).first();
 		}
 	}
 	
@@ -1985,7 +1985,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 			if( !_storageMgr.share(secStorageVm, vols, routingHost, false) ) {
 				s_logger.warn("Can not share " + vol.getPath() + " to " + secStorageVm.getHostName());
-				throw new StorageUnavailableException("Can not share " + vol.getPath() + " to " + secStorageVm.getHostName(), vol);
+				throw new StorageUnavailableException("Can not share " + vol.getPath() + " to " + secStorageVm.getHostName(), vol.getPoolId());
 			}
 
 			Answer answer = _agentMgr.easySend(routingHost.getId(), cmd);
@@ -2109,8 +2109,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         
         boolean externalDhcp = false;
         String externalDhcpStr = _configDao.getValue("direct.attach.network.externalIpAllocator.enabled");
-        if(externalDhcpStr != null && externalDhcpStr.equalsIgnoreCase("true"))
-        	externalDhcp = true;
+        if(externalDhcpStr != null && externalDhcpStr.equalsIgnoreCase("true")) {
+            externalDhcp = true;
+        }
 		
 		for (NicProfile nic : profile.getNics()) {
 			int deviceId = nic.getDeviceId();
@@ -2131,16 +2132,18 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 				managementNic = nic;
 				buf.append(" private.network.device=").append("eth").append(deviceId);
 			} else if (nic.getTrafficType() == TrafficType.Control) {
-				if(nic.getIp4Address() != null)
-					controlNic = nic;
+				if(nic.getIp4Address() != null) {
+                    controlNic = nic;
+                }
 			} else if(nic.getTrafficType() == TrafficType.Public) {
 				buf.append(" public.network.device=").append("eth").append(deviceId);
 			}
 		}
 		
 		/*External DHCP mode*/
-		if(externalDhcp)
-			buf.append(" bootproto=dhcp");
+		if(externalDhcp) {
+            buf.append(" bootproto=dhcp");
+        }
 		
         if(controlNic == null) {
         	assert(managementNic != null);

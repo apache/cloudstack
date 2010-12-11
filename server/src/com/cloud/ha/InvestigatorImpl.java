@@ -67,9 +67,9 @@ public class InvestigatorImpl implements Investigator {
             	/*TODO: checking vm status for external dhcp mode*/
             	s_logger.debug("It's external dhcp mode, how to checking the vm is alive?");
             	return true;
+            } else {
+                return testUserVM(vm, routerId);
             }
-            else
-            	return testUserVM(vm, routerId);
         } else if ((vm.getType() == VirtualMachine.Type.DomainRouter) || (vm.getType() == VirtualMachine.Type.ConsoleProxy)) {
             // get the data center IP address, find a host on the pod, use that host to ping the data center IP address
             HostVO vmHost = _hostDao.findById(vm.getHostId());
@@ -203,7 +203,7 @@ public class InvestigatorImpl implements Investigator {
                 } 
             } catch (AgentUnavailableException e) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Couldn't reach " + e.getAgentId());
+                    s_logger.debug("Couldn't reach " + e.getResourceId());
                 }
                 continue;
             } catch (OperationTimedoutException e) {

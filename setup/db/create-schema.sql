@@ -401,6 +401,7 @@ CREATE TABLE  `cloud`.`data_center` (
   `lb_provider` char(64) NOT NULL DEFAULT 'VirtualRouter',
   `vpn_provider` char(64) NOT NULL DEFAULT 'VirtualRouter',
   `userdata_provider` char(64) NOT NULL DEFAULT 'VirtualRouter',
+  `enable` tinyint NOT NULL DEFAULT 1 COMMENT 'Is this data center enabled for activities',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -412,6 +413,7 @@ CREATE TABLE `cloud`.`op_dc_ip_address_alloc` (
   `instance_id` bigint unsigned NULL COMMENT 'instance id',
   `reservation_id` char(40) NULL COMMENT 'reservation id',
   `taken` datetime COMMENT 'Date taken',
+  `mac_address` bigint unsigned NOT NULL COMMENT 'mac address for management ips',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -434,6 +436,7 @@ CREATE TABLE  `cloud`.`host_pod_ref` (
   `cidr_address` varchar(15) NOT NULL COMMENT 'CIDR address for the pod',
   `cidr_size` bigint unsigned NOT NULL COMMENT 'CIDR size for the pod',
   `description` varchar(255) COMMENT 'store private ip range in startIP-endIP format',
+  `enabled` tinyint NOT NULL DEFAULT 1 COMMENT 'Is this Pod enabled for activity',
   PRIMARY KEY  (`id`),
   UNIQUE KEY (`name`, `data_center_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

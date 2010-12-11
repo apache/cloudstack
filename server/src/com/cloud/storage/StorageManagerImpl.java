@@ -2431,7 +2431,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 			}
 			
 			if (primaryStorage.getStatus().equals(Status.Up)) {
-				throw new StorageUnavailableException("Primary storage with id " + primaryStorageId + " is not ready to complete migration, as the status is:" + primaryStorage.getStatus().toString());
+				throw new StorageUnavailableException("Primary storage with id " + primaryStorageId + " is not ready to complete migration, as the status is:" + primaryStorage.getStatus().toString(), primaryStorageId);
 			}
 			
 			//set state to cancelmaintenance
@@ -2658,10 +2658,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             vol.setInstanceId(vm.getId());
         }
         
-        if(type.equals(VolumeType.ROOT))
-        	vol.setDeviceId(0l);
-        else
-        	vol.setDeviceId(1l);
+        if(type.equals(VolumeType.ROOT)) {
+            vol.setDeviceId(0l);
+        } else {
+            vol.setDeviceId(1l);
+        }
         
         vol = _volsDao.persist(vol);
         
@@ -2689,10 +2690,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
         vol.setTemplateId(template.getId());
         
-        if(type.equals(VolumeType.ROOT))
-        	vol.setDeviceId(0l);
-        else
-        	vol.setDeviceId(1l);
+        if(type.equals(VolumeType.ROOT)) {
+            vol.setDeviceId(0l);
+        } else {
+            vol.setDeviceId(1l);
+        }
         
         vol = _volsDao.persist(vol);
         
@@ -2739,7 +2741,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                         }
                         recreateVols.add(vol);
                     } else {
-                        throw new StorageUnavailableException("Volume " + vol + " is not available on the storage pool.", pool);
+                        throw new StorageUnavailableException("Volume " + vol + " is not available on the storage pool.", pool.getId());
                     }
                 } else {
                     if (s_logger.isDebugEnabled()) {
@@ -2753,7 +2755,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 }
                 recreateVols.add(vol);
             } else {
-                throw new StorageUnavailableException("Volume " + vol + " can not be used", vol);
+                throw new StorageUnavailableException("Volume " + vol + " can not be used", vol.getPoolId());
             }
         }
         
@@ -2771,7 +2773,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             try {
                 _volsDao.update(newVol, Volume.Event.Create);
             } catch(ConcurrentOperationException e) {
-                throw new StorageUnavailableException("Unable to create " + newVol, newVol);
+                throw new StorageUnavailableException("Unable to create " + newVol, newVol.getPoolId());
             }
             Pair<VolumeTO, StoragePool> created = createVolume(newVol, _diskOfferingDao.findById(newVol.getDiskOfferingId()), vm, vols, dest);
             if (created == null) {
@@ -2781,7 +2783,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 } catch (ConcurrentOperationException e) {
                     throw new CloudRuntimeException("Unable to update the failure on a volume: " + newVol, e);
                 }
-                throw new StorageUnavailableException("Unable to create " + newVol, newVol);
+                throw new StorageUnavailableException("Unable to create " + newVol, newVol.getPoolId());
             }
             created.first().setDeviceId(newVol.getDeviceId().intValue());
             newVol.setStatus(AsyncInstanceCreateStatus.Created);
@@ -2813,7 +2815,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             txn.commit();
             return newVolume;
         } catch (ConcurrentOperationException e) {
-            throw new StorageUnavailableException("Unable to duplicate the volume " + existingVolume, existingVolume, e);
+            throw new StorageUnavailableException("Unable to duplicate the volume " + existingVolume, existingVolume.getPoolId(), e);
         }
     }
     
