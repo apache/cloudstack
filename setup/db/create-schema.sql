@@ -486,7 +486,7 @@ CREATE TABLE `cloud`.`load_balancer_vm_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `load_balancer_id` bigint unsigned NOT NULL,
   `instance_id` bigint unsigned NOT NULL,
-  `pending` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'whether the vm is being applied to the load balancer (pending=1) or has already been applied (pending=0)',
+  `revoke` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 is when rule is set for Revoke',
   PRIMARY KEY  (`id`),
   UNIQUE KEY (`load_balancer_id`, `instance_id`),
   CONSTRAINT `fk_load_balancer_vm_map__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE,
