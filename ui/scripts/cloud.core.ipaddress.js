@@ -1465,7 +1465,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
         $spinningWheel.show(); 			
 		
 		$.ajax({
-		   data: createURL("command=assignToLoadBalancerRule&id="+loadBalancerId+"&virtualmachineid="+vmId),
+		   data: createURL("command=assignToLoadBalancerRule&id="+loadBalancerId+"&virtualmachineids="+vmId),
 			dataType: "json",
 			success: function(json) {
 				var lbInstanceJSON = json.assigntoloadbalancerruleresponse;
