@@ -248,8 +248,7 @@ function publicNetworkFirewallJsonToTemplate(jsonObj, $template) {
     $template.attr("id", "publicNetworkFirewall_" + jsonObj.id);
         
     $template.find("#grid_header_title").text(fromdb(jsonObj.url));    
-    $template.find("#id").text(fromdb(jsonObj.id));
-    $template.find("#type").text(fromdb(jsonObj.type));
+    $template.find("#id").text(fromdb(jsonObj.id));    
     $template.find("#url").text(fromdb(jsonObj.url));   
    
     var $actionLink = $template.find("#firewall_action_link");		
@@ -320,8 +319,7 @@ function publicNetworkLoadBalancerJsonToTemplate(jsonObj, $template) {
     $template.attr("id", "publicNetworkLoadBalancer_" + jsonObj.id);
         
     $template.find("#grid_header_title").text(fromdb(jsonObj.url));    
-    $template.find("#id").text(fromdb(jsonObj.id));
-    $template.find("#type").text(fromdb(jsonObj.type));
+    $template.find("#id").text(fromdb(jsonObj.id));   
     $template.find("#url").text(fromdb(jsonObj.url));   
    
     var $actionLink = $template.find("#loadbalancer_action_link");		
