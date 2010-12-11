@@ -88,7 +88,8 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
     @DB
     public void addIpRange(long dcId, long podId, String start, String end) {
         Transaction txn = Transaction.currentTxn();
-        String insertSql = "INSERT INTO op_dc_ip_address_alloc (ip_address, data_center_id, pod_id) VALUES (?, ?, ?)";
+        String insertSql = "INSERT INTO `cloud`.`op_dc_ip_address_alloc` (ip_address, data_center_id, pod_id, mac_address) VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?))";
+        String updateSql = "UPDATE `cloud`.`data_center` set mac_address = mac_address+1 where id=?";
         PreparedStatement stmt = null;
         
         long startIP = NetUtils.ip2Long(start);
@@ -96,14 +97,20 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         
         try {
             txn.start();
-            stmt = txn.prepareAutoCloseStatement(insertSql);
+            
             while (startIP <= endIP) {
+                stmt = txn.prepareStatement(insertSql);
                 stmt.setString(1, NetUtils.long2Ip(startIP++));
                 stmt.setLong(2, dcId);
                 stmt.setLong(3, podId);
-                stmt.addBatch();
+                stmt.setLong(4, dcId);
+                stmt.executeUpdate();
+                stmt.close();
+                stmt = txn.prepareStatement(updateSql);
+                stmt.setLong(1, dcId);
+                stmt.executeUpdate();
+                stmt.close();
             }
-            stmt.executeBatch();
             txn.commit();
         } catch (SQLException ex) {
             throw new CloudRuntimeException("Unable to persist ip address range ", ex);
