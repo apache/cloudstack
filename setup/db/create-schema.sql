@@ -115,6 +115,7 @@ CREATE TABLE `cloud`.`op_networks`(
   `mac_address_seq` bigint unsigned NOT NULL DEFAULT 1 COMMENT 'mac address',
   `nics_count` int unsigned NOT NULL DEFAULT 0 COMMENT '# of nics',
   `gc` tinyint unsigned NOT NULL DEFAULT 1 COMMENT 'gc this network or not',
+  `check_for_gc` tinyint unsigned NOT NULL DEFAULT 1 COMMENT 'check this network for gc or not',
   PRIMARY KEY(`id`),
   CONSTRAINT `fk_op_networks__id` FOREIGN KEY (`id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -485,7 +486,7 @@ CREATE TABLE `cloud`.`load_balancer_vm_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `load_balancer_id` bigint unsigned NOT NULL,
   `instance_id` bigint unsigned NOT NULL,
-  `revoke` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 when vm is set for revoke from load balancer',
+  `pending` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'whether the vm is being applied to the load balancer (pending=1) or has already been applied (pending=0)',
   PRIMARY KEY  (`id`),
   UNIQUE KEY (`load_balancer_id`, `instance_id`),
   CONSTRAINT `fk_load_balancer_vm_map__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE,

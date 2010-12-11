@@ -35,6 +35,9 @@ public class NetworkOpVO {
     
     @Column(name="gc")
     boolean garbageCollected;
+    
+    @Column(name="check_for_gc")
+    boolean checkForGc;
 
     protected NetworkOpVO() {
     }
@@ -42,6 +45,7 @@ public class NetworkOpVO {
     public NetworkOpVO(long id, boolean gc) {
         this.id = id;
         this.garbageCollected = gc;
+        this.checkForGc = gc;
         this.activeNicsCount = 0;
     }
     
@@ -59,5 +63,13 @@ public class NetworkOpVO {
     
     public boolean isGarbageCollected() {
         return garbageCollected;
+    }
+    
+    public boolean isCheckForGc() {
+        return checkForGc;
+    }
+    
+    public void setCheckForGc(boolean check) {
+        checkForGc = check;
     }
 }

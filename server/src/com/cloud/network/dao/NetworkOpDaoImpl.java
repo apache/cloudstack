@@ -51,6 +51,7 @@ public class NetworkOpDaoImpl extends GenericDaoBase<NetworkOpVO, Long> implemen
         GarbageCollectSearch.selectField(GarbageCollectSearch.entity().getId());
         GarbageCollectSearch.and("activenics", GarbageCollectSearch.entity().getActiveNicsCount(), Op.EQ);
         GarbageCollectSearch.and("gc", GarbageCollectSearch.entity().isGarbageCollected(), Op.EQ);
+        GarbageCollectSearch.and("check", GarbageCollectSearch.entity().isCheckForGc(), Op.EQ);
         GarbageCollectSearch.done();
         
         _activeNicsAttribute = _allAttributes.get("activeNicsCount");
@@ -61,6 +62,7 @@ public class NetworkOpDaoImpl extends GenericDaoBase<NetworkOpVO, Long> implemen
         SearchCriteria<Long> sc = GarbageCollectSearch.create();
         sc.setParameters("activenics", 0);
         sc.setParameters("gc", true);
+        sc.setParameters("check", true);
         
         return customSearch(sc, null);
     }
@@ -77,9 +79,16 @@ public class NetworkOpDaoImpl extends GenericDaoBase<NetworkOpVO, Long> implemen
         sc.setParameters("network", networkId);
         
         NetworkOpVO vo = createForUpdate();
+        vo.setCheckForGc(true);
         UpdateBuilder builder = getUpdateBuilder(vo);
         builder.incr(_activeNicsAttribute, count);
         
         update(builder, sc, null);
+    }
+    
+    public void clearCheckForGc(long networkId) {
+        NetworkOpVO vo = createForUpdate();
+        vo.setCheckForGc(false);
+        update(networkId, vo);
     }
 }

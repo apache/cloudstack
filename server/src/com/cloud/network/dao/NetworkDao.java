@@ -52,4 +52,6 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     void changeActiveNicsBy(long networkId, int nicsCount);
     
     int getActiveNicsIn(long networkId);
+    List<Long> findNetworksToGarbageCollect();
+    void clearCheckForGc(long networkId);
 }

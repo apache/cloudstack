@@ -219,4 +219,14 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     public int getActiveNicsIn(long networkId) {
         return _opDao.getActiveNics(networkId);
     }
+    
+    @Override
+    public List<Long> findNetworksToGarbageCollect() {
+        return _opDao.getNetworksToGarbageCollect();
+    }
+    
+    @Override
+    public void clearCheckForGc(long networkId) {
+        _opDao.clearCheckForGc(networkId);
+    }
 }

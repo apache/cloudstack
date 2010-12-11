@@ -26,7 +26,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 
 import javax.ejb.Local;
@@ -116,6 +115,7 @@ import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
@@ -184,13 +184,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     Adapters<NetworkElement> _networkElements;
 
     private HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
-    Random _rand = new Random(System.currentTimeMillis());
 
     ScheduledExecutorService _executor;
 
     SearchBuilder<AccountVO> AccountsUsingNetworkSearch;
     SearchBuilder<IPAddressVO> AssignIpAddressSearch;
     SearchBuilder<IPAddressVO> IpAddressSearch;
+    int _networkGcWait;
 
     private Map<String, String> _configs;
     
@@ -305,7 +305,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
                 
                 assert(sourceNat != null) : "How do we get a bunch of ip addresses but none of them are source nat? account=" + ownerId + "; dc=" + dcId;
-                ip = new PublicIp(sourceNat, _vlanDao.findById(sourceNat.getVlanId()), sourceNat.getMacAddress() | 0x060000000000l | (((long)_rand.nextInt(32768) << 25) & 0x00fffe000000l));
+                ip = new PublicIp(sourceNat, _vlanDao.findById(sourceNat.getVlanId()), NetUtils.createSequenceBasedMacAddress(sourceNat.getMacAddress()));
             }
             
             UserStatisticsVO stats = _userStatsDao.findBy(ownerId, dcId);
@@ -747,6 +747,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         validateRemoteAccessVpnConfiguration();
         Integer rateMbps = getIntegerConfigValue(Config.NetworkThrottlingRate.key(), null);  
         Integer multicastRateMbps = getIntegerConfigValue(Config.MulticastThrottlingRate.key(), null);
+        _networkGcWait = NumbersUtil.parseInt(_configs.get(Config.NetworkGcWait.key()), 600);
 
         NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);
         publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
@@ -2047,7 +2048,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             long currentTime = System.currentTimeMillis() >> 10;
             HashMap<Long, Long> stillFree = new HashMap<Long, Long>();
             
-            List<Long> networkIds = _nicDao.listNetworksWithNoActiveNics();
+            List<Long> networkIds = _networksDao.findNetworksToGarbageCollect();
             for (Long networkId : networkIds) {
                 Long time = _lastNetworkIdsToFree.remove(networkId);
                 if (time == null) {
@@ -2055,7 +2056,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         s_logger.debug("We found network " + networkId + " to be free for the first time.  Adding it to the list: " + currentTime);
                     }
                     stillFree.put(networkId, currentTime);
-                } else if (time < (currentTime + 600)) {
+                } else if (time < (currentTime + _networkGcWait)) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Network " + networkId + " is still free but it's not time to shutdown yet: " + time);
                     }

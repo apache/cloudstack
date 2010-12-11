@@ -56,6 +56,9 @@ public class DataCenterIpAddressVO {
     @Column(name="instance_id")
     private Long instanceId;
     
+    @Column(name="mac_address")
+    long macAddress;
+    
     protected DataCenterIpAddressVO() {
     }
     
@@ -103,5 +106,9 @@ public class DataCenterIpAddressVO {
 
     public Date getTakenAt() {
         return takenAt;
+    }
+    
+    public long getMacAddress() {
+        return macAddress;
     }
 }
