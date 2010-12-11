@@ -1171,7 +1171,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         }
 
         IPAddressVO addr = _ipAddressDao.findById(loadBalancer.getSourceIpAddress().toString());
-        List<UserVmVO> userVms = _vmDao.listVirtualNetworkInstancesByAcctAndZone(loadBalancer.getAccountId(), addr.getDataCenterId());
+        List<UserVmVO> userVms = _vmDao.listVirtualNetworkInstancesByAcctAndZone(loadBalancer.getAccountId(), addr.getDataCenterId(), loadBalancer.getNetworkId());
 
         for (UserVmVO userVm : userVms) {
             // if the VM is destroyed, being expunged, in an error state, or in an unknown state, skip it

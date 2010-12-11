@@ -19,7 +19,6 @@ package com.cloud.configuration;
 
 import java.util.List;
 
-import com.cloud.api.commands.CreateVlanIpRangeCmd;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -30,10 +29,10 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.offering.DiskOffering;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;

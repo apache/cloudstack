@@ -90,7 +90,7 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long>, StateDao<State, V
 	 * @param dcId will search for vm instances in this zone
 	 * @return the list of vm instances owned by the account in the given data center that have virtualized networking (not direct attached networking)
 	 */
-	List<UserVmVO> listVirtualNetworkInstancesByAcctAndZone(long accountId, long dcId);
+	List<UserVmVO> listVirtualNetworkInstancesByAcctAndZone(long accountId, long dcId, long networkId);
 	
 	List<UserVmVO> listVmsUsingGuestIpAddress(long dcId, String ipAddress);
 

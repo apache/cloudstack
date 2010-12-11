@@ -24,9 +24,6 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.offering.NetworkOffering;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
@@ -35,6 +32,7 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.UpdateBuilder;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -273,23 +271,23 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     }
 
     @Override
-    public List<UserVmVO> listVirtualNetworkInstancesByAcctAndZone(long accountId, long dcId) {
+    public List<UserVmVO> listVirtualNetworkInstancesByAcctAndZone(long accountId, long dcId, long networkId) {
         if (AccountDataCenterVirtualSearch == null) {
-            ServiceOfferingDao offeringDao = ComponentLocator.getLocator("management-server").getDao(ServiceOfferingDao.class);
-            SearchBuilder<ServiceOfferingVO> offeringSearch = offeringDao.createSearchBuilder();
-            offeringSearch.and("guestIpType", offeringSearch.entity().getGuestIpType(), SearchCriteria.Op.EQ);
+            NicDao _nicDao = ComponentLocator.getLocator("management-server").getDao(NicDao.class);
+            SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
+            nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
 
             AccountDataCenterVirtualSearch = createSearchBuilder();
             AccountDataCenterVirtualSearch.and("account", AccountDataCenterVirtualSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
             AccountDataCenterVirtualSearch.and("dc", AccountDataCenterVirtualSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-            AccountDataCenterVirtualSearch.join("offeringSearch", offeringSearch, AccountDataCenterVirtualSearch.entity().getServiceOfferingId(), offeringSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+            AccountDataCenterVirtualSearch.join("nicSearch", nicSearch, AccountDataCenterVirtualSearch.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
             AccountDataCenterVirtualSearch.done();
         }
 
         SearchCriteria<UserVmVO> sc = AccountDataCenterVirtualSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
-        sc.setJoinParameters("offeringSearch", "guestIpType", NetworkOffering.GuestIpType.Virtual);
+        sc.setJoinParameters("nicSearch", "networkId", networkId);
 
         return listBy(sc);
     }
