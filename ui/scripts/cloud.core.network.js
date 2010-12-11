@@ -377,7 +377,7 @@ function showNetworkingTab(p_domainId, p_account) {
 	    createPortForwardingRow.find("#protocol").val("TCP");  		    
 
 	    $.ajax({
-		    data: "command=listVirtualMachines&response=json&domainid="+ipPanel.data("ip_domainid")+"&account="+ipPanel.data("ip_account"),
+		    data: "command=listVirtualMachines&pagesize=500&response=json&domainid="+ipPanel.data("ip_domainid")+"&account="+ipPanel.data("ip_account"),
 		    dataType: "json",
 		    success: function(json) {			    
 			    var instances = json.listvirtualmachinesresponse.virtualmachine;
@@ -414,7 +414,7 @@ function showNetworkingTab(p_domainId, p_account) {
 	    var virtualMachineId = json.virtualmachineid;
 	    		    
 	    $.ajax({
-		    data: "command=listVirtualMachines&response=json&domainid="+ipPanel.data("ip_domainid")+"&account="+ipPanel.data("ip_account"),
+		    data: "command=listVirtualMachines&pagesize=500&response=json&domainid="+ipPanel.data("ip_domainid")+"&account="+ipPanel.data("ip_account"),
 		    dataType: "json",
 		    success: function(json) {			    
 			    var instances = json.listvirtualmachinesresponse.virtualmachine;

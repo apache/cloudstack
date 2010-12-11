@@ -65,7 +65,7 @@ function showTemplatesTab() {
 		addIsoZoneField.append("<option value='-1'>All Zones</option>"); 
 	}
     $.ajax({
-	    data: "command=listZones&available=true&response=json"+maxPageSize,
+	    data: "command=listZones&pagesize=500&available=true&response=json"+maxPageSize,
 	    dataType: "json",
 	    success: function(json) {		        
 		    var zones = json.listzonesresponse.zone;	 			     			    	

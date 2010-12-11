@@ -21,7 +21,7 @@ function showStorageTab(domainId, targetTab) {
        		
     var populateZoneField = function(isAdmin) {         
         $.ajax({
-		    data: "command=listZones&available=true&response=json",
+		    data: "command=listZones&pagesize=500&available=true&response=json",
 		    dataType: "json",
 		    success: function(json) {
 			    var zones = json.listzonesresponse.zone;					    
@@ -48,7 +48,7 @@ function showStorageTab(domainId, targetTab) {
     
     var populateDiskOfferingField = function() {        
         $.ajax({
-		    data: "command=listDiskOfferings&response=json",
+		    data: "command=listDiskOfferings&pagesize=500&response=json",
 		    dataType: "json",
 		    success: function(json) {			    
 		        var offerings = json.listdiskofferingsresponse.diskoffering;								
@@ -66,7 +66,7 @@ function showStorageTab(domainId, targetTab) {
     var populateVirtualMachineField = function(domainId, account, zoneId) {        
 	    $.ajax({
 		    cache: false,
-		    data: "command=listVirtualMachines&state=Running&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+"&response=json",
+		    data: "command=listVirtualMachines&pagesize=500&state=Running&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+"&response=json",
 		    dataType: "json",
 		    success: function(json) {			    
 			    var instances = json.listvirtualmachinesresponse.virtualmachine;				
@@ -78,7 +78,7 @@ function showStorageTab(domainId, targetTab) {
 			    }
 				$.ajax({
 					cache: false,
-					data: "command=listVirtualMachines&state=Stopped&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+"&response=json",
+					data: "command=listVirtualMachines&pagesize=500&state=Stopped&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+"&response=json",
 					dataType: "json",
 					success: function(json) {			    
 						var instances = json.listvirtualmachinesresponse.virtualmachine;								

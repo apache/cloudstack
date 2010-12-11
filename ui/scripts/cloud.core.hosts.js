@@ -33,7 +33,7 @@ function showHostsTab() {
 		var dialogAddRouting = $("#dialog_add_routing");
 					
 		$.ajax({
-			data: "command=listZones&available=true&response=json",
+			data: "command=listZones&pagesize=500&available=true&response=json",
 			dataType: "json",
 			success: function(json) {
 				var zones = json.listzonesresponse.zone;
@@ -49,7 +49,7 @@ function showHostsTab() {
 		dialogAddRouting.find("#host_zone").bind("change", function(event) {
 			var zoneId = $(this).val();
 			$.ajax({
-				data: "command=listPods&zoneId="+zoneId+"&response=json",
+				data: "command=listPods&pagesize=500&zoneId="+zoneId+"&response=json",
 				dataType: "json",
 				async: false,
 				success: function(json) {

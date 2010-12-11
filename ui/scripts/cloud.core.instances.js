@@ -568,7 +568,7 @@ function showInstancesTab(p_domainId, p_account) {
 				
 				$("#dialog_change_service_offering").find("#change_vm_name").text(vmName);
 				$.ajax({
-					data: "command=listServiceOfferings&VirtualMachineId="+vmId+"&response=json",
+					data: "command=listServiceOfferings&pagesize=500&VirtualMachineId="+vmId+"&response=json",
 					dataType: "json",
 					success: function(json) {
 						var offerings = json.listserviceofferingsresponse.serviceoffering;
@@ -827,7 +827,7 @@ function showInstancesTab(p_domainId, p_account) {
 				break;
 			case "vm_action_attach_iso" :
 				$.ajax({
-					data: "command=listIsos&isReady=true&response=json",
+					data: "command=listIsos&pagesize=500&isReady=true&response=json",
 					dataType: "json",
 					async: false,
 					success: function(json) {
@@ -979,7 +979,7 @@ function showInstancesTab(p_domainId, p_account) {
 					var index = 0;
 					$.ajax({
 						cache: false,
-						data: "command=listVolumes&virtualMachineId="+vmId+"&response=json",
+						data: "command=listVolumes&pagesize=500&virtualMachineId="+vmId+"&response=json",
 						dataType: "json",
 						success: function(json) {
 							var volumes = json.listvolumesresponse.volume;
@@ -1214,7 +1214,7 @@ function showInstancesTab(p_domainId, p_account) {
 	    }
 	    else {    
 	        $.ajax({
-			    data: "command=listServiceOfferings&response=json&id="+serviceOfferingId,
+			    data: "command=listServiceOfferings&pagesize=500&response=json&id="+serviceOfferingId,
 			    dataType: "json",				
 			    success: function(json) {
 				    var offerings = json.listserviceofferingsresponse.serviceoffering;					
@@ -1243,7 +1243,7 @@ function showInstancesTab(p_domainId, p_account) {
 		vmWizardCleanup();	
 					
 		$.ajax({
-			data: "command=listZones&available=true&response=json",
+			data: "command=listZones&pagesize=500&available=true&response=json",
 			dataType: "json",
 			success: function(json) {
 				var zones = json.listzonesresponse.zone;					
@@ -1273,7 +1273,7 @@ function showInstancesTab(p_domainId, p_account) {
 		});					
 		
 	    $.ajax({
-			data: "command=listServiceOfferings&response=json",
+			data: "command=listServiceOfferings&pagesize=500&response=json",
 			dataType: "json",
 			async: false,
 			success: function(json) {
@@ -1295,7 +1295,7 @@ function showInstancesTab(p_domainId, p_account) {
 				}
 				
 				$.ajax({
-					data: "command=listDiskOfferings&domainid=1&response=json",
+					data: "command=listDiskOfferings&pagesize=500&domainid=1&response=json",
 					dataType: "json",
 					async: false,
 					success: function(json) {
