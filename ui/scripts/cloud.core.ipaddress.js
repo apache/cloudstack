@@ -1280,7 +1280,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
     $template.find("#row_container_edit #private_port").text(fromdb(jsonObj.privateport));
     
     $template.find("#row_container #algorithm").text(fromdb(jsonObj.algorithm));	
-    $template.find("#row_container_edit #algorithm").val(fromdb(jsonObj.algorithm));			    	    
+    $template.find("#row_container_edit #algorithm_select").val(fromdb(jsonObj.algorithm));			    	    
         
     $template.find("#manage_link").unbind("click").bind("click", function(event){	
         var $managementArea = $template.find("#management_area");
