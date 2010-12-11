@@ -1533,7 +1533,7 @@ function lbVmObjToTemplate(obj, $template) {
 	    var $spinningWheel = $template.find("#spinning_wheel");		    
         $spinningWheel.show();   	   			    		
         $.ajax({
-	       data: createURL("command=removeFromLoadBalancerRule&id="+fromdb(obj.loadBalancerId)+"&virtualmachineid="+fromdb(obj.vmId)),
+	       data: createURL("command=removeFromLoadBalancerRule&id="+fromdb(obj.loadBalancerId)+"&virtualmachineids="+fromdb(obj.vmId)),
 			dataType: "json",
 			success: function(json) {
 				var lbJSON = json.removefromloadbalancerruleresponse;
