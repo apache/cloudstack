@@ -1071,15 +1071,15 @@ public class ApiResponseHelper implements ResponseGenerator {
            if (network != null) {
                if (network.getTrafficType() == TrafficType.Public) {
                    routerResponse.setPublicIp(singleNic.getIp4Address());
-                   routerResponse.setPublicMacAddress(singleNic.getGateway());
+                   routerResponse.setPublicMacAddress(singleNic.getMacAddress());
                    routerResponse.setPublicNetmask(singleNic.getNetmask());
                } else if (network.getTrafficType() == TrafficType.Control) {
                    routerResponse.setPrivateIp(singleNic.getIp4Address());
-                   routerResponse.setPrivateMacAddress(singleNic.getGateway());
+                   routerResponse.setPrivateMacAddress(singleNic.getMacAddress());
                    routerResponse.setPrivateNetmask(singleNic.getNetmask());
                } else if (network.getTrafficType() == TrafficType.Guest) {
                    routerResponse.setGuestIpAddress(singleNic.getIp4Address());
-                   routerResponse.setGuestIpAddress(singleNic.getGateway());
+                   routerResponse.setGuestMacAddress(singleNic.getMacAddress());
                    routerResponse.setGuestNetmask(singleNic.getNetmask());
                }
            }
@@ -1150,11 +1150,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                if (network != null) {
                    if (network.getTrafficType() == TrafficType.Public) {
                        vmResponse.setPublicIp(singleNic.getIp4Address());
-                       vmResponse.setPublicMacAddress(singleNic.getGateway());
+                       vmResponse.setPublicMacAddress(singleNic.getMacAddress());
                        vmResponse.setPublicNetmask(singleNic.getNetmask());
                    } else if (network.getTrafficType() == TrafficType.Control) {
                        vmResponse.setPrivateIp(singleNic.getIp4Address());
-                       vmResponse.setPrivateMacAddress(singleNic.getGateway());
+                       vmResponse.setPrivateMacAddress(singleNic.getMacAddress());
                        vmResponse.setPrivateNetmask(singleNic.getNetmask());
                    }
                }
