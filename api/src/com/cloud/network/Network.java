@@ -112,4 +112,6 @@ public interface Network extends ControlledEntity {
     String getDisplayText();
     
     boolean isShared();
+    
+    String getReservationId();
 }

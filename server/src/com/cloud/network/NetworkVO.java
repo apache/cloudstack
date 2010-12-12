@@ -129,6 +129,8 @@ public class NetworkVO implements Network {
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
     
+    @Column(name="reservation_id")
+    String reservationId;
     
     public NetworkVO() {
     }
@@ -189,6 +191,15 @@ public class NetworkVO implements Network {
         this.name = name;
         this.displayText = displayText;
         this.isShared = isShared;
+    }
+    
+    @Override
+    public String getReservationId() {
+        return reservationId;
+    }
+    
+    public void setReservationId(String reservationId) {
+        this.reservationId = reservationId;
     }
     
     @Override

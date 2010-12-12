@@ -26,7 +26,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -121,6 +123,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
@@ -192,6 +195,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     SearchBuilder<IPAddressVO> AssignIpAddressSearch;
     SearchBuilder<IPAddressVO> IpAddressSearch;
     int _networkGcWait;
+    int _networkGcInterval;
 
     private Map<String, String> _configs;
     
@@ -754,6 +758,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         virtualNetworkVlanSB.and("vlanType", virtualNetworkVlanSB.entity().getVlanType(), Op.EQ);
         IpAddressSearch.join("virtualNetworkVlanSB", virtualNetworkVlanSB, IpAddressSearch.entity().getVlanId(), virtualNetworkVlanSB.entity().getId(), JoinBuilder.JoinType.INNER);
         IpAddressSearch.done();
+        
+        _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Network-Scavenger"));
 
         s_logger.info("Network Manager is configured.");
 
@@ -767,6 +773,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public boolean start() {
+        _executor.scheduleWithFixedDelay(new NetworkGarbageCollector(), _networkGcInterval, _networkGcInterval, TimeUnit.SECONDS);
         return true;
     }
 
@@ -1958,15 +1965,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
+        txn.start();
         if (success) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Unsuccessfully shutdown the network.");
+            }
             NetworkGuru guru = _networkGurus.get(network.getGuruName());
             guru.destroy(network, _networkOfferingDao.findById(network.getNetworkOfferingId()));
             network.setState(Network.State.Allocated);
             _networksDao.update(network.getId(), network);
+            _networksDao.clearCheckForGc(networkId);
         } else {
             network.setState(Network.State.Implemented);
             _networksDao.update(network.getId(), network);
         }
+        txn.commit();
         
         
     }
@@ -2000,32 +2013,40 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         @Override
         public void run() {
-            List<Long> shutdownList = new ArrayList<Long>();
-            long currentTime = System.currentTimeMillis() >> 10;
-            HashMap<Long, Long> stillFree = new HashMap<Long, Long>();
-            
-            List<Long> networkIds = _networksDao.findNetworksToGarbageCollect();
-            for (Long networkId : networkIds) {
-                Long time = _lastNetworkIdsToFree.remove(networkId);
-                if (time == null) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("We found network " + networkId + " to be free for the first time.  Adding it to the list: " + currentTime);
+            try {
+                List<Long> shutdownList = new ArrayList<Long>();
+                long currentTime = System.currentTimeMillis() >> 10;
+                HashMap<Long, Long> stillFree = new HashMap<Long, Long>();
+                
+                List<Long> networkIds = _networksDao.findNetworksToGarbageCollect();
+                for (Long networkId : networkIds) {
+                    Long time = _lastNetworkIdsToFree.remove(networkId);
+                    if (time == null) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("We found network " + networkId + " to be free for the first time.  Adding it to the list: " + currentTime);
+                        }
+                        stillFree.put(networkId, currentTime);
+                    } else if (time < (currentTime + _networkGcWait)) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Network " + networkId + " is still free but it's not time to shutdown yet: " + time);
+                        }
+                        stillFree.put(networkId, time);
+                    } else {
+                        shutdownList.add(networkId);
                     }
-                    stillFree.put(networkId, currentTime);
-                } else if (time < (currentTime + _networkGcWait)) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Network " + networkId + " is still free but it's not time to shutdown yet: " + time);
-                    }
-                    stillFree.put(networkId, time);
-                } else {
-                    shutdownList.add(networkId);
                 }
-            }
-            
-            _lastNetworkIdsToFree = stillFree;
-            
-            for (Long networkId : shutdownList) {
-                shutdownNetwork(networkId);
+                
+                _lastNetworkIdsToFree = stillFree;
+                
+                for (Long networkId : shutdownList) {
+                    try {
+                        shutdownNetwork(networkId);
+                    } catch (Exception e) {
+                        s_logger.warn("Unable to shutdown network: " + networkId);
+                    }
+                }
+            } catch (Exception e) {
+                s_logger.warn("Caught exception while running network gc: ", e);
             }
         }
     }

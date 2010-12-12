@@ -39,7 +39,6 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.guru.NetworkGuru;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.resource.Resource.ReservationStrategy;
@@ -87,7 +86,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         DataCenterVO dc = _dcDao.findById(plan.getDataCenterId());
         
-        NetworkVO config = new NetworkVO(offering.getTrafficType(), offering.getGuestIpType(), mode, broadcastType, offering.getId(), plan.getDataCenterId());
+        NetworkVO network = new NetworkVO(offering.getTrafficType(), offering.getGuestIpType(), mode, broadcastType, offering.getId(), plan.getDataCenterId());
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) ||
                 (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {
@@ -95,75 +94,75 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
             }
             
             if (userSpecified.getCidr() != null) {
-                config.setCidr(userSpecified.getCidr());
-                config.setGateway(userSpecified.getGateway());
+                network.setCidr(userSpecified.getCidr());
+                network.setGateway(userSpecified.getGateway());
             } else {
                 String guestNetworkCidr = dc.getGuestNetworkCidr();
                 String[] cidrTuple = guestNetworkCidr.split("\\/");
-                config.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));
-                config.setCidr(guestNetworkCidr);
+                network.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));
+                network.setCidr(guestNetworkCidr);
             }
             
-            config.setDns1(dc.getDns1());
-            config.setDns2(dc.getDns2());
+            network.setDns1(dc.getDns1());
+            network.setDns2(dc.getDns2());
             
             if (userSpecified.getBroadcastUri() != null) {
-                config.setBroadcastUri(userSpecified.getBroadcastUri());
-                config.setState(State.Setup);
+                network.setBroadcastUri(userSpecified.getBroadcastUri());
+                network.setState(State.Setup);
             }
         } else {
             String guestNetworkCidr = dc.getGuestNetworkCidr();
             String[] cidrTuple = guestNetworkCidr.split("\\/");
-            config.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));
-            config.setCidr(guestNetworkCidr);
-            config.setDns1(dc.getDns1());
-            config.setDns2(dc.getDns2());
+            network.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));
+            network.setCidr(guestNetworkCidr);
+            network.setDns1(dc.getDns1());
+            network.setDns2(dc.getDns2());
         }
         
-        return config;
+        return network;
     }
 
     @Override
-    public void deallocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
+    public void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
     }
     
     @Override
-    public Network implement(Network config, NetworkOffering offering, DeployDestination dest, ReservationContext context) {
-        assert (config.getState() == State.Allocated) : "Why implement are we implementing " + config;
+    public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) {
+        assert (network.getState() == State.Allocated) : "Why implement are we implementing " + network;
         
         long dcId = dest.getDataCenter().getId();
-        NetworkVO implemented = new NetworkVO(config.getTrafficType(), config.getGuestType(), config.getMode(), config.getBroadcastDomainType(), config.getNetworkOfferingId(), config.getDataCenterId());
+        NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getGuestType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), network.getDataCenterId());
         
-        if (config.getBroadcastUri() == null) {
-            String vnet = _dcDao.allocateVnet(dcId, config.getAccountId(), context.getReservationId());
+        if (network.getBroadcastUri() == null) {
+            String vnet = _dcDao.allocateVnet(dcId, network.getAccountId(), context.getReservationId());
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vnet));
         } else {
-            implemented.setBroadcastUri(config.getBroadcastUri());
+            implemented.setBroadcastUri(network.getBroadcastUri());
         }
         
-        if (config.getGateway() != null) {
-            implemented.setGateway(config.getGateway());
+        if (network.getGateway() != null) {
+            implemented.setGateway(network.getGateway());
         }
         
-        if (config.getCidr() != null) {
-            implemented.setCidr(config.getCidr());
+        if (network.getCidr() != null) {
+            implemented.setCidr(network.getCidr());
         }
         
-        if (config.getDns1() != null) {
-            implemented.setDns1(config.getDns1());
+        if (network.getDns1() != null) {
+            implemented.setDns1(network.getDns1());
         }
         
-        if (config.getDns2() != null) {
-            implemented.setDns2(config.getDns2());
+        if (network.getDns2() != null) {
+            implemented.setDns2(network.getDns2());
         }
         
         return implemented;
     }
 
     @Override
-    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm)
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
-        if (config.getTrafficType() != TrafficType.Guest) {
+        if (network.getTrafficType() != TrafficType.Guest) {
             return null;
         }
         
@@ -176,9 +175,9 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         
         if (nic.getMacAddress() == null) {
-            nic.setMacAddress(_networkMgr.getNextAvailableMacAddressInNetwork(config.getId()));
+            nic.setMacAddress(_networkMgr.getNextAvailableMacAddressInNetwork(network.getId()));
             if (nic.getMacAddress() == null) {
-                throw new InsufficientAddressCapacityException("Unable to allocate more mac addresses", Network.class, config.getId());
+                throw new InsufficientAddressCapacityException("Unable to allocate more mac addresses", Network.class, network.getId());
             }
         }
         
@@ -186,9 +185,9 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     }
     
     @DB
-    protected String acquireGuestIpAddress(Network config) {
-        List<String> ips = _nicDao.listIpAddressInNetworkConfiguration(config.getId());
-        String[] cidr = config.getCidr().split("/");
+    protected String acquireGuestIpAddress(Network network) {
+        List<String> ips = _nicDao.listIpAddressInNetworkConfiguration(network.getId());
+        String[] cidr = network.getCidr().split("/");
         Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]));
         Set<Long> usedIps = new TreeSet<Long> ();
         for (String ip : ips) {
@@ -205,17 +204,17 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
      }
 
     @Override
-    public void reserve(NicProfile nic, Network config, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
+    public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         assert (nic.getReservationStrategy() == ReservationStrategy.Start) : "What can I do for nics that are not allocated at start? ";
 
-        nic.setBroadcastUri(config.getBroadcastUri());
-        nic.setIsolationUri(config.getBroadcastUri());
-        nic.setGateway(config.getGateway());
-        nic.setIp4Address(acquireGuestIpAddress(config));
-        nic.setNetmask(NetUtils.cidr2Netmask(config.getCidr()));
-        nic.setDns1(config.getDns1());
-        nic.setDns2(config.getDns2());
+        nic.setBroadcastUri(network.getBroadcastUri());
+        nic.setIsolationUri(network.getBroadcastUri());
+        nic.setGateway(network.getGateway());
+        nic.setIp4Address(acquireGuestIpAddress(network));
+        nic.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
+        nic.setDns1(network.getDns1());
+        nic.setDns2(network.getDns2());
     }
 
     @Override
@@ -226,12 +225,12 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public void destroy(Network config, NetworkOffering offering) {
-        config.getBroadcastUri();
+    public void destroy(Network network, NetworkOffering offering) {
+        _dcDao.releaseVnet(network.getBroadcastUri().getHost(), network.getDataCenterId(), network.getAccountId(), network.getReservationId());
     }
 
     @Override
-    public boolean trash(Network config, NetworkOffering offering, Account owner) {
+    public boolean trash(Network network, NetworkOffering offering, Account owner) {
         return true;
     }
 }
