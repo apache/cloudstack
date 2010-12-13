@@ -236,4 +236,11 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     public void clearCheckForGc(long networkId) {
         _opDao.clearCheckForGc(networkId);
     }
+    
+    @Override
+    public List<NetworkVO> listByOwner(long ownerId) {
+        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+        sc.setParameters("account", ownerId);
+        return listBy(sc);
+    }
 }

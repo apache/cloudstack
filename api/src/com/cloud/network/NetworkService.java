@@ -85,6 +85,6 @@ public interface NetworkService {
     
     Network createNetwork(CreateNetworkCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     List<? extends Network> searchForNetworks(ListNetworksCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-    boolean deleteNetwork(DeleteNetworkCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    boolean deleteNetwork(long networkId) throws InvalidParameterValueException, PermissionDeniedException;
 
 }

@@ -60,7 +60,7 @@ public class DeleteNetworkCmd extends BaseCmd{
     
     @Override
     public void execute(){
-        boolean result = _networkService.deleteNetwork(this);
+        boolean result = _networkService.deleteNetwork(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

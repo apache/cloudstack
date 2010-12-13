@@ -1896,8 +1896,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override @DB
-    public boolean deleteNetwork(DeleteNetworkCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{        
-        Long networkId = cmd.getId();
+    public boolean deleteNetwork(long networkId) throws InvalidParameterValueException, PermissionDeniedException{        
         Long userId = UserContext.current().getUserId();
         Account account = UserContext.current().getAccount();
 
@@ -1941,6 +1940,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //remove all the vlans associated with the network
         Transaction txn = Transaction.currentTxn();
         try {
+            txn.start();
             //remove corresponding vlans
             List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
             for (VlanVO vlan : vlans) {

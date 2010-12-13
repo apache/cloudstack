@@ -63,7 +63,9 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.DomainRouterManager;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.server.Criteria;
@@ -112,6 +114,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     @Inject private DomainRouterDao _routerDao;
     @Inject private VMTemplateDao _templateDao;
     @Inject private PodVlanMapDao _podVlanMapDao;
+    @Inject private NetworkDao _networkDao;
 	
 	
 	@Inject private NetworkGroupManager _networkGroupMgr;
@@ -890,6 +893,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
                         decrementResourceCount(accountId, ResourceType.public_ip);
                     }
                 }
+
             } else {
                 accountCleanupNeeded = true;
             }
@@ -904,6 +908,14 @@ public class AccountManagerImpl implements AccountManager, AccountService {
                 } catch (InvalidParameterValueException e) {
                     allVlansDeleted = false;
                 }
+            }
+            
+            //delete networks
+            s_logger.debug("Deleting networks for account " + account.getId());
+            List<NetworkVO> networks = _networkDao.listByOwner(accountId);
+            for (NetworkVO network : networks) {
+                _networkMgr.deleteNetwork(network.getId());
+                s_logger.debug("Network " + network.getId() + " successfully deleted.");
             }
 
             if (!allVlansDeleted) {
