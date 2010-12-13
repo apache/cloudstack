@@ -28,7 +28,7 @@ function alertGetSearchParams() {
 	else {     			    		
 	    var searchInput = $("#basic_search").find("#search_input").val();	 
         if (lastSearchType == "basic_search" && searchInput != null && searchInput.length > 0) {	           
-            moreCriteria.push("&type="+todb(searchInput));	       
+            moreCriteria.push("&keyword="+todb(searchInput));	       
         }        
 	}
 	
