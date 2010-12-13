@@ -2141,7 +2141,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("accountIdEQ", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
         sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
-        sb.and("name", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("stateEQ", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
         sb.and("stateNIN", sb.entity().getState(), SearchCriteria.Op.NIN);
@@ -2452,7 +2452,7 @@ public class ManagementServerImpl implements ManagementServer {
         Object keyword = cmd.getKeyword();
 
         SearchBuilder<DomainRouterVO> sb = _routerDao.createSearchBuilder();
-        sb.and("name", sb.entity().getHostName(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -2518,10 +2518,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (keyword != null) {
             SearchCriteria<ConsoleProxyVO> ssc = _consoleProxyDao.createSearchCriteria();
-            ssc.addOr("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("group", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
@@ -3017,12 +3014,12 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public Pair<String, Integer> getVncPort(VirtualMachine vm) {
         if (vm.getHostId() == null) {
-        	s_logger.warn("VM " + vm.getHostName() + " does not have host, return -1 for its VNC port");
+        	s_logger.warn("VM " + vm.getName() + " does not have host, return -1 for its VNC port");
             return new Pair<String, Integer>(null, -1);
         }
         
         if(s_logger.isTraceEnabled()) {
-            s_logger.trace("Trying to retrieve VNC port from agent about VM " + vm.getHostName());
+            s_logger.trace("Trying to retrieve VNC port from agent about VM " + vm.getName());
         }
         
         GetVncPortAnswer answer = (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(), new GetVncPortCommand(vm.getId(), vm.getInstanceName()));
@@ -4142,8 +4139,6 @@ public class ManagementServerImpl implements ManagementServer {
         if (keyword != null) {
             SearchCriteria<SecondaryStorageVmVO> ssc = _secStorageVmDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
@@ -4884,7 +4879,7 @@ public class ManagementServerImpl implements ManagementServer {
 				}
 				for(ConsoleProxyVO cp : cpList)
 				{
-					Long cpHostId = hostNameToHostIdMap.get(cp.getHostName());
+					Long cpHostId = hostNameToHostIdMap.get(cp.getName());
 					//now send a command to each console proxy host
 					UpdateCertificateCommand certCmd = new UpdateCertificateCommand(_certDao.findById(certVOId).getCertificate(), false);
 					try {

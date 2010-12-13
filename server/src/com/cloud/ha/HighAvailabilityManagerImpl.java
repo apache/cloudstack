@@ -199,12 +199,12 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             // collect list of vm names for the alert email
             VMInstanceVO vm = vms.get(0);
             if (vm.isHaEnabled()) {
-                sb.append(" " + vm.getHostName());
+                sb.append(" " + vm.getName());
             }
             for (int i = 1; i < vms.size(); i++) {
                 vm = vms.get(i);
                 if (vm.isHaEnabled()) {
-                    sb.append(" " + vm.getHostName());
+                    sb.append(" " + vm.getName());
                 }
             }
         }
@@ -217,7 +217,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
 
         for (final VMInstanceVO vm : vms) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Notifying HA Mgr of to investigate vm " + vm.getId() + "-" + vm.getHostName());
+                s_logger.debug("Notifying HA Mgr of to investigate vm " + vm.getId() + "-" + vm.getName());
             }
             scheduleRestart(vm, true);
         }
@@ -284,8 +284,8 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             if (!(_forceHA || vm.isHaEnabled())) {
             	
                 _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "VM (name: "
-                		+ vm.getHostName() + ", id: " + vm.getId() + ") stopped unexpectedly on host "
-                		+ vm.getHostId(), "Virtual Machine " + vm.getHostName() + " (id: "
+                		+ vm.getName() + ", id: " + vm.getId() + ") stopped unexpectedly on host "
+                		+ vm.getHostId(), "Virtual Machine " + vm.getName() + " (id: "
                 		+ vm.getId() + ") running on host [" + vm.getHostId()
                 		+ "] stopped unexpectedly.");
                 		
@@ -371,12 +371,12 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
                 investigator = en.nextElement();
                 alive = investigator.isVmAlive(vm, host);
                 if (alive != null) {
-                    s_logger.debug(investigator.getName() + " found VM " + vm.getHostName() + "to be alive? " + alive);
+                    s_logger.debug(investigator.getName() + " found VM " + vm.getName() + "to be alive? " + alive);
                     break;
                 }
             }
             if (alive != null && alive) {
-                s_logger.debug("VM " + vm.getHostName() + " is found to be alive by " + investigator.getName());
+                s_logger.debug("VM " + vm.getName() + " is found to be alive by " + investigator.getName());
                 if (host.getStatus() == Status.Up) {
                 	compareState(vm, new AgentVmInfo(vm.getInstanceName(), mgr, State.Running), false);
                 	return null;
@@ -402,7 +402,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             
             if (alive== null && !fenced) {
             	s_logger.debug("We were unable to fence off the VM " + vm.toString());
-                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc, "Insufficient capacity to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
+                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getName() + " which was running on host " + hostDesc, "Insufficient capacity to restart VM, name: " + vm.getName() + ", id: " + vmId + " which was running on host " + hostDesc);
             	return (System.currentTimeMillis() >> 10) + _restartRetryInterval;
             }
 
@@ -414,8 +414,8 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
 
         // send an alert for VMs that stop unexpectedly
         _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(),
-        		"VM (name: " + vm.getHostName() + ", id: " + vmId + ") stopped unexpectedly on host "
-        		+ hostDesc, "Virtual Machine " + vm.getHostName() + " (id: "
+        		"VM (name: " + vm.getName() + ", id: " + vmId + ") stopped unexpectedly on host "
+        		+ hostDesc, "Virtual Machine " + vm.getName() + " (id: "
         		+ vm.getId() + ") running on host [" + hostDesc + "] stopped unexpectedly.");
         
         vm = mgr.get(vm.getId());
@@ -455,19 +455,19 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             return (System.currentTimeMillis() >> 10) + _restartRetryInterval;
         } catch (final InsufficientCapacityException e) {
         	s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
-            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc, "Insufficient capacity to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
+            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getName() + " which was running on host " + hostDesc, "Insufficient capacity to restart VM, name: " + vm.getName() + ", id: " + vmId + " which was running on host " + hostDesc);
             return null;
         } catch (final StorageUnavailableException e) {
         	s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
-            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc, "The Storage is unavailable for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
+            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getName() + " which was running on host " + hostDesc, "The Storage is unavailable for trying to restart VM, name: " + vm.getName() + ", id: " + vmId + " which was running on host " + hostDesc);
             return null;
         } catch (ConcurrentOperationException e) {
         	s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
-            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc, "The Storage is unavailable for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
+            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getName() + " which was running on host " + hostDesc, "The Storage is unavailable for trying to restart VM, name: " + vm.getName() + ", id: " + vmId + " which was running on host " + hostDesc);
             return null;
         } catch (ExecutionException e) {
            	s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
-            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getHostName() + " which was running on host " + hostDesc, "The Storage is unavailable for trying to restart VM, name: " + vm.getHostName() + ", id: " + vmId + " which was running on host " + hostDesc);
+            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getName() + " which was running on host " + hostDesc, "The Storage is unavailable for trying to restart VM, name: " + vm.getName() + ", id: " + vmId + " which was running on host " + hostDesc);
             return null;
         }
     }
@@ -483,7 +483,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     	State agentState = info.state;
         final String agentName = info.name;
         final State serverState = vm.getState();
-        final String serverName = vm.getHostName();
+        final String serverName = vm.getName();
 
         
         Command command = null;
@@ -507,7 +507,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             HostVO hostVO = _hostDao.findById(vm.getHostId());
             
             String hostDesc = "name: " + hostVO.getName() + " (id:" + hostVO.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
-            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "VM (name: " + vm.getHostName() + ", id: " + vm.getId() + ") stopped on host " + hostDesc + " due to storage failure", "Virtual Machine " + vm.getHostName() + " (id: " + vm.getId() + ") running on host [" + vm.getHostId() + "] stopped due to storage failure.");
+            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "VM (name: " + vm.getName() + ", id: " + vm.getId() + ") stopped on host " + hostDesc + " due to storage failure", "Virtual Machine " + vm.getName() + " (id: " + vm.getId() + ") running on host [" + vm.getHostId() + "] stopped due to storage failure.");
         }
         
         if (serverState == State.Migrating) {
@@ -545,10 +545,10 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
                     info.mgr.completeStopCommand(vm);
                     command = info.mgr.cleanup(vm, agentName);
                 } else {
-                    s_logger.debug("Ignoring VM in stopping mode: " + vm.getHostName());
+                    s_logger.debug("Ignoring VM in stopping mode: " + vm.getName());
                 }
             } else if (serverState == State.Starting) {
-                s_logger.debug("Ignoring VM in starting mode: " + vm.getHostName());
+                s_logger.debug("Ignoring VM in starting mode: " + vm.getName());
             } else {
                 s_logger.debug("Sending cleanup to a stopped vm: " + agentName);            
                 _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
@@ -721,14 +721,14 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Unable to find a host for migrating vm " + vmId);
                     }
-                    _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to migrate vm " + vm.getHostName() + " from host " + fromHostName + " in zone " + dcVO.getName() + " and pod " + podVO.getName(), "Unable to find a suitable host");
+                    _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to migrate vm " + vm.getName() + " from host " + fromHostName + " in zone " + dcVO.getName() + " and pod " + podVO.getName(), "Unable to find a suitable host");
                 }
             } catch(final InsufficientCapacityException e) {
             	s_logger.warn("Unable to mgirate due to insufficient capacity " + vm.toString());
-                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to migrate vm " + vm.getHostName() + " from host " + fromHostName + " in zone " + dcVO.getName() + " and pod " + podVO.getName(), "Insufficient capacity");
+                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to migrate vm " + vm.getName() + " from host " + fromHostName + " in zone " + dcVO.getName() + " and pod " + podVO.getName(), "Insufficient capacity");
             } catch(final StorageUnavailableException e) {
                 s_logger.warn("Storage is unavailable: " + vm.toString());
-                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to migrate vm " + vm.getHostName() + " from host " + fromHostName + " in zone " + dcVO.getName() + " and pod " + podVO.getName(), "Storage is gone.");
+                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to migrate vm " + vm.getName() + " from host " + fromHostName + " in zone " + dcVO.getName() + " and pod " + podVO.getName(), "Storage is gone.");
             }
             
             if (toHost == null) {
@@ -775,7 +775,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
 
                 DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterId());
                 HostPodVO podVO = _podDao.findById(vm.getPodId());
-                _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(), "Unable to migrate vm " + vm.getHostName() + " from host " + fromHost.getName() + " in zone " + dcVO.getName() + " and pod " + podVO.getName(), "Migrate Command failed.  Please check logs.");
+                _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(), "Unable to migrate vm " + vm.getName() + " from host " + fromHost.getName() + " in zone " + dcVO.getName() + " and pod " + podVO.getName(), "Migrate Command failed.  Please check logs.");
 
                 _itMgr.stateTransitTo(vm, Event.MigrationFailedOnSource, toHost.getId());
                 _agentMgr.maintenanceFailed(vm.getHostId());

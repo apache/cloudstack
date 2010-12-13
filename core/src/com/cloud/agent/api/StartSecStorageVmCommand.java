@@ -98,7 +98,7 @@ public class StartSecStorageVmCommand extends AbstractStartCommand {
 		String basic = " eth0ip=" + secStorageVm.getGuestIpAddress() + " eth0mask=" + secStorageVm.getGuestNetmask() + " eth1ip="
         + eth1Ip + " eth1mask=" + eth1NetMask + " eth2ip="
         + eth2Ip + " eth2mask=" + eth2NetMask + " gateway=" + gateWay
-		+ " dns1=" + secStorageVm.getDns1() + " type=secstorage" + " name=" + secStorageVm.getHostName() + " template=domP";
+		+ " dns1=" + secStorageVm.getDns1() + " type=secstorage" + " name=" + secStorageVm.getName() + " template=domP";
 		if (secStorageVm.getDns2() != null) {
 			basic = basic + " dns2=" + secStorageVm.getDns2();
 		}

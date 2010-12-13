@@ -61,7 +61,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity {
     /**
      * @return the name of the virtual machine.
      */
-    public String getHostName();
+    public String getName();
     
     /**
      * @return the ip address of the virtual machine.

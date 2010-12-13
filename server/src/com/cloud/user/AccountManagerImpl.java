@@ -978,7 +978,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             try {
                 success = (success && _vmMgr.stop(vm, 0));
             } catch (AgentUnavailableException aue) {
-                s_logger.warn("Agent running on host " + vm.getHostId() + " is unavailable, unable to stop vm " + vm.getHostName());
+                s_logger.warn("Agent running on host " + vm.getHostId() + " is unavailable, unable to stop vm " + vm.getName());
                 success = false;
             }
         }

@@ -225,7 +225,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         VMInstanceVO vmInstance = _vmDao.findById(volume.getInstanceId());
         String vmDisplayName = "detached";
         if (vmInstance != null) {
-            vmDisplayName = vmInstance.getHostName();
+            vmDisplayName = vmInstance.getName();
         }
         String snapshotName = vmDisplayName + "_" + volume.getName() + "_" + timeString;
 

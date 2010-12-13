@@ -51,7 +51,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	protected long id;
 
     @Column(name="name", updatable=false, nullable=false, length=255)
-	protected String hostName = null;
+	protected String name = null;
 
     @Column(name="vnc_password", updatable=true, nullable=false, length=255)
     protected String vncPassword;
@@ -149,7 +149,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
                         long accountId,
                         boolean haEnabled) {
         this.id = id;
-        this.hostName = name;
+        this.name = name;
         if (vmTemplateId != null) {
             this.templateId = vmTemplateId;
         }
@@ -184,7 +184,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
                         Long hostId) {
         super();
         this.id = id;
-        this.hostName = name;
+        this.name = name;
         if (vmTemplateId > -1)
         	this.templateId = vmTemplateId;
         else
@@ -267,8 +267,8 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	}
 	
 	@Override
-	public String getHostName() {
-		return hostName;
+	public String getName() {
+		return name;
 	}
 	
 	@Override

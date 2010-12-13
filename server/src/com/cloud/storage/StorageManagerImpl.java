@@ -929,7 +929,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             List<StoragePoolVO> avoids, long size) {
         List<VolumeVO> volumes = create(account, vm, template, dc, pod, offering, diskOffering, avoids, size);
         if( volumes == null || volumes.size() == 0) {
-            throw new CloudRuntimeException("Unable to create volume for " + vm.getHostName());
+            throw new CloudRuntimeException("Unable to create volume for " + vm.getName());
         }
         
         for (VolumeVO v : volumes) {

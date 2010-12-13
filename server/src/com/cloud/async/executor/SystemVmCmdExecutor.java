@@ -110,7 +110,7 @@ public class SystemVmCmdExecutor extends VMOperationExecutor {
 		if (vm instanceof SecondaryStorageVmVO) {
 			SecondaryStorageVmVO ssVm = (SecondaryStorageVmVO)vm;
 		result.setId(ssVm.getId());
-		result.setName(vm.getHostName());
+		result.setName(vm.getName());
 		result.setZoneId(ssVm.getDataCenterId());
 		result.setZoneName(managementServer.findDataCenterById(ssVm.getDataCenterId()).getName());
 		result.setDns1(ssVm.getDns1());

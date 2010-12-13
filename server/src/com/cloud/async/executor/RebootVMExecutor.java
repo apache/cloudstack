@@ -78,7 +78,7 @@ public class RebootVMExecutor extends VMOperationExecutor {
 		VMOperationParam param = listener.getParam();
 		AsyncJobManager asyncMgr = getAsyncJobMgr();
 		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
-        String params = "id="+vm.getId() + "\nvmName=" + vm.getHostName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId();
+        String params = "id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId();
 		
 		boolean jobStatusUpdated = false;
 		try {
@@ -90,14 +90,14 @@ public class RebootVMExecutor extends VMOperationExecutor {
 	        		AsyncJobResult.STATUS_SUCCEEDED, 0, VMExecutorHelper.composeResultObject(asyncMgr.getExecutorContext().getManagementServer(), vm, null));
 	    		jobStatusUpdated = true;	            
 	            EventUtils.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_REBOOT,
-	            		"Successfully rebooted VM instance : " + vm.getHostName(), params, param.getEventId());
+	            		"Successfully rebooted VM instance : " + vm.getName(), params, param.getEventId());
 	    	} else {
 	    		asyncMgr.completeAsyncJob(getJob().getId(), 
 	            		AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, "Agent is unable to execute the command");
 	    		
 	    		jobStatusUpdated = true;
 	    		EventUtils.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_REBOOT,
-	            		"Failed to reboot VM instance : " + vm.getHostName(), params, param.getEventId());
+	            		"Failed to reboot VM instance : " + vm.getName(), params, param.getEventId());
 	            
 	    	}
 	    	    		
@@ -142,8 +142,8 @@ public class RebootVMExecutor extends VMOperationExecutor {
         event.setUserId(param.getUserId());
         event.setAccountId(vm.getAccountId());
         event.setType(EventTypes.EVENT_VM_REBOOT);
-        event.setParameters("id="+vm.getId() + "\nvmName=" + vm.getHostName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
-        event.setDescription("failed to reboot VM instance : " + vm.getHostName() + " due to " + resultMessage);
+        event.setParameters("id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
+        event.setDescription("failed to reboot VM instance : " + vm.getName() + " due to " + resultMessage);
         event.setLevel(EventVO.LEVEL_ERROR);
 
         boolean jobStatusUpdated = false;

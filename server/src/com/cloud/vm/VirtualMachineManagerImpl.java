@@ -495,7 +495,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
         event.setAccountId(vm.getAccountId());
         event.setType(EventTypes.EVENT_VM_STOP);
         event.setStartId(1); // FIXME:
-        event.setParameters("id="+vm.getId() + "\n" + "vmName=" + vm.getHostName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
+        event.setParameters("id="+vm.getId() + "\n" + "vmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
 
         StopCommand stop = new StopCommand(vm, vm.getInstanceName(), null);
 

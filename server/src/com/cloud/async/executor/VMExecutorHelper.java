@@ -30,7 +30,7 @@ public class VMExecutorHelper {
 		VMOperationResultObject resultObject = new VMOperationResultObject();
 		
 		resultObject.setId(vm.getId());
-		resultObject.setName(vm.getHostName());
+		resultObject.setName(vm.getName());
 		resultObject.setCreated(vm.getCreated());
 		resultObject.setZoneId(vm.getDataCenterId());
 		resultObject.setZoneName(managementServer.findDataCenterById(vm.getDataCenterId()).getName());
@@ -38,7 +38,7 @@ public class VMExecutorHelper {
 		resultObject.setServiceOfferingId(vm.getServiceOfferingId());
 		resultObject.setHaEnabled(vm.isHaEnabled());
 		if (vm.getDisplayName() == null || vm.getDisplayName().length() == 0) {
-			resultObject.setDisplayName(vm.getHostName());
+			resultObject.setDisplayName(vm.getName());
 		}
 		else {
 			resultObject.setDisplayName(vm.getDisplayName());

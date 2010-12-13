@@ -80,7 +80,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         HostRunningSearch.done();
         
         NameSearch = createSearchBuilder();
-        NameSearch.and("name", NameSearch.entity().getHostName(), SearchCriteria.Op.EQ);
+        NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
         NameSearch.done();
         
         RouterStateSearch = createSearchBuilder();

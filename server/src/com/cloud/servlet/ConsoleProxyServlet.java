@@ -221,7 +221,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 			return;
 		}
 		
-		String vmName = vm.getHostName();
+		String vmName = vm.getName();
 		if(vmName == null)
 			vmName = vm.getInstanceName();
 		
