@@ -664,7 +664,7 @@ function beforeAddingMidMenuItem() {
 	$midmenuItem1.find("#content").addClass("inaction"); 
 	$midmenuItem1.find("#spinning_wheel").show();
 	$midmenuItem1.find("#info_icon").removeClass("error").hide();
-	$("#midmenu_container").append($midmenuItem1.show());
+	$("#midmenu_container").prepend($midmenuItem1.show());
 	return $midmenuItem1;
 }
 function afterAddingMidMenuItem($midmenuItem1, isSuccessful, extraMessage) {
