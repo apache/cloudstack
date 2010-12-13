@@ -1886,6 +1886,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 //                    _accountMgr.incrementResourceCount(createdVolume.getAccountId(), ResourceType.volume);
                     _accountMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
                     VolumeVO volForUpdate = _volsDao.createForUpdate();
+                    volForUpdate.setSourceId(diskOffering.getId());
+                    volForUpdate.setSourceType(SourceType.DiskOffering);
                     volForUpdate.setStatus(AsyncInstanceCreateStatus.Created);
                     _volsDao.update(volume.getId(), volForUpdate);
 
