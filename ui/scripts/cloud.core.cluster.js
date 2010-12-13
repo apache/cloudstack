@@ -17,7 +17,7 @@
  */
   
 function afterLoadClusterJSP($leftmenuItem1) {
-    showMiddleMenu();
+    showMiddleMenuWithoutSearchAndPagination();    
      
     clearAddButtonsOnTop(); 
     initAddHostButton($("#midmenu_add_host_button"), "cluster_page", $leftmenuItem1); 
