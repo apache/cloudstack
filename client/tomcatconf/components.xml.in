@@ -94,5 +94,8 @@
         <dao name="host zone configuration server" class="com.cloud.dc.dao.DataCenterDaoImpl" singleton="false"/>
         <dao name="host pod configuration server" class="com.cloud.dc.dao.HostPodDaoImpl" singleton="false"/>
         <dao name="DomainDao" class="com.cloud.domain.dao.DomainDaoImpl" singleton="false"/>
+        <dao name="NetworkOfferingDao" class="com.cloud.offerings.dao.NetworkOfferingDaoImpl" singleton="false"/>
+        <dao name="DataCenterDao" class="com.cloud.dc.dao.DataCenterDaoImpl" singleton="false"/>
+        <dao name="NetworkDao" class="com.cloud.network.dao.NetworkDaoImpl" singleton="false"/> 
     </configuration-server>
 </components.xml>

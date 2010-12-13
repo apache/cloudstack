@@ -30,6 +30,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
@@ -52,7 +53,16 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.Network.State;
+import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.Mode;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -78,6 +88,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     private final DiskOfferingDao _diskOfferingDao;
     private final ServiceOfferingDao _serviceOfferingDao;
     private final DomainDao _domainDao;
+    private final NetworkOfferingDao _networkOfferingDao;
+    private final DataCenterDao _dataCenterDao;
+    private final NetworkDao _networkDao;
 
 	
 	public ConfigurationServerImpl() {
@@ -88,7 +101,10 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         _podDao = locator.getDao(HostPodDao.class);
         _diskOfferingDao = locator.getDao(DiskOfferingDao.class);
         _serviceOfferingDao = locator.getDao(ServiceOfferingDao.class);
+        _networkOfferingDao = locator.getDao(NetworkOfferingDao.class);
         _domainDao = locator.getDao(DomainDao.class);
+        _dataCenterDao = locator.getDao(DataCenterDao.class);
+        _networkDao = locator.getDao(NetworkDao.class);
 	}
 
 	@Override
@@ -224,6 +240,13 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
 	        // generate a single sign-on key
 	        updateSSOKey();
+	        
+	        //Create default network offerings
+	        createDefaultNetworkOfferings();
+	        
+	        //Create default networks
+	        createDefaultNetworks();
+	        
 		}
 
 		// store the public and private keys in the database
@@ -234,7 +257,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
 		// Update the cloud identifier
 		updateCloudIdentifier();
-
+		
 		// Set init to true
 		_configDao.update("init", "true");
 	}
@@ -684,4 +707,89 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         
         return tags;
     }
+    
+    private void createDefaultNetworkOfferings() {
+        Integer rateMbps = getIntegerConfigValue(Config.NetworkThrottlingRate.key(), null);  
+        Integer multicastRateMbps = getIntegerConfigValue(Config.MulticastThrottlingRate.key(), null);
+
+        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);
+        publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
+        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmManagementNetwork, TrafficType.Management, null);
+        managementNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(managementNetworkOffering);
+        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmControlNetwork, TrafficType.Control, null);
+        controlNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(controlNetworkOffering);
+        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmStorageNetwork, TrafficType.Storage, null);
+        storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
+        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, GuestIpType.Virtual, false, false, rateMbps, multicastRateMbps, null, true);
+        defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
+        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Public, GuestIpType.Direct, false, false, rateMbps, multicastRateMbps, null, true);
+        defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
+        NetworkOfferingVO defaultGuestDirectPodBasedNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectPodBasedNetworkOffering, "DirectPodBased", TrafficType.Public, GuestIpType.DirectPodBased, true, false, rateMbps, multicastRateMbps, null, true);
+        defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectPodBasedNetworkOffering);
+    }
+    
+    private Integer getIntegerConfigValue(String configKey, Integer dflt) {
+        String value = _configDao.getValue(configKey);
+        if (value != null) {
+            return Integer.parseInt(value);
+        }
+        return dflt;
+    }
+    
+    private void createDefaultNetworks() {
+        List<DataCenterVO> zones = _dataCenterDao.listAll();
+        long id = 1;
+        
+        HashMap<TrafficType, String> guruNames = new HashMap<TrafficType, String>();
+        guruNames.put(TrafficType.Public, "PublicNetworkGuru-com.cloud.network.guru.PublicNetworkGuru");
+        guruNames.put(TrafficType.Management, "PodBasedNetworkGuru-com.cloud.network.guru.PodBasedNetworkGuru");
+        guruNames.put(TrafficType.Control, "ControlNetworkGuru-com.cloud.network.guru.ControlNetworkGuru");
+        guruNames.put(TrafficType.Storage, "PodBasedNetworkGuru-com.cloud.network.guru.PodBasedNetworkGuru");
+        
+        for (DataCenterVO zone : zones) {
+            long zoneId = zone.getId();
+            long accountId = 1L;
+            Long domainId = zone.getDomainId();
+            
+            if (domainId == null) {
+                domainId = 1L;
+            }
+            //Create default networks - system only
+            List<NetworkOfferingVO> ntwkOff = _networkOfferingDao.listSystemNetworkOfferings();
+            
+            for (NetworkOfferingVO offering : ntwkOff) {
+                if (offering.isSystemOnly()) {
+                    long related = id;
+                    long networkOfferingId = offering.getId();
+                    Mode mode = Mode.Static;
+                    
+                    BroadcastDomainType broadcastDomainType = null;
+                    TrafficType trafficType= offering.getTrafficType();
+                    GuestIpType guestIpType = offering.getGuestIpType();
+                    if (offering.getGuestIpType() != GuestIpType.DirectPodBased) {
+                        if (trafficType == TrafficType.Management || trafficType == TrafficType.Storage) {
+                            broadcastDomainType = BroadcastDomainType.Native;
+                        } else if (trafficType == TrafficType.Public) {
+                            broadcastDomainType = BroadcastDomainType.Vlan;
+                        } else if (trafficType == TrafficType.Control) {
+                            broadcastDomainType = BroadcastDomainType.LinkLocal;
+                        }  
+                    } else if (zone.getNetworkType() == NetworkType.Basic && offering.getGuestIpType() == GuestIpType.DirectPodBased){
+                        broadcastDomainType = BroadcastDomainType.Vlan;
+                    }
+                    
+                    if (broadcastDomainType != null) {
+                        NetworkVO network = new NetworkVO(id, trafficType, guestIpType, mode, broadcastDomainType, networkOfferingId, zoneId, domainId, accountId, related, null, null, true);
+                        network.setGuruName(guruNames.get(network.getTrafficType()));
+                        network.setDns1(zone.getDns1());
+                        network.setDns2(zone.getDns2());
+                        network.setState(State.Implemented);
+                        _networkDao.persist(network, false);
+                        id++;
+                    }
+                } 
+            }
+        }
+    }
+    
 }

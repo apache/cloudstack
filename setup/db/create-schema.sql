@@ -296,7 +296,7 @@ INSERT INTO `cloud`.`sequence` (name, value) VALUES ('public_mac_address_seq', 1
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('private_mac_address_seq', 1);
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('storage_pool_seq', 200);
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('volume_seq', 1);
-INSERT INTO `cloud`.`sequence` (name, value) VALUES ('networks_seq', 1);
+INSERT INTO `cloud`.`sequence` (name, value) VALUES ('networks_seq', 200);
 INSERT INTO `cloud`.`sequence` (name, value) VALUES ('snapshots_seq', 1);
 
 CREATE TABLE `cloud`.`volumes` (
