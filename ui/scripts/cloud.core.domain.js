@@ -196,8 +196,9 @@ function initAddDomainDialog() {
 											
 					    var $expandIcon = $parentDomainNode.find("#domain_expand_icon_"+item.parentdomainid);
 					    if($expandIcon.hasClass("expanded_close"))
-					        $expandIcon.click(); //expand parentDomain node					    
-					    drawNode(item, $("#domain_children_container_"+item.parentdomainid));	
+					        $expandIcon.click(); //expand parentDomain node		
+					    else			    
+					        drawNode(item, $("#domain_children_container_"+item.parentdomainid));	
 					}							
 				});				
 			}, 
