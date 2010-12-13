@@ -667,7 +667,7 @@ function beforeAddingMidMenuItem() {
 	$("#midmenu_container").append($midmenuItem1.show());
 	return $midmenuItem1;
 }
-function afterAddingMidMenuItem($midmenuItem1, isSuccessful, extraMessage, hasMultipleSelectionSubContainer) {
+function afterAddingMidMenuItem($midmenuItem1, isSuccessful, extraMessage) {
     $midmenuItem1.find("#content").removeClass("inaction"); 
 	$midmenuItem1.find("#spinning_wheel").hide();	
 
@@ -676,7 +676,7 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, extraMessage, hasMu
 	    $midmenuItem1.data("afterActionInfo", ("Adding succeeded.")); 
 	    
 	    var $container = $("#midmenu_container");
-	    if(hasMultipleSelectionSubContainer) {
+	    if($("#midmenu_container").find("#multiple_selection_sub_container").length > 0) {
 	        $container = $("#midmenu_container").find("#multiple_selection_sub_container");
 	        $midmenuItem1.appendTo("#midmenu_container #multiple_selection_sub_container"); 
 	    }
