@@ -12,7 +12,7 @@
 <div class="main_title" id="right_panel_header">
     
     <div class="main_titleicon">
-        <img src="images/title_diskofferingicon.gif" alt="Disk Offering" /></div>
+        <img src="images/title_diskofferingicon.gif" /></div>
     
     <h1>
         Disk Offering

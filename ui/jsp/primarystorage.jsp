@@ -9,7 +9,7 @@
 
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
-        <img src="images/title_storageicon.gif" alt="Primary Storage" /></div>
+        <img src="images/title_storageicon.gif"/></div>
     <h1>
         Primary Storage
     </h1>

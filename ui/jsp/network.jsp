@@ -9,7 +9,7 @@
 
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
-        <img src="images/title_podicon.gif" alt="Network" /></div>
+        <img src="images/title_podicon.gif" /></div>
     <h1 id="page_title">
         Network
     </h1>

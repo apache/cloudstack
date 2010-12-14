@@ -12,7 +12,7 @@
 <div class="main_title" id="right_panel_header">
    
     <div class="main_titleicon">
-        <img src="images/title_globalsettingsicon.gif" alt=" Global_Settings" /></div>
+        <img src="images/title_globalsettingsicon.gif" /></div>
     
     <h1>
         Global Settings

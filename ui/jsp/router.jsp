@@ -13,7 +13,7 @@
 <div class="main_title" id="right_panel_header">
      
     <div class="main_titleicon">
-        <img src="images/title_routersicon.gif" alt="Routers" /></div>
+        <img src="images/title_routersicon.gif" /></div>
    
     <h1>
         Virtual Appliance

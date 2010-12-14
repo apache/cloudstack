@@ -550,13 +550,13 @@
                                     <fmt:message key="label.menu.ipaddresses"/>
                                 </div>
                             </div>
-                        </div>  
+                        </div>                        
                         <div class="leftmenu_expandedlist">
                             <div class="leftmenu_content" id="leftmenu_security_group">
                                 <div class="leftmenu_secondindent">
                                    	<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>                                    
-                                    Security Group
+                                    <fmt:message key="label.menu.security.groups"/>
                                 </div>
                             </div>
                         </div>                        

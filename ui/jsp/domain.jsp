@@ -12,7 +12,7 @@
 <div class="main_title" id="right_panel_header">
   
     <div class="main_titleicon">
-        <img src="images/title_domainicon.gif" alt="Domain" /></div>
+        <img src="images/title_domainicon.gif" /></div>
    
     <h1>
         Domain

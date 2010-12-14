@@ -9,7 +9,7 @@
 
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
-        <img src="images/title_systemvmicon.gif" alt="System VM" /></div>
+        <img src="images/title_systemvmicon.gif" /></div>
     <h1>
         System VM
     </h1>

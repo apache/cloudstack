@@ -12,7 +12,7 @@
 <!-- ISO detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
-        <img src="images/title_isoicon.gif" alt="ISO" /></div>
+        <img src="images/title_isoicon.gif" /></div>
     <h1>
         ISO
     </h1>
