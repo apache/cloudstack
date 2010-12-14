@@ -66,6 +66,8 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
         for (StoragePoolVO pool: pools) {
         	if (checkPool(avoid, pool, dskCh, template, null, vm, sc)) {
         		return pool;
+        	} else {
+        		pools.remove(pool);
         	}
         }
         

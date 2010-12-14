@@ -979,7 +979,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 	                _itMgr.stateTransitTo(router, VirtualMachine.Event.OperationRetry, routingHost.getId());
 
 	                List<VolumeVO> vols = _storageMgr.prepare(router, routingHost);
-	                if (vols == null) {
+	                if (vols == null || vols.size() == 0) {
 	                    s_logger.debug("Couldn't get storage working for " + routingHost);
 	                    continue;
 	                }

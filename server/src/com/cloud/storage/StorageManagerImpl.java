@@ -370,7 +370,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             return vols;
         }
         
-        List<VolumeVO> createds = new ArrayList<VolumeVO>(recreateVols.size());
+        List<VolumeVO> createds = new ArrayList<VolumeVO>();
         for (VolumeVO vol : recreateVols) {
             VolumeVO create = new VolumeVO(vol.getVolumeType(), vol.getInstanceId(), vol.getTemplateId(), vol.getName(), vol.getDataCenterId(), host.getPodId(), vol.getAccountId(), vol.getDomainId(), vol.isRecreatable());
             create.setDiskOfferingId(vol.getDiskOfferingId());
@@ -392,6 +392,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 break;
             }
             createds.add(created);
+        }
+        
+        if (createds.size() != recreateVols.size()) {
+        	return null;
         }
 
         for (VolumeVO vol : recreateVols) {
