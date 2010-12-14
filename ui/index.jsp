@@ -41,6 +41,7 @@
     <script type="text/javascript" src="scripts/cloud.core.domain.js?t=<%=now%>"></script>    
     <script type="text/javascript" src="scripts/cloud.core.serviceoffering.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.diskoffering.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.networkoffering.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.globalsetting.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.resource.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.zone.js?t=<%=now%>"></script>
@@ -846,6 +847,17 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" id="leftmenu_network_offering">
+                                <div class="leftmenu_secondindent">
+                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+                                    </div>
+                                    Network Offering
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="leftmenu_expandedlist">
                             <div class="leftmenu_content" id="leftmenu_global_setting">
                                 <div class="leftmenu_secondindent">
