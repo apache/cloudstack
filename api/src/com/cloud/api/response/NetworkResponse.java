@@ -53,6 +53,11 @@ public class NetworkResponse extends BaseResponse{
     @SerializedName("networkofferingdisplaytext")
     private String networkOfferingDisplayText;
     
+    //TODO - add description
+    @SerializedName("networkofferingavailability")
+    private String networkOfferingAvailability;
+    
+    
   //TODO - add description
     @SerializedName("isshared")
     private Boolean isShared;
@@ -297,6 +302,14 @@ public class NetworkResponse extends BaseResponse{
 	public void setDomain(String domain) {
 		this.domain = domain;
 	}
+
+    public String getNetworkOfferingAvailability() {
+        return networkOfferingAvailability;
+    }
+
+    public void setNetworkOfferingAvailability(String networkOfferingAvailability) {
+        this.networkOfferingAvailability = networkOfferingAvailability;
+    }
     
     
 }

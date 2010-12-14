@@ -29,6 +29,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.Networks.Availability;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
@@ -179,7 +180,7 @@ public interface ConfigurationManager extends Manager {
      * @param specifyVlan;
      * @return network offering object
      */
-    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, GuestIpType type, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan);
+    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, GuestIpType type, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability);
     
     Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
     

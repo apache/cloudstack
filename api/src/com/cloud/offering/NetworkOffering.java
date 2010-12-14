@@ -17,6 +17,7 @@
  */
 package com.cloud.offering;
 
+import com.cloud.network.Networks.Availability;
 import com.cloud.network.Networks.TrafficType;
 
 /**
@@ -77,4 +78,6 @@ public interface NetworkOffering {
     boolean isDefault();
     
     boolean isSystemOnly();
+    
+    Availability getAvailability();
 }

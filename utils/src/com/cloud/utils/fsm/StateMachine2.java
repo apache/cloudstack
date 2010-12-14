@@ -24,9 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
-
 /**
  * StateMachine is a partial implementation of a finite state machine.
  * Specifically, it implements the Moore machine.

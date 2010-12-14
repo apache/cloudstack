@@ -29,35 +29,23 @@ import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.network.Networks.Availability;
 import com.cloud.offering.NetworkOffering;
 
-@Implementation(description="Creates a network offering.", responseObject=NetworkOfferingResponse.class)
-public class CreateNetworkOfferingCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateNetworkOfferingCmd.class.getName());
+@Implementation(description="Updates a network offering.", responseObject=NetworkOfferingResponse.class)
+public class UpdateNetworkOfferingCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(UpdateNetworkOfferingCmd.class.getName());
     private static final String _name = "createnetworkofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+    
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the id of the network offering")
+    private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the network offering")
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the network offering")
     private String networkOfferingName;
     
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the network offering")
+    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the network offering")
     private String displayText;
-    
-    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, required=true, description="type of the network. Supported types Virtual, Direct")
-    private String type;
-    
-    @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, required=true, description="the traffic type for the network offering, supported types are Public, Management, Control, Guest, Vlan or Storage.")
-    private String traffictype;
-    
-    @Parameter(name=ApiConstants.MAX_CONNECTIONS, type=CommandType.INTEGER, description="maximum number of concurrent connections supported by the network offering")
-    private Integer maxConnections;
-    
-    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for the network offering.")
-    private String tags; 
-    
-    @Parameter(name=ApiConstants.SPECIFY_VLAN, type=CommandType.BOOLEAN, description="true is network offering supports vlans")
-    private Boolean specifyVlan; 
     
     @Parameter(name=ApiConstants.AVAILABILITY, type=CommandType.STRING, description="the availability of network offering. Default value is Required")
     private String availability; 
@@ -73,29 +61,12 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     public String getDisplayText() {
         return displayText;
     }
-
-    public String getTags() {
-        return tags;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public String getTraffictype() {
-        return traffictype;
-    }
-
-    public Integer getMaxconnections() {
-        return maxConnections;
-    }
     
-    public Boolean getSpecifyVlan() {
-        return specifyVlan == null ? false : specifyVlan;
+    public Long getId() {
+        return id;
     }
 
     public String getAvailability() {
-        //Verify availability
         return availability == null ? Availability.Required.toString() : availability;
     }
 
@@ -109,13 +80,13 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        NetworkOffering result = _configService.createNetworkOffering(this);
+        NetworkOffering result = _configService.updateNetworkOffering(this);
         if (result != null) {
             NetworkOfferingResponse response = _responseGenerator.createNetworkOfferingResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create network offering");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update network offering");
         }
     }
 }

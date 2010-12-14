@@ -18,6 +18,7 @@ import com.cloud.api.commands.DeleteZoneCmd;
 import com.cloud.api.commands.ListNetworkOfferingsCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
+import com.cloud.api.commands.UpdateNetworkOfferingCmd;
 import com.cloud.api.commands.UpdatePodCmd;
 import com.cloud.api.commands.UpdateServiceOfferingCmd;
 import com.cloud.api.commands.UpdateZoneCmd;
@@ -177,6 +178,8 @@ public interface ConfigurationService {
     boolean deleteVlanIpRange(DeleteVlanIpRangeCmd cmd);
     
     NetworkOffering createNetworkOffering(CreateNetworkOfferingCmd cmd);
+    
+    NetworkOffering updateNetworkOffering(UpdateNetworkOfferingCmd cmd);
     
     List<? extends NetworkOffering> searchForNetworkOfferings(ListNetworkOfferingsCmd cmd);
     

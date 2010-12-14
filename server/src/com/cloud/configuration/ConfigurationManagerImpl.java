@@ -49,6 +49,7 @@ import com.cloud.api.commands.DeleteZoneCmd;
 import com.cloud.api.commands.ListNetworkOfferingsCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
+import com.cloud.api.commands.UpdateNetworkOfferingCmd;
 import com.cloud.api.commands.UpdatePodCmd;
 import com.cloud.api.commands.UpdateServiceOfferingCmd;
 import com.cloud.api.commands.UpdateZoneCmd;
@@ -87,6 +88,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.Availability;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
@@ -2548,8 +2550,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String typeString = cmd.getType();
         String trafficTypeString = cmd.getTraffictype();
         Boolean specifyVlan = cmd.getSpecifyVlan();
+        String availabilityStr = cmd.getAvailability();
+        
         TrafficType trafficType = null;
         GuestIpType type = null;
+        Availability availability = null;
+       
         
         //Verify traffic type
         for (TrafficType tType : TrafficType.values()) {
@@ -2571,22 +2577,29 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Invalid value for type. Supported types: Virtual, Direct");
         }
         
-        if (specifyVlan == null) {
-            specifyVlan = false;
+        //Verify availability
+        for (Availability avlb : Availability.values()) {
+            if (avlb.name().equalsIgnoreCase(availabilityStr)) {
+                availability = avlb;
+            }
+        }
+        
+        if (availability == null) {
+            throw new InvalidParameterValueException("Invalid value for Availability. Supported types: " + Availability.Required + ", " + Availability.Optional + ", " + Availability.Unavailable);
         }
 
         Integer maxConnections = cmd.getMaxconnections();
-        return createNetworkOffering(userId, name, displayText, type, trafficType, tags, maxConnections, specifyVlan);
+        return createNetworkOffering(userId, name, displayText, type, trafficType, tags, maxConnections, specifyVlan, availability);
     }
     
     @Override
-    public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, GuestIpType type, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan) {
+    public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, GuestIpType type, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability) {
         String networkRateStr = _configDao.getValue("network.throttling.rate");
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));      
         tags = cleanupTags(tags);
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, type, false, specifyVlan, networkRate, multicastRate, maxConnections, false);
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, type, false, specifyVlan, networkRate, multicastRate, maxConnections, false, availability);
         
         if ((offering = _networkOfferingDao.persist(offering)) != null) {
             saveConfigurationEvent(userId, null, EventTypes.EVENT_NETWORK_OFFERING_CREATE, "Successfully created new network offering with name: " + name + ".", "noId=" + offering.getId(), "name=" + name,
@@ -2610,6 +2623,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Object isDefault = cmd.getIsDefault();
         Object specifyVlan = cmd.getSpecifyVlan();
         Object isShared = cmd.getIsShared();
+        Object availability = cmd.getAvailability();
         
         Object keyword = cmd.getKeyword();
 
@@ -2650,6 +2664,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             sc.addAnd("isShared", SearchCriteria.Op.EQ, isShared);
         }
         
+        if (availability != null) {
+            sc.addAnd("availability", SearchCriteria.Op.EQ, availability);
+        }
+        
         //Don't return system network offerings to the user
         sc.addAnd("systemOnly", SearchCriteria.Op.EQ, false);
         
@@ -2680,6 +2698,54 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             return true;
         } else {
             return false;
+        }
+    }
+    
+    
+    
+    @Override
+    public NetworkOffering updateNetworkOffering(UpdateNetworkOfferingCmd cmd) {
+        String displayText = cmd.getDisplayText();
+        Long id = cmd.getId();
+        String name = cmd.getNetworkOfferingName();
+        String availabilityStr = cmd.getAvailability();
+        Availability availability = null;
+        
+        // Verify input parameters
+        NetworkOfferingVO offeringHandle = _networkOfferingDao.findById(id);
+        if (offeringHandle == null) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find network offering " + id);
+        }
+
+        NetworkOfferingVO offering = _networkOfferingDao.createForUpdate(id);
+
+        if (name != null) {
+            offering.setName(name);
+        }
+        
+        if (displayText != null) {
+            offering.setDisplayText(displayText);
+        }
+
+        //Verify availability
+        if (availabilityStr != null) {
+            for (Availability avlb : Availability.values()) {
+                if (avlb.name().equalsIgnoreCase(availabilityStr)) {
+                    availability = avlb;
+                }
+            }
+            if (availability == null) {
+                throw new InvalidParameterValueException("Invalid value for Availability. Supported types: " + Availability.Required + ", " + Availability.Optional + ", " + Availability.Unavailable);
+            } else {
+                offering.setAvailability(availability);
+            }
+        } 
+        
+        if (_networkOfferingDao.update(id, offering)) {
+            offering = _networkOfferingDao.findById(id);
+            return offering;
+        } else {
+            return null;
         }
     }
 }

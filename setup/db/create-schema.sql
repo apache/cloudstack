@@ -209,6 +209,7 @@ CREATE TABLE `cloud`.`network_offerings` (
   `created` datetime NOT NULL COMMENT 'time the entry was created',
   `removed` datetime DEFAULT NULL COMMENT 'time the entry was removed',
   `default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is default',
+  `availability` varchar(255) NOT NULL COMMENT 'availability of the network',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
