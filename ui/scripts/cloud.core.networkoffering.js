@@ -144,7 +144,7 @@ function networkOfferingJsonToDetailsTab() {
         dataType: "json",
         async: false,
         success: function(json) {  
-            var items = json.listNetworkOfferingsresponse.NetworkOffering;
+            var items = json.listnetworkofferingsresponse.networkoffering;
             if(items != null && items.length > 0) {
                 jsonObj = items[0];
                 $midmenuItem1.data("jsonObj", jsonObj);  
@@ -160,14 +160,15 @@ function networkOfferingJsonToDetailsTab() {
     
     $thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
     //$thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
-    
-    $thisTab.find("#type").text(fromdb(jsonObj.type));
-    $thisTab.find("#traffictype").text(fromdb(jsonObj.traffictype));
-    
+     
+    $thisTab.find("#availability").text(fromdb(jsonObj.availability)); 
+     
     setBooleanReadField(jsonObj.isdefault, $thisTab.find("#isdefault"));
     setBooleanReadField(jsonObj.specifyvlan, $thisTab.find("#specifyvlan"));
-    
-    
+      
+    $thisTab.find("#type").text(fromdb(jsonObj.type));
+    $thisTab.find("#traffictype").text(fromdb(jsonObj.traffictype));
+   
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();    
