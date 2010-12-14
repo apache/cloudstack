@@ -21,15 +21,15 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
-            <%=t.t("details")%></div>
-        <div class="content_tabs off" id="tab_statistics">
-            <%=t.t("statistics")%></div>
+            <%=t.t("details")%></div>        
         <div class="content_tabs off" id="tab_instance">
             <%=t.t("instance")%></div>
         <div class="content_tabs off" id="tab_router">
             <%=t.t("router")%></div>
         <div class="content_tabs off" id="tab_systemvm">
             <%=t.t("system.vm")%></div>
+        <div class="content_tabs off" id="tab_statistics">
+            <%=t.t("statistics")%></div>
     </div>
     <!-- Details tab (start)-->
     <div id="tab_content_details">
@@ -176,6 +176,46 @@
 	    </div>        
     </div>
     <!-- Details tab (end)-->
+           
+    <!--Instance tab (start)-->
+    <div style="display: none;" id="tab_content_instance">
+    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
+        </div>
+        <div id="tab_container">
+        </div>
+    </div> 
+    <!--Instance tab (end)-->
+    
+    <!--router tab (start)-->
+    <div style="display: none;" id="tab_content_router">
+    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
+        </div>
+        <div id="tab_container">
+        </div>
+    </div> 
+    <!--router tab (end)-->
+    
+    <!--systemvm tab (start)-->
+    <div style="display: none;" id="tab_content_systemvm">
+    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
+        </div>
+        <div id="tab_container">
+        </div>
+    </div> 
+    <!--systemvm tab (end)-->
+    
     
     <!--Statistics tab (start)-->
     <div style="display: none;" id="tab_content_statistics">
@@ -287,45 +327,6 @@
         </div>   
     </div>
     <!--Statistics tab (end)--> 
-       
-    <!--Instance tab (start)-->
-    <div style="display: none;" id="tab_content_instance">
-    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
-              <div class="rightpanel_mainloaderbox">
-                   <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
-              </div>               
-        </div>
-        <div id="tab_container">
-        </div>
-    </div> 
-    <!--Instance tab (end)-->
-    
-    <!--router tab (start)-->
-    <div style="display: none;" id="tab_content_router">
-    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
-              <div class="rightpanel_mainloaderbox">
-                   <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
-              </div>               
-        </div>
-        <div id="tab_container">
-        </div>
-    </div> 
-    <!--router tab (end)-->
-    
-    <!--systemvm tab (start)-->
-    <div style="display: none;" id="tab_content_systemvm">
-    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
-              <div class="rightpanel_mainloaderbox">
-                   <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
-              </div>               
-        </div>
-        <div id="tab_container">
-        </div>
-    </div> 
-    <!--systemvm tab (end)-->
 </div>
 
 <!--  instance tab template (begin) -->

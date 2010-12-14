@@ -52,9 +52,9 @@ function afterLoadHostJSP($midmenuItem1) {
     initDialog("dialog_update_os");
          
     // switch between different tabs 
-    var tabArray = [$("#tab_details"), $("#tab_statistics"), $("#tab_instance"), $("#tab_router"), $("#tab_systemvm")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_statistics"), $("#tab_content_instance"), $("#tab_content_router"), $("#tab_content_systemvm")];
-    var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToStatisticsTab, hostJsonToInstanceTab, hostJsonToRouterTab, hostJsonToSystemvmTab];
+    var tabArray = [$("#tab_details"), $("#tab_instance"), $("#tab_router"), $("#tab_systemvm"), $("#tab_statistics")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_instance"), $("#tab_content_router"), $("#tab_content_systemvm"), $("#tab_content_statistics")];
+    var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToInstanceTab, hostJsonToRouterTab, hostJsonToSystemvmTab, hostJsonToStatisticsTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);    
     
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);         
@@ -170,54 +170,6 @@ function hostJsonToDetailsTab() {
     $thisTab.find("#tab_container").show();               
 }
 
-function hostJsonToStatisticsTab() {    
-    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
-        return;
-    
-    var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
-        return;
-    
-    var $thisTab = $("#right_panel_content").find("#tab_content_statistics");  
-	$thisTab.find("#tab_container").hide(); 
-    $thisTab.find("#tab_spinning_wheel").show();   
-    
-    var $barChartContainer = $thisTab.find("#cpu_barchart");
-         
-    var cpuNumber = ((jsonObj.cpunumber==null)? "":jsonObj.cpunumber.toString());
-    $barChartContainer.find("#cpunumber").text(cpuNumber);
-    
-    var cpuSpeed = ((jsonObj.cpuspeed==null)? "":convertHz(jsonObj.cpuspeed)) ;
-    $barChartContainer.find("#cpuspeed").text(cpuSpeed);
-    
-    $barChartContainer.find("#bar_chart").removeClass().addClass("db_barbox").css("width", "0%");    
-    $barChartContainer.find("#percentused").text("");   
-    if(jsonObj.cpuused!=null)
-        drawBarChart($barChartContainer, jsonObj.cpuused);		
-    
-    var cpuAllocated = ((jsonObj.cpuallocated==null)? "":jsonObj.cpuallocated);
-    $thisTab.find("#cpuallocated").text(cpuAllocated);    
-    
-    var memoryTotal = ((jsonObj.cpuallocated==null)? "":convertBytes(jsonObj.memorytotal));
-    $thisTab.find("#memorytotal").text(memoryTotal);
-    
-    var memoryAllocated = ((jsonObj.cpuallocated==null)? "":convertBytes(jsonObj.memoryallocated));
-    $thisTab.find("#memoryallocated").text(memoryAllocated);
-    
-    var memoryUsed = ((jsonObj.memoryused==null)? "":convertBytes(jsonObj.memoryused));
-    $thisTab.find("#memoryused").text(memoryUsed);
-        
-    var networkKbsRead = ((jsonObj.networkkbsread==null)? "":convertBytes(jsonObj.networkkbsread * 1024));
-    $thisTab.find("#networkkbsread").text(networkKbsRead);
-    
-    var networkKbsWrite = ((jsonObj.networkkbswrite==null)? "":convertBytes(jsonObj.networkkbswrite * 1024));
-    $thisTab.find("#networkkbswrite").text(networkKbsWrite);
-    
-    $thisTab.find("#tab_spinning_wheel").hide();    
-    $thisTab.find("#tab_container").show();  
-}
-
 function hostJsonToInstanceTab() {       	
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     if($midmenuItem1 == null)
@@ -298,6 +250,54 @@ function hostJsonToRouterTab() {
 		}
 	});
 } 
+
+function hostJsonToStatisticsTab() {    
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;
+    
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    if(jsonObj == null)
+        return;
+    
+    var $thisTab = $("#right_panel_content").find("#tab_content_statistics");  
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   
+    
+    var $barChartContainer = $thisTab.find("#cpu_barchart");
+         
+    var cpuNumber = ((jsonObj.cpunumber==null)? "":jsonObj.cpunumber.toString());
+    $barChartContainer.find("#cpunumber").text(cpuNumber);
+    
+    var cpuSpeed = ((jsonObj.cpuspeed==null)? "":convertHz(jsonObj.cpuspeed)) ;
+    $barChartContainer.find("#cpuspeed").text(cpuSpeed);
+    
+    $barChartContainer.find("#bar_chart").removeClass().addClass("db_barbox").css("width", "0%");    
+    $barChartContainer.find("#percentused").text("");   
+    if(jsonObj.cpuused!=null)
+        drawBarChart($barChartContainer, jsonObj.cpuused);		
+    
+    var cpuAllocated = ((jsonObj.cpuallocated==null)? "":jsonObj.cpuallocated);
+    $thisTab.find("#cpuallocated").text(cpuAllocated);    
+    
+    var memoryTotal = ((jsonObj.cpuallocated==null)? "":convertBytes(jsonObj.memorytotal));
+    $thisTab.find("#memorytotal").text(memoryTotal);
+    
+    var memoryAllocated = ((jsonObj.cpuallocated==null)? "":convertBytes(jsonObj.memoryallocated));
+    $thisTab.find("#memoryallocated").text(memoryAllocated);
+    
+    var memoryUsed = ((jsonObj.memoryused==null)? "":convertBytes(jsonObj.memoryused));
+    $thisTab.find("#memoryused").text(memoryUsed);
+        
+    var networkKbsRead = ((jsonObj.networkkbsread==null)? "":convertBytes(jsonObj.networkkbsread * 1024));
+    $thisTab.find("#networkkbsread").text(networkKbsRead);
+    
+    var networkKbsWrite = ((jsonObj.networkkbswrite==null)? "":convertBytes(jsonObj.networkkbswrite * 1024));
+    $thisTab.find("#networkkbswrite").text(networkKbsWrite);
+    
+    $thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();  
+}
 
 function hostRouterJSONToTemplate(jsonObj, template) {
     template.data("jsonObj", jsonObj);     
