@@ -33,6 +33,7 @@
     <script type="text/javascript" src="scripts/cloud.core.volume.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.snapshot.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.ipaddress.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.securitygroup.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.template.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.iso.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.router.js?t=<%=now%>"></script>
@@ -544,13 +545,23 @@
                             <div class="leftmenu_content" id="leftmenu_ip">
                                 <div class="leftmenu_secondindent">
                                    	<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
-                                    </div>
-                                    
+                                    </div>                                    
                                     <fmt:message key="label.menu.ipaddresses"/>
                                 </div>
                             </div>
                         </div>                        
-                    </div>
+                    </div>                    
+                    <div class="leftmenu_expandedbox" style="display: none">
+                        <div class="leftmenu_expandedlist">
+                            <div class="leftmenu_content" id="leftmenu_security_group">
+                                <div class="leftmenu_secondindent">
+                                   	<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+                                    </div>                                    
+                                    Security Group
+                                </div>
+                            </div>
+                        </div>                        
+                    </div>                    
                 </div>  
                 <div class="leftmenu_list">
                     <div class="leftmenu_content_flevel" id="leftmenu_templates">

@@ -1510,7 +1510,7 @@ function showNetworkingTab(p_domainId, p_account) {
         template.data("endPort", json.endport);           
         template.data("icmpType", json.icmptype);
         template.data("icmpCode", json.icmpcode);			    
-	    debugger;
+
 	    var cidrOrGroup;
 	    if(json.cidr != null && json.cidr.length > 0)
 	        cidrOrGroup = json.cidr;
