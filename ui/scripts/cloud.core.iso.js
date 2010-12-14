@@ -497,7 +497,10 @@ function doEditISO2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
 		    $detailsTab.find("#name").text(name);
 		    $midmenuItem1.find("#first_row").text(name.substring(0,25)); 
 		    $detailsTab.find("#displaytext").text(displaytext);		           
-		    $detailsTab.find("#ostypename").text($detailsTab.find("#ostypename_edit option:selected").text());		   					
+		    $detailsTab.find("#ostypename").text($detailsTab.find("#ostypename_edit option:selected").text());				    
+		    jsonObj.name = name;
+		    jsonObj.displaytext = displaytext;
+		    //jsonObj.ostypeid = parseInt(newOsTypeId);  	//to fix when ISO is available to test (i.e. status is not "No route to host")				
 		}
 	});
 	
@@ -520,6 +523,9 @@ function doEditISO2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
 		    async: false,
 		    success: function(json) {			    	        						       					    
 		        setBooleanReadField(newIsPublic, $detailsTab.find("#ispublic"));
+		        setBooleanReadField(newIsFeatured, $detailsTab.find("#isfeatured"));		       
+		        jsonObj.ispublic = (newIsPublic == "true");
+		        jsonObj.isfeatured = (newIsFeatured == "true");
     		}
 	    });
 	}	
