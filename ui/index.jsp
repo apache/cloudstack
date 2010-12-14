@@ -165,6 +165,10 @@
                             <div id="advanced_search_container">
                             </div>
                         </div>
+                        
+                        <div class="searchpanel" id="blank_search_panel" style="display: none;">                            
+                        </div>
+                        
                         <div class="actionpanel_button_wrapper" id="midmenu_action_link" style="position: relative;
                             display: none">
                             <div class="actionpanel_button">

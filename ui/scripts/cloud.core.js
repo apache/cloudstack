@@ -641,17 +641,19 @@ function selectLeftSubMenu($menuToSelect) {
 
 var selected_midmenu_id = null; 
 function hideMiddleMenu() {
-    $("#middle_menu, #search_panel, #middle_menu_pagination").hide();
+    $("#middle_menu, #search_panel, #blank_search_panel, #middle_menu_pagination").hide();
     $("#midmenu_container").empty();
     $("#right_panel").removeClass("main_contentarea_with_midmenu").addClass("main_contentarea_without_midmenu");            
 }
 function showMiddleMenu() {
     $("#middle_menu, #search_panel, #middle_menu_pagination").show();
+    $("#blank_search_panel").hide();
     $("#right_panel").removeClass("main_contentarea_without_midmenu").addClass("main_contentarea_with_midmenu");
 }    
 function showMiddleMenuWithoutSearchAndPagination() {
     $("#middle_menu").show();
     $("#search_panel, #middle_menu_pagination").hide();
+    $("#blank_search_panel").show();
     $("#right_panel").removeClass("main_contentarea_without_midmenu").addClass("main_contentarea_with_midmenu");
 }    
 function isMiddleMenuShown() {
