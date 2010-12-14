@@ -499,8 +499,9 @@ function doEditISO2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
 		    $detailsTab.find("#displaytext").text(displaytext);		           
 		    $detailsTab.find("#ostypename").text($detailsTab.find("#ostypename_edit option:selected").text());				    
 		    jsonObj.name = name;
-		    jsonObj.displaytext = displaytext;
-		    //jsonObj.ostypeid = parseInt(newOsTypeId);  	//to fix when ISO is available to test (i.e. status is not "No route to host")				
+		    jsonObj.displaytext = displaytext;		    
+		    jsonObj.ostypeid = parseInt(newOsTypeId);
+		    jsonObj.ostypename = $detailsTab.find("#ostypename_edit option:selected").text();    		
 		}
 	});
 	

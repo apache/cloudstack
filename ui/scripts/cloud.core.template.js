@@ -506,7 +506,13 @@ function doEditTemplate2($actionLink, $detailsTab, $midmenuItem1, $readonlyField
 		        $midmenuItem1.find("#first_row").text(newName.substring(0,25)); 		        
 		        $detailsTab.find("#displaytext").text(newDesc);
 		        setBooleanReadField(newPasswordEnabled, $detailsTab.find("#passwordenabled"));		        
-		        $detailsTab.find("#ostypename").text($detailsTab.find("#ostypename_edit option:selected").text());		        
+		        $detailsTab.find("#ostypename").text($detailsTab.find("#ostypename_edit option:selected").text());		
+		        
+		        jsonObj.name = newName;
+		        jsonObj.displaytext = newDesc;		      
+		        jsonObj.passwordenabled = (newPasswordEnabled == "true"); 
+		        jsonObj.ostypeid = parseInt(newOsTypeId);
+		        jsonObj.ostypename = $detailsTab.find("#ostypename_edit option:selected").text();     
 		    }
 	    });
 	}
@@ -531,6 +537,9 @@ function doEditTemplate2($actionLink, $detailsTab, $midmenuItem1, $readonlyField
 		    success: function(json) {			        	        						       					    
 		        setBooleanReadField(newIsPublic, $detailsTab.find("#ispublic"));
 		        setBooleanReadField(newIsFeatured, $detailsTab.find("#isfeatured"));
+		        	      	      
+		        jsonObj.ispublic = (newIsPublic == "true"); 
+		        jsonObj.isfeatured = (newIsFeatured == "true"); 
     		}
 	    });
 	}	
