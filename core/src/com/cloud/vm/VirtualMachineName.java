@@ -127,7 +127,7 @@ public class VirtualMachineName {
     
     public static boolean isValidRouterName(String name, String instance) {
         String[] tokens = name.split(SEPARATOR);
-        if (tokens.length != 4) {
+        if (tokens.length != 3) {
             return false;
         }
         
@@ -137,9 +137,6 @@ public class VirtualMachineName {
         
         try {
             Long.parseLong(tokens[1]);
-            if (!Vlan.UNTAGGED.equalsIgnoreCase(tokens[3])) {
-            	Long.parseLong(tokens[3], 16);
-            }
         } catch (NumberFormatException ex) {
             return false;
         }

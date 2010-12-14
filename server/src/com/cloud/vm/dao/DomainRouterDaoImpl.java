@@ -59,6 +59,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     protected final SearchBuilder<DomainRouterVO> DcSearch;
     protected final SearchBuilder<DomainRouterVO> IpSearch;
     protected final SearchBuilder<DomainRouterVO> HostSearch;
+    protected final SearchBuilder<DomainRouterVO> LastHostSearch;
     protected final SearchBuilder<DomainRouterVO> HostUpSearch;
     protected final SearchBuilder<DomainRouterVO> DomainIdSearch;
     protected final SearchBuilder<DomainRouterVO> VlanDbIdSearch;
@@ -98,6 +99,11 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         HostSearch = createSearchBuilder();
         HostSearch.and("host", HostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         HostSearch.done();
+        
+        LastHostSearch = createSearchBuilder();
+        LastHostSearch.and("lastHost", LastHostSearch.entity().getLastHostId(), SearchCriteria.Op.EQ);
+        LastHostSearch.and("state", LastHostSearch.entity().getState(), SearchCriteria.Op.EQ);
+        LastHostSearch.done();
 
         HostUpSearch = createSearchBuilder();
         HostUpSearch.and("host", HostUpSearch.entity().getHostId(), SearchCriteria.Op.EQ);
@@ -344,5 +350,13 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
 			s_logger.debug(str.toString());
 		}
 		return result > 0;
+	}
+
+	@Override
+	public List<DomainRouterVO> listByLastHostId(Long hostId) {
+		SearchCriteria<DomainRouterVO> sc = LastHostSearch.create();
+        sc.setParameters("lastHost", hostId);
+        sc.setParameters("state", State.Stopped);
+        return listBy(sc);
 	}
 }

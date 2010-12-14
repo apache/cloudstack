@@ -49,6 +49,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     protected final SearchBuilder<UserVmVO> AccountDataCenterSearch;
     protected final SearchBuilder<UserVmVO> AccountSearch;
     protected final SearchBuilder<UserVmVO> HostSearch;
+    protected final SearchBuilder<UserVmVO> LastHostSearch;
     protected final SearchBuilder<UserVmVO> HostUpSearch;
     protected final SearchBuilder<UserVmVO> HostRunningSearch;
     protected final SearchBuilder<UserVmVO> NameSearch;
@@ -68,6 +69,11 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         HostSearch = createSearchBuilder();
         HostSearch.and("host", HostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         HostSearch.done();
+        
+        LastHostSearch = createSearchBuilder();
+        LastHostSearch.and("lastHost", LastHostSearch.entity().getLastHostId(), SearchCriteria.Op.EQ);
+        LastHostSearch.and("state", LastHostSearch.entity().getState(), SearchCriteria.Op.EQ);
+        LastHostSearch.done();
         
         HostUpSearch = createSearchBuilder();
         HostUpSearch.and("host", HostUpSearch.entity().getHostId(), SearchCriteria.Op.EQ);
@@ -345,5 +351,13 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 			s_logger.debug(str.toString());
 		}
 		return result > 0;
+	}
+
+	@Override
+	public List<UserVmVO> listByLastHostId(Long hostId) {
+		SearchCriteria<UserVmVO> sc = LastHostSearch.create();
+		sc.setParameters("lastHost", hostId);
+		sc.setParameters("state", State.Stopped);
+		return listBy(sc);
 	}
 }

@@ -105,7 +105,7 @@ public class CapacityVO implements Capacity {
         return reservedCapacity;
     }
     public void setReservedCapacity(long reservedCapacity) {
-        this.usedCapacity = reservedCapacity;
+        this.reservedCapacity = reservedCapacity;
     }
     @Override
     public long getTotalCapacity() {

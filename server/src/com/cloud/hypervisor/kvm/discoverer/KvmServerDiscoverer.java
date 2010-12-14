@@ -267,7 +267,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 	}
 
 	private HostVO waitForHostConnect(long dcId, long podId, long clusterId, String guid) {
-		for (int i = 0; i < _waitTime; i++) {
+		for (int i = 0; i < _waitTime *2; i++) {
 			List<HostVO> hosts = _hostDao.listBy(Host.Type.Routing, clusterId, podId, dcId);
 			for (HostVO host : hosts) {
 				if (host.getGuid().equalsIgnoreCase(guid)) {
@@ -275,7 +275,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 				}
 			}
 			try {
-				Thread.sleep(60000);
+				Thread.sleep(30000);
 			} catch (InterruptedException e) {
 				s_logger.debug("Failed to sleep: " + e.toString());
 			}

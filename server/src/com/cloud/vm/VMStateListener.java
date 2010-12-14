@@ -65,7 +65,9 @@ public class VMStateListener implements StateListener<State, VirtualMachine.Even
 					/*release capacify from original host*/
 					releaseResource(vm, false, false, vm.getHostId());
 				} else if (event == Event.OperationSucceeded) {
-					releaseResource(vm, false, false, vm.getHostId());					
+					releaseResource(vm, false, false, vm.getHostId());
+					/*set lasthost id to migration destination host id*/
+					vm.setLastHostId(id);
 				}
 			} else if (oldState == State.Stopping) {
 				if (event == Event.AgentReportStopped || event == Event.OperationSucceeded) {
@@ -73,7 +75,7 @@ public class VMStateListener implements StateListener<State, VirtualMachine.Even
 				}
 			} else if (oldState == State.Stopped) {
 				if (event == Event.DestroyRequested) {
-					releaseResource(vm, true, false, vm.getHostId());
+					releaseResource(vm, true, false, vm.getLastHostId());
 
 					vm.setLastHostId(null);
 					

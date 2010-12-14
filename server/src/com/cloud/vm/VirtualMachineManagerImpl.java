@@ -54,6 +54,7 @@ import com.cloud.event.EventVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;

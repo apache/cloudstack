@@ -195,6 +195,10 @@
       <zipfileset dir="${console-proxy.dist.dir}" filemode="555">
         <include name="**/*.sh" />
       </zipfileset>
+      <zipfileset dir="${scripts.dir}/storage/secondary" prefix="scripts/storage/secondary" filemode="555">
+        <exclude name="**/.project" />
+        <exclude name="**/.classpath" />
+      </zipfileset>
     </zip>
   </target>
 

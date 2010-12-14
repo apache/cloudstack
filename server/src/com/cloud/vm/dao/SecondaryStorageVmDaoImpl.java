@@ -48,6 +48,7 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
     protected SearchBuilder<SecondaryStorageVmVO> DataCenterStatusSearch;
     protected SearchBuilder<SecondaryStorageVmVO> StateSearch;
     protected SearchBuilder<SecondaryStorageVmVO> HostSearch;
+    protected SearchBuilder<SecondaryStorageVmVO> LastHostSearch;
     protected SearchBuilder<SecondaryStorageVmVO> HostUpSearch;
     protected SearchBuilder<SecondaryStorageVmVO> ZoneSearch;
     protected SearchBuilder<SecondaryStorageVmVO> StateChangeSearch;
@@ -67,6 +68,11 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
         HostSearch = createSearchBuilder();
         HostSearch.and("host", HostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         HostSearch.done();
+        
+        LastHostSearch = createSearchBuilder();
+        LastHostSearch.and("lastHost", LastHostSearch.entity().getLastHostId(), SearchCriteria.Op.EQ);
+        LastHostSearch.and("state", LastHostSearch.entity().getState(), SearchCriteria.Op.EQ);
+        LastHostSearch.done();
         
         HostUpSearch = createSearchBuilder();
         HostUpSearch.and("host", HostUpSearch.entity().getHostId(), SearchCriteria.Op.EQ);
@@ -247,5 +253,13 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
 			s_logger.debug(str.toString());
 		}
 		return result > 0;
+	}
+
+	@Override
+	public List<SecondaryStorageVmVO> listByLastHostId(long hostId) {
+		SearchCriteria<SecondaryStorageVmVO> sc = LastHostSearch.create();
+		sc.setParameters("lastHost", hostId);
+		sc.setParameters("state", State.Stopped);
+		return listBy(sc);
 	}
 }

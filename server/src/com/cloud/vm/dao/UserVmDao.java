@@ -34,6 +34,7 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long>, StateDao<State, V
     List<UserVmVO> listByAccountAndPod(long accountId, long podId);
     List<UserVmVO> listByAccountAndDataCenter(long accountId, long dcId);
     List<UserVmVO> listByHostId(Long hostId);
+    List<UserVmVO> listByLastHostId(Long hostId);
     List<UserVmVO> listUpByHostId(Long hostId);
 
     /**

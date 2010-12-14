@@ -377,7 +377,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                      vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
                  }
 
-                 cmds.addCommand(new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ip.getAddress(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress));
+                 cmds.addCommand("IPAssocCommand", new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ip.getAddress(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress));
 
                  firstIP = false;
              }

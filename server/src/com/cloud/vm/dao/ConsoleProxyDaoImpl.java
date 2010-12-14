@@ -112,6 +112,7 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
     protected SearchBuilder<ConsoleProxyVO> DataCenterStatusSearch;
     protected SearchBuilder<ConsoleProxyVO> StateSearch;
     protected SearchBuilder<ConsoleProxyVO> HostSearch;
+    protected SearchBuilder<ConsoleProxyVO> LastHostSearch;
     protected SearchBuilder<ConsoleProxyVO> HostUpSearch;
     protected SearchBuilder<ConsoleProxyVO> StateChangeSearch;
     
@@ -130,6 +131,11 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
         HostSearch = createSearchBuilder();
         HostSearch.and("host", HostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         HostSearch.done();
+        
+        LastHostSearch = createSearchBuilder();
+        LastHostSearch.and("lastHost", LastHostSearch.entity().getLastHostId(), SearchCriteria.Op.EQ);
+        LastHostSearch.and("state", LastHostSearch.entity().getState(), SearchCriteria.Op.EQ);
+        LastHostSearch.done();
         
         HostUpSearch = createSearchBuilder();
         HostUpSearch.and("host", HostUpSearch.entity().getHostId(), SearchCriteria.Op.EQ);
@@ -423,5 +429,13 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
 			s_logger.debug(str.toString());
 		}
 		return result > 0;
+	}
+
+	@Override
+	public List<ConsoleProxyVO> listByLastHostId(long hostId) {
+		SearchCriteria<ConsoleProxyVO> sc = LastHostSearch.create();
+		sc.setParameters("lastHost", hostId);
+		sc.setParameters("state", State.Stopped);
+		return listBy(sc);
 	}
 }

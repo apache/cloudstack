@@ -160,50 +160,49 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 	protected boolean deployToHost(HostVO host, Integer cpu, long ram, boolean fromLastHost, ExcludeList avoid) {		
     	if (avoid.shouldAvoid(host)) {
 			return false;
-		}
-    	
-		CapacityVO capacityCpu = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_CPU);
-		CapacityVO capacityMem = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_MEMORY);
-				
-		capacityCpu = _capacityDao.lockRow(capacityCpu.getId(), true);
-    	capacityMem = _capacityDao.lockRow(capacityMem.getId(), true);
-    	
-		Transaction txn = Transaction.currentTxn();
-       
-        try {
-        	txn.start();
-        	   	
-        	long usedCpu = capacityCpu.getUsedCapacity();
+    	}
+
+    	CapacityVO capacityCpu = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_CPU);
+    	CapacityVO capacityMem = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_MEMORY);
+
+    	Transaction txn = Transaction.currentTxn();
+
+    	try {
+    		txn.start();
+    		capacityCpu = _capacityDao.lockRow(capacityCpu.getId(), true);
+    		capacityMem = _capacityDao.lockRow(capacityMem.getId(), true);
+
+    		long usedCpu = capacityCpu.getUsedCapacity();
     		long usedMem = capacityMem.getUsedCapacity();
     		long reservedCpu = capacityCpu.getReservedCapacity();
     		long reservedMem = capacityMem.getReservedCapacity();
     		long totalCpu = capacityCpu.getTotalCapacity();
     		long totalMem = capacityMem.getTotalCapacity();
-    		
+
     		boolean success = false;
-        	if (fromLastHost) {
-        		/*alloc from reserved*/
-        		if (reservedCpu >= cpu && reservedMem >= ram) {
-        			capacityCpu.setReservedCapacity(reservedCpu - cpu);
-        			capacityMem.setReservedCapacity(reservedMem - ram);        
-        			capacityCpu.setUsedCapacity(usedCpu + cpu);
-        			capacityMem.setUsedCapacity(usedMem + ram);
-        			success = true;
-        		}		
-        	} else {
-        		/*alloc from free resource*/
-        		if ((reservedCpu + usedCpu + cpu <= totalCpu) && (reservedMem + usedMem + ram <= totalMem)) {
-        			capacityCpu.setUsedCapacity(usedCpu + cpu);
-        			capacityMem.setUsedCapacity(usedMem + ram);
-        			success = true;
-        		}
-        	}
-        	
-        	if (success) {
-        		s_logger.debug("alloc cpu from host: " + host.getId() + ", old used: " + usedCpu + ", old reserved: " +
-        				reservedCpu + ", old total: " + totalCpu + 
-        				"; new used:" + capacityCpu.getUsedCapacity() + ", reserved:" + capacityCpu.getReservedCapacity() + ", total: " + capacityCpu.getTotalCapacity() + 
-        				"; requested cpu:" + cpu + ",alloc_from_last:" + fromLastHost);
+    		if (fromLastHost) {
+    			/*alloc from reserved*/
+    			if (reservedCpu >= cpu && reservedMem >= ram) {
+    				capacityCpu.setReservedCapacity(reservedCpu - cpu);
+    				capacityMem.setReservedCapacity(reservedMem - ram);        
+    				capacityCpu.setUsedCapacity(usedCpu + cpu);
+    				capacityMem.setUsedCapacity(usedMem + ram);
+    				success = true;
+    			}		
+    		} else {
+    			/*alloc from free resource*/
+    			if ((reservedCpu + usedCpu + cpu <= totalCpu) && (reservedMem + usedMem + ram <= totalMem)) {
+    				capacityCpu.setUsedCapacity(usedCpu + cpu);
+    				capacityMem.setUsedCapacity(usedMem + ram);
+    				success = true;
+    			}
+    		}
+
+    		if (success) {
+    			s_logger.debug("alloc cpu from host: " + host.getId() + ", old used: " + usedCpu + ", old reserved: " +
+    					reservedCpu + ", old total: " + totalCpu + 
+    					"; new used:" + capacityCpu.getUsedCapacity() + ", reserved:" + capacityCpu.getReservedCapacity() + ", total: " + capacityCpu.getTotalCapacity() + 
+    					"; requested cpu:" + cpu + ",alloc_from_last:" + fromLastHost);
         		
         		s_logger.debug("alloc mem from host: " + host.getId() + ", old used: " + usedMem + ", old reserved: " +
         				reservedMem + ", old total: " + totalMem + "; new used: " + capacityMem.getUsedCapacity() + ", reserved: " +
@@ -211,7 +210,16 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         		
         		_capacityDao.update(capacityCpu.getId(), capacityCpu);
         		_capacityDao.update(capacityMem.getId(), capacityMem);
-        	}
+        	} else {
+        		if (fromLastHost) {
+        			s_logger.debug("Failed to alloc resource from host: " + host.getId() + " reservedCpu: " + reservedCpu + ", requested cpu: " + cpu +
+        					", reservedMem: " + reservedMem + ", requested mem: " + ram); 
+        		} else {
+        			s_logger.debug("Failed to alloc resource from host: " + host.getId() + " reservedCpu: " + reservedCpu + ", used cpu: " + usedCpu + ", requested cpu: " + cpu +
+        					", total cpu: " + totalCpu + 
+        					", reservedMem: " + reservedMem + ", used Mem: " + usedMem + ", requested mem: " + ram + ", total Mem:" + totalMem); 
+        		}
+         	}
         	
         	txn.commit();
         	return success;

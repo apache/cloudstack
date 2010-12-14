@@ -73,6 +73,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -317,6 +318,136 @@ public class AlertManagerImpl implements AlertManager {
         		CapacityVO newCPUCapacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), cpu, (long)(host.getCpus()*host.getSpeed()* _cpuOverProvisioningFactor), CapacityVO.CAPACITY_TYPE_CPU);
         		newCapacities.add(newMemoryCapacity);
         		newCapacities.add(newCPUCapacity);
+        	} 
+        } {
+        	/*Add a checker here, 50% for debug purpose, */
+        	for (HostVO host : hosts) {
+        		if (host.getType() != Host.Type.Routing) {
+        			continue;
+        		}
+
+        		long usedCpu = 0;
+        		long usedMemory = 0;
+        		long reservedMemory = 0;
+        		long reservedCpu = 0;
+        		List<DomainRouterVO> domainRouters = _routerDao.listUpByHostId(host.getId());
+        		if (s_logger.isDebugEnabled()) {
+        			s_logger.debug("Found " + domainRouters.size() + " router domains on host " + host.getId());
+        		}
+        		for (DomainRouterVO router : domainRouters) {
+        			ServiceOffering so = offeringsMap.get(router.getServiceOfferingId());
+        			if (router.getState() == State.Running) {
+        				usedMemory += so.getRamSize() * 1024L * 1024L; 
+        				usedCpu += so.getCpu() * so.getSpeed();
+        			}
+        		}
+
+        		List<DomainRouterVO> domainRoutersByLastHostId = _routerDao.listByLastHostId(host.getId());
+        		if (s_logger.isDebugEnabled()) {
+        			s_logger.debug("Found " + domainRoutersByLastHostId.size() + " router domains, not running on host " + host.getId());
+        		}
+        		for (DomainRouterVO router : domainRoutersByLastHostId) {
+        			ServiceOffering so = offeringsMap.get(router.getServiceOfferingId());
+        			reservedMemory += so.getRamSize() * 1024L * 1024L; 
+        			usedCpu += so.getCpu() * so.getSpeed();
+        		}
+        		
+        		List<ConsoleProxyVO> proxys = _consoleProxyDao.listUpByHostId(host.getId());
+        		if (s_logger.isDebugEnabled()) {
+        			s_logger.debug("Found " + proxys.size() + " console proxy on host " + host.getId());
+        		}
+        		for(ConsoleProxyVO proxy : proxys) {
+        			ServiceOffering so = offeringsMap.get(proxy.getServiceOfferingId());
+        			if (proxy.getState() == State.Running) {
+        				usedMemory += so.getRamSize() * 1024L * 1024L;
+        				usedCpu += so.getCpu() * so.getSpeed();
+        			}
+        		}
+        		
+        		List<ConsoleProxyVO> proxysByLastHostId = _consoleProxyDao.listByLastHostId(host.getId());
+        		if (s_logger.isDebugEnabled()) {
+        			s_logger.debug("Found " + proxysByLastHostId.size() + " console proxy, not running on host " + host.getId());
+        		}
+        		for (ConsoleProxyVO proxy : proxysByLastHostId) {
+        			ServiceOffering so = offeringsMap.get(proxy.getServiceOfferingId());
+        			reservedMemory += so.getRamSize() * 1024L * 1024L; 
+        			usedCpu += so.getCpu() * so.getSpeed();
+        		}
+
+        		List<SecondaryStorageVmVO> secStorageVms = _secStorgaeVmDao.listUpByHostId(host.getId());
+        		if (s_logger.isDebugEnabled()) {
+        			s_logger.debug("Found " + secStorageVms.size() + " secondary storage VM on host " + host.getId());
+        		}
+        		for(SecondaryStorageVmVO secStorageVm : secStorageVms) {
+        			ServiceOffering so = offeringsMap.get(secStorageVm.getServiceOfferingId());
+        			if (secStorageVm.getState() == State.Running) {
+        				usedMemory += so.getRamSize() * 1024L * 1024L; 
+        				usedCpu += so.getCpu() * so.getSpeed();
+        			}
+        		}
+        		
+        		List<SecondaryStorageVmVO> secStorageVmsByLastHostId = _secStorgaeVmDao.listByLastHostId(host.getId());
+        		if (s_logger.isDebugEnabled()) {
+        			s_logger.debug("Found " + secStorageVmsByLastHostId.size() + " secondary storage VM, not running on host " + host.getId());
+        		}
+        		for (SecondaryStorageVmVO secStorageVm : secStorageVmsByLastHostId) {
+        			ServiceOffering so = offeringsMap.get(secStorageVm.getServiceOfferingId());
+        			reservedMemory += so.getRamSize() * 1024L * 1024L; 
+        			usedCpu += so.getCpu() * so.getSpeed();
+        		}
+
+        		List<UserVmVO> vms = _userVmDao.listUpByHostId(host.getId());
+        		if (s_logger.isDebugEnabled()) {
+        			s_logger.debug("Found " + vms.size() + " user VM on host " + host.getId());
+        		}
+
+        		for (UserVmVO vm : vms) {
+        			ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
+        			if (vm.getState() == State.Running) {
+        				usedMemory += so.getRamSize() * 1024L * 1024L;
+        				usedCpu += so.getCpu() * so.getSpeed();
+        			}
+        		}
+        		
+        		List<UserVmVO> vmsByLastHostId = _userVmDao.listByLastHostId(host.getId());
+        		if (s_logger.isDebugEnabled()) {
+        			s_logger.debug("Found " + secStorageVmsByLastHostId.size() + " user VM, not running on host " + host.getId());
+        		}
+        		for (UserVmVO vm : vmsByLastHostId) {
+        			ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
+        			reservedMemory += so.getRamSize() * 1024L * 1024L; 
+        			reservedCpu += so.getCpu() * so.getSpeed();
+        		}
+
+        		CapacityVO cpuCap = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_CPU);
+        		CapacityVO memCap = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_MEMORY);
+        		
+        		if (cpuCap.getUsedCapacity() == usedCpu && cpuCap.getReservedCapacity() == reservedCpu) {
+        			s_logger.debug("Cool, no need to calibrate cpu capacity, host:" + host.getId() + " usedCpu: " + cpuCap.getUsedCapacity() + " reservedCpu: " + cpuCap.getReservedCapacity());
+        		} else if (cpuCap.getReservedCapacity() != reservedCpu) {
+        			s_logger.debug("Calibrate reserved cpu for host: " + host.getId() + " old reservedCpu:" + cpuCap.getReservedCapacity() + " new reservedCpu:" + reservedCpu);
+        			cpuCap.setReservedCapacity(reservedCpu);
+        		} else {
+        			/*Didn't calibrate for used cpu, because VMs can be in state(starting/migrating) that I don't know on which host they are allocated*/
+        			s_logger.debug("host: " + host.getId() + ", old usedCpu: " + cpuCap.getUsedCapacity() + ", new usedCpu: " + usedCpu + ", no calibration");
+        		}
+        		
+        		if (memCap.getUsedCapacity() == usedMemory && memCap.getReservedCapacity() == reservedMemory) {
+        			s_logger.debug("Cool, no need to calibrate memory capacity, host:" + host.getId() + " usedMem: " + memCap.getUsedCapacity() + " reservedMem: " + memCap.getReservedCapacity());
+        		} else if (memCap.getReservedCapacity() != reservedMemory) {
+        			s_logger.debug("Calibrate reserved memory for host: " + host.getId() + " old reservedMem:" + memCap.getReservedCapacity() + " new reservedMem:" + reservedMemory);
+        			memCap.setReservedCapacity(reservedMemory);
+        		} else {
+        			/*Didn't calibrate for used memory, because VMs can be in state(starting/migrating) that I don't know on which host they are allocated*/
+        			s_logger.debug("host: " + host.getId() + ", old usedMem: " + memCap.getUsedCapacity() + ", new nesedMem: " + usedMemory + ", no calibration");
+        		}
+        		
+        		try {
+        			_capacityDao.update(cpuCap.getId(), cpuCap);
+        			_capacityDao.update(memCap.getId(), memCap);
+        		} catch (Exception e) {
+
+        		}
         	} 
         }
 
