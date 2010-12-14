@@ -334,62 +334,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
 
-    protected void cleanupDiskMounts() {
-        Connection conn = getConnection();
-
-        Map<SR, SR.Record> srs;
-        try {
-            srs = SR.getAllRecords(conn);
-        } catch (XenAPIException e) {
-            s_logger.warn("Unable to get the SRs " + e.toString(), e);
-            throw new CloudRuntimeException("Unable to get SRs " + e.toString(), e);
-        } catch (XmlRpcException e) {
-            throw new CloudRuntimeException("Unable to get SRs " + e.getMessage());
-        }
-
-        for (Map.Entry<SR, SR.Record> sr : srs.entrySet()) {
-            SR.Record rec = sr.getValue();
-            if (SRType.NFS.equals(rec.type) || (SRType.ISO.equals(rec.type) && rec.nameLabel.endsWith("iso"))) {
-                if (rec.PBDs == null || rec.PBDs.size() == 0) {
-                    cleanSR(sr.getKey(), rec);
-                    continue;
-                }
-
-                for (PBD pbd : rec.PBDs) {
-
-                    if (isRefNull(pbd)) {
-                        continue;
-                    }
-                    PBD.Record pbdr = null;
-                    try {
-                        pbdr = pbd.getRecord(conn);
-                    } catch (XenAPIException e) {
-                        s_logger.warn("Unable to get pbd record " + e.toString());
-                    } catch (XmlRpcException e) {
-                        s_logger.warn("Unable to get pbd record " + e.getMessage());
-                    }
-
-                    if (pbdr == null) {
-                        continue;
-                    }
-
-                    try {
-                        if (pbdr.host.getUuid(conn).equals(_host.uuid)) {
-                            if (!pbdr.currentlyAttached) {
-                               pbdPlug(conn, pbd);
-                            }
-                        }
-
-                    } catch (XenAPIException e) {
-                        s_logger.warn("Catch XenAPIException due to" + e.toString(), e);
-                    } catch (XmlRpcException e) {
-                        s_logger.warn("Catch XmlRpcException due to" + e.getMessage(), e);
-                    }
-                }
-            }
-        }
-    }
-
     protected Pair<VM, VM.Record> getVmByNameLabel(Connection conn, Host host, String nameLabel, boolean getRecord) throws XmlRpcException, XenAPIException {
         Set<VM> vms = host.getResidentVMs(conn);
         for (VM vm : vms) {
@@ -2520,6 +2464,13 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         // snapshots dir fails, let Ready command
         // succeed.
         callHostPlugin("vmopsSnapshot", "unmountSnapshotsDir", "dcId", dcId.toString());
+       
+        _localGateway = callHostPlugin("vmops", "getgateway", "mgmtIP", _host.ip);
+        if (_localGateway == null || _localGateway.isEmpty()) {
+            String msg = "can not get gateway for host :" + _host.uuid;
+            s_logger.warn(msg);
+            return new ReadyAnswer(cmd, msg);
+        }
         return new ReadyAnswer(cmd);
     }
 
@@ -3506,49 +3457,43 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return true;
     }
 
-    protected Nic getManageMentNetwork(Connection conn, String name) throws XmlRpcException, XenAPIException {
-        if( name == null) {
-            return null;
-        }
-        Set<Network> networks = Network.getByNameLabel(conn, name);
-        for (Network network : networks) {
-            Network.Record nr = network.getRecord(conn);
-            for (PIF pif : nr.PIFs) {
-                PIF.Record pr = pif.getRecord(conn);
-                if (_host.uuid.equals(pr.host.getUuid(conn))) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Found a network called " + name + " on host=" + _host.ip + ";  Network=" + nr.uuid + "; pif=" + pr.uuid);
-                    }
-                    if (!pr.management && pr.bondMasterOf != null && pr.bondMasterOf.size() > 0) {
-                        if (pr.bondMasterOf.size() > 1) {
-                            String msg = new StringBuilder("Unsupported configuration.  Network " + name + " has more than one bond.  Network=").append(nr.uuid)
-                                    .append("; pif=").append(pr.uuid).toString();
-                            s_logger.warn(msg);
-                            return null;
-                        }
-                        Bond bond = pr.bondMasterOf.iterator().next();
-                        Set<PIF> slaves = bond.getSlaves(conn);
-                        for (PIF slave : slaves) {
-                            PIF.Record spr = slave.getRecord(conn);
-                            if (spr.management) {
-                            	Host host = Host.getByUuid(conn, _host.uuid);
-                                if (!transferManagementNetwork(conn, host, slave, spr, pif)) {
-                                    String msg = new StringBuilder("Unable to transfer management network.  slave=" + spr.uuid + "; master=" + pr.uuid + "; host="
-                                            + _host.uuid).toString();
-                                    s_logger.warn(msg);
-                                    return null;
-                                }
-                                break;
-                            }
-                        }
-                    }
-
-                    return new Nic(network, nr, pif, pr);
+    protected Nic getManageMentNetwork(Connection conn) throws XmlRpcException, XenAPIException {       
+        PIF mgmtPif = null;
+        PIF.Record mgmtPifRec = null;
+        Host host = Host.getByUuid(conn, _host.uuid);
+        Set<PIF> hostPifs = host.getPIFs(conn);
+        for (PIF pif : hostPifs) {
+            PIF.Record rec = pif.getRecord(conn);
+            if (rec.management) {
+                if (rec.VLAN != null && rec.VLAN != -1) {
+                    String msg = new StringBuilder("Unsupported configuration.  Management network is on a VLAN.  host=").append(_host.uuid).append("; pif=").append(rec.uuid)
+                            .append("; vlan=").append(rec.VLAN).toString();
+                    s_logger.warn(msg);
+                    throw new CloudRuntimeException(msg);
                 }
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Management network is on pif=" + rec.uuid);
+                }
+                mgmtPif = pif;
+                mgmtPifRec = rec;
+                break;
             }
         }
-
-        return null;
+        if (mgmtPif == null) {
+            String msg = "Unable to find management network for " + _host.uuid;
+            s_logger.warn(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        Bond bond = mgmtPifRec.bondSlaveOf;
+        if ( !isRefNull(bond) ) {
+            String msg = "Management interface is on slave(" +mgmtPifRec.uuid + ") of bond("
+                + bond.getUuid(conn) + ") on host(" +_host.uuid + "), please move management interface to bond!";
+            s_logger.warn(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        Network nk =  mgmtPifRec.network;
+        Network.Record nkRec = nk.getRecord(conn);
+        return new Nic(nk, nkRec, mgmtPif, mgmtPifRec);
     }
     
     
@@ -3813,8 +3758,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
     protected SR getLocalLVMSR() {
         Connection conn = getConnection();
-
         try {
+            
             Map<SR, SR.Record> map = SR.getAllRecords(conn);
             for (Map.Entry<SR, SR.Record> entry : map.entrySet()) {
                 SR.Record srRec = entry.getValue();
@@ -3954,45 +3899,15 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 _host.speed = hc.getSpeed(conn).intValue();
                 break;
             }
-                       
-            _localGateway = callHostPlugin("vmops", "getgateway", "mgmtIP", myself.getAddress(conn));
-            if (_localGateway == null || _localGateway.isEmpty()) {
-                s_logger.warn("can not get gateway for host :" + _host.uuid);
-                return false;
-            }
-
+            Nic privateNic = getManageMentNetwork(conn);
+            _privateNetworkName = privateNic.nr.nameLabel;           
+            _host.privatePif = privateNic.pr.uuid;
+            _host.privateNetwork = privateNic.nr.uuid;
+            
             _canBridgeFirewall = can_bridge_firewall();
             
             _host.systemvmisouuid = null;
             
-            Nic privateNic = null;
-            privateNic = getManageMentNetwork(conn, "cloud-private");
-            if (privateNic == null) {
-                privateNic = getManageMentNetwork(conn, _privateNetworkName);
-            } else {
-                _privateNetworkName = "cloud-private";
-            }
-            String name = _privateNetworkName;
-
-            if (privateNic == null) {
-                s_logger.debug("Unable to find any private network.  Trying to determine that by route for host " + _host.ip);
-                name = callHostPlugin("vmops", "getnetwork", "mgmtIP", myself.getAddress(conn));
-                if (name == null || name.isEmpty()) {
-                    s_logger.warn("Unable to determine the private network for host " + _host.ip);
-                    return false;
-                }
-                _privateNetworkName = name;
-                privateNic = getManageMentNetwork(conn, name);
-                if (privateNic == null) {
-                    s_logger.warn("Unable to get private network " + name);
-                    return false;
-                }
-                name = privateNic.nr.nameLabel;
-            }
-
-            _host.privatePif = privateNic.pr.uuid;
-            _host.privateNetwork = privateNic.nr.uuid;
-
             Nic guestNic = null;
             if (_guestNetworkName != null && !_guestNetworkName.equals(_privateNetworkName)) {
             	guestNic = getLocalNetwork(conn, _guestNetworkName);
@@ -4021,23 +3936,34 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             _host.publicPif = publicNic.pr.uuid;
             _host.publicNetwork = publicNic.nr.uuid;
 
-
-            Nic storageNic1 = getLocalNetwork(conn, _storageNetworkName1);
-            if (storageNic1 == null) {
-                storageNic1 = privateNic;
-                _storageNetworkName1 = _privateNetworkName;
+            Nic storageNic1 = null;
+            if (_storageNetworkName1 != null && !_storageNetworkName1.equals(_guestNetworkName)) {
+                storageNic1 = getLocalNetwork(conn, _storageNetworkName1);
+                if (storageNic1 == null) {
+                    s_logger.warn("Unable to find storage network 1: " + _storageNetworkName1 + " for host " + _host.ip);
+                    throw new IllegalArgumentException("Unable to find public network " + _storageNetworkName1 + " for host " + _host.ip);
+                }
+            } else {
+                storageNic1 = guestNic;
+                _storageNetworkName1 = _guestNetworkName;
             }
             _host.storageNetwork1 = storageNic1.nr.uuid;
             _host.storagePif1 = storageNic1.pr.uuid;
 
-            Nic storageNic2 = getLocalNetwork(conn, _storageNetworkName2);
-            if (storageNic2 == null) {
-                storageNic2 = privateNic;
-                _storageNetworkName2 = _privateNetworkName;
+            Nic storageNic2 = null;
+            if (_storageNetworkName2 != null && !_storageNetworkName2.equals(_guestNetworkName)) {
+                storageNic2 = getLocalNetwork(conn, _storageNetworkName2);
+                if (storageNic2 == null) {
+                    s_logger.warn("Unable to find storage network 2: " + _storageNetworkName2 + " for host " + _host.ip);
+                    throw new IllegalArgumentException("Unable to find public network " + _storageNetworkName2 + " for host " + _host.ip);
+                }
+            } else {
+                storageNic2 = guestNic;
+                _storageNetworkName2 = _guestNetworkName;
             }
-            _host.storageNetwork2 = storageNic2.nr.uuid;
-            _host.storagePif2 = storageNic2.pr.uuid;
-            
+            _host.storageNetwork1 = storageNic2.nr.uuid;
+            _host.storagePif1 = storageNic2.pr.uuid;
+                       
             s_logger.info("Private Network is " + _privateNetworkName + " for host " + _host.ip);
             s_logger.info("Guest Network is " + _guestNetworkName + " for host " + _host.ip);
             s_logger.info("Public Network is " + _publicNetworkName + " for host " + _host.ip);
@@ -4171,8 +4097,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
         StartupRoutingCommand cmd = new StartupRoutingCommand();
         fillHostInfo(cmd);
-
-        cleanupDiskMounts();
 
         Map<String, State> changes = null;
         synchronized (_vms) {
@@ -4494,13 +4418,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     protected void fillHostInfo(StartupRoutingCommand cmd) {
-        long speed = 0;
-        int cpus = 0;
-        long ram = 0;
-
         Connection conn = getConnection();
-
-        long dom0Ram = 0;
         final StringBuilder caps = new StringBuilder();
         try {
 
@@ -4538,13 +4456,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             cmd.setSpeed(_host.speed);
             cmd.setCpus(_host.cpus);
 
-            long free = 0;
-
             HostMetrics hm = host.getMetrics(conn);
 
+            long ram = 0;
+            long dom0Ram = 0;
             ram = hm.getMemoryTotal(conn);
-            free = hm.getMemoryFree(conn);
-
             Set<VM> vms = host.getResidentVMs(conn);
             for (VM vm : vms) {
                 if (vm.getIsControlDomain(conn)) {
@@ -4552,14 +4468,13 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     break;
                 }
             }
-            
             // assume the memory Virtualization overhead is 1/64
             ram = (ram - dom0Ram) * 63/64;
             cmd.setMemory(ram);
             cmd.setDom0MinMemory(dom0Ram);
 
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Total Ram: " + ram + " Free Ram: " + free + " dom0 Ram: " + dom0Ram);
+                s_logger.debug("Total Ram: " + ram + " dom0 Ram: " + dom0Ram);
             }
             
             PIF pif = PIF.getByUuid(conn, _host.privatePif);
