@@ -1200,7 +1200,7 @@ function showNetworkingTab(p_domainId, p_account) {
         }    	              
         
         //listItems(submenuContent, commandString, jsonResponse1, jsonResponse2, template, fnJSONToTemplate);         
-        listItems(submenuContent, commandString, "listnetworkgroupsresponse", "networkgroup", $("#network_group_template"), networkGroupJSONToTemplate);          
+        listItems(submenuContent, commandString, "listnetworkgroupsresponse", "securitygroup", $("#network_group_template"), networkGroupJSONToTemplate);          
     }	    
     
     submenuContentEventBinder($("#submenu_content_network_groups"), listNetworkGroups);	   
@@ -1269,7 +1269,7 @@ function showNetworkingTab(p_domainId, p_account) {
 					   data: createURL("command=listNetworkGroups"+"&domainid="+domainId+"&account="+account+"&networkgroupname="+networkGroupName+"&response=json"),
 	                    dataType: "json",		                    
 	                    success: function(json) {			                        		                       
-	                        var items = json.listnetworkgroupsresponse.networkgroup[0].ingressrule;                  
+	                        var items = json.listnetworkgroupsresponse.securitygroup[0].ingressrule;                  
 	                        var grid = template.find("#ingress_rule_grid");								
 					        if(grid.find("#network_group_ingress_rule_add_row").length==0) {
 					            var row = $("#network_group_ingress_rule_add_row").clone().show();
@@ -1426,7 +1426,7 @@ function showNetworkingTab(p_domainId, p_account) {
 										        } else {
 											        $("body").stopTime(timerKey);
 											        if (result.jobstatus == 1) { // Succeeded													            							            
-											            var items = result.networkgroup[0].ingressrule;			            
+											            var items = result.jobresult.networkgroup.ingressrule;			            
 											            ingressRuleJSONToTemplate(items[0], ingressRuleTemplate).data("parentNetworkGroupId", networkGroupId).data("parentNetworkGroupDomainId", domainId).data("parentNetworkGroupAccount", account).data("parentNetworkGroupName",networkGroupName);													            
 											            if(items.length > 1) {                               
                                                             for(var i=1; i<items.length; i++) {         
@@ -1510,7 +1510,7 @@ function showNetworkingTab(p_domainId, p_account) {
         template.data("endPort", json.endport);           
         template.data("icmpType", json.icmptype);
         template.data("icmpCode", json.icmpcode);			    
-	    
+	    debugger;
 	    var cidrOrGroup;
 	    if(json.cidr != null && json.cidr.length > 0)
 	        cidrOrGroup = json.cidr;
@@ -1601,10 +1601,10 @@ function showNetworkingTab(p_domainId, p_account) {
                                                 $(this).remove();                                                                                                        
                                                 //After deleting ingress rule successfully, check if this network group has any ingress rule(s) left. Show delete link of network group if no ingress rule(s) are left.
                                                 $.ajax({
-						   data: createURL("command=listNetworkGroups&response=json&domainid="+parentNetworkGroupDomainId+"&account="+parentNetworkGroupAccount+"&networkgroupname="+parentNetworkGroupName),
+						                            data: createURL("command=listNetworkGroups&response=json&domainid="+parentNetworkGroupDomainId+"&account="+parentNetworkGroupAccount+"&networkgroupname="+parentNetworkGroupName),
                                                     dataType: "json",
                                                     success: function(json){                                                                                                                     
-                                                        networkGroupJSONToTemplate(json.listnetworkgroupsresponse.networkgroup[0], parentNeteworkGroupTemplate);
+                                                        networkGroupJSONToTemplate(json.listnetworkgroupsresponse.securitygroup[0], parentNeteworkGroupTemplate);
                                                     }
                                                 });                                                        
                                             });							                                                           
