@@ -41,8 +41,6 @@ $(document).ready(function() {
 				
 	$("#leftmenu_domain").bind("click", function(event) {
 		selectLeftMenu($(this), true);	
-		bindEventHandlerToDomainTreeNode();			
-		drawRootNode(g_domainid);		
 		return false;
 	});	
 	$("#leftmenu_account").bind("click", function(event) {
@@ -52,19 +50,18 @@ $(document).ready(function() {
 	
 	
 	$("#leftmenu_dashboard").bind("click", function(event) {
-	    selectLeftMenu($(this), false);	    
-		
-		clearMiddleMenu();
-		hideMiddleMenu();
-		
-		$("#right_panel").data("onRefreshFn", function() {
-		    $("#leftmenu_dashboard").click();
-		});
-		
-		$("#right_panel").load("jsp/dashboard.jsp", function(){
-			afterLoadDashboardJSP();        
-		});
-		
+	    selectLeftMenu($(this), false, function() {
+			clearMiddleMenu();
+			hideMiddleMenu();
+			
+			$("#right_panel").data("onRefreshFn", function() {
+				$("#leftmenu_dashboard").click();
+			});
+			
+			$("#right_panel").load("jsp/dashboard.jsp", function(){
+				afterLoadDashboardJSP();        
+			});
+		});	    
 		return false;
 	});	
 	$("#leftmenu_storage").bind("click", function(event) {
@@ -163,6 +160,10 @@ $(document).ready(function() {
 			resourceLoadPage("jsp/resource.jsp", null);			
 			return false;
 		});
+		
+		//Setup domain
+		bindEventHandlerToDomainTreeNode();			
+		drawRootNode(g_domainid);
 	}
                
     $("#midmenu_action_link").bind("mouseover", function(event) {

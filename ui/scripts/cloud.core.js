@@ -594,7 +594,7 @@ function clearRightPanel() {
 
 var $selectedLeftMenu;
 var $expandedLeftMenu;
-function selectLeftMenu($menuToSelect, expandable) {
+function selectLeftMenu($menuToSelect, expandable, afterSelectFn) {
 	if ($selectedLeftMenu == null || ($menuToSelect.attr("id") != $selectedLeftMenu.attr("id"))) {
 		if($selectedLeftMenu != null) {
 			$selectedLeftMenu.removeClass("selected");  
@@ -611,13 +611,13 @@ function selectLeftMenu($menuToSelect, expandable) {
 		}
 		
 		if ($expandedLeftMenu != null) {
-			$expandedLeftMenu.slideUp(500, function() {
-				//if ($menuToExpand != null) $menuToExpand.slideDown(200);
-			});
+			$expandedLeftMenu.slideUp(500, afterSelectFn);
 			if ($menuToExpand != null) $menuToExpand.slideDown(500);
 			$expandedLeftMenu = null;
 		} else if ($menuToExpand != null) {
-			$menuToExpand.slideDown(500);
+			$menuToExpand.slideDown(500, afterSelectFn);
+		} else if (afterSelectFn != undefined) {
+			afterSelectFn();
 		}
 		$expandedLeftMenu = $menuToExpand;
 		
