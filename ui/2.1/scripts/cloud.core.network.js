@@ -517,7 +517,7 @@ function showNetworkingTab(p_domainId, p_account) {
 								    } else if (result.jobstatus == 2) { //Fail
 								        loadingImg.hide(); 		
 							            rowContainer.show(); 
-									    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");											    					    
+									    $("#dialog_alert").html("<p>" + fromdb(result.jobresult.errortext) + "</p>").dialog("open");											    					    
 								    }
 							    }
 						    },
@@ -784,7 +784,7 @@ function showNetworkingTab(p_domainId, p_account) {
 								    } else if (result.jobstatus == 2) { //Fail
 								        loadingContainer.hide(); 		
 							            rowContainer.show(); 
-									    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");											    					    
+									    $("#dialog_alert").html("<p>" + fromdb(result.jobresult.errortext) + "</p>").dialog("open");											    					    
 								    }
 							    }
 						    },
@@ -845,7 +845,7 @@ function showNetworkingTab(p_domainId, p_account) {
 			                                loading.hide();  
 			                                rowContainer.show(); 
 										} else if (result.jobstatus == 2) { // Failed
-											$("#dialog_error").html("<p style='color:red'><b>Operation error:</b></p><br/><p style='color:red'>"+ fromdb(result.jobresult)+"</p>").dialog("open");
+											$("#dialog_error").html("<p style='color:red'><b>Operation error:</b></p><br/><p style='color:red'>"+ fromdb(result.jobresult.errortext)+"</p>").dialog("open");
 											loading.hide();  
 											rowContainer.show();  
 										}
@@ -1424,7 +1424,7 @@ function showNetworkingTab(p_domainId, p_account) {
 										        if (result.jobstatus == 0) {
 											        return; //Job has not completed
 										        } else {
-											        $("body").stopTime(timerKey);
+											        $("body").stopTime(timerKey);											 
 											        if (result.jobstatus == 1) { // Succeeded													            							            
 											            var items = result.jobresult.networkgroup.ingressrule;			            
 											            ingressRuleJSONToTemplate(items[0], ingressRuleTemplate).data("parentNetworkGroupId", networkGroupId).data("parentNetworkGroupDomainId", domainId).data("parentNetworkGroupAccount", account).data("parentNetworkGroupName",networkGroupName);													            
@@ -1440,7 +1440,7 @@ function showNetworkingTab(p_domainId, p_account) {
                                                         //hide delete link of network group. (network group is not allowed to delete if it is not empty. i.e. having ingress rule(s) 
                                                         template.find("#delete_link").hide();                                                                                                             												
 											        } else if (result.jobstatus == 2) { // Failed
-											            $("#dialog_alert").text("Unable to add ingress rule due to the error: " + result.jobresult).dialog("open");
+											            $("#dialog_alert").text("Unable to add ingress rule due to the error: " + result.jobresult.errortext).dialog("open");
 												        ingressRuleTemplate.slideUp("slow", function() {
 													        $(this).remove();
 												        });
@@ -1609,7 +1609,7 @@ function showNetworkingTab(p_domainId, p_account) {
                                                 });                                                        
                                             });							                                                           
 					                    } else if (result.jobstatus == 2) {										        
-						                    $("#dialog_alert").html("<p>" + fromdb(result.jobresult) + "</p>").dialog("open");		
+						                    $("#dialog_alert").html("<p>" + fromdb(result.jobresult.errortext) + "</p>").dialog("open");		
 						                    loadingImg.hide();  
                                             rowContainer.show();                                                         									   					    
 					                    }
