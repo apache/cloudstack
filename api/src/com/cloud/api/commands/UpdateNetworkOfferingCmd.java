@@ -32,7 +32,7 @@ import com.cloud.offering.NetworkOffering;
 @Implementation(description="Updates a network offering.", responseObject=NetworkOfferingResponse.class)
 public class UpdateNetworkOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkOfferingCmd.class.getName());
-    private static final String _name = "createnetworkofferingresponse";
+    private static final String _name = "updatenetworkofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
