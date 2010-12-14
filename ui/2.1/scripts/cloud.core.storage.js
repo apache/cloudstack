@@ -23,7 +23,7 @@ function showStorageTab(domainId, targetTab) {
        		
     var populateZoneField = function(isAdmin) {         
         $.ajax({
-	        data: createURL("command=listZones&available=true&response=json"+maxPageSize),
+	        data: createURL("command=listZones&available=true&response=json"),
 		    dataType: "json",
 		    success: function(json) {
 			    var zones = json.listzonesresponse.zone;					    
@@ -68,7 +68,7 @@ function showStorageTab(domainId, targetTab) {
     var populateVirtualMachineField = function(domainId, account, zoneId) {        
 	    $.ajax({
 		    cache: false,
-		    data: createURL("command=listVirtualMachines&state=Running&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+"&response=json"+maxPageSize),
+		    data: createURL("command=listVirtualMachines&state=Running&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+"&response=json"),
 		    dataType: "json",
 		    success: function(json) {			    
 			    var instances = json.listvirtualmachinesresponse.virtualmachine;				
@@ -80,7 +80,7 @@ function showStorageTab(domainId, targetTab) {
 			    }
 				$.ajax({
 					cache: false,
-					data: createURL("command=listVirtualMachines&state=Stopped&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+"&response=json"+maxPageSize),
+					data: createURL("command=listVirtualMachines&state=Stopped&zoneid="+zoneId+"&domainid="+domainId+"&account="+account+"&response=json"),
 					dataType: "json",
 					success: function(json) {			    
 						var instances = json.listvirtualmachinesresponse.virtualmachine;								
@@ -1403,7 +1403,7 @@ function showStorageTab(domainId, targetTab) {
 					if (expanded == null || expanded == false) {										
 						$.ajax({
 							cache: false,
-							data: createURL("command=listSnapshots&volumeid="+volumeId+"&response=json"+maxPageSize),
+							data: createURL("command=listSnapshots&volumeid="+volumeId+"&response=json"),
 							dataType: "json",
 							success: function(json) {							    
 								var items = json.listsnapshotsresponse.snapshot;																						
@@ -1770,7 +1770,7 @@ function showStorageTab(domainId, targetTab) {
 		$("#dialog_add_pool").find("#pool_zone").bind("change", function(event) {
 			var zoneId = $(this).val();
 			$.ajax({
-			        data: createURL("command=listPods&zoneId="+zoneId+"&response=json"+maxPageSize),
+			        data: createURL("command=listPods&zoneId="+zoneId+"&response=json"),
 				dataType: "json",
 				async: false,
 				success: function(json) {

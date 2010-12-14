@@ -46,9 +46,6 @@ function getSystemVmUseLocalStorage() { return g_systemVmUseLocalStorage; }
 //keyboard keycode
 var keycode_Enter = 13;
 
-//dropdown field size 
-var maxPageSize = "&pagesize=500"; 
-
 //XMLHttpResponse.status
 var ERROR_ACCESS_DENIED_DUE_TO_UNAUTHORIZED = 401;
 var ERROR_INTERNET_NAME_NOT_RESOLVED = 12007;
@@ -365,7 +362,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
     var zoneSelect = submenuContent.find("#advanced_search #adv_search_zone");	    
 	if(zoneSelect.length>0) {  //if zone dropdown is found on Advanced Search dialog 	    		
 	    $.ajax({
-		    data: createURL("command=listZones&available=true&response=json"+maxPageSize),
+		    data: createURL("command=listZones&available=true&response=json"),
 		    dataType: "json",
 		    success: function(json) {
 			    var zones = json.listzonesresponse.zone;			   
@@ -392,7 +389,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
 		            podLabel.css("color", "black");	
 		            podSelect.removeAttr("disabled");
 		            $.ajax({
-				    data: createURL("command=listPods&zoneId="+zoneId+"&response=json"+maxPageSize),
+				    data: createURL("command=listPods&zoneId="+zoneId+"&response=json"),
 			            dataType: "json",
 			            async: false,
 			            success: function(json) {
@@ -417,7 +414,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
 	if(domainSelect.length>0 && isAdmin()) {
 	    var domainSelect = domainSelect.empty();			
 	    $.ajax({
-		    data: createURL("command=listDomains&available=true&response=json"+maxPageSize),
+		    data: createURL("command=listDomains&available=true&response=json"),
 		    dataType: "json",
 		    success: function(json) {			        
 			    var domains = json.listdomainsresponse.domain;			 
@@ -435,7 +432,7 @@ function submenuContentEventBinder(submenuContent, listFunction) {
 	    vmSelect.empty();		
 	    vmSelect.append("<option value=''></option>"); 	
 	    $.ajax({
-		    data: createURL("command=listVirtualMachines&response=json"+maxPageSize),
+		    data: createURL("command=listVirtualMachines&response=json"),
 		    dataType: "json",
 		    success: function(json) {			        
 			    var items = json.listvirtualmachinesresponse.virtualmachine;		 

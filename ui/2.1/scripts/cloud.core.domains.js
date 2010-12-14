@@ -66,7 +66,7 @@ function showDomainsTab() {
     
     function drawTree(id, level, container) {		        
         $.ajax({
-		    data: createURL("command=listDomainChildren&id="+id+"&response=json&pageSize=-1"),
+		    data: createURL("command=listDomainChildren&id="+id+"&response=json"),
 		    dataType: "json",
 		    async: false,
 		    success: function(json) {					        
@@ -120,7 +120,7 @@ function showDomainsTab() {
 	    var accountType = (domainId==1)? 1: 2; 	    		
 	    $.ajax({
 			cache: false,				
-		       data: createURL("command=listAccounts&domainid="+domainId+"&accounttype="+accountType+"&response=json"+maxPageSize),
+		       data: createURL("command=listAccounts&domainid="+domainId+"&accounttype="+accountType+"&response=json"),
 			dataType: "json",
 			success: function(json) {
 				var accounts = json.listaccountsresponse.account;					
@@ -155,7 +155,7 @@ function showDomainsTab() {
 		    domainDetail.find("#domain_id").text(domainId);			  	
 		  	$.ajax({
 			    cache: false,				
-				   data: createURL("command=listAccounts&domainid="+domainId+"&response=json"+maxPageSize),
+				   data: createURL("command=listAccounts&domainid="+domainId+"&response=json"),
 			    dataType: "json",
 			    success: function(json) {				       
 				    var accounts = json.listaccountsresponse.account;					
@@ -321,7 +321,7 @@ function showDomainsTab() {
 	    rightPanelSearchResult.show();	                	        	
         var keyword = searchInput.val();             
         $.ajax({
-	        data: createURL("command=listDomains&keyword="+keyword+"&response=json&pageSize=-1"), //pageSize=-1 will return all items (no limitation)
+	        data: createURL("command=listDomains&keyword="+keyword+"&response=json"), 
 	        dataType: "json",
 	        async: false,
 	        success: function(json) {					        
@@ -350,7 +350,7 @@ function showDomainsTab() {
 	function drawRootNode(rootDomainId) {
 	    treeContentBox.empty();
 	    $.ajax({
-	        data: createURL("command=listDomains&id="+rootDomainId+"&response=json&pageSize=-1"), //pageSize=-1 will return all items (no limitation)
+	        data: createURL("command=listDomains&id="+rootDomainId+"&response=json"), 
 	        dataType: "json",
 	        async: false,
 	        success: function(json) {					        

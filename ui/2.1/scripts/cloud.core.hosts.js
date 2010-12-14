@@ -34,7 +34,7 @@ function showHostsTab() {
 	var dialogAddRouting = $("#dialog_add_routing");
 	
 	$.ajax({
-	       data: createURL("command=listZones&available=true&response=json"+maxPageSize),
+	       data: createURL("command=listZones&available=true&response=json"),
 		dataType: "json",
 		success: function(json) {
 			var zones = json.listzonesresponse.zone;
@@ -50,7 +50,7 @@ function showHostsTab() {
 	dialogAddRouting.find("#host_zone").bind("change", function(event) {
 		var zoneId = $(this).val();
 		$.ajax({
-		       data: createURL("command=listPods&zoneId="+zoneId+"&response=json"+maxPageSize),
+		       data: createURL("command=listPods&zoneId="+zoneId+"&response=json"),
 			dataType: "json",
 			async: false,
 			success: function(json) {
@@ -72,7 +72,7 @@ function showHostsTab() {
 	        return;
 	    var clusterSelect = dialogAddRouting.find("#cluster_select").empty();		        
 	    $.ajax({
-		   data: createURL("command=listClusters&response=json&podid=" + podId+maxPageSize),
+		   data: createURL("command=listClusters&response=json&podid=" + podId),
 	        dataType: "json",
 	        success: function(json) {			            
 	            var items = json.listclustersresponse.cluster;
@@ -95,7 +95,7 @@ function showHostsTab() {
 		zIndex: 2000
 	}));
 	$.ajax({
-	    data: createURL("command=listOsCategories&response=json"+maxPageSize),
+	    data: createURL("command=listOsCategories&response=json"),
 		dataType: "json",
 		success: function(json) {
 			var categories = json.listoscategoriesresponse.oscategory;
@@ -158,7 +158,7 @@ function showHostsTab() {
                     var vms, routers, systemVms;
                     $.ajax({
 						cache: false,
-			   data: createURL("command=listVirtualMachines&hostid="+hostId+"&response=json"+maxPageSize),
+			   data: createURL("command=listVirtualMachines&hostid="+hostId+"&response=json"),
 						dataType: "json",
 						async: false,
 						success: function(json) {							    					    
@@ -169,7 +169,7 @@ function showHostsTab() {
 					});								
                     $.ajax({
 						cache: false,
-			   data: createURL("command=listRouters&hostid="+hostId+"&response=json"+maxPageSize),
+			   data: createURL("command=listRouters&hostid="+hostId+"&response=json"),
 						dataType: "json",
 						async: false,
 						success: function(json) {								    					    					    
@@ -180,7 +180,7 @@ function showHostsTab() {
 					});												
 					$.ajax({
 						cache: false,
-						   data: createURL("command=listSystemVms&hostid="+hostId+"&response=json"+maxPageSize),
+						   data: createURL("command=listSystemVms&hostid="+hostId+"&response=json"),
 						dataType: "json",
 						async: false,
 						success: function(json) {								    					    					    					    

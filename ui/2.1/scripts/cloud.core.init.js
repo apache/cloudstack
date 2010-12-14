@@ -618,9 +618,7 @@ $(document).ready(function() {
 				$("#menutab_role_root").hide();
 				$("#menutab_role_domain").show();
 				$("#launch_test").hide();
-				
-				// Need to use/create better API for this as there is a limit of pageSize
-				// to list count.
+								
 				$.ajax({
 				        data: createURL("command=listVirtualMachines&response=json"),
 					dataType: "json",

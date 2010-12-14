@@ -29,7 +29,7 @@ function showNetworkingTab(p_domainId, p_account) {
 	
 	//*** Acquire New IP (begin) ***
 	$.ajax({
-	       data: createURL("command=listZones&available=true&response=json"+maxPageSize),
+	       data: createURL("command=listZones&available=true&response=json"),
 		dataType: "json",
 		success: function(json) {
 			var zones = json.listzonesresponse.zone;				
@@ -215,7 +215,7 @@ function showNetworkingTab(p_domainId, p_account) {
     function populateDomainDropdown() {
         var domainSelect = $("#submenu_content_network #search_by_domain").empty();			
 	    $.ajax({
-		   data: createURL("command=listDomains&available=true&response=json"+maxPageSize),
+		   data: createURL("command=listDomains&available=true&response=json"),
 		    dataType: "json",
 		    success: function(json) {			        
 			    var domains = json.listdomainsresponse.domain;			 
@@ -379,7 +379,7 @@ function showNetworkingTab(p_domainId, p_account) {
 	    createPortForwardingRow.find("#protocol").val("TCP");  		    
 
 	    $.ajax({
-		   data: createURL("command=listVirtualMachines&response=json&domainid="+ipPanel.data("ip_domainid")+"&account="+ipPanel.data("ip_account")+maxPageSize),
+		   data: createURL("command=listVirtualMachines&response=json&domainid="+ipPanel.data("ip_domainid")+"&account="+ipPanel.data("ip_account")),
 		    dataType: "json",
 		    success: function(json) {			    
 			    var instances = json.listvirtualmachinesresponse.virtualmachine;
@@ -414,7 +414,7 @@ function showNetworkingTab(p_domainId, p_account) {
 	    var virtualMachineId = json.virtualmachineid;
 	    		    
 	    $.ajax({
-		   data: createURL("command=listVirtualMachines&response=json&domainid="+ipPanel.data("ip_domainid")+"&account="+ipPanel.data("ip_account")+maxPageSize),
+		   data: createURL("command=listVirtualMachines&response=json&domainid="+ipPanel.data("ip_domainid")+"&account="+ipPanel.data("ip_account")),
 		    dataType: "json",
 		    success: function(json) {			    
 			    var instances = json.listvirtualmachinesresponse.virtualmachine;

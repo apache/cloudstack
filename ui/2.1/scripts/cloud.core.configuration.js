@@ -657,7 +657,7 @@ function showConfigurationTab() {
 			$("#add_publicip_vlan_type_container").show();
 			var podSelect = dialogAddVlanForZone.find("#add_publicip_vlan_pod").empty();		
 			$.ajax({
-			  data: createURL("command=listPods&zoneId="+id+"&response=json"+maxPageSize),
+			  data: createURL("command=listPods&zoneId="+id+"&response=json"),
 				dataType: "json",
 				async: false,
 				success: function(json) {
@@ -674,7 +674,7 @@ function showConfigurationTab() {
 			
 			var domainSelect = dialogAddVlanForZone.find("#add_publicip_vlan_domain").empty();	
 			$.ajax({
-			  data: createURL("command=listDomains&response=json"+maxPageSize),
+			  data: createURL("command=listDomains&response=json"),
 				dataType: "json",
 				async: false,
 				success: function(json) {
@@ -1197,7 +1197,7 @@ function showConfigurationTab() {
 		$("#submenu_content_global, #submenu_content_service, #submenu_content_disk").hide(); 
 		clearRightPanel();
 		$.ajax({
-		  data: createURL("command=listZones&available=true&response=json"+maxPageSize),
+		  data: createURL("command=listZones&available=true&response=json"),
 			dataType: "json",
 			success: function(json) {
 				var zones = json.listzonesresponse.zone;

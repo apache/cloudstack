@@ -970,7 +970,7 @@ function showInstancesTab(p_domainId, p_account) {
 					var index = 0;
 					$.ajax({
 						cache: false,
-						   data: createURL("command=listVolumes&virtualMachineId="+vmId+"&response=json"+maxPageSize),
+						   data: createURL("command=listVolumes&virtualMachineId="+vmId+"&response=json"),
 						dataType: "json",
 						success: function(json) {
 							var volumes = json.listvolumesresponse.volume;
@@ -1221,7 +1221,7 @@ function showInstancesTab(p_domainId, p_account) {
 		vmWizardCleanup();	
 					
 		$.ajax({
-		       data: createURL("command=listZones&available=true&response=json"+maxPageSize),
+		       data: createURL("command=listZones&available=true&response=json"),
 			dataType: "json",
 			success: function(json) {
 				var zones = json.listzonesresponse.zone;					
@@ -1409,15 +1409,16 @@ function showInstancesTab(p_domainId, p_account) {
         var searchInput = vmPopup.find("#search_input").val();   
         if (selectedTemplateTypeInVmPopup != "blank") {      
             if (searchInput != null && searchInput.length > 0)                 
-                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&hypervisor="+hypervisor+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup+"&response=json"; 
+                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&hypervisor="+hypervisor+"&keyword="+searchInput+"&response=json"; 
             else
-                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&hypervisor="+hypervisor+"&page="+currentPageInTemplateGridInVmPopup+"&response=json";           		    		
+                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&hypervisor="+hypervisor+"&response=json";           		    		
 		} else {
 		    if (searchInput != null && searchInput.length > 0)                 
-                commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&hypervisor="+hypervisor+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup+"&response=json";  
+                commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&hypervisor="+hypervisor+"&keyword="+searchInput+"&response=json";  
             else
-                commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&hypervisor="+hypervisor+"&page="+currentPageInTemplateGridInVmPopup+"&response=json";  
+                commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&hypervisor="+hypervisor+"&response=json";  
 		}
+		commandString += commandString + "&pagesize="+vmPopupStep2PageSize + "&page="+currentPageInTemplateGridInVmPopup;
 		
 		var loading = vmPopup.find("#wiz_template_loading").show();				
 		if(currentPageInTemplateGridInVmPopup==1)
