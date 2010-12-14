@@ -219,10 +219,10 @@ function initAddAccountDialog() {
 					        $("#leftmenu_account_all_accounts").click();
 					    }
 					    else {			    
-					        var user = json.createuserresponse.user;	
+					        var user = json.createuserresponse.user;					        
 					        var item;					    
 					        $.ajax({
-					            data: createURL("command=listAccounts&domainid="+user.domainid+"&account="+user.account),
+					            data: createURL("command=listAccounts&domainid="+user.domainid+"&name="+user.account),
 					            dataType: "json",
 					            async: false,
 					            success: function(json) {					            
