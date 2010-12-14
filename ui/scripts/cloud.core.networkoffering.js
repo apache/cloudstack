@@ -90,7 +90,7 @@ function doEditNetworkOffering2($actionLink, $detailsTab, $midmenuItem1, $readon
 	    data: createURL("command=updateNetworkOffering&id="+id+array1.join("")),
 		dataType: "json",
 		success: function(json) {			    
-		    var jsonObj = json.updateNetworkOfferingresponse.networkoffering;   		    
+		    var jsonObj = json.updatenetworkofferingresponse.networkoffering;   		    
 		    networkOfferingToMidmenu(jsonObj, $midmenuItem1);
 		    networkOfferingToRightPanel($midmenuItem1);	
 		    
