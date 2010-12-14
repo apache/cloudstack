@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
-import org.GNOME.Accessibility._AccessibleStub;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
