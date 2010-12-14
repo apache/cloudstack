@@ -47,20 +47,24 @@ function snapshotGetSearchParams() {
 	return moreCriteria.join("");          
 }
 
-function afterLoadSnapshotJSP() {
-    //initialize dialog
-    initDialog("dialog_add_volume_from_snapshot");       
-    initDialog("dialog_create_template_from_snapshot", 400);  
-	initDialog("dialog_confirmation_delete_snapshot");	
+function afterLoadSnapshotJSP() {    
+    initDialog("dialog_add_volume_from_snapshot");          
+	initDialog("dialog_confirmation_delete_snapshot");		
+    initCreateTemplateFromSnapshotDialog();
+}
+
+function initCreateTemplateFromSnapshotDialog() {
+    initDialog("dialog_create_template_from_snapshot", 450);  
     
-    //populate dropdown
+    var $dialogCreateTemplateFromSnapshot = $("#dialog_create_template_from_snapshot");
+        
     $.ajax({
         data: createURL("command=listOsTypes"),
 	    dataType: "json",
 	    success: function(json) {
 		    types = json.listostypesresponse.ostype;
 		    if (types != null && types.length > 0) {
-			    var osTypeField = $("#dialog_create_template_from_snapshot").find("#os_type").empty();	
+			    var osTypeField = $dialogCreateTemplateFromSnapshot.find("#os_type").empty();	
 			    for (var i = 0; i < types.length; i++) {
 				    var html = "<option value='" + types[i].id + "'>" + types[i].description + "</option>";
 				    osTypeField.append(html);						
@@ -68,6 +72,11 @@ function afterLoadSnapshotJSP() {
 		    }	
 	    }
     });	
+    
+    if(isAdmin())
+	    $dialogCreateTemplateFromSnapshot.find("#isfeatured_container").show();
+	else
+	    $dialogCreateTemplateFromSnapshot.find("#isfeatured_container").hide();		
 }
 
 function snapshotToMidmenu(jsonObj, $midmenuItem1) {  
@@ -239,13 +248,26 @@ function doCreateTemplateFromSnapshotInSnapshotPage($actionLink, $detailsTab, $m
          
          thisDialog.dialog("close");	
          
+         var array1 = [];
          var name = thisDialog.find("#name").val();	 
+         array1.push("&name="+name);
+         
          var displayText = thisDialog.find("#display_text").val();	 
+         array1.push("&displaytext="+displayText);
+         
          var osTypeId = thisDialog.find("#os_type").val(); 	  
-         var password = thisDialog.find("#password").val();	                                         
+         array1.push("&ostypeid="+osTypeId);
+         
+         var password = thisDialog.find("#password").val();	       
+         array1.push("&passwordEnabled="+password);                                 
+     
+         if(thisDialog.find("#isfeatured_container").css("display")!="none") {				
+		    var isFeatured = thisDialog.find("#isfeatured").val();						    	
+            array1.push("&isfeatured="+isFeatured);
+        }	
        
          var id = jsonObj.id;
-         var apiCommand = "command=createTemplate&snapshotid="+id+"&name="+name+"&displaytext="+displayText+"&ostypeid="+osTypeId+"&passwordEnabled="+password;
+         var apiCommand = "command=createTemplate&snapshotid="+id+array1.join("");
     	 doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
      },
      "Cancel": function() {	                         
