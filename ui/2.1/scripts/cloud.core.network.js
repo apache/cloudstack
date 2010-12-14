@@ -1726,11 +1726,11 @@ function showNetworkingTab(p_domainId, p_account) {
 				thisDialog.dialog("close");
 							
 				$.ajax({						
-				       data: createURL("command=createNetworkGroup&name="+todb(name)+"&description="+todb(desc)+"&response=json"),
+				    data: createURL("command=createNetworkGroup&name="+todb(name)+"&description="+todb(desc)+"&response=json"),
 					dataType: "json",
 					success: function(json) {						   
-						var items = json.createnetworkgroupresponse.networkgroup;													
-						networkGroupJSONToTemplate(items[0], template);							
+						var item = json.createsecuritygroupresponse.securitygroup;													
+						networkGroupJSONToTemplate(item, template);							
 						changeGridRowsTotal(submenuContent.find("#grid_rows_total"), 1);	
 						loadingImg.hide();  
                         rowContainer.show();    						

@@ -2,7 +2,6 @@
 <%
 long milliseconds = new Date().getTime();
 %>
-<script type="text/javascript" src="scripts/cloud.core.storage.js?t=<%=milliseconds%>"></script>
 	
 <div class="submenu_links">
     <div class="submenu_links_on" id="submenu_pool">

@@ -2,8 +2,7 @@
 <%
 long milliseconds = new Date().getTime();
 %>
-<script type="text/javascript" src="scripts/cloud.core.templates.js?t=<%=milliseconds%>"></script>
-	
+
 <div class="submenu_links">		
     <div class="submenu_links_on" id="submenu_template">Template</div>
     <div class="submenu_links_off" id="submenu_iso">ISO</div>       

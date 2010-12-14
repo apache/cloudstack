@@ -2,7 +2,6 @@
 <%
 long milliseconds = new Date().getTime();
 %>
-<script type="text/javascript" src="scripts/cloud.core.network.js?t=<%=milliseconds%>"></script>
 
 <!-- Content Panel -->
 <!-- Submenus -->
