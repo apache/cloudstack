@@ -142,6 +142,22 @@
 	                    </select>	                 
 	                </div>
 	            </div>	 
+	            
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <%=t.t("Featured")%>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="isfeatured">                        
+	                    </div>
+	                    <select class="select" id="isfeatured_edit" style="width: 202px; display: none;">
+	                        <option value="true">Yes</option>
+							<option value="false">No</option>
+	                    </select>
+	                </div>
+	            </div>
+	            
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
@@ -248,6 +264,15 @@
 						<option value="true">Yes</option>						
 					</select>
 				</li>	
+				
+				<li id="isfeatured_container" style="display:none">
+					<label>Featured?:</label>
+					<select class="select" id="isfeatured">
+					    <option value="false">No</option>
+						<option value="true">Yes</option>						
+					</select>
+				</li>
+				
 			</ol>
 		</form>
 	</div>

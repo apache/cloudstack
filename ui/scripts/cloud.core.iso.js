@@ -56,14 +56,67 @@ function isoGetSearchParams() {
 	return moreCriteria.join("");          
 }
 
-function afterLoadIsoJSP() {
-    var $detailsTab = $("#right_panel_content #tab_content_details");   
+function afterLoadIsoJSP() {    
+    initDialog("dialog_confirmation_delete_iso_all_zones");
+    initDialog("dialog_confirmation_delete_iso");
+    initDialog("dialog_copy_iso", 300);    
+    initDialog("dialog_download_ISO");
+    
+    initAddIsoDialog();
+    initCreateVmFromIsoDialog();
+}
+
+function initAddIsoDialog() {
+    initDialog("dialog_add_iso", 450);   
+
+    var $dialogAddIso = $("#dialog_add_iso");
+    var $detailsTab = $("#right_panel_content").find("#tab_content_details");             
+    
+    if(isAdmin())
+	    $dialogAddIso.find("#isfeatured_container").show();
+	else
+	    $dialogAddIso.find("#isfeatured_container").hide();		
+    
+    var addIsoZoneField = $dialogAddIso.find("#add_iso_zone");    	
+	if (isAdmin())  
+		addIsoZoneField.append("<option value='-1'>All Zones</option>"); 	
+    $.ajax({
+        data: createURL("command=listZones&available=true"),
+	    dataType: "json",
+	    success: function(json) {		        
+		    var zones = json.listzonesresponse.zone;	 			     			    	
+		    if (zones != null && zones.length > 0) {
+		        for (var i = 0; i < zones.length; i++) {
+			        addIsoZoneField.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 			        
+			        g_zoneIds.push(zones[i].id);
+			        g_zoneNames.push(zones[i].name);			       
+		        }
+		    }				    			
+	    }
+	});	
+    
+    $.ajax({
+	    data: createURL("command=listOsTypes"),
+		dataType: "json",
+		success: function(json) {
+			types = json.listostypesresponse.ostype;
+			if (types != null && types.length > 0) {
+				var osTypeDropDownAdd = $dialogAddIso.find("#add_iso_os_type").empty();
+				var osTypeDropdownEdit = $detailsTab.find("#ostypename_edit").empty();
+				for (var i = 0; i < types.length; i++) {
+					var html = "<option value='" + types[i].id + "'>" + fromdb(types[i].description) + "</option>";
+					osTypeDropDownAdd.append(html);			
+					osTypeDropdownEdit.append(html);					
+				}
+			}	
+		}
+	});
     
     //add button ***
     $("#midmenu_add_link").find("#label").text("Add ISO"); 
     $("#midmenu_add_link").show();     
     $("#midmenu_add_link").unbind("click").bind("click", function(event) {     
-        $("#dialog_add_iso")
+        $dialogAddIso
 	    .dialog('option', 'buttons', { 				
 		    "Create": function() { 	
 		        var thisDialog = $(this);
@@ -100,7 +153,11 @@ function afterLoadIsoJSP() {
 			    
 			    var bootable = thisDialog.find("#add_iso_bootable").val();	
 			    array1.push("&bootable="+bootable);
-			    		
+			    
+			    if(thisDialog.find("#isfeatured_container").css("display") != "none") {				
+				    var isFeatured = thisDialog.find("#isfeatured").val();						    	
+                    array1.push("&isfeatured="+isFeatured);
+                }			
     		    				    
 		        var $midmenuItem1 = beforeAddingMidMenuItem() ;				    
     		       		    				
@@ -135,50 +192,20 @@ function afterLoadIsoJSP() {
 	    }).dialog("open");
         return false;
     });
+}
+
+function initCreateVmFromIsoDialog() {
+    initDialog("dialog_create_vm_from_iso", 450);    
     
-    //populate dropdown ***
-    var addIsoZoneField = $("#dialog_add_iso").find("#add_iso_zone");    	
-	if (isAdmin())  
-		addIsoZoneField.append("<option value='-1'>All Zones</option>"); 	
-    $.ajax({
-        data: createURL("command=listZones&available=true"),
-	    dataType: "json",
-	    success: function(json) {		        
-		    var zones = json.listzonesresponse.zone;	 			     			    	
-		    if (zones != null && zones.length > 0) {
-		        for (var i = 0; i < zones.length; i++) {
-			        addIsoZoneField.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 			        
-			        g_zoneIds.push(zones[i].id);
-			        g_zoneNames.push(zones[i].name);			       
-		        }
-		    }				    			
-	    }
-	});	
+    var $dialogCreateVmFromIso = $("#dialog_create_vm_from_iso");
     
     $.ajax({
-	    data: createURL("command=listOsTypes"),
-		dataType: "json",
-		success: function(json) {
-			types = json.listostypesresponse.ostype;
-			if (types != null && types.length > 0) {
-				var osTypeDropDownAdd = $("#dialog_add_iso").find("#add_iso_os_type").empty();
-				var osTypeDropdownEdit = $detailsTab.find("#ostypename_edit").empty();
-				for (var i = 0; i < types.length; i++) {
-					var html = "<option value='" + types[i].id + "'>" + fromdb(types[i].description) + "</option>";
-					osTypeDropDownAdd.append(html);			
-					osTypeDropdownEdit.append(html);					
-				}
-			}	
-		}
-	});
-	
-	$.ajax({
 	    data: createURL("command=listServiceOfferings"),
 	    dataType: "json",
 	    success: function(json) {
 	        var items = json.listserviceofferingsresponse.serviceoffering;
 	        if(items != null && items.length > 0 ) {
-	            var serviceOfferingField = $("#dialog_create_vm_from_iso").find("#service_offering").empty();
+	            var serviceOfferingField = $dialogCreateVmFromIso.find("#service_offering").empty();
 	            for(var i = 0; i < items.length; i++)		        
 	                serviceOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
 	        }		        
@@ -191,36 +218,28 @@ function afterLoadIsoJSP() {
 	    success: function(json) {
 	        var items = json.listdiskofferingsresponse.diskoffering;
 	        if(items != null && items.length > 0 ) {
-	            var diskOfferingField = $("#dialog_create_vm_from_iso").find("#disk_offering").empty();
+	            var diskOfferingField = $dialogCreateVmFromIso.find("#disk_offering").empty();
 	            for(var i = 0; i < items.length; i++) {		  
 	                var $option = $("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");	
 		            $option.data("jsonObj", items[i]);			                              
 	                diskOfferingField.append($option);	            
 	            }
-	            $("#dialog_create_vm_from_iso").find("#disk_offering").change();
+	            $dialogCreateVmFromIso.find("#disk_offering").change();
 	        }		  
 	        
 	    }
 	});		
     
-    $("#dialog_create_vm_from_iso").find("#disk_offering").bind("change", function(event) {  	         
+    $dialogCreateVmFromIso.find("#disk_offering").bind("change", function(event) {  	         
         var jsonObj = $(this).find("option:selected").data("jsonObj");
         if(jsonObj != null && jsonObj.isCustomized == true) { //jsonObj is null when "<option value=''>No disk offering</option>" is selected
-            $("#dialog_create_vm_from_iso").find("#size_container").show();
+            $dialogCreateVmFromIso.find("#size_container").show();
         }
         else {
-            $("#dialog_create_vm_from_iso").find("#size_container").hide();  
-            $("#dialog_create_vm_from_iso").find("#size").val("");
+            $dialogCreateVmFromIso.find("#size_container").hide();  
+            $dialogCreateVmFromIso.find("#size").val("");
         }      
-    });
-    
-    //initialize dialog box ***
-    initDialog("dialog_confirmation_delete_iso_all_zones");
-    initDialog("dialog_confirmation_delete_iso");
-    initDialog("dialog_copy_iso", 300);
-    initDialog("dialog_create_vm_from_iso", 450);
-    initDialog("dialog_add_iso", 450);   
-    initDialog("dialog_download_ISO");
+    });    
 }
 
 function isoGetMidmenuId(jsonObj) {
@@ -288,6 +307,9 @@ function isoJsonToDetailsTab() {
     setBooleanReadField(jsonObj.ispublic, $thisTab.find("#ispublic"));	
     setBooleanEditField(jsonObj.ispublic, $thisTab.find("#ispublic_edit"));
     
+    setBooleanReadField(jsonObj.isfeatured, $thisTab.find("#isfeatured"));
+    setBooleanEditField(jsonObj.isfeatured, $thisTab.find("#isfeatured_edit"));
+    
     setBooleanReadField(jsonObj.crossZones, $thisTab.find("#crossZones"));	     
     setDateField(jsonObj.created, $thisTab.find("#created"));	  
     
@@ -347,6 +369,8 @@ function isoClearRightPanel() {
 function isoClearDetailsTab() {
     var $thisTab = $("#right_panel_content #tab_content_details");   
     
+    $thisTab.find("#grid_header_title").text("");
+    
     $thisTab.find("#id").text("");
     $thisTab.find("#zonename").text("");
     
@@ -364,9 +388,15 @@ function isoClearDetailsTab() {
     $thisTab.find("#size").text("");  
 	$thisTab.find("#status").text(""); 
 	$thisTab.find("#bootable").text("");
-	$thisTab.find("#ispublic").text("")
+	$thisTab.find("#ispublic").text("");	
+	$thisTab.find("#isfeatured").text("");  
 	$thisTab.find("#crossZones").text("");
-    $thisTab.find("#created").text("");   
+    $thisTab.find("#created").text("");  
+    
+     //actions ***
+    var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
+    $actionMenu.find("#action_list").empty();
+    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
 }
 
 var isoActionMap = {  
@@ -406,10 +436,17 @@ var isoActionMap = {
     }     
 }   
 
-function doEditISO($actionLink, $detailsTab, $midmenuItem1) {   
-    //var $detailsTab = $("#right_panel_content #tab_content_details");  
-    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #ispublic, #ostypename");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ispublic_edit, #ostypename_edit"); 
+function doEditISO($actionLink, $detailsTab, $midmenuItem1) {     
+    var $readonlyFields, $editFields;
+  
+    if(isAdmin()) {
+        $readonlyFields  = $detailsTab.find("#name, #displaytext, #ispublic, #ostypename, #isfeatured");
+        $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ispublic_edit, #ostypename_edit, #isfeatured_edit"); 
+    }
+    else {  
+        $readonlyFields  = $detailsTab.find("#name, #displaytext, #ispublic, #ostypename");
+        $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ispublic_edit, #ostypename_edit"); 
+    }
            
     $readonlyFields.hide();
     $editFields.show();  
@@ -470,6 +507,11 @@ function doEditISO2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
 	var newIsPublic = $detailsTab.find("#ispublic_edit").val();       
 	if(newIsPublic != oldIsPublic)
 	    array2.push("&ispublic="+newIsPublic);	    						
+		    
+	var oldIsFeatured = jsonObj.isfeatured.toString();	
+	var newIsFeatured = $detailsTab.find("#isfeatured_edit").val();           
+    if(newIsFeatured != oldIsFeatured)
+        array2.push("&isfeatured="+newIsFeatured);		
 								
 	if(array2.length > 0) {	
 	    $.ajax({
