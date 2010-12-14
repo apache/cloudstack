@@ -46,8 +46,8 @@ function afterLoadNetworkOfferingJSP() {
 }
 
 function doEditNetworkOffering($actionLink, $detailsTab, $midmenuItem1) {       
-    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #tags, #domain");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #domain_edit"); 
+    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #availability");
+    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #availability_edit"); 
              
     $readonlyFields.hide();
     $editFields.show();  
@@ -83,17 +83,14 @@ function doEditNetworkOffering2($actionLink, $detailsTab, $midmenuItem1, $readon
     var displaytext = $detailsTab.find("#displaytext_edit").val();
     array1.push("&displayText="+todb(displaytext));
 	
-	var tags = $detailsTab.find("#tags_edit").val();
-	array1.push("&tags="+todb(tags));	
-	
-	var domainid = $detailsTab.find("#domain_edit").val();
-	array1.push("&domainid="+todb(domainid));	
+	var availability = $detailsTab.find("#availability_edit").val();
+    array1.push("&availability="+todb(availability));	
 	
 	$.ajax({
 	    data: createURL("command=updateNetworkOffering&id="+id+array1.join("")),
 		dataType: "json",
 		success: function(json) {			    
-		    var jsonObj = json.updateNetworkOfferingresponse.NetworkOffering;   
+		    var jsonObj = json.updateNetworkOfferingresponse.networkoffering;   		    
 		    networkOfferingToMidmenu(jsonObj, $midmenuItem1);
 		    networkOfferingToRightPanel($midmenuItem1);	
 		    
@@ -156,12 +153,13 @@ function networkOfferingJsonToDetailsTab() {
         
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $thisTab.find("#name").text(fromdb(jsonObj.name));
-    //$thisTab.find("#name_edit").val(fromdb(jsonObj.name));
+    $thisTab.find("#name_edit").val(fromdb(jsonObj.name));
     
     $thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
-    //$thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
+    $thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
      
-    $thisTab.find("#availability").text(fromdb(jsonObj.availability)); 
+    $thisTab.find("#availability").text(fromdb(jsonObj.availability));     
+    $thisTab.find("#availability_edit").val(fromdb(jsonObj.availability)); 
      
     setBooleanReadField(jsonObj.isdefault, $thisTab.find("#isdefault"));
     setBooleanReadField(jsonObj.specifyvlan, $thisTab.find("#specifyvlan"));

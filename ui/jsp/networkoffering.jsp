@@ -97,7 +97,12 @@
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="availability">
-	                    </div>
+	                    </div>	                    
+	                    <select class="select" id="availability_edit" style="width: 202px; display: none;">
+	                        <option value="Required">Required</option>
+							<option value="Optional">Optional</option>
+							<option value="Unavailable">Unavailable</option>
+	                    </select>	                    
 	                </div>
 	            </div>
 	            
