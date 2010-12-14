@@ -271,7 +271,7 @@ function listItems(submenuContent, commandString, jsonResponse1, jsonResponse2, 
 
     index = 0;
     $.ajax({
-	    data: createURL(commandString),
+	    data: createURL(commandString+"&pagesize="+pageSize),
 	    dataType: "json",
 	    async: false,
 	    success: function(json) {
