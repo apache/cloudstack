@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import org.GNOME.Accessibility._AccessibleStub;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
@@ -135,6 +136,7 @@ import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.test.PodZoneConfig;
 import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
@@ -180,6 +182,53 @@ public class ApiResponseHelper implements ResponseGenerator {
         return userResponse;
     }
 
+    @Override
+    public UserResponse createUserResponse(User user) {
+        UserResponse userResponse = new UserResponse();
+        Account account = ApiDBUtils.findAccountById(user.getAccountId());
+        userResponse.setAccountName(account.getAccountName());
+        userResponse.setAccountType(account.getType());
+        userResponse.setCreated(user.getCreated());
+        userResponse.setDomainId(account.getDomainId());
+        userResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
+        userResponse.setEmail(user.getEmail());
+        userResponse.setFirstname(user.getFirstname());
+        userResponse.setId(user.getId());
+        userResponse.setLastname(user.getLastname());
+        userResponse.setState(user.getState());
+        userResponse.setTimezone(user.getTimezone());
+        userResponse.setUsername(user.getUsername());
+        userResponse.setApiKey(user.getApiKey());
+        userResponse.setSecretKey(user.getSecretKey());
+        userResponse.setObjectName("user");
+
+        return userResponse;
+    }
+
+    //this method is used for response generation via createAccount (which creates an account + user)
+    @Override
+    public UserResponse createUserAccountResponse(UserAccount user) {
+        UserResponse userResponse = new UserResponse();
+        userResponse.setAccountName(user.getAccountName());
+        userResponse.setAccountType(user.getType());
+        userResponse.setCreated(user.getCreated());
+        userResponse.setDomainId(user.getDomainId());
+        userResponse.setDomainName(ApiDBUtils.findDomainById(user.getDomainId()).getName());
+        userResponse.setEmail(user.getEmail());
+        userResponse.setFirstname(user.getFirstname());
+        userResponse.setId(user.getId());
+        userResponse.setLastname(user.getLastname());
+        userResponse.setState(user.getState());
+        userResponse.setTimezone(user.getTimezone());
+        userResponse.setUsername(user.getUsername());
+        userResponse.setApiKey(user.getApiKey());
+        userResponse.setSecretKey(user.getSecretKey());
+        userResponse.setObjectName("account");
+
+        return userResponse;
+    }
+
+    
     @Override
     public AccountResponse createAccountResponse(Account account) {
         boolean accountIsAdmin = (account.getType() == Account.ACCOUNT_TYPE_ADMIN);

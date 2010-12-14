@@ -78,7 +78,7 @@ public class EventUtils {
         event.setLevel(level);
         event.setStartId(startEventId);
         event = _eventDao.persist(event);
-        return event.getId();
+        return (event != null ? event.getId() : null);
     }
     
     public static Long saveEvent(Long userId, Long accountId, String level, String type, String description, String params, long startEventId) {

@@ -30,7 +30,11 @@ import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.SecurityChecker;
+import com.cloud.api.BaseCmd;
+import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.CreateAccountCmd;
 import com.cloud.api.commands.CreateUserCmd;
+import com.cloud.api.commands.DeleteAccountCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DisableAccountCmd;
 import com.cloud.api.commands.DisableUserCmd;
@@ -748,42 +752,21 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     }
     
     @Override
-    public boolean deleteUserInternal(long userId, long startEventId) {
-        UserAccount userAccount = null;
-        Long accountId = null;
-        String username = null;
+    public boolean deleteAccountInternal(long accountId, long startEventId) {
         boolean result = false;
         
         try {        	
-            UserVO user = _userDao.findById(userId);
-            accountId =  user != null ? user.getAccountId() : 1L;// We cant set it to null.            
-            EventUtils.saveStartedEvent(UserContext.current().getUserId(), accountId, EventTypes.EVENT_USER_DELETE, "Start deleting the user id:" +userId, startEventId);
-            if (user == null || user.getRemoved() != null) {
-            	result = true;
-                return result;
-            }
-            username = user.getUsername();
-            result = _userDao.remove(userId);
-            if (!result) {
-                s_logger.error("Unable to remove the user with id: " + userId + "; username: " + user.getUsername());            
-                return result;
-            }
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("User is removed, id: " + userId + "; username: " + user.getUsername());
+            List<UserVO> users = _userDao.listByAccount(accountId);
+
+            for(UserVO user : users){
+            	//remove each user
+            	_userDao.remove(user.getId());
             }
             
-            userAccount = _userAccountDao.findByIdIncludingRemoved(userId);
-
-            List<UserVO> users = _userDao.listByAccount(accountId);
-            if (users.size() != 0) {
-                s_logger.debug("User (" + userId + "/" + user.getUsername() + ") is deleted but there's still other users in the account so not deleting account.");
-                result = true;
-                return result;
-            }
-
             result = _accountDao.remove(accountId);
             if (!result) {
                 s_logger.error("Unable to delete account " + accountId);
+                return false;
             }
 
             if (s_logger.isDebugEnabled()) {
@@ -795,18 +778,14 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             result = true;
             return result;
         } catch (Exception e) {
-            s_logger.error("exception deleting user: " + userId, e);            
+            s_logger.error("exception deleting account: " + accountId, e);            
             return false;
         }finally{
-            long domainId = 0L;
-            if (userAccount != null) {
-                domainId = userAccount.getDomainId();
-            }
-            String description = "User " + username + " (id: " + userId + ") for accountId = " + accountId + " and domainId = " + domainId;
+            String description = "Account:" + accountId ;
             if(result){
-            	EventUtils.saveEvent(UserContext.current().getUserId(), accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_USER_DELETE, "Successfully deleted " +description, startEventId);
+            	EventUtils.saveEvent(UserContext.current().getUserId(), accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_ACCOUNT_DELETE, "Successfully deleted " +description, startEventId);
             }else{
-            	EventUtils.saveEvent(UserContext.current().getUserId(), accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_DELETE, "Error deleting " +description, startEventId);
+            	EventUtils.saveEvent(UserContext.current().getUserId(), accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_ACCOUNT_DELETE, "Error deleting " +description, startEventId);
             }
         }
     }
@@ -997,7 +976,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 
     
     @Override
-    public UserAccount createUser(CreateUserCmd cmd) {
+    public UserAccount createAccount(CreateAccountCmd cmd) {
         Long accountId = null;
         String username = cmd.getUsername();
         String password = cmd.getPassword();
@@ -1019,10 +998,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 
             Account account = _accountDao.findActiveAccount(accountName, domainId);
             if (account != null) {
-                if (account.getType() != userType) {
-                    throw new CloudRuntimeException("Account " + accountName + " is not the correct account type for user " + username);
-                }
-                accountId = account.getId();
+                throw new CloudRuntimeException("The specified account: "+account.getAccountName()+" already exists");
             }
 
             if (!_userAccountDao.validateUsernameInDomain(username, domainId)) {
@@ -1092,6 +1068,54 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             }
             throw new CloudRuntimeException(e.getMessage());
         }
+    }
+    
+    @Override
+    public UserVO createUser(CreateUserCmd cmd){
+    	String accountName = cmd.getAccountName();
+    	Long domainId = cmd.getDomainId();
+    	String userName = cmd.getUsername();
+    	String password = cmd.getPassword();
+    	String firstName = cmd.getFirstname();
+    	String lastName = cmd.getLastname();
+    	String email = cmd.getEmail();
+    	String timeZone = cmd.getTimezone();
+    	Long accountId = null;
+    	
+    	Account account = _accountDao.findActiveAccount(accountName, domainId);
+    	
+    	if( account == null){
+    		throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find account to create user");
+    	}else{
+    		accountId = account.getAccountId();
+    	}
+    	
+        if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
+            throw new CloudRuntimeException("The user " + userName + " already exists in domain " + domainId);
+        }
+
+        UserVO user = new UserVO();
+        user.setUsername(userName);
+        user.setPassword(password);
+        user.setState("enabled");
+        user.setFirstname(firstName);
+        user.setLastname(lastName);
+        user.setAccountId(accountId.longValue());
+        user.setEmail(email);
+        user.setTimezone(timeZone);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating user: " + userName + ", account: " + accountName + " (id:" + accountId + "), domain: " + domainId + " timezone:"+ timeZone);
+        }
+
+        UserVO dbUser = _userDao.persist(user);
+
+        if (!user.getPassword().equals(dbUser.getPassword())) {
+            throw new CloudRuntimeException("The user " + userName + " being creating is using a password that is different than what's in the db");
+        }
+        
+        EventUtils.saveEvent(new Long(1), new Long(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_CREATE, "User, " + userName + " for accountId = " + accountId
+                + " and domainId = " + domainId + " was created.");
+        return dbUser;
     }
     
     @Override
@@ -1206,20 +1230,8 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 
         boolean success = doSetUserStatus(userId, Account.ACCOUNT_STATE_DISABLED);
         if (success) {
-            List<UserVO> allUsersByAccount = _userDao.listByAccount(user.getAccountId());
-            for (UserVO oneUser : allUsersByAccount) {
-                if (oneUser.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
-                    return _userAccountDao.findById(userId);
-                }
-            }
-
-            // there are no enabled users attached to this user's account, disable the account
-            if (disableAccount(user.getAccountId())) {
-                return _userAccountDao.findById(userId);
-            } else {
-                throw new CloudRuntimeException("Unable to disable corresponding account for the user " + userId);
-            }
-
+        	//user successfully disabled
+        	return _userAccountDao.findById(userId);
         } else {
             throw new CloudRuntimeException("Unable to disable user " + userId);
         }
@@ -1318,22 +1330,26 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     }
     
     @Override
-    public boolean deleteUser(DeleteUserCmd cmd) {
-        Long userId = cmd.getId();
-        
-        //Verify that the user exists in the system
-        User user = _userDao.getUser(userId.longValue());
-        if (user == null) {
-            throw new InvalidParameterValueException("unable to find user " + userId);
-        }
-        
+    //This method deletes the account
+    public boolean deleteUserAccount(DeleteAccountCmd cmd) {
+        Long accountId = cmd.getId();
+                
         // If the user is a System user, return an error.  We do not allow this
-        Account account = _accountDao.findById(user.getAccountId());
+        Account account = _accountDao.findById(accountId);
         if ((account != null) && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
-            throw new InvalidParameterValueException("user id : " + userId + " is a system account, delete is not allowed");
+            throw new InvalidParameterValueException("Account id : " + accountId + " is a system account, delete is not allowed");
         }
         
-        return deleteUserInternal(userId, cmd.getStartEventId());
+        if(account == null){
+        	throw new InvalidParameterValueException("The specified account does not exist in the system");
+        }
+        
+        if(account.getRemoved() != null){
+        	s_logger.info("The account:"+account.getAccountName()+" is already removed");
+        	return true;
+        }
+        
+        return deleteAccountInternal(accountId, cmd.getStartEventId());
     }
     
     
@@ -1371,7 +1387,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     }
     
     @Override
-    public AccountVO lockAccount(LockAccountCmd cmd) {
+    public AccountVO lockAccount(DisableAccountCmd cmd) {
         Account adminAccount = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
@@ -1463,5 +1479,21 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             throw new CloudRuntimeException("Unable to update account " + accountName + " in domain " + domainId);
         }
     }
+
+	@Override
+	public boolean deleteUser(DeleteUserCmd deleteUserCmd) {
+		long id = deleteUserCmd.getId();
+		
+		UserVO user = _userDao.findById(id);
+		
+		if(user == null)
+			throw new InvalidParameterValueException("The specified user doesn't exist in the system");
+		
+        if ((user != null) && (user.getAccountId() == Account.ACCOUNT_ID_SYSTEM)) {
+            throw new InvalidParameterValueException("Account id : " + user.getAccountId() + " is a system account, delete for user associated with this account is not allowed");
+        }
+        
+        return _userDao.remove(id);
+	}
 
 }

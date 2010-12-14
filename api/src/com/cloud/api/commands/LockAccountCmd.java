@@ -66,7 +66,8 @@ public class LockAccountCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        Account result = _accountService.lockAccount(this);
+        Account result = null;
+        //result = _accountService.lockAccount(this);
         if (result != null){
             AccountResponse response = _responseGenerator.createAccountResponse(result);
             response.setResponseName(getCommandName());

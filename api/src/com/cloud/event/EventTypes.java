@@ -65,6 +65,9 @@ public class EventTypes {
 
     // Account events
     public static final String EVENT_ACCOUNT_DISABLE = "ACCOUNT.DISABLE";
+    public static final String EVENT_ACCOUNT_CREATE = "ACCOUNT.CREATE";
+    public static final String EVENT_ACCOUNT_DELETE = "ACCOUNT.DELETE";
+
     
 	// UserVO Events
 	public static final String EVENT_USER_LOGIN = "USER.LOGIN";

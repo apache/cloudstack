@@ -21,6 +21,7 @@ package com.cloud.user;
 import java.util.List;
 
 import com.cloud.acl.ControlledEntity;
+import com.cloud.api.commands.CreateUserCmd;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
@@ -107,9 +108,12 @@ public interface AccountManager extends Manager {
     
     boolean deleteAccount(AccountVO account);
     
-    boolean deleteUserInternal(long userId, long startEventId);
-    
     void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
     
     void checkAccess(Account account, ControlledEntity... entities) throws PermissionDeniedException;
+
+	boolean deleteAccountInternal(long accountId, long startEventId);
+
+	UserVO createUser(CreateUserCmd cmd);
+
 }

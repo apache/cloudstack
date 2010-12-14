@@ -2,6 +2,8 @@
 ### Please standardize naming conventions to camel-case (even for acronyms).
 
 ### Account commands
+createAccount=com.cloud.api.commands.CreateAccountCmd;1
+deleteAccount=com.cloud.api.commands.DeleteAccountCmd;1
 updateAccount=com.cloud.api.commands.UpdateAccountCmd;3
 disableAccount=com.cloud.api.commands.DisableAccountCmd;3
 enableAccount=com.cloud.api.commands.EnableAccountCmd;3
@@ -10,10 +12,10 @@ listAccounts=com.cloud.api.commands.ListAccountsCmd;15
 
 #### User commands
 createUser=com.cloud.api.commands.CreateUserCmd;1
-updateUser=com.cloud.api.commands.UpdateUserCmd;1
 deleteUser=com.cloud.api.commands.DeleteUserCmd;1
+updateUser=com.cloud.api.commands.UpdateUserCmd;1
 listUsers=com.cloud.api.commands.ListUsersCmd;7
-lockUser=com.cloud.api.commands.LockUserCmd;3
+####lockUser=com.cloud.api.commands.LockUserCmd;3
 disableUser=com.cloud.api.commands.DisableUserCmd;3
 enableUser=com.cloud.api.commands.EnableUserCmd;3
 

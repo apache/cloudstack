@@ -19,7 +19,9 @@ package com.cloud.user;
 
 import java.util.List;
 
+import com.cloud.api.commands.CreateAccountCmd;
 import com.cloud.api.commands.CreateUserCmd;
+import com.cloud.api.commands.DeleteAccountCmd;
 import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.DisableAccountCmd;
 import com.cloud.api.commands.DisableUserCmd;
@@ -42,13 +44,13 @@ public interface AccountService {
      * @param cmd the create command that has the username, email, password, account name, domain, timezone, etc. for creating the user.
      * @return the user if created successfully, null otherwise
      */
-    UserAccount createUser(CreateUserCmd cmd);
+    UserAccount createAccount(CreateAccountCmd cmd);
     /**
      * Deletes a user by userId
      * @param cmd - the delete command defining the id of the user to be deleted.
      * @return true if delete was successful, false otherwise
      */
-    boolean deleteUser(DeleteUserCmd cmd);
+    boolean deleteUserAccount(DeleteAccountCmd cmd);
 
     /**
      * Disables a user by userId
@@ -101,7 +103,8 @@ public interface AccountService {
      * @param cmd - the LockAccount command defining the accountId to be locked.
      * @return account object
      */
-    Account lockAccount(LockAccountCmd cmd);
+    //Account lockAccount(LockAccountCmd cmd);
+	Account lockAccount(DisableAccountCmd cmd);
 
     /**
      * Updates an account name
@@ -132,5 +135,9 @@ public interface AccountService {
     Account getSystemAccount();
     
     User getSystemUser();
+    
+    User createUser(CreateUserCmd cmd);
+	boolean deleteUser(DeleteUserCmd deleteUserCmd);
+
 
 }

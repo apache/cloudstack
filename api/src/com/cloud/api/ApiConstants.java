@@ -92,6 +92,7 @@ public class ApiConstants {
     public static final String JOB_STATUS = "jobstatus";
     public static final String LASTNAME = "lastname";
     public static final String LEVEL = "level";
+    public static final String LOCK = "lock";
     public static final String LUN = "lun";
     public static final String MAX = "max";
     public static final String MAX_SNAPS = "maxsnaps";

@@ -205,4 +205,8 @@ public interface ResponseGenerator {
     
     NetworkResponse createNetworkResponse(Network network);
 
+	UserResponse createUserResponse(User user);
+
+	UserResponse createUserAccountResponse(UserAccount user);
+
 }

@@ -26,13 +26,13 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserResponse;
-import com.cloud.user.User;
+import com.cloud.user.UserAccount;
 
-@Implementation(description="Creates a user for an account that already exists", responseObject=UserResponse.class)
-public class CreateUserCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateUserCmd.class.getName());
+@Implementation(description="Creates an account", responseObject=UserResponse.class)
+public class CreateAccountCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(CreateAccountCmd.class.getName());
 
-    private static final String s_name = "createuserresponse";
+    private static final String s_name = "createaccountresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -40,6 +40,9 @@ public class CreateUserCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="Creates the user under the specified account. If no account is specified, the username will be used as the account name.")
     private String accountName;
+
+    @Parameter(name=ApiConstants.ACCOUNT_TYPE, type=CommandType.LONG, required=true, description="Type of the account.  Specify 0 for user, 1 for root admin, and 2 for domain admin")
+    private Long accountType;
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Creates the user under the specified domain.")
     private Long domainId;
@@ -61,6 +64,10 @@ public class CreateUserCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="Unique username.")
     private String username;
+    
+    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain name of the Vms that belong to the domain")
+    private String networkdomain;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -68,6 +75,10 @@ public class CreateUserCmd extends BaseCmd {
 
     public String getAccountName() {
         return accountName;
+    }
+
+    public Long getAccountType() {
+        return accountType;
     }
 
     public Long getDomainId() {
@@ -98,6 +109,9 @@ public class CreateUserCmd extends BaseCmd {
         return username;
     }
 
+    public String getNetworkdomain() {
+        return networkdomain;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -109,13 +123,13 @@ public class CreateUserCmd extends BaseCmd {
     
     @Override
     public void execute(){
-        User user = _accountService.createUser(this);
+        UserAccount user = _accountService.createAccount(this);
         if (user != null) {
-            UserResponse response = _responseGenerator.createUserResponse(user);
+            UserResponse response = _responseGenerator.createUserAccountResponse(user);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a user");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create a user account");
         }
     }
 }

@@ -21,29 +21,25 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
-import com.cloud.event.EventTypes;
-import com.cloud.user.Account;
-import com.cloud.user.User;
-import com.cloud.user.UserContext;
+import com.cloud.api.response.UserResponse;
 
-@Implementation(description="Deletes a user account", responseObject=SuccessResponse.class)
-public class DeleteUserCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(DeleteUserCmd.class.getName());
-	private static final String s_name = "deleteuserresponse";
+@Implementation(description="Creates a user for an account", responseObject=UserResponse.class)
+public class DeleteUserCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteUserCmd.class.getName());
+
+    private static final String s_name = "deleteuserresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="User id")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Deletes a user")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -53,41 +49,15 @@ public class DeleteUserCmd extends BaseAsyncCmd {
         return id;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-	public static String getStaticName() {
-		return s_name;
-	}
-	
     @Override
-	public String getCommandName() {
+    public String getCommandName() {
         return s_name;
     }
-
-    @Override
-    public long getEntityOwnerId() {
-        Account account = UserContext.current().getAccount();
-        if (account != null) {
-            return account.getId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
-    }
-
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_USER_DELETE;
-    }
-
-    @Override
-    public String getEventDescription() {
-        User user = _responseGenerator.findUserById(getId());
-        return (user != null ? ("User " + user.getUsername() + " (id: " + user.getId() + ") and accountId = " + user.getAccountId()) : "user delete, but this user does not exist in the system");
-    }
-	
+    
     @Override
     public void execute(){
         boolean result = _accountService.deleteUser(this);

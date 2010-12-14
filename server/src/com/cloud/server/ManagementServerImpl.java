@@ -3257,12 +3257,7 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
             List<AccountVO> accounts = _accountDao.search(sc, null);
             for (AccountVO account : accounts) {
-                SearchCriteria<UserVO> userSc = _userDao.createSearchCriteria();
-                userSc.addAnd("accountId", SearchCriteria.Op.EQ, account.getId());
-                List<UserVO> users = _userDao.search(userSc, null);
-                for (UserVO user : users) {
-                    success = (success && _accountMgr.deleteUserInternal(user.getId(), 0));
-                }
+                	success = (success && _accountMgr.deleteAccountInternal(account.getAccountId(), 0));
             }
         }
 

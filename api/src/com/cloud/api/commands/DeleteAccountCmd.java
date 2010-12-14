@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
+
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
@@ -25,53 +26,45 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.AccountResponse;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Disables an account", responseObject=AccountResponse.class)
-public class DisableAccountCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(DisableAccountCmd.class.getName());
-    private static final String s_name = "disableaccountresponse";
+@Implementation(description="Deletes a account, and all users associated with this account", responseObject=SuccessResponse.class)
+public class DeleteAccountCmd extends BaseAsyncCmd {
+	public static final Logger s_logger = Logger.getLogger(DeleteAccountCmd.class.getName());
+	private static final String s_name = "deleteaccountresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="Disables specified account.")
-    private String accountName;
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Account id")
+    private Long id;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, required=true, description="Disables specified account in this domain.")
-    private Long domainId;
-
-    @Parameter(name=ApiConstants.LOCK, type=CommandType.BOOLEAN, required=true, description="If true, only lock the account; else disable the account")
-    private Boolean lockRequested;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getAccountName() {
-        return accountName;
+    public Long getId() {
+        return id;
     }
 
-    public Long getDomainId() {
-        return domainId;
-    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
+	public static String getStaticName() {
+		return s_name;
+	}
+	
     @Override
-    public String getCommandName() {
+	public String getCommandName() {
         return s_name;
-    }
-
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_ACCOUNT_DISABLE;
     }
 
     @Override
@@ -85,23 +78,24 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public String getEventDescription() {
-        return  "disabling account: " + getAccountName() + " in domain: " + getDomainId();
+    public String getEventType() {
+        return EventTypes.EVENT_ACCOUNT_DELETE;
     }
 
     @Override
+    public String getEventDescription() {
+        User user = _responseGenerator.findUserById(getId());
+        return (user != null ? ("User " + user.getUsername() + " (id: " + user.getId() + ") and accountId = " + user.getAccountId()) : "user delete, but this user does not exist in the system");
+    }
+	
+    @Override
     public void execute(){
-    	Account result = null;
-    	if(lockRequested)
-    		result = _accountService.lockAccount(this);
-    	else
-    		result = _accountService.disableAccount(this);
-        if (result != null){
-            AccountResponse response = _responseGenerator.createAccountResponse(result);
-            response.setResponseName(getCommandName());
+        boolean result = _accountService.deleteUserAccount(this);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, lockRequested == true ? "Failed to lock account" : "Failed to disable account" );
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete user account and all corresponding users");
         }
     }
 }
