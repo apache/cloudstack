@@ -1370,14 +1370,14 @@ a:hover {
 }
 
 .language_dropdownbox {
-	width:105px;
+	width:101px;
 	height:auto;
 	position:absolute;
-	background:#FFF repeat top left;
-	border:1px solid #999;
+	background:#053a52 repeat top left;
+	border:1px solid #aac5d1;
 	margin:0;
 	padding:0 0 15px 0;
-	top:16px;
+	top:17px;
 	z-index:1010;
 }
 
@@ -1386,7 +1386,7 @@ a:hover {
 	height:auto;
 	float:left;
 	list-style:none;
-	margin:5px 0 0 10px;
+	margin:3px 0 0 8px;
 	display:inline;
 	padding:0;
 }
@@ -1398,15 +1398,15 @@ a:hover {
 	list-style:none;
 	margin:0px 0 0 0;
 	border-bottom:1px dashed #999;
-	color:#333;
+	color:#FFF;
 	font-size:11px;
 	font-weight:normal;
 	display:inline;
-	padding:6px 0 6px 3px;
+	padding:4px 0 4px 3px;
 }
 
 .language_dropdownbox li:hover {
-	background:#e9e9e9 repeat top left;
+	background:#547887 repeat top left;
 }
 
 #main_contentpanel {
@@ -1436,7 +1436,7 @@ a:hover {
 	width:220px;
 	height:auto;
 	float:left;
-	margin:3px 0 0 0;
+	margin:0 0 0 0;
 	list-style:none;
 	padding:0;
 }
@@ -1679,8 +1679,8 @@ a:hover {
 }
 
 .leftmenu_arrows {
-	width:9px;
-	height:9px;
+	width:12px;
+	height:12px;
 	float:left;
 	margin:2px 4px 0 0;
 	padding:0;
