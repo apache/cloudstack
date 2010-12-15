@@ -160,6 +160,7 @@
 </div>
 
 
+
 <!-- advanced search template (begin) -->
 <div id="advanced_search_template" class="adv_searchpopup" style="display: none;">
     <div class="adv_searchformbox">
@@ -172,13 +173,41 @@
                 <label>
                     Name:</label>
                 <input class="text" type="text" id="adv_search_name" />
-            </li>           
-            <li id="adv_search_domain_li" style="display: none;">
-                <label>
-                    Domain:</label>
-                <select class="select" id="adv_search_domain">
+            </li>
+            
+            <li>
+                <label>Availability:</label>
+            	<select class="select" id="adv_search_availability">
+					<option value=""></option>
+					<option value="Required">Required</option>
+					<option value="Optional">Optional</option>
+					<option value="Unavailable">Unavailable</option>					
                 </select>
-            </li>           
+            </li>
+            
+            <li>
+                <label>Type:</label>
+            	<select class="select" id="adv_search_type">
+					<option value=""></option>
+					<option value="Virtual">Virtual</option>
+					<option value="Direct">Direct</option>
+					<option value="DirectPodBased">DirectPodBased</option>					
+                </select>
+            </li>
+            
+            <li>
+                <label>Traffic Type:</label>
+            	<select class="select" id="adv_search_traffictype">
+					<option value=""></option>
+					<option value="Public">Public</option>
+					<option value="Guest">Guest</option>
+					<option value="Storage">Storage</option>
+					<option value="Management">Management</option>
+					<option value="Control">Control</option>
+					<option value="Vpn">Vpn</option>					
+                </select>
+            </li>
+           
         </ol>
         </form>
         <div class="adv_search_actionbox">
@@ -188,3 +217,4 @@
     </div>
 </div>
 <!-- advanced search template (end) -->
+

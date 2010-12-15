@@ -17,19 +17,26 @@
  */
 
 function networkOfferingGetSearchParams() {
-    var moreCriteria = [];	
-
+   var moreCriteria = [];	
+   
 	var $advancedSearchPopup = $("#advanced_search_popup");
 	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {
 	    var name = $advancedSearchPopup.find("#adv_search_name").val();							
 		if (name!=null && trim(name).length > 0) 
-			moreCriteria.push("&name="+todb(name));	
+			moreCriteria.push("&name="+todb(name));		
         
-        if ($advancedSearchPopup.find("#adv_search_domain_li").css("display") != "none") {		
-		    var domainId = $advancedSearchPopup.find("#adv_search_domain").val();		
-		    if (domainId!=null && domainId.length > 0) 
-			    moreCriteria.push("&domainid="+domainId);	
-    	}	    
+        var availability = $advancedSearchPopup.find("#adv_search_availability").val();				
+	    if (availability!=null && availability.length > 0) 
+		    moreCriteria.push("&availability="+todb(availability));	
+		    
+		var type = $advancedSearchPopup.find("#adv_search_type").val();				
+	    if (type!=null && type.length > 0) 
+		    moreCriteria.push("&type="+todb(type));	
+		    
+		var traffictype = $advancedSearchPopup.find("#adv_search_traffictype").val();				
+	    if (traffictype!=null && traffictype.length > 0) 
+		    moreCriteria.push("&traffictype="+todb(traffictype));	        
+       
 	} 
 	else {     			    		
 	    var searchInput = $("#basic_search").find("#search_input").val();	 
@@ -37,8 +44,8 @@ function networkOfferingGetSearchParams() {
             moreCriteria.push("&keyword="+todb(searchInput));	       
         }        
 	}
-	
-	return moreCriteria.join("");          
+		
+	return moreCriteria.join("");         
 }
 
 function afterLoadNetworkOfferingJSP() {   
