@@ -226,7 +226,112 @@ function hostPrimaryStorageJSONToTemplate(jsonObj, $template) {
 	$template.find("#disksizeallocated").text(convertBytes(jsonObj.disksizeallocated));
 	
 	$template.find("#tags").text(fromdb(jsonObj.tags));   	
+	
+	var $actionLink = $template.find("#primarystorage_action_link");		
+	$actionLink.bind("mouseover", function(event) {
+        $(this).find("#primarystorage_action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {
+        $(this).find("#primarystorage_action_menu").hide();    
+        return false;
+    });		
+	
+	var $actionMenu = $actionLink.find("#primarystorage_action_menu");
+    $actionMenu.find("#action_list").empty();	
+    
+    buildActionLinkForSubgridItem("Enable Maintenance Mode", hostPrimarystorageActionMap, $actionMenu, $template);	
+    buildActionLinkForSubgridItem("Cancel Maintenance Mode", hostPrimarystorageActionMap, $actionMenu, $template);	
+    buildActionLinkForSubgridItem("Delete Primary Storage", hostPrimarystorageActionMap, $actionMenu, $template);	
 }  
+
+var hostPrimarystorageActionMap = {             
+    "Enable Maintenance Mode": {              
+        isAsyncJob: true,
+        asyncJobResponse: "prepareprimarystorageformaintenanceresponse",
+        dialogBeforeActionFn: doEnableMaintenanceModeForPrimaryStorageInHostPage,
+        inProcessText: "Enabling Maintenance Mode....",
+        afterActionSeccessFn: function(json, id, $subgridItem) {             
+            var item = json.queryasyncjobresultresponse.jobresult.storagepool; 
+            hostPrimaryStorageJSONToTemplate(item, $subgridItem);                                
+            $subgridItem.find("#after_action_info").text("We are actively enabling maintenance. Please refresh periodically for an updated status.");
+        }
+    },
+    "Cancel Maintenance Mode": {              
+        isAsyncJob: true,
+        asyncJobResponse: "cancelprimarystoragemaintenanceresponse",
+        dialogBeforeActionFn: doCancelMaintenanceModeForPrimaryStorageInHostPage,
+        inProcessText: "Cancelling Maintenance Mode....",
+        afterActionSeccessFn: function(json, id, $subgridItem) {   
+            var item = json.queryasyncjobresultresponse.jobresult.storagepool;    
+            hostPrimaryStorageJSONToTemplate(item, $subgridItem);                                
+            $subgridItem.find("#after_action_info").text("We are actively cancelling your scheduled maintenance.  Please refresh periodically for an updated status.");
+        }
+    },
+    "Delete Primary Storage": {              
+        isAsyncJob: false,        
+        dialogBeforeActionFn: doDeletePrimaryStorageInHostPage,
+        inProcessText: "Deleting Primary Storage....",
+        afterActionSeccessFn: function(json, id, $subgridItem) {   
+            $subgridItem.slideUp("slow", function() {
+                $(this).remove();
+            });               
+        }
+    }
+}
+
+function doEnableMaintenanceModeForPrimaryStorageInHostPage($actionLink, $subgridItem) { 
+    var jsonObj = $subgridItem.data("jsonObj");
+       
+    $("#dialog_confirmation")
+    .text("Warning: placing the primary storage into maintenance mode will cause all VMs using volumes from it to be stopped.  Do you want to continue?")
+    .dialog("option", "buttons", {	                    
+         "OK": function() {
+             $(this).dialog("close");      
+             var id = jsonObj.id;
+             var apiCommand = "command=enableStorageMaintenance&id="+id;
+             doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem);		
+         },
+         "Cancel": function() {	                         
+             $(this).dialog("close");
+         }
+    }).dialog("open");     
+} 
+
+function doCancelMaintenanceModeForPrimaryStorageInHostPage($actionLink, $subgridItem) { 
+    var jsonObj = $subgridItem.data("jsonObj");
+       
+    $("#dialog_confirmation")
+    .text("Please confirm you want to cancel maintenace")
+    .dialog("option", "buttons", {	                    
+         "OK": function() {
+             $(this).dialog("close");      
+             var id = jsonObj.id;
+             var apiCommand = "command=cancelStorageMaintenance&id="+id;
+             doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem);		
+         },
+         "Cancel": function() {	                         
+             $(this).dialog("close");
+         }
+    }).dialog("open");     
+} 
+
+function doDeletePrimaryStorageInHostPage($actionLink, $subgridItem) { 
+    var jsonObj = $subgridItem.data("jsonObj");
+       
+    $("#dialog_confirmation_delete_primarystorage")
+    .dialog("option", "buttons", {	                    
+         "OK": function() {
+             $(this).dialog("close");      
+             var id = jsonObj.id;
+             var apiCommand = "command=deleteStoragePool&id="+id;
+             doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem);		
+         },
+         "Cancel": function() {	                         
+             $(this).dialog("close");
+         }
+    }).dialog("open");     
+} 
 
 function hostJsonToInstanceTab() {       	
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
