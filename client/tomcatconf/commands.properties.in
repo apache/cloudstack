@@ -7,7 +7,7 @@ deleteAccount=com.cloud.api.commands.DeleteAccountCmd;1
 updateAccount=com.cloud.api.commands.UpdateAccountCmd;3
 disableAccount=com.cloud.api.commands.DisableAccountCmd;3
 enableAccount=com.cloud.api.commands.EnableAccountCmd;3
-lockAccount=com.cloud.api.commands.LockAccountCmd;3
+###lockAccount=com.cloud.api.commands.LockAccountCmd;3
 listAccounts=com.cloud.api.commands.ListAccountsCmd;15
 
 #### User commands

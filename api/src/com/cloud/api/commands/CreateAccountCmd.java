@@ -25,6 +25,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.UserResponse;
 import com.cloud.user.UserAccount;
 
@@ -125,7 +126,7 @@ public class CreateAccountCmd extends BaseCmd {
     public void execute(){
         UserAccount user = _accountService.createAccount(this);
         if (user != null) {
-            UserResponse response = _responseGenerator.createUserAccountResponse(user);
+            AccountResponse response = _responseGenerator.createUserAccountResponse(user);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {

@@ -207,6 +207,6 @@ public interface ResponseGenerator {
 
 	UserResponse createUserResponse(User user);
 
-	UserResponse createUserAccountResponse(UserAccount user);
+	AccountResponse createUserAccountResponse(UserAccount user);
 
 }

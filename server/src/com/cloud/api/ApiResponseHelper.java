@@ -203,28 +203,10 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         return userResponse;
     }
-
     //this method is used for response generation via createAccount (which creates an account + user)
     @Override
-    public UserResponse createUserAccountResponse(UserAccount user) {
-        UserResponse userResponse = new UserResponse();
-        userResponse.setAccountName(user.getAccountName());
-        userResponse.setAccountType(user.getType());
-        userResponse.setCreated(user.getCreated());
-        userResponse.setDomainId(user.getDomainId());
-        userResponse.setDomainName(ApiDBUtils.findDomainById(user.getDomainId()).getName());
-        userResponse.setEmail(user.getEmail());
-        userResponse.setFirstname(user.getFirstname());
-        userResponse.setId(user.getId());
-        userResponse.setLastname(user.getLastname());
-        userResponse.setState(user.getState());
-        userResponse.setTimezone(user.getTimezone());
-        userResponse.setUsername(user.getUsername());
-        userResponse.setApiKey(user.getApiKey());
-        userResponse.setSecretKey(user.getSecretKey());
-        userResponse.setObjectName("account");
-
-        return userResponse;
+    public AccountResponse createUserAccountResponse(UserAccount user) {
+    	return createAccountResponse(ApiDBUtils.findAccountById(user.getAccountId()));
     }
 
     
