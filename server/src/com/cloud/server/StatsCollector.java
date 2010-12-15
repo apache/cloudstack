@@ -258,6 +258,8 @@ public class StatsCollector {
 		
 		public void run() {
 			try {
+				s_logger.debug("StorageCollector is running...");
+				
 				SearchCriteria sc = _hostDao.createSearchCriteria();
 				sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
 				sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.Storage.toString());
@@ -277,12 +279,16 @@ public class StatsCollector {
                 sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.SecondaryStorage.toString());
                 
                 hosts = _hostDao.search(sc, null);
-                for (HostVO host : hosts) {
-                    GetStorageStatsCommand command = new GetStorageStatsCommand(host.getGuid());
-                    Answer answer = _agentMgr.easySend(host.getId(), command);
-                    if (answer != null && answer.getResult()) {
-                        storageStats.put(host.getId(), (StorageStats)answer);
-                    }
+                try{
+	                for (HostVO host : hosts) {
+	                    GetStorageStatsCommand command = new GetStorageStatsCommand(host.getGuid());
+	                    Answer answer = _agentMgr.easySend(host.getId(), command);
+	                    if (answer != null && answer.getResult()) {
+	                        storageStats.put(host.getId(), (StorageStats)answer);
+	                    }
+	                }
+                }catch(Exception e){
+                	s_logger.warn("Caught exception for StorageCollector " +e.getMessage());
                 }
 				_storageStats = storageStats;
 				
@@ -297,9 +303,6 @@ public class StatsCollector {
 					}
 				}
 				_storagePoolStats = storagePoolStats;
-
-				// a list to store the new capacity entries that will be committed once everything is calculated
-				List<CapacityVO> newCapacities = new ArrayList<CapacityVO>();
 
                 // Updating the storage entries and creating new ones if they dont exist.
 				Transaction txn = Transaction.open(Transaction.CLOUD_DB);
@@ -331,10 +334,10 @@ public class StatsCollector {
                                 CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), stats.getByteUsed(), stats.getCapacityBytes(), capacityType);
                                 _capacityDao.persist(capacity);
                             }else{ //Update if it already exists.                             
-                                CapacityVO capacity = capacities.get(0);
+                                CapacityVO capacity = _capacityDao.createForUpdate(capacities.get(0).getId());                                
                                 capacity.setUsedCapacity(stats.getByteUsed());
                                 capacity.setTotalCapacity(stats.getCapacityBytes());
-                                _capacityDao.update(capacity.getId(), capacity);
+                                _capacityDao.update(capacities.get(0).getId(), capacity);
                             }
                         }
                     }// End of for
