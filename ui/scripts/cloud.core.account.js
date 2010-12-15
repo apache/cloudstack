@@ -517,8 +517,10 @@ function accountUserJSONToTemplate(jsonObj, $template) {
         buildActionLinkForSubgridItem("Generate Keys", accountUserActionMap, $actionMenu, $template);	    
         noAvailableActions = false;
         
-        if(jsonObj.id != systemUserId && jsonObj.id != adminUserId) 
+        if(jsonObj.id != systemUserId && jsonObj.id != adminUserId) {
+            buildActionLinkForSubgridItem("Disable User", accountUserActionMap, $actionMenu, $template);	  
             buildActionLinkForSubgridItem("Delete User", accountUserActionMap, $actionMenu, $template);	  
+        }
 	} 	
 	
 	if(noAvailableActions == true) {
@@ -755,6 +757,16 @@ var accountUserActionMap = {
             $subgridItem.find("#secretkey").text(fromdb(jsonObj.secretkey));	
         }            
     },
+    "Disable User": {              
+        api: "disableUser",     
+        isAsyncJob: true,
+        asyncJobResponse: "disableuserresponse",		
+        inProcessText: "Disabling User....",
+        afterActionSeccessFn: function(json, id, $subgridItem) {                 
+            var item = json.queryasyncjobresultresponse.jobresult.user;    
+            accountUserJSONToTemplate(item, $subgridItem); 
+        }
+    } ,
     "Delete User": {
         api: "deleteUser",            
         isAsyncJob: false,
