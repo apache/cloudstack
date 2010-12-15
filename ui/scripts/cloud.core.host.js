@@ -52,9 +52,9 @@ function afterLoadHostJSP($midmenuItem1) {
     initDialog("dialog_update_os");
          
     // switch between different tabs 
-    var tabArray = [$("#tab_details"), $("#tab_instance"), $("#tab_router"), $("#tab_systemvm"), $("#tab_statistics")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_instance"), $("#tab_content_router"), $("#tab_content_systemvm"), $("#tab_content_statistics")];
-    var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToInstanceTab, hostJsonToRouterTab, hostJsonToSystemvmTab, hostJsonToStatisticsTab];
+    var tabArray = [$("#tab_details"), $("#tab_primarystorage"), $("#tab_instance"), $("#tab_router"), $("#tab_systemvm"), $("#tab_statistics")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_primarystorage"), $("#tab_content_instance"), $("#tab_content_router"), $("#tab_content_systemvm"), $("#tab_content_statistics")];
+    var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToPrimaryStorageTab, hostJsonToInstanceTab, hostJsonToRouterTab, hostJsonToSystemvmTab, hostJsonToStatisticsTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);    
     
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);         
@@ -169,6 +169,64 @@ function hostJsonToDetailsTab() {
 	$thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();               
 }
+
+function hostJsonToPrimaryStorageTab() {       	
+	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
+        return;
+    
+    var jsonObj = $midmenuItem1.data("jsonObj");
+    if(jsonObj == null)
+        return;
+    
+    var $thisTab = $("#right_panel_content #tab_content_primarystorage");
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show(); 
+        
+    $.ajax({
+        cache: false,
+        data: createURL("command=listStoragePools&clusterid="+jsonObj.clusterid),
+        dataType: "json",        
+        success: function(json) {    
+            var items = json.liststoragepoolsresponse.storagepool;      
+            if(items != null && items.length > 0) {
+                var $container = $thisTab.find("#tab_container").empty();
+                var $template = $("#primarystorage_tab_template"); 		
+                for(var i=0; i<items.length;i++) { 
+                    var $newTemplate = $template.clone(true);	               
+	                hostPrimaryStorageJSONToTemplate(items[i], $newTemplate); 
+	                $container.append($newTemplate.show());                            
+                }                 
+            }  
+            $thisTab.find("#tab_spinning_wheel").hide();    
+            $thisTab.find("#tab_container").show();    		                
+        }
+    });	     
+} 
+
+function hostPrimaryStorageJSONToTemplate(jsonObj, $template) {
+    $template.data("jsonObj", jsonObj);     
+    $template.attr("id", "host_primarystorage_"+jsonObj.id).data("hostPrimarystorageId", jsonObj.id);        
+    $template.find("#grid_header_title").text(fromdb(jsonObj.name));
+    $template.find("#id").text(fromdb(jsonObj.id));
+    $template.find("#name").text(fromdb(jsonObj.name));
+        
+    setHostStateInRightPanel(fromdb(jsonObj.state), $template.find("#state"));
+    
+    $template.find("#zonename").text(fromdb(jsonObj.zonename));
+    $template.find("#podname").text(fromdb(jsonObj.podname));
+    $template.find("#clustername").text(fromdb(jsonObj.clustername));
+	var storageType = "ISCSI Share";
+	if (jsonObj.type == 'NetworkFilesystem') 
+	    storageType = "NFS Share";
+    $template.find("#type").text(fromdb(storageType));
+    $template.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
+    $template.find("#path").text(fromdb(jsonObj.path));                
+	$template.find("#disksizetotal").text(convertBytes(jsonObj.disksizetotal));
+	$template.find("#disksizeallocated").text(convertBytes(jsonObj.disksizeallocated));
+	
+	$template.find("#tags").text(fromdb(jsonObj.tags));   	
+}  
 
 function hostJsonToInstanceTab() {       	
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
