@@ -30,6 +30,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor;
 
 @Local(value=Discoverer.class)
 public class DummyHostDiscoverer implements Discoverer {
@@ -88,7 +89,12 @@ public class DummyHostDiscoverer implements Discoverer {
     public boolean stop() {
         return true;
     }
-
+    
+    @Override
+	public boolean matchHypervisor(String hypervisor) {
+    	return false;
+    }
+    
 	@Override
 	public void postDiscovery(List<HostVO> hosts, long msId) {
 		//do nothing

@@ -34,6 +34,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ServerResource;
@@ -236,6 +237,11 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
         	_useServiceVM = true;
         }
         return true;
+    }
+    
+    @Override
+	public boolean matchHypervisor(String hypervisor) {
+    	return true;
     }
 
 	@Override

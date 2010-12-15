@@ -222,7 +222,8 @@ public interface AgentManager extends Manager {
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException;
     public boolean reconnect(final long hostId) throws AgentUnavailableException;
 
-    public List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+    public List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password, String hypervisor) 
+    	throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
 
 	Answer easySend(Long hostId, Command cmd, int timeout);
 

@@ -23,6 +23,7 @@ import java.util.Map;
 
 import com.cloud.exception.DiscoveryException;
 import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.component.Adapter;
 
 /**
@@ -41,4 +42,6 @@ public interface Discoverer extends Adapter {
     Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI uri, String username, String password) throws DiscoveryException;
 
 	void postDiscovery(List<HostVO> hosts, long msId)  throws DiscoveryException;
+	
+	boolean matchHypervisor(String hypervisor);
 }

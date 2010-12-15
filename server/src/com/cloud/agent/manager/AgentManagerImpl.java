@@ -118,6 +118,7 @@ import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
 import com.cloud.maid.StackMaid;
@@ -557,18 +558,19 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         if( clusterName == null && clusterId == null ) {
             clusterName = "Standalone-" + url;
         }
-        return discoverHosts(dcId, podId, clusterId, clusterName, url, username, password);
+        return discoverHosts(dcId, podId, clusterId, clusterName, url, username, password, cmd.getHypervisor());
     }
 
     @Override
     public List<? extends Host> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         Long dcId = cmd.getZoneId();
         String url = cmd.getUrl();
-        return discoverHosts(dcId, null, null, null, url, null, null);
+        return discoverHosts(dcId, null, null, null, url, null, null, "");
     }
 
     @Override
-    public List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+    public List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId, String clusterName, String url, String username, String password, String hypervisorType) 
+    	throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
     	URI uri = null;
     	
         //Check if the zone exists in the system
@@ -639,6 +641,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         Enumeration<Discoverer> en = _discoverers.enumeration();
         while (en.hasMoreElements()) {
             Discoverer discoverer = en.nextElement();
+            if(hypervisorType != null) {
+            	if(!discoverer.matchHypervisor(hypervisorType))
+            		continue;
+            }
+            
             Map<? extends ServerResource, Map<String, String>> resources = null;
             
             try {

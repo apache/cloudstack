@@ -52,6 +52,7 @@ import com.cloud.host.HostInfo;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase;
 import com.cloud.hypervisor.xen.resource.XcpServerResource;
@@ -478,7 +479,14 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         createXsToolsISO();
         return true;
     }
-
+    
+    @Override
+	public boolean matchHypervisor(String hypervisor) {
+    	if(hypervisor == null)
+    		return true;
+    	return Hypervisor.HypervisorType.XenServer.toString().equalsIgnoreCase(hypervisor);
+    }
+    
     @Override
     public void postDiscovery(List<HostVO> hosts, long msId)  throws DiscoveryException{
         //do nothing
@@ -540,4 +548,5 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     public boolean processTimeout(long agentId, long seq) {
         return false;
     }
+    
 }

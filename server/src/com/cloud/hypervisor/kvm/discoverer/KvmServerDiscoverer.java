@@ -29,6 +29,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
 import com.cloud.resource.Discoverer;
@@ -310,6 +311,18 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 	public void postDiscovery(List<HostVO> hosts, long msId)
 			throws DiscoveryException {
 		// TODO Auto-generated method stub
-		
 	}
+	
+	public Hypervisor.HypervisorType getHypervisorType() {
+		return Hypervisor.HypervisorType.KVM;
+	}
+	
+    @Override
+	public boolean matchHypervisor(String hypervisor) {
+    	// for backwards compatibility, if not supplied, always let to try it
+    	if(hypervisor == null)
+    		return true;
+    	
+    	return Hypervisor.HypervisorType.KVM.toString().equalsIgnoreCase(hypervisor);
+    }
 }
