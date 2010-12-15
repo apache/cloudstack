@@ -897,6 +897,7 @@
                 <select class="select" id="add_pool_protocol">
                     <option value="nfs">NFS</option>
                     <option value="iscsi">ISCSI</option>
+                    <option value="vmfs">VMFS</option>
                 </select>
             </li>
             <li>

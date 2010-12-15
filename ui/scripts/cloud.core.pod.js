@@ -484,7 +484,7 @@ function initAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenu
 			    isValid &= validateDropDownBox("Cluster", $thisDialog.find("#pool_cluster"), $thisDialog.find("#pool_cluster_errormsg"), false);  //required, reset error text					    				
 			    isValid &= validateString("Name", $thisDialog.find("#add_pool_name"), $thisDialog.find("#add_pool_name_errormsg"));
 			    isValid &= validateString("Server", $thisDialog.find("#add_pool_nfs_server"), $thisDialog.find("#add_pool_nfs_server_errormsg"));	
-				if (protocol == "nfs") {
+				if (protocol == "nfs" || protocol == "vmfs") {
 					isValid &= validateString("Path", $thisDialog.find("#add_pool_path"), $thisDialog.find("#add_pool_path_errormsg"));	
 				} else {
 					isValid &= validateString("Target IQN", $thisDialog.find("#add_pool_iqn"), $thisDialog.find("#add_pool_iqn_errormsg"));	
@@ -514,6 +514,11 @@ function initAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenu
 					if(path.substring(0,1)!="/")
 						path = "/" + path; 
 					url = nfsURL(server, path);
+				} else if (protocol == "vmfs") {
+					var path = trim($thisDialog.find("#add_pool_path").val());
+					if(path.substring(0,1)!="/")
+						path = "/" + path; 
+					url = vmfsURL(server, path);
 				} else {
 					var iqn = trim($thisDialog.find("#add_pool_iqn").val());
 					if(iqn.substring(0,1)!="/")
@@ -660,6 +665,15 @@ function nfsURL(server, path) {
 	return url;
 }
 
+function vmfsURL(server, path) {
+    var url;
+    if(server.indexOf("://")==-1)
+	    url = "vmfs://" + server + path;
+	else
+	    url = server + path;
+	return url;
+}
+
 function iscsiURL(server, iqn, lun) {
     var url;
     if(server.indexOf("://")==-1)
@@ -676,6 +690,10 @@ function bindEventHandlerToDialogAddPool($dialogAddPool) {
 			$dialogAddPool.find("#add_pool_iqn_container,#add_pool_lun_container").show();
 		} 
 		else if ($(this).val() == "nfs") {
+			$dialogAddPool.find("#add_pool_path_container").show();
+			$dialogAddPool.find("#add_pool_iqn_container,#add_pool_lun_container").hide();
+		}
+		else if ($(this).val() == "vmfs") {
 			$dialogAddPool.find("#add_pool_path_container").show();
 			$dialogAddPool.find("#add_pool_iqn_container,#add_pool_lun_container").hide();
 		}
