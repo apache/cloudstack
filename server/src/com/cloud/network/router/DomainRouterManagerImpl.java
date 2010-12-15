@@ -2275,15 +2275,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         		router.setPrivateMacAddress(nic.getMacAddress());
         	}
         }
-      //source NAT address is stored in /proc/cmdline of the domR and gets
+        //source NAT address is stored in /proc/cmdline of the domR and gets
 		//reassigned upon powerup. Source NAT rule gets configured in StartRouter command
     	final List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(router.getAccountId(), router.getDataCenterId(), null);
-		final List<String> ipAddrList = new ArrayList<String>();
-		for (final IPAddressVO ipVO : ipAddrs) {
-			ipAddrList.add(ipVO.getAddress());
-		}
-		if (!ipAddrList.isEmpty()) {	  
-			_networkMgr.getAssociateIPCommands(router, ipAddrList, true, 0, cmds);               
+		if (!ipAddrs.isEmpty()) {	  
+			cmds = getAssociateIPCommands(router, ipAddrs, cmds, 0);               
 		}
         return true;
     }
@@ -2295,10 +2291,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
             return false;
         }
-        
-        // FIXME:  Need to check return values from ipassoc command
-       
-      
+
         return true;
     }
     
@@ -2557,15 +2550,15 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         return router;
     }
     
-    private void reconstructRouterPortForwardingRules(Commands cmds, List<? extends IpAddress> ipAddrs) {
-        List<? extends PortForwardingRule> rules = _rulesMgr.gatherPortForwardingRulesForApplication(ipAddrs);
-        if (rules.size() == 0) {
-            s_logger.debug("There are not port forwarding rules to send. ");
-            return;
-        }
-        SetPortForwardingRulesCommand pfrCmd = new SetPortForwardingRulesCommand(rules);
-        cmds.addCommand(pfrCmd);
-    }
+//    private void reconstructRouterPortForwardingRules(Commands cmds, List<? extends IpAddress> ipAddrs) {
+//        List<? extends PortForwardingRule> rules = _rulesMgr.gatherPortForwardingRulesForApplication(ipAddrs);
+//        if (rules.size() == 0) {
+//            s_logger.debug("There are not port forwarding rules to send. ");
+//            return;
+//        }
+//        SetPortForwardingRulesCommand pfrCmd = new SetPortForwardingRulesCommand(rules);
+//        cmds.addCommand(pfrCmd);
+//    }
     /*
     private List<? extends IpAddress> reconstructRouterIpAssocations(Commands cmds, VirtualRouter router) {
         List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(router.getAccountId(), router.getDataCenterId(), null);
@@ -2573,81 +2566,6 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     }
     */
     
-    public boolean associateIP(final DomainRouterVO router, final List<String> ipAddrList, final boolean add, long vmId) {
-        Commands cmds = new Commands(OnError.Continue);
-        boolean sourceNat = false;
-        Map<VlanVO, ArrayList<IPAddressVO>> vlanIpMap = new HashMap<VlanVO, ArrayList<IPAddressVO>>();
-        for (final String ipAddress: ipAddrList) {
-            IPAddressVO ip = _ipAddressDao.findById(ipAddress);
-
-            VlanVO vlan = _vlanDao.findById(ip.getVlanId());
-            ArrayList<IPAddressVO> ipList = vlanIpMap.get(vlan.getId());
-            if (ipList == null) {
-                ipList = new ArrayList<IPAddressVO>();
-            }
-            ipList.add(ip);
-            vlanIpMap.put(vlan, ipList);
-        }
-        for (Map.Entry<VlanVO, ArrayList<IPAddressVO>> vlanAndIp: vlanIpMap.entrySet()) {
-            boolean firstIP = true;
-            ArrayList<IPAddressVO> ipList = vlanAndIp.getValue();
-            Collections.sort(ipList, new Comparator<IPAddressVO>() {
-                @Override
-                public int compare(IPAddressVO o1, IPAddressVO o2) {
-                    return o1.getAddress().compareTo(o2.getAddress());
-                } });
-
-            for (final IPAddressVO ip: ipList) {
-                sourceNat = ip.isSourceNat();
-                VlanVO vlan = vlanAndIp.getKey();
-                String vlanId = vlan.getVlanId();
-                String vlanGateway = vlan.getVlanGateway();
-                String vlanNetmask = vlan.getVlanNetmask();
-
-                String vifMacAddress = null;
-                if (firstIP && add) {
-                    String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(ip.getDataCenterId());
-                    vifMacAddress = macAddresses[1];
-                }
-                String vmGuestAddress = null;
-                if(vmId!=0){
-                    vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
-                }
-
-                cmds.addCommand(new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ip.getAddress(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress));
-
-                firstIP = false;
-            }
-        }
-
-        Answer[] answers = null;
-        try {
-            answers = _agentMgr.send(router.getHostId(), cmds);
-        } catch (final AgentUnavailableException e) {
-            s_logger.warn("Agent unavailable", e);
-            return false;
-        } catch (final OperationTimedoutException e) {
-            s_logger.warn("Timed Out", e);
-            return false;
-        }
-
-        if (answers == null) {
-            return false;
-        }
-
-        if (answers.length != ipAddrList.size()) {
-            return false;
-        }
-
-        // FIXME:  this used to be a loop for all answers, but then we always returned the
-        //         first one in the array, so what should really be done here?
-        if (answers.length > 0) {
-            Answer ans = answers[0];
-            return ans.getResult();
-        }
-
-        return true;
-    }
     /*
     
     private boolean reconstructRouterState(Network config, DomainRouterVO router, Commands cmds) {
@@ -2685,39 +2603,134 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     }
     */
     
-    private boolean resendDhcpEntries(Network config, DomainRouterVO router, Commands cmd){
-        final List<UserVmVO> vms = _vmDao.listBy(router.getId(), State.Creating, State.Starting, State.Running, State.Stopping, State.Stopped, State.Migrating);
-        Commands cmds = new Commands(OnError.Continue);
-        for (UserVmVO vm: vms) {
-            if (vm.getGuestIpAddress() == null || vm.getGuestMacAddress() == null || vm.getName() == null) {
-                continue;
-            }
-            DhcpEntryCommand decmd = new DhcpEntryCommand(vm.getGuestMacAddress(), vm.getGuestIpAddress(), router.getPrivateIpAddress(), vm.getName());
-            cmds.addCommand(decmd);
+//    private boolean resendDhcpEntries(Network config, DomainRouterVO router, Commands cmd){
+//        final List<UserVmVO> vms = _vmDao.listBy(router.getId(), State.Creating, State.Starting, State.Running, State.Stopping, State.Stopped, State.Migrating);
+//        Commands cmds = new Commands(OnError.Continue);
+//        for (UserVmVO vm: vms) {
+//            if (vm.getGuestIpAddress() == null || vm.getGuestMacAddress() == null || vm.getName() == null) {
+//                continue;
+//            }
+//            DhcpEntryCommand decmd = new DhcpEntryCommand(vm.getGuestMacAddress(), vm.getGuestIpAddress(), router.getPrivateIpAddress(), vm.getName());
+//            cmds.addCommand(decmd);
+//        }
+//        if (cmds.size() > 0) {
+//            try {
+//                _agentMgr.send(router.getHostId(), cmds);
+//            } catch (final AgentUnavailableException e) {
+//                s_logger.warn("agent unavailable", e);
+//            } catch (final OperationTimedoutException e) {
+//                s_logger.warn("Timed Out", e);
+//            }
+//            Answer[] answers = cmds.getAnswers();
+//            if (answers == null ){
+//                return false;
+//            }
+//            int i=0;
+//            while (i < cmds.size()) {
+//                Answer ans = answers[i];
+//                i++;
+//                if ((ans != null) && (ans.getResult())) {
+//                    continue;
+//                } else {
+//                    return false;
+//                }
+//            }
+//        }
+//        return true;
+//    }
+    
+
+    private Commands getAssociateIPCommands(final DomainRouterVO router, final List<? extends IpAddress> ipAddrList, Commands cmds, long vmId) {        
+        boolean sourceNat = false;
+         Map<VlanVO, ArrayList<IpAddress>> vlanIpMap = new HashMap<VlanVO, ArrayList<IpAddress>>();
+         for (final IpAddress ip: ipAddrList) {
+             VlanVO vlan = _vlanDao.findById(ip.getVlanId());
+             ArrayList<IpAddress> ipList = vlanIpMap.get(vlan);
+             if (ipList == null) {
+                 ipList = new ArrayList<IpAddress>();
+             }
+             ipList.add(ip);
+             vlanIpMap.put(vlan, ipList);
+         }
+         for (Map.Entry<VlanVO, ArrayList<IpAddress>> vlanAndIp: vlanIpMap.entrySet()) {
+             boolean firstIP = true;
+             ArrayList<IpAddress> ipList = vlanAndIp.getValue();
+             Collections.sort(ipList, new Comparator<IpAddress>() {
+                 @Override
+                 public int compare(IpAddress o1, IpAddress o2) {
+                     return o1.getAddress().compareTo(o2.getAddress());
+                 } });
+
+             for (final IpAddress ip: ipList) {
+                 boolean add = (ip.getState() == IpAddress.State.Releasing ? false : true);
+                 sourceNat = ip.isSourceNat();
+                 VlanVO vlan = vlanAndIp.getKey();
+                 String vlanId = vlan.getVlanId();
+                 String vlanGateway = vlan.getVlanGateway();
+                 String vlanNetmask = vlan.getVlanNetmask();
+
+                 String vifMacAddress = null;
+                 if (firstIP && add) {
+                     String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(ip.getDataCenterId());
+                     vifMacAddress = macAddresses[1];
+                 }
+                 String vmGuestAddress = null;
+                 if(vmId!=0){
+                     vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
+                 }
+
+                 cmds.addCommand("IPAssocCommand", new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ip.getAddress(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress));
+
+                 firstIP = false;
+             }
+         }
+         return cmds;
+    }
+    
+    
+    private boolean sendAssociateIPCommands(final DomainRouterVO router, Commands cmds) {
+        Answer[] answers = null;
+        try {
+            answers = _agentMgr.send(router.getHostId(), cmds);
+        } catch (final OperationTimedoutException e) {
+            s_logger.warn("Timed Out", e);
+            throw new ResourceUnavailableException("Unable to assign ip addresses", e);
         }
-        if (cmds.size() > 0) {
-            try {
-                _agentMgr.send(router.getHostId(), cmds);
-            } catch (final AgentUnavailableException e) {
-                s_logger.warn("agent unavailable", e);
-            } catch (final OperationTimedoutException e) {
-                s_logger.warn("Timed Out", e);
-            }
-            Answer[] answers = cmds.getAnswers();
-            if (answers == null ){
-                return false;
-            }
-            int i=0;
-            while (i < cmds.size()) {
-                Answer ans = answers[i];
-                i++;
-                if ((ans != null) && (ans.getResult())) {
-                    continue;
-                } else {
-                    return false;
-                }
-            }
+
+        if (answers == null) {
+            return false;
+        }
+
+        if (answers.length != cmds.size()) {
+            return false;
+        }
+
+        // FIXME:  Have to return state for individual ipAssoc command in the future
+        if (answers.length > 0) {
+            Answer ans = answers[0];
+            return ans.getResult();
         }
         return true;
+    }
+      
+    @Override
+    public boolean associateIP (Network network, List<? extends IpAddress> ipAddress) {
+        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
+        if (router == null) {
+            s_logger.warn("Unable to associate ip addresses, virtual router doesn't exist in the network " + network.getId());
+            throw new ResourceUnavailableException("Unable to assign ip addresses");
+        }
+        
+        if (router.getState() == State.Running || router.getState() == State.Starting) {
+            Commands cmds = new Commands(OnError.Continue);
+            //We have to resend all already associated ip addresses
+            cmds = getAssociateIPCommands(router, ipAddress, cmds, 0);
+            return sendAssociateIPCommands(router, cmds);
+        } else if (router.getState() == State.Stopped || router.getState() == State.Stopping){
+            return true;
+        } else {
+            s_logger.warn("Unable to associate ip addresses, virtual router is not in the right state " + router.getState());
+            throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState());
+        }
     }
 }

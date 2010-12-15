@@ -102,6 +102,7 @@ listVlanIpRanges=com.cloud.api.commands.ListVlanIpRangesCmd;1
 associateIpAddress=com.cloud.api.commands.AssociateIPAddrCmd;15
 disassociateIpAddress=com.cloud.api.commands.DisassociateIPAddrCmd;15
 listPublicIpAddresses=com.cloud.api.commands.ListPublicIpAddressesCmd;15
+restartNetwork=com.cloud.api.commands.RestartNetworkCmd;15
 
 #### firewall commands
 listPortForwardingRules=com.cloud.api.commands.ListPortForwardingRulesCmd;15

@@ -127,6 +127,4 @@ public interface NetworkManager extends NetworkService {
 
 	boolean applyRules(Ip ip, List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
 	
-	Commands getAssociateIPCommands(DomainRouterVO router,
-			List<String> ipAddrList, boolean add, long vmId, Commands cmds);
 }

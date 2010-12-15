@@ -20,6 +20,7 @@ package com.cloud.network.router;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.manager.Commands;
 import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -31,6 +32,8 @@ import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IPAddressVO;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.VpnUserVO;
@@ -158,4 +161,6 @@ public interface DomainRouterManager extends Manager {
 	boolean deleteRemoteAccessVpn(RemoteAccessVpnVO vpnVO);
 	
 	DomainRouterVO addVirtualMachineIntoNetwork(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, ReservationContext context, Boolean startDhcp) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException;
+    
+    boolean associateIP (Network network, List<? extends IpAddress> ipAddress);
 }

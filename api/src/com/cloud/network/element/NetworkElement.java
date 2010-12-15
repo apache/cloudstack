@@ -68,23 +68,15 @@ public interface NetworkElement extends Adapter {
      */
     boolean shutdown(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
 
+    
     /**
-     * Associate a new ip address to this network
+     * Apply ip addresses to this network
      * @param network
      * @param ipAddress
      * @return
      * @throws ResourceUnavailableException
      */
-    boolean associate(Network network, List<? extends IpAddress> ipAddress) throws ResourceUnavailableException;
-
-    /**
-     * Disassociate the ip address from this network
-     * @param network
-     * @param ipAddress
-     * @return
-     * @throws ResourceUnavailableException
-     */
-    boolean disassociate(Network network, List<? extends IpAddress> ipAddress) throws ResourceUnavailableException;
+    boolean applyIps(Network network, List<? extends IpAddress> ipAddress) throws ResourceUnavailableException;
     
     /**
      * Apply rules

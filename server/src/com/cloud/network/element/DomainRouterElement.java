@@ -64,6 +64,7 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     @Inject UserVmDao _userVmDao;
     @Inject DomainRouterDao _routerDao;
     
+    
     private boolean canHandle(GuestIpType ipType, DeployDestination dest) {
         DataCenter dc = dest.getDataCenter();
         String provider = dc.getGatewayProvider();
@@ -99,7 +100,6 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
         } else {
             return false;
         }
-       
     }
 
     @Override
@@ -115,25 +115,15 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
         }
         return _routerMgr.stopRouter(router.getId(), 1);
     }
-    
-    protected DomainRouterElement() {
-        super();
-    }
 
     @Override
     public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-        return false;
+        return true;
     }
 
     @Override
-    public boolean associate(Network network, List<? extends IpAddress> ipAddress) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
+    public boolean applyIps(Network network, List<? extends IpAddress> ipAddress) throws ResourceUnavailableException {
+        return _routerMgr.associateIP(network, ipAddress);
     }
 
-    @Override
-    public boolean disassociate(Network network, List<? extends IpAddress> ipAddress) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
-    }
 }

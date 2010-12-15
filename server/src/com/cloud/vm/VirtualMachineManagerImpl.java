@@ -115,8 +115,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     @Inject private DomainRouterDao _routerDao;
     @Inject private ConsoleProxyDao _consoleDao;
     @Inject private SecondaryStorageVmDao _secondaryDao;
-    @Inject private NicDao _nicDao;
-    @Inject private NetworkDao _networkDao;
     
     @Inject(adapter=DeploymentPlanner.class)
     private Adapters<DeploymentPlanner> _planners;

@@ -115,10 +115,6 @@ public class DhcpElement extends AdapterBase implements NetworkElement {
         }
         return _routerMgr.stopRouter(router.getId(), 1);
     }
-    
-    protected DhcpElement() {
-        super();
-    }
 
     @Override
     public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
@@ -126,12 +122,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean associate(Network network, List<? extends IpAddress> ipAddress) throws ResourceUnavailableException {
-       return true;
-    }
-
-    @Override
-    public boolean disassociate(Network network, List<? extends IpAddress> ipAddress) throws ResourceUnavailableException {
-       return true;
+    public boolean applyIps(Network network, List<? extends IpAddress> ipAddress) throws ResourceUnavailableException {
+        return true;
     }
 }

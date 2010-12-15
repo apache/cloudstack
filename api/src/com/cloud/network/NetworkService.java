@@ -23,10 +23,10 @@ import com.cloud.api.commands.AddVpnUserCmd;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.api.commands.CreateRemoteAccessVpnCmd;
-import com.cloud.api.commands.DeleteNetworkCmd;
 import com.cloud.api.commands.DeleteRemoteAccessVpnCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListNetworksCmd;
+import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.api.commands.RemoveVpnUserCmd;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -86,5 +86,6 @@ public interface NetworkService {
     Network createNetwork(CreateNetworkCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     List<? extends Network> searchForNetworks(ListNetworksCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     boolean deleteNetwork(long networkId) throws InvalidParameterValueException, PermissionDeniedException;
-
+    
+    boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException;
 }

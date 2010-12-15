@@ -49,6 +49,7 @@ import com.cloud.api.commands.CreateRemoteAccessVpnCmd;
 import com.cloud.api.commands.DeleteRemoteAccessVpnCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListNetworksCmd;
+import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.api.commands.RemoveVpnUserCmd;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
@@ -337,54 +338,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
     
-    @Override
-    public Commands getAssociateIPCommands(final DomainRouterVO router, final List<String> ipAddrList, final boolean add, long vmId, Commands cmds) {   	 
-         boolean sourceNat = false;
-         Map<VlanVO, ArrayList<IPAddressVO>> vlanIpMap = new HashMap<VlanVO, ArrayList<IPAddressVO>>();
-         for (final String ipAddress: ipAddrList) {
-             IPAddressVO ip = _ipAddressDao.findById(ipAddress);
 
-             VlanVO vlan = _vlanDao.findById(ip.getVlanId());
-             ArrayList<IPAddressVO> ipList = vlanIpMap.get(vlan.getId());
-             if (ipList == null) {
-                 ipList = new ArrayList<IPAddressVO>();
-             }
-             ipList.add(ip);
-             vlanIpMap.put(vlan, ipList);
-         }
-         for (Map.Entry<VlanVO, ArrayList<IPAddressVO>> vlanAndIp: vlanIpMap.entrySet()) {
-             boolean firstIP = true;
-             ArrayList<IPAddressVO> ipList = vlanAndIp.getValue();
-             Collections.sort(ipList, new Comparator<IPAddressVO>() {
-                 @Override
-                 public int compare(IPAddressVO o1, IPAddressVO o2) {
-                     return o1.getAddress().compareTo(o2.getAddress());
-                 } });
-
-             for (final IPAddressVO ip: ipList) {
-                 sourceNat = ip.isSourceNat();
-                 VlanVO vlan = vlanAndIp.getKey();
-                 String vlanId = vlan.getVlanId();
-                 String vlanGateway = vlan.getVlanGateway();
-                 String vlanNetmask = vlan.getVlanNetmask();
-
-                 String vifMacAddress = null;
-                 if (firstIP && add) {
-                     String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(ip.getDataCenterId());
-                     vifMacAddress = macAddresses[1];
-                 }
-                 String vmGuestAddress = null;
-                 if(vmId!=0){
-                     vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
-                 }
-
-                 cmds.addCommand("IPAssocCommand", new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ip.getAddress(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress));
-
-                 firstIP = false;
-             }
-         }
-         return cmds;
-    }
     
     @Override
     public boolean associateIP(final DomainRouterVO router, final List<String> ipAddrList, final boolean add, long vmId) {
@@ -501,7 +455,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         boolean success = true;
         for (NetworkElement element : _networkElements) {
             try {
-                element.associate(network, userIps);
+                element.applyIps(network, userIps);
             } catch (ResourceUnavailableException e) {
                 success = false;
                 if (!continueOnError) {
@@ -611,6 +565,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             txn.commit();
 
             success = applyIpAssociations(network, false);
+            if (success) {
+                s_logger.debug("Successfully associated ip address " + ip + " for account " + owner.getId() + " in zone " + network.getDataCenterId());
+            } else {
+                s_logger.warn("Failed to associate ip address " + ip + " for account " + owner.getId() + " in zone " + network.getDataCenterId());
+            }
             
             return ip;
         } catch (ResourceUnavailableException e) {
@@ -1179,7 +1138,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException, IllegalArgumentException {
-        Transaction txn = Transaction.currentTxn();
 
         Long userId = UserContext.current().getUserId();
         Account account = UserContext.current().getAccount();
@@ -1251,12 +1209,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new PermissionDeniedException(ipAddress + " belongs to Account wide IP pool and cannot be disassociated");
             }
 
-            txn.start();
             boolean success = releasePublicIpAddress(ipAddress, accountId, userId);
             if (success) {
                 _accountMgr.decrementResourceCount(accountId, ResourceType.public_ip);
             }
-            txn.commit();
             return success;
 
         } catch (PermissionDeniedException pde) {
@@ -1264,7 +1220,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } catch (IllegalArgumentException iae) {
             throw iae;
         } catch (Throwable t) {
-            s_logger.error("Disassociate IP address threw an exception.");
+            s_logger.error("Disassociate IP address threw an exception.", t);
             throw new IllegalArgumentException("Disassociate IP address threw an exception");
         }
     }
@@ -2072,6 +2028,40 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 shutdownNetwork(networkId);
             }
         }
-        
     }
+    
+    
+    
+    @Override
+    public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException{
+        String accountName = cmd.getAccountName();
+        long domainId = cmd.getDomainId();
+        Account caller = UserContext.current().getAccount();
+
+        Account owner = _accountDao.findActiveAccount(accountName, domainId);
+        if (owner == null) {
+            throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId + ", permission denied");
+        }
+        
+        _accountMgr.checkAccess(caller, owner);
+        
+        Long networkId = cmd.getNetworkId();
+        Network network = null;
+        if (networkId != null) {
+            network = _networksDao.findById(networkId);
+            if (network == null) {
+                throw new InvalidParameterValueException("Network id is invalid: " + networkId);
+            }
+        }
+        
+        //TODO - re-apply port forwarding and load balancing rules in the future
+        boolean success = applyIpAssociations(network, false);
+        if (!success) {
+            s_logger.warn("Failed to reapply the ip addresses for the account " + owner.getId() + " in zone " + network.getDataCenterId() + ", in network " + network.getId());
+        } else {
+            s_logger.debug("Ip addresses are reapplied successfully for the account " + owner.getId() + " in zone " + network.getDataCenterId() + ", in network " + network.getId());
+        }
+        return success;
+    }
+
 }
