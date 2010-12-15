@@ -485,6 +485,7 @@ function accountUserJSONToTemplate(jsonObj, $template) {
     $template.find("#grid_header_title").text(fromdb(jsonObj.username));			   
     $template.find("#id").text(fromdb(jsonObj.id));
     $template.find("#username").text(fromdb(jsonObj.username));	    
+    $template.find("#state").text(fromdb(jsonObj.state));	
     $template.find("#apikey").text(fromdb(jsonObj.apikey));
     $template.find("#secretkey").text(fromdb(jsonObj.secretkey));    
     $template.find("#account").text(fromdb(jsonObj.account));	
