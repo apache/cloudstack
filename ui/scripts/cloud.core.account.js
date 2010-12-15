@@ -219,8 +219,7 @@ function initAddAccountDialog() {
 					        $("#leftmenu_account_all_accounts").click();
 					    }
 					    else {							       
-					        var item = json.createaccountresponse.account;	
-					        debugger;			    			    		
+					        var item = json.createaccountresponse.account;					    			    		
 						    accountToMidmenu(item, $midmenuItem1);
 	                        bindClickToMidMenu($midmenuItem1, accountToRightPanel, getMidmenuId);  
 	                        afterAddingMidMenuItem($midmenuItem1, true);	                       
@@ -508,7 +507,7 @@ var accountActionMap = {
         asyncJobResponse: "disableaccountresponse",
         dialogBeforeActionFn : doDisableAccount,
         inProcessText: "Disabling account....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id) { 
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {             
             var item = json.queryasyncjobresultresponse.jobresult.account;
             accountToMidmenu(item, $midmenuItem1);           
             accountJsonToDetailsTab($midmenuItem1);
@@ -516,11 +515,12 @@ var accountActionMap = {
     }    
     ,
     "Lock account": {              
-        isAsyncJob: false,       
+        isAsyncJob: true,     
+        asyncJobResponse: "disableaccountresponse",  
         dialogBeforeActionFn : doLockAccount,
         inProcessText: "Locking account....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {  
-            var item = json.lockaccountresponse.account;            
+             var item = json.queryasyncjobresultresponse.jobresult.account;
             accountToMidmenu(item, $midmenuItem1);           
             accountJsonToDetailsTab($midmenuItem1);
         }
@@ -637,7 +637,7 @@ function doDisableAccount($actionLink, $detailsTab, $midmenuItem1) {
     .dialog('option', 'buttons', {                    
         "Yes": function() { 		                    
             $(this).dialog("close");	
-			var apiCommand = "command=disableAccount&account="+jsonObj.name+"&domainId="+jsonObj.domainid;	    	
+			var apiCommand = "command=disableAccount&lock=false&account="+jsonObj.name+"&domainId="+jsonObj.domainid;	    	
 	    	doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab) ;         		                    	     
         },
         "Cancel": function() {
@@ -653,7 +653,7 @@ function doLockAccount($actionLink, $detailsTab, $midmenuItem1) {
     .dialog('option', 'buttons', {                    
         "Yes": function() { 		                    
             $(this).dialog("close");			
-			var apiCommand = "command=lockAccount&account="+jsonObj.name+"&domainId="+jsonObj.domainid;
+			var apiCommand = "command=disableAccount&lock=true&account="+jsonObj.name+"&domainId="+jsonObj.domainid;
 	    	doActionToTab(jsonObj.id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	         		                    	     
         },
         "Cancel": function() {
