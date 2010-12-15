@@ -57,6 +57,9 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name=ApiConstants.DISPLAY_NAME, type=CommandType.STRING, description="an optional user generated name for the virtual machine")
     private String displayName;
+    
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="host name for the virtual machine")
+    private String name;
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.")
     private Long domainId;
@@ -163,10 +166,11 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         return networkIds;
     }
 
-    public void setNetworkList(List<Long> networkIds) {
-        this.networkIds = networkIds;
+    public String getName() {
+        return name;
     }
-
+    
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

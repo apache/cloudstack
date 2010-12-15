@@ -145,8 +145,8 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
                     long domainId,
                     long accountId,
                     long serviceOfferingId,
-                    String userData) {
-        super(id, serviceOfferingId, displayName == null ? instanceName : displayName, instanceName, Type.User, templateId, guestOsId, domainId, accountId, haEnabled);
+                    String userData, String name) {
+        super(id, serviceOfferingId, name, instanceName, Type.User, templateId, guestOsId, domainId, accountId, haEnabled);
         this.userData = userData;
         this.displayName = displayName != null ? displayName : null;
     }

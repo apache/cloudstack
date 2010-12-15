@@ -2421,7 +2421,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         String zoneName = _dcDao.findById(config.getDataCenterId()).getName();
         
         
-        cmds.addCommand("vmdata", generateVmDataCommand(routerControlIpAddress, routerPublicIpAddress, nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), profile.getVirtualMachine().getName(), profile.getVirtualMachine().getName(), profile.getId()));
+        cmds.addCommand("vmdata", generateVmDataCommand(routerControlIpAddress, routerPublicIpAddress, nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), profile.getVirtualMachine().getName(), profile.getVirtualMachine().getInstanceName(), profile.getId()));
         
         try {
             _agentMgr.send(router.getHostId(), cmds);

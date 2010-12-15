@@ -3742,8 +3742,24 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         
         long id = _vmDao.getNextInSequence(Long.class, "id");
         
-        UserVmVO vm = new UserVmVO(id, VirtualMachineName.getVmName(id, owner.getId(), _instance), cmd.getDisplayName(),
-                                   template.getId(), template.getGuestOSId(), offering.getOfferHA(), domainId, owner.getId(), offering.getId(), userData);
+        String hostName = cmd.getName();
+        String instanceName = VirtualMachineName.getVmName(id, owner.getId(), _instance);
+        if (hostName == null) {
+            hostName = instanceName;
+        } else {
+            hostName = hostName.toLowerCase();
+            //verify hostName
+            UserVm vm = _vmDao.findVmByZoneIdAndName(dc.getId(), hostName);
+            if (vm != null && !(vm.getState() == State.Expunging || vm.getState() == State.Error)) {
+                throw new InvalidParameterValueException("Vm instance with name \"" + hostName + "\" already exists in zone " + dc.getId());
+            } else if (!NetUtils.verifyHostName(hostName)) {
+                throw new InvalidParameterValueException("Invalid name. Vm name can contain ASCII letters 'a' through 'z', the digits '0' through '9', " +
+                		                                "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\"");
+            }
+        }
+        
+        UserVmVO vm = new UserVmVO(id, instanceName, cmd.getDisplayName(),
+                                   template.getId(), template.getGuestOSId(), offering.getOfferHA(), domainId, owner.getId(), offering.getId(), userData, hostName);
 
         try{
 	        if (_itMgr.allocate(vm, template, offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, cmd.getHypervisor(), owner) == null) {
