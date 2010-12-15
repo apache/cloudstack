@@ -17,6 +17,39 @@
  */
  
 
+function hostGetSearchParams() {
+    var moreCriteria = [];	
+    
+    /*
+	var $advancedSearchPopup = $("#advanced_search_popup");
+	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {
+	    var name = $advancedSearchPopup.find("#adv_search_name").val();							
+		if (name!=null && trim(name).length > 0) 
+			moreCriteria.push("&name="+todb(name));		
+        
+        if ($advancedSearchPopup.find("#adv_search_domain_li").css("display") != "none") {		
+		    var domainId = $advancedSearchPopup.find("#adv_search_domain").val();		
+		    if (domainId!=null && domainId.length > 0) 
+			    moreCriteria.push("&domainid="+domainId);	
+    	}	
+    	
+		if ($advancedSearchPopup.find("#adv_search_account_li").css("display") != "none") {	
+		    var account = $advancedSearchPopup.find("#adv_search_account").val();		
+		    if (account!=null && account.length > 0) 
+			    moreCriteria.push("&account="+account);		
+		}	
+	} 
+	else {     			    		
+	    var searchInput = $("#basic_search").find("#search_input").val();	 
+        if (lastSearchType == "basic_search" && searchInput != null && searchInput.length > 0) {	           
+            moreCriteria.push("&keyword="+todb(searchInput));	       
+        }        
+	}
+	*/
+	
+	return moreCriteria.join("");          
+}
+
 function hostGetMidmenuId(jsonObj) {
     return "midmenuItem_host_" + jsonObj.id; 
 }

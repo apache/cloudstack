@@ -28,7 +28,11 @@ function afterLoadClusterJSP($leftmenuItem1) {
     bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	       
     
 	clusterJsonToRightPanel($leftmenuItem1);	
+	
 	var clusterId = $leftmenuItem1.data("jsonObj").id;            
+    listMidMenuItems(("listHosts&type=Routing&clusterid="+clusterId), hostGetSearchParams, "listhostsresponse", "host", "jsp/host.jsp", afterLoadHostJSP, hostToMidmenu, hostToRightPanel, getMidmenuId, false, ("cluster_"+clusterId));
+        
+    /*
     var $midmenuContainer = $("#midmenu_container").empty();	
             
     var $container_host = $("<div id='midmenu_host_container'></div>"); 
@@ -64,38 +68,7 @@ function afterLoadClusterJSP($leftmenuItem1) {
             }                  
         }
     });	 	
-	
-	
-	
-    var $container_primarystorage = $("<div id='midmenu_primarystorage_container'></div>");
-    $midmenuContainer.append($container_primarystorage);       
-	var $header2 = $("#midmenu_itemheader_with_margin").clone().show(); //with margin on top
-    $header2.find("#name").text("Primary Storage");
-    $container_primarystorage.append($header2);
-	var count = 0;    
-    $.ajax({
-        cache: false,
-        data: createURL("command=listStoragePools&clusterid="+clusterId),
-        dataType: "json",
-        async: false,
-        success: function(json) { 
-            selectedItemsInMidMenu = {};    	                
-            var items = json.liststoragepoolsresponse.storagepool;      
-            if(items != null && items.length > 0) {
-                for(var i=0; i<items.length;i++) { 
-                    var $midmenuItem1 = $("#midmenu_item").clone();                      
-                    $midmenuItem1.data("toRightPanelFn", primarystorageToRightPanel);                             
-                    primarystorageToMidmenu(items[i], $midmenuItem1);    
-                    bindClickToMidMenu($midmenuItem1, primarystorageToRightPanel, primarystorageGetMidmenuId);  
-                    $container_primarystorage.append($midmenuItem1.show());                                     
-                }  
-                count = items.length;
-            }  
-            else {
-                $container_primarystorage.append($("#midmenu_container_no_items_available").clone().attr("id","midmenu_container_no_items_available_clone").show());  
-            }                  
-        }
-    });	 
+    */
 }
 
 function clusterJsonToRightPanel($leftmenuItem1) {

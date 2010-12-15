@@ -22,7 +22,7 @@
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
             <%=t.t("details")%></div>  
-        <div class="content_tabs on" id="tab_primarystorage">
+        <div class="content_tabs off" id="tab_primarystorage">
             Primary Storage</div>       
         <div class="content_tabs off" id="tab_instance">
             <%=t.t("instance")%></div>
