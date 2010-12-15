@@ -637,6 +637,8 @@ function selectLeftSubMenu($menuToSelect) {
 		$menuToSelect.addClass("selected");
 		$selectedSubMenu = $menuToSelect; 
 	}
+	// Every time you click on a different menu item, we should stop all previous async job queries
+	$("body").stopTime();
 }
 
 var selected_midmenu_id = null; 
