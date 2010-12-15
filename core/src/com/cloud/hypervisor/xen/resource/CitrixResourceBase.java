@@ -2904,6 +2904,11 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             vm.setActionsAfterCrash(conn, Types.OnCrashBehaviour.DESTROY);
 
             vm.start(conn, false, true);
+            
+            if (!vm.getResidentOn(conn).getUuid(conn).equals(_host.uuid)) {
+                startvmfailhandle(vm, null);
+                throw new Exception("can not start VM " + vmName + " On host " + _host.ip);
+            }
 
             if (_canBridgeFirewall) {
                 String result = callHostPlugin("default_network_rules_systemvm", "vmName", vmName);
