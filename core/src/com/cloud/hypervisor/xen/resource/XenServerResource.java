@@ -65,11 +65,12 @@ public class XenServerResource extends CitrixResourceBase {
     } 
     
     @Override
-    protected boolean can_bridge_firewall() {   
-        return Boolean.valueOf(callHostPlugin("vmops", "can_bridge_firewall", "host_uuid", _host.uuid));
+    protected boolean can_bridge_firewall(Connection conn) {   
+        return Boolean.valueOf(callHostPlugin(conn, "vmops", "can_bridge_firewall", "host_uuid", _host.uuid));
     }
     
     private Answer execute(NetworkIngressRulesCmd cmd) {
+        Connection conn = getConnection();
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Sending network rules command to " + _host.ip);
         }
@@ -79,7 +80,7 @@ public class XenServerResource extends CitrixResourceBase {
             return new NetworkIngressRuleAnswer(cmd, false, "Host " + _host.ip + " cannot do bridge firewalling");
         }
       
-        String result = callHostPlugin("vmops", "network_rules",
+        String result = callHostPlugin(conn, "vmops", "network_rules",
                 "vmName", cmd.getVmName(),
                 "vmIP", cmd.getGuestIp(),
                 "vmMAC", cmd.getGuestMac(),
