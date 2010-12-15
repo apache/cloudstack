@@ -233,6 +233,7 @@ setup_router() {
   enable_svc cloud-passwd-srvr 1
   enable_svc cloud 0
   enable_fwding 1
+  chkconfig nfs-common off
   cp /etc/iptables/iptables-router /etc/iptables/rules
 }
 
@@ -258,6 +259,7 @@ setup_dhcpsrvr() {
   enable_svc cloud-passwd-srvr 1
   enable_svc cloud 0
   enable_fwding 0
+  chkconfig nfs-common off
   cp /etc/iptables/iptables-router /etc/iptables/rules
 }
 
@@ -305,6 +307,7 @@ setup_console_proxy() {
   enable_svc dnsmasq 0
   enable_svc cloud-passwd-srvr 0
   enable_svc cloud 1
+  chkconfig nfs-common off
 }
 
 setup_default() {
