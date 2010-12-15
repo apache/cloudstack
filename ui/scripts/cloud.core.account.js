@@ -359,6 +359,11 @@ function accountToRightPanel($midmenuItem1) {
     $("#tab_details").click();   
 }
 
+function accountClearRightPanel() { 
+    accountJsonClearDetailsTab();
+    accountJsonClearUserTab();
+}
+
 function accountJsonToDetailsTab() {  
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     if($midmenuItem1 == null)
@@ -391,19 +396,19 @@ function accountJsonToDetailsTab() {
     if(isAdmin()) {
         if(jsonObj.id != systemAccountId && jsonObj.id != adminAccountId) {        
             if (jsonObj.accounttype == roleTypeUser || jsonObj.accounttype == roleTypeDomainAdmin) {
-                buildActionLinkForTab("Resource limits", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);	
-                noAvailableActions = false;	
+                buildActionLinkForTab("Resource limits", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);	                
             }
              
             if(jsonObj.state == "enabled") {
                 buildActionLinkForTab("Disable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
-                buildActionLinkForTab("Lock account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);
-                noAvailableActions = false;	
+                buildActionLinkForTab("Lock account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);                
             }          	        
             else if(jsonObj.state == "disabled" || jsonObj.state == "locked") {
-                buildActionLinkForTab("Enable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);   
-                noAvailableActions = false;	
-            }                
+                buildActionLinkForTab("Enable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);                   
+            }   
+            
+            buildActionLinkForTab("Delete account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+            noAvailableActions = false;	            
         }  
     }
     
@@ -411,6 +416,25 @@ function accountJsonToDetailsTab() {
 	if(noAvailableActions == true) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
 	}	  
+}
+
+function accountJsonClearDetailsTab() {      
+    var $detailsTab = $("#right_panel_content").find("#tab_content_details");           
+    $detailsTab.find("#grid_header_title").text("");
+    $detailsTab.find("#id").text("");
+    $detailsTab.find("#role").text("");
+    $detailsTab.find("#account").text("");
+    $detailsTab.find("#domain").text("");
+    $detailsTab.find("#vm_total").text("");
+    $detailsTab.find("#ip_total").text("");
+    $detailsTab.find("#bytes_received").text("");
+    $detailsTab.find("#bytes_sent").text("");
+    $detailsTab.find("#state").text("");
+    
+    //actions ***
+    var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
+    $actionMenu.find("#action_list").empty();    
+	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());		  
 }
 
 function accountJsonToUserTab() {       	
@@ -448,6 +472,11 @@ function accountJsonToUserTab() {
             $thisTab.find("#tab_container").show();    			
 		}
 	});
+} 
+
+function accountJsonClearUserTab() {     
+	var $thisTab = $("#right_panel_content").find("#tab_content_user");	    
+	var $container = $thisTab.find("#tab_container").empty();
 } 
 
 function accountUserJSONToTemplate(jsonObj, $template) {
@@ -520,7 +549,7 @@ var accountActionMap = {
         dialogBeforeActionFn : doLockAccount,
         inProcessText: "Locking account....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {  
-             var item = json.queryasyncjobresultresponse.jobresult.account;
+            var item = json.queryasyncjobresultresponse.jobresult.account;
             accountToMidmenu(item, $midmenuItem1);           
             accountJsonToDetailsTab($midmenuItem1);
         }
@@ -535,7 +564,20 @@ var accountActionMap = {
             accountToMidmenu(item, $midmenuItem1);           
             accountJsonToDetailsTab($midmenuItem1);
         }
-    }    
+    } 
+    ,
+    "Delete account": {              
+        isAsyncJob: true,
+        asyncJobResponse: "deleteaccountresponse",
+        dialogBeforeActionFn : doDeleteAccount,
+        inProcessText: "Deleting account....",
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {                   
+            $midmenuItem1.slideUp("slow", function() {
+                $(this).remove();
+            });
+            accountClearRightPanel();
+        }
+    }          
 }; 
 
 function updateResourceLimitForAccount(domainId, account, type, max) {
@@ -678,6 +720,23 @@ function doEnableAccount($actionLink, $detailsTab, $midmenuItem1) {
     }).dialog("open");  
 }
 
+function doDeleteAccount($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");    
+    var id = jsonObj.id;
+    
+    $("#dialog_info")    
+    .text("Are you sure you want to delete this account?")
+    .dialog('option', 'buttons', {                    
+        "Yes": function() { 		                    
+            $(this).dialog("close");	
+			var apiCommand = "command=deleteAccount&id="+jsonObj.id;	    	
+	    	doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab) ;         		                    	     
+        },
+        "Cancel": function() {
+            $(this).dialog("close");		     
+        }
+    }).dialog("open");  
+}
 
 var accountUserActionMap = {
     "Edit User": {
