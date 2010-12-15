@@ -3939,11 +3939,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             Nic storageNic1 = null;
             if (_storageNetworkName1 != null && !_storageNetworkName1.equals(_guestNetworkName)) {
                 storageNic1 = getLocalNetwork(conn, _storageNetworkName1);
-                if (storageNic1 == null) {
-                    s_logger.warn("Unable to find storage network 1: " + _storageNetworkName1 + " for host " + _host.ip);
-                    throw new IllegalArgumentException("Unable to find public network " + _storageNetworkName1 + " for host " + _host.ip);
-                }
-            } else {
+            }
+            if (storageNic1 == null) {
                 storageNic1 = guestNic;
                 _storageNetworkName1 = _guestNetworkName;
             }
@@ -3953,16 +3950,13 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             Nic storageNic2 = null;
             if (_storageNetworkName2 != null && !_storageNetworkName2.equals(_guestNetworkName)) {
                 storageNic2 = getLocalNetwork(conn, _storageNetworkName2);
-                if (storageNic2 == null) {
-                    s_logger.warn("Unable to find storage network 2: " + _storageNetworkName2 + " for host " + _host.ip);
-                    throw new IllegalArgumentException("Unable to find public network " + _storageNetworkName2 + " for host " + _host.ip);
-                }
-            } else {
+            }
+            if (storageNic2 == null) {
                 storageNic2 = guestNic;
                 _storageNetworkName2 = _guestNetworkName;
             }
-            _host.storageNetwork1 = storageNic2.nr.uuid;
-            _host.storagePif1 = storageNic2.pr.uuid;
+            _host.storageNetwork2 = storageNic2.nr.uuid;
+            _host.storagePif2 = storageNic2.pr.uuid;
                        
             s_logger.info("Private Network is " + _privateNetworkName + " for host " + _host.ip);
             s_logger.info("Guest Network is " + _guestNetworkName + " for host " + _host.ip);
