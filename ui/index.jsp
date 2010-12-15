@@ -49,7 +49,6 @@
     <script type="text/javascript" src="scripts/cloud.core.pod.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.cluster.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.host.js?t=<%=now%>"></script>
-    <script type="text/javascript" src="scripts/cloud.core.primarystorage.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.systemvm.js?t=<%=now%>"></script>
 	
 	<!-- Favicon -->
