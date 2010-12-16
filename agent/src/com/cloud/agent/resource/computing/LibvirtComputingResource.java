@@ -121,8 +121,8 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
-import com.cloud.agent.api.Start2Answer;
-import com.cloud.agent.api.Start2Command;
+import com.cloud.agent.api.StartAnswer;
+import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StopAnswer;
@@ -1100,8 +1100,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((DeleteStoragePoolCommand) cmd);
             } else if (cmd instanceof FenceCommand ) {
             	return execute((FenceCommand) cmd);
-            } else if (cmd instanceof Start2Command ) {
-            	return execute((Start2Command) cmd);
+            } else if (cmd instanceof StartCommand ) {
+            	return execute((StartCommand) cmd);
             } else if (cmd instanceof RoutingCommand) {
             	return _virtRouterResource.executeRequest(cmd);
             } else if (cmd instanceof CheckSshCommand) {
@@ -2390,7 +2390,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 	
 
-	protected synchronized Start2Answer execute(Start2Command cmd) {
+	protected synchronized StartAnswer execute(StartCommand cmd) {
 		VirtualMachineTO vmSpec = cmd.getVirtualMachine();
 		String vmName = vmSpec.getName();
 		LibvirtVMDef vm = null;
@@ -2438,11 +2438,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 				}
 			}
 			state = State.Running;
-			return new Start2Answer(cmd);
+			return new StartAnswer(cmd);
 		} catch (Exception e) {
 			s_logger.warn("Exception ", e);
 			handleVmStartFailure(vmName, vm);
-			return new Start2Answer(cmd, e.getMessage());
+			return new StartAnswer(cmd, e.getMessage());
 		} finally {
 			synchronized (_vms) {
 				if (state != State.Stopped) {

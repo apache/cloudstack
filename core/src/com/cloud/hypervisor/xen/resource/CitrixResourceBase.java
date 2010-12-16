@@ -106,8 +106,8 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
-import com.cloud.agent.api.Start2Answer;
-import com.cloud.agent.api.Start2Command;
+import com.cloud.agent.api.StartAnswer;
+import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
@@ -429,8 +429,8 @@ public abstract class CitrixResourceBase implements ServerResource {
             return execute((ModifySshKeysCommand) cmd);
         } else if (cmd instanceof PoolEjectCommand) {
             return execute((PoolEjectCommand) cmd);
-        } else if (cmd instanceof Start2Command) {
-            return execute((Start2Command)cmd);
+        } else if (cmd instanceof StartCommand) {
+            return execute((StartCommand)cmd);
         } else if (cmd instanceof RemoteAccessVpnCfgCommand) {
             return execute((RemoteAccessVpnCfgCommand)cmd);
         } else if (cmd instanceof VpnUsersCfgCommand) {
@@ -775,7 +775,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         return new CheckSshAnswer(cmd);
     }
     
-    protected Start2Answer execute(Start2Command cmd) {
+    protected StartAnswer execute(StartCommand cmd) {
         Connection conn = getConnection();
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
         String vmName = vmSpec.getName(); 
@@ -837,11 +837,11 @@ public abstract class CitrixResourceBase implements ServerResource {
             }
             
             state = State.Running;
-            return new Start2Answer(cmd);
+            return new StartAnswer(cmd);
         } catch (Exception e) {
             s_logger.warn("Catch Exception: " + e.getClass().toString() + " due to " + e.toString(), e);
             String msg = handleVmStartFailure(conn, vmName, vm, "", e);
-            return new Start2Answer(cmd, msg);
+            return new StartAnswer(cmd, msg);
         } finally {
             synchronized (_vms) {
                 if (state != State.Stopped) {

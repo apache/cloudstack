@@ -22,7 +22,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 /**
  * This command carries information to start a VM.
  */
-public class Start2Command extends Command {
+public class StartCommand extends Command {
     VirtualMachineTO vm;
     
     public VirtualMachineTO getVirtualMachine() {
@@ -34,10 +34,10 @@ public class Start2Command extends Command {
         return true;
     }
     
-    protected Start2Command() {
+    protected StartCommand() {
     }
     
-    public Start2Command(VirtualMachineTO vm) {
+    public StartCommand(VirtualMachineTO vm) {
         this.vm = vm;
     }
 }

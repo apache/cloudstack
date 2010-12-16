@@ -19,8 +19,8 @@ package com.cloud.resource.hypervisor;
 
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
-import com.cloud.agent.api.Start2Answer;
-import com.cloud.agent.api.Start2Command;
+import com.cloud.agent.api.StartAnswer;
+import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.resource.ServerResource;
@@ -37,7 +37,7 @@ public interface HypervisorResource extends ServerResource {
      * @param cmd carries all the information necessary to start a VM
      * @return Start2Answer answer.
      */
-    Start2Answer execute(Start2Command cmd);
+    StartAnswer execute(StartCommand cmd);
     
     /**
      * Stops a VM.  Must return true as long as the VM does not exist.

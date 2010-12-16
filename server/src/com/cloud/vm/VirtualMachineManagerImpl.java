@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Start2Command;
+import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -422,7 +422,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
             VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
             
             Commands cmds = new Commands(OnError.Revert);
-            cmds.addCommand(new Start2Command(vmTO));
+            cmds.addCommand(new StartCommand(vmTO));
             
             vmGuru.finalizeDeployment(cmds, vmProfile, dest, context);
             try {
