@@ -1819,7 +1819,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         // remove old entries, we'll recalculate them anyway
         if ((capacities != null) && !capacities.isEmpty()) {
             for (CapacityVO capacity : capacities) {
-                _capacityDao.remove(capacity.getId());
+            	if ( capacity.getCapacityType() != CapacityVO.CAPACITY_TYPE_SECONDARY_STORAGE){ // Not allowing secondary storage to be deleted Bug# 7391
+            		_capacityDao.remove(capacity.getId());
+            	}
             }
         }
 
