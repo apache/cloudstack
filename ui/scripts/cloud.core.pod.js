@@ -547,34 +547,12 @@ function initAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenu
 				        $thisDialog.dialog("close");					
 						 
 						var item = json.createstoragepoolresponse.storagepool;	
-						var $newTemplate = $("#primarystorage_tab_template").clone(true);	               
-	                    hostPrimaryStorageJSONToTemplate(item, $newTemplate); 
-	                    $("#tab_content_primarystorage").find("#tab_container").append($newTemplate.show()); 
-												 
-						/*            
-					    if(isMiddleMenuShown() == false) { //not on cluster node (still on pod node, so middle menu is hidden)
-					        var $clusterNode = $("#cluster_"+clusterId);
-					        if($clusterNode.length > 0)
-					  	        $("#cluster_"+clusterId).find("#cluster_name").click();		
-					  	    else  //pod node is close. Expand pod node.	
-					  	        refreshClusterUnderPod($("#pod_" + podId), null, clusterId);
-					    }
-					    else {	
-					        var $container = $("#midmenu_container").find("#midmenu_primarystorage_container");
-					        var $noItemsAvailable = $container.find("#midmenu_container_no_items_available_clone");
-					        if($noItemsAvailable.length > 0) {
-					            $noItemsAvailable.slideUp("slow", function() {
-					                $(this).remove();
-					            });
-					        }					            
-					        
-					        var $midmenuItem1 = $("#midmenu_item").clone();
-                            $container.append($midmenuItem1.fadeIn("slow"));
-				            var item = json.createstoragepoolresponse.storagepool;				            			      										   
-					        primarystorageToMidmenu(item, $midmenuItem1);
-	                        bindClickToMidMenu($midmenuItem1, primarystorageToRightPanel, primarystorageGetMidmenuId);  
-	                    }
-	                    */                                             
+						
+						if($("#tab_content_primarystorage").length > 0 && $("#tab_content_primarystorage").css("display") != "none" && $("#primarystorage_tab_template").length > 0) {
+						    var $newTemplate = $("#primarystorage_tab_template").clone(true);	               
+	                        hostPrimaryStorageJSONToTemplate(item, $newTemplate); 
+	                        $("#tab_content_primarystorage").find("#tab_container").append($newTemplate.show()); 		
+	                    }				                   
 				    },			
                     error: function(XMLHttpResponse) {	  
 						handleError(XMLHttpResponse, function() {

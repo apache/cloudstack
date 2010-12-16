@@ -1160,30 +1160,13 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 			    $.ajax({
 				    data: createURL("command=createStoragePool" + array1.join("")),
 				    dataType: "json",
-				    success: function(json) {				       			               
-					    if(isMiddleMenuShown() == false) { //not on cluster node (still on pod node, so middle menu is hidden)
-					        var $clusterNode = $("#cluster_"+clusterId);
-					        if($clusterNode.length > 0)
-					  	        $("#cluster_"+clusterId).find("#cluster_name").click();		
-					  	    else  //pod node is close. Expand pod node.	
-					  	        refreshClusterUnderPod($("#pod_" + podId), null, clusterId);
-					    }
-					    else {	
-					        var $container = $("#midmenu_container").find("#midmenu_primarystorage_container");
-					        var $noItemsAvailable = $container.find("#midmenu_container_no_items_available_clone");
-					        if($noItemsAvailable.length > 0) {
-					            $noItemsAvailable.slideUp("slow", function() {
-					                $(this).remove();
-					            });
-					        }					            
-					        
-					        var $midmenuItem1 = $("#midmenu_item").clone();
-                            $container.append($midmenuItem1.fadeIn("slow"));
-				            var item = json.createstoragepoolresponse.storagepool;				            			      										   
-					        primarystorageToMidmenu(item, $midmenuItem1);
-	                        bindClickToMidMenu($midmenuItem1, primarystorageToRightPanel, primarystorageGetMidmenuId);  
-	                    }
-	                    
+				    success: function(json) {	
+				        var $clusterNode = $("#cluster_"+clusterId);
+				        if($clusterNode.length > 0)
+				  	        $("#cluster_"+clusterId).find("#cluster_name").click();		
+				  	    else  //pod node is close. Expand pod node.	
+				  	        refreshClusterUnderPod($("#pod_" + podId), null, clusterId);					    
+					   	                    
 	                    var primarystorageTotal = parseInt($("#primarystorage_total").text());
 		                primarystorageTotal++;
 		                $("#primarystorage_total").text(primarystorageTotal.toString());				    	
