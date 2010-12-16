@@ -58,7 +58,6 @@ import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
-import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.manager.Commands;
@@ -131,7 +130,7 @@ import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.router.VirtualRouter.Role;
-import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.offering.NetworkOffering;
@@ -2732,5 +2731,11 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             s_logger.warn("Unable to associate ip addresses, virtual router is not in the right state " + router.getState());
             throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState());
         }
+    }
+    
+    @Override
+    public boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules) {
+        //TODO - apply port forwarding and load balancing rules here
+        return true;
     }
 }

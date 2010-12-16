@@ -24,6 +24,7 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -63,17 +64,17 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     @Inject UserVmManager _userVmMgr;
     @Inject UserVmDao _userVmDao;
     @Inject DomainRouterDao _routerDao;
+    @Inject DataCenterDao _dataCenterDao;
     
     
-    private boolean canHandle(GuestIpType ipType, DeployDestination dest) {
-        DataCenter dc = dest.getDataCenter();
+    private boolean canHandle(GuestIpType ipType, DataCenter dc) {
         String provider = dc.getGatewayProvider();
         return (ipType == GuestIpType.Virtual && provider.equals(Providers.VirtualRouter));
     }
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
-        if (canHandle(offering.getGuestIpType(), dest)) {
+        if (canHandle(offering.getGuestIpType(), dest.getDataCenter())) {
             DomainRouterVO router = _routerMgr.deployVirtualRouter(guestConfig, dest, context.getAccount());
             if (router == null) {
                 throw new ResourceUnavailableException("Unable to deploy the router for " + guestConfig);
@@ -87,8 +88,7 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
 
     @Override
     public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
-        if (canHandle(config.getGuestType(), dest)) {
-           
+        if (canHandle(config.getGuestType(), dest.getDataCenter())) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
@@ -118,12 +118,22 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
 
     @Override
     public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-        return true;
+        DataCenter dc = _dataCenterDao.findById(config.getDataCenterId());
+        if (canHandle(config.getGuestType(),dc)) {
+            return _routerMgr.applyFirewallRules(config, rules);
+        } else {
+            return false;
+        }
     }
 
     @Override
     public boolean applyIps(Network network, List<? extends IpAddress> ipAddress) throws ResourceUnavailableException {
-        return _routerMgr.associateIP(network, ipAddress);
+        DataCenter dc = _dataCenterDao.findById(network.getDataCenterId());
+        if (canHandle(network.getGuestType(),dc)) {
+            return _routerMgr.associateIP(network, ipAddress);
+        } else {
+            return false;
+        }
     }
 
 }

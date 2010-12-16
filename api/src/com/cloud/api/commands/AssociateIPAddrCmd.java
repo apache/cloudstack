@@ -30,6 +30,7 @@ import com.cloud.api.response.IPAddressResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
@@ -87,7 +88,7 @@ public class AssociateIPAddrCmd extends BaseCmd {
         
         List<? extends Network> networks = _networkService.getVirtualNetworksOwnedByAccountInZone(getAccountName(), getDomainId(), getZoneId());
         if (networks.size() == 0) {
-            return null;
+            throw new InvalidParameterValueException("Account name=" + getAccountName() + " domainId=" + getDomainId() + " doesn't have virtual networks in zone " + getZoneId());
         }
         assert (networks.size() <= 1) : "Too many virtual networks.  This logic should be obsolete";
         return networks.get(0).getId();
