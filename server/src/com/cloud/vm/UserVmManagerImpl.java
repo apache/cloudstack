@@ -142,6 +142,7 @@ import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.DomainRouterManager;
 import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.offering.NetworkOffering;
@@ -262,6 +263,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject NetworkDao _networkDao;
     @Inject DomainRouterManager _routerMgr;
     @Inject NicDao _nicDao;
+    @Inject RulesManager _rulesMgr;
     
     private IpAddrAllocator _IpAllocator;
     ScheduledExecutorService _executor = null;
@@ -2272,8 +2274,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     	List<UserVmVO> vms = _vmDao.findDestroyedVms(new Date(System.currentTimeMillis() - ((long)_expungeDelay << 10)));
     	s_logger.info("Found " + vms.size() + " vms to expunge.");
     	for (UserVmVO vm : vms) {
-    		boolean deleteRules = true;
-            String privateIpAddress = vm.getPrivateIpAddress();
     		long vmId = vm.getId();
     		releaseGuestIpAddress(vm);
             vm.setGuestNetmask(null);
@@ -2282,58 +2282,21 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     			s_logger.info("vm " + vmId + " is skipped because it is no longer in Destroyed state");
     			continue;
     		}
-    		
-            if(VirtualMachineName.isValidRouterName(vm.getName()) && !vm.getState().equals(State.Running)){
-                deleteRules = false;
-            }
-           
-//FIXME    		if(deleteRules)
-//    		{
-//	    		List<PortForwardingRuleVO> forwardingRules = null;
-//				forwardingRules = _rulesDao.listByPrivateIp(privateIpAddress);
-//				
-//				for(PortForwardingRuleVO rule: forwardingRules)
-//				{
-//					try
-//					{
-//						IPAddressVO publicIp = _ipAddressDao.findById(rule.getSourceIpAddress());
-//						
-//						if(publicIp != null)
-//						{
-//							if((publicIp.getAccountId().longValue() == vm.getAccountId()))
-//							{
-//								if(publicIp.isOneToOneNat()){
-//									_networkMgr.deleteIpForwardingRule(rule.getId());
-//									if(s_logger.isDebugEnabled())
-//										s_logger.debug("Rule "+rule.getId()+" for vm:"+vm.getHostName()+" is deleted successfully during expunge operation");									
-//								}else{
-//									_networkMgr.deletePortForwardingRule(rule.getId(),true);//delete the rule with the sys user's credentials
-//									if(s_logger.isDebugEnabled())
-//										s_logger.debug("Rule "+rule.getId()+" for vm:"+vm.getHostName()+" is deleted successfully during expunge operation");
-//								}
-//							}
-//						}
-//					}
-//					catch(Exception e)
-//					{
-//						s_logger.warn("Failed to delete rule:"+rule.getId()+" for vm:"+vm.getHostName());
-//					}
-//				}
-//    		}
-//
-//            List<VolumeVO> vols = null;
-//            try {
-//                vols = _volsDao.findByInstanceIdDestroyed(vmId);
-//                _storageMgr.destroy(vm, vols);
-//                
-//                _vmDao.remove(vm.getId());
-//                _networkGroupMgr.removeInstanceFromGroups(vm.getId());
-//                removeInstanceFromGroup(vm.getId());
-//                
-//                s_logger.debug("vm is destroyed");
-//            } catch (Exception e) {
-//            	s_logger.info("VM " + vmId +" expunge failed due to " + e.getMessage());
-//			}
+
+           List<VolumeVO> vols = null;
+            try {
+                vols = _volsDao.findByInstanceIdDestroyed(vmId);
+                _storageMgr.destroy(vm, vols);
+                
+                _rulesMgr.revokePortForwardingRule(vmId);
+                _vmDao.remove(vm.getId());
+                _networkGroupMgr.removeInstanceFromGroups(vm.getId());
+                removeInstanceFromGroup(vm.getId());
+               s_logger.debug("vm is destroyed");
+            } catch (Exception e) {
+            	s_logger.info("VM " + vmId +" expunge failed due to " + e.getMessage());
+			}
+
     	}
     	
     	List<VolumeVO> destroyedVolumes = _volsDao.findByDetachedDestroyed();

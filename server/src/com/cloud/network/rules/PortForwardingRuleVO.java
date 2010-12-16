@@ -45,7 +45,7 @@ public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardi
     private int destinationPortEnd;
     
     @Column(name="instance_id")
-    private long instanceId;
+    private long virtualMachineId;
 
     public PortForwardingRuleVO() {
     }
@@ -53,7 +53,7 @@ public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardi
     public PortForwardingRuleVO(String xId, Ip srcIp, int srcPortStart, int srcPortEnd, Ip dstIp, int dstPortStart, int dstPortEnd, String protocol, long networkId, long accountId, long domainId, long instanceId) {
         super(xId, srcIp, srcPortStart, srcPortEnd, protocol, networkId, accountId, domainId, Purpose.PortForwarding);
         this.destinationIpAddress = dstIp;
-        this.instanceId = instanceId;
+        this.virtualMachineId = instanceId;
         this.destinationPortStart = dstPortStart;
         this.destinationPortEnd = dstPortEnd;
     }
@@ -79,7 +79,7 @@ public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardi
     
     @Override
     public long getVirtualMachineId() {
-        return instanceId;
+        return virtualMachineId;
     }
 }
 

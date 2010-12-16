@@ -71,4 +71,6 @@ public interface RulesManager extends RulesService {
     List<? extends PortForwardingRule> listPortForwardingRulesForApplication(Ip ip);
     
     List<? extends PortForwardingRule> gatherPortForwardingRulesForApplication(List<? extends IpAddress> addrs);
+
+	boolean revokePortForwardingRule(long vmId);
 }

@@ -339,6 +339,20 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         return null;
     }
     
+    @Override
+    public boolean revokePortForwardingRule(long vmId) {
+    	UserVmVO vm = _vmDao.findById(vmId);
+    	if (vm == null) {
+    		return false;
+    	}
+    	
+    	List<PortForwardingRuleVO> rules = _forwardingDao.listByVm(vmId);
+    	for (PortForwardingRuleVO rule : rules) {
+    		revokePortForwardingRule(rule.getId(), true);
+    	}
+        return true;
+    }
+    
     public List<? extends FirewallRule> listFirewallRules(Ip ip) {
         return _firewallDao.listByIpAndNotRevoked(ip);
     }

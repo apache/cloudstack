@@ -37,6 +37,7 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
     protected final SearchBuilder<PortForwardingRuleVO> AllFieldsSearch;
     protected final SearchBuilder<PortForwardingRuleVO> ApplicationSearch;
     protected final SearchBuilder<PortForwardingRuleVO> ActiveRulesSearch;
+    protected final SearchBuilder<PortForwardingRuleVO> AllRulesSearchByVM;
     
     protected PortForwardingRulesDaoImpl() {
         super();
@@ -55,6 +56,10 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         ActiveRulesSearch.and("ip", ActiveRulesSearch.entity().getSourceIpAddress(), Op.EQ);
         ActiveRulesSearch.and("state", ActiveRulesSearch.entity().getState(), Op.NEQ);
         ActiveRulesSearch.done();
+        
+        AllRulesSearchByVM = createSearchBuilder();
+        AllRulesSearchByVM.and("vmId", AllRulesSearchByVM.entity().getVirtualMachineId(), Op.EQ);
+        AllRulesSearchByVM.done();
     }
 
     @Override
@@ -64,6 +69,13 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         sc.setParameters("state", State.Staged);
         
         return listBy(sc, null);
+    }
+    
+    @Override
+    public List<PortForwardingRuleVO> listByVm(Long vmId) {
+    	SearchCriteria<PortForwardingRuleVO> sc = AllRulesSearchByVM.create();
+    	sc.setParameters("vmId", vmId);
+    	return listBy(sc, null);
     }
 
     @Override
