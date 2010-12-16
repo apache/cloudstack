@@ -2629,7 +2629,6 @@ public class ManagementServerImpl implements ManagementServer {
         if (keyword != null) {
             SearchCriteria<VolumeVO> ssc = _volumeDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("nameLabel", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("volumeType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
