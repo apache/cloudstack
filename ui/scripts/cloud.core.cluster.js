@@ -17,8 +17,6 @@
  */
   
 function afterLoadClusterJSP($leftmenuItem1) {
-    showMiddleMenuWithoutSearchAndPagination();    
-     
     clearAddButtonsOnTop(); 
     initAddHostButton($("#midmenu_add_host_button"), "cluster_page", $leftmenuItem1); 
     initAddPrimaryStorageButton($("#midmenu_add_primarystorage_button"), "cluster_page", $leftmenuItem1);  
@@ -30,45 +28,7 @@ function afterLoadClusterJSP($leftmenuItem1) {
 	clusterJsonToRightPanel($leftmenuItem1);	
 	
 	var clusterId = $leftmenuItem1.data("jsonObj").id;            
-    listMidMenuItems("hosts", ("listHosts&type=Routing&clusterid="+clusterId), hostGetSearchParams, "listhostsresponse", "host", "jsp/host.jsp", afterLoadHostJSP, hostToMidmenu, hostToRightPanel, getMidmenuId, false, ("cluster_"+clusterId));
-        
-    /*
-    var $midmenuContainer = $("#midmenu_container").empty();	
-            
-    var $container_host = $("<div id='midmenu_host_container'></div>"); 
-    $midmenuContainer.append($container_host);        
-    var $header1 = $("#midmenu_itemheader_without_margin").clone().show();  //without margin on top
-    $header1.find("#name").text("Host");
-    $container_host.append($header1);    
-    var count = 0;    
-    $.ajax({
-        cache: false,
-        data: createURL("command=listHosts&type=Routing&clusterid="+clusterId),
-        dataType: "json",
-        async: false,
-        success: function(json) { 
-            selectedItemsInMidMenu = {};    	                
-            var items = json.listhostsresponse.host;      
-            if(items != null && items.length > 0) {
-                for(var i=0; i<items.length;i++) { 
-                    var $midmenuItem1 = $("#midmenu_item").clone();                      
-                    $midmenuItem1.data("toRightPanelFn", hostToRightPanel);                             
-                    hostToMidmenu(items[i], $midmenuItem1);    
-                    bindClickToMidMenu($midmenuItem1, hostToRightPanel, hostGetMidmenuId);             
-                   
-                    $container_host.append($midmenuItem1.show());   
-                    if(i == 0)  { //click the 1st item in middle menu as default                        
-                        $midmenuItem1.click();   
-                    }                 
-                }  
-                count = items.length;
-            }  
-            else {
-                $container_host.append($("#midmenu_container_no_items_available").clone().attr("id","midmenu_container_no_items_available_clone").show());  
-            }                  
-        }
-    });	 	
-    */
+    listMidMenuItems("hosts", ("listHosts&type=Routing&clusterid="+clusterId), hostGetSearchParams, "listhostsresponse", "host", "jsp/host.jsp", afterLoadHostJSP, hostToMidmenu, hostToRightPanel, getMidmenuId, false, ("cluster_"+clusterId));    
 }
 
 function clusterJsonToRightPanel($leftmenuItem1) {

@@ -166,9 +166,7 @@
                             <div id="advanced_search_container">
                             </div>
                         </div>
-                        
-                        <div class="searchpanel" id="blank_search_panel" style="display: none;">                            
-                        </div>
+                                                
                         <div id="midmenu_add_links_container">
 							<div class="actionpanel_button_wrapper" id="midmenu_add_link" style="display: none;">
 								<div class="actionpanel_button">

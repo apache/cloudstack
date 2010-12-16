@@ -22,7 +22,7 @@ function afterLoadNetworkJSP($leftmenuItem1) {
     if(zoneObj == null) 
 	    return;	  
     
-    showMiddleMenuWithoutSearchAndPagination();    
+    showMiddleMenu();    
     
     initAddNetworkButton($("#midmenu_add_network_button"));
     
