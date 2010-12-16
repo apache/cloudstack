@@ -18,18 +18,17 @@
 package com.cloud.agent.api;
 
 import java.util.List;
-import java.util.Map;
 
 import com.cloud.storage.VolumeVO;
 
-public class PrepareForMigrationCommand extends AbstractStartCommand {
+public class PrepareForMigrationCommand extends StartCommand {
     String vnet;
     
     protected PrepareForMigrationCommand() {
     }
     
     public PrepareForMigrationCommand(String vmName, String vnet, String[] storageHosts, List<VolumeVO> vols, boolean mirrored) {
-        super(vmName, storageHosts, vols, mirrored);
+        //super(vmName, storageHosts, vols, mirrored);
         this.vnet = vnet;
     }
     

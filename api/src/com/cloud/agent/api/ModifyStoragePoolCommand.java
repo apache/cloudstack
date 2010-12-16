@@ -21,12 +21,13 @@ package com.cloud.agent.api;
 import java.io.File;
 import java.util.UUID;
 
-import com.cloud.storage.StoragePoolVO;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.storage.StoragePool;
 
 public class ModifyStoragePoolCommand extends Command {
 	
 	boolean add;
-	StoragePoolVO pool;
+	StorageFilerTO pool;
     String localPath;
 	String [] options;
 	public static final String LOCAL_PATH_PREFIX="/mnt/";
@@ -36,23 +37,23 @@ public class ModifyStoragePoolCommand extends Command {
 		
 	}
     
-    public ModifyStoragePoolCommand(boolean add, StoragePoolVO pool, String localPath) {
+    public ModifyStoragePoolCommand(boolean add, StoragePool pool, String localPath) {
     	this.add = add;
-    	this.pool = new StoragePoolVO(pool);
+    	this.pool = new StorageFilerTO(pool);
         this.localPath = localPath;
 
     }
     
-    public ModifyStoragePoolCommand(boolean add, StoragePoolVO pool) {
+    public ModifyStoragePoolCommand(boolean add, StoragePool pool) {
 		this(add, pool, LOCAL_PATH_PREFIX + File.separator + UUID.nameUUIDFromBytes((pool.getHostAddress() + pool.getPath()).getBytes()));
 	}
 
-    public StoragePoolVO getPool() {
+    public StorageFilerTO getPool() {
         return pool;
     }
 
-    public void setPool(StoragePoolVO pool) {
-        this.pool = pool;
+    public void setPool(StoragePool pool) {
+        this.pool = new StorageFilerTO(pool);
     }
     
 	public boolean getAdd() {

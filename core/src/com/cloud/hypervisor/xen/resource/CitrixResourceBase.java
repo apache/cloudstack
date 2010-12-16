@@ -1760,96 +1760,97 @@ public abstract class CitrixResourceBase implements ServerResource {
          * List<VolumeVO> vols = cmd.getVolumes(); result = mountwithoutvdi(vols, cmd.getMappings()); if (result !=
          * null) { return new PrepareForMigrationAnswer(cmd, false, result); }
          */
-        final String vmName = cmd.getVmName();
-        try {
-            Set<Host> hosts = Host.getAll(conn);
-            // workaround before implementing xenserver pool
-            // no migration
-            if (hosts.size() <= 1) {
-                return new PrepareForMigrationAnswer(cmd, false, "not in a same xenserver pool");
-            }
-            // if the vm have CD
-            // 1. make iosSR shared
-            // 2. create pbd in target xenserver
-            SR sr = getISOSRbyVmName(conn, cmd.getVmName());
-            if (sr != null) {
-                Set<PBD> pbds = sr.getPBDs(conn);
-                boolean found = false;
-                for (PBD pbd : pbds) {
-                    if (Host.getByUuid(conn, _host.uuid).equals(pbd.getHost(conn))) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    sr.setShared(conn, true);
-                    PBD pbd = pbds.iterator().next();
-                    PBD.Record pbdr = new PBD.Record();
-                    pbdr.deviceConfig = pbd.getDeviceConfig(conn);
-                    pbdr.host = Host.getByUuid(conn, _host.uuid);
-                    pbdr.SR = sr;
-                    PBD newpbd = PBD.create(conn, pbdr);
-                    newpbd.plug(conn);
-                }
-            }
-            Set<VM> vms = VM.getByNameLabel(conn, vmName);
-            if (vms.size() != 1) {
-                String msg = "There are " + vms.size() + " " + vmName;
-                s_logger.warn(msg);
-                return new PrepareForMigrationAnswer(cmd, false, msg);
-            }
-
-            VM vm = vms.iterator().next();
-
-            // check network
-            Set<VIF> vifs = vm.getVIFs(conn);
-            for (VIF vif : vifs) {
-                Network network = vif.getNetwork(conn);
-                Set<PIF> pifs = network.getPIFs(conn);
-                long vlan = -1;
-                PIF npif = null;
-                for (PIF pif : pifs) {
-                    try {
-                        vlan = pif.getVLAN(conn);
-                        if (vlan != -1 ) {
-                            VLAN vland = pif.getVLANMasterOf(conn);
-                            npif = vland.getTaggedPIF(conn);
-                        }
-                        break;
-                    }catch (Exception e) {
-                        continue;
-                    }
-                }
-                if (npif == null)  {
-                    continue;
-                }
-                network = npif.getNetwork(conn);
-                String nwuuid = network.getUuid(conn);
-                
-                String pifuuid = null;
-                if(nwuuid.equalsIgnoreCase(_host.privateNetwork)) {
-                    pifuuid = _host.privatePif;
-                } else if(nwuuid.equalsIgnoreCase(_host.publicNetwork)) {
-                    pifuuid = _host.publicPif;
-                } else {
-                    continue;
-                }
-                Network vlanNetwork = enableVlanNetwork(conn, vlan, pifuuid);
-
-                if (vlanNetwork == null) {
-                    throw new InternalErrorException("Failed to enable VLAN network with tag: " + vlan);
-                }
-            }
-
-            synchronized (_vms) {
-                _vms.put(cmd.getVmName(), State.Migrating);
-            }
-            return new PrepareForMigrationAnswer(cmd, true, null);
-        } catch (Exception e) {
-            String msg = "catch exception " + e.getMessage();
-            s_logger.warn(msg, e);
-            return new PrepareForMigrationAnswer(cmd, false, msg);
-        }
+//        final String vmName = cmd.getVmName();
+//        try {
+//            Set<Host> hosts = Host.getAll(conn);
+//            // workaround before implementing xenserver pool
+//            // no migration
+//            if (hosts.size() <= 1) {
+//                return new PrepareForMigrationAnswer(cmd, false, "not in a same xenserver pool");
+//            }
+//            // if the vm have CD
+//            // 1. make iosSR shared
+//            // 2. create pbd in target xenserver
+//            SR sr = getISOSRbyVmName(conn, cmd.getVmName());
+//            if (sr != null) {
+//                Set<PBD> pbds = sr.getPBDs(conn);
+//                boolean found = false;
+//                for (PBD pbd : pbds) {
+//                    if (Host.getByUuid(conn, _host.uuid).equals(pbd.getHost(conn))) {
+//                        found = true;
+//                        break;
+//                    }
+//                }
+//                if (!found) {
+//                    sr.setShared(conn, true);
+//                    PBD pbd = pbds.iterator().next();
+//                    PBD.Record pbdr = new PBD.Record();
+//                    pbdr.deviceConfig = pbd.getDeviceConfig(conn);
+//                    pbdr.host = Host.getByUuid(conn, _host.uuid);
+//                    pbdr.SR = sr;
+//                    PBD newpbd = PBD.create(conn, pbdr);
+//                    newpbd.plug(conn);
+//                }
+//            }
+//            Set<VM> vms = VM.getByNameLabel(conn, vmName);
+//            if (vms.size() != 1) {
+//                String msg = "There are " + vms.size() + " " + vmName;
+//                s_logger.warn(msg);
+//                return new PrepareForMigrationAnswer(cmd, false, msg);
+//            }
+//
+//            VM vm = vms.iterator().next();
+//
+//            // check network
+//            Set<VIF> vifs = vm.getVIFs(conn);
+//            for (VIF vif : vifs) {
+//                Network network = vif.getNetwork(conn);
+//                Set<PIF> pifs = network.getPIFs(conn);
+//                long vlan = -1;
+//                PIF npif = null;
+//                for (PIF pif : pifs) {
+//                    try {
+//                        vlan = pif.getVLAN(conn);
+//                        if (vlan != -1 ) {
+//                            VLAN vland = pif.getVLANMasterOf(conn);
+//                            npif = vland.getTaggedPIF(conn);
+//                        }
+//                        break;
+//                    }catch (Exception e) {
+//                        continue;
+//                    }
+//                }
+//                if (npif == null)  {
+//                    continue;
+//                }
+//                network = npif.getNetwork(conn);
+//                String nwuuid = network.getUuid(conn);
+//                
+//                String pifuuid = null;
+//                if(nwuuid.equalsIgnoreCase(_host.privateNetwork)) {
+//                    pifuuid = _host.privatePif;
+//                } else if(nwuuid.equalsIgnoreCase(_host.publicNetwork)) {
+//                    pifuuid = _host.publicPif;
+//                } else {
+//                    continue;
+//                }
+//                Network vlanNetwork = enableVlanNetwork(conn, vlan, pifuuid);
+//
+//                if (vlanNetwork == null) {
+//                    throw new InternalErrorException("Failed to enable VLAN network with tag: " + vlan);
+//                }
+//            }
+//
+//            synchronized (_vms) {
+//                _vms.put(cmd.getVmName(), State.Migrating);
+//            }
+//            return new PrepareForMigrationAnswer(cmd, true, null);
+//        } catch (Exception e) {
+//            String msg = "catch exception " + e.getMessage();
+//            s_logger.warn(msg, e);
+//            return new PrepareForMigrationAnswer(cmd, false, msg);
+//        }
+        return null;
     }
 
     public PrimaryStorageDownloadAnswer execute(final PrimaryStorageDownloadCommand cmd) {
@@ -3210,7 +3211,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             lvmsr.setNameDescription(conn, name);
             Host host = Host.getByUuid(conn, _host.uuid);
             String address = host.getAddress(conn);
-            StoragePoolInfo pInfo = new StoragePoolInfo(name, lvmuuid, address, SRType.LVM.toString(), SRType.LVM.toString(), StoragePoolType.LVM, cap, avail);
+            StoragePoolInfo pInfo = new StoragePoolInfo(name, address, SRType.LVM.toString(), SRType.LVM.toString(), StoragePoolType.LVM, cap, avail);
             StartupStorageCommand cmd = new StartupStorageCommand();
             cmd.setPoolInfo(pInfo);
             cmd.setGuid(_host.uuid);
@@ -3747,14 +3748,13 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     protected Answer execute(ModifyStoragePoolCommand cmd) {
         Connection conn = getConnection();
-        StoragePoolVO pool = cmd.getPool();
-        StorageFilerTO poolTO = new StorageFilerTO(pool);
+        StorageFilerTO pool = cmd.getPool();
         try {
-            SR sr = getStorageRepository(conn, poolTO);
+            SR sr = getStorageRepository(conn, pool);
             long capacity = sr.getPhysicalSize(conn);
             long available = capacity - sr.getPhysicalUtilisation(conn);
             if (capacity == -1) {
-                String msg = "Pool capacity is -1! pool: " + pool.getName() + pool.getHostAddress() + pool.getPath();
+                String msg = "Pool capacity is -1! pool: " + pool.getHost() + pool.getPath();
                 s_logger.warn(msg);
                 return new Answer(cmd, false, msg);
             }
@@ -3762,11 +3762,11 @@ public abstract class CitrixResourceBase implements ServerResource {
             ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(cmd, capacity, available, tInfo);
             return answer;
         } catch (XenAPIException e) {
-            String msg = "ModifyStoragePoolCommand XenAPIException:" + e.toString() + " host:" + _host.uuid + " pool: " + pool.getName() + pool.getHostAddress() + pool.getPath();
+            String msg = "ModifyStoragePoolCommand XenAPIException:" + e.toString() + " host:" + _host.uuid + " pool: " + pool.getHost() + pool.getPath();
             s_logger.warn(msg, e);
             return new Answer(cmd, false, msg);
         } catch (Exception e) {
-            String msg = "ModifyStoragePoolCommand XenAPIException:" + e.getMessage() + " host:" + _host.uuid + " pool: " + pool.getName() + pool.getHostAddress() + pool.getPath();
+            String msg = "ModifyStoragePoolCommand XenAPIException:" + e.getMessage() + " host:" + _host.uuid + " pool: " + pool.getHost() + pool.getPath();
             s_logger.warn(msg, e);
             return new Answer(cmd, false, msg);
         }

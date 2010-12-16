@@ -22,7 +22,6 @@ import java.util.Map;
 import com.cloud.storage.Storage.StoragePoolType;
 
 public class StoragePoolInfo {
-	String name;
 	String uuid;
 	String host;
 	String localPath;
@@ -36,11 +35,10 @@ public class StoragePoolInfo {
 		super();
 	}
 
-	public StoragePoolInfo(String name, String uuid, String host, String hostPath,
+	public StoragePoolInfo(String uuid, String host, String hostPath,
 			String localPath, StoragePoolType poolType, long capacityBytes,
 			long availableBytes) {
 		super();
-		this.name = name;
 		this.uuid = uuid;
 		this.host = host;
 		this.localPath = localPath;
@@ -50,10 +48,10 @@ public class StoragePoolInfo {
 		this.availableBytes = availableBytes;
 	}
 	
-    public StoragePoolInfo(String name, String uuid, String host, String hostPath,
+    public StoragePoolInfo(String uuid, String host, String hostPath,
             String localPath, StoragePoolType poolType, long capacityBytes,
             long availableBytes, Map<String, String> details) {
-        this(name, uuid, host, hostPath, localPath, poolType, capacityBytes, availableBytes);
+        this(uuid, host, hostPath, localPath, poolType, capacityBytes, availableBytes);
         this.details = details;
     }
     
@@ -82,14 +80,6 @@ public class StoragePoolInfo {
 
 	public void setUuid(String uuid) {
 		this.uuid = uuid;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
 	}
 
 	public Map<String, String> getDetails() {

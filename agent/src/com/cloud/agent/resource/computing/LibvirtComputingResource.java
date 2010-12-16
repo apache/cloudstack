@@ -175,7 +175,6 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeVO;
@@ -1686,10 +1685,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     }
     
-    private StoragePool createNfsStoragePool(Connect conn, StoragePoolVO pool) {
+    private StoragePool createNfsStoragePool(Connect conn, StorageFilerTO pool) {
     	String targetPath = _mountPoint + File.separator + pool.getUuid();
     	LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.NFS, pool.getUuid(), pool.getUuid(),
-    														  pool.getHostAddress(), pool.getPath(), targetPath);
+    														  pool.getHost(), pool.getPath(), targetPath);
     	_storage.mkdir(targetPath);
     	StoragePool sp = null;
     	try {
@@ -1715,7 +1714,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	}
     }
     
-    private StoragePool getStoragePool(Connect conn, StoragePoolVO pool) {
+    private StoragePool getStoragePool(Connect conn, StorageFilerTO pool) {
     	StoragePool sp = null;
     	try {
     		sp = conn.storagePoolLookupByUUIDString(pool.getUuid());
@@ -1724,7 +1723,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	}
     	
     	if (sp == null) {
-			if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
+			if (pool.getType() == StoragePoolType.NetworkFilesystem) {
 				sp = createNfsStoragePool(conn, pool);
 			}
 			if (sp == null) {
@@ -1764,7 +1763,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                                                                      tInfo);
        
         KVMHABase.NfsStoragePool pool = new KVMHABase.NfsStoragePool(cmd.getPool().getUuid(),
-        		cmd.getPool().getHostAddress(),
+        		cmd.getPool().getHost(),
         		cmd.getPool().getPath(),
         		_mountPoint + File.separator + cmd.getPool().getUuid(),
         		PoolType.PrimaryStorage);
@@ -2020,25 +2019,26 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 
 	private synchronized Answer execute(PrepareForMigrationCommand cmd) {
-		final String vmName = cmd.getVmName();
-		String result = null;
-		
-		if (cmd.getVnet() != null && !isDirectAttachedNetwork(cmd.getVnet())) {
-			final String vnet = getVnetId(cmd.getVnet());
-			if (vnet != null) {
-				try {
-					createVnet(vnet, _pifs.first()); /*TODO: Need to add public network for domR*/
-				} catch (InternalErrorException e) {
-					return new PrepareForMigrationAnswer(cmd, false, result);
-				}
-			}
-		}
-
-		synchronized(_vms) {
-			_vms.put(vmName, State.Migrating);
-		}
-
-		return new PrepareForMigrationAnswer(cmd, result == null, result);
+//		final String vmName = cmd.getVmName();
+//		String result = null;
+//		
+//		if (cmd.getVnet() != null && !isDirectAttachedNetwork(cmd.getVnet())) {
+//			final String vnet = getVnetId(cmd.getVnet());
+//			if (vnet != null) {
+//				try {
+//					createVnet(vnet, _pifs.first()); /*TODO: Need to add public network for domR*/
+//				} catch (InternalErrorException e) {
+//					return new PrepareForMigrationAnswer(cmd, false, result);
+//				}
+//			}
+//		}
+//
+//		synchronized(_vms) {
+//			_vms.put(vmName, State.Migrating);
+//		}
+//
+//		return new PrepareForMigrationAnswer(cmd, result == null, result);
+	    return null;
 	}
 	
     public void createVnet(String vnetId, String pif) throws InternalErrorException {
