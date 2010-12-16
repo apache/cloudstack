@@ -380,7 +380,8 @@ function accountJsonToDetailsTab() {
     $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $detailsTab.find("#id").text(fromdb(jsonObj.id));
     $detailsTab.find("#role").text(toRole(jsonObj.accounttype));
-    $detailsTab.find("#account").text(fromdb(jsonObj.name));
+    $detailsTab.find("#name").text(fromdb(jsonObj.name));
+    $detailsTab.find("#name_edit").val(fromdb(jsonObj.name));
     $detailsTab.find("#domain").text(fromdb(jsonObj.domain));
     $detailsTab.find("#vm_total").text(fromdb(jsonObj.vmtotal));
     $detailsTab.find("#ip_total").text(fromdb(jsonObj.iptotal));
@@ -394,7 +395,9 @@ function accountJsonToDetailsTab() {
     var noAvailableActions = true;
   
     if(isAdmin()) {
-        if(jsonObj.id != systemAccountId && jsonObj.id != adminAccountId) {        
+        if(jsonObj.id != systemAccountId && jsonObj.id != adminAccountId) {   
+            buildActionLinkForTab("Edit account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+             
             if (jsonObj.accounttype == roleTypeUser || jsonObj.accounttype == roleTypeDomainAdmin) {
                 buildActionLinkForTab("Resource limits", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);	                
             }
@@ -423,7 +426,7 @@ function accountJsonClearDetailsTab() {
     $detailsTab.find("#grid_header_title").text("");
     $detailsTab.find("#id").text("");
     $detailsTab.find("#role").text("");
-    $detailsTab.find("#account").text("");
+    $detailsTab.find("#name").text("");
     $detailsTab.find("#domain").text("");
     $detailsTab.find("#vm_total").text("");
     $detailsTab.find("#ip_total").text("");
@@ -531,6 +534,9 @@ function accountUserJSONToTemplate(jsonObj, $template) {
 } 
 
 var accountActionMap = {  
+    "Edit account": {
+        dialogBeforeActionFn: doEditAccount  
+    },
     "Resource limits": {                 
         dialogBeforeActionFn : doResourceLimitsForAccount 
     } 
@@ -543,7 +549,7 @@ var accountActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {             
             var item = json.queryasyncjobresultresponse.jobresult.account;
             accountToMidmenu(item, $midmenuItem1);           
-            accountJsonToDetailsTab($midmenuItem1);
+            accountJsonToDetailsTab();
         }
     }    
     ,
@@ -555,7 +561,7 @@ var accountActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {  
             var item = json.queryasyncjobresultresponse.jobresult.account;
             accountToMidmenu(item, $midmenuItem1);           
-            accountJsonToDetailsTab($midmenuItem1);
+            accountJsonToDetailsTab();
         }
     }    
     ,
@@ -566,7 +572,7 @@ var accountActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             var item = json.enableaccountresponse.account;                  
             accountToMidmenu(item, $midmenuItem1);           
-            accountJsonToDetailsTab($midmenuItem1);
+            accountJsonToDetailsTab();
         }
     } 
     ,
@@ -583,6 +589,57 @@ var accountActionMap = {
         }
     }          
 }; 
+
+function doEditAccount($actionLink, $detailsTab, $midmenuItem1) {    
+    var $readonlyFields  = $detailsTab.find("#name");
+    var $editFields = $detailsTab.find("#name_edit"); 
+               
+    $readonlyFields.hide();
+    $editFields.show();  
+    $detailsTab.find("#cancel_button, #save_button").show();
+    
+    $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
+        $editFields.hide();
+        $readonlyFields.show();   
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });
+    $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
+        doEditAccount2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields);   
+        return false;
+    });   
+}
+
+function doEditAccount2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) {     
+    // validate values
+    var isValid = true;					
+    isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"));    		
+    if (!isValid) 
+        return;
+       
+    var jsonObj = $midmenuItem1.data("jsonObj"); 
+	var id = jsonObj.id;
+	
+	var array1 = [];
+	array1.push("&id="+id);
+							
+	var name = $detailsTab.find("#name_edit").val();
+	array1.push("&newname="+todb(name));
+		
+	$.ajax({
+	    data: createURL("command=updateAccount&domainid="+jsonObj.domainid+"&account="+jsonObj.name+array1.join("")),
+		dataType: "json",		
+		success: function(json) {	
+		    var item = json.updateaccountresponse.account;		
+		    accountToMidmenu(item, $midmenuItem1);           
+            accountJsonToDetailsTab();
+            		   		    
+		    $editFields.hide();      
+            $readonlyFields.show();       
+            $("#save_button, #cancel_button").hide();       	  		
+		}
+	});
+}
 
 function updateResourceLimitForAccount(domainId, account, type, max) {
 	$.ajax({

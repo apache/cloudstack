@@ -76,11 +76,13 @@
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("Account")%>:</div>
+                        Account Name:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
-                    <div class="row_celltitles" id="account">
-                    </div>
+                    <div class="row_celltitles" id="name">
+                    </div>                    
+                    <input class="text" id="name_edit" style="width: 200px; display: none;" type="text" />
+	                <div id="name_edit_errormsg" style="display:none"></div>                    
                 </div>
             </div>
             <div class="grid_rows even">
@@ -143,7 +145,11 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div>        
+        <div class="grid_botactionpanel">
+	        <div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
+	        <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
+	    </div>         
     </div>
     <!--Details tab (end)-->
     <!--user tab (start)-->
@@ -241,7 +247,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Account:</div>
+                Account Name:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="account">
