@@ -13,7 +13,7 @@
 <div class="main_title" id="right_panel_header">
     
     <div class="main_titleicon">
-        <img src="images/title_diskofferingicon.gif" alt="Disk Offering" /></div>
+        <img src="images/title_networkoffering.gif" alt="Network Offering" /></div>
     
     <h1>
         Network Offering
@@ -41,7 +41,7 @@
 	        <div class="grid_container">
 	        	<div class="grid_header">
 	            	<div id="grid_header_title" class="grid_header_title">(title)</div>
-	                <div id="action_link" class="grid_actionbox" id="account_action_link">
+	                <div id="action_link" class="grid_actionbox">
 	                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                        <ul class="actionsdropdown_boxlist" id="action_list">
 	                        	<li><%=t.t("no.available.actions")%></li>
