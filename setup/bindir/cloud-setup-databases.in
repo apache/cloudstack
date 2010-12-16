@@ -137,7 +137,13 @@ def run_mysql(text,user,password,host,port,debug=False):
   if password: kwargs['passwd']   = password
   if port: kwargs['port']   = port
 
-  conn = MySQLdb.connect(**kwargs)
+  try:
+      conn = MySQLdb.connect(**kwargs)
+  except:
+      print "Connect to mysqld failed, please make sure mysqld is running. \
+You may start it by: service mysqld start"
+      sys.exit (-1)
+
   cur = conn.cursor()
   import re
   exp = re.compile("DELIMITER (.*)$",re.M)
