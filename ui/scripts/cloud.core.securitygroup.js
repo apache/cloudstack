@@ -104,13 +104,38 @@ function doEditSecurityGroup2($actionLink, $detailsTab, $midmenuItem1, $readonly
 	});
 }
 
+function doDeleteSecurityGroup($actionLink, $thisTab, $midmenuItem1) {
+	$("#dialog_info")	
+	.text("Are you sure you want to delete this security group?")
+    .dialog('option', 'buttons', { 						
+	    "Confirm": function() { 
+		    $(this).dialog("close"); 	
+		    	
+		    var jsonObj = $midmenuItem1.data("jsonObj");	
+		    		    
+		    var array1 = [];
+            array1.push("&domainid="+jsonObj.domainid);
+            array1.push("&account="+jsonObj.account);
+            array1.push("&name="+jsonObj.name);    
+		    
+			var id = jsonObj.id;
+			var apiCommand = "command=deleteNetworkGroup" + array1.join(""); 	                 
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab); 
+	    }, 
+	    "Cancel": function() { 
+		    $(this).dialog("close"); 
+			
+	    } 
+    }).dialog("open");
+}
+
 function securityGroupToMidmenu(jsonObj, $midmenuItem1) {  
     $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj); 
     
     /*    
     var $iconContainer = $midmenuItem1.find("#icon_container").show();   
-    $iconContainer.find("#icon").attr("src", "images/midmenuicon_system_securityGroup.png");	
+    $iconContainer.find("#icon").attr("src", "images/midmenuicon_securityGroup.png");	
     */
     
     $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
@@ -183,7 +208,8 @@ function securityGroupClearDetailsTab() {
     $thisTab.find("#displaytext_edit").val("");    
     $thisTab.find("#disksize").text("");
     $thisTab.find("#tags").text("");   
-    $thisTab.find("#domain").text("");   
+    $thisTab.find("#domain").text("");  
+    $thisTab.find("#account").text("");   
     
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty(); 
@@ -194,11 +220,11 @@ var securityGroupActionMap = {
     "Edit Security Group": {
         dialogBeforeActionFn: doEditSecurityGroup
     },   
-    "Delete Security Group": {              
-        api: "deleteNetworkGroup",     
-        isAsyncJob: false,           
+    "Delete Security Group": {               
+        isAsyncJob: false,      
+        dialogBeforeActionFn: doDeleteSecurityGroup,     
         inProcessText: "Deleting Security Group....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {   
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {  
             $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();
             });    
