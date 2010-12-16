@@ -520,6 +520,7 @@ function accountUserJSONToTemplate(jsonObj, $template) {
         
         if(jsonObj.id != systemUserId && jsonObj.id != adminUserId) {
             buildActionLinkForSubgridItem("Disable User", accountUserActionMap, $actionMenu, $template);	  
+            buildActionLinkForSubgridItem("Enable User", accountUserActionMap, $actionMenu, $template);	  
             buildActionLinkForSubgridItem("Delete User", accountUserActionMap, $actionMenu, $template);	  
         }
 	} 	
@@ -765,6 +766,15 @@ var accountUserActionMap = {
         inProcessText: "Disabling User....",
         afterActionSeccessFn: function(json, id, $subgridItem) {                 
             var item = json.queryasyncjobresultresponse.jobresult.user;    
+            accountUserJSONToTemplate(item, $subgridItem); 
+        }
+    } ,
+    "Enable User": {              
+        api: "enableUser",     
+        isAsyncJob: false,        
+        inProcessText: "Enabling User....",
+        afterActionSeccessFn: function(json, id, $subgridItem) {    
+            var item = json.enableuserresponse.user;    
             accountUserJSONToTemplate(item, $subgridItem); 
         }
     } ,
