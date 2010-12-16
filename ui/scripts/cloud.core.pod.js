@@ -323,7 +323,11 @@ function initAddHostButton($button, currentPageInRightPanel, $leftmenuItem1) {
 		            				
 				$thisDialog.find("#spinning_wheel").show(); 				
 				
-		        var array1 = [];    
+		        var array1 = [];
+			    var hypervisor = $thisDialog.find("#host_hypervisor").val();
+			    if(hypervisor.length > 0)
+				    array1.push("&hypervisor="+hypervisor);
+		        
 		        array1.push("&zoneId="+zoneId);
 		        array1.push("&podId="+podId);
 						      

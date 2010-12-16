@@ -1031,7 +1031,11 @@ function initAddHostButtonOnZonePage($button, zoneId, zoneName) {
 					
 				$thisDialog.find("#spinning_wheel").show() 				
 				
-		        var array1 = [];    
+		        var array1 = [];
+				
+			    var hypervisor = $thisDialog.find("#host_hypervisor").val();
+			    if(hypervisor.length > 0)
+				    array1.push("&hypervisor="+hypervisor);
 		        		    
 		        array1.push("&zoneid="+zoneId);
 		        

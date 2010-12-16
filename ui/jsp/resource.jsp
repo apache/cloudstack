@@ -537,6 +537,15 @@
         <form action="#" method="post" id="form_acquire">
         <ol>
             <li>
+            	<label for="host_hypervisor">Hypervisor:</label>
+                <select class="select" id="host_hypervisor">
+                    <option value="XenServer" SELECTED>Xen Server</option>		
+                    <option value="KVM">KVM</option>										
+                    <option value="VmWare">VMware</option>										
+                    <option value="">Auto</option>									
+                </select>
+            </li>
+            <li>
                 <label>
                     Zone:</label>
                 <select class="select" id="zone_dropdown">

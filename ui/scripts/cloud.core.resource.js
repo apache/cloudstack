@@ -463,7 +463,11 @@ function initAddHostShortcut() {
 					
 				$thisDialog.find("#spinning_wheel").show() 				
 				
-		        var array1 = [];    
+		        var array1 = [];
+				
+			    var hypervisor = $thisDialog.find("#host_hypervisor").val();
+			    if(hypervisor.length > 0)
+				    array1.push("&hypervisor="+hypervisor);
 		        
 		        var zoneId = $thisDialog.find("#zone_dropdown").val();
 		        array1.push("&zoneid="+zoneId);
