@@ -26,8 +26,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name=("network_group"))
-public class NetworkGroupVO implements NetworkGroup {
+@Table(name=("security_group"))
+public class SecurityGroupVO implements SecurityGroup {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -48,9 +48,9 @@ public class NetworkGroupVO implements NetworkGroup {
     @Column(name="account_name")
     private String accountName = null;
 
-    public NetworkGroupVO() {}
+    public SecurityGroupVO() {}
 
-    public NetworkGroupVO(String name, String description, long domainId, long accountId, String accountName) {
+    public SecurityGroupVO(String name, String description, long domainId, long accountId, String accountName) {
         this.name = name;
         this.description = description;
         this.domainId = domainId;

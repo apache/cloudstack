@@ -28,22 +28,22 @@ import com.cloud.vm.State;
  * Ensures that network firewall rules stay updated as VMs go up and down
  *
  */
-public interface NetworkGroupManager {
+public interface SecurityGroupManager {
 	
 	public static final String DEFAULT_GROUP_NAME = "default"; 
-	public static final String DEFAULT_GROUP_DESCRIPTION = "Default Network Group"; 
+	public static final String DEFAULT_GROUP_DESCRIPTION = "Default Security Group"; 
 
 	public void handleVmStateTransition(UserVm userVm, State vmState);
 	
-	public NetworkGroupVO createNetworkGroup(String name, String description, Long domainId, Long accountId, String accountName);
+	public SecurityGroupVO createSecurityGroup(String name, String description, Long domainId, Long accountId, String accountName);
 	
-	public NetworkGroupVO createDefaultNetworkGroup( Long accountId);
+	public SecurityGroupVO createDefaultSecurityGroup( Long accountId);
 	
-	public boolean addInstanceToGroups(Long userVmId, List<NetworkGroupVO> groups);
+	public boolean addInstanceToGroups(Long userVmId, List<SecurityGroupVO> groups);
 
 	public void removeInstanceFromGroups(Long userVmId);
 
 	public void fullSync(long agentId, HashMap<String, Pair<Long, Long>> newGroupStates);
 	
-	public String getNetworkGroupsNamesForVm(long vmId);
+	public String getSecurityGroupsNamesForVm(long vmId);
 }

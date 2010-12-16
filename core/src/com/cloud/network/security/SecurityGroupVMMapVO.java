@@ -31,23 +31,23 @@ import javax.persistence.Table;
 import com.cloud.vm.State;
 
 @Entity
-@Table(name=("network_group_vm_map"))
+@Table(name=("security_group_vm_map"))
 @SecondaryTables({
 @SecondaryTable(name="user_vm",
         pkJoinColumns={@PrimaryKeyJoinColumn(name="instance_id", referencedColumnName="id")}),
 @SecondaryTable(name="vm_instance",
                 pkJoinColumns={@PrimaryKeyJoinColumn(name="instance_id", referencedColumnName="id")}),
-@SecondaryTable(name="network_group", 
-		pkJoinColumns={@PrimaryKeyJoinColumn(name="network_group_id", referencedColumnName="id")})
+@SecondaryTable(name="security_group", 
+		pkJoinColumns={@PrimaryKeyJoinColumn(name="security_group_id", referencedColumnName="id")})
 		})
-public class NetworkGroupVMMapVO {
+public class SecurityGroupVMMapVO {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private Long id;
 
-    @Column(name="network_group_id")
-    private long networkGroupId;
+    @Column(name="security_group_id")
+    private long securityGroupId;
 
     @Column(name="instance_id")
     private long instanceId;
@@ -58,13 +58,13 @@ public class NetworkGroupVMMapVO {
     @Column(name="state", table="vm_instance", insertable=false, updatable=false)
     private State vmState;
     
-    @Column(name="name", table="network_group", insertable=false, updatable=false)
+    @Column(name="name", table="security_group", insertable=false, updatable=false)
     private String groupName;
 
-    public NetworkGroupVMMapVO() { }
+    public SecurityGroupVMMapVO() { }
 
-    public NetworkGroupVMMapVO(long networkGroupId, long instanceId) {
-        this.networkGroupId = networkGroupId;
+    public SecurityGroupVMMapVO(long securityGroupId, long instanceId) {
+        this.securityGroupId = securityGroupId;
         this.instanceId = instanceId;
     }
 
@@ -72,8 +72,8 @@ public class NetworkGroupVMMapVO {
         return id;
     }
 
-    public long getNetworkGroupId() {
-        return networkGroupId;
+    public long getSecurityGroupId() {
+        return securityGroupId;
     }
 
     public String getGuestIpAddress() {

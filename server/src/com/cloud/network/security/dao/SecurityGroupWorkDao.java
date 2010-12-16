@@ -15,34 +15,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.network.security;
 
-public interface NetworkGroupRules {
-    long getId();
+package com.cloud.network.security.dao;
 
-    String getName();
+import java.util.Date;
+import java.util.List;
 
-    String getDescription();
+import com.cloud.network.security.SecurityGroupWorkVO;
+import com.cloud.network.security.SecurityGroupWorkVO.Step;
+import com.cloud.utils.db.GenericDao;
 
-    Long getDomainId();
+public interface SecurityGroupWorkDao extends GenericDao<SecurityGroupWorkVO, Long> {
+    SecurityGroupWorkVO findByVmId(long vmId, boolean taken);
+    
+    SecurityGroupWorkVO findByVmIdStep(long vmId, Step step);
 
-    Long getAccountId();
 
-    String getAccountName();
+	SecurityGroupWorkVO take(long serverId);
 
-    Long getRuleId();
+	void updateStep(Long vmId, Long logSequenceNumber, Step done);
+	
+	void updateStep(Long workId, Step done);
+	
+	int deleteFinishedWork(Date timeBefore);
+	
+	List<SecurityGroupWorkVO> findUnfinishedWork(Date timeBefore);
 
-    int getStartPort();
-
-    int getEndPort();
-
-    String getProtocol();
-
-    Long getAllowedNetworkId();
-
-    String getAllowedNetworkGroup();
-
-    String getAllowedNetGrpAcct();
-
-    String getAllowedSourceIpCidr();
+    
 }

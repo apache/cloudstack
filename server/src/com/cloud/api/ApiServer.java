@@ -655,9 +655,9 @@ public class ApiServer implements HttpRequestHandler {
             if (hypervisorType == null) 
             	hypervisorType = "kvm";
             
-            String directAttachNetworkGroupsEnabled = _ms.getConfigurationValue("direct.attach.network.groups.enabled");
-            if(directAttachNetworkGroupsEnabled == null) 
-            	directAttachNetworkGroupsEnabled = "false";     
+            String directAttachSecurityGroupsEnabled = _ms.getConfigurationValue("direct.attach.security.groups.enabled");
+            if(directAttachSecurityGroupsEnabled == null) 
+            	directAttachSecurityGroupsEnabled = "false";     
             
             String systemVmUseLocalStorage = _ms.getConfigurationValue("system.vm.use.local.storage");
             if (systemVmUseLocalStorage == null) 
@@ -674,7 +674,7 @@ public class ApiServer implements HttpRequestHandler {
             session.setAttribute("type", Short.valueOf(account.getType()).toString());
 //            session.setAttribute("networktype", networkType);
             session.setAttribute("hypervisortype", hypervisorType);
-            session.setAttribute("directattachnetworkgroupsenabled", directAttachNetworkGroupsEnabled);
+            session.setAttribute("directattachsecuritygroupsenabled", directAttachSecurityGroupsEnabled);
             session.setAttribute("systemvmuselocalstorage", systemVmUseLocalStorage);
 
             if (timezone != null) {

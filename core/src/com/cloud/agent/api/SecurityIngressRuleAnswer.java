@@ -17,20 +17,20 @@
  */
 package com.cloud.agent.api;
 
-public class NetworkIngressRuleAnswer extends Answer {
+public class SecurityIngressRuleAnswer extends Answer {
     Long logSequenceNumber = null;
     Long vmId = null;
     
-    protected NetworkIngressRuleAnswer() {
+    protected SecurityIngressRuleAnswer() {
     }
     
-    public NetworkIngressRuleAnswer(NetworkIngressRulesCmd cmd) {
+    public SecurityIngressRuleAnswer(SecurityIngressRulesCmd cmd) {
     	super(cmd);
         this.logSequenceNumber = cmd.getSeqNum();
         this.vmId = cmd.getVmId();
     }
     
-    public NetworkIngressRuleAnswer(NetworkIngressRulesCmd cmd, boolean result, String detail) {
+    public SecurityIngressRuleAnswer(SecurityIngressRulesCmd cmd, boolean result, String detail) {
         super(cmd, result, detail);
         this.logSequenceNumber = cmd.getSeqNum();
         this.vmId = cmd.getVmId();

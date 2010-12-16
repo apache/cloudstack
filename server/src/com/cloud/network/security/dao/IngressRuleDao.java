@@ -24,13 +24,13 @@ import com.cloud.network.security.IngressRuleVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface IngressRuleDao extends GenericDao<IngressRuleVO, Long> {
-    List<IngressRuleVO> listByNetworkGroupId(long networkGroupId);
-    List<IngressRuleVO> listByAllowedNetworkGroupId(long networkGroupId);
+    List<IngressRuleVO> listBySecurityGroupId(long networkGroupId);
+    List<IngressRuleVO> listByAllowedSecurityGroupId(long networkGroupId);
     IngressRuleVO findByProtoPortsAndCidr(long networkGroupId, String proto, int startPort, int endPort, String cidr);
     IngressRuleVO findByProtoPortsAndGroup(String proto, int startPort, int endPort, String networkGroup);
     IngressRuleVO findByProtoPortsAndAllowedGroupId(long networkGroupId, String proto, int startPort, int endPort, Long allowedGroupId);
-    int deleteByNetworkGroup(long networkGroupId);
-	int deleteByPortProtoAndGroup(long networkGroupId, String protocol, int startPort,int endPort, Long id);
-	int deleteByPortProtoAndCidr(long networkGroupId, String protocol, int startPort,int endPort, String cidr);
+    int deleteBySecurityGroup(long securityGroupId);
+	int deleteByPortProtoAndGroup(long securityGroupId, String protocol, int startPort,int endPort, Long id);
+	int deleteByPortProtoAndCidr(long securityGroupId, String protocol, int startPort,int endPort, String cidr);
 
 }

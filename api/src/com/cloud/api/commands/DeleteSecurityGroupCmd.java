@@ -10,23 +10,23 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.ResourceInUseException;
 
-@Implementation(description="Deletes network group", responseObject=SuccessResponse.class)
-public class DeleteNetworkGroupCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteNetworkGroupCmd.class.getName());
-    private static final String s_name = "deletenetworkgroupresponse";
+@Implementation(description="Deletes security group", responseObject=SuccessResponse.class)
+public class DeleteSecurityGroupCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(DeleteSecurityGroupCmd.class.getName());
+    private static final String s_name = "deletesecuritygroupresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account of the network group. Must be specified with domain ID")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account of the security group. Must be specified with domain ID")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID of account owning the network group")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID of account owning the security group")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the network group name")
-    private String networkGroupName;
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the security group name")
+    private String securityGroupName;
 
 
     /////////////////////////////////////////////////////
@@ -41,8 +41,8 @@ public class DeleteNetworkGroupCmd extends BaseCmd {
         return domainId;
     }
 
-    public String getNetworkGroupName() {
-        return networkGroupName;
+    public String getSecurityGroupName() {
+        return securityGroupName;
     }
 
 
@@ -58,12 +58,12 @@ public class DeleteNetworkGroupCmd extends BaseCmd {
     @Override
     public void execute(){
         try{
-            boolean result = _networkGroupMgr.deleteNetworkGroup(this);
+            boolean result = _securityGroupMgr.deleteSecurityGroup(this);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete network group");
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete security group");
             }
         } catch (ResourceInUseException ex) {
             s_logger.warn("Exception: ", ex);

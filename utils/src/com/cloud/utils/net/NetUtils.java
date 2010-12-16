@@ -731,7 +731,7 @@ public class NetUtils {
     	return (proto.equals("tcp") || proto.equals("udp") || proto.equals("icmp"));
     }
     
-    public static boolean isValidNetworkGroupProto(String p) {
+    public static boolean isValidSecurityGroupProto(String p) {
     	String proto = p.toLowerCase();
     	return (proto.equals("tcp") || proto.equals("udp") || proto.equals("icmp") || proto.equals("all"));
     }

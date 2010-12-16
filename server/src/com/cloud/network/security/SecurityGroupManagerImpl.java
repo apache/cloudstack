@@ -40,16 +40,16 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.NetworkIngressRulesCmd;
-import com.cloud.agent.api.NetworkIngressRulesCmd.IpPortAndProto;
+import com.cloud.agent.api.SecurityIngressRulesCmd;
+import com.cloud.agent.api.SecurityIngressRulesCmd.IpPortAndProto;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.commands.AuthorizeNetworkGroupIngressCmd;
-import com.cloud.api.commands.CreateNetworkGroupCmd;
-import com.cloud.api.commands.DeleteNetworkGroupCmd;
-import com.cloud.api.commands.ListNetworkGroupsCmd;
-import com.cloud.api.commands.RevokeNetworkGroupIngressCmd;
+import com.cloud.api.commands.AuthorizeSecurityGroupIngressCmd;
+import com.cloud.api.commands.CreateSecurityGroupCmd;
+import com.cloud.api.commands.DeleteSecurityGroupCmd;
+import com.cloud.api.commands.ListSecurityGroupsCmd;
+import com.cloud.api.commands.RevokeSecurityGroupIngressCmd;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -57,12 +57,12 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
-import com.cloud.network.security.NetworkGroupWorkVO.Step;
+import com.cloud.network.security.SecurityGroupWorkVO.Step;
 import com.cloud.network.security.dao.IngressRuleDao;
-import com.cloud.network.security.dao.NetworkGroupDao;
-import com.cloud.network.security.dao.NetworkGroupRulesDao;
-import com.cloud.network.security.dao.NetworkGroupVMMapDao;
-import com.cloud.network.security.dao.NetworkGroupWorkDao;
+import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.security.dao.SecurityGroupRulesDao;
+import com.cloud.network.security.dao.SecurityGroupVMMapDao;
+import com.cloud.network.security.dao.SecurityGroupWorkDao;
 import com.cloud.network.security.dao.VmRulesetLogDao;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
@@ -87,18 +87,18 @@ import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
-@Local(value={NetworkGroupManager.class, NetworkGroupService.class})
-public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGroupService, Manager {
-    public static final Logger s_logger = Logger.getLogger(NetworkGroupManagerImpl.class);
+@Local(value={SecurityGroupManager.class, SecurityGroupService.class})
+public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityGroupService, Manager {
+    public static final Logger s_logger = Logger.getLogger(SecurityGroupManagerImpl.class);
 
-	@Inject NetworkGroupDao _networkGroupDao;
+	@Inject SecurityGroupDao _securityGroupDao;
 	@Inject IngressRuleDao  _ingressRuleDao;
-	@Inject NetworkGroupVMMapDao _networkGroupVMMapDao;
-	@Inject NetworkGroupRulesDao _networkGroupRulesDao;
+	@Inject SecurityGroupVMMapDao _securityGroupVMMapDao;
+	@Inject SecurityGroupRulesDao _securityGroupRulesDao;
 	@Inject UserVmDao _userVMDao;
 	@Inject AccountDao _accountDao;
 	@Inject ConfigurationDao _configDao;
-	@Inject NetworkGroupWorkDao _workDao;
+	@Inject SecurityGroupWorkDao _workDao;
 	@Inject VmRulesetLogDao _rulesetLogDao;
 	@Inject DomainDao _domainDao;
 	@Inject AgentManager _agentMgr;
@@ -111,13 +111,13 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 
 	
 	boolean _enabled = false;
-	NetworkGroupListener _answerListener;
+	SecurityGroupListener _answerListener;
     
 	
-	private final class NetworkGroupVOComparator implements
-			Comparator<NetworkGroupVO> {
+	private final class SecurityGroupVOComparator implements
+			Comparator<SecurityGroupVO> {
 		@Override
-		public int compare(NetworkGroupVO o1, NetworkGroupVO o2) {
+		public int compare(SecurityGroupVO o1, SecurityGroupVO o2) {
 			return o1.getId() == o2.getId() ? 0 : o1.getId() < o2.getId() ? -1 : 1;
 		}
 	}
@@ -268,9 +268,9 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 
 		Map<PortAndProto, Set<String>> allowed = new TreeMap<PortAndProto, Set<String>>();
 
-		List<NetworkGroupVMMapVO> groupsForVm = _networkGroupVMMapDao.listByInstanceId(userVmId);
-		for (NetworkGroupVMMapVO mapVO: groupsForVm) {
-			List<IngressRuleVO> rules = _ingressRuleDao.listByNetworkGroupId(mapVO.getNetworkGroupId());
+		List<SecurityGroupVMMapVO> groupsForVm = _securityGroupVMMapDao.listByInstanceId(userVmId);
+		for (SecurityGroupVMMapVO mapVO: groupsForVm) {
+			List<IngressRuleVO> rules = _ingressRuleDao.listBySecurityGroupId(mapVO.getSecurityGroupId());
 			for (IngressRuleVO rule: rules){
 				PortAndProto portAndProto = new PortAndProto(rule.getProtocol(), rule.getStartPort(), rule.getEndPort());
 				Set<String> cidrs = allowed.get(portAndProto );
@@ -278,8 +278,8 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 					cidrs = new TreeSet<String>(new CidrComparator());
 				}
 				if (rule.getAllowedNetworkId() != null){
-					List<NetworkGroupVMMapVO> allowedInstances = _networkGroupVMMapDao.listByNetworkGroup(rule.getAllowedNetworkId(), State.Running);
-					for (NetworkGroupVMMapVO ngmapVO: allowedInstances){
+					List<SecurityGroupVMMapVO> allowedInstances = _securityGroupVMMapDao.listBySecurityGroup(rule.getAllowedNetworkId(), State.Running);
+					for (SecurityGroupVMMapVO ngmapVO: allowedInstances){
 						String cidr = ngmapVO.getGuestIpAddress();
 						if (cidr != null) {
 							cidr = cidr + "/32";
@@ -320,7 +320,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 			Transaction txn = Transaction.currentTxn();
 			txn.start();
 			VmRulesetLogVO log = null;
-			NetworkGroupWorkVO work = null;
+			SecurityGroupWorkVO work = null;
 			UserVm vm = null;
 			try {
 				vm = _userVMDao.acquireInLockTable(vmId);
@@ -340,7 +340,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 				}
 				work = _workDao.findByVmIdStep(vmId, Step.Scheduled);
 				if (work == null) {
-					work = new NetworkGroupWorkVO(vmId,  null, null, NetworkGroupWorkVO.Step.Scheduled, null);
+					work = new SecurityGroupWorkVO(vmId,  null, null, SecurityGroupWorkVO.Step.Scheduled, null);
 					work = _workDao.persist(work);
 				}
 				
@@ -362,10 +362,10 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 	protected Set<Long> getAffectedVmsForVmStart(UserVm userVm) {
 		Set<Long> affectedVms = new HashSet<Long>();
 		affectedVms.add(userVm.getId());
-		List<NetworkGroupVMMapVO> groupsForVm = _networkGroupVMMapDao.listByInstanceId(userVm.getId());
+		List<SecurityGroupVMMapVO> groupsForVm = _securityGroupVMMapDao.listByInstanceId(userVm.getId());
 		//For each group, find the ingress rules that allow the group
-		for (NetworkGroupVMMapVO mapVO: groupsForVm) {//FIXME: use custom sql in the dao
-			List<IngressRuleVO> allowingRules = _ingressRuleDao.listByAllowedNetworkGroupId(mapVO.getNetworkGroupId());
+		for (SecurityGroupVMMapVO mapVO: groupsForVm) {//FIXME: use custom sql in the dao
+			List<IngressRuleVO> allowingRules = _ingressRuleDao.listByAllowedSecurityGroupId(mapVO.getSecurityGroupId());
 			//For each ingress rule that allows a group that the vm belongs to, find the group it belongs to
 			affectedVms.addAll(getAffectedVmsForIngressRules(allowingRules));
 		}
@@ -374,10 +374,10 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 	
 	protected Set<Long> getAffectedVmsForVmStop(UserVm userVm) {
 		Set<Long> affectedVms = new HashSet<Long>();
-		List<NetworkGroupVMMapVO> groupsForVm = _networkGroupVMMapDao.listByInstanceId(userVm.getId());
+		List<SecurityGroupVMMapVO> groupsForVm = _securityGroupVMMapDao.listByInstanceId(userVm.getId());
 		//For each group, find the ingress rules that allow the group
-		for (NetworkGroupVMMapVO mapVO: groupsForVm) {//FIXME: use custom sql in the dao
-			List<IngressRuleVO> allowingRules = _ingressRuleDao.listByAllowedNetworkGroupId(mapVO.getNetworkGroupId());
+		for (SecurityGroupVMMapVO mapVO: groupsForVm) {//FIXME: use custom sql in the dao
+			List<IngressRuleVO> allowingRules = _ingressRuleDao.listByAllowedSecurityGroupId(mapVO.getSecurityGroupId());
 			//For each ingress rule that allows a group that the vm belongs to, find the group it belongs to
 			affectedVms.addAll(getAffectedVmsForIngressRules(allowingRules));
 		}
@@ -390,27 +390,27 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 		Set<Long> affectedVms = new HashSet<Long>();
 
 		for (IngressRuleVO allowingRule: allowingRules){
-			distinctGroups.add(allowingRule.getNetworkGroupId());
+			distinctGroups.add(allowingRule.getSecurityGroupId());
 		}
 		for (Long groupId: distinctGroups){
 			//allVmUpdates.putAll(generateRulesetForGroupMembers(groupId));
-			affectedVms.addAll(_networkGroupVMMapDao.listVmIdsByNetworkGroup(groupId));
+			affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(groupId));
 		}
 		return affectedVms;
 	}
 
 	
 	
-	protected NetworkIngressRulesCmd generateRulesetCmd(String vmName, String guestIp, String guestMac, Long vmId, String signature,  long seqnum, Map<PortAndProto, Set<String>> rules) {
+	protected SecurityIngressRulesCmd generateRulesetCmd(String vmName, String guestIp, String guestMac, Long vmId, String signature,  long seqnum, Map<PortAndProto, Set<String>> rules) {
 		List<IpPortAndProto> result = new ArrayList<IpPortAndProto>();
 		for (PortAndProto pAp : rules.keySet()) {
 			Set<String> cidrs = rules.get(pAp);
 			if (cidrs.size() > 0) {
-				IpPortAndProto ipPortAndProto = new NetworkIngressRulesCmd.IpPortAndProto(pAp.getProto(), pAp.getStartPort(), pAp.getEndPort(), cidrs.toArray(new String[cidrs.size()]));
+				IpPortAndProto ipPortAndProto = new SecurityIngressRulesCmd.IpPortAndProto(pAp.getProto(), pAp.getStartPort(), pAp.getEndPort(), cidrs.toArray(new String[cidrs.size()]));
 				result.add(ipPortAndProto);
 			}
 		}
-		return new NetworkIngressRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqnum, result.toArray(new IpPortAndProto[result.size()]));
+		return new SecurityIngressRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqnum, result.toArray(new IpPortAndProto[result.size()]));
 	}
 	
 	protected void handleVmStopped(UserVm userVm) {
@@ -420,15 +420,15 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 	
 	
 	@Override @DB @SuppressWarnings("rawtypes")
-	public List<IngressRuleVO> authorizeNetworkGroupIngress(AuthorizeNetworkGroupIngressCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
-		String groupName = cmd.getNetworkGroupName();
+	public List<IngressRuleVO> authorizeSecurityGroupIngress(AuthorizeSecurityGroupIngressCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
+		String groupName = cmd.getSecurityGroupName();
 		String protocol = cmd.getProtocol();
 		Integer startPort = cmd.getStartPort();
 		Integer endPort = cmd.getEndPort();
 		Integer icmpType = cmd.getIcmpType();
 		Integer icmpCode = cmd.getIcmpCode();
 		List<String> cidrList = cmd.getCidrList();
-		Map groupList = cmd.getUserNetworkGroupList();
+		Map groupList = cmd.getUserSecurityGroupList();
         Account account = UserContext.current().getAccount();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
@@ -445,7 +445,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
         	protocol = "all";
         }
 
-        if (!NetUtils.isValidNetworkGroupProto(protocol)) {
+        if (!NetUtils.isValidSecurityGroupProto(protocol)) {
         	s_logger.debug("Invalid protocol specified " + protocol);
         	 throw new InvalidParameterValueException("Invalid protocol " + protocol);
         }
@@ -497,9 +497,9 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
                 // if it's an admin account, do a quick permission check
                 if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Unable to find rules for network security group id = " + groupName + ", permission denied.");
+                        s_logger.debug("Unable to find rules for security group id = " + groupName + ", permission denied.");
                     }
-                    throw new PermissionDeniedException("Unable to find rules for network security group id = " + groupName + ", permission denied.");
+                    throw new PermissionDeniedException("Unable to find rules for security group id = " + groupName + ", permission denied.");
                 }
 
                 Account groupOwner = _accountDao.findActiveAccount(accountName, domainId);
@@ -521,7 +521,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
         }
 
         if (accountId == null) {
-            throw new InvalidParameterValueException("Unable to find account for network security group " + groupName + "; failed to authorize ingress.");
+            throw new InvalidParameterValueException("Unable to find account for security group " + groupName + "; failed to authorize ingress.");
         }
       
 
@@ -532,7 +532,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
         	throw new InvalidParameterValueException("At least one cidr or at least one security group needs to be specified");
         }
         
-        List<NetworkGroupVO> authorizedGroups = new ArrayList<NetworkGroupVO> ();
+        List<SecurityGroupVO> authorizedGroups = new ArrayList<SecurityGroupVO> ();
         if (groupList != null) {
             Collection userGroupCollection = groupList.values();
             Iterator iter = userGroupCollection.iterator();
@@ -552,7 +552,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
         		    throw new InvalidParameterValueException("Nonexistent account: " + authorizedAccountName + " when trying to authorize ingress for " + groupName + ":" + protocol + ":" + startPortOrType + ":" + endPortOrCode);
         		}
 
-        		NetworkGroupVO groupVO = _networkGroupDao.findByAccountAndName(authorizedAccount.getId(), group);
+        		SecurityGroupVO groupVO = _securityGroupDao.findByAccountAndName(authorizedAccount.getId(), group);
         		if (groupVO == null) {
         		    if (s_logger.isDebugEnabled()) {
         		        s_logger.debug("Nonexistent group " + group + " for account " + authorizedAccountName + "/" + domainId);
@@ -564,79 +564,79 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
         }
 		
         final Transaction txn = Transaction.currentTxn();
-		final Set<NetworkGroupVO> authorizedGroups2 = new TreeSet<NetworkGroupVO>(new NetworkGroupVOComparator());
+		final Set<SecurityGroupVO> authorizedGroups2 = new TreeSet<SecurityGroupVO>(new SecurityGroupVOComparator());
 
 		authorizedGroups2.addAll(authorizedGroups); //Ensure we don't re-lock the same row
 		txn.start();
-		NetworkGroupVO networkGroup = _networkGroupDao.findByAccountAndName(accountId, groupName);
-		if (networkGroup == null) {
-			s_logger.warn("Network security group not found: name= " + groupName);
+		SecurityGroupVO securityGroup = _securityGroupDao.findByAccountAndName(accountId, groupName);
+		if (securityGroup == null) {
+			s_logger.warn("Security group not found: name= " + groupName);
 			return null;
 		}
 		//Prevents other threads/management servers from creating duplicate ingress rules
-		NetworkGroupVO networkGroupLock = _networkGroupDao.acquireInLockTable(networkGroup.getId());
-		if (networkGroupLock == null)  {
+		SecurityGroupVO securityGroupLock = _securityGroupDao.acquireInLockTable(securityGroup.getId());
+		if (securityGroupLock == null)  {
 			s_logger.warn("Could not acquire lock on network security group: name= " + groupName);
 			return null;
 		}
 		List<IngressRuleVO> newRules = new ArrayList<IngressRuleVO>();
 		try {
 			//Don't delete the group from under us.
-			networkGroup = _networkGroupDao.lockRow(networkGroup.getId(), false);
-			if (networkGroup == null) {
+			securityGroup = _securityGroupDao.lockRow(securityGroup.getId(), false);
+			if (securityGroup == null) {
 				s_logger.warn("Could not acquire lock on network group " + groupName);
 				return null;
 			}
 
-			for (final NetworkGroupVO ngVO: authorizedGroups2) {
+			for (final SecurityGroupVO ngVO: authorizedGroups2) {
 				final Long ngId = ngVO.getId();
 				//Don't delete the referenced group from under us
-				if (ngVO.getId() != networkGroup.getId()) {
-					final NetworkGroupVO tmpGrp = _networkGroupDao.lockRow(ngId, false);
+				if (ngVO.getId() != securityGroup.getId()) {
+					final SecurityGroupVO tmpGrp = _securityGroupDao.lockRow(ngId, false);
 					if (tmpGrp == null) {
-						s_logger.warn("Failed to acquire lock on network group: " + ngId);
+						s_logger.warn("Failed to acquire lock on security group: " + ngId);
 						txn.rollback();
 						return null;
 					}
 				}
-				IngressRuleVO ingressRule = _ingressRuleDao.findByProtoPortsAndAllowedGroupId(networkGroup.getId(), protocol, startPort, endPort, ngVO.getId());
+				IngressRuleVO ingressRule = _ingressRuleDao.findByProtoPortsAndAllowedGroupId(securityGroup.getId(), protocol, startPort, endPort, ngVO.getId());
 				if (ingressRule != null) {
 					continue; //rule already exists.
 				}
-				ingressRule  = new IngressRuleVO(networkGroup.getId(), startPort, endPort, protocol, ngVO.getId(), ngVO.getName(), ngVO.getAccountName());
+				ingressRule  = new IngressRuleVO(securityGroup.getId(), startPort, endPort, protocol, ngVO.getId(), ngVO.getName(), ngVO.getAccountName());
 				ingressRule = _ingressRuleDao.persist(ingressRule);
 				newRules.add(ingressRule);
 			}
 			for (String cidr: cidrList) {
-				IngressRuleVO ingressRule = _ingressRuleDao.findByProtoPortsAndCidr(networkGroup.getId(),protocol, startPort, endPort, cidr);
+				IngressRuleVO ingressRule = _ingressRuleDao.findByProtoPortsAndCidr(securityGroup.getId(),protocol, startPort, endPort, cidr);
 				if (ingressRule != null) {
 					continue;
 				}
-				ingressRule  = new IngressRuleVO(networkGroup.getId(), startPort, endPort, protocol, cidr);
+				ingressRule  = new IngressRuleVO(securityGroup.getId(), startPort, endPort, protocol, cidr);
 				ingressRule = _ingressRuleDao.persist(ingressRule);
 				newRules.add(ingressRule);
 			}
 			if (s_logger.isDebugEnabled()) {
-	            s_logger.debug("Added " + newRules.size() + " rules to network group " + groupName);
+	            s_logger.debug("Added " + newRules.size() + " rules to security group " + groupName);
 			}
 			txn.commit();
 			final Set<Long> affectedVms = new HashSet<Long>();
-			affectedVms.addAll(_networkGroupVMMapDao.listVmIdsByNetworkGroup(networkGroup.getId()));
+			affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(securityGroup.getId()));
 			scheduleRulesetUpdateToHosts(affectedVms, true, null);
 			return newRules;
 		} catch (Exception e){
 			s_logger.warn("Exception caught when adding ingress rules ", e);
 			throw new CloudRuntimeException("Exception caught when adding ingress rules", e);
 		} finally {
-			if (networkGroupLock != null) {
-				_networkGroupDao.releaseFromLockTable(networkGroupLock.getId());
+			if (securityGroupLock != null) {
+				_securityGroupDao.releaseFromLockTable(securityGroupLock.getId());
 			}
 		}
 	}
 	
 	@Override
 	@DB @SuppressWarnings("rawtypes")
-	public boolean revokeNetworkGroupIngress(RevokeNetworkGroupIngressCmd cmd) {
+	public boolean revokeSecurityGroupIngress(RevokeSecurityGroupIngressCmd cmd) {
 		
 		//input validation
 		Account account = UserContext.current().getAccount();
@@ -648,9 +648,9 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
         Integer icmpType = cmd.getIcmpType();
         Integer icmpCode = cmd.getIcmpCode();
         String protocol = cmd.getProtocol();
-        String networkGroup = cmd.getNetworkGroupName();
+        String securityGroup = cmd.getSecurityGroupName();
         String cidrList = cmd.getCidrList();
-        Map groupList = cmd.getUserNetworkGroupList();
+        Map groupList = cmd.getUserSecurityGroupList();
         String [] cidrs = null;
         Long accountId = null;
         Integer startPortOrType = null;
@@ -659,7 +659,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
         	protocol = "all";
         }
         //FIXME: for exceptions below, add new enums to BaseCmd.PARAM_ to reflect the error condition more precisely
-        if (!NetUtils.isValidNetworkGroupProto(protocol)) {
+        if (!NetUtils.isValidSecurityGroupProto(protocol)) {
         	s_logger.debug("Invalid protocol specified " + protocol);
         	 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid protocol " + protocol);
         }
@@ -709,9 +709,9 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
                 // if it's an admin account, do a quick permission check
                 if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Unable to find rules for network security group id = " + networkGroup + ", permission denied.");
+                        s_logger.debug("Unable to find rules for network security group id = " + securityGroup + ", permission denied.");
                     }
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find rules for network security group id = " + networkGroup + ", permission denied.");
+                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find rules for network security group id = " + securityGroup + ", permission denied.");
                 }
                 Account groupOwner =  _accountDao.findActiveAccount(accountName, domainId);
                 if (groupOwner == null) {
@@ -732,13 +732,13 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
         }
 
         if (accountId == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account for network security group " + networkGroup + "; failed to revoke ingress.");
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account for network security group " + securityGroup + "; failed to revoke ingress.");
         }
 
-        NetworkGroupVO sg = _networkGroupDao.findByAccountAndName(accountId, networkGroup);
+        SecurityGroupVO sg = _securityGroupDao.findByAccountAndName(accountId, securityGroup);
         if (sg == null) {
-            s_logger.debug("Unable to find network security group with id " + networkGroup);
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find network security group with id " + networkGroup);
+            s_logger.debug("Unable to find network security group with id " + securityGroup);
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find network security group with id " + securityGroup);
         }
 
         if (cidrList == null && groupList == null) {
@@ -760,7 +760,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
         	}
         }
 
-        List<NetworkGroupVO> authorizedGroups = new ArrayList<NetworkGroupVO> ();
+        List<SecurityGroupVO> authorizedGroups = new ArrayList<SecurityGroupVO> ();
         if (groupList != null) {
             Collection userGroupCollection = groupList.values();
             Iterator iter = userGroupCollection.iterator();
@@ -775,12 +775,12 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
         		Account authorizedAccount = _accountDao.findActiveAccount(authorizedAccountName, domainId);
                 if (authorizedAccount == null) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Nonexistent account: " + authorizedAccountName + ", domainid: " + domainId + " when trying to revoke ingress for " + networkGroup + ":" + protocol + ":" + startPortOrType + ":" + endPortOrCode);
+                        s_logger.debug("Nonexistent account: " + authorizedAccountName + ", domainid: " + domainId + " when trying to revoke ingress for " + securityGroup + ":" + protocol + ":" + startPortOrType + ":" + endPortOrCode);
                     }
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Nonexistent account: " + authorizedAccountName + " when trying to revoke ingress for " + networkGroup + ":" + protocol + ":" + startPortOrType + ":" + endPortOrCode);
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Nonexistent account: " + authorizedAccountName + " when trying to revoke ingress for " + securityGroup + ":" + protocol + ":" + startPortOrType + ":" + endPortOrCode);
                 }
 
-                NetworkGroupVO groupVO = _networkGroupDao.findByAccountAndName(authorizedAccount.getId(), group);
+                SecurityGroupVO groupVO = _securityGroupDao.findByAccountAndName(authorizedAccount.getId(), group);
                 if (groupVO == null) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Nonexistent group and/or accountId: " + accountId + ", groupName=" + group);
@@ -803,29 +803,29 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 		final int numToDelete = cidrList.length() + authorizedGroups.size();
         final Transaction txn = Transaction.currentTxn();
 
-		NetworkGroupVO networkGroupHandle = _networkGroupDao.findByAccountAndName(accountId, networkGroup);
-		if (networkGroupHandle == null) {
-			s_logger.warn("Network security group not found: name= " + networkGroup);
+		SecurityGroupVO securityGroupHandle = _securityGroupDao.findByAccountAndName(accountId, securityGroup);
+		if (securityGroupHandle == null) {
+			s_logger.warn("Network security group not found: name= " + securityGroup);
 			return false;
 		}
 		try {
 			txn.start();
 			
-			networkGroupHandle = _networkGroupDao.acquireInLockTable(networkGroupHandle.getId());
-			if (networkGroupHandle == null)  {
-				s_logger.warn("Could not acquire lock on network security group: name= " + networkGroup);
+			securityGroupHandle = _securityGroupDao.acquireInLockTable(securityGroupHandle.getId());
+			if (securityGroupHandle == null)  {
+				s_logger.warn("Could not acquire lock on network security group: name= " + securityGroup);
 				return false;
 			}
-			for (final NetworkGroupVO ngVO: authorizedGroups) {
-				numDeleted += _ingressRuleDao.deleteByPortProtoAndGroup(networkGroupHandle.getId(), protocol, startPort, endPort, ngVO.getId());
+			for (final SecurityGroupVO ngVO: authorizedGroups) {
+				numDeleted += _ingressRuleDao.deleteByPortProtoAndGroup(securityGroupHandle.getId(), protocol, startPort, endPort, ngVO.getId());
 			}
 			for (final String cidr: cidrs) {
-				numDeleted += _ingressRuleDao.deleteByPortProtoAndCidr(networkGroupHandle.getId(), protocol, startPort, endPort, cidr);
+				numDeleted += _ingressRuleDao.deleteByPortProtoAndCidr(securityGroupHandle.getId(), protocol, startPort, endPort, cidr);
 			}
-			s_logger.debug("revokeNetworkGroupIngress for group: " + networkGroup + ", numToDelete=" + numToDelete + ", numDeleted=" + numDeleted);
+			s_logger.debug("revokeSecurityGroupIngress for group: " + securityGroup + ", numToDelete=" + numToDelete + ", numDeleted=" + numDeleted);
 			
 			final Set<Long> affectedVms = new HashSet<Long>();
-			affectedVms.addAll(_networkGroupVMMapDao.listVmIdsByNetworkGroup(networkGroupHandle.getId()));
+			affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(securityGroupHandle.getId()));
 			scheduleRulesetUpdateToHosts(affectedVms, true, null);
 			
 			return true;
@@ -833,8 +833,8 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 			s_logger.warn("Exception caught when deleting ingress rules ", e);
 			throw new CloudRuntimeException("Exception caught when deleting ingress rules", e);
 		} finally {
-			if (networkGroup != null) {
-				_networkGroupDao.releaseFromLockTable(networkGroupHandle.getId());
+			if (securityGroup != null) {
+				_securityGroupDao.releaseFromLockTable(securityGroupHandle.getId());
 			}
 			txn.commit();
 		}
@@ -848,7 +848,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 	}
 
 	@Override
-    public NetworkGroupVO createNetworkGroup(CreateNetworkGroupCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
+    public SecurityGroupVO createSecurityGroup(CreateSecurityGroupCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
         if (!_enabled) {
             return null;
         }
@@ -862,17 +862,17 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
             if ((account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
                 if ((domainId != null) && (accountName != null)) {
                     if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                        throw new PermissionDeniedException("Unable to create network group in domain " + domainId + ", permission denied.");
+                        throw new PermissionDeniedException("Unable to create security group in domain " + domainId + ", permission denied.");
                     }
 
                     Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
                     if (userAccount == null) {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId + ", failed to create network group " + cmd.getNetworkGroupName());
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId + ", failed to create security group " + cmd.getSecurityGroupName());
                     }
 
                     accountId = userAccount.getId();
                 } else {
-                    // the admin must be creating a network group for himself/herself
+                    // the admin must be creating a security group for himself/herself
                     if (account != null) {
                         accountId = account.getId();
                         domainId = account.getDomainId();
@@ -893,23 +893,23 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
                 if (userAccount != null) {
                     accountId = userAccount.getId();
                 } else {
-                    throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId + ", failed to create network group " + cmd.getNetworkGroupName());
+                    throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId + ", failed to create security group " + cmd.getSecurityGroupName());
                 }
             } else {
-                throw new InvalidParameterValueException("Missing account information (account: " + accountName + ", domain: " + domainId + "), failed to create network group " + cmd.getNetworkGroupName());
+                throw new InvalidParameterValueException("Missing account information (account: " + accountName + ", domain: " + domainId + "), failed to create security group " + cmd.getSecurityGroupName());
             }
         }
 
-        if (_networkGroupDao.isNameInUse(accountId, domainId, cmd.getNetworkGroupName())) {
-            throw new InvalidParameterValueException("Unable to create network group, a group with name " + cmd.getNetworkGroupName() + " already exisits.");
+        if (_securityGroupDao.isNameInUse(accountId, domainId, cmd.getSecurityGroupName())) {
+            throw new InvalidParameterValueException("Unable to create security group, a group with name " + cmd.getSecurityGroupName() + " already exisits.");
         }
 
-        return createNetworkGroup(cmd.getNetworkGroupName(), cmd.getDescription(), domainId, accountId, accountName);
+        return createSecurityGroup(cmd.getSecurityGroupName(), cmd.getDescription(), domainId, accountId, accountName);
 	}
 
 	@DB
 	@Override
-	public NetworkGroupVO createNetworkGroup(String name, String description, Long domainId, Long accountId, String accountName) {
+	public SecurityGroupVO createSecurityGroup(String name, String description, Long domainId, Long accountId, String accountName) {
 		if (!_enabled) {
 			return null;
 		}
@@ -922,10 +922,10 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 				s_logger.warn("Failed to acquire lock on account");
 				return null;
 			}
-			NetworkGroupVO group = _networkGroupDao.findByAccountAndName(accountId, name);
+			SecurityGroupVO group = _securityGroupDao.findByAccountAndName(accountId, name);
 			if (group == null){
-				group = new NetworkGroupVO(name, description, domainId, accountId, accountName);
-				group =  _networkGroupDao.persist(group);
+				group = new SecurityGroupVO(name, description, domainId, accountId, accountName);
+				group =  _securityGroupDao.persist(group);
 			}
 			return group;
 		} finally {
@@ -940,14 +940,14 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
-		String enabled =_configDao.getValue("direct.attach.network.groups.enabled");
+		String enabled =_configDao.getValue("direct.attach.security.groups.enabled");
 		if ("true".equalsIgnoreCase(enabled)) {
 			_enabled = true;
 		}
 		if (!_enabled) {
 			return false;
 		}
-		_answerListener = new NetworkGroupListener(this, _agentMgr, _workDao);
+		_answerListener = new SecurityGroupListener(this, _agentMgr, _workDao);
 		_agentMgr.registerForHostEvents(_answerListener, true, true, true);
 		
         _serverId = ((ManagementServer)ComponentLocator.getComponent(ManagementServer.Name)).getId();
@@ -981,15 +981,15 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 	}
 
 	@Override
-	public NetworkGroupVO createDefaultNetworkGroup(Long accountId) {
+	public SecurityGroupVO createDefaultSecurityGroup(Long accountId) {
 		if (!_enabled) {
 			return null;
 		}
-		NetworkGroupVO groupVO = _networkGroupDao.findByAccountAndName(accountId, NetworkGroupManager.DEFAULT_GROUP_NAME);
+		SecurityGroupVO groupVO = _securityGroupDao.findByAccountAndName(accountId, SecurityGroupManager.DEFAULT_GROUP_NAME);
 		if (groupVO == null ) {
 			Account accVO = _accountDao.findById(accountId);
 			if (accVO != null) {
-				return createNetworkGroup(NetworkGroupManager.DEFAULT_GROUP_NAME, NetworkGroupManager.DEFAULT_GROUP_DESCRIPTION, accVO.getDomainId(), accVO.getId(), accVO.getAccountName());
+				return createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, accVO.getDomainId(), accVO.getId(), accVO.getAccountName());
 			}
 		}
 		return groupVO;
@@ -1000,7 +1000,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 	    if (s_logger.isTraceEnabled()) {
 	        s_logger.trace("Checking the database");
 	    }
-		final NetworkGroupWorkVO work = _workDao.take(_serverId);
+		final SecurityGroupWorkVO work = _workDao.take(_serverId);
 		if (work == null) {
 			return;
 		}
@@ -1029,7 +1029,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 				agentId = vm.getHostId();
 				if (agentId != null ) {
 					_rulesetLogDao.findByVmId(work.getInstanceId());
-					NetworkIngressRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), vm.getGuestIpAddress(), vm.getGuestMacAddress(), vm.getId(), generateRulesetSignature(rules), seqnum, rules);
+					SecurityIngressRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), vm.getGuestIpAddress(), vm.getGuestMacAddress(), vm.getId(), generateRulesetSignature(rules), seqnum, rules);
 					Commands cmds = new Commands(cmd);
 					try {
 						_agentMgr.send(agentId, cmds, _answerListener);
@@ -1052,12 +1052,12 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 
 	@Override
 	@DB
-	public boolean addInstanceToGroups(final Long userVmId, final List<NetworkGroupVO> groups) {
+	public boolean addInstanceToGroups(final Long userVmId, final List<SecurityGroupVO> groups) {
 		if (!_enabled) {
 			return true;
 		}
 		if (groups != null) {
-			final Set<NetworkGroupVO> uniqueGroups = new TreeSet<NetworkGroupVO>(new NetworkGroupVOComparator());
+			final Set<SecurityGroupVO> uniqueGroups = new TreeSet<SecurityGroupVO>(new SecurityGroupVOComparator());
 			uniqueGroups.addAll(groups);
 			final Transaction txn = Transaction.currentTxn();
 			txn.start();
@@ -1066,17 +1066,17 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 				s_logger.warn("Failed to acquire lock on user vm id=" + userVmId);
 			}
 			try {
-				for (NetworkGroupVO networkGroup:uniqueGroups) {
+				for (SecurityGroupVO networkGroup:uniqueGroups) {
 					//don't let the group be deleted from under us.
-					NetworkGroupVO ngrpLock = _networkGroupDao.lockRow(networkGroup.getId(), false);
+					SecurityGroupVO ngrpLock = _securityGroupDao.lockRow(networkGroup.getId(), false);
 					if (ngrpLock == null) {
 						s_logger.warn("Failed to acquire lock on network group id=" + networkGroup.getId() + " name=" + networkGroup.getName());
 						txn.rollback();
 						return false;
 					}
-					if (_networkGroupVMMapDao.findByVmIdGroupId(userVmId, networkGroup.getId()) == null) {
-						NetworkGroupVMMapVO groupVmMapVO = new NetworkGroupVMMapVO(networkGroup.getId(), userVmId);
-						_networkGroupVMMapDao.persist(groupVmMapVO);
+					if (_securityGroupVMMapDao.findByVmIdGroupId(userVmId, networkGroup.getId()) == null) {
+						SecurityGroupVMMapVO groupVmMapVO = new SecurityGroupVMMapVO(networkGroup.getId(), userVmId);
+						_securityGroupVMMapDao.persist(groupVmMapVO);
 					}
 				}
 				txn.commit();
@@ -1105,7 +1105,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 		if (userVm == null) {
 			s_logger.warn("Failed to acquire lock on user vm id=" + userVmId);
 		}
-		int n = _networkGroupVMMapDao.deleteVM(userVmId);
+		int n = _securityGroupVMMapDao.deleteVM(userVmId);
 		s_logger.info("Disassociated " + n + " network groups " + " from uservm " + userVmId);
 		_userVMDao.releaseFromLockTable(userVmId);
 		txn.commit();
@@ -1113,8 +1113,8 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 
 	@DB
 	@Override
-	public boolean deleteNetworkGroup(DeleteNetworkGroupCmd cmd) throws ResourceInUseException, PermissionDeniedException, InvalidParameterValueException{
-		String name = cmd.getNetworkGroupName();
+	public boolean deleteSecurityGroup(DeleteSecurityGroupCmd cmd) throws ResourceInUseException, PermissionDeniedException, InvalidParameterValueException{
+		String name = cmd.getSecurityGroupName();
 		String accountName = cmd.getAccountName();
 		Long domainId = cmd.getDomainId();
 		Account account = UserContext.current().getAccount();
@@ -1157,7 +1157,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
             throw new InvalidParameterValueException("Unable to find account for network group " + name + "; failed to delete group.");
         }
 
-        NetworkGroupVO sg = _networkGroupDao.findByAccountAndName(accountId, name);
+        SecurityGroupVO sg = _securityGroupDao.findByAccountAndName(accountId, name);
         if (sg == null) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find network group " + name + "; failed to delete group.");
         }
@@ -1167,41 +1167,41 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();
 		
-		final NetworkGroupVO group = _networkGroupDao.lockRow(groupId, true);
+		final SecurityGroupVO group = _securityGroupDao.lockRow(groupId, true);
 		if (group == null) {
 			s_logger.info("Not deleting group -- cannot find id " + groupId);
 			return false;
 		}
 		
-		if (group.getName().equalsIgnoreCase(NetworkGroupManager.DEFAULT_GROUP_NAME)) {
+		if (group.getName().equalsIgnoreCase(SecurityGroupManager.DEFAULT_GROUP_NAME)) {
 			txn.rollback();
 			throw new PermissionDeniedException("The network group default is reserved");
 		}
 		
-		List<IngressRuleVO> allowingRules = _ingressRuleDao.listByAllowedNetworkGroupId(groupId);
+		List<IngressRuleVO> allowingRules = _ingressRuleDao.listByAllowedSecurityGroupId(groupId);
 		if (allowingRules.size() != 0) {
 			txn.rollback();
 			throw new ResourceInUseException("Cannot delete group when there are ingress rules that allow this group");
 		}
 		
-		List<IngressRuleVO> rulesInGroup = _ingressRuleDao.listByNetworkGroupId(groupId);
+		List<IngressRuleVO> rulesInGroup = _ingressRuleDao.listBySecurityGroupId(groupId);
 		if (rulesInGroup.size() != 0) {
 			txn.rollback();
 			throw new ResourceInUseException("Cannot delete group when there are ingress rules in this group");
 		}
-        _networkGroupDao.expunge(groupId);
+        _securityGroupDao.expunge(groupId);
         txn.commit();
         return true;
 	}
 
     @Override
-    public List<NetworkGroupRulesVO> searchForNetworkGroupRules(ListNetworkGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
+    public List<SecurityGroupRulesVO> searchForSecurityGroupRules(ListSecurityGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
         Account account = UserContext.current().getAccount();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
         Long instanceId = cmd.getVirtualMachineId();
-        String networkGroup = cmd.getNetworkGroupName();
+        String networkGroup = cmd.getSecurityGroupName();
         Boolean recursive = Boolean.FALSE;
 
         // permissions check
@@ -1253,10 +1253,10 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
             }
         }
 
-        Filter searchFilter = new Filter(NetworkGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(SecurityGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         Object keyword = cmd.getKeyword();
 
-        SearchBuilder<NetworkGroupVO> sb = _networkGroupDao.createSearchBuilder();
+        SearchBuilder<SecurityGroupVO> sb = _securityGroupDao.createSearchBuilder();
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
@@ -1268,13 +1268,13 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
-        SearchCriteria<NetworkGroupVO> sc = sb.create();
+        SearchCriteria<SecurityGroupVO> sc = sb.create();
         if (accountId != null) {
             sc.setParameters("accountId", accountId);
             if (networkGroup != null) {
                 sc.setParameters("name", networkGroup);
             } else if (keyword != null) {
-                SearchCriteria<NetworkGroupRulesVO> ssc = _networkGroupRulesDao.createSearchCriteria();
+                SearchCriteria<SecurityGroupRulesVO> ssc = _securityGroupRulesDao.createSearchCriteria();
                 ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
                 ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
                 sc.addAnd("name", SearchCriteria.Op.SC, ssc);
@@ -1288,10 +1288,10 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
             }
         }
         
-        List<NetworkGroupVO> networkGroups = _networkGroupDao.search(sc, searchFilter);
-        List<NetworkGroupRulesVO> networkRulesList = new ArrayList<NetworkGroupRulesVO>();
-        for (NetworkGroupVO group : networkGroups) {
-           networkRulesList.addAll(_networkGroupRulesDao.listNetworkRulesByGroupId(group.getId()));
+        List<SecurityGroupVO> networkGroups = _securityGroupDao.search(sc, searchFilter);
+        List<SecurityGroupRulesVO> networkRulesList = new ArrayList<SecurityGroupRulesVO>();
+        for (SecurityGroupVO group : networkGroups) {
+           networkRulesList.addAll(_securityGroupRulesDao.listSecurityRulesByGroupId(group.getId()));
         }
         
        if (instanceId != null) {
@@ -1301,13 +1301,13 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
         return networkRulesList;
     }
 
-	private List<NetworkGroupRulesVO> listNetworkGroupRulesByVM(long vmId) {
-	    List<NetworkGroupRulesVO> results = new ArrayList<NetworkGroupRulesVO>();
-	    List<NetworkGroupVMMapVO> networkGroupMappings = _networkGroupVMMapDao.listByInstanceId(vmId);
+	private List<SecurityGroupRulesVO> listNetworkGroupRulesByVM(long vmId) {
+	    List<SecurityGroupRulesVO> results = new ArrayList<SecurityGroupRulesVO>();
+	    List<SecurityGroupVMMapVO> networkGroupMappings = _securityGroupVMMapDao.listByInstanceId(vmId);
 	    if (networkGroupMappings != null) {
-	        for (NetworkGroupVMMapVO networkGroupMapping : networkGroupMappings) {
-	            NetworkGroupVO group = _networkGroupDao.findById(networkGroupMapping.getNetworkGroupId());
-	            List<NetworkGroupRulesVO> rules = _networkGroupRulesDao.listNetworkGroupRules(group.getAccountId(), networkGroupMapping.getGroupName());
+	        for (SecurityGroupVMMapVO networkGroupMapping : networkGroupMappings) {
+	            SecurityGroupVO group = _securityGroupDao.findById(networkGroupMapping.getSecurityGroupId());
+	            List<SecurityGroupRulesVO> rules = _securityGroupRulesDao.listSecurityGroupRules(group.getAccountId(), networkGroupMapping.getGroupName());
 	            if (rules != null) {
 	                results.addAll(rules);
 	            }
@@ -1348,11 +1348,11 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 
 	private void cleanupUnfinishedWork() {
 		Date before = new Date(System.currentTimeMillis() - 30*1000l);
-		List<NetworkGroupWorkVO> unfinished = _workDao.findUnfinishedWork(before);
+		List<SecurityGroupWorkVO> unfinished = _workDao.findUnfinishedWork(before);
 		if (unfinished.size() > 0) {
 			s_logger.info("Network Group Work cleanup found " + unfinished.size() + " unfinished work items older than " + before.toString());
 			Set<Long> affectedVms = new HashSet<Long>();
-			for (NetworkGroupWorkVO work: unfinished) {
+			for (SecurityGroupWorkVO work: unfinished) {
 				affectedVms.add(work.getInstanceId());
 			}
 			scheduleRulesetUpdateToHosts(affectedVms, false, null);
@@ -1362,11 +1362,11 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
 	}
 
 	@Override
-	public String getNetworkGroupsNamesForVm(long vmId) 
+	public String getSecurityGroupsNamesForVm(long vmId) 
 	{
 		try
 		{
-			List<NetworkGroupVMMapVO>networkGroupsToVmMap =  _networkGroupVMMapDao.listByInstanceId(vmId);
+			List<SecurityGroupVMMapVO>networkGroupsToVmMap =  _securityGroupVMMapDao.listByInstanceId(vmId);
         	int size = 0;
         	int j=0;		
             StringBuilder networkGroupNames = new StringBuilder();
@@ -1375,10 +1375,10 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager, NetworkGrou
             {
             	size = networkGroupsToVmMap.size();
             	
-            	for(NetworkGroupVMMapVO nG: networkGroupsToVmMap)
+            	for(SecurityGroupVMMapVO nG: networkGroupsToVmMap)
             	{
             		//get the group id and look up for the group name
-            		NetworkGroupVO currentNetworkGroup = _networkGroupDao.findById(nG.getNetworkGroupId());
+            		SecurityGroupVO currentNetworkGroup = _securityGroupDao.findById(nG.getSecurityGroupId());
             		networkGroupNames.append(currentNetworkGroup.getName());
             	
             		if(j<(size-1))

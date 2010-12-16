@@ -35,7 +35,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.IPAddressVO;
-import com.cloud.network.security.NetworkGroupVO;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
@@ -529,14 +529,14 @@ public interface ManagementServer extends ManagementService {
 
 	List<SecondaryStorageVmVO> searchForSecondaryStorageVm(Criteria c);
 
-    NetworkGroupVO findNetworkGroupByName(Long accountId, String groupName);
+    SecurityGroupVO findNetworkGroupByName(Long accountId, String groupName);
 
     /**
      * Find a network group by id
      * @param networkGroupId id of group to lookup
      * @return the network group if found, null otherwise
      */
-    NetworkGroupVO findNetworkGroupById(long networkGroupId);
+    SecurityGroupVO findNetworkGroupById(long networkGroupId);
 
 	/**
 	 * Is the hypervisor snapshot capable.

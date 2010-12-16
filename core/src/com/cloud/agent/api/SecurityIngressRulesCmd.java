@@ -20,7 +20,7 @@ package com.cloud.agent.api;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-public class NetworkIngressRulesCmd extends Command {
+public class SecurityIngressRulesCmd extends Command {
 	public static class IpPortAndProto {
 		String proto;
 		int startPort;
@@ -69,12 +69,12 @@ public class NetworkIngressRulesCmd extends Command {
 	Long vmId;
 	IpPortAndProto [] ruleSet;
 	
-	public NetworkIngressRulesCmd() {
+	public SecurityIngressRulesCmd() {
 		super();
 	}
 
 	
-	public NetworkIngressRulesCmd(String guestIp, String guestMac, String vmName, Long vmId, String signature, Long seqNum, IpPortAndProto[] ruleSet) {
+	public SecurityIngressRulesCmd(String guestIp, String guestMac, String vmName, Long vmId, String signature, Long seqNum, IpPortAndProto[] ruleSet) {
 		super();
 		this.guestIp = guestIp;
 		this.vmName = vmName;
@@ -113,7 +113,7 @@ public class NetworkIngressRulesCmd extends Command {
 	
 	public String stringifyRules() {
 		StringBuilder ruleBuilder = new StringBuilder();
-		for (NetworkIngressRulesCmd.IpPortAndProto ipPandP: getRuleSet()) {
+		for (SecurityIngressRulesCmd.IpPortAndProto ipPandP: getRuleSet()) {
 			ruleBuilder.append(ipPandP.getProto()).append(":").append(ipPandP.getStartPort()).append(":").append(ipPandP.getEndPort()).append(":");
 			for (String cidr: ipPandP.getAllowedCidrs()) {
 				ruleBuilder.append(cidr).append(",");
@@ -130,10 +130,10 @@ public class NetworkIngressRulesCmd extends Command {
 		return json.toJson(this);
 	}
 	
-	public static NetworkIngressRulesCmd fromJson(String jsonString) {
+	public static SecurityIngressRulesCmd fromJson(String jsonString) {
 		GsonBuilder gBuilder = new GsonBuilder();
 		Gson json = gBuilder.create();
-		return json.fromJson(jsonString, NetworkIngressRulesCmd.class);
+		return json.fromJson(jsonString, SecurityIngressRulesCmd.class);
 	}
 
 

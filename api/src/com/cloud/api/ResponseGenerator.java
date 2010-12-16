@@ -40,7 +40,7 @@ import com.cloud.api.response.InstanceGroupResponse;
 import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
-import com.cloud.api.response.NetworkGroupResponse;
+import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.PodResponse;
@@ -78,8 +78,8 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.security.IngressRule;
-import com.cloud.network.security.NetworkGroup;
-import com.cloud.network.security.NetworkGroupRules;
+import com.cloud.network.security.SecurityGroup;
+import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -171,11 +171,11 @@ public interface ResponseGenerator {
 
     ListResponse<TemplateResponse> createIsoResponses(VirtualMachineTemplate template, Long zoneId);
 
-    ListResponse<NetworkGroupResponse> createNetworkGroupResponses(List<? extends NetworkGroupRules> networkGroups);
+    ListResponse<SecurityGroupResponse> createSecurityGroupResponses(List<? extends SecurityGroupRules> networkGroups);
     
-    NetworkGroupResponse createNetworkGroupResponseFromIngressRule(List<? extends IngressRule> ingressRules);
+    SecurityGroupResponse createSecurityGroupResponseFromIngressRule(List<? extends IngressRule> ingressRules);
 
-    NetworkGroupResponse createNetworkGroupResponse(NetworkGroup group);
+    SecurityGroupResponse createSecurityGroupResponse(SecurityGroup group);
 
     ExtractResponse createExtractResponse(Long uploadId, Long id, Long zoneId, Long accountId, String mode);
 

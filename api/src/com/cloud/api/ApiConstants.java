@@ -100,8 +100,6 @@ public class ApiConstants {
     public static final String MODE = "mode";
     public static final String NAME = "name";
     public static final String NETWORK_DOMAIN = "networkdomain";
-    public static final String NETWORK_GROUP_LIST = "networkgrouplist";
-    public static final String NETWORK_GROUP_NAME = "networkgroupname";
     public static final String NETMASK = "netmask";
     public static final String NEW_NAME = "newname";
     public static final String OFFER_HA = "offerha";
@@ -127,6 +125,8 @@ public class ApiConstants {
     public static final String SCHEDULE = "schedule";
     public static final String SCOPE = "scope";
     public static final String SECRET_KEY = "secretkey";
+    public static final String SECURITY_GROUP_LIST = "securitygrouplist";
+    public static final String SECURITY_GROUP_NAME = "securitygroupname";
     public static final String SENT = "sent";
     public static final String SENT_BYTES = "sentbytes";
     public static final String SERVICE_OFFERING_ID = "serviceofferingid";
@@ -151,7 +151,7 @@ public class ApiConstants {
     public static final String USER_DATA = "userdata";
     public static final String USER_ID = "userid";
     public static final String USERNAME = "username";
-    public static final String USER_NETWORK_GROUP_LIST = "usernetworkgrouplist";
+    public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
     public static final String VALUE = "value";
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";

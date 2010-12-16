@@ -117,8 +117,8 @@ public class VMOperationResultObject {
 	@Param(name="hostid")
 	private Long hostid;
 	
-	@Param(name="networkgrouplist")
-	private String networkGroupList;
+	@Param(name="securitygrouplist")
+	private String securityGroupList;
 	
 	@Param(name="rootdeviceid")
 	private Long rootDeviceId;
@@ -142,12 +142,12 @@ public class VMOperationResultObject {
 		this.rootDeviceType = deviceType;
 	}
 	
-	public String getNetworkGroupList(){
-		return this.networkGroupList;
+	public String getSecurityGroupList(){
+		return this.securityGroupList;
 	}
 	
-	public void setNetworkGroupList(String nGroups){
-		this.networkGroupList = nGroups;
+	public void setSecurityGroupList(String nGroups){
+		this.securityGroupList = nGroups;
 	}
 	
 	public long getId() {

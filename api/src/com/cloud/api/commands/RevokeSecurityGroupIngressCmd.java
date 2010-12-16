@@ -20,10 +20,10 @@ import com.cloud.user.UserContext;
 
 @SuppressWarnings("rawtypes")
 @Implementation(responseObject=SuccessResponse.class)
-public class RevokeNetworkGroupIngressCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(RevokeNetworkGroupIngressCmd.class.getName());
+public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
+	public static final Logger s_logger = Logger.getLogger(RevokeSecurityGroupIngressCmd.class.getName());
 
-    private static final String s_name = "revokenetworkgroupingress";
+    private static final String s_name = "revokesecuritygroupingress";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -54,8 +54,8 @@ public class RevokeNetworkGroupIngressCmd extends BaseAsyncCmd {
     private Integer icmpType;
 
     //FIXME - add description
-    @Parameter(name=ApiConstants.NETWORK_GROUP_NAME, type=CommandType.STRING, required=true)
-    private String networkGroupName;
+    @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, required=true)
+    private String securityGroupName;
 
     //FIXME - add description
     @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING)
@@ -66,8 +66,8 @@ public class RevokeNetworkGroupIngressCmd extends BaseAsyncCmd {
     private Integer startPort;
 
     //FIXME - add description
-    @Parameter(name=ApiConstants.USER_NETWORK_GROUP_LIST, type=CommandType.MAP)
-    private Map userNetworkGroupList;
+    @Parameter(name=ApiConstants.USER_SECURITY_GROUP_LIST, type=CommandType.MAP)
+    private Map userSecurityGroupList;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -97,8 +97,8 @@ public class RevokeNetworkGroupIngressCmd extends BaseAsyncCmd {
         return icmpType;
     }
 
-    public String getNetworkGroupName() {
-        return networkGroupName;
+    public String getSecurityGroupName() {
+        return securityGroupName;
     }
 
     public String getProtocol() {
@@ -109,8 +109,8 @@ public class RevokeNetworkGroupIngressCmd extends BaseAsyncCmd {
         return startPort;
     }
 
-    public Map getUserNetworkGroupList() {
-        return userNetworkGroupList;
+    public Map getUserSecurityGroupList() {
+        return userSecurityGroupList;
     }
 
     /////////////////////////////////////////////////////
@@ -123,7 +123,7 @@ public class RevokeNetworkGroupIngressCmd extends BaseAsyncCmd {
     }
 
     public static String getResultObjectName() {
-    	return "revokenetworkgroupingress";
+    	return "revokesecuritygroupingress";
     }
 
     @Override
@@ -147,15 +147,15 @@ public class RevokeNetworkGroupIngressCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_NETWORK_GROUP_REVOKE_INGRESS;
+        return EventTypes.EVENT_SECURITY_GROUP_REVOKE_INGRESS;
     }
 
     @Override
     public String getEventDescription() {
         StringBuilder sb = new StringBuilder();
-        if (getUserNetworkGroupList() != null) {
+        if (getUserSecurityGroupList() != null) {
             sb.append("group list(group/account): ");
-            Collection userGroupCollection = getUserNetworkGroupList().values();
+            Collection userGroupCollection = getUserSecurityGroupList().values();
             Iterator iter = userGroupCollection.iterator();
 
             HashMap userGroup = (HashMap)iter.next();
@@ -175,12 +175,12 @@ public class RevokeNetworkGroupIngressCmd extends BaseAsyncCmd {
             sb.append("<error:  no ingress parameters>");
         }
 
-        return  "revoking ingress from group: " + getNetworkGroupName() + " for " + sb.toString();
+        return  "revoking ingress from group: " + getSecurityGroupName() + " for " + sb.toString();
     }
     
     @Override
     public void execute(){
-        boolean result = _networkGroupMgr.revokeNetworkGroupIngress(this);
+        boolean result = _securityGroupMgr.revokeSecurityGroupIngress(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

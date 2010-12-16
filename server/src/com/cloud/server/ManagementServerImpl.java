@@ -188,8 +188,8 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.router.DomainRouterManager;
-import com.cloud.network.security.NetworkGroupVO;
-import com.cloud.network.security.dao.NetworkGroupDao;
+import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.auth.UserAuthenticator;
@@ -283,7 +283,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final AccountManager _accountMgr;
     private final AgentManager _agentMgr;
     private final ConfigurationManager _configMgr;
-	private final NetworkGroupDao _networkSecurityGroupDao;
+	private final SecurityGroupDao _networkSecurityGroupDao;
     private final IPAddressDao _publicIpAddressDao;
     private final DataCenterIpAddressDao _privateIpAddressDao;
     private final DomainRouterDao _routerDao;
@@ -383,7 +383,7 @@ public class ManagementServerImpl implements ManagementServer {
         _consoleProxyMgr = locator.getManager(ConsoleProxyManager.class);
         _secStorageVmMgr = locator.getManager(SecondaryStorageVmManager.class);
         _storageMgr = locator.getManager(StorageManager.class);
-        _networkSecurityGroupDao  = locator.getDao(NetworkGroupDao.class);
+        _networkSecurityGroupDao  = locator.getDao(SecurityGroupDao.class);
         _publicIpAddressDao = locator.getDao(IPAddressDao.class);
         _privateIpAddressDao = locator.getDao(DataCenterIpAddressDao.class);
         _consoleProxyDao = locator.getDao(ConsoleProxyDao.class);
@@ -4362,14 +4362,14 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
 	@Override
-	public NetworkGroupVO findNetworkGroupByName(Long accountId, String groupName) {
-		NetworkGroupVO groupVO = _networkSecurityGroupDao.findByAccountAndName(accountId, groupName);
+	public SecurityGroupVO findNetworkGroupByName(Long accountId, String groupName) {
+		SecurityGroupVO groupVO = _networkSecurityGroupDao.findByAccountAndName(accountId, groupName);
 		return groupVO;
 	}
 
     @Override
-    public NetworkGroupVO findNetworkGroupById(long networkGroupId) {
-        NetworkGroupVO groupVO = _networkSecurityGroupDao.findById(networkGroupId);
+    public SecurityGroupVO findNetworkGroupById(long networkGroupId) {
+        SecurityGroupVO groupVO = _networkSecurityGroupDao.findById(networkGroupId);
         return groupVO;
     }
 
@@ -4467,12 +4467,12 @@ public class ManagementServerImpl implements ManagementServer {
     public Map<String, String> listCapabilities(ListCapabilitiesCmd cmd) {
         Map<String, String> capabilities = new HashMap<String, String>();
         
-        String networkGroupsEnabled = _configs.get("direct.attach.network.groups.enabled");
-        if(networkGroupsEnabled == null) {
-            networkGroupsEnabled = "false";
+        String securityGroupsEnabled = _configs.get("direct.attach.security.groups.enabled");
+        if(securityGroupsEnabled == null) {
+            securityGroupsEnabled = "false";
         }             
 
-        capabilities.put("networkGroupsEnabled", networkGroupsEnabled);        
+        capabilities.put("securityGroupsEnabled", securityGroupsEnabled);        
         capabilities.put("cloudStackVersion", getVersion());
         return capabilities;
     }

@@ -4,18 +4,18 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class CapabilitiesResponse extends BaseResponse {
-    @SerializedName("networkgroupsenabled") @Param(description="true if network groups support is enabled, false otherwise")
-    private String networkGroupsEnabled;
+    @SerializedName("securitygroupsenabled") @Param(description="true if security groups support is enabled, false otherwise")
+    private String securityGroupsEnabled;
 
     @SerializedName("cloudstackversion") @Param(description="version of the cloud stack")
     private String cloudStackVersion;
 
-    public String getNetworkGroupsEnabled() {
-        return networkGroupsEnabled;
+    public String getSecurityGroupsEnabled() {
+        return securityGroupsEnabled;
     }
 
-    public void setNetworkGroupsEnabled(String networkGroupsEnabled) {
-        this.networkGroupsEnabled = networkGroupsEnabled;
+    public void setSecurityGroupsEnabled(String securityGroupsEnabled) {
+        this.securityGroupsEnabled = securityGroupsEnabled;
     }
 
     public String getCloudStackVersion() {

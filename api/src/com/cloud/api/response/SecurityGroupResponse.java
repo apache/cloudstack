@@ -22,26 +22,26 @@ import java.util.List;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
-public class NetworkGroupResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the ID of the network group")
+public class SecurityGroupResponse extends BaseResponse {
+    @SerializedName("id") @Param(description="the ID of the security group")
     private Long id;
 
-    @SerializedName("name") @Param(description="the name of the network group")
+    @SerializedName("name") @Param(description="the name of the security group")
     private String name;
 
-    @SerializedName("description") @Param(description="the description of the network group")
+    @SerializedName("description") @Param(description="the description of the security group")
     private String description;
 
-    @SerializedName("account") @Param(description="the account owning the network group")
+    @SerializedName("account") @Param(description="the account owning the security group")
     private String accountName;
 
-    @SerializedName("domainid") @Param(description="the domain ID of the network group")
+    @SerializedName("domainid") @Param(description="the domain ID of the security group")
     private Long domainId;
 
-    @SerializedName("domain") @Param(description="the domain name of the network group")
+    @SerializedName("domain") @Param(description="the domain name of the security group")
     private String domainName;
 
-    @SerializedName("ingressrule")  @Param(description="the list of ingress rules associated with the network group")
+    @SerializedName("ingressrule")  @Param(description="the list of ingress rules associated with the security group")
     private List<IngressRuleResponse> ingressRules;
 
     public Long getId() {

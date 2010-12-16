@@ -6,3 +6,10 @@ SET foreign_key_checks = 0;
 ALTER TABLE `cloud`.`template_host_ref` ADD COLUMN `physical_size` bigint unsigned NOT NULL DEFAULT 0
 ALTER TABLE `cloud`.`snapshots` MODIFY COLUMN `id` bigint unsigned UNIQUE NOT NULL
 ALTER TABLE `vm_instance` DROP COLUMN `group`
+
+
+-- NOTE for tables below
+-- these 2 tables were used in 2.1, but are not in 2.2
+-- we will need a migration script for these tables when the migration is written
+DROP TABLE `cloud`.`security_group`;
+DROP TABLE `cloud`.`security_group_vm_map`;

@@ -2,21 +2,21 @@ package com.cloud.async.executor;
 
 import java.util.List;
 
-import com.cloud.network.security.NetworkGroupVO;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.user.AccountVO;
 
-public class NetworkGroupIngressParam {
+public class SecurityGroupIngressParam {
 	private AccountVO account;
 	private String groupName;
 	private String protocol;
 	private int startPort;
 	private int endPort;
 	private String[] cidrList;
-	private List<NetworkGroupVO> authorizedGroups;
+	private List<SecurityGroupVO> authorizedGroups;
 
-	protected NetworkGroupIngressParam() { }
+	protected SecurityGroupIngressParam() { }
 
-	public NetworkGroupIngressParam(AccountVO account, String groupName, String protocol, int startPort, int endPort, String[] cidrList, List<NetworkGroupVO> authorizedGroups) {
+	public SecurityGroupIngressParam(AccountVO account, String groupName, String protocol, int startPort, int endPort, String[] cidrList, List<SecurityGroupVO> authorizedGroups) {
 		this.account = account;
 		this.groupName = groupName;
 		this.protocol = protocol;
@@ -50,7 +50,7 @@ public class NetworkGroupIngressParam {
 		return cidrList;
 	}
 
-	public List<NetworkGroupVO> getAuthorizedGroups() {
+	public List<SecurityGroupVO> getAuthorizedGroups() {
 		return authorizedGroups;
 	}
 }

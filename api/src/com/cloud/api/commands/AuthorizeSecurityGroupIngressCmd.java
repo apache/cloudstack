@@ -33,7 +33,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.IngressRuleResponse;
-import com.cloud.api.response.NetworkGroupResponse;
+import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.security.IngressRule;
 import com.cloud.user.Account;
@@ -42,10 +42,10 @@ import com.cloud.utils.StringUtils;
 
 //FIXME - add description
 @Implementation(responseObject=IngressRuleResponse.class) @SuppressWarnings("rawtypes")
-public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
-	public static final Logger s_logger = Logger.getLogger(AuthorizeNetworkGroupIngressCmd.class.getName());
+public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
+	public static final Logger s_logger = Logger.getLogger(AuthorizeSecurityGroupIngressCmd.class.getName());
 
-    private static final String s_name = "authorizenetworkgroupingress";
+    private static final String s_name = "authorizesecuritygroupingress";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -71,16 +71,16 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
     private Integer icmpCode;
 
     //FIXME - add description
-    @Parameter(name=ApiConstants.NETWORK_GROUP_NAME, type=CommandType.STRING, required=true)
-    private String networkGroupName;
+    @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, required=true)
+    private String securityGroupName;
 
     //FIXME - add description
     @Parameter(name=ApiConstants.CIDR_LIST, type=CommandType.LIST, collectionType=CommandType.STRING)
     private List cidrList;
 
     //FIXME - add description
-    @Parameter(name=ApiConstants.USER_NETWORK_GROUP_LIST, type=CommandType.MAP)
-    private Map userNetworkGroupList;
+    @Parameter(name=ApiConstants.USER_SECURITY_GROUP_LIST, type=CommandType.MAP)
+    private Map userSecurityGroupList;
 
     //FIXME - add description
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING)
@@ -119,8 +119,8 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
         return icmpType;
     }
 
-    public String getNetworkGroupName() {
-        return networkGroupName;
+    public String getSecurityGroupName() {
+        return securityGroupName;
     }
 
     public String getProtocol() {
@@ -134,8 +134,8 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
         return startPort;
     }
 
-    public Map getUserNetworkGroupList() {
-        return userNetworkGroupList;
+    public Map getUserSecurityGroupList() {
+        return userSecurityGroupList;
     }
 
 
@@ -149,7 +149,7 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
     }
 
     public static String getResultObjectName() {
-    	return "networkgroup";
+    	return "securitygroup";
     }
 
     @Override
@@ -173,15 +173,15 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_NETWORK_GROUP_AUTHORIZE_INGRESS;
+        return EventTypes.EVENT_SECURITY_GROUP_AUTHORIZE_INGRESS;
     }
 
     @Override
     public String getEventDescription() {
         StringBuilder sb = new StringBuilder();
-        if (getUserNetworkGroupList() != null) {
+        if (getUserSecurityGroupList() != null) {
             sb.append("group list(group/account): ");
-            Collection userGroupCollection = getUserNetworkGroupList().values();
+            Collection userGroupCollection = getUserSecurityGroupList().values();
             Iterator iter = userGroupCollection.iterator();
 
             HashMap userGroup = (HashMap)iter.next();
@@ -202,17 +202,17 @@ public class AuthorizeNetworkGroupIngressCmd extends BaseAsyncCmd {
             sb.append("<error:  no ingress parameters>");
         }
 
-        return  "authorizing ingress to group: " + getNetworkGroupName() + " to " + sb.toString();
+        return  "authorizing ingress to group: " + getSecurityGroupName() + " to " + sb.toString();
     }
 	
     @Override
     public void execute(){
-        List<? extends IngressRule> ingressRules = _networkGroupMgr.authorizeNetworkGroupIngress(this);
+        List<? extends IngressRule> ingressRules = _securityGroupMgr.authorizeSecurityGroupIngress(this);
         if (ingressRules != null && ! ingressRules.isEmpty()) {
-        NetworkGroupResponse response = _responseGenerator.createNetworkGroupResponseFromIngressRule(ingressRules);
+        SecurityGroupResponse response = _responseGenerator.createSecurityGroupResponseFromIngressRule(ingressRules);
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to authorize network group ingress rule(s)");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to authorize security group ingress rule(s)");
         }
         
     }

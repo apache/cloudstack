@@ -31,15 +31,15 @@ import com.cloud.async.AsyncInstanceCreateStatus;
 import com.google.gson.annotations.Expose;
 
 @Entity
-@Table(name=("network_ingress_rule"))
+@Table(name=("security_ingress_rule"))
 public class IngressRuleVO implements IngressRule {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
 
-    @Column(name="network_group_id")
-    private long networkGroupId;
+    @Column(name="security_group_id")
+    private long securityGroupId;
 
     @Column(name="start_port")
     private int startPort;
@@ -53,11 +53,11 @@ public class IngressRuleVO implements IngressRule {
     @Column(name="allowed_network_id", nullable=true)
     private Long allowedNetworkId = null;
 
-    @Column(name="allowed_network_group")
-    private String allowedNetworkGroup;
+    @Column(name="allowed_security_group")
+    private String allowedSecurityGroup;
     
-    @Column(name="allowed_net_grp_acct")
-    private String allowedNetGrpAcct;
+    @Column(name="allowed_sec_grp_acct")
+    private String allowedSecGrpAcct;
     
     @Column(name="allowed_ip_cidr", nullable=true)
     private String allowedSourceIpCidr = null;
@@ -69,18 +69,18 @@ public class IngressRuleVO implements IngressRule {
 
     public IngressRuleVO() {}
 
-    public IngressRuleVO(long networkGroupId, int fromPort, int toPort, String protocol, long allowedNetworkId, String allowedNetworkGroup, String allowedNetGrpAcct) {
-        this.networkGroupId = networkGroupId;
+    public IngressRuleVO(long securityGroupId, int fromPort, int toPort, String protocol, long allowedNetworkId, String allowedSecurityGroup, String allowedSecGrpAcct) {
+        this.securityGroupId = securityGroupId;
         this.startPort = fromPort;
         this.endPort = toPort;
         this.protocol = protocol;
         this.allowedNetworkId  = allowedNetworkId;
-        this.allowedNetworkGroup = allowedNetworkGroup;
-        this.allowedNetGrpAcct = allowedNetGrpAcct;
+        this.allowedSecurityGroup = allowedSecurityGroup;
+        this.allowedSecGrpAcct = allowedSecGrpAcct;
     }
     
-    public IngressRuleVO(long networkGroupId, int fromPort, int toPort, String protocol, String allowedIpCidr) {
-        this.networkGroupId = networkGroupId;
+    public IngressRuleVO(long securityGroupId, int fromPort, int toPort, String protocol, String allowedIpCidr) {
+        this.securityGroupId = securityGroupId;
         this.startPort = fromPort;
         this.endPort = toPort;
         this.protocol = protocol;
@@ -93,8 +93,8 @@ public class IngressRuleVO implements IngressRule {
     }
 
     @Override
-    public long getNetworkGroupId() {
-        return networkGroupId;
+    public long getSecurityGroupId() {
+        return securityGroupId;
     }
 
     @Override
@@ -127,13 +127,13 @@ public class IngressRuleVO implements IngressRule {
 	}
 
 	@Override
-    public String getAllowedNetworkGroup() {
-	    return allowedNetworkGroup;
+    public String getAllowedSecurityGroup() {
+	    return allowedSecurityGroup;
 	}
 
     @Override
-    public String getAllowedNetGrpAcct() {
-        return allowedNetGrpAcct;
+    public String getAllowedSecGrpAcct() {
+        return allowedSecGrpAcct;
     }
 
 	@Override

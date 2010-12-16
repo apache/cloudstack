@@ -38,7 +38,7 @@ import com.cloud.network.DomainRouterService;
 import com.cloud.network.NetworkService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
-import com.cloud.network.security.NetworkGroupService;
+import com.cloud.network.security.SecurityGroupService;
 import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.StorageService;
@@ -96,7 +96,7 @@ public abstract class BaseCmd {
     public static ResourceService _resourceService;
     public static NetworkService _networkService;
     public static TemplateService _templateService;
-    public static NetworkGroupService _networkGroupMgr;
+    public static SecurityGroupService _securityGroupMgr;
     public static SnapshotService _snapshotMgr;
     public static ConsoleProxyService _consoleProxyMgr;
     public static DomainRouterService _routerService;
@@ -116,7 +116,7 @@ public abstract class BaseCmd {
         _resourceService = locator.getManager(ResourceService.class);
         _networkService = locator.getManager(NetworkService.class);
         _templateService = locator.getManager(TemplateService.class);
-        _networkGroupMgr = locator.getManager(NetworkGroupService.class);
+        _securityGroupMgr = locator.getManager(SecurityGroupService.class);
         _snapshotMgr = locator.getManager(SnapshotService.class);
         _consoleProxyMgr = locator.getManager(ConsoleProxyService.class);
         _routerService = locator.getManager(DomainRouterService.class);

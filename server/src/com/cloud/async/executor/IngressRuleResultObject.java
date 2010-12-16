@@ -15,24 +15,24 @@ public class IngressRuleResultObject {
     @Param(name="protocol")
     private String protocol;
 
-    @Param(name="networkgroup")
-    private String allowedNetworkGroup = null;
+    @Param(name="securitygroup")
+    private String allowedSecurityGroup = null;
 
     @Param(name="account")
-    private String allowedNetGroupAcct = null;
+    private String allowedSecGroupAcct = null;
 
     @Param(name="cidr")
     private String allowedSourceIpCidr = null;
 
     public IngressRuleResultObject() { }
 
-    public IngressRuleResultObject(Long id, int startPort, int endPort, String protocol, String allowedNetworkGroup, String allowedNetGroupAcct, String allowedSourceIpCidr) {
+    public IngressRuleResultObject(Long id, int startPort, int endPort, String protocol, String allowedSecurityGroup, String allowedSecGroupAcct, String allowedSourceIpCidr) {
         this.id = id;
         this.startPort = startPort;
         this.endPort = endPort;
         this.protocol = protocol;
-        this.allowedNetworkGroup = allowedNetworkGroup;
-        this.allowedNetGroupAcct = allowedNetGroupAcct;
+        this.allowedSecurityGroup = allowedSecurityGroup;
+        this.allowedSecGroupAcct = allowedSecGroupAcct;
         this.allowedSourceIpCidr = allowedSourceIpCidr;
     }
 
@@ -68,20 +68,20 @@ public class IngressRuleResultObject {
         this.protocol = protocol;
     }
 
-    public String getAllowedNetworkGroup() {
-        return allowedNetworkGroup;
+    public String getAllowedSecurityGroup() {
+        return allowedSecurityGroup;
     }
 
-    public void setAllowedNetworkGroup(String allowedNetworkGroup) {
-        this.allowedNetworkGroup = allowedNetworkGroup;
+    public void setAllowedSecurityGroup(String allowedSecurityGroup) {
+        this.allowedSecurityGroup = allowedSecurityGroup;
     }
 
-    public String getAllowedNetGroupAcct() {
-        return allowedNetGroupAcct;
+    public String getAllowedSecGroupAcct() {
+        return allowedSecGroupAcct;
     }
 
-    public void setAllowedNetGroupAcct(String allowedNetGroupAcct) {
-        this.allowedNetGroupAcct = allowedNetGroupAcct;
+    public void setAllowedSecGroupAcct(String allowedSecGroupAcct) {
+        this.allowedSecGroupAcct = allowedSecGroupAcct;
     }
 
     public String getAllowedSourceIpCidr() {

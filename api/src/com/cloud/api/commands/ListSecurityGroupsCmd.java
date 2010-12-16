@@ -26,29 +26,29 @@ import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
-import com.cloud.api.response.NetworkGroupResponse;
-import com.cloud.network.security.NetworkGroupRules;
+import com.cloud.api.response.SecurityGroupResponse;
+import com.cloud.network.security.SecurityGroupRules;
 
-@Implementation(description="Lists network groups", responseObject=NetworkGroupResponse.class)
-public class ListNetworkGroupsCmd extends BaseListCmd {
-	public static final Logger s_logger = Logger.getLogger(ListNetworkGroupsCmd.class.getName());
+@Implementation(description="Lists security groups", responseObject=SecurityGroupResponse.class)
+public class ListSecurityGroupsCmd extends BaseListCmd {
+	public static final Logger s_logger = Logger.getLogger(ListSecurityGroupsCmd.class.getName());
 
-    private static final String s_name = "listnetworkgroupsresponse";
+    private static final String s_name = "listsecuritygroupsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="lists all available port network groups for the account. Must be used with domainID parameter")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="lists all available port security groups for the account. Must be used with domainID parameter")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="lists all available network groups for the domain ID. If used with the account parameter, lists all available network groups for the account in the specified domain ID.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="lists all available security groups for the domain ID. If used with the account parameter, lists all available security groups for the account in the specified domain ID.")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.NETWORK_GROUP_NAME, type=CommandType.STRING, description="lists network groups by name")
-    private String networkGroupName;
+    @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, description="lists security groups by name")
+    private String securityGroupName;
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="lists network groups by virtual machine id")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="lists security groups by virtual machine id")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////
@@ -63,8 +63,8 @@ public class ListNetworkGroupsCmd extends BaseListCmd {
         return domainId;
     }
 
-    public String getNetworkGroupName() {
-        return networkGroupName;
+    public String getSecurityGroupName() {
+        return securityGroupName;
     }
 
     public Long getVirtualMachineId() {
@@ -82,9 +82,9 @@ public class ListNetworkGroupsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends NetworkGroupRules> networkGroups = _networkGroupMgr.searchForNetworkGroupRules(this);
+        List<? extends SecurityGroupRules> securityGroups = _securityGroupMgr.searchForSecurityGroupRules(this);
 
-        ListResponse<NetworkGroupResponse> response = _responseGenerator.createNetworkGroupResponses(networkGroups);
+        ListResponse<SecurityGroupResponse> response = _responseGenerator.createSecurityGroupResponses(securityGroups);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

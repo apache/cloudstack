@@ -109,8 +109,8 @@ import com.cloud.agent.api.MirrorCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
-import com.cloud.agent.api.NetworkIngressRuleAnswer;
-import com.cloud.agent.api.NetworkIngressRulesCmd;
+import com.cloud.agent.api.SecurityIngressRuleAnswer;
+import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingTestCommand;
@@ -1094,8 +1094,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((CreatePrivateTemplateFromSnapshotCommand) cmd);
             } else if (cmd instanceof ModifyStoragePoolCommand) {
                 return execute((ModifyStoragePoolCommand) cmd);
-            } else if (cmd instanceof NetworkIngressRulesCmd) {
-                return execute((NetworkIngressRulesCmd) cmd);
+            } else if (cmd instanceof SecurityIngressRulesCmd) {
+                return execute((SecurityIngressRulesCmd) cmd);
             } else if (cmd instanceof DeleteStoragePoolCommand) {
                 return execute((DeleteStoragePoolCommand) cmd);
             } else if (cmd instanceof FenceCommand ) {
@@ -1777,8 +1777,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	}
         return answer;
     }
-    private Answer execute(NetworkIngressRulesCmd cmd) {
-    	 return new NetworkIngressRuleAnswer(cmd);
+    private Answer execute(SecurityIngressRulesCmd cmd) {
+    	 return new SecurityIngressRuleAnswer(cmd);
     }
     
 	protected GetVncPortAnswer execute(GetVncPortCommand cmd) {

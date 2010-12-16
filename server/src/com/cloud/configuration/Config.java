@@ -152,7 +152,7 @@ public enum Config {
 	SecStorageAllowedInternalDownloadSites("Advanced", ManagementServer.class, String.class, "secstorage.allowed.internal.sites", null, "Comma separated list of cidrs internal to the datacenter that can host template download servers", null),
 	SecStorageEncryptCopy("Advanced", ManagementServer.class, Boolean.class, "secstorage.encrypt.copy", "false", "Use SSL method used to encrypt copy traffic between zones", "true,false"),
 	SecStorageSecureCopyCert("Advanced", ManagementServer.class, Boolean.class, "secstorage.ssl.cert.domain", "realhostip.com", "SSL certificate used to encrypt copy traffic between zones", "realhostip.com"),
-	DirectAttachNetworkGroupsEnabled("Advanced", ManagementServer.class, Boolean.class, "direct.attach.network.groups.enabled", "false", "Ec2-style distributed firewall for direct-attach VMs", "true,false"),
+	DirectAttachSecurityGroupsEnabled("Advanced", ManagementServer.class, Boolean.class, "direct.attach.security.groups.enabled", "false", "Ec2-style distributed firewall for direct-attach VMs", "true,false"),
 	DirectAttachNetworkEnabled("Advanced", ManagementServer.class, Boolean.class, "direct.attach.network.externalIpAllocator.enabled", "false", "Direct-attach VMs using external DHCP server", "true,false"),
 	DirectAttachNetworkExternalAPIURL("Advanced", ManagementServer.class, String.class, "direct.attach.network.externalIpAllocator.url", null, "Direct-attach VMs using external DHCP server (API url)", null),
 	CheckPodCIDRs("Advanced", ManagementServer.class, String.class, "check.pod.cidrs", "true", "If true, different pods must belong to different CIDR subnets.", "true,false"),

@@ -23,8 +23,8 @@ import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.NetworkIngressRuleAnswer;
-import com.cloud.agent.api.NetworkIngressRulesCmd;
+import com.cloud.agent.api.SecurityIngressRuleAnswer;
+import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase;
 import com.xensource.xenapi.VM;
 import com.cloud.resource.ServerResource;
@@ -42,8 +42,8 @@ public class XenServerResource extends CitrixResourceBase {
     
     @Override
     public Answer executeRequest(Command cmd) {       
-        if (cmd instanceof NetworkIngressRulesCmd) {
-            return execute((NetworkIngressRulesCmd) cmd);
+        if (cmd instanceof SecurityIngressRulesCmd) {
+            return execute((SecurityIngressRulesCmd) cmd);
         } else {
             return super.executeRequest(cmd);
         }
@@ -69,7 +69,7 @@ public class XenServerResource extends CitrixResourceBase {
         return Boolean.valueOf(callHostPlugin(conn, "vmops", "can_bridge_firewall", "host_uuid", _host.uuid));
     }
     
-    private Answer execute(NetworkIngressRulesCmd cmd) {
+    private Answer execute(SecurityIngressRulesCmd cmd) {
         Connection conn = getConnection();
         if (s_logger.isTraceEnabled()) {
             s_logger.trace("Sending network rules command to " + _host.ip);
@@ -77,7 +77,7 @@ public class XenServerResource extends CitrixResourceBase {
 
         if (!_canBridgeFirewall) {
             s_logger.info("Host " + _host.ip + " cannot do bridge firewalling");
-            return new NetworkIngressRuleAnswer(cmd, false, "Host " + _host.ip + " cannot do bridge firewalling");
+            return new SecurityIngressRuleAnswer(cmd, false, "Host " + _host.ip + " cannot do bridge firewalling");
         }
       
         String result = callHostPlugin(conn, "vmops", "network_rules",
@@ -91,10 +91,10 @@ public class XenServerResource extends CitrixResourceBase {
 
         if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
             s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
-            return new NetworkIngressRuleAnswer(cmd, false, "programming network rules failed");
+            return new SecurityIngressRuleAnswer(cmd, false, "programming network rules failed");
         } else {
             s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ", numrules=" + cmd.getRuleSet().length);
-            return new NetworkIngressRuleAnswer(cmd);
+            return new SecurityIngressRuleAnswer(cmd);
         }
     }
 

@@ -1013,15 +1013,6 @@ CREATE TABLE  `cloud`.`service_offering` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`security_group` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `name` varchar(255) NOT NULL,
-  `description` varchar(4096) NULL,
-  `domain_id` bigint unsigned NOT NULL,
-  `account_id` bigint unsigned NOT NULL,
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 CREATE TABLE `cloud`.`network_rule_config` (
   `id` bigint unsigned NOT NULL auto_increment,
   `security_group_id` bigint unsigned NOT NULL,
@@ -1029,14 +1020,6 @@ CREATE TABLE `cloud`.`network_rule_config` (
   `private_port` varchar(10) default NULL,
   `protocol` varchar(16) NOT NULL default 'TCP',
   `create_status` varchar(32) COMMENT 'rule creation status',
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`security_group_vm_map` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `security_group_id` bigint unsigned NOT NULL,
-  `ip_address` varchar(15) NOT NULL,
-  `instance_id` bigint unsigned NOT NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1193,7 +1176,7 @@ CREATE TABLE `cloud`.`op_pod_vlan_alloc` (
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`network_group` (
+CREATE TABLE `cloud`.`security_group` (
   `id` bigint unsigned NOT NULL auto_increment,
   `name` varchar(255) NOT NULL,
   `description` varchar(4096) NULL,
@@ -1203,23 +1186,23 @@ CREATE TABLE `cloud`.`network_group` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`network_ingress_rule` (
+CREATE TABLE `cloud`.`security_ingress_rule` (
   `id` bigint unsigned NOT NULL auto_increment,
-  `network_group_id` bigint unsigned NOT NULL,
+  `security_group_id` bigint unsigned NOT NULL,
   `start_port` varchar(10) default NULL,
   `end_port` varchar(10) default NULL,
   `protocol` varchar(16) NOT NULL default 'TCP',
   `allowed_network_id` bigint unsigned,
-  `allowed_network_group` varchar(255) COMMENT 'data duplicated from network_group table to avoid lots of joins when listing rules (the name of the group should be displayed rather than just id)',
-  `allowed_net_grp_acct` varchar(100) COMMENT 'data duplicated from network_group table to avoid lots of joins when listing rules (the name of the group owner should be displayed)',
+  `allowed_security_group` varchar(255) COMMENT 'data duplicated from security_group table to avoid lots of joins when listing rules (the name of the group should be displayed rather than just id)',
+  `allowed_sec_grp_acct` varchar(100) COMMENT 'data duplicated from security_group table to avoid lots of joins when listing rules (the name of the group owner should be displayed)',
   `allowed_ip_cidr`  varchar(44),
   `create_status` varchar(32) COMMENT 'rule creation status',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`network_group_vm_map` (
+CREATE TABLE `cloud`.`security_group_vm_map` (
   `id` bigint unsigned NOT NULL auto_increment,
-  `network_group_id` bigint unsigned NOT NULL,
+  `security_group_id` bigint unsigned NOT NULL,
   `instance_id` bigint unsigned NOT NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

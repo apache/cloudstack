@@ -29,30 +29,30 @@ import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.NetworkIngressRuleAnswer;
+import com.cloud.agent.api.SecurityIngressRuleAnswer;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.network.security.NetworkGroupWorkVO.Step;
-import com.cloud.network.security.dao.NetworkGroupWorkDao;
+import com.cloud.network.security.SecurityGroupWorkVO.Step;
+import com.cloud.network.security.dao.SecurityGroupWorkDao;
 
 /**
  * Listens for answers to ingress rules modification commands
  *
  */
-public class NetworkGroupListener implements Listener {
-    public static final Logger s_logger = Logger.getLogger(NetworkGroupListener.class.getName());
+public class SecurityGroupListener implements Listener {
+    public static final Logger s_logger = Logger.getLogger(SecurityGroupListener.class.getName());
 
-	NetworkGroupManagerImpl _networkGroupManager;
+	SecurityGroupManagerImpl _securityGroupManager;
     AgentManager _agentMgr;
-    NetworkGroupWorkDao _workDao;
+    SecurityGroupWorkDao _workDao;
     
 
-	public NetworkGroupListener(NetworkGroupManagerImpl networkGroupManager,
-			AgentManager agentMgr, NetworkGroupWorkDao workDao) {
+	public SecurityGroupListener(SecurityGroupManagerImpl securityGroupManager,
+			AgentManager agentMgr, SecurityGroupWorkDao workDao) {
 		super();
-		_networkGroupManager = networkGroupManager;
+		_securityGroupManager = securityGroupManager;
 		_agentMgr = agentMgr;
 		_workDao = workDao;
 	}
@@ -75,8 +75,8 @@ public class NetworkGroupListener implements Listener {
 		Set<Long> affectedVms = new HashSet<Long>();
 		int commandNum = 0;
 		for (Answer ans: answers) {
-			if (ans instanceof NetworkIngressRuleAnswer) {
-				NetworkIngressRuleAnswer ruleAnswer = (NetworkIngressRuleAnswer) ans;
+			if (ans instanceof SecurityIngressRuleAnswer) {
+				SecurityIngressRuleAnswer ruleAnswer = (SecurityIngressRuleAnswer) ans;
 				if (ans.getResult()) {
 					s_logger.debug("Successfully programmed rule " + ruleAnswer.toString() + " into host " + agentId);
 					_workDao.updateStep(ruleAnswer.getVmId(), ruleAnswer.getLogSequenceNumber(), Step.Done);
@@ -89,7 +89,7 @@ public class NetworkGroupListener implements Listener {
 				commandNum++;
 			}
 		}
-		_networkGroupManager.scheduleRulesetUpdateToHosts(affectedVms, false, new Long(10*1000l));
+		_securityGroupManager.scheduleRulesetUpdateToHosts(affectedVms, false, new Long(10*1000l));
 
         return true;
 	}
@@ -101,7 +101,7 @@ public class NetworkGroupListener implements Listener {
             if (cmd instanceof PingRoutingWithNwGroupsCommand) {
             	PingRoutingWithNwGroupsCommand ping = (PingRoutingWithNwGroupsCommand)cmd;
                 if (ping.getNewGroupStates().size() > 0) {
-                    _networkGroupManager.fullSync(agentId, ping.getNewGroupStates());
+                    _securityGroupManager.fullSync(agentId, ping.getNewGroupStates());
                 }
                 processed = true;
             }

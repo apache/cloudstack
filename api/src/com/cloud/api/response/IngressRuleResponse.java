@@ -42,8 +42,8 @@ public class IngressRuleResponse extends BaseResponse {
     @SerializedName(ApiConstants.END_PORT) @Param(description="the ending IP of the ingress rule ")
     private Integer endPort;
 
-    @SerializedName(ApiConstants.NETWORK_GROUP_NAME) @Param(description="network group name")
-    private String networkGroupName;
+    @SerializedName(ApiConstants.SECURITY_GROUP_NAME) @Param(description="security group name")
+    private String securityGroupName;
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="account owning the ingress rule")
     private String accountName;
@@ -99,12 +99,12 @@ public class IngressRuleResponse extends BaseResponse {
         this.endPort = endPort;
     }
 
-    public String getNetworkGroupName() {
-        return networkGroupName;
+    public String getSecurityGroupName() {
+        return securityGroupName;
     }
 
-    public void setNetworkGroupName(String networkGroupName) {
-        this.networkGroupName = networkGroupName;
+    public void setSecurityGroupName(String securityGroupName) {
+        this.securityGroupName = securityGroupName;
     }
 
     public String getAccountName() {

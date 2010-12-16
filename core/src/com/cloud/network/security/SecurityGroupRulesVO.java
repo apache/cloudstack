@@ -10,10 +10,10 @@ import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 
 @Entity
-@Table(name=("network_group"))
-@SecondaryTable(name="network_ingress_rule", join="left",
-        pkJoinColumns={@PrimaryKeyJoinColumn(name="id", referencedColumnName="network_group_id")})
-public class NetworkGroupRulesVO implements NetworkGroupRules {
+@Table(name=("security_group"))
+@SecondaryTable(name="security_ingress_rule", join="left",
+        pkJoinColumns={@PrimaryKeyJoinColumn(name="id", referencedColumnName="security_group_id")})
+public class SecurityGroupRulesVO implements SecurityGroupRules {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -34,33 +34,33 @@ public class NetworkGroupRulesVO implements NetworkGroupRules {
     @Column(name="account_name")
     private String accountName;
 
-    @Column(name="id", table="network_ingress_rule", insertable=false, updatable=false)
+    @Column(name="id", table="security_ingress_rule", insertable=false, updatable=false)
     private Long ruleId;
 
-    @Column(name="start_port", table="network_ingress_rule", insertable=false, updatable=false)
+    @Column(name="start_port", table="security_ingress_rule", insertable=false, updatable=false)
     private int startPort;
 
-    @Column(name="end_port", table="network_ingress_rule", insertable=false, updatable=false)
+    @Column(name="end_port", table="security_ingress_rule", insertable=false, updatable=false)
     private int endPort;
 
-    @Column(name="protocol", table="network_ingress_rule", insertable=false, updatable=false)
+    @Column(name="protocol", table="security_ingress_rule", insertable=false, updatable=false)
     private String protocol;
 
-    @Column(name="allowed_network_id", table="network_ingress_rule", insertable=false, updatable=false, nullable=true)
+    @Column(name="allowed_network_id", table="security_ingress_rule", insertable=false, updatable=false, nullable=true)
     private Long allowedNetworkId = null;
 
-    @Column(name="allowed_network_group", table="network_ingress_rule", insertable=false, updatable=false, nullable=true)
-    private String allowedNetworkGroup = null;
+    @Column(name="allowed_security_group", table="security_ingress_rule", insertable=false, updatable=false, nullable=true)
+    private String allowedSecurityGroup = null;
 
-    @Column(name="allowed_net_grp_acct", table="network_ingress_rule", insertable=false, updatable=false, nullable=true)
-    private String allowedNetGrpAcct = null;
+    @Column(name="allowed_sec_grp_acct", table="security_ingress_rule", insertable=false, updatable=false, nullable=true)
+    private String allowedSecGrpAcct = null;
 
-    @Column(name="allowed_ip_cidr", table="network_ingress_rule", insertable=false, updatable=false, nullable=true)
+    @Column(name="allowed_ip_cidr", table="security_ingress_rule", insertable=false, updatable=false, nullable=true)
     private String allowedSourceIpCidr = null;
 
-    public NetworkGroupRulesVO() { }
+    public SecurityGroupRulesVO() { }
 
-    public NetworkGroupRulesVO(long id, String name, String description, Long domainId, Long accountId, String accountName, Long ruleId, int startPort, int endPort, String protocol, Long allowedNetworkId, String allowedNetworkGroup, String allowedNetGrpAcct, String allowedSourceIpCidr) {
+    public SecurityGroupRulesVO(long id, String name, String description, Long domainId, Long accountId, String accountName, Long ruleId, int startPort, int endPort, String protocol, Long allowedNetworkId, String allowedSecurityGroup, String allowedSecGrpAcct, String allowedSourceIpCidr) {
     	this.id = id;
     	this.name = name;
     	this.description = description;
@@ -72,8 +72,8 @@ public class NetworkGroupRulesVO implements NetworkGroupRules {
     	this.endPort = endPort;
     	this.protocol = protocol;
     	this.allowedNetworkId = allowedNetworkId;
-    	this.allowedNetworkGroup = allowedNetworkGroup;
-    	this.allowedNetGrpAcct = allowedNetGrpAcct;
+    	this.allowedSecurityGroup = allowedSecurityGroup;
+    	this.allowedSecGrpAcct = allowedSecGrpAcct;
     	this.allowedSourceIpCidr = allowedSourceIpCidr;
     }
 
@@ -121,12 +121,12 @@ public class NetworkGroupRulesVO implements NetworkGroupRules {
 		return allowedNetworkId;
 	}
 
-	public String getAllowedNetworkGroup() {
-	    return allowedNetworkGroup;
+	public String getAllowedSecurityGroup() {
+	    return allowedSecurityGroup;
 	}
 
-    public String getAllowedNetGrpAcct() {
-        return allowedNetGrpAcct;
+    public String getAllowedSecGrpAcct() {
+        return allowedSecGrpAcct;
     }
 
 	public String getAllowedSourceIpCidr() {

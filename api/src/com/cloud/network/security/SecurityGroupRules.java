@@ -17,12 +17,32 @@
  */
 package com.cloud.network.security;
 
-import com.cloud.domain.PartOf;
-import com.cloud.user.OwnedBy;
-
-public interface NetworkGroup extends PartOf, OwnedBy {
+public interface SecurityGroupRules {
     long getId();
+
     String getName();
+
     String getDescription();
+
+    Long getDomainId();
+
+    Long getAccountId();
+
     String getAccountName();
+
+    Long getRuleId();
+
+    int getStartPort();
+
+    int getEndPort();
+
+    String getProtocol();
+
+    Long getAllowedNetworkId();
+
+    String getAllowedSecurityGroup();
+
+    String getAllowedSecGrpAcct();
+
+    String getAllowedSourceIpCidr();
 }

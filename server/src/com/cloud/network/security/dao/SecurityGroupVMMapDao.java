@@ -18,28 +18,19 @@
 
 package com.cloud.network.security.dao;
 
-import java.util.Date;
 import java.util.List;
 
-import com.cloud.network.security.NetworkGroupWorkVO;
-import com.cloud.network.security.NetworkGroupWorkVO.Step;
+import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.State;
 
-public interface NetworkGroupWorkDao extends GenericDao<NetworkGroupWorkVO, Long> {
-    NetworkGroupWorkVO findByVmId(long vmId, boolean taken);
-    
-    NetworkGroupWorkVO findByVmIdStep(long vmId, Step step);
-
-
-	NetworkGroupWorkVO take(long serverId);
-
-	void updateStep(Long vmId, Long logSequenceNumber, Step done);
-	
-	void updateStep(Long workId, Step done);
-	
-	int deleteFinishedWork(Date timeBefore);
-	
-	List<NetworkGroupWorkVO> findUnfinishedWork(Date timeBefore);
-
-    
+public interface SecurityGroupVMMapDao extends GenericDao<SecurityGroupVMMapVO, Long> {
+    List<SecurityGroupVMMapVO> listByIpAndInstanceId(String ipAddress, long instanceId);
+    List<SecurityGroupVMMapVO> listByInstanceId(long instanceId);
+    List<SecurityGroupVMMapVO> listByIp(String ipAddress);
+    List<SecurityGroupVMMapVO> listBySecurityGroup(long securityGroupId);
+    List<SecurityGroupVMMapVO> listBySecurityGroup(long securityGroupId, State ... vmStates);
+    int deleteVM(long instanceid);
+	List<Long> listVmIdsBySecurityGroup(long securityGroupId);
+	SecurityGroupVMMapVO findByVmIdGroupId(long instanceId, long securityGroupId);
 }

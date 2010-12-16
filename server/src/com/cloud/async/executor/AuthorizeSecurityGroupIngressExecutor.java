@@ -11,15 +11,15 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.network.security.IngressRuleVO;
-import com.cloud.network.security.NetworkGroupRulesVO;
-import com.cloud.network.security.NetworkGroupVO;
+import com.cloud.network.security.SecurityGroupRulesVO;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.AccountVO;
 import com.google.gson.Gson;
 
-public class AuthorizeNetworkGroupIngressExecutor extends BaseAsyncJobExecutor {
-    public static final Logger s_logger = Logger.getLogger(AuthorizeNetworkGroupIngressExecutor.class.getName());
+public class AuthorizeSecurityGroupIngressExecutor extends BaseAsyncJobExecutor {
+    public static final Logger s_logger = Logger.getLogger(AuthorizeSecurityGroupIngressExecutor.class.getName());
 
     @Override
     public boolean execute() {
@@ -27,17 +27,17 @@ public class AuthorizeNetworkGroupIngressExecutor extends BaseAsyncJobExecutor {
         AsyncJobManager asyncMgr = getAsyncJobMgr();
         AsyncJobVO job = getJob();
         ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
-        NetworkGroupIngressParam param = gson.fromJson(job.getCmdInfo(), NetworkGroupIngressParam.class);
+        SecurityGroupIngressParam param = gson.fromJson(job.getCmdInfo(), SecurityGroupIngressParam.class);
         AccountVO account = param.getAccount();
 
         /*
         if (getSyncSource() == null) {
-            NetworkGroupVO networkGroup = managementServer.findNetworkGroupByName(param.getAccount().getId(), param.getGroupName());
+            SecurityGroupVO networkGroup = managementServer.findNetworkGroupByName(param.getAccount().getId(), param.getGroupName());
             if(networkGroup == null) {
                 asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, 
                     BaseCmd.PARAM_ERROR, "Unable to find network group " + param.getGroupName() + " for account " + account.getAccountName() + " (id: " + account.getId() + ")"); 
             } else {
-                asyncMgr.syncAsyncJobExecution(job.getId(), "NetworkGroup", networkGroup.getId());
+                asyncMgr.syncAsyncJobExecution(job.getId(), "SecurityGroup", networkGroup.getId());
             }
             return true;
         } else {
@@ -65,17 +65,17 @@ public class AuthorizeNetworkGroupIngressExecutor extends BaseAsyncJobExecutor {
         return true;
     }
 
-    private NetworkGroupResultObject composeResultObject(ManagementServer ms, Long accountId, String groupName, List<IngressRuleVO> addedRules) {
-        NetworkGroupVO networkGroup = ms.findNetworkGroupByName(accountId, groupName);
-        List<NetworkGroupRulesVO> groupRules = new ArrayList<NetworkGroupRulesVO>();
+    private SecurityGroupResultObject composeResultObject(ManagementServer ms, Long accountId, String groupName, List<IngressRuleVO> addedRules) {
+        SecurityGroupVO networkGroup = ms.findNetworkGroupByName(accountId, groupName);
+        List<SecurityGroupRulesVO> groupRules = new ArrayList<SecurityGroupRulesVO>();
         for (IngressRuleVO ingressRule : addedRules) {
-            NetworkGroupRulesVO groupRule = new NetworkGroupRulesVO(networkGroup.getId(), networkGroup.getName(), networkGroup.getDescription(), networkGroup.getDomainId(),
+            SecurityGroupRulesVO groupRule = new SecurityGroupRulesVO(networkGroup.getId(), networkGroup.getName(), networkGroup.getDescription(), networkGroup.getDomainId(),
                                                                     networkGroup.getAccountId(), networkGroup.getAccountName(), ingressRule.getId(), ingressRule.getStartPort(), ingressRule.getEndPort(),
-                                                                    ingressRule.getProtocol(), ingressRule.getAllowedNetworkId(), ingressRule.getAllowedNetworkGroup(), ingressRule.getAllowedNetGrpAcct(),
+                                                                    ingressRule.getProtocol(), ingressRule.getAllowedNetworkId(), ingressRule.getAllowedSecurityGroup(), ingressRule.getAllowedSecGrpAcct(),
                                                                     ingressRule.getAllowedSourceIpCidr());
             groupRules.add(groupRule);
         }
-        List<NetworkGroupResultObject> results = NetworkGroupResultObject.transposeNetworkGroups(groupRules);
+        List<SecurityGroupResultObject> results = SecurityGroupResultObject.transposeNetworkGroups(groupRules);
         if ((results != null) && !results.isEmpty()) {
             return results.get(0);
         }

@@ -17,22 +17,12 @@
  */
 package com.cloud.network.security;
 
-import com.cloud.async.AsyncInstanceCreateStatus;
+import com.cloud.domain.PartOf;
+import com.cloud.user.OwnedBy;
 
-/**
- * @author ahuang
- *
- */
-public interface IngressRule {
+public interface SecurityGroup extends PartOf, OwnedBy {
     long getId();
-    long getSecurityGroupId();
-    int getStartPort();
-    int getEndPort();
-    String getProtocol();
-    AsyncInstanceCreateStatus getCreateStatus();
-    Long getAllowedNetworkId();
-    String getAllowedSecurityGroup();
-    String getAllowedSecGrpAcct();
-    String getAllowedSourceIpCidr();
-
+    String getName();
+    String getDescription();
+    String getAccountName();
 }

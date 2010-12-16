@@ -24,8 +24,8 @@ import java.util.List;
 import javax.ejb.Local;
 
 import com.cloud.ha.HaWorkVO;
-import com.cloud.network.security.NetworkGroupWorkVO;
-import com.cloud.network.security.NetworkGroupWorkVO.Step;
+import com.cloud.network.security.SecurityGroupWorkVO;
+import com.cloud.network.security.SecurityGroupWorkVO.Step;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -34,17 +34,17 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Local(value={NetworkGroupWorkDao.class})
-public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, Long> implements NetworkGroupWorkDao {
-    private SearchBuilder<NetworkGroupWorkVO> VmIdTakenSearch;
-    private SearchBuilder<NetworkGroupWorkVO> VmIdSeqNumSearch;
-    private SearchBuilder<NetworkGroupWorkVO> VmIdUnTakenSearch;
-    private SearchBuilder<NetworkGroupWorkVO> UntakenWorkSearch;
-    private SearchBuilder<NetworkGroupWorkVO> VmIdStepSearch;
-    private SearchBuilder<NetworkGroupWorkVO> CleanupSearch;
+@Local(value={SecurityGroupWorkDao.class})
+public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO, Long> implements SecurityGroupWorkDao {
+    private SearchBuilder<SecurityGroupWorkVO> VmIdTakenSearch;
+    private SearchBuilder<SecurityGroupWorkVO> VmIdSeqNumSearch;
+    private SearchBuilder<SecurityGroupWorkVO> VmIdUnTakenSearch;
+    private SearchBuilder<SecurityGroupWorkVO> UntakenWorkSearch;
+    private SearchBuilder<SecurityGroupWorkVO> VmIdStepSearch;
+    private SearchBuilder<SecurityGroupWorkVO> CleanupSearch;
 
 
-    protected NetworkGroupWorkDaoImpl() {
+    protected SecurityGroupWorkDaoImpl() {
         VmIdTakenSearch = createSearchBuilder();
         VmIdTakenSearch.and("vmId", VmIdTakenSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
         VmIdTakenSearch.and("taken", VmIdTakenSearch.entity().getDateTaken(), SearchCriteria.Op.NNULL);
@@ -86,29 +86,29 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
     }
 
     @Override
-    public NetworkGroupWorkVO findByVmId(long vmId, boolean taken) {
-        SearchCriteria<NetworkGroupWorkVO> sc = taken?VmIdTakenSearch.create():VmIdUnTakenSearch.create();
+    public SecurityGroupWorkVO findByVmId(long vmId, boolean taken) {
+        SearchCriteria<SecurityGroupWorkVO> sc = taken?VmIdTakenSearch.create():VmIdUnTakenSearch.create();
         sc.setParameters("vmId", vmId);
         return findOneIncludingRemovedBy(sc);
     }
 
 	@Override
-	public NetworkGroupWorkVO take(long serverId) {
+	public SecurityGroupWorkVO take(long serverId) {
 		final Transaction txn = Transaction.currentTxn();
         try {
-            final SearchCriteria<NetworkGroupWorkVO> sc = UntakenWorkSearch.create();
+            final SearchCriteria<SecurityGroupWorkVO> sc = UntakenWorkSearch.create();
             sc.setParameters("step", Step.Scheduled);
 
-            final Filter filter = new Filter(NetworkGroupWorkVO.class, null, true, 0l, 1l);//FIXME: order desc by update time?
+            final Filter filter = new Filter(SecurityGroupWorkVO.class, null, true, 0l, 1l);//FIXME: order desc by update time?
 
             txn.start();
-            final List<NetworkGroupWorkVO> vos = lockRows(sc, filter, true);
+            final List<SecurityGroupWorkVO> vos = lockRows(sc, filter, true);
             if (vos.size() == 0) {
                 txn.commit();
                 return null;
             }
-            NetworkGroupWorkVO work = null;
-            for (NetworkGroupWorkVO w: vos) {       
+            SecurityGroupWorkVO work = null;
+            for (SecurityGroupWorkVO w: vos) {       
             	//ensure that there is no job in Processing state for the same VM
             	if ( findByVmIdStep(w.getInstanceId(), Step.Processing) == null) {
             		work = w;
@@ -121,7 +121,7 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
             }
             work.setServerId(serverId);
             work.setDateTaken(new Date());
-            work.setStep(NetworkGroupWorkVO.Step.Processing);
+            work.setStep(SecurityGroupWorkVO.Step.Processing);
 
             update(work.getId(), work);
 
@@ -138,18 +138,18 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
 	public void updateStep(Long vmId, Long logSequenceNumber, Step step) {
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();
-        SearchCriteria<NetworkGroupWorkVO> sc = VmIdSeqNumSearch.create();
+        SearchCriteria<SecurityGroupWorkVO> sc = VmIdSeqNumSearch.create();
         sc.setParameters("vmId", vmId);
         sc.setParameters("seqno", logSequenceNumber);
         
         final Filter filter = new Filter(HaWorkVO.class, null, true, 0l, 1l);
 
-        final List<NetworkGroupWorkVO> vos = lockRows(sc, filter, true);
+        final List<SecurityGroupWorkVO> vos = lockRows(sc, filter, true);
         if (vos.size() == 0) {
             txn.commit();
             return;
         }
-        NetworkGroupWorkVO work = vos.get(0);
+        SecurityGroupWorkVO work = vos.get(0);
         work.setStep(step);
         update(work.getId(), work);
 
@@ -157,8 +157,8 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
 	}
 
 	@Override
-	public NetworkGroupWorkVO findByVmIdStep(long vmId, Step step) {
-        SearchCriteria<NetworkGroupWorkVO> sc = VmIdStepSearch.create();
+	public SecurityGroupWorkVO findByVmIdStep(long vmId, Step step) {
+        SearchCriteria<SecurityGroupWorkVO> sc = VmIdStepSearch.create();
         sc.setParameters("vmId", vmId);
         sc.setParameters("step", step);
         return findOneIncludingRemovedBy(sc);
@@ -169,7 +169,7 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();
         
-        NetworkGroupWorkVO work = lockRow(workId, true);
+        SecurityGroupWorkVO work = lockRow(workId, true);
         if (work == null) {
         	txn.commit();
         	return;
@@ -183,7 +183,7 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
 
 	@Override
 	public int deleteFinishedWork(Date timeBefore) {
-		final SearchCriteria<NetworkGroupWorkVO> sc = CleanupSearch.create();
+		final SearchCriteria<SecurityGroupWorkVO> sc = CleanupSearch.create();
 		sc.setParameters("taken", timeBefore);
 		sc.setParameters("step", Step.Done);
 
@@ -191,14 +191,14 @@ public class NetworkGroupWorkDaoImpl extends GenericDaoBase<NetworkGroupWorkVO, 
 	}
 
 	@Override
-	public List<NetworkGroupWorkVO> findUnfinishedWork(Date timeBefore) {
-		final SearchCriteria<NetworkGroupWorkVO> sc = CleanupSearch.create();
+	public List<SecurityGroupWorkVO> findUnfinishedWork(Date timeBefore) {
+		final SearchCriteria<SecurityGroupWorkVO> sc = CleanupSearch.create();
 		sc.setParameters("taken", timeBefore);
 		sc.setParameters("step", Step.Processing);
 
-		List<NetworkGroupWorkVO> result = listIncludingRemovedBy(sc);
+		List<SecurityGroupWorkVO> result = listIncludingRemovedBy(sc);
 		
-		NetworkGroupWorkVO work = createForUpdate();
+		SecurityGroupWorkVO work = createForUpdate();
 		work.setStep(Step.Error);
 		update(work, sc);
 		

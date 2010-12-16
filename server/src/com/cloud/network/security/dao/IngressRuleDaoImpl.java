@@ -25,7 +25,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.network.security.IngressRuleVO;
-import com.cloud.network.security.NetworkGroupVO;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder;
@@ -35,66 +35,66 @@ import com.cloud.utils.db.SearchCriteria;
 @Local(value={IngressRuleDao.class})
 public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> implements IngressRuleDao {
 	
-	@Inject NetworkGroupDao _networkGroupDao;
+	@Inject SecurityGroupDao _securityGroupDao;
 	
-    protected SearchBuilder<IngressRuleVO> networkGroupIdSearch;
-    protected SearchBuilder<IngressRuleVO> allowedNetworkGroupIdSearch;
+    protected SearchBuilder<IngressRuleVO> securityGroupIdSearch;
+    protected SearchBuilder<IngressRuleVO> allowedSecurityGroupIdSearch;
     protected SearchBuilder<IngressRuleVO> protoPortsAndCidrSearch;
-    protected SearchBuilder<IngressRuleVO> protoPortsAndNetworkGroupNameSearch;
-    protected SearchBuilder<IngressRuleVO> protoPortsAndNetworkGroupIdSearch;
+    protected SearchBuilder<IngressRuleVO> protoPortsAndSecurityGroupNameSearch;
+    protected SearchBuilder<IngressRuleVO> protoPortsAndSecurityGroupIdSearch;
 
 
 
     protected IngressRuleDaoImpl() {
-        networkGroupIdSearch  = createSearchBuilder();
-        networkGroupIdSearch.and("networkGroupId", networkGroupIdSearch.entity().getNetworkGroupId(), SearchCriteria.Op.EQ);
-        networkGroupIdSearch.done();
+        securityGroupIdSearch  = createSearchBuilder();
+        securityGroupIdSearch.and("securityGroupId", securityGroupIdSearch.entity().getSecurityGroupId(), SearchCriteria.Op.EQ);
+        securityGroupIdSearch.done();
         
-        allowedNetworkGroupIdSearch  = createSearchBuilder();
-        allowedNetworkGroupIdSearch.and("allowedNetworkId", allowedNetworkGroupIdSearch.entity().getAllowedNetworkId(), SearchCriteria.Op.EQ);
-        allowedNetworkGroupIdSearch.done();
+        allowedSecurityGroupIdSearch  = createSearchBuilder();
+        allowedSecurityGroupIdSearch.and("allowedNetworkId", allowedSecurityGroupIdSearch.entity().getAllowedNetworkId(), SearchCriteria.Op.EQ);
+        allowedSecurityGroupIdSearch.done();
         
         protoPortsAndCidrSearch = createSearchBuilder();
-        protoPortsAndCidrSearch.and("networkGroupId", protoPortsAndCidrSearch.entity().getNetworkGroupId(), SearchCriteria.Op.EQ);
+        protoPortsAndCidrSearch.and("securityGroupId", protoPortsAndCidrSearch.entity().getSecurityGroupId(), SearchCriteria.Op.EQ);
         protoPortsAndCidrSearch.and("proto", protoPortsAndCidrSearch.entity().getProtocol(), SearchCriteria.Op.EQ);
         protoPortsAndCidrSearch.and("startPort", protoPortsAndCidrSearch.entity().getStartPort(), SearchCriteria.Op.EQ);
         protoPortsAndCidrSearch.and("endPort", protoPortsAndCidrSearch.entity().getEndPort(), SearchCriteria.Op.EQ);
         protoPortsAndCidrSearch.and("cidr", protoPortsAndCidrSearch.entity().getAllowedSourceIpCidr(), SearchCriteria.Op.EQ);
         protoPortsAndCidrSearch.done();
         
-        protoPortsAndNetworkGroupIdSearch = createSearchBuilder();
-        protoPortsAndNetworkGroupIdSearch.and("networkGroupId", protoPortsAndNetworkGroupIdSearch.entity().getNetworkGroupId(), SearchCriteria.Op.EQ);
-        protoPortsAndNetworkGroupIdSearch.and("proto", protoPortsAndNetworkGroupIdSearch.entity().getProtocol(), SearchCriteria.Op.EQ);
-        protoPortsAndNetworkGroupIdSearch.and("startPort", protoPortsAndNetworkGroupIdSearch.entity().getStartPort(), SearchCriteria.Op.EQ);
-        protoPortsAndNetworkGroupIdSearch.and("endPort", protoPortsAndNetworkGroupIdSearch.entity().getEndPort(), SearchCriteria.Op.EQ);        
-        protoPortsAndNetworkGroupIdSearch.and("allowedNetworkId", protoPortsAndNetworkGroupIdSearch.entity().getAllowedNetworkId(), SearchCriteria.Op.EQ);
+        protoPortsAndSecurityGroupIdSearch = createSearchBuilder();
+        protoPortsAndSecurityGroupIdSearch.and("securityGroupId", protoPortsAndSecurityGroupIdSearch.entity().getSecurityGroupId(), SearchCriteria.Op.EQ);
+        protoPortsAndSecurityGroupIdSearch.and("proto", protoPortsAndSecurityGroupIdSearch.entity().getProtocol(), SearchCriteria.Op.EQ);
+        protoPortsAndSecurityGroupIdSearch.and("startPort", protoPortsAndSecurityGroupIdSearch.entity().getStartPort(), SearchCriteria.Op.EQ);
+        protoPortsAndSecurityGroupIdSearch.and("endPort", protoPortsAndSecurityGroupIdSearch.entity().getEndPort(), SearchCriteria.Op.EQ);        
+        protoPortsAndSecurityGroupIdSearch.and("allowedNetworkId", protoPortsAndSecurityGroupIdSearch.entity().getAllowedNetworkId(), SearchCriteria.Op.EQ);
 
     }
 
-    public List<IngressRuleVO> listByNetworkGroupId(long networkGroupId) {
-        SearchCriteria<IngressRuleVO> sc = networkGroupIdSearch.create();
-        sc.setParameters("networkGroupId", networkGroupId);
+    public List<IngressRuleVO> listBySecurityGroupId(long securityGroupId) {
+        SearchCriteria<IngressRuleVO> sc = securityGroupIdSearch.create();
+        sc.setParameters("securityGroupId", securityGroupId);
         return listBy(sc);
     }
 
-    public int deleteByNetworkGroup(long networkGroupId) {
-        SearchCriteria<IngressRuleVO> sc = networkGroupIdSearch.create();
-        sc.setParameters("networkGroupId", networkGroupId);
+    public int deleteBySecurityGroup(long securityGroupId) {
+        SearchCriteria<IngressRuleVO> sc = securityGroupIdSearch.create();
+        sc.setParameters("securityGroupId", securityGroupId);
         return expunge(sc);
     }
 
 	@Override
-	public List<IngressRuleVO> listByAllowedNetworkGroupId(long networkGroupId) {
-		 SearchCriteria<IngressRuleVO> sc = allowedNetworkGroupIdSearch.create();
-		 sc.setParameters("allowedNetworkId", networkGroupId);
+	public List<IngressRuleVO> listByAllowedSecurityGroupId(long securityGroupId) {
+		 SearchCriteria<IngressRuleVO> sc = allowedSecurityGroupIdSearch.create();
+		 sc.setParameters("allowedNetworkId", securityGroupId);
 		 return listBy(sc);
 	}
 
 	@Override
-	public IngressRuleVO findByProtoPortsAndCidr(long networkGroupId, String proto, int startPort,
+	public IngressRuleVO findByProtoPortsAndCidr(long securityGroupId, String proto, int startPort,
 			int endPort, String cidr) {
 		SearchCriteria<IngressRuleVO> sc = protoPortsAndCidrSearch.create();
-		sc.setParameters("networkGroupId", networkGroupId);
+		sc.setParameters("securityGroupId", securityGroupId);
 		sc.setParameters("proto", proto);
 		sc.setParameters("startPort", startPort);
 		sc.setParameters("endPort", endPort);
@@ -104,33 +104,33 @@ public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> impl
 
 	@Override
 	public IngressRuleVO findByProtoPortsAndGroup(String proto, int startPort,
-			int endPort, String networkGroup) {
-		SearchCriteria<IngressRuleVO> sc = protoPortsAndNetworkGroupNameSearch.create();
+			int endPort, String securityGroup) {
+		SearchCriteria<IngressRuleVO> sc = protoPortsAndSecurityGroupNameSearch.create();
 		sc.setParameters("proto", proto);
 		sc.setParameters("startPort", startPort);
 		sc.setParameters("endPort", endPort);
-		sc.setJoinParameters("groupName", "groupName", networkGroup);
+		sc.setJoinParameters("groupName", "groupName", securityGroup);
 		return findOneIncludingRemovedBy(sc);
 	}
 
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
-		protoPortsAndNetworkGroupNameSearch = createSearchBuilder();
-        protoPortsAndNetworkGroupNameSearch.and("proto", protoPortsAndNetworkGroupNameSearch.entity().getProtocol(), SearchCriteria.Op.EQ);
-        protoPortsAndNetworkGroupNameSearch.and("startPort", protoPortsAndNetworkGroupNameSearch.entity().getStartPort(), SearchCriteria.Op.EQ);
-        protoPortsAndNetworkGroupNameSearch.and("endPort", protoPortsAndNetworkGroupNameSearch.entity().getEndPort(), SearchCriteria.Op.EQ);
-        SearchBuilder<NetworkGroupVO> ngSb = _networkGroupDao.createSearchBuilder();
+		protoPortsAndSecurityGroupNameSearch = createSearchBuilder();
+        protoPortsAndSecurityGroupNameSearch.and("proto", protoPortsAndSecurityGroupNameSearch.entity().getProtocol(), SearchCriteria.Op.EQ);
+        protoPortsAndSecurityGroupNameSearch.and("startPort", protoPortsAndSecurityGroupNameSearch.entity().getStartPort(), SearchCriteria.Op.EQ);
+        protoPortsAndSecurityGroupNameSearch.and("endPort", protoPortsAndSecurityGroupNameSearch.entity().getEndPort(), SearchCriteria.Op.EQ);
+        SearchBuilder<SecurityGroupVO> ngSb = _securityGroupDao.createSearchBuilder();
         ngSb.and("groupName", ngSb.entity().getName(), SearchCriteria.Op.EQ);
-        protoPortsAndNetworkGroupNameSearch.join("groupName", ngSb, protoPortsAndNetworkGroupNameSearch.entity().getAllowedNetworkId(), ngSb.entity().getId(), JoinBuilder.JoinType.INNER);
-        protoPortsAndNetworkGroupNameSearch.done();
+        protoPortsAndSecurityGroupNameSearch.join("groupName", ngSb, protoPortsAndSecurityGroupNameSearch.entity().getAllowedNetworkId(), ngSb.entity().getId(), JoinBuilder.JoinType.INNER);
+        protoPortsAndSecurityGroupNameSearch.done();
 		return super.configure(name, params);
 	}
 
 	@Override
-	public int deleteByPortProtoAndGroup(long networkGroupId, String protocol, int startPort, int endPort, Long allowedGroupId) {
-		SearchCriteria<IngressRuleVO> sc = protoPortsAndNetworkGroupIdSearch.create();
-		sc.setParameters("networkGroupId", networkGroupId);
+	public int deleteByPortProtoAndGroup(long securityGroupId, String protocol, int startPort, int endPort, Long allowedGroupId) {
+		SearchCriteria<IngressRuleVO> sc = protoPortsAndSecurityGroupIdSearch.create();
+		sc.setParameters("securityGroupId", securityGroupId);
 		sc.setParameters("proto", protocol);
 		sc.setParameters("startPort", startPort);
 		sc.setParameters("endPort", endPort);
@@ -141,9 +141,9 @@ public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> impl
 	}
 
 	@Override
-	public int deleteByPortProtoAndCidr(long networkGroupId, String protocol, int startPort, int endPort, String cidr) {
+	public int deleteByPortProtoAndCidr(long securityGroupId, String protocol, int startPort, int endPort, String cidr) {
 		SearchCriteria<IngressRuleVO> sc = protoPortsAndCidrSearch.create();
-		sc.setParameters("networkGroupId", networkGroupId);
+		sc.setParameters("securityGroupId", securityGroupId);
 		sc.setParameters("proto", protocol);
 		sc.setParameters("startPort", startPort);
 		sc.setParameters("endPort", endPort);
@@ -153,10 +153,10 @@ public class IngressRuleDaoImpl extends GenericDaoBase<IngressRuleVO, Long> impl
 	}
 
 	@Override
-	public IngressRuleVO findByProtoPortsAndAllowedGroupId(long networkGroupId, String proto,
+	public IngressRuleVO findByProtoPortsAndAllowedGroupId(long securityGroupId, String proto,
 			int startPort, int endPort, Long allowedGroupId) {
-		SearchCriteria<IngressRuleVO> sc = protoPortsAndNetworkGroupIdSearch.create();
-		sc.addAnd("networkGroupId", SearchCriteria.Op.EQ, networkGroupId);
+		SearchCriteria<IngressRuleVO> sc = protoPortsAndSecurityGroupIdSearch.create();
+		sc.addAnd("securityGroupId", SearchCriteria.Op.EQ, securityGroupId);
 		sc.setParameters("proto", proto);
 		sc.setParameters("startPort", startPort);
 		sc.setParameters("endPort", endPort);

@@ -7,7 +7,7 @@ import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
-import com.cloud.network.security.NetworkGroupVO;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.AccountVO;
@@ -22,17 +22,17 @@ public class RevokeNetworkGroupIngressExecutor extends BaseAsyncJobExecutor {
 		AsyncJobManager asyncMgr = getAsyncJobMgr();
 		AsyncJobVO job = getJob();
 		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
-		NetworkGroupIngressParam param = gson.fromJson(job.getCmdInfo(), NetworkGroupIngressParam.class);
+		SecurityGroupIngressParam param = gson.fromJson(job.getCmdInfo(), SecurityGroupIngressParam.class);
 		AccountVO account = param.getAccount();
 
 		/*
 		if (getSyncSource() == null) {
-			NetworkGroupVO networkGroup = managementServer.findNetworkGroupByName(param.getAccount().getId(), param.getGroupName());
+			SecurityGroupVO networkGroup = managementServer.findNetworkGroupByName(param.getAccount().getId(), param.getGroupName());
 	        if(networkGroup == null) {
 				asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, 
 					BaseCmd.PARAM_ERROR, "Unable to find network group " + param.getGroupName() + " for account " + account.getAccountName() + " (id: " + account.getId() + ")"); 
 	        } else {
-		    	asyncMgr.syncAsyncJobExecution(job.getId(), "NetworkGroup", networkGroup.getId());
+		    	asyncMgr.syncAsyncJobExecution(job.getId(), "SecurityGroup", networkGroup.getId());
 	        }
 			return true;
 		} else {

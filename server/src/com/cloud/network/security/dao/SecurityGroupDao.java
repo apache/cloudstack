@@ -20,12 +20,12 @@ package com.cloud.network.security.dao;
 
 import java.util.List;
 
-import com.cloud.network.security.NetworkGroupVO;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface NetworkGroupDao extends GenericDao<NetworkGroupVO, Long> {
-    List<NetworkGroupVO> listByAccountId(long accountId);
+public interface SecurityGroupDao extends GenericDao<SecurityGroupVO, Long> {
+    List<SecurityGroupVO> listByAccountId(long accountId);
     boolean isNameInUse(Long accountId, Long domainId, String name);
-    NetworkGroupVO findByAccountAndName(Long accountId, String name);
-    List<NetworkGroupVO> findByAccountAndNames(Long accountId, String... names);
+    SecurityGroupVO findByAccountAndName(Long accountId, String name);
+    List<SecurityGroupVO> findByAccountAndNames(Long accountId, String... names);
 }

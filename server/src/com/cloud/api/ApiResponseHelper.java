@@ -51,7 +51,7 @@ import com.cloud.api.response.InstanceGroupResponse;
 import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
-import com.cloud.api.response.NetworkGroupResponse;
+import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.NicResponse;
@@ -75,7 +75,7 @@ import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.executor.IngressRuleResultObject;
-import com.cloud.async.executor.NetworkGroupResultObject;
+import com.cloud.async.executor.SecurityGroupResultObject;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.Configuration;
@@ -105,8 +105,8 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.security.IngressRule;
-import com.cloud.network.security.NetworkGroup;
-import com.cloud.network.security.NetworkGroupRules;
+import com.cloud.network.security.SecurityGroup;
+import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
@@ -1035,7 +1035,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         userVmResponse.setGuestOsId(userVm.getGuestOSId());
         // network groups
-        userVmResponse.setNetworkGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(userVm.getId()));
+        userVmResponse.setSecurityGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(userVm.getId()));
 
         List<? extends Nic> nics = ApiDBUtils.getNics(userVm);
         List<NicResponse> nicResponses = new ArrayList<NicResponse>();
@@ -1483,13 +1483,13 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     @Override
-    public ListResponse<NetworkGroupResponse> createNetworkGroupResponses(List<? extends NetworkGroupRules> networkGroups) {
-        List<NetworkGroupResultObject> groupResultObjs = NetworkGroupResultObject.transposeNetworkGroups(networkGroups);
+    public ListResponse<SecurityGroupResponse> createSecurityGroupResponses(List<? extends SecurityGroupRules> networkGroups) {
+        List<SecurityGroupResultObject> groupResultObjs = SecurityGroupResultObject.transposeNetworkGroups(networkGroups);
  
-        ListResponse<NetworkGroupResponse> response = new ListResponse<NetworkGroupResponse>();
-        List<NetworkGroupResponse> netGrpResponses = new ArrayList<NetworkGroupResponse>();
-        for (NetworkGroupResultObject networkGroup : groupResultObjs) {
-            NetworkGroupResponse netGrpResponse = new NetworkGroupResponse();
+        ListResponse<SecurityGroupResponse> response = new ListResponse<SecurityGroupResponse>();
+        List<SecurityGroupResponse> netGrpResponses = new ArrayList<SecurityGroupResponse>();
+        for (SecurityGroupResultObject networkGroup : groupResultObjs) {
+            SecurityGroupResponse netGrpResponse = new SecurityGroupResponse();
             netGrpResponse.setId(networkGroup.getId());
             netGrpResponse.setName(networkGroup.getName());
             netGrpResponse.setDescription(networkGroup.getDescription());
@@ -1514,9 +1514,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                         ingressData.setEndPort(ingressRule.getEndPort());
                     }
 
-                    if (ingressRule.getAllowedNetworkGroup() != null) {
-                        ingressData.setNetworkGroupName(ingressRule.getAllowedNetworkGroup());
-                        ingressData.setAccountName(ingressRule.getAllowedNetGroupAcct());
+                    if (ingressRule.getAllowedSecurityGroup() != null) {
+                        ingressData.setSecurityGroupName(ingressRule.getAllowedSecurityGroup());
+                        ingressData.setAccountName(ingressRule.getAllowedSecGroupAcct());
                     } else {
                         ingressData.setCidr(ingressRule.getAllowedSourceIpCidr());
                     }
@@ -1535,8 +1535,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     @Override
-    public NetworkGroupResponse createNetworkGroupResponse(NetworkGroup group) {
-        NetworkGroupResponse response = new NetworkGroupResponse();
+    public SecurityGroupResponse createSecurityGroupResponse(SecurityGroup group) {
+        SecurityGroupResponse response = new SecurityGroupResponse();
         response.setAccountName(group.getAccountName());
         response.setDescription(group.getDescription());
         response.setDomainId(group.getDomainId());
@@ -2084,17 +2084,17 @@ public class ApiResponseHelper implements ResponseGenerator {
     
     
     @Override
-    public NetworkGroupResponse createNetworkGroupResponseFromIngressRule(List<? extends IngressRule> ingressRules) {
-        NetworkGroupResponse response = new NetworkGroupResponse();
+    public SecurityGroupResponse createSecurityGroupResponseFromIngressRule(List<? extends IngressRule> ingressRules) {
+        SecurityGroupResponse response = new SecurityGroupResponse();
 
         if ((ingressRules != null) && !ingressRules.isEmpty()) {
-            NetworkGroup networkGroup  = ApiDBUtils.findNetworkGroupById(ingressRules.get(0).getNetworkGroupId());
-            response.setId(networkGroup.getId());
-            response.setName(networkGroup.getName());
-            response.setDescription(networkGroup.getDescription());
-            response.setAccountName(networkGroup.getAccountName());
-            response.setDomainId(networkGroup.getDomainId());
-            response.setDomainName(ApiDBUtils.findDomainById(networkGroup.getDomainId()).getName());
+            SecurityGroup securityGroup  = ApiDBUtils.findNetworkGroupById(ingressRules.get(0).getSecurityGroupId());
+            response.setId(securityGroup.getId());
+            response.setName(securityGroup.getName());
+            response.setDescription(securityGroup.getDescription());
+            response.setAccountName(securityGroup.getAccountName());
+            response.setDomainId(securityGroup.getDomainId());
+            response.setDomainName(ApiDBUtils.findDomainById(securityGroup.getDomainId()).getName());
 
             List<IngressRuleResponse> responses = new ArrayList<IngressRuleResponse>();
             for (IngressRule ingressRule : ingressRules) {
@@ -2110,9 +2110,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                     ingressData.setEndPort(ingressRule.getEndPort());
                 }
 
-                if (ingressRule.getAllowedNetworkGroup() != null) {
-                    ingressData.setNetworkGroupName(ingressRule.getAllowedNetworkGroup());
-                    ingressData.setAccountName(ingressRule.getAllowedNetGrpAcct());
+                if (ingressRule.getAllowedSecurityGroup() != null) {
+                    ingressData.setSecurityGroupName(ingressRule.getAllowedSecurityGroup());
+                    ingressData.setAccountName(ingressRule.getAllowedSecGrpAcct());
                 } else {
                     ingressData.setCidr(ingressRule.getAllowedSourceIpCidr());
                 }
@@ -2121,7 +2121,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 responses.add(ingressData);
             }
             response.setIngressRules(responses);
-            response.setObjectName("networkgroup");
+            response.setObjectName("securitygroup");
 
         }
         return response;

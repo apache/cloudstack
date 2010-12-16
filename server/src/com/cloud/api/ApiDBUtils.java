@@ -36,9 +36,9 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
-import com.cloud.network.security.NetworkGroup;
-import com.cloud.network.security.NetworkGroupManager;
-import com.cloud.network.security.dao.NetworkGroupDao;
+import com.cloud.network.security.SecurityGroup;
+import com.cloud.network.security.SecurityGroupManager;
+import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -97,7 +97,7 @@ public class ApiDBUtils {
     private static AccountManager _accountMgr;
     private static AgentManager _agentMgr;
     public static AsyncJobManager _asyncMgr;
-    private static NetworkGroupManager _networkGroupMgr;
+    private static SecurityGroupManager _networkGroupMgr;
     private static SnapshotManager _snapMgr;
     private static StorageManager _storageMgr;
     private static UserVmManager _userVmMgr;
@@ -115,7 +115,7 @@ public class ApiDBUtils {
     private static HostDao _hostDao;
     private static IPAddressDao _ipAddressDao;
     private static LoadBalancerDao _loadBalancerDao;
-    private static NetworkGroupDao _networkGroupDao;
+    private static SecurityGroupDao _networkGroupDao;
     private static NetworkRuleConfigDao _networkRuleConfigDao;
     private static HostPodDao _podDao;
     private static ServiceOfferingDao _serviceOfferingDao;
@@ -140,7 +140,7 @@ public class ApiDBUtils {
         _accountMgr = locator.getManager(AccountManager.class);
         _agentMgr = locator.getManager(AgentManager.class);
         _asyncMgr = locator.getManager(AsyncJobManager.class);
-        _networkGroupMgr = locator.getManager(NetworkGroupManager.class);
+        _networkGroupMgr = locator.getManager(SecurityGroupManager.class);
         _snapMgr = locator.getManager(SnapshotManager.class);
         _storageMgr = locator.getManager(StorageManager.class);
         _userVmMgr = locator.getManager(UserVmManager.class);
@@ -171,7 +171,7 @@ public class ApiDBUtils {
         _vlanDao = locator.getDao(VlanDao.class);
         _volumeDao = locator.getDao(VolumeDao.class);
         _zoneDao = locator.getDao(DataCenterDao.class);
-        _networkGroupDao = locator.getDao(NetworkGroupDao.class);
+        _networkGroupDao = locator.getDao(SecurityGroupDao.class);
         _networkOfferingDao = locator.getDao(NetworkOfferingDao.class);
         _networkDao = locator.getDao(NetworkDao.class);
 
@@ -240,7 +240,7 @@ public class ApiDBUtils {
     }
 
     public static String getNetworkGroupsNamesForVm(long vmId) {
-        return _networkGroupMgr.getNetworkGroupsNamesForVm(vmId);
+        return _networkGroupMgr.getSecurityGroupsNamesForVm(vmId);
     }
 
     public static String getSnapshotIntervalTypes(long snapshotId) {
@@ -351,7 +351,7 @@ public class ApiDBUtils {
         return _networkRuleConfigDao.findById(ruleId);
     }
     
-    public static NetworkGroup findNetworkGroupById(Long groupId) {
+    public static SecurityGroup findNetworkGroupById(Long groupId) {
         return _networkGroupDao.findById(groupId);
     }
 

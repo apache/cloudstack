@@ -40,7 +40,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
     public void execute(){
         Map<String, String> capabilities = _mgr.listCapabilities(this);
         CapabilitiesResponse response = new CapabilitiesResponse();
-        response.setNetworkGroupsEnabled(capabilities.get("networkGroupsEnabled"));
+        response.setSecurityGroupsEnabled(capabilities.get("securityGroupsEnabled"));
         response.setCloudStackVersion(capabilities.get("cloudStackVersion"));
         response.setObjectName("capability");
         response.setResponseName(getCommandName());

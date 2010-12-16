@@ -3,10 +3,10 @@ package com.cloud.async.executor;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.network.security.NetworkGroupRules;
+import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.serializer.Param;
 
-public class NetworkGroupResultObject {
+public class SecurityGroupResultObject {
     @Param(name="id")
     private Long id;
 
@@ -28,9 +28,9 @@ public class NetworkGroupResultObject {
     @Param(name="ingressrules")
     private List<IngressRuleResultObject> ingressRules = null;
 
-    public NetworkGroupResultObject() {}
+    public SecurityGroupResultObject() {}
 
-    public NetworkGroupResultObject(Long id, String name, String description, Long domainId, Long accountId, String accountName, List<IngressRuleResultObject> ingressRules) {
+    public SecurityGroupResultObject(Long id, String name, String description, Long domainId, Long accountId, String accountName, List<IngressRuleResultObject> ingressRules) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -96,15 +96,15 @@ public class NetworkGroupResultObject {
         this.ingressRules = ingressRules;
     }
 
-    public static List<NetworkGroupResultObject> transposeNetworkGroups(List<? extends NetworkGroupRules> groups) {
-        List<NetworkGroupResultObject> resultObjects = new ArrayList<NetworkGroupResultObject>();
+    public static List<SecurityGroupResultObject> transposeNetworkGroups(List<? extends SecurityGroupRules> groups) {
+        List<SecurityGroupResultObject> resultObjects = new ArrayList<SecurityGroupResultObject>();
 
         if ((groups != null) && !groups.isEmpty()) {
             List<IngressRuleResultObject> ingressDataList = new ArrayList<IngressRuleResultObject>();
-            NetworkGroupResultObject currentGroup = null;
+            SecurityGroupResultObject currentGroup = null;
 
             List<Long> processedGroups = new ArrayList<Long>();
-            for (NetworkGroupRules netGroupRule : groups) {
+            for (SecurityGroupRules netGroupRule : groups) {
                 Long groupId = netGroupRule.getId();
                 if (!processedGroups.contains(groupId)) {
                     processedGroups.add(groupId);
@@ -118,7 +118,7 @@ public class NetworkGroupResultObject {
                     }
 
                     // start a new group
-                    NetworkGroupResultObject groupResult = new NetworkGroupResultObject();
+                    SecurityGroupResultObject groupResult = new SecurityGroupResultObject();
                     groupResult.setId(netGroupRule.getId());
                     groupResult.setName(netGroupRule.getName());
                     groupResult.setDescription(netGroupRule.getDescription());
@@ -137,9 +137,9 @@ public class NetworkGroupResultObject {
                     ingressData.setId(netGroupRule.getRuleId());
                     ingressData.setProtocol(netGroupRule.getProtocol());
 
-                    if (netGroupRule.getAllowedNetworkGroup() != null) {
-                        ingressData.setAllowedNetworkGroup(netGroupRule.getAllowedNetworkGroup());
-                        ingressData.setAllowedNetGroupAcct(netGroupRule.getAllowedNetGrpAcct());
+                    if (netGroupRule.getAllowedSecurityGroup() != null) {
+                        ingressData.setAllowedSecurityGroup(netGroupRule.getAllowedSecurityGroup());
+                        ingressData.setAllowedSecGroupAcct(netGroupRule.getAllowedSecGrpAcct());
                     } else if (netGroupRule.getAllowedSourceIpCidr() != null) {
                         ingressData.setAllowedSourceIpCidr(netGroupRule.getAllowedSourceIpCidr());
                     }

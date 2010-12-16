@@ -71,7 +71,7 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.DomainRouterManager;
-import com.cloud.network.security.NetworkGroupManager;
+import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.server.Criteria;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
@@ -121,7 +121,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     @Inject private NetworkDao _networkDao;
 	
 	
-	@Inject private NetworkGroupManager _networkGroupMgr;
+	@Inject private SecurityGroupManager _networkGroupMgr;
 	@Inject private NetworkManager _networkMgr;
 	@Inject private SnapshotManager _snapMgr;
 	@Inject private UserVmManager _vmMgr;
@@ -1049,7 +1049,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 
             UserVO dbUser = _userDao.persist(user);
             
-            _networkGroupMgr.createDefaultNetworkGroup(accountId);
+            _networkGroupMgr.createDefaultSecurityGroup(accountId);
 
             if (!user.getPassword().equals(dbUser.getPassword())) {
                 throw new CloudRuntimeException("The user " + username + " being creating is using a password that is different than what's in the db");

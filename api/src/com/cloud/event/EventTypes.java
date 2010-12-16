@@ -158,9 +158,9 @@ public class EventTypes {
 	// Configuration Table
 	public static final String EVENT_CONFIGURATION_VALUE_EDIT = "CONFIGURATION.VALUE.EDIT";
 
-	// Network Groups
-	public static final String EVENT_NETWORK_GROUP_AUTHORIZE_INGRESS = "NG.AUTH.INGRESS";
-    public static final String EVENT_NETWORK_GROUP_REVOKE_INGRESS = "NG.REVOKE.INGRESS";
+	// Security Groups
+	public static final String EVENT_SECURITY_GROUP_AUTHORIZE_INGRESS = "SG.AUTH.INGRESS";
+    public static final String EVENT_SECURITY_GROUP_REVOKE_INGRESS = "SG.REVOKE.INGRESS";
 
     // Host
     public static final String EVENT_HOST_RECONNECT = "HOST.RECONNECT";

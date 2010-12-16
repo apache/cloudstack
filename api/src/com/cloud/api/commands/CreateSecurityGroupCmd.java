@@ -24,13 +24,13 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.NetworkGroupResponse;
-import com.cloud.network.security.NetworkGroup;
+import com.cloud.api.response.SecurityGroupResponse;
+import com.cloud.network.security.SecurityGroup;
 
 //TODO - add description to implementation
-@Implementation(responseObject=NetworkGroupResponse.class)
-public class CreateNetworkGroupCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateNetworkGroupCmd.class.getName());
+@Implementation(responseObject=SecurityGroupResponse.class)
+public class CreateSecurityGroupCmd extends BaseCmd {
+    public static final Logger s_logger = Logger.getLogger(CreateSecurityGroupCmd.class.getName());
 
     private static final String s_name = "createsecuritygroupresponse";
 
@@ -38,17 +38,17 @@ public class CreateNetworkGroupCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the network group. Must be used with domainId.")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the security group. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="the description of the network group")
+    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="the description of the security group")
     private String description;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the network group. If the account parameter is used, domainId must also be used.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the security group. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the network group")
-    private String networkGroupName;
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the security group")
+    private String securityGroupName;
 
 
     /////////////////////////////////////////////////////
@@ -67,8 +67,8 @@ public class CreateNetworkGroupCmd extends BaseCmd {
         return domainId;
     }
 
-    public String getNetworkGroupName() {
-        return networkGroupName;
+    public String getSecurityGroupName() {
+        return securityGroupName;
     }
 
 
@@ -83,13 +83,13 @@ public class CreateNetworkGroupCmd extends BaseCmd {
     
     @Override
     public void execute(){
-        NetworkGroup group = _networkGroupMgr.createNetworkGroup(this);
+        SecurityGroup group = _securityGroupMgr.createSecurityGroup(this);
         if (group != null) {
-            NetworkGroupResponse response = _responseGenerator.createNetworkGroupResponse(group);
+            SecurityGroupResponse response = _responseGenerator.createSecurityGroupResponse(group);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create network group");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create security group");
         }
     }
 }
