@@ -203,11 +203,11 @@ enableStorageMaintenance=com.cloud.api.commands.PreparePrimaryStorageForMaintena
 cancelStorageMaintenance=com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;1
 
 #### security group commands
-createNetworkGroup=com.cloud.api.commands.CreateSecurityGroupCmd;11
-deleteNetworkGroup=com.cloud.api.commands.DeleteSecurityGroupCmd;11
-authorizeNetworkGroupIngress=com.cloud.api.commands.AuthorizeSecurityGroupIngressCmd;11
-revokeNetworkGroupIngress=com.cloud.api.commands.RevokeSecurityGroupIngressCmd;11
-listNetworkGroups=com.cloud.api.commands.ListSecurityGroupsCmd;11
+createSecurityGroup=com.cloud.api.commands.CreateSecurityGroupCmd;11
+deleteSecurityGroup=com.cloud.api.commands.DeleteSecurityGroupCmd;11
+authorizeSecurityGroupIngress=com.cloud.api.commands.AuthorizeSecurityGroupIngressCmd;11
+revokeSecurityGroupIngress=com.cloud.api.commands.RevokeSecurityGroupIngressCmd;11
+listSecurityGroups=com.cloud.api.commands.ListSecurityGroupsCmd;11
 
 registerPreallocatedLun=com.cloud.api.commands.RegisterPreallocatedLunCmd;1
 deletePreallocatedLun=com.cloud.api.commands.DeletePreallocatedLunCmd;1
