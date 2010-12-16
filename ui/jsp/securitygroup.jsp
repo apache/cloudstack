@@ -72,9 +72,7 @@
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="name">
-	                    </div>                    
-	                    <input class="text" id="name_edit" style="width: 200px; display: none;" type="text" />
-	                    <div id="name_edit_errormsg" style="display:none"></div>                       
+	                    </div>                        
 	                </div>
 	            </div>
 	            <div class="grid_rows odd">
@@ -84,33 +82,9 @@
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="displaytext">
-	                    </div>                    
-	                    <input class="text" id="displaytext_edit" style="width: 200px; display: none;" type="text" />
-	                    <div id="displaytext_edit_errormsg" style="display:none"></div>                       
+	                    </div>          
 	                </div>
-	            </div>
-	            <div class="grid_rows even">
-	                <div class="grid_row_cell" style="width: 20%;">
-	                    <div class="row_celltitles">
-	                        <%=t.t("disk.size")%>:</div>
-	                </div>
-	                <div class="grid_row_cell" style="width: 79%;">
-	                    <div class="row_celltitles" id="disksize">
-	                    </div>
-	                </div>
-	            </div>  
-	            <div class="grid_rows odd">
-	                <div class="grid_row_cell" style="width: 20%;">
-	                    <div class="row_celltitles">
-	                        <%=t.t("tags")%>:</div>
-	                </div>
-	                <div class="grid_row_cell" style="width: 79%;">
-	                    <div class="row_celltitles" id="tags">
-	                    </div>
-	                    <input class="text" id="tags_edit" style="width: 200px; display: none;" type="text" />
-	                    <div id="tags_edit_errormsg" style="display:none"></div>  
-	                </div>
-	            </div>
+	            </div>	            
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
@@ -118,23 +92,19 @@
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="domain">
-	                    </div>
-	                    <select class="select" id="domain_edit" style="width: 202px; display: none;">	                       
-	                    </select>	
+	                    </div>	                    
 	                </div>
-	            </div>      
-	            <!-- 	            
+	            </div>   	            
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("customizable.during.VM.creation")%>:</div>
+	                        <%=t.t("account")%>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
-	                    <div class="row_celltitles" id="isCustomized">
-	                    </div>
+	                    <div class="row_celltitles" id="account">
+	                    </div>          
 	                </div>
-	            </div>  
-	             -->   
+	            </div>	 
 	        </div>        
 	        <div class="grid_botactionpanel">
 	        	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>

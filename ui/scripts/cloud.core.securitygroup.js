@@ -153,30 +153,16 @@ function securityGroupJsonToDetailsTab() {
     });   
     */    
  
-    $thisTab.find("#id").text(fromdb(jsonObj.id));
-    
-    /*
+    $thisTab.find("#id").text(fromdb(jsonObj.id));     
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
-    $thisTab.find("#name").text(fromdb(jsonObj.name));
-    $thisTab.find("#name_edit").val(fromdb(jsonObj.name));
-    
-    $thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
-    $thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
-    
-    var diskSize = securityGroupGetDiskSize(jsonObj);   
-    $thisTab.find("#disksize").text(diskSize);    
-        
-    $thisTab.find("#tags").text(fromdb(jsonObj.tags));    
-    $thisTab.find("#tags_edit").val(fromdb(jsonObj.tags));    
-      
+    $thisTab.find("#name").text(fromdb(jsonObj.name)); 
+    $thisTab.find("#displaytext").text(fromdb(jsonObj.description));       
     $thisTab.find("#domain").text(fromdb(jsonObj.domain));   
-    $thisTab.find("#domain_edit").val(fromdb(jsonObj.domainid));   
-    */
-    
+    $thisTab.find("#account").text(fromdb(jsonObj.account));   
+        
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
-    $actionMenu.find("#action_list").empty();    
-    buildActionLinkForTab("Edit Security Group", securityGroupActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
+    $actionMenu.find("#action_list").empty();  
     buildActionLinkForTab("Delete Security Group", securityGroupActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
     
     $thisTab.find("#tab_spinning_wheel").hide();    
