@@ -423,6 +423,9 @@ function clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, exist
 function initAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenuItem1) {    
     $button.show();   
     $button.unbind("click").bind("click", function(event) {   
+        if($("#tab_content_primarystorage").length > 0 && $("#tab_content_primarystorage").css("display") == "none")
+            $("#tab_primarystorage").click();
+    
         dialogAddPool = $("#dialog_add_pool");  
         dialogAddPool.find("#info_container").hide();	
              
@@ -542,7 +545,13 @@ function initAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenu
 				    success: function(json) {
 				        $thisDialog.find("#spinning_wheel").hide();					       
 				        $thisDialog.dialog("close");					
-						            
+						 
+						var item = json.createstoragepoolresponse.storagepool;	
+						var $newTemplate = $("#primarystorage_tab_template").clone(true);	               
+	                    hostPrimaryStorageJSONToTemplate(item, $newTemplate); 
+	                    $("#tab_content_primarystorage").find("#tab_container").append($newTemplate.show()); 
+												 
+						/*            
 					    if(isMiddleMenuShown() == false) { //not on cluster node (still on pod node, so middle menu is hidden)
 					        var $clusterNode = $("#cluster_"+clusterId);
 					        if($clusterNode.length > 0)
@@ -565,7 +574,7 @@ function initAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenu
 					        primarystorageToMidmenu(item, $midmenuItem1);
 	                        bindClickToMidMenu($midmenuItem1, primarystorageToRightPanel, primarystorageGetMidmenuId);  
 	                    }
-	                                                                 
+	                    */                                             
 				    },			
                     error: function(XMLHttpResponse) {	  
 						handleError(XMLHttpResponse, function() {
