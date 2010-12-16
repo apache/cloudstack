@@ -169,199 +169,183 @@
                         
                         <div class="searchpanel" id="blank_search_panel" style="display: none;">                            
                         </div>
-                        
-                        <div class="actionpanel_button_wrapper" id="midmenu_action_link" style="position: relative;
-                            display: none">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/actions_actionicon.png" alt="Add" /></div>
-                                <div class="actionpanel_button_links">
-									<fmt:message key="label.actions"/>
-                                </div>
-                                <div class="action_ddarrow">
-                                </div>
-                            </div>
-                            <div class="actionsdropdown_box" id="action_menu" style="display: none;">
-                                <ul class="actionsdropdown_boxlist" style="width: 97px;" id="action_list">
-                                </ul>
-                            </div>
-                        </div>
-                        
-                        <div class="actionpanel_button_wrapper" id="midmenu_add_link" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/addvm_actionicon.png" alt="Add" /></div>
-                                <div class="actionpanel_button_links" id="label">
-									<fmt:message key="label.add"/>
-                                </div>
-                            </div>
-                        </div>
-                         
-                        <div class="actionpanel_button_wrapper" id="midmenu_add_zone_button" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/addvm_actionicon.png" alt="Add Zone" /></div>
-                                <div class="actionpanel_button_links" id="Div3">
-									<fmt:message key="label.add.zone"/>
-                                </div>
-                            </div>
-                        </div> 
-                        <div class="actionpanel_button_wrapper" id="midmenu_add_host_button" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/addvm_actionicon.png" alt="Add Host" /></div>
-                                <div class="actionpanel_button_links" id="label">
-									<fmt:message key="label.add.host"/>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="actionpanel_button_wrapper" id="midmenu_add_primarystorage_button" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/addvm_actionicon.png" alt="Add Primary Storage" /></div>
-                                <div class="actionpanel_button_links" id="Div2">
-									<fmt:message key="label.add.primarystorage"/>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="actionpanel_button_wrapper" id="midmenu_add_secondarystorage_button" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/addvm_actionicon.png" alt="Add Secondary Storage" /></div>
-                                <div class="actionpanel_button_links" id="Div4">
-									<fmt:message key="label.add.secondarystorage"/>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="actionpanel_button_wrapper" id="midmenu_add_pod_button" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/addvm_actionicon.png" alt="Add pod" /></div>
-                                <div class="actionpanel_button_links" id="Div6">
-									<fmt:message key="label.add.pod"/>
-                                </div>
-                            </div>
-                        </div>
-                        <!--  
-                        <div class="actionpanel_button_wrapper" id="midmenu_add_vlan_button" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/addvm_actionicon.png" alt="Add VLAN" /></div>
-                                <div class="actionpanel_button_links" id="Div8">
-									<fmt:message key="label.add.vlan"/>
-                                </div>
-                            </div>
-                        </div>
-                        -->
-                        <div class="actionpanel_button_wrapper" id="midmenu_add_network_button" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/addvm_actionicon.png" alt="Add Network" /></div>
-                                <div class="actionpanel_button_links" id="Div8">
-									Add Network
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="actionpanel_button_wrapper" id="midmenu_add_iprange_button" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/addvm_actionicon.png" alt="Add IP Range" /></div>
-                                <div class="actionpanel_button_links" id="Div8">
-									Add IP Range
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="actionpanel_button_wrapper" id="midmenu_add_external_firewall_button" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/addvm_actionicon.png" alt="Add Firewall" /></div>
-                                <div class="actionpanel_button_links" id="Div10">
-									Add Firewall
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="actionpanel_button_wrapper" id="midmenu_add_load_balancer_button" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/addvm_actionicon.png" alt="Add Load Balancer" /></div>
-                                <div class="actionpanel_button_links" id="Div10">
-									Add Load Balancer
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="actionpanel_button_wrapper" id="midmenu_Update_SSL_Certificate_button" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/addvm_actionicon.png" alt="Update SSL Certificate" /></div>
-                                <div class="actionpanel_button_links" id="Div12">
-									<fmt:message key="label.update.ssl.cert"/>
-                                </div>
-                            </div>
-                        </div>
-                       
-                        <div class="actionpanel_button_wrapper" id="midmenu_startvm_link" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/startvm_actionicon.png" alt="Start VM" /></div>
-                                <div class="actionpanel_button_links">
-									<fmt:message key="label.vm.start"/>
+                        <div id="midmenu_add_links_container">
+							<div class="actionpanel_button_wrapper" id="midmenu_add_link" style="display: none;">
+								<div class="actionpanel_button">
+									<div class="actionpanel_button_icons">
+										<img src="images/addvm_actionicon.png" alt="Add" /></div>
+									<div class="actionpanel_button_links" id="label">
+										<fmt:message key="label.add"/>
+									</div>
 								</div>
-                            </div>
-                        </div>
-                        <div class="actionpanel_button_wrapper" id="midmenu_stopvm_link" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/stopvm_actionicon.png" alt="Stop VM" /></div>
-                                <div class="actionpanel_button_links">
-                                    <fmt:message key="label.vm.stop"/>
+							</div>
+							
+							<div class="actionpanel_button_wrapper" id="midmenu_add_zone_button" style="display: none;">
+								<div class="actionpanel_button">
+									<div class="actionpanel_button_icons">
+										<img src="images/addvm_actionicon.png" alt="Add Zone" /></div>
+									<div class="actionpanel_button_links" id="Div3">
+										<fmt:message key="label.add.zone"/>
+									</div>
 								</div>
-                            </div>
-                        </div>
-                        <div class="actionpanel_button_wrapper" id="midmenu_rebootvm_link" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/rebootvm_actionicon.png" alt="Reboot VM" /></div>
-                                <div class="actionpanel_button_links">
-                                    <fmt:message key="label.vm.reboot"/>
+							</div> 
+							<div class="actionpanel_button_wrapper" id="midmenu_add_host_button" style="display: none;">
+								<div class="actionpanel_button">
+									<div class="actionpanel_button_icons">
+										<img src="images/addvm_actionicon.png" alt="Add Host" /></div>
+									<div class="actionpanel_button_links" id="label">
+										<fmt:message key="label.add.host"/>
+									</div>
 								</div>
-                            </div>
-                        </div>
-                        <div class="actionpanel_button_wrapper" id="midmenu_destroyvm_link" style="display: none;">
-                            <div class="actionpanel_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/destroyvm_actionicon.png" alt="Destroy VM" /></div>
-                                <div class="actionpanel_button_links">
-                                    <fmt:message key="label.vm.destroy"/>
+							</div>
+							
+							<div class="actionpanel_button_wrapper" id="midmenu_add_primarystorage_button" style="display: none;">
+								<div class="actionpanel_button">
+									<div class="actionpanel_button_icons">
+										<img src="images/addvm_actionicon.png" alt="Add Primary Storage" /></div>
+									<div class="actionpanel_button_links" id="Div2">
+										<fmt:message key="label.add.primarystorage"/>
+									</div>
 								</div>
-                            </div>
-                        </div>
-                        <div class="actionpanel_button_wrapper" id="help_link" style="display: block; border:none; float: right;
-                        position: relative;">
-                            <div class="actionpanel_button" id="help_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/help_actionicon.png" alt="Help" /></div>
-                                <div class="actionpanel_button_links">
-                                    <fmt:message key="label.help"/>
+							</div>
+							
+							<div class="actionpanel_button_wrapper" id="midmenu_add_secondarystorage_button" style="display: none;">
+								<div class="actionpanel_button">
+									<div class="actionpanel_button_icons">
+										<img src="images/addvm_actionicon.png" alt="Add Secondary Storage" /></div>
+									<div class="actionpanel_button_links" id="Div4">
+										<fmt:message key="label.add.secondarystorage"/>
+									</div>
 								</div>
-                            </div>
-                        </div>
-                        
-                        <div class="actionpanel_button_wrapper" id="refresh_link" style="display: block; border:none; float: right;
-                        position: relative;">
-                            <div class="actionpanel_button" id="refresh_button">
-                                <div class="actionpanel_button_icons">
-                                    <img src="images/refresh_actionicon.png" alt="Refresh" /></div>
-                                <div class="actionpanel_button_links">
-                                    <fmt:message key="label.refresh"/></div>
-                            </div>
-                        </div>
+							</div>
+							
+							<div class="actionpanel_button_wrapper" id="midmenu_add_pod_button" style="display: none;">
+								<div class="actionpanel_button">
+									<div class="actionpanel_button_icons">
+										<img src="images/addvm_actionicon.png" alt="Add pod" /></div>
+									<div class="actionpanel_button_links" id="Div6">
+										<fmt:message key="label.add.pod"/>
+									</div>
+								</div>
+							</div>
+							<!--  
+							<div class="actionpanel_button_wrapper" id="midmenu_add_vlan_button" style="display: none;">
+								<div class="actionpanel_button">
+									<div class="actionpanel_button_icons">
+										<img src="images/addvm_actionicon.png" alt="Add VLAN" /></div>
+									<div class="actionpanel_button_links" id="Div8">
+										<fmt:message key="label.add.vlan"/>
+									</div>
+								</div>
+							</div>
+							-->
+							<div class="actionpanel_button_wrapper" id="midmenu_add_network_button" style="display: none;">
+								<div class="actionpanel_button">
+									<div class="actionpanel_button_icons">
+										<img src="images/addvm_actionicon.png" alt="Add Network" /></div>
+									<div class="actionpanel_button_links" id="Div8">
+										Add Network
+									</div>
+								</div>
+							</div>
+							
+							<div class="actionpanel_button_wrapper" id="midmenu_add_iprange_button" style="display: none;">
+								<div class="actionpanel_button">
+									<div class="actionpanel_button_icons">
+										<img src="images/addvm_actionicon.png" alt="Add IP Range" /></div>
+									<div class="actionpanel_button_links" id="Div8">
+										Add IP Range
+									</div>
+								</div>
+							</div>
+							
+							<div class="actionpanel_button_wrapper" id="midmenu_add_external_firewall_button" style="display: none;">
+								<div class="actionpanel_button">
+									<div class="actionpanel_button_icons">
+										<img src="images/addvm_actionicon.png" alt="Add Firewall" /></div>
+									<div class="actionpanel_button_links" id="Div10">
+										Add Firewall
+									</div>
+								</div>
+							</div>
+							
+							<div class="actionpanel_button_wrapper" id="midmenu_add_load_balancer_button" style="display: none;">
+								<div class="actionpanel_button">
+									<div class="actionpanel_button_icons">
+										<img src="images/addvm_actionicon.png" alt="Add Load Balancer" /></div>
+									<div class="actionpanel_button_links" id="Div10">
+										Add Load Balancer
+									</div>
+								</div>
+							</div>
+							
+							<div class="actionpanel_button_wrapper" id="midmenu_Update_SSL_Certificate_button" style="display: none;">
+								<div class="actionpanel_button">
+									<div class="actionpanel_button_icons">
+										<img src="images/addvm_actionicon.png" alt="Update SSL Certificate" /></div>
+									<div class="actionpanel_button_links" id="Div12">
+										<fmt:message key="label.update.ssl.cert"/>
+									</div>
+								</div>
+							</div>
+						   
+							<div class="actionpanel_button_wrapper" id="midmenu_startvm_link" style="display: none;">
+								<div class="actionpanel_button">
+									<div class="actionpanel_button_icons">
+										<img src="images/startvm_actionicon.png" alt="Start VM" /></div>
+									<div class="actionpanel_button_links">
+										<fmt:message key="label.vm.start"/>
+									</div>
+								</div>
+							</div>
+							<div class="actionpanel_button_wrapper" id="midmenu_stopvm_link" style="display: none;">
+								<div class="actionpanel_button">
+									<div class="actionpanel_button_icons">
+										<img src="images/stopvm_actionicon.png" alt="Stop VM" /></div>
+									<div class="actionpanel_button_links">
+										<fmt:message key="label.vm.stop"/>
+									</div>
+								</div>
+							</div>
+							<div class="actionpanel_button_wrapper" id="midmenu_rebootvm_link" style="display: none;">
+								<div class="actionpanel_button">
+									<div class="actionpanel_button_icons">
+										<img src="images/rebootvm_actionicon.png" alt="Reboot VM" /></div>
+									<div class="actionpanel_button_links">
+										<fmt:message key="label.vm.reboot"/>
+									</div>
+								</div>
+							</div>
+							<div class="actionpanel_button_wrapper" id="midmenu_destroyvm_link" style="display: none;">
+								<div class="actionpanel_button">
+									<div class="actionpanel_button_icons">
+										<img src="images/destroyvm_actionicon.png" alt="Destroy VM" /></div>
+									<div class="actionpanel_button_links">
+										<fmt:message key="label.vm.destroy"/>
+									</div>
+								</div>
+							</div>
+							<div class="actionpanel_button_wrapper" id="help_link" style="display: block; border:none; float: right;
+							position: relative;">
+								<div class="actionpanel_button" id="help_button">
+									<div class="actionpanel_button_icons">
+										<img src="images/help_actionicon.png" alt="Help" /></div>
+									<div class="actionpanel_button_links">
+										<fmt:message key="label.help"/>
+									</div>
+								</div>
+							</div>
+							
+							<div class="actionpanel_button_wrapper" id="refresh_link" style="display: block; border:none; float: right;
+							position: relative;">
+								<div class="actionpanel_button" id="refresh_button">
+									<div class="actionpanel_button_icons">
+										<img src="images/refresh_actionicon.png" alt="Refresh" /></div>
+									<div class="actionpanel_button_links">
+										<fmt:message key="label.refresh"/></div>
+								</div>
+							</div>
+						</div>
                         
 						<div class="help_dropdown_box" id="help_dropdown_dialog" style="display:none;">
                             	<div class="help_dropdown_box_titlebox">

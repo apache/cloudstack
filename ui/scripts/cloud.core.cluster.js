@@ -30,7 +30,7 @@ function afterLoadClusterJSP($leftmenuItem1) {
 	clusterJsonToRightPanel($leftmenuItem1);	
 	
 	var clusterId = $leftmenuItem1.data("jsonObj").id;            
-    listMidMenuItems(("listHosts&type=Routing&clusterid="+clusterId), hostGetSearchParams, "listhostsresponse", "host", "jsp/host.jsp", afterLoadHostJSP, hostToMidmenu, hostToRightPanel, getMidmenuId, false, ("cluster_"+clusterId));
+    listMidMenuItems("hosts", ("listHosts&type=Routing&clusterid="+clusterId), hostGetSearchParams, "listhostsresponse", "host", "jsp/host.jsp", afterLoadHostJSP, hostToMidmenu, hostToRightPanel, getMidmenuId, false, ("cluster_"+clusterId));
         
     /*
     var $midmenuContainer = $("#midmenu_container").empty();	

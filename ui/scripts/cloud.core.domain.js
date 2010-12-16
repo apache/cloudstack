@@ -119,6 +119,7 @@ function domainAccountJSONToTemplate(jsonObj, $template) {
 function afterLoadDomainJSP() {
     hideMiddleMenu();   
 	clearMiddleMenu();
+	clearAddButtonsOnTop();
 	   
     if(isAdmin()) {
         initAddDomainDialog();

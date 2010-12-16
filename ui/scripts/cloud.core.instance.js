@@ -91,31 +91,37 @@ function instanceBuildSubMenu2(label, commandString) {
 }
 
 var $doTemplateNo, $doTemplateCustom,$doTemplateExisting;
-
+var init = false;
 function afterLoadInstanceJSP() {
-    //Add VM button
-    $("#midmenu_add_link").find("#label").text("Add VM"); 
-    $("#midmenu_add_link").show(); 
+	if (!init) {
+		//initialize VM Wizard  
+		$doTemplateNo = $("#vm_popup_disk_offering_template_no");
+		$doTemplateCustom = $("#vm_popup_disk_offering_template_custom");
+		$doTemplateExisting = $("#vm_popup_disk_offering_template_existing");
+		initVMWizard(); 
+		vmPopulateDropdown();
+		init = true;
+	}
 	
-    if (isAdmin() || isDomainAdmin())
-        $("#right_panel_content").find("#tab_router,#tab_router").show();
-        
-    initStartVMButton();    
-    initStopVMButton(); 
-    initRebootVMButton();    
-    initDestroyVMButton();
-    
-    // switch between different tabs 
-    var tabArray = [$("#tab_details"), $("#tab_nic"), $("#tab_volume"), $("#tab_statistics"), $("#tab_router")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_nic"), $("#tab_content_volume"), $("#tab_content_statistics"), $("#tab_content_router")];
-    var afterSwitchFnArray = [vmJsonToDetailsTab, vmJsonToNicTab, vmJsonToVolumeTab, vmJsonToStatisticsTab, vmJsonToRouterTab];
-    switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
-    
-    //initialize VM Wizard  
-	$doTemplateNo = $("#vm_popup_disk_offering_template_no");
-	$doTemplateCustom = $("#vm_popup_disk_offering_template_custom");
-	$doTemplateExisting = $("#vm_popup_disk_offering_template_existing");
-    initVMWizard();       
+	initStartVMButton();    
+	initStopVMButton(); 
+	initRebootVMButton();    
+	initDestroyVMButton();
+		
+	if (isAdmin() || isDomainAdmin())
+			$("#right_panel_content").find("#tab_router,#tab_router").show();
+	
+	// switch between different tabs 
+	var tabArray = [$("#tab_details"), $("#tab_nic"), $("#tab_volume"), $("#tab_statistics"), $("#tab_router")];
+	var tabContentArray = [$("#tab_content_details"), $("#tab_content_nic"), $("#tab_content_volume"), $("#tab_content_statistics"), $("#tab_content_router")];
+	var afterSwitchFnArray = [vmJsonToDetailsTab, vmJsonToNicTab, vmJsonToVolumeTab, vmJsonToStatisticsTab, vmJsonToRouterTab];
+	switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);   
+			
+	//Add VM button
+	var $midLinks = $("#midmenu_add_links_container");
+	$midLinks.find("#midmenu_add_link #label").text("Add VM"); 
+	$midLinks.find("#midmenu_add_link, #midmenu_startvm_link, #midmenu_stopvm_link, #midmenu_rebootvm_link, #midmenu_destroyvm_link").show(); 
+	initVMWizard();
     
     // dialogs
     initDialog("dialog_detach_iso_from_vm");       	
@@ -135,8 +141,6 @@ function afterLoadInstanceJSP() {
     initDialog("dialog_confirmation_start_router");
     initDialog("dialog_confirmation_stop_router");
     initDialog("dialog_confirmation_reboot_router");
-    
-    vmPopulateDropdown();
     
     //customize advanced search 
     switch(currentLeftMenuId) {

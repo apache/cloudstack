@@ -553,7 +553,7 @@ function setBooleanEditField(value, $field) {
 function clearMiddleMenu() {
     $("#midmenu_container").empty();
     $("#midmenu_action_link").hide();
-    clearAddButtonsOnTop();        
+    //clearAddButtonsOnTop();        
     lastSearchType = null;
     $("#basic_search").find("#search_input").val("");
     $("#advanced_search_container").empty();
@@ -562,8 +562,14 @@ function clearMiddleMenu() {
 }
 
 function clearAddButtonsOnTop() {
-    $("#midmenu_add_link").unbind("click").hide(); 
+	// This button is re-used by all pages
+	var $addLinksContainer = $("#midmenu_add_links_container");
+    var addButton = $addLinksContainer.find("#midmenu_add_link").unbind("click").hide(); 
     
+	$addLinksContainer.children().each(function() {
+		$(this).unbind("click").hide();
+	});
+	/*
     $("#midmenu_add_zone_button").unbind("click").hide();   
     $("#midmenu_add_host_button").unbind("click").hide();   
     $("#midmenu_add_primarystorage_button").unbind("click").hide(); 
@@ -576,10 +582,11 @@ function clearAddButtonsOnTop() {
     $("#midmenu_add_load_balancer_button").unbind("click").hide(); 
     $("#midmenu_Update_SSL_Certificate_button").unbind("click").hide();   
          
-    $("#midmenu_startvm_link").unbind("click").hide();     
-    $("#midmenu_stopvm_link").unbind("click").hide(); 
-    $("#midmenu_rebootvm_link").unbind("click").hide(); 
-    $("#midmenu_destroyvm_link").unbind("click").hide(); 
+    $("#midmenu_startvm_link").hide();     
+    $("#midmenu_stopvm_link").hide(); 
+    $("#midmenu_rebootvm_link").hide(); 
+    $("#midmenu_destroyvm_link").hide(); 
+	*/
 }
 
 function clearRightPanel() {
@@ -996,7 +1003,8 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
 }
 
 var currentLeftMenuId;
-function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, leftmenuId) { 
+var currentContext = null;
+function listMidMenuItems(context, commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, leftmenuId) { 
 	clearMiddleMenu();
 	showMiddleMenu();	
 	$("#midmenu_container").hide();
@@ -1007,27 +1015,33 @@ function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonR
 	    $("#"+leftmenuId).click();
 	});
 
-	$("#right_panel").load(rightPanelJSP, function(){     
-		var $actionLink = $("#right_panel_content #tab_content_details #action_link");
-		$actionLink.bind("mouseover", function(event) {	    
-			$(this).find("#action_menu").show();    
-			return false;
-		});
-		$actionLink.bind("mouseout", function(event) {       
-			$(this).find("#action_menu").hide();    
-			return false;
-		});	   
-		removeDialogs();
-		afterLoadRightPanelJSPFn();                
-		listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, 1);            
-	});     
+	if (context != currentContext) {
+		$("#right_panel").load(rightPanelJSP, function(){     
+			var $actionLink = $("#right_panel_content #tab_content_details #action_link");
+			$actionLink.bind("mouseover", function(event) {	    
+				$(this).find("#action_menu").show();    
+				return false;
+			});
+			$actionLink.bind("mouseout", function(event) {       
+				$(this).find("#action_menu").hide();    
+				return false;
+			});	   
+			removeDialogs();
+			clearAddButtonsOnTop();
+			afterLoadRightPanelJSPFn();                
+			listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, 1);            
+			currentContext = context;
+		});     
+	} else {
+		listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, 1);        
+	}
 	return false;
 }
 
-function bindAndListMidMenuItems($leftmenu, commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu) {	
+function bindAndListMidMenuItems(context, $leftmenu, commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu) {	
 	$leftmenu.bind("click", function(event) {
 		selectLeftSubMenu($(this));		
-        listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, $(this).attr("id"));
+        listMidMenuItems(context, commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, $(this).attr("id"));
         return false;
     });
 }
