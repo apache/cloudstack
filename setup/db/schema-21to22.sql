@@ -11,5 +11,9 @@ ALTER TABLE `vm_instance` DROP COLUMN `group`
 -- NOTE for tables below
 -- these 2 tables were used in 2.1, but are not in 2.2
 -- we will need a migration script for these tables when the migration is written
+-- furthermore we have renamed the following in 2.2
+-- network_group table --> security_group table
+-- network_group_vm_map table --> security_group_vm_map table
 DROP TABLE `cloud`.`security_group`;
 DROP TABLE `cloud`.`security_group_vm_map`;
+--END NOTE
