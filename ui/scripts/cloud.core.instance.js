@@ -99,7 +99,7 @@ function afterLoadInstanceJSP() {
 		$doTemplateNo = $("#vm_popup_disk_offering_template_no");
 		$doTemplateCustom = $("#vm_popup_disk_offering_template_custom");
 		$doTemplateExisting = $("#vm_popup_disk_offering_template_existing");
-		initVMWizard(); 
+		//initVMWizard(); 
 		vmPopulateDropdown();
 		init = true;
 	}
@@ -377,6 +377,7 @@ function vmPopulateDropdown() {
 var currentPageInTemplateGridInVmPopup =1;
 var selectedTemplateTypeInVmPopup;  //selectedTemplateTypeInVmPopup will be set to "featured" when new VM dialog box opens
 var vmPopupTemplatePageSize = 6; //max number of templates in VM wizard
+var currentStepInVmPopup = 1;
 function initVMWizard() {
     $vmPopup = $("#vm_popup");  
     $("#midmenu_add_link").unbind("click").bind("click", function(event) {
