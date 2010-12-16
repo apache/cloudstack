@@ -176,7 +176,7 @@ function afterLoadIpJSP() {
 			                        $("body").stopTime(timerKey);				                        
 			                        $spinningWheel.hide();  			                                 		                       
 			                        if (result.jobstatus == 1) { // Succeeded 	
-	                                    var item = json.createportforwardingruleresponse.portforwardingrule;		       	        	
+	                                    var item = json.queryasyncjobresultresponse.jobresult.portforwardingrule;		       	        	
 	                                    portForwardingJsonToTemplate(item,$template);
 	                                    $spinningWheel.hide();   
 	                                    refreshCreatePortForwardingRow();			 
