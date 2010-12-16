@@ -36,6 +36,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.DomainRouterManager;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.service.Providers;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
@@ -120,10 +121,17 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
         DataCenter dc = _dataCenterDao.findById(config.getDataCenterId());
         if (canHandle(config.getGuestType(),dc)) {
-            return _routerMgr.applyFirewallRules(config, rules);
-        } else {
-            return false;
-        }
+            if (rules != null && !rules.isEmpty()) {
+                if (rules.get(0).getPurpose() == Purpose.LoadBalancing) {
+                    return _routerMgr.applyLBRules(config, rules);
+                } else if (rules.get(0).getPurpose() == Purpose.PortForwarding) {
+                    return _routerMgr.applyPortForwardingRules(config, rules);
+                }
+            } else {
+                return true;
+            }
+        } 
+        return false;
     }
 
     @Override

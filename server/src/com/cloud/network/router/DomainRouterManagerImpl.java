@@ -56,6 +56,7 @@ import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IPAssocCommand;
+import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
@@ -129,10 +130,13 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
+import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -2687,13 +2691,13 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     }
     
     
-    private boolean sendAssociateIPCommands(final DomainRouterVO router, Commands cmds) {
+    private boolean sendCommandsToRouter(final DomainRouterVO router, Commands cmds) {
         Answer[] answers = null;
         try {
             answers = _agentMgr.send(router.getHostId(), cmds);
         } catch (final OperationTimedoutException e) {
             s_logger.warn("Timed Out", e);
-            throw new ResourceUnavailableException("Unable to assign ip addresses", e);
+            throw new ResourceUnavailableException("Unable to send commands to virtual router ", e);
         }
 
         if (answers == null) {
@@ -2704,7 +2708,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             return false;
         }
 
-        // FIXME:  Have to return state for individual ipAssoc command in the future
+        // FIXME:  Have to return state for individual command in the future
         if (answers.length > 0) {
             Answer ans = answers[0];
             return ans.getResult();
@@ -2724,7 +2728,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             Commands cmds = new Commands(OnError.Continue);
             //We have to resend all already associated ip addresses
             cmds = getAssociateIPCommands(router, ipAddress, cmds, 0);
-            return sendAssociateIPCommands(router, cmds);
+            return sendCommandsToRouter(router, cmds);
         } else if (router.getState() == State.Stopped || router.getState() == State.Stopping){
             return true;
         } else {
@@ -2734,8 +2738,50 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     }
     
     @Override
-    public boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules) {
-        //TODO - apply port forwarding and load balancing rules here
+    public boolean applyLBRules(Network network, List<? extends FirewallRule> rules) {
+        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
+        if (router == null) {
+            s_logger.warn("Unable to apply lb rules, virtual router doesn't exist in the network " + network.getId());
+            throw new ResourceUnavailableException("Unable to apply lb rules");
+        }
+
+        if (router.getState() == State.Running || router.getState() == State.Starting) {
+            List<LoadBalancingRule> loadBalancingRules = new ArrayList<LoadBalancingRule>();
+             
+            for (FirewallRule rule : rules) {
+                loadBalancingRules.add((LoadBalancingRule) rule);
+            }
+            
+            Commands cmds = new Commands(OnError.Continue);
+            
+            for (LoadBalancingRule rule : loadBalancingRules) {
+                boolean revoked = (rule.getState().equals(FirewallRule.State.Revoke));
+                String protocol = rule.getProtocol();
+                String algorithm = rule.getAlgorithm();
+                String srcIp = rule.getSourceIpAddress().addr();
+                int srcPort = rule.getSourcePortStart();                
+                List<LbDestination> destinations = rule.getDestinations();          
+                
+                LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(srcIp, srcPort, protocol, algorithm, revoked, false, destinations);
+                cmds.addCommand(cmd);
+            }
+            
+            //Send commands to router
+            return sendCommandsToRouter(router, cmds);   
+            
+        } else if (router.getState() == State.Stopped || router.getState() == State.Stopping){
+            s_logger.debug("Router is in " + router.getState() + ", so not sending apply LB rules commands to the backend");
+            return true;
+        } else {
+            s_logger.warn("Unable to apply load balancer rules, virtual router is not in the right state " + router.getState());
+            throw new ResourceUnavailableException("Unable to apply load balancer rules, domR is not in right state " + router.getState());
+        }
+
+    }
+    
+    @Override
+    public boolean applyPortForwardingRules(Network network, List<? extends FirewallRule> rules) {
+        //TODO - apply port forwarding rules here
         return true;
     }
 }

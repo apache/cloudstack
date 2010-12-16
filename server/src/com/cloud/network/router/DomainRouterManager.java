@@ -163,5 +163,6 @@ public interface DomainRouterManager extends Manager {
     
     boolean associateIP (Network network, List<? extends IpAddress> ipAddress);
     
-    boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules);
+    boolean applyLBRules(Network network, List<? extends FirewallRule> rules);
+    boolean applyPortForwardingRules(Network network, List<? extends FirewallRule> rules);
 }
