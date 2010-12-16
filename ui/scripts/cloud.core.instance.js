@@ -92,6 +92,7 @@ function instanceBuildSubMenu2(label, commandString) {
 
 var $doTemplateNo, $doTemplateCustom,$doTemplateExisting;
 var init = false;
+var $selectedVmWizardTemplate;	
 function afterLoadInstanceJSP() {
 	if (!init) {
 		//initialize VM Wizard  
@@ -373,11 +374,11 @@ function vmPopulateDropdown() {
     });        
 }
 
+var currentPageInTemplateGridInVmPopup =1;
+var selectedTemplateTypeInVmPopup;  //selectedTemplateTypeInVmPopup will be set to "featured" when new VM dialog box opens
+var vmPopupTemplatePageSize = 6; //max number of templates in VM wizard
 function initVMWizard() {
     $vmPopup = $("#vm_popup");  
-    var currentPageInTemplateGridInVmPopup =1;
-    var selectedTemplateTypeInVmPopup;  //selectedTemplateTypeInVmPopup will be set to "featured" when new VM dialog box opens
-	   	
     $("#midmenu_add_link").unbind("click").bind("click", function(event) {
         vmWizardOpen();			
 	    $.ajax({
@@ -571,7 +572,7 @@ function initVMWizard() {
         return false;   //event.preventDefault() + event.stopPropagation() 
     });	
 						
-    var vmPopupTemplatePageSize = 6; //max number of templates in VM wizard 
+    //var vmPopupTemplatePageSize = 6; //max number of templates in VM wizard 
     function listTemplatesInVmPopup() {		
         var zoneId = $vmPopup.find("#wizard_zone").val();
         if(zoneId == null || zoneId.length == 0)
@@ -656,7 +657,7 @@ function initVMWizard() {
 	    });
     }
 		
-	var $selectedVmWizardTemplate;		
+	//var $selectedVmWizardTemplate;		
 	function vmWizardTemplateJsonToTemplate(jsonObj, $template, templateType, i) {	 
 	    $template.attr("id", ("vmWizardTemplate_"+jsonObj.id));
 	    $template.data("templateId", jsonObj.id);
