@@ -441,10 +441,10 @@ public class ApiServer implements HttpRequestHandler {
         	for (AsyncJob job : jobs) {
         		if (job.getInstanceId() == null) continue;
         		for (ResponseObject response : responses) {
-        			if (job.getInstanceId() == response.getObjectId()) {
-        				response.setJobId(job.getId());
-        				response.setJobStatus(job.getStatus());
-        			}
+        		    if (response.getObjectId() != null && job.getInstanceId().longValue() == response.getObjectId().longValue()) {
+        		        response.setJobId(job.getId());
+                        response.setJobStatus(job.getStatus());
+        		    }
         		}
         	}
     	}

@@ -72,6 +72,16 @@ public class StoragePoolResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the storage pool")
     private Status state;
+    
+    @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the storage pool")
+    private Long jobId;
+
+    @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
+    private Integer jobStatus;
+    
+    public Long getObjectId() {
+        return getId();
+    }
 
     public Long getId() {
         return id;
@@ -199,5 +209,21 @@ public class StoragePoolResponse extends BaseResponse {
 
     public void setState(Status state) {
         this.state = state;
+    }
+    
+    public Integer getJobStatus() {
+        return jobStatus;
+    }
+
+    public void setJobStatus(Integer jobStatus) {
+        this.jobStatus = jobStatus;
+    }
+
+    public Long getJobId() {
+        return jobId;
+    }
+
+    public void setJobId(Long jobId) {
+        this.jobId = jobId;
     }
 }

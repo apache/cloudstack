@@ -30,7 +30,8 @@ public interface AsyncJob {
         Template,
         Iso,
         SystemVm,
-        Host
+        Host,
+        StoragePool
     }
 	
     Long getId();

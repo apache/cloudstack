@@ -66,7 +66,7 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
     }
     
     public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Host;
+        return AsyncJob.Type.StoragePool;
     }
     
     public Long getInstanceId() {

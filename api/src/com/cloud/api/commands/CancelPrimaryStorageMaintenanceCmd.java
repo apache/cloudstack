@@ -70,7 +70,7 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
     }
     
     public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Host;
+        return AsyncJob.Type.StoragePool;
     }
     
     public Long getInstanceId() {

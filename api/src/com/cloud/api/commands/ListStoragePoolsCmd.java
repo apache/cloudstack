@@ -98,7 +98,7 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     }
     
     public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.Host;
+        return AsyncJob.Type.StoragePool;
     }
 
     @Override

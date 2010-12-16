@@ -132,6 +132,12 @@ public class HostResponse extends BaseResponse {
     @SerializedName("events") @Param(description="events available for the host")
     private String events;
     
+    @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the host")
+    private Long jobId;
+
+    @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
+    private Integer jobStatus;
+    
     public Long getObjectId() {
     	return getId();
     }
@@ -414,5 +420,21 @@ public class HostResponse extends BaseResponse {
 
     public void setEvents(String events) {
         this.events = events;
+    }
+    
+    public Long getJobId() {
+        return jobId;
+    }
+
+    public void setJobId(Long jobId) {
+        this.jobId = jobId;
+    }
+
+    public Integer getJobStatus() {
+        return jobStatus;
+    }
+
+    public void setJobStatus(Integer jobStatus) {
+        this.jobStatus = jobStatus;
     }
 }
