@@ -51,8 +51,8 @@ import com.cloud.api.commands.CreateRemoteAccessVpnCmd;
 import com.cloud.api.commands.DeleteRemoteAccessVpnCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListNetworksCmd;
-import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.api.commands.RemoveVpnUserCmd;
+import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -711,6 +711,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Integer rateMbps = getIntegerConfigValue(Config.NetworkThrottlingRate.key(), null);  
         Integer multicastRateMbps = getIntegerConfigValue(Config.MulticastThrottlingRate.key(), null);
         _networkGcWait = NumbersUtil.parseInt(_configs.get(Config.NetworkGcWait.key()), 600);
+        _networkGcInterval = NumbersUtil.parseInt(_configs.get(Config.NetworkGcInterval.key()), 600);
 
         NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);
         publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
@@ -721,9 +722,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmControlNetwork, TrafficType.Control, null);
         controlNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(controlNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemVmControlNetwork, controlNetworkOffering);
-        //        NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmGuestNetwork, TrafficType.Guest, GuestIpType.Virtualized);
-        //        guestNetworkOffering = _networkOfferingDao.persistSystemNetworkOffering(guestNetworkOffering);
-        //        _systemNetworks.put(NetworkOfferingVO.SystemVmGuestNetwork, guestNetworkOffering);
         NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmStorageNetwork, TrafficType.Storage, null);
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemVmStorageNetwork, storageNetworkOffering);
