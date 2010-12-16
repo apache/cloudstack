@@ -357,7 +357,7 @@ $(document).ready(function() {
 	});
 	
 	//pagination
-	$("#middle_menu_pagination").unbind("clik").bind("click", function(event) {	
+	$("#middle_menu_pagination").unbind("click").bind("click", function(event) {	
 	    var params = $(this).data("params");
 	    if(params == null)
 	        return;	    
@@ -376,7 +376,7 @@ $(document).ready(function() {
 	});
 	
 	// refresh button
-	$("#refresh_link").unbind("clik").bind("click", function(event) {		
+	$("#refresh_link").unbind("click").bind("click", function(event) {		
 		var onRefreshFn = $("#right_panel").data("onRefreshFn");
 		if(onRefreshFn != null)
 		    onRefreshFn();
@@ -384,13 +384,13 @@ $(document).ready(function() {
 	});
 	
 	// Initialize help drop down dialog
-	$("#help_link").unbind("clik").bind("click", function(event) {
+	$("#help_link").unbind("click").bind("click", function(event) {
 		$("#help_dropdown_dialog").show();
 		$("#help_button").addClass("selected");
 		return false;
 	});
 	
-	$("#help_dropdown_close").unbind("clik").bind("click", function(event) {
+	$("#help_dropdown_close").unbind("click").bind("click", function(event) {
 		$("#help_dropdown_dialog").hide();
 		$("#help_button").removeClass("selected");
 		return false;

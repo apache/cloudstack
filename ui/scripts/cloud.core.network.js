@@ -16,6 +16,49 @@
  * 
  */
 
+function networkGetSearchParams() {
+    var moreCriteria = [];	
+    
+	var $advancedSearchPopup = $("#advanced_search_popup");
+	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {		    
+	    var type = $advancedSearchPopup.find("#adv_search_type").val();							
+		if (type!=null && trim(type).length > 0) 
+			moreCriteria.push("&type="+todb(type));		
+		
+		var level = $advancedSearchPopup.find("#adv_search_level").val();	
+	    if (level!=null && level.length > 0) 
+			moreCriteria.push("&level="+todb(level));	
+		
+		if ($advancedSearchPopup.find("#adv_search_domain_li").css("display") != "none") {
+		    var domainId = $advancedSearchPopup.find("#adv_search_domain").val();		
+		    if (domainId!=null && domainId.length > 0) 
+			    moreCriteria.push("&domainid="+todb(domainId));	
+	    }
+    	
+    	if ($advancedSearchPopup.find("#adv_search_account_li").css("display") != "none") {	
+		    var account = $advancedSearchPopup.find("#adv_search_account").val();					
+		    if (account!=null && account.length > 0) 
+			    moreCriteria.push("&account="+todb(account));	
+		}
+		
+		var startdate = $advancedSearchPopup.find("#adv_search_startdate").val();						
+		if (startdate!=null && startdate.length > 0) 
+			moreCriteria.push("&startdate="+todb(startdate));	
+		
+		var enddate = $advancedSearchPopup.find("#adv_search_enddate").val();			
+		if (enddate!=null && enddate.length > 0) 
+			moreCriteria.push("&enddate="+todb(enddate));	
+	} 
+	else {     			    		
+	    var searchInput = $("#basic_search").find("#search_input").val();	 
+        if (lastSearchType == "basic_search" && searchInput != null && searchInput.length > 0) {	           
+            moreCriteria.push("&keyword="+todb(searchInput));	       
+        }        
+	}
+
+	return moreCriteria.join("");          
+}
+
 var zoneObj;  
 function afterLoadNetworkJSP($leftmenuItem1) {    
     zoneObj = $leftmenuItem1.data("jsonObj");    
@@ -42,29 +85,10 @@ function afterLoadNetworkJSP($leftmenuItem1) {
          
     //populate items into middle menu  
     var $midmenuContainer = $("#midmenu_container").empty();   
-    
-    //public network  
-    if(zoneObj.networktype == "Advanced") {
-        $.ajax({
-            data: createURL("command=listNetworks&isSystem=true&zoneId="+zoneObj.id),
-            dataType: "json",
-            async: false,
-            success: function(json) {       
-                var items = json.listnetworksresponse.network;       
-                if(items != null && items.length > 0) {
-                    var item = items[0];
-                    var $midmenuItem1 = $("#midmenu_item").clone();                      
-                    $midmenuItem1.data("toRightPanelFn", publicNetworkToRightPanel);                             
-                    publicNetworkToMidmenu(item, $midmenuItem1);    
-                    bindClickToMidMenu($midmenuItem1, publicNetworkToRightPanel, publicNetworkGetMidmenuId);   
-                    $midmenuContainer.append($midmenuItem1.show());    
-                    $midmenuItem1.click();  
-                }
-            }
-        });   
-    }
-    
+
     //direct network
+    listMidMenuItems2(("listNetworks&type=Direct&zoneId="+zoneObj.id), networkGetSearchParams, "listnetworksresponse", "network", directNetworkToMidmenu, directNetworkToRightPanel, directNetworkGetMidmenuId, false, 1);
+    /*
     $.ajax({
 		data: createURL("command=listNetworks&type=Direct&zoneId="+zoneObj.id),
 		dataType: "json",
@@ -81,6 +105,28 @@ function afterLoadNetworkJSP($leftmenuItem1) {
 			}	
 		}
 	});    
+	*/
+		    
+    //public network  
+    if(zoneObj.networktype == "Advanced") {
+        $.ajax({
+            data: createURL("command=listNetworks&isSystem=true&zoneId="+zoneObj.id),
+            dataType: "json",
+            async: false,
+            success: function(json) {       
+                var items = json.listnetworksresponse.network;       
+                if(items != null && items.length > 0) {
+                    var item = items[0];
+                    var $midmenuItem1 = $("#midmenu_item").clone();                      
+                    $midmenuItem1.data("toRightPanelFn", publicNetworkToRightPanel);                             
+                    publicNetworkToMidmenu(item, $midmenuItem1);    
+                    bindClickToMidMenu($midmenuItem1, publicNetworkToRightPanel, publicNetworkGetMidmenuId);   
+                    $midmenuContainer.prepend($midmenuItem1.show());    //prepend public network on the top of middle menu
+                    $midmenuItem1.click();  
+                }
+            }
+        });   
+    }    
 }
 
 //***** Public Network (begin) ******************************************************************************************************
