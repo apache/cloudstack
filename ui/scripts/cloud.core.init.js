@@ -99,7 +99,6 @@ $(document).ready(function() {
 		bindAndListMidMenuItems($("#leftmenu_instances_destroyed_instances"), "listVirtualMachines&state=Destroyed", vmGetSearchParams, "listvirtualmachinesresponse", "virtualmachine", "jsp/instance.jsp", afterLoadInstanceJSP, vmToMidmenu, vmToRightPanel, getMidmenuId, true);
 		
 		bindAndListMidMenuItems($("#leftmenu_event"), "listEvents", eventGetSearchParams, "listeventsresponse", "event", "jsp/event.jsp", afterLoadEventJSP, eventToMidmenu, eventToRightPanel, getMidmenuId, false);
-		bindAndListMidMenuItems($("#leftmenu_alert"), "listAlerts", alertGetSearchParams, "listalertsresponse", "alert", "jsp/alert.jsp", afterLoadAlertJSP, alertToMidmenu, alertToRightPanel, getMidmenuId, false);
 		bindAndListMidMenuItems($("#leftmenu_volume"), "listVolumes", volumeGetSearchParams, "listvolumesresponse", "volume", "jsp/volume.jsp", afterLoadVolumeJSP, volumeToMidmenu, volumeToRightPanel, getMidmenuId, false);
 		bindAndListMidMenuItems($("#leftmenu_snapshot"), "listSnapshots", snapshotGetSearchParams, "listsnapshotsresponse", "snapshot", "jsp/snapshot.jsp", afterLoadSnapshotJSP, snapshotToMidmenu, snapshotToRightPanel, getMidmenuId, false);
 		bindAndListMidMenuItems($("#leftmenu_ip"), "listPublicIpAddresses", ipGetSearchParams, "listpublicipaddressesresponse", "publicipaddress", "jsp/ipaddress.jsp", afterLoadIpJSP, ipToMidmenu, ipToRightPanel, ipGetMidmenuId, false);
@@ -113,16 +112,24 @@ $(document).ready(function() {
 		bindAndListMidMenuItems($("#leftmenu_submenu_featured_iso"), "listIsos&isofilter=featured", isoGetSearchParams, "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRightPanel, isoGetMidmenuId, false);
 		bindAndListMidMenuItems($("#leftmenu_submenu_community_iso"), "listIsos&isofilter=community", isoGetSearchParams, "listisosresponse", "iso", "jsp/iso.jsp", afterLoadIsoJSP, isoToMidmenu, isoToRightPanel, isoGetMidmenuId, false);
 		
-		bindAndListMidMenuItems($("#leftmenu_account_my_accounts"), "listAccounts&domainid="+g_domainid+"&name="+g_account, accountGetSearchParams, "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRightPanel, getMidmenuId, false);
-		bindAndListMidMenuItems($("#leftmenu_account_all_accounts"), "listAccounts", accountGetSearchParams, "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRightPanel, getMidmenuId, false);
+		if (isAdmin() || isDomainAdmin()) {
+		    bindAndListMidMenuItems($("#leftmenu_account_my_accounts"), "listAccounts&domainid="+g_domainid+"&name="+g_account, accountGetSearchParams, "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRightPanel, getMidmenuId, false);
+		    bindAndListMidMenuItems($("#leftmenu_account_all_accounts"), "listAccounts", accountGetSearchParams, "listaccountsresponse", "account", "jsp/account.jsp", afterLoadAccountJSP, accountToMidmenu, accountToRightPanel, getMidmenuId, false);
+    	}
+    	
+    	if (isAdmin()) {	    	   
+    	    bindAndListMidMenuItems($("#leftmenu_alert"), "listAlerts", alertGetSearchParams, "listalertsresponse", "alert", "jsp/alert.jsp", afterLoadAlertJSP, alertToMidmenu, alertToRightPanel, getMidmenuId, false);
+		    	
+    	    //system
+    	    bindAndListMidMenuItems($("#leftmenu_submenu_virtual_router"), "listRouters", routerGetSearchParams, "listroutersresponse", "router", "jsp/router.jsp", afterLoadRouterJSP, routerToMidmenu, routerToRightPanel, getMidmenuId, false);
+		    bindAndListMidMenuItems($("#leftmenu_submenu_systemvm"), "listSystemVms", systemVmGetSearchParams, "listsystemvmsresponse", "systemvm", "jsp/systemvm.jsp", afterLoadSystemVmJSP, systemvmToMidmenu, systemvmToRightPanel, getMidmenuId, false);
 		
-		bindAndListMidMenuItems($("#leftmenu_service_offering"), "listServiceOfferings", serviceOfferingGetSearchParams, "listserviceofferingsresponse", "serviceoffering", "jsp/serviceoffering.jsp", afterLoadServiceOfferingJSP, serviceOfferingToMidmenu, serviceOfferingToRightPanel, getMidmenuId, false); 
-		bindAndListMidMenuItems($("#leftmenu_disk_offering"), "listDiskOfferings", diskOfferingGetSearchParams, "listdiskofferingsresponse", "diskoffering", "jsp/diskoffering.jsp", afterLoadDiskOfferingJSP, diskOfferingToMidmenu, diskOfferingToRightPanel, getMidmenuId, false); 
-		bindAndListMidMenuItems($("#leftmenu_network_offering"), "listNetworkOfferings", networkOfferingGetSearchParams, "listnetworkofferingsresponse", "networkoffering", "jsp/networkoffering.jsp", afterLoadNetworkOfferingJSP, networkOfferingToMidmenu, networkOfferingToRightPanel, getMidmenuId, false); 
-		
-		bindAndListMidMenuItems($("#leftmenu_submenu_virtual_router"), "listRouters", routerGetSearchParams, "listroutersresponse", "router", "jsp/router.jsp", afterLoadRouterJSP, routerToMidmenu, routerToRightPanel, getMidmenuId, false);
-		bindAndListMidMenuItems($("#leftmenu_submenu_systemvm"), "listSystemVms", systemVmGetSearchParams, "listsystemvmsresponse", "systemvm", "jsp/systemvm.jsp", afterLoadSystemVmJSP, systemvmToMidmenu, systemvmToRightPanel, getMidmenuId, false);
-		
+    		//configuration	
+		    bindAndListMidMenuItems($("#leftmenu_service_offering"), "listServiceOfferings", serviceOfferingGetSearchParams, "listserviceofferingsresponse", "serviceoffering", "jsp/serviceoffering.jsp", afterLoadServiceOfferingJSP, serviceOfferingToMidmenu, serviceOfferingToRightPanel, getMidmenuId, false); 
+		    bindAndListMidMenuItems($("#leftmenu_disk_offering"), "listDiskOfferings", diskOfferingGetSearchParams, "listdiskofferingsresponse", "diskoffering", "jsp/diskoffering.jsp", afterLoadDiskOfferingJSP, diskOfferingToMidmenu, diskOfferingToRightPanel, getMidmenuId, false); 
+		    bindAndListMidMenuItems($("#leftmenu_network_offering"), "listNetworkOfferings", networkOfferingGetSearchParams, "listnetworkofferingsresponse", "networkoffering", "jsp/networkoffering.jsp", afterLoadNetworkOfferingJSP, networkOfferingToMidmenu, networkOfferingToRightPanel, getMidmenuId, false); 
+		}
+				
 		$("#leftmenu_global_setting").bind("click", function(event) {
 		    selectLeftSubMenu($(this));		
 		    hideMiddleMenu();	
@@ -164,8 +171,10 @@ $(document).ready(function() {
 		});
 		
 		//Setup domain
-		bindEventHandlerToDomainTreeNode();			
-		drawRootNode(g_domainid);
+		if (isAdmin() || isDomainAdmin()) {
+		    bindEventHandlerToDomainTreeNode();			
+		    drawRootNode(g_domainid);
+		}
 	}
                
     $("#midmenu_action_link").bind("mouseover", function(event) {
