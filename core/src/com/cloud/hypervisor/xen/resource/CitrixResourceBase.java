@@ -108,14 +108,6 @@ import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.Start2Answer;
 import com.cloud.agent.api.Start2Command;
-import com.cloud.agent.api.StartAnswer;
-import com.cloud.agent.api.StartCommand;
-import com.cloud.agent.api.StartConsoleProxyAnswer;
-import com.cloud.agent.api.StartConsoleProxyCommand;
-import com.cloud.agent.api.StartRouterAnswer;
-import com.cloud.agent.api.StartRouterCommand;
-import com.cloud.agent.api.StartSecStorageVmAnswer;
-import com.cloud.agent.api.StartSecStorageVmCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
@@ -159,7 +151,6 @@ import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.router.VirtualRouter;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -178,9 +169,7 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
-import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineName;
@@ -374,10 +363,6 @@ public abstract class CitrixResourceBase implements ServerResource {
             return execute((DhcpEntryCommand) cmd);
         } else if (cmd instanceof VmDataCommand) {
             return execute((VmDataCommand) cmd);
-        } else if (cmd instanceof StartCommand) {
-            return execute((StartCommand) cmd);
-        } else if (cmd instanceof StartRouterCommand) {
-            return execute((StartRouterCommand) cmd);
         } else if (cmd instanceof ReadyCommand) {
             return execute((ReadyCommand) cmd);
         } else if (cmd instanceof GetHostStatsCommand) {
@@ -430,10 +415,6 @@ public abstract class CitrixResourceBase implements ServerResource {
             return execute((GetStorageStatsCommand) cmd);
         } else if (cmd instanceof PrimaryStorageDownloadCommand) {
             return execute((PrimaryStorageDownloadCommand) cmd);
-        } else if (cmd instanceof StartConsoleProxyCommand) {
-            return execute((StartConsoleProxyCommand) cmd);
-        } else if (cmd instanceof StartSecStorageVmCommand) {
-            return execute((StartSecStorageVmCommand) cmd);
         } else if (cmd instanceof GetVncPortCommand) {
             return execute((GetVncPortCommand) cmd);
         } else if (cmd instanceof SetupCommand) {
@@ -554,9 +535,9 @@ public abstract class CitrixResourceBase implements ServerResource {
         
         VBD.Record vbdr = new VBD.Record();
         vbdr.VM = vm;
-        if (vdi != null)
-        	vbdr.VDI = vdi;
-        else {
+        if (vdi != null) {
+            vbdr.VDI = vdi;
+        } else {
         	vbdr.empty = true;
         }
         if (type == VolumeType.ROOT && bootLoaderType == BootloaderType.PyGrub) {
@@ -960,31 +941,6 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     protected SetupAnswer execute(SetupCommand cmd) {
         return new SetupAnswer(cmd);
-    }
-
-    protected Answer execute(StartSecStorageVmCommand cmd) {
-        Connection conn = getConnection();
-        final String vmName = cmd.getVmName();
-        SecondaryStorageVmVO storage = cmd.getSecondaryStorageVmVO();
-        try {
-            Network network = Network.getByUuid(conn, _host.privateNetwork);
-
-            String bootArgs = cmd.getBootArgs();
-            bootArgs += " zone=" + _dcId;
-            bootArgs += " pod=" + _pod;
-            bootArgs += " localgw=" + _localGateway;
-            String result = startSystemVM(conn, vmName, storage.getVlanId(), network, cmd.getVolumes(), bootArgs, storage.getGuestMacAddress(), storage.getGuestIpAddress(), storage
-                    .getPrivateMacAddress(), storage.getPublicMacAddress(), cmd.getProxyCmdPort(), storage.getRamSize(), cmd.getGuestOSDescription(), cmd.getNetworkRateMbps());
-            if (result == null) {
-                return new StartSecStorageVmAnswer(cmd);
-            }
-            return new StartSecStorageVmAnswer(cmd, result);
-
-        } catch (Exception e) {
-            String msg = "Exception caught while starting router vm " + vmName + " due to " + e.getMessage();
-            s_logger.warn(msg, e);
-            return new StartSecStorageVmAnswer(cmd, msg);
-        }
     }
 
     protected SetPortForwardingRulesAnswer execute(SetPortForwardingRulesCommand cmd) {
@@ -2430,32 +2386,6 @@ public abstract class CitrixResourceBase implements ServerResource {
         return answer;
     }
 
-    protected VM createVmFromTemplate(Connection conn, StartCommand cmd) throws XenAPIException, XmlRpcException {
-        Set<VM> templates;
-        VM vm = null;
-        String stdType = cmd.getGuestOSDescription();
-        String guestOsTypeName = getGuestOsType(stdType, cmd.getBootFromISO());
-        templates = VM.getByNameLabel(conn, guestOsTypeName);
-        assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
-        VM template = templates.iterator().next();
-        vm = template.createClone(conn, cmd.getVmName());
-        vm.removeFromOtherConfig(conn, "disks");
-
-        if (!(guestOsTypeName.startsWith("Windows") || guestOsTypeName.startsWith("Citrix") || guestOsTypeName.startsWith("Other"))) {
-            if (cmd.getBootFromISO()) {
-                vm.setPVBootloader(conn, "eliloader");
-                Map<String, String> otherConfig = vm.getOtherConfig(conn);
-                otherConfig.put( "install-repository", "cdrom");
-                vm.setOtherConfig(conn, otherConfig);
-            } else {
-                vm.setPVBootloader(conn, "pygrub");
-            }
-        }
-        return vm;
-    }
-
-
-
     public boolean joinPool(String masterIp, String username, String password) {
         Connection hostConn = null;
         Connection poolConn = null;
@@ -2617,142 +2547,6 @@ public abstract class CitrixResourceBase implements ServerResource {
         vm.setMemoryStaticMax(conn, memsize);
     }
 
-    protected StartAnswer execute(StartCommand cmd) {
-        Connection conn = getConnection();
-        State state = State.Stopped;
-        VM vm = null;
-        SR isosr = null;
-        List<Ternary<SR, VDI, VolumeVO>> mounts = null;
-            try {
-                synchronized (_vms) {
-                    _vms.put(cmd.getVmName(), State.Starting);
-                }
-
-                List<VolumeVO> vols = cmd.getVolumes();
-
-                mounts = mount(conn, vols);
-                vm = createVmFromTemplate(conn, cmd);
-
-                long memsize = cmd.getRamSize() * 1024L * 1024L;
-                setMemory(conn, vm, memsize);
-
-                vm.setIsATemplate(conn, false);
-
-                vm.setVCPUsMax(conn, (long) cmd.getCpu());
-                vm.setVCPUsAtStartup(conn, (long) cmd.getCpu());
-
-                Host host = Host.getByUuid(conn, _host.uuid);
-                vm.setAffinity(conn, host);
-
-                Map<String, String> vcpuparam = new HashMap<String, String>();
-
-                vcpuparam.put("weight", Integer.toString(cmd.getCpuWeight()));
-                vcpuparam.put("cap", Integer.toString(cmd.getUtilization()));
-                vm.setVCPUsParams(conn, vcpuparam);
-
-                boolean bootFromISO = cmd.getBootFromISO();
-
-                /* create root VBD */
-                VBD.Record vbdr = new VBD.Record();
-                Ternary<SR, VDI, VolumeVO> mount = mounts.get(0);
-                vbdr.VM = vm;
-                vbdr.VDI = mount.second();
-                vbdr.bootable = !bootFromISO;
-                vbdr.userdevice = "0";
-                vbdr.mode = Types.VbdMode.RW;
-                vbdr.type = Types.VbdType.DISK;
-                VBD.create(conn, vbdr);
-
-                /* create data VBDs */
-                for (int i = 1; i < mounts.size(); i++) {
-                    mount = mounts.get(i);
-                    // vdi.setNameLabel(conn, cmd.getVmName() + "-DATA");
-                    vbdr.VM = vm;
-                    vbdr.VDI = mount.second();
-                    vbdr.bootable = false;
-                    vbdr.userdevice = Long.toString(mount.third().getDeviceId());
-                    vbdr.mode = Types.VbdMode.RW;
-                    vbdr.type = Types.VbdType.DISK;
-                    vbdr.unpluggable = true;
-                    VBD.create(conn, vbdr);
-
-                }
-
-                /* create CD-ROM VBD */
-                VBD.Record cdromVBDR = new VBD.Record();
-                cdromVBDR.VM = vm;
-                cdromVBDR.empty = true;
-                cdromVBDR.bootable = bootFromISO;
-                cdromVBDR.userdevice = "3";
-                cdromVBDR.mode = Types.VbdMode.RO;
-                cdromVBDR.type = Types.VbdType.CD;
-                VBD cdromVBD = VBD.create(conn, cdromVBDR);
-
-                /* insert the ISO VDI if isoPath is not null */
-                String isopath = cmd.getISOPath();
-                if (isopath != null) {
-                    int index = isopath.lastIndexOf("/");
-
-                    String mountpoint = isopath.substring(0, index);
-                    URI uri = new URI(mountpoint);
-                    isosr = createIsoSRbyURI(conn, uri, cmd.getVmName(), false);
-
-                    String isoname = isopath.substring(index + 1);
-
-                    VDI isovdi = getVDIbyLocationandSR(conn, isoname, isosr);
-
-                    if (isovdi == null) {
-                        String msg = " can not find ISO " + cmd.getISOPath();
-                        s_logger.warn(msg);
-                        return new StartAnswer(cmd, msg);
-                    } else {
-                        cdromVBD.insert(conn, isovdi);
-                    }
-
-                }
-
-                createVIF(conn, vm, cmd.getGuestMacAddress(), cmd.getGuestNetworkId(), cmd.getNetworkRateMbps(), "0", false);
-
-                if (cmd.getExternalMacAddress() != null && cmd.getExternalVlan() != null) {
-                    createVIF(conn, vm, cmd.getExternalMacAddress(), cmd.getExternalVlan(), 0, "1", true);
-                }
-
-                /* set action after crash as destroy */
-                vm.setActionsAfterCrash(conn, Types.OnCrashBehaviour.DESTROY);
-
-                vm.start(conn, false, true);
-
-                if (_canBridgeFirewall) {
-                    String result = callHostPlugin(conn, "vmops", "default_network_rules",
-                    		"vmName", cmd.getVmName(),
-                    		"vmIP", cmd.getGuestIpAddress(),
-                    		"vmMAC", cmd.getGuestMacAddress(),
-                    		"vmID", Long.toString(cmd.getId()));
-                    if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
-                        s_logger.warn("Failed to program default network rules for vm " + cmd.getVmName());
-                    } else {
-                        s_logger.info("Programmed default network rules for vm " + cmd.getVmName());
-                    }
-                }
-
-                state = State.Running;
-                return new StartAnswer(cmd);
-            } catch (Exception e) {
-                String msg = "Catch Exception: " + e.getClass().getName() + " due to " + e.toString();
-                s_logger.warn(msg, e);
-                startvmfailhandle(conn, vm, mounts);
-                removeSR(conn, isosr);
-                state = State.Stopped;
-                return new StartAnswer(cmd, msg);
-            } finally {
-                synchronized (_vms) {
-                    _vms.put(cmd.getVmName(), state);
-                }
-
-            }
-
-    }
-    
     protected VIF createVIF(Connection conn, VM vm, String mac, int rate, String devNum, Network network) throws XenAPIException, XmlRpcException,
     InternalErrorException {
         VIF.Record vifr = new VIF.Record();
@@ -2985,216 +2779,6 @@ public abstract class CitrixResourceBase implements ServerResource {
         return connect(conn, vmname, ipAddress, 3922);
     }
 
-    protected StartRouterAnswer execute(StartRouterCommand cmd) {
-        Connection conn = getConnection();
-        final String vmName = cmd.getVmName();
-        final VirtualRouter router = cmd.getRouter();
-        try {
-            String tag = router.getVnet();
-            Network network = null;
-            if ("untagged".equalsIgnoreCase(tag)) {
-                network = Network.getByUuid(conn, _host.guestNetwork);
-            } else {
-                network = enableVlanNetwork(conn, Long.parseLong(tag), _host.guestPif);
-            }
-
-            if (network == null) {
-                throw new InternalErrorException("Failed to enable VLAN network with tag: " + tag);
-            }
-
-            String bootArgs = cmd.getBootArgs();
-
-            String result = startSystemVM(conn, vmName, router.getVlanId(), network, cmd.getVolumes(), bootArgs, router.getGuestMacAddress(), router.getPrivateIpAddress(), router
-                    .getPrivateMacAddress(), router.getPublicMacAddress(), 3922, router.getRamSize(), cmd.getGuestOSDescription(), cmd.getNetworkRateMbps());
-            if (result == null) {
-                networkUsage(conn, router.getPrivateIpAddress(), "create", null);
-                return new StartRouterAnswer(cmd);
-            }
-            return new StartRouterAnswer(cmd, result);
-
-        } catch (Exception e) {
-            String msg = "Exception caught while starting router vm " + vmName + " due to " + e.getMessage();
-            s_logger.warn(msg, e);
-            return new StartRouterAnswer(cmd, msg);
-        }
-    }
-
-    protected String startSystemVM(Connection conn, String vmName, String vlanId, Network nw0, List<VolumeVO> vols, String bootArgs, String guestMacAddr, String privateIp, String privateMacAddr,
-            String publicMacAddr, int cmdPort, long ramSize, String getGuestOSDescription, int networkRateMbps) {
-
-    	setupLinkLocalNetwork(conn);
-        VM vm = null;
-        List<Ternary<SR, VDI, VolumeVO>> mounts = null;
-        State state = State.Stopped;
-        try {
-            synchronized (_vms) {
-                _vms.put(vmName, State.Starting);
-            }
-
-            mounts = mount(conn, vols);
-
-            assert mounts.size() == 1 : "System VMs should have only 1 partition but we actually have " + mounts.size();
-
-            Ternary<SR, VDI, VolumeVO> mount = mounts.get(0);
-
-            Set<VM> templates = VM.getByNameLabel(conn, getGuestOsType(getGuestOSDescription, false));
-            if (templates.size() == 0) {
-            	String msg = " can not find systemvm template " + getGuestOsType(getGuestOSDescription, false) ;
-            	s_logger.warn(msg);
-            	return msg;
-
-            }
-
-            VM template = templates.iterator().next();
-
-            vm = template.createClone(conn, vmName);
-
-            vm.removeFromOtherConfig(conn, "disks");
-
-            vm.setPVBootloader(conn, "pygrub");
-
-            long memsize = ramSize * 1024L * 1024L;
-            setMemory(conn, vm, memsize);
-            vm.setIsATemplate(conn, false);
-
-            vm.setVCPUsAtStartup(conn, 1L);
-
-            Host host = Host.getByUuid(conn, _host.uuid);
-            vm.setAffinity(conn, host);
-
-            /* create VBD */
-            VBD.Record vbdr = new VBD.Record();
-
-            vbdr.VM = vm;
-            vbdr.VDI = mount.second();
-            vbdr.bootable = true;
-            vbdr.userdevice = "0";
-            vbdr.mode = Types.VbdMode.RW;
-            vbdr.type = Types.VbdType.DISK;
-            VBD.create(conn, vbdr);
-
-            
-            /* create CD-ROM VBD */
-            createPatchVbd(conn, vmName, vm);
-
-            /* create VIF0 */
-            Network network = null;
-            if (VirtualMachineName.isValidConsoleProxyName(vmName) || VirtualMachineName.isValidSecStorageVmName(vmName, null)) {
-            	network = Network.getByUuid(conn, _host.linkLocalNetwork);
-            } else {
-            	network = nw0;
-            }
-            createVIF(conn, vm, guestMacAddr, networkRateMbps, "0", network);
-
-            /* create VIF1 */
-            /* For routing vm, set its network as link local bridge */
-            if (VirtualMachineName.isValidRouterName(vmName) && privateIp.startsWith("169.254")) {
-                network = Network.getByUuid(conn, _host.linkLocalNetwork);
-            } else {
-                network = Network.getByUuid(conn, _host.privateNetwork);
-            }
-            createVIF(conn, vm, privateMacAddr,  networkRateMbps, "1", network);
-
-            /* create VIF2 */            
-            if( !publicMacAddr.equalsIgnoreCase("FE:FF:FF:FF:FF:FF") ) {
-                network = null;
-                if ("untagged".equalsIgnoreCase(vlanId)) {
-                    network = Network.getByUuid(conn, _host.publicNetwork);
-                } else {
-                    network = enableVlanNetwork(conn, Long.valueOf(vlanId), _host.publicPif);
-                    if (network == null) {
-                        throw new InternalErrorException("Failed to enable VLAN network with tag: " + vlanId);
-                    }   
-                }
-                createVIF(conn, vm, publicMacAddr, networkRateMbps, "2", network);
-            }
-            /* set up PV dom argument */
-            String pvargs = vm.getPVArgs(conn);
-            pvargs = pvargs + bootArgs;
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("PV args for system vm are " + pvargs);
-            }
-            vm.setPVArgs(conn, pvargs);
-
-            /* destroy console */
-            Set<Console> consoles = vm.getRecord(conn).consoles;
-
-            for (Console console : consoles) {
-                console.destroy(conn);
-            }
-
-            /* set action after crash as destroy */
-            vm.setActionsAfterCrash(conn, Types.OnCrashBehaviour.DESTROY);
-
-            vm.start(conn, false, true);
-
-            if (_canBridgeFirewall) {
-                String result = callHostPlugin(conn, "vmops", "default_network_rules_systemvm", "vmName", vmName);
-                if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
-                    s_logger.warn("Failed to program default system vm network rules for " + vmName);
-                } else {
-                    s_logger.info("Programmed default system vm network rules for " + vmName);
-                }
-            }
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Ping system vm command port, " + privateIp + ":" + cmdPort);
-            }
-
-            state = State.Running;
-            String result = connect(conn, vmName, privateIp, cmdPort);
-            if (result != null) {
-                String msg = "Can not ping System vm " + vmName + "due to:" + result;
-                s_logger.warn(msg);
-                throw new CloudRuntimeException(msg);
-            } else {
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Ping system vm command port succeeded for vm " + vmName);
-                }
-            }
-            return null;
-        } catch (Exception e) {
-            String msg = "Catch Exception: " + e.getClass().getName() + "  while starting System vm " + vmName + " due to " + e.toString();
-            s_logger.warn(msg, e);
-            startvmfailhandle(conn, vm, mounts);
-            state = State.Stopped;
-            return msg;
-        } finally {
-            synchronized (_vms) {
-                _vms.put(vmName, state);
-            }
-        }
-    }
-
-    // TODO : need to refactor it to reuse code with StartRouter
-    protected Answer execute(final StartConsoleProxyCommand cmd) {
-        Connection conn = getConnection();
-        final String vmName = cmd.getVmName();
-        final ConsoleProxyVO proxy = cmd.getProxy();
-        try {
-            Network network = Network.getByUuid(conn, _host.privateNetwork);
-            String bootArgs = cmd.getBootArgs();
-            bootArgs += " zone=" + _dcId;
-            bootArgs += " pod=" + _pod;
-            bootArgs += " guid=Proxy." + proxy.getId();
-            bootArgs += " proxy_vm=" + proxy.getId();
-            bootArgs += " localgw=" + _localGateway;
-
-            String result = startSystemVM(conn, vmName, proxy.getVlanId(), network, cmd.getVolumes(), bootArgs, proxy.getGuestMacAddress(), proxy.getGuestIpAddress(), proxy
-                    .getPrivateMacAddress(), proxy.getPublicMacAddress(), cmd.getProxyCmdPort(), proxy.getRamSize(), cmd.getGuestOSDescription(), cmd.getNetworkRateMbps());
-            if (result == null) {
-                return new StartConsoleProxyAnswer(cmd);
-            }
-            return new StartConsoleProxyAnswer(cmd, result);
-
-        } catch (Exception e) {
-            String msg = "Exception caught while starting router vm " + vmName + " due to " + e.getMessage();
-            s_logger.warn(msg, e);
-            return new StartConsoleProxyAnswer(cmd, msg);
-        }
-    }
-    
     protected boolean isDeviceUsed(Connection conn, VM vm, Long deviceId) {
         // Figure out the disk number to attach the VM to
 

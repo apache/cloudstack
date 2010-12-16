@@ -2376,14 +2376,14 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         				{
     						//create a dummy event and restart the domr immediately
     						long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "starting domr with Id: "+vmInstance.getId());
-    						if(_routerMgr.startRouter(vmInstance.getId(), eventId)==null)
-    						{
-    						    String errorMsg = "There was an error starting the domain router id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance";
-    							s_logger.warn(errorMsg);
-    			            	primaryStorage.setStatus(Status.ErrorInMaintenance);
-    			        		_storagePoolDao.persist(primaryStorage);
-    			        		throw new CloudRuntimeException(errorMsg);
-    						}
+// FIXME    						if(_routerMgr.startRouter(vmInstance.getId(), eventId)==null)
+//    						{
+//    						    String errorMsg = "There was an error starting the domain router id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance";
+//    							s_logger.warn(errorMsg);
+//    			            	primaryStorage.setStatus(Status.ErrorInMaintenance);
+//    			        		_storagePoolDao.persist(primaryStorage);
+//    			        		throw new CloudRuntimeException(errorMsg);
+//    						}
         				}
         			}
         		}	

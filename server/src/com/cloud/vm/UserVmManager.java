@@ -21,23 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.cloud.agent.api.VmStatsEntry;
-import com.cloud.async.executor.OperationResponse;
-import com.cloud.async.executor.StartVMExecutor;
-import com.cloud.async.executor.StopVMExecutor;
-import com.cloud.async.executor.VMOperationParam;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientStorageCapacityException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.network.security.NetworkGroupVO;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.user.AccountVO;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.VirtualMachine.Event;
 
 /**
@@ -60,24 +44,7 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>{
      */
     UserVmVO getVirtualMachine(long vmId);
     
-    /**
-     * creates a virtual machine.
-     * @param userId the id of the user performing the action
-     * @param account account creating the virtual machine.
-     * @param dc data center to deploy it in.
-     * @param offering the service offering that comes with it.
-     * @param template template to base the virtual machine on. Can either represent an ISO, or a normal template.
-     * @param diskOffering the disk offering for the root disk (deploying from ISO) or the data disk (deploying from a normal template)
-     * @return UserVmVO if created; null if not.
-     */
-    UserVmVO createVirtualMachine(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String userData, List<StoragePoolVO> avoids, long startEventId, long size) throws InsufficientStorageCapacityException, ResourceAllocationException;
-    
-	UserVmVO createDirectlyAttachedVM(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String userData, List<StoragePoolVO> a, List<NetworkGroupVO> networkGroupVO, long startEventId, long size) throws ResourceAllocationException;
-
-	UserVmVO createDirectlyAttachedVMExternal(Long vmId, long userId, AccountVO account, DataCenterVO dc, ServiceOfferingVO offering, VMTemplateVO template, DiskOfferingVO diskOffering, String displayName, String userData, List<StoragePoolVO> a, List<NetworkGroupVO> networkGroupVO, long startEventId, long size) throws ResourceAllocationException;
-
     boolean destroyVirtualMachine(long userId, long vmId);
-//    OperationResponse executeDestroyVM(DestroyVMExecutor executor, VMOperationParam param);
     
     
     /**
@@ -88,30 +55,6 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>{
      * @return
      */
     boolean attachISOToVM(long vmId, long isoId, boolean attach);
-    
-    /**
-     * Start the virtual machine.
-     * @param userId the id of the user performing the action
-     * @param vmId the id of the virtual machine.
-     * @param isoPath path of the ISO from which the VM should be booted (optional)
-     * @throws ExecutionException 
-     * @throws StorageUnavailableException 
-     * @throws ConcurrentOperationException 
-     */
-    UserVmVO startVirtualMachine(long userId, long vmId, String isoPath, long startEventId) throws ExecutionException, StorageUnavailableException, ConcurrentOperationException;
-    boolean executeStartVM(StartVMExecutor executor, VMOperationParam param);
-    
-    /**
-     * Start the virtual machine.
-     * @param userId the id of the user performing the action
-     * @param vmId the id of the virtual machine.
-     * @param password the password that the user wants to use to access the virtual machine
-     * @param isoPath path of the ISO from which the VM should be booted (optional)
-     * @throws ExecutionException 
-     * @throws StorageUnavailableException 
-     * @throws ConcurrentOperationException 
-     */
-    UserVmVO startVirtualMachine(long userId, long vmId, String password, String isoPath, long startEventId) throws ExecutionException, StorageUnavailableException, ConcurrentOperationException;
     
     /**
      * Stops the virtual machine
@@ -153,8 +96,4 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>{
     InstanceGroupVO getGroupForVm(long vmId);
     
     void removeInstanceFromGroup(long vmId);
-    
-    @Deprecated
-    OperationResponse executeStopVM(StopVMExecutor executor, VMOperationParam param);
-
 }

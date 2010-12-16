@@ -40,8 +40,7 @@ import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.ReadyCommand;
-import com.cloud.agent.api.StartCommand;
-import com.cloud.agent.api.StartRouterCommand;
+import com.cloud.agent.api.Start2Command;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.transport.Request;
@@ -101,7 +100,7 @@ public abstract class AgentAttache {
     public final static String[] s_commandsAllowedInMaintenanceMode =
         new String[] { MaintainCommand.class.toString(), MigrateCommand.class.toString(), StopCommand.class.toString(), CheckVirtualMachineCommand.class.toString(), PingTestCommand.class.toString(), CheckHealthCommand.class.toString(), ReadyCommand.class.toString() };
     protected final static String[] s_commandsNotAllowedInConnectingMode =
-        new String[] { StartCommand.class.toString(), StartRouterCommand.class.toString(), CreateCommand.class.toString() };
+        new String[] { Start2Command.class.toString(), CreateCommand.class.toString() };
     static {
         Arrays.sort(s_commandsAllowedInMaintenanceMode);
         Arrays.sort(s_commandsNotAllowedInConnectingMode);
