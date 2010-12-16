@@ -280,7 +280,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 s_logger.debug("Found a rule that is still in stage state so just removing it: " + rule);
             }
             _firewallDao.remove(rule.getId());
-        } else if (rule.getState() == State.Add) {
+        } else if (rule.getState() == State.Add || rule.getState() == State.Active) {
             rule.setState(State.Revoke);
             _firewallDao.update(rule.getId(), rule);
         }
@@ -310,6 +310,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         event.setDescription(description.toString());
         event.setLevel(EventVO.LEVEL_INFO);
         _eventDao.persist(event);
+        
+        txn.commit();
     }
     
     @Override
@@ -410,7 +412,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         return applyPortForwardingRules(ip, false, caller);
     }
     
-    @Override @DB
+    @Override
     public boolean revokeAllRules(Ip ip, long userId) throws ResourceUnavailableException {
         List<PortForwardingRuleVO> rules = _forwardingDao.listByIpAndNotRevoked(ip);
         if (s_logger.isDebugEnabled()) {
