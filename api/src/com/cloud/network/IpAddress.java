@@ -63,4 +63,6 @@ public interface IpAddress extends ControlledEntity {
     State getState();
     
     boolean readyToUse();
+    
+    Long getAssociatedNetworkId();
 }

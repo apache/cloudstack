@@ -59,6 +59,9 @@ public class IPAddressResponse extends BaseResponse {
     @SerializedName("isstaticnat") @Param(description="true if this ip is for static nat, false otherwise")
     private Boolean staticNat;
     
+    @SerializedName("associatednetworkid") @Param(description="the ID of the Network associated with the IP address")
+    private Long associatedNetworkId;
+    
     public String getIpAddress() {
         return ipAddress;
     }
@@ -154,5 +157,13 @@ public class IPAddressResponse extends BaseResponse {
 	public void setStaticNat(Boolean staticNat) {
 		this.staticNat = staticNat;
 	}
+
+    public Long getAssociatedNetworkId() {
+        return associatedNetworkId;
+    }
+
+    public void setAssociatedNetworkId(Long networkId) {
+        this.associatedNetworkId = networkId;
+    }
 
 }

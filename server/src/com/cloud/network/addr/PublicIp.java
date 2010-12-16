@@ -121,4 +121,9 @@ public class PublicIp implements IpAddress {
     public String getMacAddress() {
         return macAddress;
     }
+    
+    @Override
+    public Long getAssociatedNetworkId() {
+        return _addr.getAssociatedNetworkId();
+    }
 }

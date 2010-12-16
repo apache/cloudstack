@@ -108,6 +108,7 @@ public class IPAddressVO implements IpAddress {
 		return allocatedToAccountId;
 	}
 	
+	@Override
 	public Long getAssociatedNetworkId() {
 	    return associatedNetworkId;
 	}

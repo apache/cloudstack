@@ -610,6 +610,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         ipResponse.setForVirtualNetwork(forVirtualNetworks);
         ipResponse.setStaticNat(ipAddress.isOneToOneNat());
+        
+        ipResponse.setAssociatedNetworkId(ipAddress.getAssociatedNetworkId());
 
         // show this info to admin only
         Account account = UserContext.current().getAccount();
