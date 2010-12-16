@@ -19,6 +19,7 @@ package com.cloud.resource;
 
 import java.util.List;
 
+import com.cloud.api.commands.AddExternalClusterCmd;
 import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
@@ -43,6 +44,19 @@ public interface ResourceService {
     Host cancelMaintenance(CancelMaintenanceCmd cmd) throws InvalidParameterValueException;
 
     Host reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException;
+    
+    /**
+     * We will automatically create a cloud.com cluster to attach to the external cluster and return a hyper host to perform 
+     * host related operation within the cluster
+     * 
+     * @param cmd
+     * @return
+     * @throws IllegalArgumentException
+     * @throws DiscoveryException
+     * @throws InvalidParameterValueException
+     */
+    List<? extends Host> discoverExternalCluster(AddExternalClusterCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+    
     List<? extends Host> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
     List<? extends Host> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
     Host maintain(PrepareForMaintenanceCmd cmd) throws InvalidParameterValueException;

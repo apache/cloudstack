@@ -73,6 +73,7 @@ import com.cloud.agent.transport.Response;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.commands.AddExternalClusterCmd;
 import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
@@ -127,6 +128,7 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.org.Cluster;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceService;
 import com.cloud.resource.ServerResource;
@@ -524,8 +526,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         return pcs;
     }
 
-
-
     protected AgentAttache handleDirectConnect(ServerResource resource, StartupCommand[] startup, Map<String, String> details, boolean old) throws ConnectionException {
         if (startup == null) {
             return null;
@@ -542,6 +542,118 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         attache = notifyMonitorsOfConnection(attache, startup);
        
         return attache;
+    }
+    
+    @Override
+    public List<? extends Host> discoverExternalCluster(AddExternalClusterCmd cmd) 
+    	throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+        Long dcId = cmd.getZoneId();
+        Long podId = cmd.getPodId();
+        String clusterName = cmd.getClusterName();
+        String url = cmd.getUrl();
+        String username = cmd.getUsername();
+        String password = cmd.getPassword();
+        
+    	URI uri = null;
+    	
+        //Check if the zone exists in the system
+        if (_dcDao.findById(dcId) == null ){
+        	throw new InvalidParameterValueException("Can't find zone by id " + dcId);
+        }
+        
+        //Check if the pod exists in the system
+        if (podId != null) {
+            if (_podDao.findById(podId) == null ){
+                throw new InvalidParameterValueException("Can't find pod by id " + podId);
+            }
+            //check if pod belongs to the zone
+            HostPodVO pod = _podDao.findById(podId);
+            if (!Long.valueOf(pod.getDataCenterId()).equals(dcId)) {
+            	throw new InvalidParameterValueException("Pod " + podId + " doesn't belong to the zone " + dcId);
+            }
+        }
+        
+        // Verify cluster information and create a new cluster if needed
+        if (clusterName == null || clusterName.isEmpty()) {
+            throw new InvalidParameterValueException("Please specify cluster name");
+        }
+        
+        if(cmd.getHypervisor() == null || cmd.getHypervisor().isEmpty()) {
+            throw new InvalidParameterValueException("Please specify a hypervisor");
+        }
+        
+        Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.valueOf(cmd.getHypervisor());
+        if(hypervisorType == null) {
+            throw new InvalidParameterValueException("Please specify a valid hypervisor name");
+        }
+        
+        Discoverer discoverer = getMatchingDiscover(cmd.getHypervisor());
+        if(discoverer == null) {
+            throw new InvalidParameterValueException("Please specify a valid hypervisor");
+        }
+        
+        long clusterId = 0;
+        if (clusterName != null) {      
+            ClusterVO cluster = new ClusterVO(dcId, podId, clusterName);
+            cluster.setHypervisorType(cmd.getHypervisor());
+            cluster.setClusterType(Cluster.ClusterType.ExternalManaged);
+            try {
+                cluster = _clusterDao.persist(cluster);
+            } catch (Exception e) {
+                cluster = _clusterDao.findBy(clusterName, podId);
+                if (cluster == null) {
+                    throw new CloudRuntimeException("Unable to create cluster " + clusterName + " in pod " + podId + " and data center " + dcId, e);
+                }
+            }
+            clusterId = cluster.getId();
+        }
+        
+        try {
+    		uri = new URI(UriUtils.encodeURIComponent(url));
+    		if (uri.getScheme() == null) {
+                throw new InvalidParameterValueException("uri.scheme is null " + url + ", add http:// as a prefix");
+            } else if (uri.getScheme().equalsIgnoreCase("http")) {
+    			if (uri.getHost() == null || uri.getHost().equalsIgnoreCase("") || uri.getPath() == null || uri.getPath().equalsIgnoreCase("")) {
+    				throw new InvalidParameterValueException("Your host and/or path is wrong.  Make sure it's of the format http://hostname/path");
+    			}
+    		}
+    	} catch (URISyntaxException e) {
+			throw new InvalidParameterValueException(url + " is not a valid uri");
+    	}
+        
+        List<HostVO> hosts = new ArrayList<HostVO>();
+        Map<? extends ServerResource, Map<String, String>> resources = null;
+        
+        try {
+        	resources = discoverer.find(dcId, podId, clusterId, uri, username, password);
+        } catch(Exception e) {
+        	s_logger.info("Exception in external cluster discovery process with discoverer: " + discoverer.getName());
+        }
+        if (resources != null) {
+            for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
+                ServerResource resource = entry.getKey();
+                AgentAttache attache = simulateStart(resource, entry.getValue(), true);
+                if (attache != null) {
+                    hosts.add(_hostDao.findById(attache.getId()));
+                }
+                discoverer.postDiscovery(hosts, _nodeId);
+            }
+            s_logger.info("External cluster has been successfully discovered by " + discoverer.getName());
+            return hosts;
+        }
+    	
+        s_logger.warn("Unable to find the server resources at " + url);
+        throw new DiscoveryException("Unable to add the external cluster");
+    }
+    
+    private Discoverer getMatchingDiscover(String hypervisorType) {
+        Enumeration<Discoverer> en = _discoverers.enumeration();
+        while (en.hasMoreElements()) {
+            Discoverer discoverer = en.nextElement();
+        	if(discoverer.matchHypervisor(hypervisorType))
+        		return discoverer;
+    	}
+        return null;
     }
 
     @Override

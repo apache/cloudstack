@@ -219,6 +219,7 @@ CREATE TABLE `cloud`.`cluster` (
   `pod_id` bigint unsigned NOT NULL COMMENT 'pod id',
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id',
   `hypervisor_type` varchar(255),
+  `cluster_type` varchar(64) DEFAULT 'CloudManaged',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

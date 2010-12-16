@@ -19,6 +19,8 @@ package com.cloud.dc;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -48,15 +50,20 @@ public class ClusterVO implements Cluster {
     
     @Column(name="hypervisor_type")
     String hypervisorType;
-    
+
+    @Column(name="cluster_type")
+    @Enumerated(value=EnumType.STRING)
+    Cluster.ClusterType clusterType;
     
     public ClusterVO() {
+    	clusterType = Cluster.ClusterType.CloudManaged;
     }
     
     public ClusterVO(long dataCenterId, long podId, String name) {
         this.dataCenterId = dataCenterId;
         this.podId = podId;
         this.name = name;
+    	this.clusterType = Cluster.ClusterType.CloudManaged;
     }
 
     public long getId() {
@@ -73,6 +80,14 @@ public class ClusterVO implements Cluster {
 
     public long getPodId() {
         return podId;
+    }
+    
+    public Cluster.ClusterType getClusterType() {
+    	return clusterType;
+    }
+    
+    public void setClusterType(Cluster.ClusterType clusterType) {
+    	this.clusterType = clusterType;
     }
     
     public ClusterVO(long clusterId) {
