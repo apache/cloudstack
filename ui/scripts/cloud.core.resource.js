@@ -304,7 +304,11 @@ function afterLoadResourceJSP() {
 	initAddZoneLinks();	 
     
 	initUpdateConsoleCertButton($("#midmenu_Update_SSL_Certificate_button"));
+	
 	initDialog("dialog_update_cert", 450);	
+	initDialog("dialog_add_pod_in_resource_page", 320); 	
+    initDialog("dialog_add_host_in_resource_page");  
+    initDialog("dialog_add_pool_in_resource_page");
 		
 	initAddPodShortcut();
 	initAddHostShortcut();
@@ -314,8 +318,6 @@ function afterLoadResourceJSP() {
 }
 
 function initAddPodShortcut() {
-    initDialog("dialog_add_pod_in_resource_page", 320); 	
-
     var $zoneDropdown = $("#dialog_add_pod_in_resource_page").find("#zone_dropdown");
     $.ajax({
 	    data: createURL("command=listZones&available=true"),
@@ -416,7 +418,6 @@ function initAddPodShortcut() {
 }    
 
 function initAddHostShortcut() {
-    initDialog("dialog_add_host_in_resource_page");    
     var $dialogAddHost = $("#dialog_add_host_in_resource_page");    
     
     $.ajax({
@@ -1039,8 +1040,7 @@ function initUpdateConsoleCertButton($midMenuAddLink2) {
 }
 
 
-function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel) {    
-	initDialog("dialog_add_pool_in_resource_page");
+function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel) { 
 	var $dialogAddPool = $("#dialog_add_pool_in_resource_page");    
 	
     // if hypervisor is KVM, limit the server option to NFS for now
