@@ -2088,6 +2088,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
+        s_logger.debug("Restarting network " + networkId + "...");
+        
         boolean success = true;
         if (!applyIpAssociations(network, false)) {
             s_logger.warn("Failed to apply ips as a part of network " + networkId + " restart");

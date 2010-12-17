@@ -50,6 +50,9 @@ public class LoadBalancerResponse extends BaseResponse {
 
     @SerializedName("domain") @Param(description="the domain of the load balancer rule")
     private String domainName;
+    
+    @SerializedName("state") @Param(description="the state of the rule")
+    private String state;
 
     public Long getId() {
         return id;
@@ -129,5 +132,13 @@ public class LoadBalancerResponse extends BaseResponse {
 
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 }

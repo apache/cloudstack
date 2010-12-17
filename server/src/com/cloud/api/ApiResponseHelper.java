@@ -633,6 +633,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         lbResponse.setPublicPort(Integer.toString(loadBalancer.getSourcePortStart()));
         lbResponse.setPrivatePort(Integer.toString(loadBalancer.getDefaultPortStart()));
         lbResponse.setAlgorithm(loadBalancer.getAlgorithm());
+        FirewallRule.State state = loadBalancer.getState();
+        String stateToSet = state.toString();
+        if (state.equals(FirewallRule.State.Revoke)) {
+            stateToSet = "Deleting";
+        }
+        lbResponse.setState(stateToSet);
 
         Account accountTemp = ApiDBUtils.findAccountById(loadBalancer.getAccountId());
         if (accountTemp != null) {
