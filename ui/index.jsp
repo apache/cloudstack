@@ -161,8 +161,8 @@
                                 </li>
                             </ol>
                             </form>
-                            <a id="advanced_search_icon" href="#">
-                                <fmt:message key="label.advanced"/></a>
+                            <div class="searchpanel_advancebutton" id="advanced_search_icon">
+                                <fmt:message key="label.advanced"/></div>
                             <div id="advanced_search_container">
                             </div>
                         </div>
