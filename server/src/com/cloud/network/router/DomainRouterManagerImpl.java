@@ -2074,7 +2074,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             throw new ResourceUnavailableException("Unable to apply lb rules");
         }
 
-        if (router.getState() == State.Running || router.getState() == State.Starting || router.getState() == State.Stopped) {
+        if (router.getState() == State.Running || router.getState() == State.Starting) {
 
             Commands cmds = new Commands(OnError.Continue);
             List<LoadBalancerTO> lbs = new ArrayList<LoadBalancerTO>();
