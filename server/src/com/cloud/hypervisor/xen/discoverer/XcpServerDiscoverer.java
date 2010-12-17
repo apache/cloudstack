@@ -156,6 +156,17 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             Pool.Record pr = pool.getRecord(conn);
             poolUuid = pr.uuid;
             Host master = pr.master;
+
+            /*set cluster hypervisor type to xenserver*/
+            ClusterVO clu = _clusterDao.findById(clusterId);
+            if ( HypervisorType.None == clu.getHypervisorType() ) {
+            	clu.setHypervisorType(HypervisorType.XenServer.toString());
+            }
+            if ( clu.getClusterType() == null ) {
+            	clu.setGuid(poolUuid);
+            }
+            _clusterDao.update(clusterId, clu);
+            
             LinkedHashMap<Host, Host.Record> hosts = new LinkedHashMap<Host, Host.Record>(20);
             hosts.put(master, master.getRecord(conn));
             Map<Host, Host.Record> thosts = Host.getAllRecords(conn);
@@ -164,7 +175,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                     hosts.put(entry.getKey(), entry.getValue());
                 }
             }
-                       
+                                   
             if (_checkHvm) {
                 for (Map.Entry<Host, Host.Record> entry : hosts.entrySet()) {
                     Host.Record record = entry.getValue();
@@ -269,12 +280,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             if (!addHostsToPool(url, conn, dcId, podId, clusterId, resources)) {
                 return null;
             }
-            
-            /*set cluster hypervisor type to xenserver*/
-            ClusterVO clu = _clusterDao.findById(clusterId);
-            clu.setHypervisorType(HypervisorType.XenServer.toString());
-            _clusterDao.update(clusterId, clu);
-            
+                        
         } catch (SessionAuthenticationFailed e) {
             s_logger.warn("Authentication error", e);           
             return null;
@@ -511,7 +517,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     public boolean processCommands(long agentId, long seq, Command[] commands) {
         return false;
     }
-    
+  
     private void createXsToolsISO() {
         String isoName = "xs-tools.iso";
         VMTemplateVO tmplt = _tmpltDao.findByTemplateName(isoName);

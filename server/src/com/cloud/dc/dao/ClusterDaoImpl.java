@@ -30,9 +30,14 @@ import com.cloud.utils.db.SearchCriteria;
 public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements ClusterDao {
 
     protected final SearchBuilder<ClusterVO> PodSearch;
-    
+    protected final SearchBuilder<ClusterVO> HyTypeWithoutGuidSearch;
     protected ClusterDaoImpl() {
         super();
+        
+        HyTypeWithoutGuidSearch = createSearchBuilder();
+        HyTypeWithoutGuidSearch.and("hypervisorType", HyTypeWithoutGuidSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        HyTypeWithoutGuidSearch.and("guid", HyTypeWithoutGuidSearch.entity().getGuid(), SearchCriteria.Op.NULL);
+        HyTypeWithoutGuidSearch.done();
         
         PodSearch = createSearchBuilder();
         PodSearch.and("pod", PodSearch.entity().getPodId(), SearchCriteria.Op.EQ);
@@ -55,5 +60,13 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         sc.setParameters("name", name);
         
         return findOneBy(sc);
+    }
+    
+    @Override
+    public List<ClusterVO> listByHyTypeWithoutGuid(String hyType) {
+        SearchCriteria<ClusterVO> sc = HyTypeWithoutGuidSearch.create();
+        sc.setParameters("hypervisorType", hyType);
+        
+        return listBy(sc);
     }
 }

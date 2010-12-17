@@ -5,7 +5,8 @@ SET foreign_key_checks = 0;
 --
 ALTER TABLE `cloud`.`template_host_ref` ADD COLUMN `physical_size` bigint unsigned NOT NULL DEFAULT 0
 ALTER TABLE `cloud`.`snapshots` MODIFY COLUMN `id` bigint unsigned UNIQUE NOT NULL
-ALTER TABLE `vm_instance` DROP COLUMN `group`
+ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `group`
+ALTER TABLE `cloud`.`cluster` ADD COLUMN `guid` varchar(255) UNIQUE DEFAULT NULL
 
 
 -- NOTE for tables below
@@ -16,4 +17,3 @@ ALTER TABLE `vm_instance` DROP COLUMN `group`
 -- network_group_vm_map table --> security_group_vm_map table
 DROP TABLE `cloud`.`security_group`;
 DROP TABLE `cloud`.`security_group_vm_map`;
---END NOTE

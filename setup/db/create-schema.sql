@@ -217,6 +217,7 @@ CREATE TABLE `cloud`.`network_offerings` (
 CREATE TABLE `cloud`.`cluster` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `name` varchar(255) NOT NULL COMMENT 'name for the cluster',
+  `guid` varchar(255) UNIQUE DEFAULT NULL COMMENT 'guid for the cluster',
   `pod_id` bigint unsigned NOT NULL COMMENT 'pod id',
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id',
   `hypervisor_type` varchar(255),

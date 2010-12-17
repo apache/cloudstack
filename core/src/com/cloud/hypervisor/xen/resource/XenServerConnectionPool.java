@@ -247,7 +247,7 @@ public class XenServerConnectionPool {
         return null;
     }
     
-    public Connection slaveConnect(String ip, String username, String password) {
+    static public Connection slaveConnect(String ip, String username, String password) {
         Connection conn = null;
         try{ 
             conn = new Connection(getURL(ip), 100);
@@ -579,7 +579,7 @@ public class XenServerConnectionPool {
         }
     }
 
-    static private Pool.Record getPoolRecord(Connection conn)
+    static public Pool.Record getPoolRecord(Connection conn)
             throws XmlRpcException, XenAPIException {
         Map<Pool, Pool.Record> pools = Pool.getAllRecords(conn);
         assert pools.size() == 1 : "Pool size is not one....hmmm....wth? "

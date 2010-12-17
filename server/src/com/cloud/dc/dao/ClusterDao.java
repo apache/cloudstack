@@ -25,4 +25,5 @@ import com.cloud.utils.db.GenericDao;
 public interface ClusterDao extends GenericDao<ClusterVO, Long> {
     List<ClusterVO> listByPodId(long podId);
     ClusterVO findBy(String name, long podId);
+    List<ClusterVO> listByHyTypeWithoutGuid(String hyType);
 }

@@ -42,6 +42,9 @@ public class ClusterVO implements Cluster {
     @Column(name="name")
     String name;
     
+    @Column(name="guid")
+    String guid;
+    
     @Column(name="data_center_id")
     long dataCenterId;
     
@@ -112,7 +115,16 @@ public class ClusterVO implements Cluster {
     	return HypervisorType.getType(hypervisorType);
     }
 
-    public void setHypervisorType(String hy) {
+	public void setHypervisorType(String hy) {
     	hypervisorType = hy;
     }
+	
+    public String getGuid() {
+        return guid;
+    }
+	
+    public void setGuid(String guid) {
+        this.guid = guid;
+    }
+
 }
