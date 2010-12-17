@@ -111,10 +111,11 @@ function buildZoneTree() {
         if(currentRightPanelJSP != "jsp/network.jsp") {    
             clearAddButtonsOnTop();  
             removeDialogs();
+            
+            var $thisNode = $(this);    
             $("#right_panel").load("jsp/network.jsp", function(){     
-                currentRightPanelJSP = "jsp/network.jsp";
-                 
-                var $thisNode = $(this);                          
+                currentRightPanelJSP = "jsp/network.jsp";                 
+                                      
                 $(this).data("onRefreshFn", function() {		        
                     var zoneObj = $midmenuItem1.data("jsonObj");
                     if(zoneObj == null)
@@ -293,63 +294,6 @@ function clusterJSONToTreeNode(json, $clusterNode) {
     var clusterName = $clusterNode.find("#cluster_name").text(fromdb(json.name));
     clusterName.data("jsonObj", json);	   
 }			
-
-/*
-function resourceLoadPage(rightPanelJSP, $midmenuItem1) {   //$midmenuItem1 is either $leftmenuItem1 or $midmenuItem1    
-    clearAddButtonsOnTop();  
-	removeDialogs();
-    $("#right_panel").load(rightPanelJSP, function(){     
-        currentRightPanelJSP = rightPanelJSP;
-          
-	    if(currentRightPanelJSP == "jsp/resource.jsp") {
-            afterLoadResourceJSP($midmenuItem1); 
-        }
-        else if(currentRightPanelJSP == "jsp/zone.jsp") {            
-            $(this).data("onRefreshFn", function() {
-		        zoneJsonToDetailsTab();
-		    });  
-            afterLoadZoneJSP($midmenuItem1);               
-        }        
-        else if(currentRightPanelJSP == "jsp/network.jsp") {            
-            $(this).data("onRefreshFn", function() {		        
-		        var zoneObj = $midmenuItem1.data("jsonObj");
-		        if(zoneObj == null)
-		            return;
-		        $("#zone_"+zoneObj.id).find("#network_header").click();
-		    }); 
-            afterLoadNetworkJSP($midmenuItem1);   
-        }
-        else if(currentRightPanelJSP == "jsp/pod.jsp") {            
-            $(this).data("onRefreshFn", function() {
-		        podJsonToDetailsTab();
-		    });  
-		    afterLoadPodJSP($midmenuItem1);             
-        }
-        else if(currentRightPanelJSP == "jsp/cluster.jsp") {
-            $(this).data("onRefreshFn", function() {
-		        clusterJsonToDetailsTab();
-		    }); 
-            afterLoadClusterJSP($midmenuItem1);   
-        }
-        else if(currentRightPanelJSP == "jsp/host.jsp") {                 
-            $(this).data("onRefreshFn", function() {                
-		        hostJsonToDetailsTab();
-		    }); 
-            afterLoadHostJSP($midmenuItem1);        
-            
-            copyActionInfoFromMidMenuToRightPanel($midmenuItem1);                   
-            $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
-            $("#tab_details").click();     
-        }
-        else if(currentRightPanelJSP == "jsp/primarystorage.jsp") {
-            $(this).data("onRefreshFn", function() {                
-		        primarystorageJsonToDetailsTab();
-		    }); 
-            afterLoadPrimaryStorageJSP($midmenuItem1);    
-        }         
-    });    
-}
-*/
 
 function afterLoadResourceJSP() {
     hideMiddleMenu();        
