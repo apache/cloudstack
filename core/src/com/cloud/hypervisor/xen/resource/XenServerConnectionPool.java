@@ -17,6 +17,7 @@
  */
 package com.cloud.hypervisor.xen.resource;
 
+import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
 import java.util.HashMap;
@@ -94,6 +95,64 @@ public class XenServerConnectionPool {
                 msec = firetime - System.currentTimeMillis();
             }
         }
+    }
+
+    static public boolean joinPool(Connection conn, String hostIp, String masterIp, String username, String password) {      
+        try {
+            Pool.join(conn, masterIp, username, password);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Host(" + hostIp + ") Join the pool at " + masterIp);
+            }           
+            try {
+                // slave will restart xapi in 10 sec
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+            }        
+            for (int i = 0 ; i < 15; i++) {
+                Connection slaveConn = null;
+                Session slaveSession = null;
+                try {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Logging on as the slave to " + hostIp);
+                    }
+                    slaveConn = new Connection(getURL(hostIp), 100);
+                    slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, username, password);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Slave logon successful. session= " + slaveSession);
+                    }
+                    Pool.Record pr = getPoolRecord(slaveConn);
+                    Host master = pr.master;
+                    String ma = master.getAddress(slaveConn);
+                    if (ma.trim().equals(masterIp.trim())) {
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug("Host(" + hostIp + ") Joined the pool at " + masterIp);
+                        }
+                        return true;
+                    }
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                    }  
+                } catch (Exception e) {
+                } finally {
+                    if (slaveSession != null) {
+                        try {
+                            Session.logout(slaveConn);
+                        } catch (Exception e) {
+                        }
+                        slaveConn.dispose();
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            String msg = "Catch " + e.getClass().getName() + " Unable to allow host " + hostIp + " to join pool " + masterIp + " due to " + e.toString();          
+            s_logger.warn(msg, e);
+        }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Host(" + hostIp + ") unable to Join the pool at " + masterIp);
+        }
+        return false;
     }
 
     public void switchMaster(String slaveIp, String poolUuid,
@@ -180,11 +239,6 @@ public class XenServerConnectionPool {
             throw new CloudRuntimeException(
                     "Unable to logon to the new master after " + retry + " retries");
         }
-    }
-
-
-
-    public void disconnect(String uuid, String poolUuid) {
     }
 
     public static void logout(Connection conn) {

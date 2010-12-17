@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -174,7 +173,6 @@ import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineName;
 import com.trilead.ssh2.SCPClient;
-import com.xensource.xenapi.APIVersion;
 import com.xensource.xenapi.Bond;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Console;
@@ -272,10 +270,6 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     @Override
     public void disconnected() {
-        s_logger.debug("Logging out of " + _host.uuid);
-        if (_host.pool != null) {
-            _connPool.disconnect(_host.uuid, _host.pool);
-        }
     }
 
     protected VDI cloudVDIcopy(Connection conn, VDI vdi, SR sr) throws BadServerResponse, XenAPIException, XmlRpcException{
@@ -2387,109 +2381,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         return answer;
     }
 
-    public boolean joinPool(String masterIp, String username, String password) {
-        Connection hostConn = null;
-        Connection poolConn = null;
-        Session hostSession = null;
-        URL hostUrl = null;
-        
-        try {
 
-            // Connect and find out about the new connection to the new pool.
-            poolConn = _connPool.masterConnect(masterIp, username, password);
-            Set<Pool> pools = Pool.getAll(poolConn);
-            Pool pool = pools.iterator().next();
-            String poolUUID = pool.getUuid(poolConn);
-            
-            //check if this host is already in pool
-            Set<Host> hosts = Host.getAll(poolConn);
-            for( Host host : hosts ) {
-                if(host.getAddress(poolConn).equals(_host.ip)) {
-                    _host.pool = poolUUID;
-                    return true;
-                }
-            }
-            
-            hostUrl = new URL("http://" + _host.ip);
-            hostConn = new Connection(hostUrl, 100);
-            hostSession = Session.loginWithPassword(hostConn, _username, _password, APIVersion.latest().toString());
-            
-            // Now join it.
-
-            Pool.join(hostConn, masterIp, username, password);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Joined the pool at " + masterIp);
-            }
-            
-            try {
-                // slave will restart xapi in 10 sec
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-            }
-
-            // check if the master of this host is set correctly.
-            Connection c = new Connection(hostUrl, 100);
-            int i;
-            for (i = 0 ; i < 15; i++) {
-
-                try {
-                    Session.loginWithPassword(c, _username, _password, APIVersion.latest().toString());
-                    s_logger.debug(_host.ip + " is still master, waiting for the conversion to the slave");
-                    Session.logout(c);
-                    c.dispose();
-                } catch (Types.HostIsSlave e) {
-                    try {
-                        Session.logout(c);
-                        c.dispose();
-                    } catch (XmlRpcException e1) {
-                        s_logger.debug("Unable to logout of test connection due to " + e1.getMessage());
-                    } catch (XenAPIException e1) {
-                        s_logger.debug("Unable to logout of test connection due to " + e1.getMessage());
-                    }
-                    break;
-                } catch (XmlRpcException e) {
-                    s_logger.debug("XmlRpcException: Still waiting for the conversion to the master");
-                } catch (Exception e) {
-                    s_logger.debug("Exception: Still waiting for the conversion to the master");
-                }
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                }
-            }
-            if( i >= 15 ) {
-                throw new CloudRuntimeException(_host.ip + " didn't change to slave after waiting 30 secondary");          	
-            }
-            _host.pool = poolUUID;
-            return true;
-        } catch (MalformedURLException e) {
-            throw new CloudRuntimeException("Problem with url " + _host.ip);
-        } catch (XenAPIException e) {
-            String msg = "Unable to allow host " + _host.uuid
-                    + " to join pool " + masterIp + " due to " + e.toString();
-            s_logger.warn(msg, e);
-            throw new RuntimeException(msg);
-        } catch (XmlRpcException e) {
-            String msg = "Unable to allow host " + _host.uuid
-                    + " to join pool " + masterIp + " due to " + e.getMessage();
-            s_logger.warn(msg, e);
-            throw new RuntimeException(msg);
-        } finally {
-            if (poolConn != null) {
-                try {
-                    Session.logout(poolConn);
-                } catch (Exception e) {
-                }
-                poolConn.dispose();
-            }
-            if(hostSession != null) {
-                try {
-                    Session.logout(hostConn);
-                } catch (Exception e) {
-                }
-            }
-        }
-    }
 
     protected void startvmfailhandle(Connection conn, VM vm, List<Ternary<SR, VDI, VolumeVO>> mounts) {
         if (vm != null) {
@@ -3505,19 +3397,6 @@ public abstract class CitrixResourceBase implements ServerResource {
         return new StartupCommand[] { cmd };
     }
 
-    protected String getPoolUuid(Connection conn) {
-        try {
-            Map<Pool, Pool.Record> pools = Pool.getAllRecords(conn);
-            assert (pools.size() == 1) : "Tell me how pool size can be " + pools.size();
-            Pool.Record rec = pools.values().iterator().next();
-            return rec.uuid;
-        } catch (XenAPIException e) {
-            throw new CloudRuntimeException("Unable to get pool ", e);
-        } catch (XmlRpcException e) {
-            throw new CloudRuntimeException("Unable to get pool ", e);
-        }
-    }
-
     protected void setupServer(Connection conn) {
         String version = CitrixResourceBase.class.getPackage().getImplementationVersion();
 
@@ -3913,7 +3792,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             throw new ConfigurationException("Unable to get the zone " + params.get("zone"));
         }
         _name = _host.uuid;
-        _host.ip = (String) params.get("url");
+        _host.ip = (String) params.get("ipaddress");
         _host.pool = (String) params.get("pool");
         _username = (String) params.get("username");
         _password = (String) params.get("password");

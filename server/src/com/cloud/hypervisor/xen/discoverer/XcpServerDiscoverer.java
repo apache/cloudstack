@@ -20,8 +20,6 @@ package com.cloud.hypervisor.xen.discoverer;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,7 +39,6 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
@@ -63,12 +60,9 @@ import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
-import com.cloud.storage.template.TemplateInfo;
 import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
@@ -112,64 +106,70 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             s_logger.debug(msg);
             return null;
         }
-        String cluster = null;
         if (clusterId == null) {
             String msg = "must specify cluster Id when add host";
             s_logger.debug(msg);
             throw new RuntimeException(msg);
-        } else {
-            cluster = Long.toString(clusterId);
-        }
+        } 
         
-        String pod;
 		if (podId == null) {
 			String msg = "must specify pod Id when add host";
 			s_logger.debug(msg);
 			throw new RuntimeException(msg);
-		} else {
-			pod = Long.toString(podId);
 		}
-
+		
         try {
-        	String poolUuid = null;
             List<HostVO> eHosts = _hostDao.listByCluster(clusterId);
             if( eHosts.size() > 0 ) {
             	HostVO eHost = eHosts.get(0);
             	_hostDao.loadDetails(eHost);
-                poolUuid = eHost.getDetail("pool");
             }         
-            
             String hostname = url.getHost();
             InetAddress ia = InetAddress.getByName(hostname);
-            String addr = ia.getHostAddress();
+            String hostIp = ia.getHostAddress();
             
-            conn = _connPool.masterConnect(addr, username, password);
+            conn = _connPool.masterConnect(hostIp, username, password);
             
             if (conn == null) {
                 String msg = "Unable to get a connection to " + url;
                 s_logger.debug(msg);
-                return null;
+                throw new DiscoveryException(msg);
             }
            
             Set<Pool> pools = Pool.getAll(conn);
             Pool pool = pools.iterator().next();
-            Pool.Record pr = pool.getRecord(conn);
-            poolUuid = pr.uuid;
+            Pool.Record pr = pool.getRecord(conn);           
+            String poolUuid = pr.uuid;
             Host master = pr.master;
+            Map<Host, Host.Record> thosts = Host.getAllRecords(conn);
 
             /*set cluster hypervisor type to xenserver*/
             ClusterVO clu = _clusterDao.findById(clusterId);
-            if ( HypervisorType.None == clu.getHypervisorType() ) {
-            	clu.setHypervisorType(HypervisorType.XenServer.toString());
-            }
-            if ( clu.getClusterType() == null ) {
+            if ( clu.getGuid()== null ) {
             	clu.setGuid(poolUuid);
+            } else {
+                if( !clu.getGuid().equals(poolUuid)) {
+                    if (thosts.size() == 1 ) { 
+                        if( !addHostsToPool(conn, hostIp, clusterId)){
+                            String msg = "Unable to add host(" + hostIp + ") to cluster " + clusterId;
+                            s_logger.warn(msg);
+                            throw new DiscoveryException(msg);                           
+                        }
+                    } else {
+                        String msg = "Host (" + hostIp + ") is already in pool(" + poolUuid +"), can to join pool(" + clu.getGuid() + ")";
+                        s_logger.warn(msg);
+                        throw new DiscoveryException(msg);
+                    }
+                }
+            }
+            poolUuid = clu.getGuid();
+            if ( HypervisorType.None == clu.getHypervisorType() ) {
+                clu.setHypervisorType(HypervisorType.XenServer.toString());
             }
             _clusterDao.update(clusterId, clu);
             
             LinkedHashMap<Host, Host.Record> hosts = new LinkedHashMap<Host, Host.Record>(20);
             hosts.put(master, master.getRecord(conn));
-            Map<Host, Host.Record> thosts = Host.getAllRecords(conn);
             for (Map.Entry<Host, Host.Record> entry : thosts.entrySet()) {
                 if( !master.equals(entry.getKey()) ) {
                     hosts.put(entry.getKey(), entry.getValue());
@@ -217,18 +217,17 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 Map<String, String> details = new HashMap<String, String>();
                 Map<String, Object> params = new HashMap<String, Object>();
                 details.put("url", hostAddr);
-                params.put("url", hostAddr);
-                details.put("pool", poolUuid);
-                params.put("pool", poolUuid);
                 details.put("username", username);
                 params.put("username", username);
                 details.put("password", password);
                 params.put("password", password);
                 params.put("zone", Long.toString(dcId));
                 params.put("guid", record.uuid);
-                params.put("pod", pod);
-
-                params.put("cluster", cluster);
+                params.put("pod", podId.toString());
+                params.put("cluster", clusterId.toString());
+                params.put("pool", poolUuid);
+                params.put("ipaddress", record.address);
+                
                 if (_increase != null) {
                     params.put(Config.XenPreallocatedLunSizeRange.name(), _increase);
                 }
@@ -260,9 +259,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 if (!params.containsKey("storage.network.device2") && _storageNic2 != null) {
                     params.put("storage.network.device2", _storageNic2);
                     details.put("storage.network.device2", _storageNic2);
-                }
-                
-                
+                }                             
                 params.put(Config.Wait.toString().toLowerCase(), Integer.toString(_wait));
                 details.put(Config.Wait.toString().toLowerCase(), Integer.toString(_wait));
                 try {
@@ -272,15 +269,9 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                     s_logger.warn("Unable to instantiate " + record.address, e);
                     continue;
                 }
-
                 resource.start();
                 resources.put(resource, details);
-            }
-            
-            if (!addHostsToPool(url, conn, dcId, podId, clusterId, resources)) {
-                return null;
-            }
-                        
+            }                        
         } catch (SessionAuthenticationFailed e) {
             s_logger.warn("Authentication error", e);           
             return null;
@@ -327,76 +318,32 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         }
     }
     
-    protected boolean addHostsToPool(URI url, Connection conn, long dcId, Long podId, Long clusterId, Map<? extends CitrixResourceBase, Map<String, String>> resources) throws XenAPIException, XmlRpcException, DiscoveryException {
-        if ( resources.size() == 0 ) {
-            return false;
-        }
-        if (clusterId == null ) {
-            if (resources.size() > 1) {
-                s_logger.warn("There's no cluster specified but we found a pool of xenservers " + resources.size());
-                throw new DiscoveryException("There's no cluster specified but we found a pool of xenservers " + resources.size());
-            } else if (resources.size() == 1) {
-                s_logger.debug("No cluster specified and we found only one host so no pool");
-                return true;
-            } 
-        }
+    protected boolean addHostsToPool(Connection conn, String hostIp, Long clusterId) throws XenAPIException, XmlRpcException, DiscoveryException {
         
         List<HostVO> hosts;
-        String poolLabel;
-        String poolDescription;
-        if (clusterId != null) {
-            hosts = _hostDao.listByCluster(clusterId);
-            ClusterVO cluster = _clusterDao.findById(clusterId);
-            poolLabel = "cluster-" + clusterId;
-            poolDescription = cluster.getName();
-        } else if (podId != null) {
-            hosts = _hostDao.listByHostPod(podId);
-            poolLabel = "pod-" + podId;
-            poolDescription = "Auto-Created Pool from Pod";
-        } else {
-            hosts= new ArrayList<HostVO>();
-            poolLabel = "cluster-self-created";
-            poolDescription = "Auto-Created Pool";
-        }
-        
-        if (hosts.size() == 0) {
-            Set<Pool> pools = Pool.getAll(conn);
-            Pool pool = pools.iterator().next();
-            pool.setNameLabel(conn, poolLabel);
-            pool.setNameDescription(conn, poolDescription);
-            return true;
-        }
-/*
-        if (hosts.size() + resources.size() > 16) {
-            s_logger.debug("A pool can only have 16 hosts");
-            throw new DiscoveryException("A XenServer cluster can only have 16 hosts maximum");
-        }
-  */
-        String poolUuid1 = null;
-        String poolMaster = null;
+        hosts = _hostDao.listByCluster(clusterId);
+
+        String masterIp = null;
         String username = null;
         String password = null;
-        String address = null;
         for (HostVO host : hosts) {
             _hostDao.loadDetails(host);
             username = host.getDetail("username");
             password = host.getDetail("password");
-            address = host.getDetail("url");
-            Connection hostConn = _connPool.slaveConnect(address, username, password);
+            String address = host.getPrivateIpAddress();
+            Connection hostConn = XenServerConnectionPool.slaveConnect(address, username, password);
             if (hostConn == null) {
                 continue;
             }
             try {
                 Set<Pool> pools = Pool.getAll(hostConn);
                 Pool pool = pools.iterator().next();
-                poolUuid1 = pool.getUuid(hostConn);
-                poolMaster = pool.getMaster(hostConn).getAddress(hostConn);
+                masterIp = pool.getMaster(hostConn).getAddress(hostConn);
                 break;
 
             } catch (Exception e ) {
                 s_logger.warn("Can not get master ip address from host " + address);
-            }
-            finally {
+            } finally {
                 try{
                     Session.localLogout(hostConn);
                 } catch (Exception e ) {
@@ -406,31 +353,15 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             }
         }
         
-        if (poolMaster == null) {
+        if (masterIp == null) {
             s_logger.warn("Unable to reach the pool master of the existing cluster");
             throw new CloudRuntimeException("Unable to reach the pool master of the existing cluster");
         }
         
-        Set<Pool> pools = Pool.getAll(conn);
-        Pool pool = pools.iterator().next();
-        String poolUuid2 = pool.getUuid(conn);
-        if (resources.size() > 1 && !poolUuid1.equals(poolUuid2)) {
-            s_logger.debug("Can't add a pool of servers into an existing pool");
-            throw new DiscoveryException("Can't add a pool of servers into an existing pool");
-        }
-        
-        if (poolUuid1.equals(poolUuid2)) {
-            s_logger.debug("The hosts that are discovered are already in the same pool as existing hosts");
-            return true;
-        }
-       
-        CitrixResourceBase resource = resources.keySet().iterator().next();
-        if (!resource.joinPool(poolMaster, username, password)) {
+        if( !XenServerConnectionPool.joinPool(conn, hostIp, masterIp, username, password) ){
             s_logger.warn("Unable to join the pool");
             throw new DiscoveryException("Unable to join the pool");
-        }
-        
-        
+        }   
         return true;
     }
     
