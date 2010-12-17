@@ -22,6 +22,7 @@
     initDialog("dialog_add_external_cluster");
     initDialog("dialog_add_host");
     initDialog("dialog_add_pool");
+    initDialog("dialog_add_vlan_for_pod");
     
     // if hypervisor is KVM, limit the server option to NFS for now
     if (getHypervisorType() == 'kvm') 
@@ -655,9 +656,7 @@ function initAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenu
     });             
 }
 
-function initAddPodVLANButton($button, $leftmenuItem1) {
-    initDialog("dialog_add_vlan_for_pod");
-
+function initAddPodVLANButton($button, $leftmenuItem1) {    
     $button.find("#label").text("Add Direct IP Range"); 
     $button.show();   
     $button.unbind("click").bind("click", function(event) {   

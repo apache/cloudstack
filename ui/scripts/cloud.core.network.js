@@ -62,6 +62,13 @@ function afterLoadNetworkJSP($leftmenuItem1) {
     var tabContentArray = [$directNetworkPage.find("#tab_content_details"), $directNetworkPage.find("#tab_content_ipallocation")];
     var afterSwitchFnArray = [directNetworkJsonToDetailsTab, directNetworkJsonToIpAllocationTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);    
+    
+    //initialize dialog
+    initDialog("dialog_add_iprange_to_publicnetwork");        
+    initDialog("dialog_add_external_firewall");        
+    initDialog("dialog_add_load_balancer");        
+    initDialog("dialog_add_network_for_zone");
+    initDialog("dialog_add_iprange_to_directnetwork");    
      
     networkPopulateMiddleMenu($leftmenuItem1);       
 }
@@ -370,8 +377,6 @@ var publicNetworkLoadBalancerActionMap = {
 function initAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {   
     var jsonObj = $midmenuItem1.data("jsonObj");      
     
-    initDialog("dialog_add_iprange_to_publicnetwork");    
-    
     var $dialogAddIpRangeToPublicNetwork = $("#dialog_add_iprange_to_publicnetwork"); 
          
     //***** binding Event Handler (begin) ******   
@@ -568,8 +573,6 @@ function initAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 function initAddExternalFirewallButton($button, $midmenuItem1) {         
     var jsonObj = $midmenuItem1.data("jsonObj");      
     
-    initDialog("dialog_add_external_firewall");    
-    
     var $dialogAddExternalFirewall = $("#dialog_add_external_firewall"); 
           
     $button.show();   
@@ -714,8 +717,6 @@ var publicNetworkIpRangeActionMap = {
 
 function initAddLoadBalancerButton($button, $midmenuItem1) {         
     var jsonObj = $midmenuItem1.data("jsonObj");      
-    
-    initDialog("dialog_add_load_balancer");    
     
     var $dialogAddLoadBalancer = $("#dialog_add_load_balancer"); 
           
@@ -999,8 +1000,6 @@ function initAddNetworkButton($button) {
     if(zoneObj == null)
         return;
     
-    initDialog("dialog_add_network_for_zone");
-    
     var $dialogAddNetworkForZone = $("#dialog_add_network_for_zone"); 
      
     //***** binding Event Handler (begin) ******    
@@ -1197,7 +1196,7 @@ function initAddNetworkButton($button) {
 
 function initAddIpRangeToDirectNetworkButton($button, $midmenuItem1) {   
     var jsonObj = $midmenuItem1.data("jsonObj");       
-    initDialog("dialog_add_iprange_to_directnetwork");        
+        
     var $dialogAddIpRangeToDirectNetwork = $("#dialog_add_iprange_to_directnetwork");     
   
     $dialogAddIpRangeToDirectNetwork.find("#directnetwork_name").text(fromdb(jsonObj.name));
