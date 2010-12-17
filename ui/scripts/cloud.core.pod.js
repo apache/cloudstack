@@ -330,7 +330,7 @@ function initAddClusterButton($button, currentPageInRightPanel, $leftmenuItem1) 
 					
 					    showMiddleMenu();
 					    
-                        clickClusterNodeAfterAddHost(clusterRadio, podId, clusterName, null, $thisDialog);
+                        clickClusterNodeAfterAddHost("new_cluster_radio", podId, hostname + "/" + dcName + "/" + clusterName, null, $thisDialog);
 			        },			
                     error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {							
