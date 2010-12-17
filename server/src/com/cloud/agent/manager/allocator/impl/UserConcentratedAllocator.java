@@ -29,7 +29,9 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.manager.allocator.PodAllocator;
+import com.cloud.alert.AlertManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -73,15 +75,10 @@ public class UserConcentratedAllocator implements PodAllocator {
     @Inject CapacityDao _capacityDao;
     @Inject ConfigurationDao _configDao;
     @Inject VMInstanceDao _vmInstanceDao;
+    @Inject AlertManager _alertMgr = null;
     
     Random _rand = new Random(System.currentTimeMillis());
-    private final GlobalLock m_capacityCheckLock = GlobalLock.getInternLock("capacity.check");
-    private int _hoursToSkipStoppedVMs = 24;
-    
-    private int _secStorageVmRamSize = 1024;
-    private int _proxyRamSize =  256;
-    private int _routerRamSize = 128;
-
+ 
     @Override
     public Pair<HostPodVO, Long> allocateTo(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO zone, long accountId, Set<Long> avoids) {
     	long zoneId = zone.getId();
@@ -172,7 +169,7 @@ public class UserConcentratedAllocator implements PodAllocator {
                     // for CPU/Memory, we now switch to static allocation
                     //
                     if ((capacity.getTotalCapacity() -
-                            calcHostAllocatedCpuMemoryCapacity(capacity.getHostOrPoolId(), capacityType)) >= capacityNeeded) {
+                            _alertMgr.calcHostAllocatedCpuMemoryCapacity(capacity.getHostOrPoolId(), capacityType)) >= capacityNeeded) {
 
                         hostCandidate[0] = capacity.getHostOrPoolId();
                         enoughCapacity = true;
@@ -188,82 +185,7 @@ public class UserConcentratedAllocator implements PodAllocator {
             }
         }
         return enoughCapacity;
-    }
-    
-    private boolean skipCalculation(VMInstanceVO vm) {
-    	if(vm.getState() == State.Expunging) {
-    		if(s_logger.isDebugEnabled())
-    			s_logger.debug("Skip counting capacity for Expunging VM : " + vm.getInstanceName());
-    		return true;
-    	}
-    	
-    	if(vm.getState() == State.Destroyed && vm.getType() != VirtualMachine.Type.User)
-    		return true;
-    	
-    	if(vm.getState() == State.Stopped || vm.getState() == State.Destroyed) {
-    		// for stopped/Destroyed VMs, we will skip counting it if it hasn't been used for a while
-    		
-    		long millisecondsSinceLastUpdate = DateUtil.currentGMTTime().getTime() - vm.getUpdateTime().getTime();
-    		if(millisecondsSinceLastUpdate > _hoursToSkipStoppedVMs*3600000L) {
-    			if(s_logger.isDebugEnabled())
-    				s_logger.debug("Skip counting vm " + vm.getInstanceName() + " in capacity allocation as it has been stopped for " + millisecondsSinceLastUpdate/60000 + " minutes");
-    			return true;
-    		}
-    	}
-    	return false;
-    }
-    
-    /**
-     * 
-     * @param hostId Host id to calculate against
-     * @param capacityType CapacityVO.CAPACITY_TYPE_MEMORY or CapacityVO.CAPACITY_TYPE_CPU
-     * @return
-     */
-    private long calcHostAllocatedCpuMemoryCapacity(long hostId, short capacityType) {
-        assert(capacityType == CapacityVO.CAPACITY_TYPE_MEMORY || capacityType == CapacityVO.CAPACITY_TYPE_CPU) : "Invalid capacity type passed in calcHostAllocatedCpuCapacity()";
-    	
-        List<VMInstanceVO> vms = _vmInstanceDao.listByLastHostId(hostId);
-        long usedCapacity = 0;
-        for (VMInstanceVO vm : vms) {
-        	if(skipCalculation(vm))
-        		continue;
-        	
-            ServiceOffering so = null;
-        	if(vm.getType() == VirtualMachine.Type.User) {
-        		UserVmVO userVm = _vmDao.findById(vm.getId());
-        		if (userVm == null) {
-        		    continue;
-        		}
-        		so = _offeringDao.findById(userVm.getServiceOfferingId());
-        	} else if(vm.getType() == VirtualMachine.Type.ConsoleProxy) {
-        		so = new ServiceOfferingVO("Fake Offering For DomP", 1,
-    				_proxyRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
-        	} else if(vm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
-        		so = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
-        	} else if(vm.getType() == VirtualMachine.Type.DomainRouter) {
-                so = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
-        	} else {
-        		assert(false) : "Unsupported system vm type";
-                so = new ServiceOfferingVO("Fake Offering For unknow system VM", 1, 128, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
-        	}
-            
-            if(capacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {
-            	usedCapacity += so.getRamSize() * 1024L * 1024L;
-            	
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Counting memory capacity used by vm: " + vm.getId() + ", size: " + so.getRamSize() + "MB, host: " + hostId + ", currently counted: " + usedCapacity + " Bytes");
-                }
-            } else if(capacityType == CapacityVO.CAPACITY_TYPE_CPU) {
-            	usedCapacity += so.getCpu() * so.getSpeed();
-            	
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Counting cpu capacity used by vm: " + vm.getId() + ", cpu: " + so.getCpu() + ", speed: " + so.getSpeed() + ", currently counted: " + usedCapacity + " Bytes");
-                }
-            }
-        }
-        
-    	return usedCapacity;
-    }
+    }    
     
     private boolean templateAvailableInPod(long templateId, long dcId, long podId) {
         return true;
@@ -304,17 +226,7 @@ public class UserConcentratedAllocator implements PodAllocator {
     
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _name = name;
-        
-		Map<String, String> configs = _configDao.getConfiguration("management-server", params);
-		String value = configs.get("capacity.skipcounting.hours");
-		_hoursToSkipStoppedVMs = NumbersUtil.parseInt(value, 24);
-
-		// TODO this is not good, there should be one place to get these values
-		_secStorageVmRamSize = NumbersUtil.parseInt(configs.get("secstorage.vm.ram.size"), 256);
-        _routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), 128);
-		_proxyRamSize = NumbersUtil.parseInt(configs.get("consoleproxy.ram.size"), 1024);
-        
+        _name = name;                
 /*
         ComponentLocator locator = ComponentLocator.getCurrentLocator();
         _vmDao = locator.getDao(UserVmDao.class);
