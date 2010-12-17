@@ -10,7 +10,6 @@
 # If [source path] starts with '~', then it is path relative to management server home directory.
 # If [source path] does not start with '/' or '~', then it is relative path to the location of the patch file. 
 scsiutil.py=/opt/xensource/sm
-cleanup.py=/opt/xensource/sm
 NFSSR.py=/opt/xensource/sm
 ISCSISR.py=/opt/xensource/sm
 LUNperVDI.py=/opt/xensource/sm
