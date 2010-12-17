@@ -28,11 +28,12 @@ import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
@@ -103,8 +104,9 @@ public interface DomainRouterManager extends Manager {
 	
 	DomainRouterVO addVirtualMachineIntoNetwork(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, ReservationContext context, Boolean startDhcp) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException;
     
-    boolean associateIP (Network network, List<? extends IpAddress> ipAddress);
+    boolean associateIP (Network network, List<? extends PublicIpAddress> ipAddress);
     
     boolean applyLBRules(Network network, List<? extends FirewallRule> rules);
     boolean applyPortForwardingRules(Network network, List<? extends FirewallRule> rules);
+    
 }

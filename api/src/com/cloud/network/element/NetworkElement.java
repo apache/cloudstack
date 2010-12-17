@@ -10,8 +10,8 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.network.PublicIpAddress;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.Adapter;
@@ -76,7 +76,7 @@ public interface NetworkElement extends Adapter {
      * @return
      * @throws ResourceUnavailableException
      */
-    boolean applyIps(Network network, List<? extends IpAddress> ipAddress) throws ResourceUnavailableException;
+    boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException;
     
     /**
      * Apply rules

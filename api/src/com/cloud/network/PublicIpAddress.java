@@ -15,14 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.network.lb;
+package com.cloud.network;
 
-import java.util.List;
+import com.cloud.acl.ControlledEntity;
 
-import com.cloud.network.lb.LoadBalancingRule.LbDestination;
-import com.cloud.utils.net.Ip;
+/**
+ * PublicIp is a combo object of IPAddressVO and VLAN information.
+ */
 
-public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
-    boolean removeAllLoadBalanacers(Ip ip);
-    List<LbDestination> getExistingDestinations(long lbId);
+public interface PublicIpAddress extends ControlledEntity, IpAddress{
+    
+    String getMacAddress();
+    
+    public String getNetmask();
+    
+    public String getGateway();
+    
+    public String getVlanTag();
 }

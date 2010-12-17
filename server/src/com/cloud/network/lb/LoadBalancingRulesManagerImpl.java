@@ -184,7 +184,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     }
     
 
-    @Override @DB
+    @Override
     public boolean removeFromLoadBalancer(long loadBalancerId, List<Long> instanceIds) {
         UserContext caller = UserContext.current();
 
@@ -375,7 +375,8 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         return true;
     }
     
-    private List<LbDestination> getExistingDestinations(long lbId) {
+    @Override
+    public List<LbDestination> getExistingDestinations(long lbId) {
         List<LbDestination> dstList = new ArrayList<LbDestination>();
         List<LoadBalancerVMMapVO> lbVmMaps = _lb2VmMapDao.listByLoadBalancerId(lbId);
         LoadBalancerVO lb = _lbDao.findById(lbId);

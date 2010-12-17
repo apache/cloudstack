@@ -19,89 +19,20 @@ package com.cloud.agent.api.routing;
 
 import java.util.List;
 
-import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.agent.api.to.LoadBalancerTO;
 
 /**
  * LoadBalancerConfigCommand sends the load balancer configuration
  * to the load balancer.  Isn't that kinda obvious?
  */
 public class LoadBalancerConfigCommand extends RoutingCommand {
-    String srcIp;
-    int srcPort;
-    String protocol;
-    String algorithm;    
-    boolean revoked;
-    boolean alreadyAdded;
-    DestinationTO[] destinations;
+    List<LoadBalancerTO> loadBalancers;
     
-    public LoadBalancerConfigCommand(String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, List<LbDestination> destinations) {
-    	this.srcIp = srcIp;
-    	this.srcPort = srcPort;
-    	this.protocol = protocol;
-    	this.algorithm = algorithm;    	
-    	this.revoked = revoked;
-    	this.alreadyAdded = alreadyAdded;
-    	this.destinations = new DestinationTO[destinations.size()];
-    	int i = 0;
-    	for (LbDestination destination : destinations) {
-    		this.destinations[i++] = new DestinationTO(destination.getIpAddress(), destination.getDestinationPortStart(), destination.isRevoked(), false);
-    	}
-    }
-    
-    public String getSrcIp() {
-        return srcIp;
+    public LoadBalancerConfigCommand(List<LoadBalancerTO> loadBalancers) {
+    	this.loadBalancers = loadBalancers;
     }
 
-    public int getSrcPort() {
-        return srcPort;
-    }
-    
-    public String getAlgorithm() {
-    	return algorithm;
-    }
-
-    public String getProtocol() {
-        return protocol;
-    }
-
-    public boolean isRevoked() {
-        return revoked;
-    }
-
-    public boolean isAlreadyAdded() {
-        return alreadyAdded;
-    }
-    
-    public DestinationTO[] getDestinations() {
-    	return destinations;
-    }
-
-    public class DestinationTO {
-        String destIp;
-        int destPort;
-        boolean revoked;
-        boolean alreadyAdded;
-        public DestinationTO(String destIp, int destPort, boolean revoked, boolean alreadyAdded) {
-            this.destIp = destIp;
-            this.destPort = destPort;
-            this.revoked = revoked;
-            this.alreadyAdded = alreadyAdded;
-        }
-        
-        public String getDestIp() {
-            return destIp;
-        }
-        
-        public int getDestPort() {
-            return destPort;
-        }
-        
-        public boolean isRevoked() {
-            return revoked;
-        }
-
-        public boolean isAlreadyAdded() {
-            return alreadyAdded;
-        }
+    public List<LoadBalancerTO> getLoadBalancers() {
+        return loadBalancers;
     }
 }

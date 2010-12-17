@@ -17,6 +17,7 @@
  */
 package com.cloud.network.element;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -30,10 +31,15 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.IpAddress;
+import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.PublicIpAddress;
+import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.DomainRouterManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -60,12 +66,14 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     
     @Inject NetworkDao _networkConfigDao;
     @Inject NetworkManager _networkMgr;
+    @Inject LoadBalancingRulesManager _lbMgr;
     @Inject NetworkOfferingDao _networkOfferingDao;
     @Inject DomainRouterManager _routerMgr;
     @Inject UserVmManager _userVmMgr;
     @Inject UserVmDao _userVmDao;
     @Inject DomainRouterDao _routerDao;
     @Inject DataCenterDao _dataCenterDao;
+    @Inject LoadBalancerDao _lbDao;
     
     
     private boolean canHandle(GuestIpType ipType, DataCenter dc) {
@@ -123,7 +131,16 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
         if (canHandle(config.getGuestType(),dc)) {
             if (rules != null && !rules.isEmpty()) {
                 if (rules.get(0).getPurpose() == Purpose.LoadBalancing) {
-                    return _routerMgr.applyLBRules(config, rules);
+                    //for load balancer we have to resend all lb rules for the network
+                    List<LoadBalancerVO> lbs = _lbDao.listByNetworkId(config.getId());
+                    List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
+                    for (LoadBalancerVO lb : lbs) {
+                        List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
+                        LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
+                        lbRules.add(loadBalancing);
+                    }
+                    
+                    return _routerMgr.applyLBRules(config, lbRules);
                 } else if (rules.get(0).getPurpose() == Purpose.PortForwarding) {
                     return _routerMgr.applyPortForwardingRules(config, rules);
                 }
@@ -135,7 +152,7 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean applyIps(Network network, List<? extends IpAddress> ipAddress) throws ResourceUnavailableException {
+    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
         DataCenter dc = _dataCenterDao.findById(network.getDataCenterId());
         if (canHandle(network.getGuestType(),dc)) {
             return _routerMgr.associateIP(network, ipAddress);

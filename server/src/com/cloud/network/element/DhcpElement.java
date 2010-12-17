@@ -29,9 +29,9 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.DomainRouterManager;
 import com.cloud.network.rules.FirewallRule;
@@ -122,7 +122,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean applyIps(Network network, List<? extends IpAddress> ipAddress) throws ResourceUnavailableException {
+    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
         return true;
     }
 }

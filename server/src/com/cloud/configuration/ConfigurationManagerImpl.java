@@ -1775,17 +1775,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 				otherVlanEndIP = otherVlanIpRange[1];
 			}
 			
-			if (!vlanId.equals(vlan.getVlanId()) && newVlanSubnet.equals(otherVlanSubnet)) {
-				throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanId() + " in zone " + zone.getName() + " has the same subnet. Please specify a different gateway/netmask.");
+			if (!vlanId.equals(vlan.getVlanTag()) && newVlanSubnet.equals(otherVlanSubnet)) {
+				throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag() + " in zone " + zone.getName() + " has the same subnet. Please specify a different gateway/netmask.");
 			}
 			
-			if (vlanId.equals(vlan.getVlanId()) && newVlanSubnet.equals(otherVlanSubnet)) {
+			if (vlanId.equals(vlan.getVlanTag()) && newVlanSubnet.equals(otherVlanSubnet)) {
 				if (NetUtils.ipRangesOverlap(startIP, endIP, otherVlanStartIP, otherVlanEndIP)) {
-					throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanId() + " already has IPs that overlap with the new range. Please specify a different start IP/end IP.");
+					throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag() + " already has IPs that overlap with the new range. Please specify a different start IP/end IP.");
 				}
 				
 				if (!vlanGateway.equals(otherVlanGateway)) {
-					throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanId() + " has already been added with gateway " + otherVlanGateway + ". Please specify a different tag.");
+					throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag() + " has already been added with gateway " + otherVlanGateway + ". Please specify a different tag.");
 				}
 			}
 		}
@@ -1966,14 +1966,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 			String[] ipRange = vlan.getIpRange().split("\\-");
 			String startIP = ipRange[0];
 			String endIP = (ipRange.length > 1) ? ipRange[1] : null;
-			String eventMsg = "Successfully deleted IP range (tag = " + vlan.getVlanId() + ", gateway = " + vlan.getVlanGateway() + ", netmask = " + vlan.getVlanNetmask() + ", start IP = " + startIP;
+			String eventMsg = "Successfully deleted IP range (tag = " + vlan.getVlanTag() + ", gateway = " + vlan.getVlanGateway() + ", netmask = " + vlan.getVlanNetmask() + ", start IP = " + startIP;
 			if (endIP != null) {
 				eventMsg += ", end IP = " + endIP;
 			}
 			eventMsg += ".";
 			saveConfigurationEvent(userId, null, EventTypes.EVENT_VLAN_IP_RANGE_DELETE, eventMsg, "vlanType=" + vlan.getVlanType(), "dcId=" + vlan.getDataCenterId(),
 																												"accountId=" + accountId, "podId=" + podId,
-																												"vlanId=" + vlan.getVlanId(), "vlanGateway=" + vlan.getVlanGateway(),
+																												"vlanId=" + vlan.getVlanTag(), "vlanGateway=" + vlan.getVlanGateway(),
 																												"vlanNetmask=" + vlan.getVlanNetmask(), "startIP=" + startIP,
 																												"endIP=" + endIP);
 		}

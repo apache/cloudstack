@@ -37,7 +37,7 @@ public class VlanVO implements Vlan {
 	Long id;
 	
 	@Column(name="vlan_id") 
-	String vlanId;
+	String vlanTag;
 	
 	@Column(name="vlan_gateway") 
 	String vlanGateway;
@@ -60,7 +60,7 @@ public class VlanVO implements Vlan {
 	
 	public VlanVO(VlanType vlanType, String vlanTag, String vlanGateway, String vlanNetmask, long dataCenterId, String ipRange, Long networkId) {
 		this.vlanType = vlanType;
-		this.vlanId = vlanTag;
+		this.vlanTag = vlanTag;
 		this.vlanGateway = vlanGateway;
 		this.vlanNetmask = vlanNetmask;
 		this.dataCenterId = dataCenterId;
@@ -72,12 +72,12 @@ public class VlanVO implements Vlan {
 		
 	}
 	
-	public Long getId() {
+	public long getId() {
 		return id;
 	}
 	
-	public String getVlanId() {
-		return vlanId;
+	public String getVlanTag() {
+		return vlanTag;
 	}
 
 	public String getVlanGateway() {

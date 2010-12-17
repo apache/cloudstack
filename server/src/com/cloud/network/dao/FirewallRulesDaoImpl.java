@@ -51,6 +51,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), Op.EQ);
         AllFieldsSearch.and("domain", AllFieldsSearch.entity().getDomainId(), Op.EQ);
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
+        AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
         AllFieldsSearch.done();
         
         
@@ -69,7 +70,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         
         return listBy(sc);
     }
-    
+
     @Override
     public boolean setStateToAdd(FirewallRuleVO rule) {
         SearchCriteria<FirewallRuleVO> sc = AllFieldsSearch.create();

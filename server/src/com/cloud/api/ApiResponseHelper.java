@@ -548,7 +548,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         VlanIpRangeResponse vlanResponse = new VlanIpRangeResponse();
         vlanResponse.setId(vlan.getId());
         vlanResponse.setForVirtualNetwork(vlan.getVlanType().equals(VlanType.VirtualNetwork));
-        vlanResponse.setVlan(vlan.getVlanId());
+        vlanResponse.setVlan(vlan.getVlanTag());
         vlanResponse.setZoneId(vlan.getDataCenterId());
 
         if (podId != null) {
@@ -617,7 +617,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         Account account = UserContext.current().getAccount();
         if ((account == null) || account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
             ipResponse.setVlanId(ipAddress.getVlanId());
-            ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanId()).getVlanId());
+            ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanId()).getVlanTag());
         }
         ipResponse.setObjectName("ipaddress");
         return ipResponse;
@@ -2178,7 +2178,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setEndIp(range[1]);
             response.setGateway(singleVlan.getVlanGateway());
             response.setNetmask(singleVlan.getVlanNetmask());
-            response.setVlan(singleVlan.getVlanId());
+            response.setVlan(singleVlan.getVlanTag());
         }
         
         response.setZoneId(network.getDataCenterId());

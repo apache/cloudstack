@@ -27,7 +27,6 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.domain.DomainVO;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -52,6 +51,7 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
     protected LoadBalancerDaoImpl() {
         ListByIp  = createSearchBuilder();
         ListByIp.and("ipAddress", ListByIp.entity().getSourceIpAddress(), SearchCriteria.Op.EQ);
+        ListByIp.and("networkId", ListByIp.entity().getNetworkId(), SearchCriteria.Op.EQ);
         ListByIp.done();
 
         IpAndPublicPortSearch = createSearchBuilder();
@@ -90,6 +90,13 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
     public List<LoadBalancerVO> listByIpAddress(String ipAddress) {
         SearchCriteria<LoadBalancerVO> sc = ListByIp.create();
         sc.setParameters("ipAddress", ipAddress);
+        return listBy(sc);
+    }
+    
+    @Override
+    public List<LoadBalancerVO> listByNetworkId(long networkId) {
+        SearchCriteria<LoadBalancerVO> sc = ListByIp.create();
+        sc.setParameters("networkId", networkId);
         return listBy(sc);
     }
 

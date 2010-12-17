@@ -26,9 +26,9 @@ public interface Vlan {
 	
 	public final static String UNTAGGED = "untagged";
 
-	public Long getId();
+	public long getId();
 
-	public String getVlanId();
+	public String getVlanTag();
 
 	public String getVlanGateway();
 

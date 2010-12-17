@@ -76,7 +76,7 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
 
     @Override
     public String getProtocol() {
-        return null;
+        return lb.getProtocol();
     }
     
     @Override

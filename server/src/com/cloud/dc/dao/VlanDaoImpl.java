@@ -79,7 +79,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     public VlanDaoImpl() {
     	ZoneVlanIdSearch = createSearchBuilder();
     	ZoneVlanIdSearch.and("zoneId", ZoneVlanIdSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        ZoneVlanIdSearch.and("vlanId", ZoneVlanIdSearch.entity().getVlanId(), SearchCriteria.Op.EQ);
+        ZoneVlanIdSearch.and("vlanId", ZoneVlanIdSearch.entity().getVlanTag(), SearchCriteria.Op.EQ);
         ZoneVlanIdSearch.done();
         
         ZoneSearch = createSearchBuilder();
@@ -222,7 +222,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
 		// Try to find an empty VLAN with the same tag/subnet as a VLAN that is full
 		for (VlanVO fullVlan : fullVlans) {
 			for (VlanVO emptyVlan : emptyVlans) {
-				if (fullVlan.getVlanId().equals(emptyVlan.getVlanId()) && 
+				if (fullVlan.getVlanTag().equals(emptyVlan.getVlanTag()) && 
 					fullVlan.getVlanGateway().equals(emptyVlan.getVlanGateway()) &&
 					fullVlan.getVlanNetmask().equals(emptyVlan.getVlanNetmask())) {
 					return emptyVlan;

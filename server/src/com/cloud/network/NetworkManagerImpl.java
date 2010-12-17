@@ -92,6 +92,7 @@ import com.cloud.network.Networks.Availability;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
@@ -181,6 +182,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject DomainRouterManager _routerMgr;
     @Inject RulesManager _rulesMgr;
     @Inject LoadBalancingRulesManager _lbMgr;
+    @Inject FirewallRulesDao _firewallRulesDao;
 
     @Inject(adapter=NetworkGuru.class)
     Adapters<NetworkGuru> _networkGurus;
@@ -372,7 +374,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             for (final IPAddressVO ip: ipList) {
                 sourceNat = ip.isSourceNat();
                 VlanVO vlan = vlanAndIp.getKey();
-                String vlanId = vlan.getVlanId();
+                String vlanId = vlan.getVlanTag();
                 String vlanGateway = vlan.getVlanGateway();
                 String vlanNetmask = vlan.getVlanNetmask();
 
@@ -455,11 +457,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     public boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException {
         List<IPAddressVO> userIps = _ipAddressDao.listByNetwork(network.getId());
-        
+        List<PublicIp> publicIps = new ArrayList<PublicIp>();
+        if (userIps != null && !userIps.isEmpty()) {
+            for (IPAddressVO userIp : userIps) {
+                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), userIp.getMacAddress());
+                publicIps.add(publicIp);
+            }
+        }
+     
         boolean success = true;
         for (NetworkElement element : _networkElements) {
             try {
-                element.applyIps(network, userIps);
+                element.applyIps(network, publicIps);
             } catch (ResourceUnavailableException e) {
                 success = false;
                 if (!continueOnError) {
@@ -2049,8 +2058,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
     
-    
-    
     @Override
     public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException{
         String accountName = cmd.getAccountName();
@@ -2082,5 +2089,4 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         return success;
     }
-
 }
