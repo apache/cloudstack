@@ -756,10 +756,7 @@
 <!-- advanced search template (begin) -->
 <div id="advanced_search_template" class="adv_searchpopup" style="display: none;">
 	<div class="adv_searchpopup_top">
-    	<div class="adv_searchpopup_topbuttonbox">
-        	<div class="adv_searchpopup_highlighted_advancesearch"><p>Advanced</p></div>
-        </div>
-        <div class="adv_searchpopup_topheaderbox"><h2>Advance Search</h2></div>
+    	<h2>Advance Search</h2>
     </div>
     
     <div class="adv_searchpopup_mid">

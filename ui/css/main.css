@@ -1744,6 +1744,38 @@ a:hover {
 	list-style:none
 }
 
+.searchpanel_advancebutton {
+	width:55px;
+	height:12px;
+	float:left;
+	margin:0;
+	padding:7px 0 0 0;
+	color:#FFF;
+	font-size:10px;
+	text-align:left;
+	font-weight:normal;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.searchpanel_advancebutton.off {
+	color:#FFF;
+}
+
+.searchpanel_advancebutton.on {
+	background: url(../images/advance_highlighted.gif) no-repeat top left;
+	color:#333;
+}
+
+.adv_searchpopup_highlighted_advancesearch {
+	width:55px;
+	height:19px;
+	float:right;
+	background: url(../images/advance_highlighted.gif) no-repeat top left;
+	margin:0 57px 0 0;
+	padding:0;
+}
+
 .searchpanel a{
 	width:40px;
 	color:#FFF;
@@ -1817,7 +1849,7 @@ a:hover {
 	height:auto;
 	float:left;
 	position:absolute;
-	top:5px;
+	top:22px;
 	left:8px;
 	margin:0;
 	padding:0;
@@ -1826,52 +1858,16 @@ a:hover {
 
 .adv_searchpopup_top {
 	width:268px;
-	height:40px;
-	float:left;
-	margin:0;
-	padding:0;
-	overflow:hidden;
-}
-
-.adv_searchpopup_topbuttonbox {
-	width:268px;
-	height:19px;
-	float:left;
-	margin:0;
-	padding:0;
-}
-
-.adv_searchpopup_highlighted_advancesearch {
-	width:55px;
-	height:19px;
-	float:right;
-	background: url(../images/advance_highlighted.gif) no-repeat top left;
-	margin:0 57px 0 0;
-	padding:0;
-}
-
-.adv_searchpopup_highlighted_advancesearch p{
-	width:auto;
-	height:auto;
-	float:left;
-	font-size:10px;
-	text-align:left;
-	color:#333;
-	font-weight:normal;
-	margin:3px 0 0 5px;
-	display:inline;
-	padding:0;
-}
-.adv_searchpopup_topheaderbox {
-	width:268px;
 	height:21px;
 	float:left;
 	background: url(../images/advancesearchpopup_top.png) no-repeat top left;
 	margin:0;
 	padding:0;
+	overflow:hidden;
 }
 
-.adv_searchpopup_topheaderbox h2{
+
+.adv_searchpopup_top h2{
 	width:200px;
 	height:auto;
 	float:left;
