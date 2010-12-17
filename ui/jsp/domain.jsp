@@ -218,7 +218,7 @@
         </div>
     </div>
     <!-- Resource Limits tab (start)-->    
-</div>
+
 <!-- domain detail panel (end) -->
 
 <!-- admin account tab template (begin) -->
