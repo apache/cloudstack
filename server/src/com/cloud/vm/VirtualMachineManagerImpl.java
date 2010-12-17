@@ -415,6 +415,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
             } catch (InsufficientCapacityException e) {
                 s_logger.warn("Insufficient capacity ", e);
                 avoids.add(e);
+                continue;
             }
             
             vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, context);
