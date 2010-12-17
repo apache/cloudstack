@@ -23,7 +23,9 @@
     initDialog("dialog_add_pod", 320); 
     initDialog("dialog_add_vlan_for_zone");
     initDialog("dialog_add_secondarystorage"); 
-    initDialog("dialog_confirmation_delete_secondarystorage"); 
+    initDialog("dialog_confirmation_delete_secondarystorage");     
+    initDialog("dialog_add_host_in_zone_page"); 
+	initDialog("dialog_add_pool_in_zone_page");
     
     // If the network type is vnet, don't show any vlan stuff.
     bindEventHandlerToDialogAddVlanForZone();	        
@@ -1079,10 +1081,8 @@ function initAddClusterButtonOnZonePage($button, zoneId, zoneName) {
 
 function initAddHostButtonOnZonePage($button, zoneId, zoneName) {
     $button.show();
-    
-    initDialog("dialog_add_host_in_zone_page");    
-    var $dialogAddHost = $("#dialog_add_host_in_zone_page");    
-    
+   
+    var $dialogAddHost = $("#dialog_add_host_in_zone_page");   
     var $podSelect = $dialogAddHost.find("#pod_dropdown");
         
     $podSelect.bind("change", function(event) {	        	   
@@ -1229,7 +1229,6 @@ function initAddHostButtonOnZonePage($button, zoneId, zoneName) {
 function initAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
     $button.show();
 
-	initDialog("dialog_add_pool_in_zone_page");
 	var $dialogAddPool = $("#dialog_add_pool_in_zone_page");    
 	
     // if hypervisor is KVM, limit the server option to NFS for now
