@@ -51,6 +51,9 @@ public class ListSecurityGroupsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="lists security groups by virtual machine id")
     private Long virtualMachineId;
 
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list the security group by the id provided")
+    private Long id;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -69,6 +72,10 @@ public class ListSecurityGroupsCmd extends BaseListCmd {
 
     public Long getVirtualMachineId() {
         return virtualMachineId;
+    }
+    
+    public Long getId(){
+    	return id;
     }
 
     /////////////////////////////////////////////////////

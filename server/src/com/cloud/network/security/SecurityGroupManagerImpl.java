@@ -1203,6 +1203,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         Long instanceId = cmd.getVirtualMachineId();
         String networkGroup = cmd.getSecurityGroupName();
         Boolean recursive = Boolean.FALSE;
+        Long id = cmd.getId();
 
         // permissions check
         if ((account == null) || isAdmin(account.getType())) {
@@ -1253,6 +1254,15 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             }
         }
 
+        List<SecurityGroupRulesVO> securityRulesList = new ArrayList<SecurityGroupRulesVO>();
+        
+        if(id != null){
+        	SecurityGroupRulesVO secGrp = _securityGroupRulesDao.findById(id); 
+        	if(secGrp != null)
+        		securityRulesList.add(secGrp);
+        	return securityRulesList;
+        }
+        
         Filter searchFilter = new Filter(SecurityGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         Object keyword = cmd.getKeyword();
 
@@ -1288,20 +1298,19 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             }
         }
         
-        List<SecurityGroupVO> networkGroups = _securityGroupDao.search(sc, searchFilter);
-        List<SecurityGroupRulesVO> networkRulesList = new ArrayList<SecurityGroupRulesVO>();
-        for (SecurityGroupVO group : networkGroups) {
-           networkRulesList.addAll(_securityGroupRulesDao.listSecurityRulesByGroupId(group.getId()));
+        List<SecurityGroupVO> securityGroups = _securityGroupDao.search(sc, searchFilter);
+        for (SecurityGroupVO group : securityGroups) {
+           securityRulesList.addAll(_securityGroupRulesDao.listSecurityRulesByGroupId(group.getId()));
         }
         
        if (instanceId != null) {
-            return listNetworkGroupRulesByVM(instanceId.longValue());
+            return listSecurityGroupRulesByVM(instanceId.longValue());
        } 
        
-        return networkRulesList;
+        return securityRulesList;
     }
 
-	private List<SecurityGroupRulesVO> listNetworkGroupRulesByVM(long vmId) {
+	private List<SecurityGroupRulesVO> listSecurityGroupRulesByVM(long vmId) {
 	    List<SecurityGroupRulesVO> results = new ArrayList<SecurityGroupRulesVO>();
 	    List<SecurityGroupVMMapVO> networkGroupMappings = _securityGroupVMMapDao.listByInstanceId(vmId);
 	    if (networkGroupMappings != null) {
