@@ -998,7 +998,7 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
 
 var currentLeftMenuId;
 var currentContext = null;
-function listMidMenuItems(context, commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, leftmenuId) { 
+function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, leftmenuId) { 
 	clearMiddleMenu();
 	showMiddleMenu();	
 	$("#midmenu_container").hide();
@@ -1009,7 +1009,7 @@ function listMidMenuItems(context, commandString, getSearchParamsFn, jsonRespons
 	    $("#"+leftmenuId).click();
 	});
 
-	if (context != currentContext) {
+	if (rightPanelJSP != currentContext) {
 		$("#right_panel").load(rightPanelJSP, function(){     
 			var $actionLink = $("#right_panel_content #tab_content_details #action_link");
 			$actionLink.bind("mouseover", function(event) {	    
@@ -1024,7 +1024,7 @@ function listMidMenuItems(context, commandString, getSearchParamsFn, jsonRespons
 			clearAddButtonsOnTop();
 			afterLoadRightPanelJSPFn();                
 			listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, 1);            
-			currentContext = context;
+			currentContext = rightPanelJSP;
 		});     
 	} else {
 		listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, 1);        
@@ -1032,10 +1032,10 @@ function listMidMenuItems(context, commandString, getSearchParamsFn, jsonRespons
 	return false;
 }
 
-function bindAndListMidMenuItems(context, $leftmenu, commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu) {	
+function bindAndListMidMenuItems($leftmenu, commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu) {	
 	$leftmenu.bind("click", function(event) {
 		selectLeftSubMenu($(this));		
-        listMidMenuItems(context, commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, $(this).attr("id"));
+        listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, $(this).attr("id"));
         return false;
     });
 }
