@@ -18,5 +18,5 @@ Update configuration set name='storage.max.volume.size' where name='max.volume.s
 INSERT INTO sequence (name, value)
     VALUES ('snapshots_seq', '1')
 UPDATE cloud.sequence SET value=IF((SELECT COUNT(*) FROM cloud.snapshots)  > 0, (SELECT max(id) FROM cloud.snapshots) + 1, 1) WHERE name='snapshots_seq'
-
+UPDATE configuration set name='direct.attach.security.groups.enabled' where name='direct.attach.network.groups.enabled';
 COMMIT;
