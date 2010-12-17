@@ -1462,7 +1462,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 
         //check if the given account name is unique in this domain for updating
         Account duplicateAcccount = _accountDao.findAccount(newAccountName, domainId);
-        if(duplicateAcccount != null && duplicateAcccount.getId() != account.getId()){//allow same account to update itself
+        if(duplicateAcccount != null && duplicateAcccount.getRemoved() == null && duplicateAcccount.getId() != account.getId()){//allow same account to update itself
             throw new PermissionDeniedException("There already exists an account with the name:"+newAccountName+" in the domain:"+domainId+" with existing account id:"+duplicateAcccount.getId());
         }
                 
