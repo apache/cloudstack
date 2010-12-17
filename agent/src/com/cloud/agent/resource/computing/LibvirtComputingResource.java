@@ -113,6 +113,7 @@ import com.cloud.agent.api.SecurityIngressRuleAnswer;
 import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
+import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
@@ -227,6 +228,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _manageSnapshotPath;
     private String _createTmplPath;
     private String _heartBeatPath;
+    private String _securityGroupPath;
     private String _host;
     private String _dcId;
     private String _pod;
@@ -616,6 +618,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find the createtmplt.sh");
         }
         
+        _securityGroupPath = Script.findScript(networkScriptsDir, "security_group.py");
+        if (_securityGroupPath == null) {
+        	throw new ConfigurationException("Unable to find the security_group.py");
+        }
+        
 		String value = (String)params.get("developer");
         boolean isDeveloper = Boolean.parseBoolean(value);
         
@@ -754,8 +761,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
  			}
  		}
 		
-		//_can_bridge_firewall = can_bridge_firewall();
-		
 		Network vmopsNw = null;
 		try {
 			 vmopsNw = _conn.networkLookupByName(_privNwName);
@@ -801,6 +806,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			throw new ConfigurationException("Failed to get public nic name");
 		}
 		s_logger.debug("Found pif: " + _pifs.first() + " on " + _privBridgeName + ", pif: " + _pifs.second() + " on " + _publicBridgeName);
+		
+		
+		_can_bridge_firewall = can_bridge_firewall(_pifs.second());
 		
 		_localGateway = Script.runSimpleBashScript("ip route |grep default|awk '{print $3}'");
 		if (_localGateway == null) {
@@ -1776,8 +1784,22 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	}
         return answer;
     }
+
     private Answer execute(SecurityIngressRulesCmd cmd) {
-    	 return new SecurityIngressRuleAnswer(cmd);
+    	boolean result = add_network_rules(cmd.getVmName(),
+    			Long.toString(cmd.getVmId()), 
+    			cmd.getGuestIp(),cmd.getSignature(), 
+    			Long.toString(cmd.getSeqNum()), 
+    			cmd.getGuestMac(), 
+    			cmd.stringifyRules());
+
+    	if (!result) {
+    		s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
+    		return SecurityIngressRuleAnswer(cmd, false, "programming network rules failed");
+    	} else {
+    		s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ", numrules=" + cmd.getRuleSet().length);
+    		return new SecurityIngressRuleAnswer(cmd);
+    	}
     }
     
 	protected GetVncPortAnswer execute(GetVncPortCommand cmd) {
@@ -2194,8 +2216,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             _vms.put(vmName, State.Stopping);
         }
         try {
-        	/*if (isDirectAttachedNetwork(cmd.getVnet()))
-        		destroy_network_rules_for_vm(vmName);*/
+        	destroy_network_rules_for_vm(vmName);
             String result = stopVM(vmName, defineOps.UNDEFINE_VM);
             
             answer =  new StopAnswer(cmd, null, 0, bytesSent, bytesReceived);
@@ -2411,24 +2432,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
 			s_logger.debug("starting " + vmName + ": " + vm.toString());
 			startDomain(vmName, vm.toString());
-
-			Monitor monitor = vmSpec.getMonitor();
-			if (monitor != null && monitor instanceof SshMonitor) {
-				SshMonitor sshMon = (SshMonitor)monitor;
-				String privateIp = sshMon.getIp();
-				int cmdPort = sshMon.getPort();
-
-				if (s_logger.isDebugEnabled()) {
-					s_logger.debug("Ping command port, " + privateIp + ":" + cmdPort);
-				}
-
-				String result = _virtRouterResource.connect(privateIp, cmdPort);
-				if (result != null) {
-					throw new CloudRuntimeException("Can not ping System vm " + vmName + "due to:" + result);
-				}
-				if (s_logger.isDebugEnabled()) {
-					s_logger.debug("Ping command port succeeded for vm " + vmName);
-				}
+			
+			if (vmSpec.getType() != VirtualMachine.Type.User) {
+				default_network_rules_for_systemvm(vmName);
+			} else {
+				default_network_rules(vmName, vmSpec.getNics()[0].getIp(), vmSpec.getId(), vmSpec.getNics()[0].getMac());
 			}
 
 			// Attach each data volume to the VM, if there is a deferred attached disk
@@ -2701,8 +2709,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
 	@Override
 	public PingCommand getCurrentStatus(long id) {
-        final HashMap<String, State> newStates = sync();
-        return new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id, newStates);
+		final HashMap<String, State> newStates = sync();
+		if (!_can_bridge_firewall) {
+			return new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id, newStates);
+		} else {
+			HashMap<String, Pair<Long, Long>> nwGrpStates = syncNetworkGroups(id);
+			return new PingRoutingWithNwGroupsCommand(getType(), id, newStates, nwGrpStates);
+		}
 	}
 
 	@Override
@@ -3464,57 +3477,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		return disks;
     }
     
-    private boolean can_bridge_firewall() {
-    	String command = "iptables -N BRIDGE-FIREWALL; " +
-    	 			 	 "iptables -I BRIDGE-FIREWALL -m state --state RELATED,ESTABLISHED -j ACCEPT";
-    	
-    	 String result = executeBashScript(command);
-    	 if (result != null) {
-    		 s_logger.debug("Chain BRIDGE-FIREWALL already exists");
-    	 }
-    	 
-    	 boolean enabled = true;
-    	 
-    	 result = executeBashScript("iptables -n -L FORWARD|grep BRIDGE-FIREWALL");;
-    	 if (result != null) {
-        	 result = executeBashScript("iptables -I FORWARD -m physdev --physdev-is-bridged -j BRIDGE-FIREWALL");;
-        	 if (result != null) {
-        		 enabled = false;
-        	 }
-    	 }
-    	 
-    	 File logPath = new File("/var/run/cloud");
-    	 if (!logPath.exists()) {
-    		 logPath.mkdirs();
-    	 }
-    	 
-    	 cleanup_rules_for_dead_vms();
-    	 cleanup_rules();
-    	 return enabled;
-    }
-    
-    private void cleanup_rules_for_dead_vms() {
-    	
-    }
-    
-    private void cleanup_rules() {
-    	
-    }
-    
- /*   private void ipset(String ipsetname, String proto, String start, String end, List<String> ips) {
-    Script command = new Script("/bin/bash", _timeout, s_logger);
-   	 	command.add("-c");
-   	 	command.add("ipset -N " + ipsetname + " iptreemap");
-   	 	String result = command.execute();
-   	 	if (result != null) {
-   	 		s_logger.debug("ipset chain already exists: " + ipsetname);
-   	 	}
-   	 	boolean success = true;
-   	 	String ipsettmp = ipsetname +
-   	 	
-    }
-    */
-    
     private Domain getDomain(String vmName) throws LibvirtException {
     	 return _conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes()));
     }
@@ -3557,88 +3519,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		command.add("-c");
 		command.add(script);
 		return command.execute(parser);
-    }
-    
-    private boolean default_network_rules_for_systemvm(String vmName) {
-    	String command;
-    	
-    	List<String> nics = getInterfaces(vmName);
-    	for (String vif : nics) {
-    		command = "iptables -D BRIDGE-FIREWALL -m physdev --physdev-is-bridged --physdev-out " + vif + " -j "  + vmName + ";" +
-    				  "iptables -D BRIDGE-FIREWALL -m physdev --physdev-is-bridged --physdev-in " + vif + " -j "  + vmName;
-    		String result = executeBashScript(command);
-    		if (result != null) {
-    			s_logger.debug("Ingnoring failure to delete old rules");
-    		}
-    		command = "iptables -N " + vmName;
-    		result = executeBashScript(command);
-    		if (result != null) {
-        		command = "iptables -F " + vmName;
-        		result = executeBashScript(command);
-    		}
-    		command = "iptables -A BRIDGE-FIREWALL -m physdev --physdev-is-bridged --physdev-out " + vif + " -j "  + vmName + ";" +
-    				   "iptables -A BRIDGE-FIREWALL -m physdev --physdev-is-bridged --physdev-in " + vif + " -j "  + vmName;
-    	    result = executeBashScript(command);
-    		if (result != null) {
-    			s_logger.debug("Failed to program default rules");
-    			return false;
-    		}
-    	}
-    	command = "iptables -A " + vmName + " -j ACCEPT";
-    	executeBashScript(command);
-		return true;
-    }
-    
-    private boolean default_network_rules(String vmName, String vmIP) {
-    	String command;
-
-    	List<String> nics = getInterfaces(vmName);
-    	for (String vif : nics) {
-    		command = "iptables -D BRIDGE-FIREWALL -m physdev --physdev-is-bridged --physdev-out " + vif + " -j "  + vmName + ";" +
-    				  "iptables -D BRIDGE-FIREWALL -m physdev --physdev-is-bridged --physdev-in " + vif + " -j "  + vmName + ";" +
-    				  "iptables -F " + vmName + ";" +
-    				  "iptables -X " + vmName + ";";
-    		String result = executeBashScript(command);
-    		if (result != null) {
-    			s_logger.debug("Ignoring failure to delete old rules");
-    		}
-    		
-    		result = executeBashScript("iptables -N " + vmName);
-    		if (result != null) {
-    			executeBashScript("iptables -F " + vmName);
-    		}
-    		
-    		command = "iptables -D BRIDGE-FIREWALL -m physdev --physdev-is-bridged --physdev-out " + vif + " -j "  + vmName + ";" +
-		    		  "iptables -D BRIDGE-FIREWALL -m physdev --physdev-is-bridged --physdev-in " + vif + " -j "  + vmName + ";" +
-		    		  "iptables -A " + vmName + " -m state --state RELATED,ESTABLISHED -j ACCEPT" + ";" +
-		    		  "iptables -A " + vmName + " -p udp --dport 67:68 --sport 67:68 -j ACCEPT" + ";" +
-		    		  "iptables -A " + vmName + " -m physdev --physdev-is-bridged --physdev-in " + vif + " --source " + vmIP + " -j RETURN" + ";" +
-		    		  "iptables -A " + vmName + " -j DROP";
-    		result = executeBashScript(command);
-    		if (result != null) {
-    			s_logger.debug("Failed to program default rules for vm:" + vmName);
-    			return false;
-    		}
-    	}
-    	return true;
-    }
-    
-    private boolean destroy_network_rules_for_vm(String vmName) {
-    	String command = "iptables-save |grep BRIDGE-FIREWALL |grep " + vmName + " | sed 's/-A/-D/'";
-    	OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
-    	String result = executeBashScript(command, parser);
-    	
-    	if (result == null && parser.getLines() != null) {
-    		String[] lines = parser.getLines().split("\\n");
-    		for (String cmd : lines) {
-    			command = "iptables " + cmd;
-    			executeBashScript(command);
-    		}
-    	}
-    	
-    	executeBashScript("iptables -F " + vmName);
-    	executeBashScript("iptables -X " + vmName);
-    	return true;
     }
     
     private void deletExitingLinkLocalRoutTable(String linkLocalBr) {
@@ -3852,4 +3732,112 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			}
 		}
     }
+    
+    private boolean can_bridge_firewall(String prvNic) {
+    	Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
+    	cmd.add("can_bridge_firewall");
+    	cmd.add(prvNic);
+    	String result = cmd.execute();
+    	if (result != null) {
+    		return false;
+    	}
+    	return true;
+    }
+    
+    private boolean destroy_network_rules_for_vm(String vmName) {
+    	if (!_can_bridge_firewall)
+    		return false;
+    	Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
+    	cmd.add("destroy_network_rules_for_vm");
+    	cmd.add("--vmname");
+    	cmd.add(vmName);
+    	String result = cmd.execute();
+    	if (result != null) {
+    		return false;
+    	}
+    	return true;
+    }
+    
+    private boolean default_network_rules(String vmName, String pubIP, long vmId, String mac) {
+    	if (!_can_bridge_firewall)
+    		return false;
+    	Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
+    	cmd.add("default_network_rules");
+    	cmd.add("--vmname", vmName);
+    	cmd.add("--vmip", pubIP);
+    	cmd.add("--vmid", Long.toString(vmId));
+    	cmd.add("--vmmac", mac);
+    	
+    	String result = cmd.execute();
+    	if (result != null) {
+    		return false;
+    	}
+    	return true;
+    }
+    
+    private boolean default_network_rules_for_systemvm(String vmName) {
+    	if (!_can_bridge_firewall)
+    		return false;
+    	Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
+    	cmd.add("default_network_rules_systemvm");
+    	cmd.add("--vmname");
+    	cmd.add(vmName);
+    	String result = cmd.execute();
+    	if (result != null) {
+    		return false;
+    	}
+    	return true;
+    }
+    
+    private boolean add_network_rules(String vmName, String vmId, String guestIP, String sig, String seq, String mac, String rules) {
+    	if (!_can_bridge_firewall)
+    		return false;
+    	String newRules = rules.replace(" ", ";");
+    	Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
+    	cmd.add("add_network_rules");
+    	cmd.add("--vmname", vmName);
+    	cmd.add("--vmid", vmId);
+    	cmd.add("--vmip", guestIP);
+    	cmd.add("--sig", sig);
+    	cmd.add("--seq", seq);
+    	cmd.add("--vmmac", mac);
+    	cmd.add("--rules", newRules);
+    	String result = cmd.execute();
+    	if (result != null) {
+    		return false;
+    	}
+    	return true;
+    }
+    
+    private String get_rule_logs_for_vms() {
+    	Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
+    	cmd.add("get_rule_logs_for_vms");
+    	OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+    	String result = cmd.execute(parser);
+    	if (result == null) {
+    		return parser.getLine();
+    	}
+    	return null;
+    }
+    
+    private HashMap<String, Pair<Long,Long>> syncNetworkGroups(long id) {
+    	HashMap<String, Pair<Long,Long>> states = new HashMap<String, Pair<Long,Long>>();
+        
+        String result = get_rule_logs_for_vms();
+        s_logger.trace("syncNetworkGroups: id=" + id + " got: " + result);
+        String [] rulelogs = result != null ?result.split(";"): new String [0];
+        for (String rulesforvm: rulelogs){
+        	String [] log = rulesforvm.split(",");
+        	if (log.length != 6) {
+        		continue;
+        	}
+        	try {
+        		states.put(log[0], new Pair<Long,Long>(Long.parseLong(log[1]), Long.parseLong(log[5])));
+        	} catch (NumberFormatException nfe) {
+        		states.put(log[0], new Pair<Long,Long>(-1L, -1L));
+        	}
+        }
+    	return states;
+    }
+
 }
