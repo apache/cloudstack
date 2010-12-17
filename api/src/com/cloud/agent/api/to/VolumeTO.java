@@ -35,7 +35,7 @@ public class VolumeTO {
     private Storage.StorageResourceType resourceType;
     private StoragePoolType storagePoolType;
     private String storagePoolUuid;
-    private int deviceId;
+    private long deviceId;
     private String chainInfo;
     
     public VolumeTO(long id, Volume.VolumeType type, Storage.StorageResourceType resourceType, StoragePoolType poolType, 
@@ -63,14 +63,14 @@ public class VolumeTO {
         this.storagePoolUuid = pool.getUuid();
         this.mountPoint = volume.getFolder();
         this.chainInfo = volume.getChainInfo();
-        this.deviceId = volume.getDeviceId().intValue();
+        this.deviceId = volume.getDeviceId();
     }
    
-    public int getDeviceId() {
+    public long getDeviceId() {
         return deviceId;
     }
     
-    public void setDeviceId(int id) {
+    public void setDeviceId(long id) {
     	this.deviceId = id;
     }
 
