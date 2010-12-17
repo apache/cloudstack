@@ -42,7 +42,60 @@ function securityGroupGetSearchParams() {
 }
 
 function afterLoadSecurityGroupJSP() {    
-    
+    initAddSecurityGroupDialog();  
+}
+
+function initAddSecurityGroupDialog() {
+    initDialog("dialog_add_security_group");   
+
+    var $dialogAddSecurityGroup = $("#dialog_add_security_group");
+    var $detailsTab = $("#right_panel_content").find("#tab_content_details");             
+     
+    //add button ***
+    $("#midmenu_add_link").find("#label").text("Add Security Group"); 
+    $("#midmenu_add_link").show();     
+    $("#midmenu_add_link").unbind("click").bind("click", function(event) {    
+        $dialogAddSecurityGroup
+	    .dialog('option', 'buttons', {
+	        "Create": function() {		            	          
+	            var $thisDialog = $(this);	
+							
+				// validate values
+				var isValid = true;
+				isValid &= validateString("Name", $thisDialog.find("#name"), $thisDialog.find("#name_errormsg"), false);  //required
+				isValid &= validateString("Description", $thisDialog.find("#description"), $thisDialog.find("#description_errormsg"), true);	//optional				
+				if (!isValid) 
+				    return;	
+				
+				var $midmenuItem1 = beforeAddingMidMenuItem();				   					
+				
+				var name = trim($thisDialog.find("#name").val());
+				var desc = trim($thisDialog.find("#description").val());
+				
+				$thisDialog.dialog("close");
+							
+				$.ajax({						
+				    data: createURL("command=createNetworkGroup&name="+todb(name)+"&description="+todb(desc)),
+					dataType: "json",
+					success: function(json) {						    			   
+						var item = json.createsecuritygroupresponse.securitygroup;																		   
+					    securityGroupToMidmenu(item, $midmenuItem1);
+	                    bindClickToMidMenu($midmenuItem1, securityGroupToRightPanel, getMidmenuId);  
+	                    afterAddingMidMenuItem($midmenuItem1, true);	 									
+					}, 								
+                    error: function(XMLHttpResponse) {	 
+						handleError(XMLHttpResponse, function() {
+							afterAddingMidMenuItem($midmenuItem1, false, parseXMLHttpResponse(XMLHttpResponse));	
+						});		    
+                    }	
+				});						            
+	        },
+	        "Cancel": function() {
+	            $(this).dialog("close");
+	        }
+	    }).dialog("open");		    
+	    return false;        
+    });
 }
 
 function doEditSecurityGroup($actionLink, $detailsTab, $midmenuItem1) {       

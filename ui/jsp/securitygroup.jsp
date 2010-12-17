@@ -168,6 +168,31 @@
 	</div>
 </div>
 
+<!-- Add Security Group Dialog (begin) -->
+<div id="dialog_add_security_group" title="Add Security Group" style="display: none">
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+                <label>
+                    Name:</label>
+                <input class="text" type="text" id="name" />
+                <div id="name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label>
+                    Description:</label>
+                <input class="text" type="text" id="description" />
+                <div id="description_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+        </ol>
+        </form>
+    </div>
+</div>
+<!-- Add Security Group Dialog (end) -->
+
 <!-- advanced search template (begin) -->
 <div id="advanced_search_template" class="adv_searchpopup" style="display: none;">
     <div class="adv_searchformbox">
