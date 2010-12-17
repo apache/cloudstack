@@ -22,8 +22,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -167,7 +169,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	protected static final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
 
     private int _maxVolumeSizeInGb;
-
+    protected Set<String> configValuesForValidation;
+    
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
     	_name = name;
@@ -175,7 +178,30 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String maxVolumeSizeInGbString = _configDao.getValue("storage.max.volume.size");
         _maxVolumeSizeInGb = NumbersUtil.parseInt(maxVolumeSizeInGbString, 2000);
 
+        populateConfigValuesForValidationSet();       
     	return true;
+    }
+    
+    private void populateConfigValuesForValidationSet(){
+    	configValuesForValidation = new HashSet<String>();
+    	configValuesForValidation.add("account.cleanup.interval");
+        configValuesForValidation.add("alert.wait");
+        configValuesForValidation.add("consoleproxy.capacityscan.interval");
+        configValuesForValidation.add("consoleproxy.loadscan.interval");
+        configValuesForValidation.add("expunge.interval");
+        configValuesForValidation.add("host.stats.interval");
+        configValuesForValidation.add("investigate.retry.interval");
+        configValuesForValidation.add("migrate.retry.interval");
+        configValuesForValidation.add("network.gc.interval");
+        configValuesForValidation.add("ping.interval");
+        configValuesForValidation.add("router.cleanup.interval");
+        configValuesForValidation.add("router.stats.interval");
+        configValuesForValidation.add("snapshot.poll.interval");
+        configValuesForValidation.add("stop.retry.interval");
+        configValuesForValidation.add("storage.stats.interval");
+        configValuesForValidation.add("storage.cleanup.interval");
+        configValuesForValidation.add("wait");    	
+        configValuesForValidation.add("xen.heartbeat.interval");
     }
     
     @Override
@@ -258,6 +284,18 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     			return "Please enter either \"true\" or \"false\".";
     		}
     		return null;
+    	}
+    	
+    	if(type.equals(Integer.class) && configValuesForValidation.contains(name)) {
+    		try {
+				int val = Integer.parseInt(value);
+				if(val <= 0){
+					throw new InvalidParameterValueException("Please enter a positive value for the configuration parameter:"+name);
+				}
+			} catch (NumberFormatException e) {
+				s_logger.error("There was an error trying to parse the integer value for:"+name);
+				throw new InvalidParameterValueException("There was an error trying to parse the integer value for:"+name);
+			}
     	}
     	
 		String range = c.getRange();
