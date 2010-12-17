@@ -91,10 +91,7 @@ function hostToRightPanel($midmenuItem1) {
     }
 }
 
-function afterLoadHostJSP($midmenuItem1) {
-    initAddHostButton($("#midmenu_add_host_button"), "host_page", $midmenuItem1); 
-    initAddPrimaryStorageButton($("#midmenu_add_primarystorage_button"), "host_page", $midmenuItem1);          
-
+function afterLoadHostJSP() {    
     initDialog("dialog_add_host");
     initDialog("dialog_add_pool");
     bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	     
@@ -109,11 +106,9 @@ function afterLoadHostJSP($midmenuItem1) {
     var tabContentArray = [$("#tab_content_details"), $("#tab_content_primarystorage"), $("#tab_content_instance"), $("#tab_content_router"), $("#tab_content_systemvm"), $("#tab_content_statistics")];
     var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToPrimaryStorageTab, hostJsonToInstanceTab, hostJsonToRouterTab, hostJsonToSystemvmTab, hostJsonToStatisticsTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);    
-    
-    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);         
 }
 
-function hostJsonToDetailsTab() {   
+function hostJsonToDetailsTab() {  
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     if($midmenuItem1 == null)
         return;
@@ -121,6 +116,9 @@ function hostJsonToDetailsTab() {
     var jsonObj = $midmenuItem1.data("jsonObj");
     if(jsonObj == null)
         return;    
+    
+    initAddHostButton($("#midmenu_add_host_button"), "host_page", $midmenuItem1); 
+    initAddPrimaryStorageButton($("#midmenu_add_primarystorage_button"), "host_page", $midmenuItem1);          
     
     $.ajax({
         data: createURL("command=listHosts&id="+jsonObj.id),
