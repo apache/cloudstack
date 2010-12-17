@@ -2,8 +2,6 @@
 
 <%@ page import="com.cloud.utils.*" %>
 
-<%@ include file="resourcedlgs.jsp" %>
-
 <%
     Locale browserLocale = request.getLocale();
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
