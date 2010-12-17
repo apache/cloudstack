@@ -210,15 +210,10 @@ function initAddDomainDialog() {
 }
 
 function domainToRightPanel($leftmenuItem1) {  
-    if($("#domain_grid_container").length == 0) { //domain.jsp is not loaded in right panel        
+    if(currentRightPanelJSP != "jsp/domain.jsp") {     
         $("#right_panel").load("jsp/domain.jsp", function(){     
+            currentRightPanelJSP = "jsp/domain.jsp";
             afterLoadDomainJSP();
-           
-            //switch between different tabs
-            var tabArray = [$("#tab_details"), $("#tab_resource_limits"), $("#tab_admin_account")];
-            var tabContentArray = [$("#tab_content_details"), $("#tab_content_resource_limits"), $("#tab_content_admin_account")];
-            switchBetweenDifferentTabs(tabArray, tabContentArray);       
-                           
 			domainToRightPanel2($leftmenuItem1);       
 		});        
     }

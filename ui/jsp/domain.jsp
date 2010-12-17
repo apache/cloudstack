@@ -39,8 +39,7 @@
                    <p>Loading &hellip;</p>    
               </div>               
         </div>
-        <div class="grid_container" id="domain_grid_container">        
-        
+        <div class="grid_container">    
         	<div class="grid_header">
             	<div id="grid_header_title" class="grid_header_title">(title)</div>
                 <div id="action_link" class="grid_actionbox">

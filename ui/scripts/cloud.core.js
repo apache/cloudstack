@@ -997,7 +997,7 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
 }
 
 var currentLeftMenuId;
-var currentContext = null;
+var currentRightPanelJSP = null;
 function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, leftmenuId) { 
 	clearMiddleMenu();
 	showMiddleMenu();	
@@ -1009,8 +1009,9 @@ function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonR
 	    $("#"+leftmenuId).click();
 	});
 
-	if (rightPanelJSP != currentContext) {
+	if (currentRightPanelJSP != rightPanelJSP) {
 		$("#right_panel").load(rightPanelJSP, function(){     
+		    currentRightPanelJSP = rightPanelJSP;
 			var $actionLink = $("#right_panel_content #tab_content_details #action_link");
 			$actionLink.bind("mouseover", function(event) {	    
 				$(this).find("#action_menu").show();    
@@ -1023,8 +1024,7 @@ function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonR
 			removeDialogs();
 			clearAddButtonsOnTop();
 			afterLoadRightPanelJSPFn();                
-			listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, 1);            
-			currentContext = rightPanelJSP;
+			listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, 1);   			
 		});     
 	} else {
 		listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, 1);        
