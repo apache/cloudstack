@@ -38,7 +38,7 @@
         <div class="grid_container">
         	<div class="grid_header">
             	<div id="grid_header_title" class="grid_header_title">(title)</div>
-                <div id="action_link" class="grid_actionbox" id="account_action_link">
+                <div id="action_link" class="grid_actionbox">
                     <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                         <ul class="actionsdropdown_boxlist" id="action_list">
                         	<li><%=t.t("no.available.actions")%></li>
@@ -755,33 +755,40 @@
 
 <!-- advanced search template (begin) -->
 <div id="advanced_search_template" class="adv_searchpopup" style="display: none;">
-    <div class="adv_searchformbox">
-        <h3>
-            Advance Search</h3>
-        <a id="advanced_search_close" href="#">Close </a>
-        <form action="#" method="post">
-        <ol>
-            <li>
-                <label>
-                    Name:</label>
-                <input class="text" type="text" id="adv_search_name" />
-            </li>
-            <li>
-                <label>
-                    Role:</label>
-                <select class="select" id="adv_search_role">
-                    <option value=""></option>                    
-                    <option value="0">User</option>
-                    <option value="2">Domain-Admin</option>
-                    <option value="1">Admin</option>
-                </select>
-            </li>
-        </ol>
-        </form>
-        <div class="adv_search_actionbox">
-            <div class="adv_searchpopup_button" id="adv_search_button">
+	<div class="adv_searchpopup_top">
+    	<div class="adv_searchpopup_topbuttonbox">
+        	<div class="adv_searchpopup_highlighted_advancesearch"><p>Advanced</p></div>
+        </div>
+        <div class="adv_searchpopup_topheaderbox"><h2>Advance Search</h2></div>
+    </div>
+    
+    <div class="adv_searchpopup_mid">
+        <div class="adv_searchformbox">
+            <form action="#" method="post">
+            <ol>
+                <li>
+                    <label>
+                        Name:</label>
+                    <input class="text" type="text" id="adv_search_name" />
+                </li>
+                <li>
+                    <label>
+                        Role:</label>
+                    <select class="select" id="adv_search_role">
+                        <option value=""></option>                    
+                        <option value="0">User</option>
+                        <option value="2">Domain-Admin</option>
+                        <option value="1">Admin</option>
+                    </select>
+                </li>
+            </ol>
+            </form>
+            <div class="adv_search_actionbox">
+                <div class="adv_searchpopup_button" id="adv_search_button">
+                </div>
             </div>
         </div>
     </div>
+    <div class="adv_searchpopup_bot"></div>
 </div>
 <!-- advanced search template (end) -->

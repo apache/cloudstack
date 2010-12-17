@@ -1813,12 +1813,10 @@ a:hover {
 }
 
 .adv_searchpopup {
-	width:207px;
+	width:268px;
 	height:auto;
 	float:left;
 	position:absolute;
-	background:#FFF repeat top left;
-	border:1px solid #999;
 	top:5px;
 	left:8px;
 	margin:0;
@@ -1826,11 +1824,89 @@ a:hover {
 	z-index:1005;
 }
 
-.adv_searchformbox {
-	width:190px;
+.adv_searchpopup_top {
+	width:268px;
+	height:40px;
+	float:left;
+	margin:0;
+	padding:0;
+	overflow:hidden;
+}
+
+.adv_searchpopup_topbuttonbox {
+	width:268px;
+	height:19px;
+	float:left;
+	margin:0;
+	padding:0;
+}
+
+.adv_searchpopup_highlighted_advancesearch {
+	width:55px;
+	height:19px;
+	float:right;
+	background: url(../images/advance_highlighted.gif) no-repeat top left;
+	margin:0 57px 0 0;
+	padding:0;
+}
+
+.adv_searchpopup_highlighted_advancesearch p{
+	width:auto;
 	height:auto;
 	float:left;
-	margin:0 0 10px 10px;
+	font-size:10px;
+	text-align:left;
+	color:#333;
+	font-weight:normal;
+	margin:3px 0 0 5px;
+	display:inline;
+	padding:0;
+}
+.adv_searchpopup_topheaderbox {
+	width:268px;
+	height:21px;
+	float:left;
+	background: url(../images/advancesearchpopup_top.png) no-repeat top left;
+	margin:0;
+	padding:0;
+}
+
+.adv_searchpopup_topheaderbox h2{
+	width:200px;
+	height:auto;
+	float:left;
+	color:#333;
+	font-size:11px;
+	font-weight:bold;
+	text-align:left;
+	margin:5px 0 0 10px;
+	display:inline;
+	padding:0;
+}
+
+.adv_searchpopup_mid {
+	width:268px;
+	height:auto;
+	float:left;
+	background: url(../images/advancesearchpopup_mid.gif) repeat-y top left;
+	margin:0;
+	padding:0;
+}
+
+.adv_searchpopup_bot {
+	width:268px;
+	height:8px;
+	float:left;
+	background: url(../images/advancesearchpopup_bot.gif) repeat-y top left;
+	margin:0;
+	padding:0;
+}
+
+.adv_searchformbox {
+	width:240px;
+	height:auto;
+	float:left;
+	margin:10px 0 5px 10px;
 	display:inline;
 	padding:0;
 }
@@ -1894,7 +1970,7 @@ a:hover {
 }
 
 .adv_searchformbox li {
-	width:190px;
+	width:240px;
 	float:left;
 	clear:left; 
 	font-family:Arial, Helvetica, sans-serif;
@@ -1904,7 +1980,7 @@ a:hover {
 }
 
 .adv_searchformbox label {
-	width:60px;
+	width:70px;
 	float:left;
 	clear:left; 
 	font-family:Arial, Helvetica, sans-serif;
@@ -1920,7 +1996,7 @@ a:hover {
 	float:left;
 	border: 1px solid #CCC;
 	height: 13px;
-	width: 100px;
+	width: 150px;
 	color:#666;
 	margin:0;
 	padding:1px 0 0 2px; 
@@ -1933,7 +2009,7 @@ a:hover {
 	float:left; 
 	border: 1px solid #CCC; 
 	height: 17px; 
-	width: 103px;
+	width: 154px;
 	margin:0; 
 	padding:1px 0 0 2px; 
 	color:#666;
@@ -1941,15 +2017,15 @@ a:hover {
 
 
 .adv_search_actionbox {
-	width:140px;
-	height:20px;
+	width:200px;
+	height:15px;
 	float:left;
 	margin:5px 0 0 0;
 	padding:0;
 }
 .adv_searchpopup_button {
-	width:49px;
-	height:16px;
+	width:43px;
+	height:15px;
 	float:left;
 	background:url(../images/adv_searchbutton.gif) no-repeat top left;
 	margin:0 5px 0 0;
