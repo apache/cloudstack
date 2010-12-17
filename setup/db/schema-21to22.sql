@@ -7,6 +7,8 @@ ALTER TABLE `cloud`.`template_host_ref` ADD COLUMN `physical_size` bigint unsign
 ALTER TABLE `cloud`.`snapshots` MODIFY COLUMN `id` bigint unsigned UNIQUE NOT NULL
 ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `group`
 ALTER TABLE `cloud`.`cluster` ADD COLUMN `guid` varchar(255) UNIQUE DEFAULT NULL
+ALTER TABLE `cloud`.`cluster` ADD COLUMN `cluster_type` varchar(64) DEFAULT 'CloudManaged'
+
 
 
 -- NOTE for tables below
