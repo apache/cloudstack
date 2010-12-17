@@ -44,11 +44,7 @@ function networkGetSearchParams() {
 }
 
 var zoneObj;  
-function afterLoadNetworkJSP($leftmenuItem1) {    
-    zoneObj = $leftmenuItem1.data("jsonObj");    
-    if(zoneObj == null) 
-	    return;	  
-    
+function afterLoadNetworkJSP($leftmenuItem1) {        
     showMiddleMenu();    
     
     initAddNetworkButton($("#midmenu_add_network_button"));
@@ -66,6 +62,14 @@ function afterLoadNetworkJSP($leftmenuItem1) {
     var tabContentArray = [$directNetworkPage.find("#tab_content_details"), $directNetworkPage.find("#tab_content_ipallocation")];
     var afterSwitchFnArray = [directNetworkJsonToDetailsTab, directNetworkJsonToIpAllocationTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);    
+     
+    networkPopulateMiddleMenu($leftmenuItem1);       
+}
+
+function networkPopulateMiddleMenu($leftmenuItem1) {
+    zoneObj = $leftmenuItem1.data("jsonObj");    
+    if(zoneObj == null) 
+	    return;	  
          
     //populate items into middle menu  
     var $midmenuContainer = $("#midmenu_container").empty();   

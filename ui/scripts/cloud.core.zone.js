@@ -18,7 +18,26 @@
  var networkType = "Basic";
  function afterLoadZoneJSP($leftmenuItem1) {
     hideMiddleMenu();  
+        
+    initDialog("dialog_add_external_cluster_in_zone_page");
+    initDialog("dialog_add_pod", 320); 
+    initDialog("dialog_add_vlan_for_zone");
+    initDialog("dialog_add_secondarystorage"); 
+    initDialog("dialog_confirmation_delete_secondarystorage"); 
+    
+    // If the network type is vnet, don't show any vlan stuff.
+    bindEventHandlerToDialogAddVlanForZone();	        
+            
+    //switch between different tabs in zone page    
+    var tabArray = [$("#tab_details"), $("#tab_secondarystorage"), $("#tab_network")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_secondarystorage"), $("#tab_content_network")];      
+    var afterSwitchFnArray = [zoneJsonToDetailsTab, zoneJsonToSecondaryStorageTab, zoneJsonToNetworkTab];
+    switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray); 
                  
+	zoneJsonToRightPanel($leftmenuItem1);		  
+}
+
+function zoneJsonToRightPanel($leftmenuItem1) {	                  
     initAddPodButton($("#midmenu_add_pod_button"), $leftmenuItem1);                  
     initAddVLANButton($("#midmenu_add_vlan_button"), $leftmenuItem1);
     initAddSecondaryStorageButton($("#midmenu_add_secondarystorage_button"), $leftmenuItem1);
@@ -41,26 +60,7 @@
         initAddHostButtonOnZonePage($("#midmenu_add_host_button"), zoneId, zoneName); 
         initAddPrimaryStorageButtonOnZonePage($("#midmenu_add_primarystorage_button"), zoneId, zoneName);  
     }
-    
-    initDialog("dialog_add_external_cluster_in_zone_page");
-    initDialog("dialog_add_pod", 320); 
-    initDialog("dialog_add_vlan_for_zone");
-    initDialog("dialog_add_secondarystorage"); 
-    initDialog("dialog_confirmation_delete_secondarystorage"); 
-    
-    // If the network type is vnet, don't show any vlan stuff.
-    bindEventHandlerToDialogAddVlanForZone();	        
-            
-    //switch between different tabs in zone page    
-    var tabArray = [$("#tab_details"), $("#tab_secondarystorage"), $("#tab_network")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_secondarystorage"), $("#tab_content_network")];      
-    var afterSwitchFnArray = [zoneJsonToDetailsTab, zoneJsonToSecondaryStorageTab, zoneJsonToNetworkTab];
-    switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray); 
-                 
-	zoneJsonToRightPanel($leftmenuItem1);		  
-}
 
-function zoneJsonToRightPanel($leftmenuItem1) {	 
     $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);      
     $("#right_panel_content").find("#tab_details").click();     
 }

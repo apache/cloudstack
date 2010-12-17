@@ -80,7 +80,26 @@ function buildZoneTree() {
 			
 			default:				    		    
 			    selectRowInZoneTree($(this).find("#zone_header"));	
-			    resourceLoadPage("jsp/zone.jsp", $(this));			    		   				    		   			    
+			    
+			    if(currentRightPanelJSP != "jsp/zone.jsp") {    
+                    clearAddButtonsOnTop();  
+	                removeDialogs();
+	                
+	                var $thisNode = $(this);
+                    $("#right_panel").load("jsp/zone.jsp", function(){     
+                        currentRightPanelJSP = "jsp/zone.jsp";
+                                        
+                        $(this).data("onRefreshFn", function() {
+	                        zoneJsonToDetailsTab();
+	                    });  
+            	        
+                        afterLoadZoneJSP($thisNode);   
+                    });      
+                } 
+                else {
+                    zoneJsonToRightPanel($(this));			 
+                }
+			   	    		   				    		   			    
 			    break;	
 		}
 		return false;
@@ -88,7 +107,27 @@ function buildZoneTree() {
 	
 	$("#network_header").unbind("click").bind("click", function(event) {	   
 	    selectRowInZoneTree($(this));	
-	    resourceLoadPage("jsp/network.jsp", $(this));			    
+	    
+        if(currentRightPanelJSP != "jsp/network.jsp") {    
+            clearAddButtonsOnTop();  
+            removeDialogs();
+            $("#right_panel").load("jsp/network.jsp", function(){     
+                currentRightPanelJSP = "jsp/network.jsp";
+                 
+                var $thisNode = $(this);                          
+                $(this).data("onRefreshFn", function() {		        
+                    var zoneObj = $midmenuItem1.data("jsonObj");
+                    if(zoneObj == null)
+                        return;
+                    $("#zone_"+zoneObj.id).find("#network_header").click();
+                }); 
+                afterLoadNetworkJSP($thisNode);                       
+            });      
+        } 
+        else {
+            networkPopulateMiddleMenu($(this));  		 
+        }	    
+	       
 	    return false;
 	});
 	
@@ -116,7 +155,25 @@ function buildZoneTree() {
 			    break;
 			default:			
 			    selectRowInZoneTree($(this).find("#pod_header"));	    
-	            resourceLoadPage("jsp/pod.jsp", $(this));			
+	            
+	            if(currentRightPanelJSP != "jsp/pod.jsp") {    
+                    clearAddButtonsOnTop();  
+	                removeDialogs();
+	                
+	                var $thisNode = $(this); 
+                    $("#right_panel").load("jsp/pod.jsp", function(){     
+                        currentRightPanelJSP = "jsp/pod.jsp";
+                                                    
+                        $(this).data("onRefreshFn", function() {
+		                    podJsonToDetailsTab();
+		                });  
+		                afterLoadPodJSP($thisNode);  
+                    });      
+                } 
+                else {
+                    podJsonToRightPanel($(this));    			 
+                }
+	            	            	
 			    break;
 	    }		    	    
 	    return false;
@@ -124,7 +181,25 @@ function buildZoneTree() {
 	
 	$("#leftmenu_cluster_node_template").unbind("click").bind("click", function(event) {
 	    selectRowInZoneTree($(this).find("#cluster_header"));	    
-	    resourceLoadPage("jsp/cluster.jsp", $(this));
+	    
+        if(currentRightPanelJSP != "jsp/cluster.jsp") {    
+            clearAddButtonsOnTop();  
+            removeDialogs();
+            
+            var $thisNode = $(this); 
+            $("#right_panel").load("jsp/cluster.jsp", function(){     
+                currentRightPanelJSP = "jsp/cluster.jsp";   
+                
+                $(this).data("onRefreshFn", function() {
+                    clusterJsonToDetailsTab();
+                }); 
+                afterLoadClusterJSP($thisNode);   
+            });      
+        } 
+        else {
+            clusterJsonToRightPanel($(this))	 
+        } 
+	    
 	    return false;
 	});  
 }    
@@ -219,20 +294,23 @@ function clusterJSONToTreeNode(json, $clusterNode) {
     clusterName.data("jsonObj", json);	   
 }			
 
-function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is either $leftmenuItem1 or $midmenuItem1    
+/*
+function resourceLoadPage(rightPanelJSP, $midmenuItem1) {   //$midmenuItem1 is either $leftmenuItem1 or $midmenuItem1    
     clearAddButtonsOnTop();  
 	removeDialogs();
-    $("#right_panel").load(pageToShow, function(){       
-	    if(pageToShow == "jsp/resource.jsp") {
+    $("#right_panel").load(rightPanelJSP, function(){     
+        currentRightPanelJSP = rightPanelJSP;
+          
+	    if(currentRightPanelJSP == "jsp/resource.jsp") {
             afterLoadResourceJSP($midmenuItem1); 
         }
-        else if(pageToShow == "jsp/zone.jsp") {            
+        else if(currentRightPanelJSP == "jsp/zone.jsp") {            
             $(this).data("onRefreshFn", function() {
 		        zoneJsonToDetailsTab();
 		    });  
             afterLoadZoneJSP($midmenuItem1);               
         }        
-        else if(pageToShow == "jsp/network.jsp") {            
+        else if(currentRightPanelJSP == "jsp/network.jsp") {            
             $(this).data("onRefreshFn", function() {		        
 		        var zoneObj = $midmenuItem1.data("jsonObj");
 		        if(zoneObj == null)
@@ -241,19 +319,19 @@ function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is eith
 		    }); 
             afterLoadNetworkJSP($midmenuItem1);   
         }
-        else if(pageToShow == "jsp/pod.jsp") {            
+        else if(currentRightPanelJSP == "jsp/pod.jsp") {            
             $(this).data("onRefreshFn", function() {
 		        podJsonToDetailsTab();
 		    });  
 		    afterLoadPodJSP($midmenuItem1);             
         }
-        else if(pageToShow == "jsp/cluster.jsp") {
+        else if(currentRightPanelJSP == "jsp/cluster.jsp") {
             $(this).data("onRefreshFn", function() {
 		        clusterJsonToDetailsTab();
 		    }); 
             afterLoadClusterJSP($midmenuItem1);   
         }
-        else if(pageToShow == "jsp/host.jsp") {                 
+        else if(currentRightPanelJSP == "jsp/host.jsp") {                 
             $(this).data("onRefreshFn", function() {                
 		        hostJsonToDetailsTab();
 		    }); 
@@ -263,7 +341,7 @@ function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is eith
             $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
             $("#tab_details").click();     
         }
-        else if(pageToShow == "jsp/primarystorage.jsp") {
+        else if(currentRightPanelJSP == "jsp/primarystorage.jsp") {
             $(this).data("onRefreshFn", function() {                
 		        primarystorageJsonToDetailsTab();
 		    }); 
@@ -271,8 +349,9 @@ function resourceLoadPage(pageToShow, $midmenuItem1) {   //$midmenuItem1 is eith
         }         
     });    
 }
+*/
 
-function afterLoadResourceJSP($midmenuItem1) {
+function afterLoadResourceJSP() {
     hideMiddleMenu();        
         
     $("#midmenu_add_zone_button").show();   

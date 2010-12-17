@@ -67,8 +67,28 @@ function hostToMidmenu(jsonObj, $midmenuItem1) {
     updateHostStateInMidMenu(jsonObj, $midmenuItem1);   
 }
 
-function hostToRightPanel($midmenuItem1) {     
-    resourceLoadPage("jsp/host.jsp", $midmenuItem1);  //after reloading "jsp/host.jsp", afterLoadHostJSP() will be called. 
+function hostToRightPanel($midmenuItem1) {         
+    if(currentRightPanelJSP != "jsp/host.jsp") {    
+        clearAddButtonsOnTop();  
+        removeDialogs();
+        $("#right_panel").load("jsp/host.jsp", function(){     
+            currentRightPanelJSP = "jsp/host.jsp";
+                                                    
+            $(this).data("onRefreshFn", function() {                
+                hostJsonToDetailsTab();
+            }); 
+            afterLoadHostJSP($midmenuItem1);        
+            
+            copyActionInfoFromMidMenuToRightPanel($midmenuItem1);                   
+            $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
+            $("#tab_details").click();   
+            
+        });      
+    } 
+    else {
+        $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);    
+        hostJsonToDetailsTab() 
+    }
 }
 
 function afterLoadHostJSP($midmenuItem1) {

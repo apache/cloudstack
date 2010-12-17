@@ -18,6 +18,15 @@
   
 function afterLoadClusterJSP($leftmenuItem1) {
     clearAddButtonsOnTop();
+   
+    initDialog("dialog_add_host");
+    initDialog("dialog_add_pool");    
+    bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	       
+    
+	clusterJsonToRightPanel($leftmenuItem1);	
+}
+
+function clusterJsonToRightPanel($leftmenuItem1) {
     var objCluster = $leftmenuItem1.data("jsonObj");
     
     if(objCluster.clustertype == "CloudManaged")
@@ -25,16 +34,8 @@ function afterLoadClusterJSP($leftmenuItem1) {
     
     initAddPrimaryStorageButton($("#midmenu_add_primarystorage_button"), "cluster_page", $leftmenuItem1);  
     
-    initDialog("dialog_add_host");
-    initDialog("dialog_add_pool");    
-    bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	       
-    
-	clusterJsonToRightPanel($leftmenuItem1);	
-	
     listMidMenuItems(("listHosts&type=Routing&clusterid="+objCluster.id), hostGetSearchParams, "listhostsresponse", "host", "jsp/host.jsp", afterLoadHostJSP, hostToMidmenu, hostToRightPanel, getMidmenuId, false, ("cluster_"+objCluster.id));    
-}
 
-function clusterJsonToRightPanel($leftmenuItem1) {
     $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);
     clusterJsonToDetailsTab();    
 }

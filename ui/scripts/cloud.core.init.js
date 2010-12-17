@@ -171,8 +171,20 @@ $(document).ready(function() {
 			$("#right_panel").data("onRefreshFn", function() {
 		        $("#leftmenu_physical_resource").click();
 		    });
-			
-			resourceLoadPage("jsp/resource.jsp", null);			
+							
+		    if(currentRightPanelJSP != "jsp/resource.jsp") {    
+                clearAddButtonsOnTop();  
+                removeDialogs();
+                $("#right_panel").load("jsp/resource.jsp", function(){     
+                    currentRightPanelJSP = "jsp/resource.jsp";
+                                     	        
+                    afterLoadResourceJSP(); 
+                });      
+            } 
+            else {
+                resourceCountTotal();	  
+            }
+					
 			return false;
 		});
 		

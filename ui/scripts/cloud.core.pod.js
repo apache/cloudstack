@@ -18,11 +18,7 @@
  
  function afterLoadPodJSP($leftmenuItem1) {   
     hideMiddleMenu();	
-
-    initAddClusterButton($("#midmenu_add_cluster_button"), "pod_page", $leftmenuItem1); 
-    initAddHostButton($("#midmenu_add_host_button"), "pod_page", $leftmenuItem1); 
-    initAddPrimaryStorageButton($("#midmenu_add_primarystorage_button"), "pod_page", $leftmenuItem1);  
-           
+ 
     initDialog("dialog_add_external_cluster");
     initDialog("dialog_add_host");
     initDialog("dialog_add_pool");
@@ -41,7 +37,11 @@
 	podJsonToRightPanel($leftmenuItem1);     	
 }
 
-function podJsonToRightPanel($leftmenuItem1) {	 
+function podJsonToRightPanel($leftmenuItem1) {	    
+    initAddClusterButton($("#midmenu_add_cluster_button"), "pod_page", $leftmenuItem1); 
+    initAddHostButton($("#midmenu_add_host_button"), "pod_page", $leftmenuItem1); 
+    initAddPrimaryStorageButton($("#midmenu_add_primarystorage_button"), "pod_page", $leftmenuItem1);  
+           
     $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);  
     $("#tab_details").click();   
 }
