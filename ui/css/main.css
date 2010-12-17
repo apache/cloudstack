@@ -1748,7 +1748,8 @@ a:hover {
 	width:55px;
 	height:12px;
 	float:left;
-	margin:0;
+	margin:0 0 0 4px;
+	display:inline;
 	padding:7px 0 0 0;
 	color:#FFF;
 	font-size:10px;
@@ -1764,7 +1765,11 @@ a:hover {
 
 .searchpanel_advancebutton.on {
 	background: url(../images/advance_highlighted.gif) no-repeat top left;
+	margin:6px 0 0 0;
 	color:#333;
+	padding:4px 0 0 3px;
+	width:57px;
+	height:12px;
 }
 
 .adv_searchpopup_highlighted_advancesearch {
@@ -1797,7 +1802,7 @@ a:hover {
 
 
 .searchpanel li{
-	width:160px;
+	width:155px;
 	height:auto;
 	float:left;
 	margin:5px 0 0 8px;
