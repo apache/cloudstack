@@ -128,7 +128,7 @@ $(document).ready(function() {
 			//configuration	
 			bindAndListMidMenuItems("so", $("#leftmenu_service_offering"), "listServiceOfferings", serviceOfferingGetSearchParams, "listserviceofferingsresponse", "serviceoffering", "jsp/serviceoffering.jsp", afterLoadServiceOfferingJSP, serviceOfferingToMidmenu, serviceOfferingToRightPanel, getMidmenuId, false); 
 			bindAndListMidMenuItems("do", $("#leftmenu_disk_offering"), "listDiskOfferings", diskOfferingGetSearchParams, "listdiskofferingsresponse", "diskoffering", "jsp/diskoffering.jsp", afterLoadDiskOfferingJSP, diskOfferingToMidmenu, diskOfferingToRightPanel, getMidmenuId, false); 
-			bindAndListMidMenuItems("no", $("#leftmenu_network_offering"), "listNetworkOfferings", networkOfferingGetSearchParams, "listnetworkofferingsresponse", "networkoffering", "jsp/networkoffering.jsp", afterLoadNetworkOfferingJSP, networkOfferingToMidmenu, networkOfferingToRightPanel, getMidmenuId, false);  
+			bindAndListMidMenuItems("no", $("#leftmenu_network_offering"), "listNetworkOfferings&type=Virtual", networkOfferingGetSearchParams, "listnetworkofferingsresponse", "networkoffering", "jsp/networkoffering.jsp", afterLoadNetworkOfferingJSP, networkOfferingToMidmenu, networkOfferingToRightPanel, getMidmenuId, false);  
 		}
 	
 		$("#leftmenu_global_setting").bind("click", function(event) {
