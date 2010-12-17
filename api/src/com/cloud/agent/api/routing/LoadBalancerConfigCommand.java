@@ -17,8 +17,6 @@
  */
 package com.cloud.agent.api.routing;
 
-import java.util.List;
-
 import com.cloud.agent.api.to.LoadBalancerTO;
 
 /**
@@ -26,13 +24,13 @@ import com.cloud.agent.api.to.LoadBalancerTO;
  * to the load balancer.  Isn't that kinda obvious?
  */
 public class LoadBalancerConfigCommand extends RoutingCommand {
-    List<LoadBalancerTO> loadBalancers;
+    LoadBalancerTO[] loadBalancers;
     
-    public LoadBalancerConfigCommand(List<LoadBalancerTO> loadBalancers) {
+    public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers) {
     	this.loadBalancers = loadBalancers;
     }
 
-    public List<LoadBalancerTO> getLoadBalancers() {
+    public LoadBalancerTO[] getLoadBalancers() {
         return loadBalancers;
     }
 }

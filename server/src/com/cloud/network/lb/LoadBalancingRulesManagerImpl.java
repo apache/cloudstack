@@ -343,7 +343,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
             rules.add(loadBalancing);
 
-            if (!_networkMgr.applyRules(lb.getSourceIpAddress(), rules, false)) {
+            if (!_networkMgr.applyRules(rules, false)) {
                 s_logger.debug("LB rules are not completely applied");
                 return false;
             } 

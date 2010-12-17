@@ -94,15 +94,20 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.guru.NetworkGuru;
+import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.router.DomainRouterManager;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -183,6 +188,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject RulesManager _rulesMgr;
     @Inject LoadBalancingRulesManager _lbMgr;
     @Inject FirewallRulesDao _firewallRulesDao;
+    @Inject LoadBalancerDao _lbDao;
+    @Inject PortForwardingRulesDao _pfRulesDao;
 
     @Inject(adapter=NetworkGuru.class)
     Adapters<NetworkGuru> _networkGurus;
@@ -1992,7 +1999,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public boolean applyRules(Ip ip, List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException {
+    public boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException {
         if (rules.size() == 0) {
             s_logger.debug("There are no rules to forward to the network elements");
             return true;
@@ -2003,7 +2010,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         for (NetworkElement ne : _networkElements) {
             try {
                 boolean handled = ne.applyRules(network, rules);
-                s_logger.debug("Network Rules for " + ip + " were " + (handled ? "" : " not") + " handled by " + ne.getName());
+                s_logger.debug("Network Rules for network " + network.getId() + " were " + (handled ? "" : " not") + " handled by " + ne.getName());
             } catch (ResourceUnavailableException e) {
                 if (!continueOnError) {
                     throw e;
@@ -2060,6 +2067,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     @Override
     public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException{
+        //This method reapplies Ip addresses, LoadBalancer and PortForwarding rules
         String accountName = cmd.getAccountName();
         long domainId = cmd.getDomainId();
         Account caller = UserContext.current().getAccount();
@@ -2080,12 +2088,41 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
-        //TODO - re-apply port forwarding and load balancing rules in the future
-        boolean success = applyIpAssociations(network, false);
-        if (!success) {
-            s_logger.warn("Failed to reapply the ip addresses for the account " + owner.getId() + " in zone " + network.getDataCenterId() + ", in network " + network.getId());
+        boolean success = true;
+        if (!applyIpAssociations(network, false)) {
+            s_logger.warn("Failed to apply ips as a part of network " + networkId + " restart");
+            success = false;
         } else {
-            s_logger.debug("Ip addresses are reapplied successfully for the account " + owner.getId() + " in zone " + network.getDataCenterId() + ", in network " + network.getId());
+            s_logger.debug("Ip addresses are reapplied successfully as a part of network " + networkId + " restart");
+        }
+        
+        //Reapply lb rules
+        List<LoadBalancerVO> lbs = _lbDao.listByNetworkId(networkId);
+        List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
+        for (LoadBalancerVO lb : lbs) {
+            List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
+            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
+            lbRules.add(loadBalancing);
+        }
+        
+        if (!applyRules(lbRules, true)) {
+            s_logger.warn("Failed to apply load balancing rules as a part of network " + network.getId() + " restart");
+            success = false;
+        } else {
+            s_logger.debug("Load balancing rules are reapplied successfully as a part of network " + networkId + " restart");
+        }
+        
+        //Reapply pf rules
+        List<PortForwardingRuleVO> pfRules = _pfRulesDao.listByNetworkId(networkId);
+        if (!applyRules(pfRules, true)) {
+            s_logger.warn("Failed to apply port forwarding rules as a part of network " + network.getId() + " restart");
+            success = false;
+        } else {
+            s_logger.debug("Port forwarding rules are reapplied successfully as a part of network " + networkId + " restart");
+        }
+        
+        if (success){
+            s_logger.debug("Network " + networkId + " is restarted successfully.");
         }
         return success;
     }

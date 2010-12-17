@@ -19,6 +19,7 @@ package com.cloud.network.rules.dao;
 
 import java.util.List;
 
+import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.Ip;
@@ -37,4 +38,6 @@ public interface PortForwardingRulesDao extends GenericDao<PortForwardingRuleVO,
     List<PortForwardingRuleVO> searchNatRules(Ip ip, Long startIndex, Long pageSize);
 
 	List<PortForwardingRuleVO> listByVm(Long vmId);
+	
+	List<PortForwardingRuleVO> listByNetworkId(long networkId);
 }

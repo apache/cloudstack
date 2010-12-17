@@ -399,7 +399,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             _accountMgr.checkAccess(caller, rules.toArray(new PortForwardingRuleVO[rules.size()]));
         }
         
-        if (!_networkMgr.applyRules(ip, rules, continueOnError)) {
+        if (!_networkMgr.applyRules(rules, continueOnError)) {
             s_logger.debug("Rules are not completely applied");
             return false;
         }

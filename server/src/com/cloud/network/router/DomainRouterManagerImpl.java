@@ -2077,7 +2077,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         if (router.getState() == State.Running || router.getState() == State.Starting) {
 
             Commands cmds = new Commands(OnError.Continue);
-            List<LoadBalancerTO> lbs = new ArrayList<LoadBalancerTO>();
+            LoadBalancerTO[] lbs = new LoadBalancerTO[rules.size()];
+            int i = 0;
             for (FirewallRule fwRule : rules) {
                 LoadBalancingRule rule = (LoadBalancingRule) fwRule;
                 boolean revoked = (rule.getState().equals(FirewallRule.State.Revoke));
@@ -2087,7 +2088,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                 int srcPort = rule.getSourcePortStart();                
                 List<LbDestination> destinations = rule.getDestinations();    
                 LoadBalancerTO lb = new LoadBalancerTO(srcIp, srcPort, protocol, algorithm, revoked, false, destinations);
-                lbs.add(lb);
+                lbs[i++] = lb;
             }
             
             LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs);
