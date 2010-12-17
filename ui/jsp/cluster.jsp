@@ -2,6 +2,8 @@
 
 <%@ page import="com.cloud.utils.*" %>
 
+<%@ include file="resourcedlgs.jsp" %>
+
 <%
     Locale browserLocale = request.getLocale();
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
@@ -159,6 +161,7 @@
     </div>
 </div>
 <!-- Add Host Dialog (end) -->
+
 
 <!-- Add Primary Storage Dialog (begin) -->
 <div id="dialog_add_pool" title="Add Primary Storage" style="display: none">

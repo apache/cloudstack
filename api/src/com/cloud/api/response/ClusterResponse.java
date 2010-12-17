@@ -40,6 +40,9 @@ public class ClusterResponse extends BaseResponse {
     @SerializedName("zonename") @Param(description="the Zone name of the cluster")
     private String zoneName;
 
+    @SerializedName("clustertype") @Param(description="the type of the cluster")
+    private String clusterType;
+    
     public Long getId() {
         return id;
     }
@@ -86,5 +89,13 @@ public class ClusterResponse extends BaseResponse {
 
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
+    }
+    
+    public String getClusterType() {
+    	return clusterType;
+    }
+    
+    public void setClusterType(String clusterType) {
+    	this.clusterType = clusterType;
     }
 }

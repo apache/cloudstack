@@ -18,10 +18,12 @@
  
  function afterLoadPodJSP($leftmenuItem1) {   
     hideMiddleMenu();	
-          	
+
+    initAddClusterButton($("#midmenu_add_cluster_button"), "pod_page", $leftmenuItem1); 
     initAddHostButton($("#midmenu_add_host_button"), "pod_page", $leftmenuItem1); 
     initAddPrimaryStorageButton($("#midmenu_add_primarystorage_button"), "pod_page", $leftmenuItem1);  
            
+    initDialog("dialog_add_external_cluster");
     initDialog("dialog_add_host");
     initDialog("dialog_add_pool");
     
@@ -260,6 +262,90 @@ function refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId) {
         }
     });     
 }      
+
+function initAddClusterButton($button, currentPageInRightPanel, $leftmenuItem1) {
+    $button.show();
+    $button.unbind("click").bind("click", function(event) {
+        dialogAddCluster = $("#dialog_add_external_cluster");      
+        dialogAddCluster.find("#info_container").hide();    
+    	
+        var zoneId, podId;               
+        if(currentPageInRightPanel == "pod_page") {
+            var podObj = $leftmenuItem1.data("jsonObj");   
+            zoneId = podObj.zoneid;
+            podId = podObj.id;
+            dialogAddCluster.find("#zone_name").text(fromdb(podObj.zonename));  
+            dialogAddCluster.find("#pod_name").text(fromdb(podObj.name)); 
+        }
+        
+        dialogAddCluster.dialog('option', 'buttons', { 				
+	        "Add": function() { 
+	            var $thisDialog = $(this);		            
+	            			   
+		        // validate values
+		        var isValid = true;									
+		        isValid &= validateString("vCenter Server", $thisDialog.find("#cluster_hostname"), $thisDialog.find("#cluster_hostname_errormsg"));
+		        isValid &= validateString("vCenter user", $thisDialog.find("#cluster_username"), $thisDialog.find("#cluster_username_errormsg"));
+		        isValid &= validateString("Password", $thisDialog.find("#cluster_password"), $thisDialog.find("#cluster_password_errormsg"));	
+		        isValid &= validateString("Datacenter", $thisDialog.find("#cluster_datacenter"), $thisDialog.find("#cluster_datacenter_errormsg"));	
+		        isValid &= validateString("Cluster name", $thisDialog.find("#cluster_name"), $thisDialog.find("#cluster_name_errormsg"));	
+		        if (!isValid) 
+		            return;
+		            				
+				$thisDialog.find("#spinning_wheel").show(); 				
+				
+		        var array1 = [];
+			    var hypervisor = $thisDialog.find("#cluster_hypervisor").val();
+			    array1.push("&hypervisor="+hypervisor);
+		        
+		        array1.push("&zoneId="+zoneId);
+		        array1.push("&podId="+podId);
+						      
+		        var username = trim($thisDialog.find("#cluster_username").val());
+		        array1.push("&username="+todb(username));
+				
+		        var password = trim($thisDialog.find("#cluster_password").val());
+		        array1.push("&password="+todb(password));
+		        
+		        var hostname = trim($thisDialog.find("#cluster_hostname").val());
+		        var dcName = trim($thisDialog.find("#cluster_datacenter").val());
+		        var clusterName = trim($thisDialog.find("#cluster_name").val());
+		        
+		        array1.push("&clustername=" + todb(hostname + "/" + dcName + "/" + clusterName));
+		        
+		        var url;					
+		        if(hostname.indexOf("http://")==-1)
+		            url = "http://" + todb(hostname);
+		        else
+		            url = hostname;
+		        url += "/" + todb(dcName) + "/" + todb(clusterName);
+		        array1.push("&url=" + todb(url));
+									
+		        $.ajax({
+			       data: createURL("command=addExternalCluster" + array1.join("")),
+			        dataType: "json",
+			        success: function(json) {
+			            $thisDialog.find("#spinning_wheel").hide();
+			            $thisDialog.dialog("close");
+					
+					    showMiddleMenu();
+					    
+                        clickClusterNodeAfterAddHost(clusterRadio, podId, clusterName, null, $thisDialog);
+			        },			
+                    error: function(XMLHttpResponse) {	
+						handleError(XMLHttpResponse, function() {							
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);							
+						});
+                    }				
+		        });
+	        }, 
+	        "Cancel": function() { 
+		        $(this).dialog("close"); 
+	        } 
+        }).dialog("open");            
+        return false;
+    });
+}
 
 function initAddHostButton($button, currentPageInRightPanel, $leftmenuItem1) {    
     $button.show();

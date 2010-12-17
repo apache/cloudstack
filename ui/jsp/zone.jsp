@@ -569,6 +569,87 @@
 </div>
 <!-- Add Host Dialog in zone page (end) -->
 
+<!-- Add Hypervisor managed cluster Dialog (begin) -->
+<div id="dialog_add_external_cluster_in_zone_page" title="Add External Cluster" style="display: none">
+    <p>
+        Add a hypervisor managed cluster for zone <b><span id="zone_name"></span></b>
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+            	<label for="cluster_hypervisor">Hypervisor:</label>
+                <select class="select" id="cluster_hypervisor">
+                    <option value="VmWare" SELECTED>VMware</option>										
+                </select>
+            </li>
+            <li>
+                <label>
+                    Pod:</label>
+                <select class="select" id="pod_dropdown">
+                </select>
+                <div id="pod_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>   
+            <li>
+                <label for="cluster_hostname">
+                    vCenter Server:</label>
+                <input class="text" type="text" name="cluster_hostname" id="cluster_hostname" />
+                <div id="cluster_hostname_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label for="cluster_username">
+                    vCenter user:</label>
+                <input class="text" type="text" name="cluster_username" id="cluster_username" />
+                <div id="cluster_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label for="cluster_password">
+                    Password:</label>
+                <input class="text" type="password" name="cluster_password" id="cluster_password" autocomplete="off" />
+                <div id="cluster_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            
+            <li>
+                <label for="cluster_datacenter">
+                    vCenter Datacenter:</label>
+                <input class="text" type="text" name="cluster_datacenter" id="cluster_datacenter" />
+                <div id="cluster_datacenter_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+
+            <li>
+                <label for="cluster_name">
+                    vCenter Cluster:</label>
+                <input class="text" type="text" name="cluster_name" id="cluster_name" />
+                <div id="cluster_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+        </ol>
+        </form>
+    </div>
+    <!--Loading box-->
+    <div id="spinning_wheel" class="ui_dialog_loaderbox" style="display: none;">
+        <div class="ui_dialog_loader">
+        </div>
+        <p>
+            Adding....</p>
+    </div>
+    <!--Confirmation msg box-->
+    <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+    <div id="info_container" class="ui_dialog_messagebox error" style="display: none;">
+        <div id="icon" class="ui_dialog_msgicon error">
+        </div>
+        <div id="info" class="ui_dialog_messagebox_text error">
+            (info)</div>
+    </div>
+</div>
+<!-- Add Hypervisor managed cluster Dialog (end) -->
+
+
 <!-- Add Primary Storage Dialog  in zone page (begin) -->
 <div id="dialog_add_pool_in_zone_page" title="Add Primary Storage" style="display: none"> 
     <p>
