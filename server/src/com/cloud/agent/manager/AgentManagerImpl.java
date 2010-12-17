@@ -587,7 +587,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             throw new InvalidParameterValueException("Please specify a valid hypervisor name");
         }
         
-        Discoverer discoverer = getMatchingDiscover(cmd.getHypervisor());
+        Discoverer discoverer = getMatchingDiscover(hypervisorType);
         if(discoverer == null) {
             throw new InvalidParameterValueException("Please specify a valid hypervisor");
         }
@@ -608,49 +608,57 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             clusterId = cluster.getId();
         }
         
+        boolean success = false;
         try {
-    		uri = new URI(UriUtils.encodeURIComponent(url));
-    		if (uri.getScheme() == null) {
-                throw new InvalidParameterValueException("uri.scheme is null " + url + ", add http:// as a prefix");
-            } else if (uri.getScheme().equalsIgnoreCase("http")) {
-    			if (uri.getHost() == null || uri.getHost().equalsIgnoreCase("") || uri.getPath() == null || uri.getPath().equalsIgnoreCase("")) {
-    				throw new InvalidParameterValueException("Your host and/or path is wrong.  Make sure it's of the format http://hostname/path");
-    			}
-    		}
-    	} catch (URISyntaxException e) {
-			throw new InvalidParameterValueException(url + " is not a valid uri");
-    	}
-        
-        List<HostVO> hosts = new ArrayList<HostVO>();
-        Map<? extends ServerResource, Map<String, String>> resources = null;
-        
-        try {
-        	resources = discoverer.find(dcId, podId, clusterId, uri, username, password);
-        } catch(Exception e) {
-        	s_logger.info("Exception in external cluster discovery process with discoverer: " + discoverer.getName());
+	        try {
+	    		uri = new URI(UriUtils.encodeURIComponent(url));
+	    		if (uri.getScheme() == null) {
+	                throw new InvalidParameterValueException("uri.scheme is null " + url + ", add http:// as a prefix");
+	            } else if (uri.getScheme().equalsIgnoreCase("http")) {
+	    			if (uri.getHost() == null || uri.getHost().equalsIgnoreCase("") || uri.getPath() == null || uri.getPath().equalsIgnoreCase("")) {
+	    				throw new InvalidParameterValueException("Your host and/or path is wrong.  Make sure it's of the format http://hostname/path");
+	    			}
+	    		}
+	    	} catch (URISyntaxException e) {
+				throw new InvalidParameterValueException(url + " is not a valid uri");
+	    	}
+	        
+	        List<HostVO> hosts = new ArrayList<HostVO>();
+	        Map<? extends ServerResource, Map<String, String>> resources = null;
+	        
+	        try {
+	        	resources = discoverer.find(dcId, podId, clusterId, uri, username, password);
+	        } catch(Exception e) {
+	        	s_logger.info("Exception in external cluster discovery process with discoverer: " + discoverer.getName());
+	        }
+	        if (resources != null) {
+	            for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
+	                ServerResource resource = entry.getKey();
+	                AgentAttache attache = simulateStart(resource, entry.getValue(), true);
+	                if (attache != null) {
+	                    hosts.add(_hostDao.findById(attache.getId()));
+	                }
+	                discoverer.postDiscovery(hosts, _nodeId);
+	            }
+	            s_logger.info("External cluster has been successfully discovered by " + discoverer.getName());
+	            success = true;
+	            return hosts;
+	        }
+	    	
+	        s_logger.warn("Unable to find the server resources at " + url);
+	        throw new DiscoveryException("Unable to add the external cluster");
+        } finally {
+        	if(!success) {
+        		_clusterDao.remove(clusterId);
+        	}
         }
-        if (resources != null) {
-            for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
-                ServerResource resource = entry.getKey();
-                AgentAttache attache = simulateStart(resource, entry.getValue(), true);
-                if (attache != null) {
-                    hosts.add(_hostDao.findById(attache.getId()));
-                }
-                discoverer.postDiscovery(hosts, _nodeId);
-            }
-            s_logger.info("External cluster has been successfully discovered by " + discoverer.getName());
-            return hosts;
-        }
-    	
-        s_logger.warn("Unable to find the server resources at " + url);
-        throw new DiscoveryException("Unable to add the external cluster");
     }
     
-    private Discoverer getMatchingDiscover(String hypervisorType) {
+    private Discoverer getMatchingDiscover(Hypervisor.HypervisorType hypervisorType) {
         Enumeration<Discoverer> en = _discoverers.enumeration();
         while (en.hasMoreElements()) {
             Discoverer discoverer = en.nextElement();
-        	if(discoverer.matchHypervisor(hypervisorType))
+        	if(discoverer.getHypervisorType() == hypervisorType)
         		return discoverer;
     	}
         return null;

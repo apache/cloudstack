@@ -44,4 +44,5 @@ public interface Discoverer extends Adapter {
 	void postDiscovery(List<HostVO> hosts, long msId)  throws DiscoveryException;
 	
 	boolean matchHypervisor(String hypervisor);
+	Hypervisor.HypervisorType getHypervisorType();
 }

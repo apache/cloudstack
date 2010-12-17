@@ -95,6 +95,11 @@ public class DummyHostDiscoverer implements Discoverer {
     	return false;
     }
     
+    @Override
+	public Hypervisor.HypervisorType getHypervisorType() {
+    	return Hypervisor.HypervisorType.None;
+    }
+    
 	@Override
 	public void postDiscovery(List<HostVO> hosts, long msId) {
 		//do nothing

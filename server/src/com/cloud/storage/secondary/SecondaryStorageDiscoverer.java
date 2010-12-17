@@ -244,6 +244,11 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
     	return true;
     }
 
+    @Override
+	public Hypervisor.HypervisorType getHypervisorType() {
+    	return Hypervisor.HypervisorType.None;
+    }
+    
 	@Override
 	public void postDiscovery(List<HostVO> hosts, long msId) {
 		if (_useServiceVM) {
