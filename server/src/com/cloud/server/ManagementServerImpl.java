@@ -2755,7 +2755,7 @@ public class ManagementServerImpl implements ManagementServer {
         SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
         sb.and("accountIdEQ", sb.entity().getAllocatedToAccountId(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("address", sb.entity().getAddress(), SearchCriteria.Op.LIKE);
+        sb.and("address", sb.entity().getAddress(), SearchCriteria.Op.EQ);
         sb.and("vlanDbId", sb.entity().getVlanId(), SearchCriteria.Op.EQ);
 
         if ((accountId == null) && (domainId != null)) {
@@ -2797,7 +2797,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         if (address != null) {
-            sc.setParameters("address", address + "%");
+            sc.setParameters("address", address);
         }
 
         if (vlan != null) {
