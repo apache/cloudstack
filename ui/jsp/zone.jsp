@@ -495,7 +495,6 @@
                     <option value="XenServer" SELECTED>Xen Server</option>		
                     <option value="KVM">KVM</option>										
                     <option value="VmWare">VMware</option>										
-                    <option value="">Auto</option>									
                 </select>
             </li>
             <li>
@@ -506,27 +505,63 @@
                 <div id="pod_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>   
-            <li>
+            <li input_group="general">
                 <label for="host_hostname">
                     Host name:</label>
                 <input class="text" type="text" name="host_hostname" id="host_hostname" />
                 <div id="host_hostname_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li>
+            <li input_group="general">
                 <label for="user_name">
                     User name:</label>
                 <input class="text" type="text" name="host_username" id="host_username" />
                 <div id="host_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li>
-                <label for="user_name">
+            <li input_group="general">
+                <label for="host_password">
                     Password:</label>
                 <input class="text" type="password" name="host_password" id="host_password" autocomplete="off" />
                 <div id="host_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
+            <li input_group="vmware">
+                <label for="host_vcenter_address">
+                    vCenter Address:</label>
+                <input class="text" type="text" name="host_vcenter_address" id="host_vcenter_address" />
+                <div id="host_vcenter_address_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware">
+                <label for="host_vcenter_username">
+                    vCenter User:</label>
+                <input class="text" type="text" name="host_vcenter_username" id="host_vcenter_username" />
+                <div id="host_vcenter_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware">
+                <label for="host_vcenter_password">
+                    vCenter Password:</label>
+                <input class="text" type="password" name="host_vcenter_password" id="host_vcenter_password" autocomplete="off" />
+                <div id="host_vcenter_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware">
+                <label for="host_vcenter_dc">
+                    vCenter Datacenter:</label>
+                <input class="text" type="text" name="host_vcenter_dc" id="host_vcenter_dc" />
+                <div id="host_vcenter_dc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware">
+                <label for="host_vcenter_host">
+                    vCenter Host:</label>
+                <input class="text" type="text" name="host_vcenter_host" id="host_vcenter_host" />
+                <div id="host_vcenter_host_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            
             <li id="cluster_options_container">
                 <label>
                     &nbsp;</label><span><u>Cluster Options</u></span> </li>
@@ -570,7 +605,7 @@
 <!-- Add Host Dialog in zone page (end) -->
 
 <!-- Add Hypervisor managed cluster Dialog (begin) -->
-<div id="dialog_add_external_cluster_in_zone_page" title="Add External Cluster" style="display: none">
+<div id="dialog_add_external_cluster_in_zone_page" title="Add Cluster" style="display: none">
     <p>
         Add a hypervisor managed cluster for zone <b><span id="zone_name"></span></b>
     </p>
@@ -589,8 +624,8 @@
                 <label>
                     Cluster Type:</label>
                 <select class="select" id="type_dropdown">
-                    <option value="CloudManaged">CloudManaged</option>		
-                    <option value="ExternalManaged" SELECTED>ExternalManaged</option>										
+                    <option value="CloudManaged">Cloud.com Managed</option>		
+                    <option value="ExternalManaged" SELECTED>vSphere Managed</option>										
                 </select>
                 <div id="pod_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>

@@ -53,6 +53,12 @@ public class ListClustersCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="lists clusters by Zone ID")
     private Long zoneId;
 
+    @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="lists clusters by hypervisor type")
+    private String hypervisorType;
+
+    @Parameter(name=ApiConstants.CLUSTER_TYPE, type=CommandType.STRING, description="lists clusters by cluster type")
+    private String clusterType;
+    
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -72,6 +78,14 @@ public class ListClustersCmd extends BaseListCmd {
 
     public Long getZoneId() {
         return zoneId;
+    }
+    
+    public String getHypervisorType() {
+    	return hypervisorType;
+    }
+    
+    public String getClusterType() {
+    	return clusterType;
     }
 
     /////////////////////////////////////////////////////

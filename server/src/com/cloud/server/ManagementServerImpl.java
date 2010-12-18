@@ -1254,6 +1254,8 @@ public class ManagementServerImpl implements ManagementServer {
         Object name = cmd.getClusterName();
         Object podId = cmd.getPodId();
         Object zoneId = cmd.getZoneId();
+        Object hypervisorType = cmd.getHypervisorType();
+        Object clusterType = cmd.getClusterType();
 
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
@@ -1269,6 +1271,14 @@ public class ManagementServerImpl implements ManagementServer {
         
         if (zoneId != null) {
         	sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+        }
+        
+        if(hypervisorType != null) {
+        	sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hypervisorType);
+        }
+        
+        if(clusterType != null) {
+        	sc.addAnd("clusterType", SearchCriteria.Op.EQ, clusterType);
         }
 
         return _clusterDao.search(sc, searchFilter);
