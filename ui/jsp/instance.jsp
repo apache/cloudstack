@@ -739,9 +739,19 @@
                 <div class="vmpopup_contentpanel">
                     <h3>
                     </h3>
+					<div class="revwiz_message_container" style="display: none;" id="wiz_message">
+                        <div class="revwiz_message_top">
+                            <p id="wiz_message_text">
+                                Please select at least one network to continue</p>
+                        </div>
+                        <div class="revwiz_message_bottom">
+                            <div class="revwizcontinue_button" id="wiz_message_continue">
+                            </div>
+                        </div>
+                    </div>
                     <div class="vmpopup_offeringpanel" style="position:relative;">
-                        <div class="vmpopup_offeringbox" id="network_virtual_container">
-                            <input type="radio" id="network_virtual" name="radiogroup" class="radio" checked="checked" />
+                        <div class="vmpopup_offeringbox" id="network_virtual_container" style="display:none">
+                            <input type="checkbox" id="network_virtual" name="network_virtual_checkbox" class="radio" checked="checked" />
                             <label class="label" id="network_virtual_name">Virtual Network</label>
                             <div class="vmpopup_offdescriptionbox">
                                 <div class="vmpopup_offdescriptionbox_top">
@@ -917,7 +927,7 @@
                                 <span id="wizard_review_disk_offering"></span>
                             </div>
                         </div>
-                        <div class="vmpopup_reviewbox even">
+                        <div class="vmpopup_reviewbox even" id="wizard_review_virtual_network_container">
                             <div class="vmopopup_reviewtextbox">
                                 <div class="vmpopup_reviewtick">
                                 </div>
