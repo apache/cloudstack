@@ -11,7 +11,6 @@
 # If [source path] does not start with '/' or '~', then it is relative path to the location of the patch file. 
 scsiutil.py=/opt/xensource/sm
 NFSSR.py=/opt/xensource/sm
-LUNperVDI.py=/opt/xensource/sm
 nfs.py=/opt/xensource/sm
 vmops=..,0755,/etc/xapi.d/plugins
 vmopsSnapshot=..,0755,/etc/xapi.d/plugins
