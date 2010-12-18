@@ -375,7 +375,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.0")) 
         	return new XenServerResource();
         
-        String msg = "Only support XCP 0.1.1 and XenServer 5.6.0, but this one is " + prodBrand + " " + prodVersion;
+        String msg = "Only support XCP 0.1.1 and XenServer 5.6 , but this one is " + prodBrand + " " + prodVersion;
         _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
         s_logger.debug(msg);
         throw new RuntimeException(msg);
