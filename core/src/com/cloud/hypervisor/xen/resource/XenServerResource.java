@@ -17,6 +17,10 @@
 package com.cloud.hypervisor.xen.resource;
 
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.ejb.Local;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
@@ -28,6 +32,8 @@ import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase;
 import com.xensource.xenapi.VM;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Types.XenAPIException;
 
@@ -58,11 +64,19 @@ public class XenServerResource extends CitrixResourceBase {
     protected void setMemory(Connection conn, VM vm, long memsize) throws XmlRpcException, XenAPIException {
         vm.setMemoryLimits(conn, memsize, memsize, memsize, memsize);
     }   
- 
+    
     @Override
-    protected String getPatchPath() {
-        return "scripts/vm/hypervisor/xenserver/xenserver56";
-    } 
+    protected List<File> getPatchFiles() {      
+        List<File> files = new ArrayList<File>();
+        String patch = "scripts/vm/hypervisor/xenserver/xenserver56/patch";      
+        String patchfilePath = Script.findScript("" , patch);
+        if ( patchfilePath == null ) {
+            throw new CloudRuntimeException("Unable to find patch file " + patch);
+        }
+        File file = new File(patchfilePath);
+        files.add(file);
+        return files;
+    }
     
     @Override
     protected boolean can_bridge_firewall(Connection conn) {   

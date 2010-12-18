@@ -187,13 +187,6 @@ import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Session;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.BadServerResponse;
-import com.xensource.xenapi.Types.BootloaderFailed;
-import com.xensource.xenapi.Types.IpConfigurationMode;
-import com.xensource.xenapi.Types.OperationNotAllowed;
-import com.xensource.xenapi.Types.OtherOperationInProgress;
-import com.xensource.xenapi.Types.UnknownBootloader;
-import com.xensource.xenapi.Types.VmBadPowerState;
-import com.xensource.xenapi.Types.VmIsTemplate;
 import com.xensource.xenapi.Types.VmPowerState;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
@@ -3519,13 +3512,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     }
 
     protected List<File> getPatchFiles() {
-        
-        String patchPath = getPatchPath();
-        String patchfilePath = Script.findScript(patchPath, "patch");
-        File file = new File(patchfilePath);
-        List<File> files = new ArrayList<File>();
-        files.add(file);
-        return files;
+        return null;
     }
 
     protected SR getSRByNameLabelandHost(Connection conn, String name) throws BadServerResponse, XenAPIException, XmlRpcException {
@@ -3790,10 +3777,6 @@ public abstract class CitrixResourceBase implements ServerResource {
     }
 
     public CitrixResourceBase() {
-    }
-
-    protected String getPatchPath() {
-        return "scripts/vm/hypervisor/xenserver/xcpserver";
     }
 
     @Override
