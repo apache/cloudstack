@@ -270,14 +270,15 @@ function securityGroupJsonToIngressRuleTab() {
 		cache: false,		
 		data: createURL("command=listNetworkGroups"+"&domainid="+securityGroupObj.domainid+"&account="+securityGroupObj.account+"&networkgroupname="+securityGroupObj.name),
 		dataType: "json",
-		success: function(json) {			    				    
-			var items = json.listnetworkgroupsresponse.securitygroup[0].ingressrule;    
+		success: function(json) {	
+		    var securityGroupObj = json.listnetworkgroupsresponse.securitygroup[0];		    				    
+			var items = securityGroupObj.ingressrule;    
 			var $container = $thisTab.find("#tab_container").empty();     																			
 			if (items != null && items.length > 0) {			    
 				var template = $("#ingressrule_tab_template");				
 				for (var i = 0; i < items.length; i++) {
 					var newTemplate = template.clone(true);	               
-	                securityGroupIngressRuleJSONToTemplate(items[i], newTemplate); 
+	                securityGroupIngressRuleJSONToTemplate(items[i], newTemplate).data("parentObj", securityGroupObj); 
 	                $container.append(newTemplate.show());	
 				}			
 			}	
@@ -310,21 +311,95 @@ function securityGroupIngressRuleJSONToTemplate(jsonObj, $template) {
     $template.find("#cidr").text(cidrOrGroup);	
     
     // actions	
-	var $actionLink = $template.find("#snapshot_action_link");		
+	var $actionLink = $template.find("#ingressrule_action_link");		
 	$actionLink.bind("mouseover", function(event) {
-        $(this).find("#snapshot_action_menu").show();    
+        $(this).find("#ingressrule_action_menu").show();    
         return false;
     });
     $actionLink.bind("mouseout", function(event) {
-        $(this).find("#snapshot_action_menu").hide();    
+        $(this).find("#ingressrule_action_menu").hide();    
         return false;
     });		
 	
-	var $actionMenu = $actionLink.find("#snapshot_action_menu");
+	var $actionMenu = $actionLink.find("#ingressrule_action_menu");
     $actionMenu.find("#action_list").empty();	
         
-    //buildActionLinkForSubgridItem("Delete Ingress Rule", securityGroupIngressRuleActionMap, $actionMenu, $template);	   
+    buildActionLinkForSubgridItem("Delete Ingress Rule", securityGroupIngressRuleActionMap, $actionMenu, $template);	
+    
+    return $template;   
 } 
+
+var securityGroupIngressRuleActionMap = {      
+    "Delete Ingress Rule": {      
+        isAsyncJob: true,
+        asyncJobResponse: "revokenetworkgroupingress",
+		dialogBeforeActionFn : doDeleteIngressRule,
+        inProcessText: "Deleting Ingress Rule....",
+        afterActionSeccessFn: function(json, id, $subgridItem) {                 
+            $subgridItem.slideUp("slow", function() {
+                $(this).remove();
+            });
+        }
+    }    
+}  
+
+function doDeleteIngressRule($actionLink, $subgridItem) {
+	$("#dialog_info")	
+	.text("Please confirm you want to delete this ingress rule")
+    .dialog('option', 'buttons', { 						
+	    "Confirm": function() { 
+		    $(this).dialog("close"); 	
+			var id = $subgridItem.data("jsonObj").id;
+			
+			//???			
+			var securityGroupObj = $subgridItem.data("parentObj");
+			var ingressRuleObj = $subgridItem.data("jsonObj");
+                        
+            var moreCriteria = [];		 
+	        moreCriteria.push("&domainid="+securityGroupObj.domainid);    	    	        
+	        moreCriteria.push("&account="+securityGroupObj.account);    	    		    	        
+	        moreCriteria.push("&networkgroupname="+securityGroupObj.name);    
+    	    	
+    	    var protocol = ingressRuleObj.protocol;      
+	        moreCriteria.push("&protocol="+protocol);		    	
+    	 
+	        if(protocol == "icmp") {
+	            var icmpType = ingressRuleObj.icmptype;
+	            if(icmpType != null && icmpType.length > 0)
+	                moreCriteria.push("&icmptype="+encodeURIComponent(icmpType));
+    		    
+	            var icmpCode = ingressRuleObj.icmpcode;
+	            if(icmpCode != null && icmpCode.length > 0)
+	                moreCriteria.push("&icmpcode="+encodeURIComponent(icmpCode));
+	        }
+	        else {  //TCP, UDP
+	            var startPort = ingressRuleObj.startport;
+	            if(startPort != null)
+	                moreCriteria.push("&startport="+encodeURIComponent(startPort));
+    		    
+	            var endPort = ingressRuleObj.endport;
+	            if(endPort != null)
+	                moreCriteria.push("&endport="+encodeURIComponent(endPort));
+	        }
+    	        
+	        var cidr = ingressRuleObj.cidr;
+	        if(cidr != null && cidr.length > 0)
+	            moreCriteria.push("&cidrlist="+encodeURIComponent(cidr));
+    						
+	        var account = ingressRuleObj.account;
+	        var networkGroupName = ingressRuleObj.networkgroupname; 
+	        if((account != null && account.length > 0) && (networkGroupName != null && networkGroupName.length > 0))                        
+                moreCriteria.push("&usernetworkgrouplist[0].account="+account + "&usernetworkgrouplist[0].group="+networkGroupName);    			
+						
+			var apiCommand = "command=revokeNetworkGroupIngress"+moreCriteria.join("");                  
+            doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem); 
+	    }, 
+	    "Cancel": function() { 
+		    $(this).dialog("close"); 
+			
+	    } 
+    }).dialog("open");
+}
 
 function securityGroupClearRightPanel() {
     securityGroupClearDetailsTab();
