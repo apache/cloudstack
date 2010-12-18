@@ -252,14 +252,18 @@ function selectTreeNodeInLeftMenu($menuToSelect, expandable) {
 	$selectedLeftMenu = $menuToSelect; 	
 }
 
-function zoneJSONToTreeNode(json, $zoneNode) {
-    var zoneid = json.id;
+function zoneJSONToTreeNode(jsonObj, $zoneNode) {
+    var zoneid = jsonObj.id;
     $zoneNode.attr("id", "zone_" + zoneid);  
-    $zoneNode.data("jsonObj", json);
-    $zoneNode.find("#network_header").data("jsonObj", json);		 
-    $zoneNode.data("id", zoneid).data("name", fromdb(json.name));
-    var zoneName = $zoneNode.find("#zone_name").text(fromdb(json.name));	    
-    zoneName.data("jsonObj", json);	    
+    $zoneNode.data("jsonObj", jsonObj);
+    
+   if(jsonObj.networktype == "Advanced") {
+        $zoneNode.find("#network_header").show().data("jsonObj", jsonObj);		 
+    }
+        
+    $zoneNode.data("id", zoneid).data("name", fromdb(jsonObj.name));
+    var zoneName = $zoneNode.find("#zone_name").text(fromdb(jsonObj.name));	    
+    zoneName.data("jsonObj", jsonObj);	    
 		
 	$.ajax({
         data: createURL("command=listPods&zoneid="+zoneid),

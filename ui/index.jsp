@@ -974,7 +974,7 @@
 	            <div id="pods_container">
 	            </div>	 
 	            	            
-	            <div id="network_header" class="leftmenu_content">
+	            <div id="network_header" class="leftmenu_content" style="display: none">
 		            <div class="leftmenu_fourthindent">
 		                <div class="leftmenu_arrows white_nonexpanded_close" id="cluster_arrow">
 		                </div>	                
