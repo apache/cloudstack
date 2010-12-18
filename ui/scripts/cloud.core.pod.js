@@ -78,9 +78,9 @@ function podJsonToDetailsTab() {
     
     $thisTab.find("#name").text(fromdb(jsonObj.name));
     $thisTab.find("#name_edit").val(fromdb(jsonObj.name));
-    
-    $thisTab.find("#cidr").text(fromdb(jsonObj.cidr));   
-    $thisTab.find("#cidr_edit").val(fromdb(jsonObj.cidr));   
+        
+    $thisTab.find("#netmask").text(fromdb(jsonObj.netmask));   
+    $thisTab.find("#netmask_edit").val(fromdb(jsonObj.netmask));   
          
     $thisTab.find("#ipRange").text(getIpRange(jsonObj.startip, jsonObj.endip));
     $thisTab.find("#startIpRange_edit").val(fromdb(jsonObj.startip));
@@ -215,8 +215,8 @@ function podJsonClearDetailsTab(jsonObj) {
     $thisTab.find("#name").text("");
     $thisTab.find("#name_edit").val("");
     
-    $thisTab.find("#cidr").text("");  
-    $thisTab.find("#cidr_edit").val("");
+    $thisTab.find("#netmask").text("");  
+    $thisTab.find("#netmask_edit").val("");
           
     $thisTab.find("#ipRange").text("");
     $thisTab.find("#startIpRange_edit").val("");
@@ -867,8 +867,8 @@ var podActionMap = {
 }
 
 function doEditPod($actionLink, $detailsTab, $midmenuItem1) {       
-    var $readonlyFields  = $detailsTab.find("#name, #cidr, #ipRange, #gateway");
-    var $editFields = $detailsTab.find("#name_edit, #cidr_edit, #startIpRange_edit, #endIpRange_edit, #gateway_edit");
+    var $readonlyFields  = $detailsTab.find("#name, #netmask, #ipRange, #gateway");
+    var $editFields = $detailsTab.find("#name_edit, #netmask_edit, #startIpRange_edit, #endIpRange_edit, #gateway_edit");
            
     $readonlyFields.hide();
     $editFields.show();  
@@ -887,11 +887,11 @@ function doEditPod($actionLink, $detailsTab, $midmenuItem1) {
 }
 
 function doEditPod2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) {    
-    var jsonObj = $detailsTab.data("jsonObj");
+    var jsonObj = $midmenuItem1.data("jsonObj");    
     var id = jsonObj.id;		
 	var zoneid = jsonObj.zoneid;				
 	var oldName = jsonObj.name;	
-	var oldCidr = jsonObj.cidr;	
+	var oldNetmask = jsonObj.netmask;	
 	var oldStartip = jsonObj.startip;					
 	var oldEndip = jsonObj.endip;	
 	var oldGateway = jsonObj.gateway;
@@ -899,7 +899,7 @@ function doEditPod2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
     // validate values
 	var isValid = true;			
 	isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"));
-	isValid &= validateCIDR("CIDR", $detailsTab.find("#cidr_edit"), $detailsTab.find("#cidr_edit_errormsg"));	
+	isValid &= validateIp("Netmask", $detailsTab.find("#netmask_edit"), $detailsTab.find("#netmask_edit_errormsg"));	
 	isValid &= validateIp("Start IP Range", $detailsTab.find("#startIpRange_edit"), $detailsTab.find("#startIpRange_edit_errormsg"));  //required
 	isValid &= validateIp("End IP Range", $detailsTab.find("#endIpRange_edit"), $detailsTab.find("#endIpRange_edit_errormsg"), true);  //optional
 	isValid &= validateIp("Gateway", $detailsTab.find("#gateway_edit"), $detailsTab.find("#gateway_edit_errormsg"), true);  //optional when editing	
@@ -907,7 +907,7 @@ function doEditPod2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
 	    return;			
   
     var newName = trim($detailsTab.find("#name_edit").val());
-	var newCidr = trim($detailsTab.find("#cidr_edit").val());
+	var newNetmask = trim($detailsTab.find("#netmask_edit").val());
 	var newStartip = trim($detailsTab.find("#startIpRange_edit").val());
 	var newEndip = trim($detailsTab.find("#endIpRange_edit").val());	
 	var newIpRange = getIpRange(newStartip, newEndip);	
@@ -916,8 +916,8 @@ function doEditPod2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
     var array1 = []; 	    
     if(newName != oldName)
         array1.push("&name="+todb(newName));
-    if(newCidr != oldCidr)
-        array1.push("&cidr="+todb(newCidr));
+    if(newNetmask != oldNetmask)
+        array1.push("&netmask="+todb(newNetmask));
     if(newStartip != oldStartip)
         array1.push("&startIp="+todb(newStartip));    
     if(newEndip != oldEndip && newEndip != null && newEndip.length > 0) { 
