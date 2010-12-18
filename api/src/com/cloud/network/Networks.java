@@ -138,6 +138,7 @@ public class Networks {
         
         public <T> URI toUri(T value) {
             try {
+            	assert(this!=Vlan || value.getClass().isAssignableFrom(Integer.class)) : "Why are you putting non integer into vlan url";
                 return new URI(scheme + "://" + value.toString());
             } catch (URISyntaxException e) {
                 throw new CloudRuntimeException("Unable to convert to isolation type URI: " + value);
