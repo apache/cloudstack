@@ -43,6 +43,12 @@ function securityGroupGetSearchParams() {
 
 function afterLoadSecurityGroupJSP() {    
     initAddSecurityGroupDialog();  
+    
+    // switch between different tabs 
+    var tabArray = [$("#tab_details"), $("#tab_ingressrule")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_ingressrule")];
+    var afterSwitchFnArray = [securityGroupJsonToDetailsTab, securityGroupJsonToIngressRuleTab];
+    switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);           
 }
 
 function initAddSecurityGroupDialog() {
@@ -198,7 +204,7 @@ function securityGroupToMidmenu(jsonObj, $midmenuItem1) {
 function securityGroupToRightPanel($midmenuItem1) {
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
-    securityGroupJsonToDetailsTab();   
+    $("#tab_details").click();   
 }
 
 function securityGroupJsonToDetailsTab() {     
@@ -246,6 +252,79 @@ function securityGroupJsonToDetailsTab() {
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();         
 }
+
+function securityGroupJsonToIngressRuleTab() {       		
+	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
+	if($midmenuItem1 == null)
+	    return;
+	
+	var securityGroupObj = $midmenuItem1.data("jsonObj");	
+	if(securityGroupObj == null)
+	    return;
+	
+	var $thisTab = $("#right_panel_content").find("#tab_content_ingressrule");	    
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   
+        
+    $.ajax({
+		cache: false,		
+		data: createURL("command=listNetworkGroups"+"&domainid="+securityGroupObj.domainid+"&account="+securityGroupObj.account+"&networkgroupname="+securityGroupObj.name),
+		dataType: "json",
+		success: function(json) {			    				    
+			var items = json.listnetworkgroupsresponse.securitygroup[0].ingressrule;    
+			var $container = $thisTab.find("#tab_container").empty();     																			
+			if (items != null && items.length > 0) {			    
+				var template = $("#ingressrule_tab_template");				
+				for (var i = 0; i < items.length; i++) {
+					var newTemplate = template.clone(true);	               
+	                securityGroupIngressRuleJSONToTemplate(items[i], newTemplate); 
+	                $container.append(newTemplate.show());	
+				}			
+			}	
+			$thisTab.find("#tab_spinning_wheel").hide();    
+            $thisTab.find("#tab_container").show();    			
+		}
+	});
+} 
+
+function securityGroupIngressRuleJSONToTemplate(jsonObj, $template) {
+    $template.data("jsonObj", jsonObj);     
+    $template.attr("id", "securitygroup_ingressRule_"+fromdb(jsonObj.id));   
+     
+    $template.find("#grid_header_title").text(fromdb(jsonObj.ruleid));			   
+    $template.find("#id").text(fromdb(jsonObj.ruleid));       
+    $template.find("#protocol").text(jsonObj.protocol);
+    			    		    
+    var endpoint;		    
+    if(jsonObj.protocol == "icmp")
+        endpoint = "ICMP Type=" + ((jsonObj.icmptype!=null)?jsonObj.icmptype:"") + ", code=" + ((jsonObj.icmpcode!=null)?jsonObj.icmpcode:"");		        
+    else //tcp, udp
+        endpoint = "Port Range " + ((jsonObj.startport!=null)?jsonObj.startport:"") + "-" + ((jsonObj.endport!=null)?jsonObj.endport:"");		    
+    $template.find("#endpoint").text(endpoint);	
+    
+    var cidrOrGroup;
+    if(jsonObj.cidr != null && jsonObj.cidr.length > 0)
+        cidrOrGroup = jsonObj.cidr;
+    else if (jsonObj.account != null && jsonObj.account.length > 0 &&  jsonObj.networkgroupname != null && jsonObj.networkgroupname.length > 0)
+        cidrOrGroup = jsonObj.account + "/" + jsonObj.networkgroupname;		    
+    $template.find("#cidr").text(cidrOrGroup);	
+    
+    // actions	
+	var $actionLink = $template.find("#snapshot_action_link");		
+	$actionLink.bind("mouseover", function(event) {
+        $(this).find("#snapshot_action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {
+        $(this).find("#snapshot_action_menu").hide();    
+        return false;
+    });		
+	
+	var $actionMenu = $actionLink.find("#snapshot_action_menu");
+    $actionMenu.find("#action_list").empty();	
+        
+    //buildActionLinkForSubgridItem("Delete Ingress Rule", securityGroupIngressRuleActionMap, $actionMenu, $template);	   
+} 
 
 function securityGroupClearRightPanel() {
     securityGroupClearDetailsTab();

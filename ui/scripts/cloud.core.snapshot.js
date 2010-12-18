@@ -19,6 +19,11 @@
 function snapshotGetSearchParams() {
     var moreCriteria = [];	
 
+    var searchInput = $("#basic_search").find("#search_input").val();	 
+    if (searchInput != null && searchInput.length > 0) {	           
+        moreCriteria.push("&keyword="+todb(searchInput));	       
+    }     
+
 	var $advancedSearchPopup = $("#advanced_search_popup");
 	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {
 	    var name = $advancedSearchPopup.find("#adv_search_name").val();							
@@ -37,13 +42,7 @@ function snapshotGetSearchParams() {
 			    moreCriteria.push("&account="+account);		
 		}	
 	} 
-	else {     			    		
-	    var searchInput = $("#basic_search").find("#search_input").val();	 
-        if (lastSearchType == "basic_search" && searchInput != null && searchInput.length > 0) {	           
-            moreCriteria.push("&keyword="+todb(searchInput));	       
-        }        
-	}
-	
+		
 	return moreCriteria.join("");          
 }
 
