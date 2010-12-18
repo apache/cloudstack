@@ -166,7 +166,7 @@ listCapacity=com.cloud.api.commands.ListCapacityCmd;1
 
 #### host commands
 addHost=com.cloud.api.commands.AddHostCmd;1
-addExternalCluster=com.cloud.api.commands.AddExternalClusterCmd;1
+addCluster=com.cloud.api.commands.AddClusterCmd;1
 add=com.cloud.api.commands.AddHostCmd;1
 reconnectHost=com.cloud.api.commands.ReconnectHostCmd;1
 updateHost=com.cloud.api.commands.UpdateHostCmd;1

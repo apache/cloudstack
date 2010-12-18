@@ -35,6 +35,7 @@ public class ApiConstants {
     public static final String CLEANUP = "cleanup";
     public static final String CLUSTER_ID = "clusterid";
     public static final String CLUSTER_NAME = "clustername";
+    public static final String CLUSTER_TYPE = "clustertype";
     public static final String COMPONENT = "component";
     public static final String CPU_NUMBER = "cpunumber";
     public static final String CPU_SPEED = "cpuspeed";

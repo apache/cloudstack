@@ -239,7 +239,6 @@
                     <option value="XenServer" SELECTED>Xen Server</option>		
                     <option value="KVM">KVM</option>										
                     <option value="VmWare">VMware</option>										
-                    <option value="">Auto</option>									
                 </select>
             </li>
             <li>
@@ -317,32 +316,43 @@
             <li>
             	<label for="cluster_hypervisor">Hypervisor:</label>
                 <select class="select" id="cluster_hypervisor">
-                    <option value="VmWare" SELECTED>VMware</option>										
+                    <option value="XenServer" SELECTED>Xen Server</option>		
+                    <option value="KVM">KVM</option>										
+                    <option value="VmWare">VMware</option>										
                 </select>
             </li>
-            <li>
+            <li input_group="vmware">
+                <label>
+                    Cluster Type:</label>
+                <select class="select" id="type_dropdown">
+                    <option value="CloudManaged">CloudManaged</option>		
+                    <option value="ExternalManaged" SELECTED>ExternalManaged</option>										
+                </select>
+                <div id="pod_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>   
+            <li input_group="vmware" input_sub_group="external">
                 <label for="cluster_hostname">
                     vCenter Server:</label>
                 <input class="text" type="text" name="cluster_hostname" id="cluster_hostname" />
                 <div id="cluster_hostname_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li>
+            <li input_group="vmware" input_sub_group="external">
                 <label for="cluster_username">
-                    vCenter user:</label>
+                    vCenter User:</label>
                 <input class="text" type="text" name="cluster_username" id="cluster_username" />
                 <div id="cluster_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li>
+            <li input_group="vmware" input_sub_group="external">
                 <label for="cluster_password">
                     Password:</label>
                 <input class="text" type="password" name="cluster_password" id="cluster_password" autocomplete="off" />
                 <div id="cluster_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            
-            <li>
+            <li input_group="vmware" input_sub_group="external">
                 <label for="cluster_datacenter">
                     vCenter Datacenter:</label>
                 <input class="text" type="text" name="cluster_datacenter" id="cluster_datacenter" />

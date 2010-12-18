@@ -40,6 +40,9 @@ public class ClusterResponse extends BaseResponse {
     @SerializedName("zonename") @Param(description="the Zone name of the cluster")
     private String zoneName;
 
+    @SerializedName("hypervisortype") @Param(description="the hypervisor type of the cluster")
+    private String hypervisorType;
+    
     @SerializedName("clustertype") @Param(description="the type of the cluster")
     private String clusterType;
     
@@ -97,5 +100,13 @@ public class ClusterResponse extends BaseResponse {
     
     public void setClusterType(String clusterType) {
     	this.clusterType = clusterType;
+    }
+    
+    public String getHypervisorType() {
+    	return this.hypervisorType;
+    }
+    
+    public void setHypervisorType(String hypervisorType) {
+    	this.hypervisorType = hypervisorType;
     }
 }

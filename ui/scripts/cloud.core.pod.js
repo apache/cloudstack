@@ -278,17 +278,41 @@ function initAddClusterButton($button, currentPageInRightPanel, $leftmenuItem1) 
             dialogAddCluster.find("#zone_name").text(fromdb(podObj.zonename));  
             dialogAddCluster.find("#pod_name").text(fromdb(podObj.name)); 
         }
+
+        dialogAddCluster.find("#cluster_hypervisor").change(function() {
+        	if($(this).val() == "VmWare") {
+        		$('li[input_group]="vmware"', dialogAddCluster).show();
+        		dialogAddCluster.find("#type_dropdown").change();
+        	} else {
+        		$('li[input_group]="vmware"', dialogAddCluster).hide();
+        	}
+        }).change();
+        
+        dialogAddCluster.find("#type_dropdown").change(function() {
+        	if($(this).val() == "ExternalManaged") {
+        		$('li[input_sub_group]="external"', dialogAddCluster).show();
+        	} else {
+        		$('li[input_sub_group]="external"', dialogAddCluster).hide();
+        	}
+        });
         
         dialogAddCluster.dialog('option', 'buttons', { 				
 	        "Add": function() { 
 	            var $thisDialog = $(this);		            
-	            			   
+
+			    var hypervisor = $thisDialog.find("#cluster_hypervisor").val();
+			    var clusterType="CloudManaged";
+			    if(hypervisor == "VmWare")
+			    	clusterType = $thisDialog.find("#type_dropdown").val();
+	            
 		        // validate values
-		        var isValid = true;									
-		        isValid &= validateString("vCenter Server", $thisDialog.find("#cluster_hostname"), $thisDialog.find("#cluster_hostname_errormsg"));
-		        isValid &= validateString("vCenter user", $thisDialog.find("#cluster_username"), $thisDialog.find("#cluster_username_errormsg"));
-		        isValid &= validateString("Password", $thisDialog.find("#cluster_password"), $thisDialog.find("#cluster_password_errormsg"));	
-		        isValid &= validateString("Datacenter", $thisDialog.find("#cluster_datacenter"), $thisDialog.find("#cluster_datacenter_errormsg"));	
+		        var isValid = true;
+		        if(hypervisor == "VmWare" && clusterType != "CloudManaged") {
+			        isValid &= validateString("vCenter Server", $thisDialog.find("#cluster_hostname"), $thisDialog.find("#cluster_hostname_errormsg"));
+			        isValid &= validateString("vCenter user", $thisDialog.find("#cluster_username"), $thisDialog.find("#cluster_username_errormsg"));
+			        isValid &= validateString("Password", $thisDialog.find("#cluster_password"), $thisDialog.find("#cluster_password_errormsg"));	
+			        isValid &= validateString("Datacenter", $thisDialog.find("#cluster_datacenter"), $thisDialog.find("#cluster_datacenter_errormsg"));	
+		        }
 		        isValid &= validateString("Cluster name", $thisDialog.find("#cluster_name"), $thisDialog.find("#cluster_name_errormsg"));	
 		        if (!isValid) 
 		            return;
@@ -298,32 +322,37 @@ function initAddClusterButton($button, currentPageInRightPanel, $leftmenuItem1) 
 		        var array1 = [];
 			    var hypervisor = $thisDialog.find("#cluster_hypervisor").val();
 			    array1.push("&hypervisor="+hypervisor);
-		        
+			    array1.push("&clustertype=" + clusterType);
 		        array1.push("&zoneId="+zoneId);
 		        array1.push("&podId="+podId);
-						      
-		        var username = trim($thisDialog.find("#cluster_username").val());
-		        array1.push("&username="+todb(username));
-				
-		        var password = trim($thisDialog.find("#cluster_password").val());
-		        array1.push("&password="+todb(password));
-		        
-		        var hostname = trim($thisDialog.find("#cluster_hostname").val());
-		        var dcName = trim($thisDialog.find("#cluster_datacenter").val());
+
 		        var clusterName = trim($thisDialog.find("#cluster_name").val());
+		        if(hypervisor == "VmWare" && clusterType != "CloudManaged") {
+			        
+			        var username = trim($thisDialog.find("#cluster_username").val());
+			        array1.push("&username="+todb(username));
+					
+			        var password = trim($thisDialog.find("#cluster_password").val());
+			        array1.push("&password="+todb(password));
+			        
+			        var hostname = trim($thisDialog.find("#cluster_hostname").val());
+			        var dcName = trim($thisDialog.find("#cluster_datacenter").val());
+			        
+			        var url;					
+			        if(hostname.indexOf("http://")==-1)
+			            url = "http://" + todb(hostname);
+			        else
+			            url = hostname;
+			        url += "/" + todb(dcName) + "/" + todb(clusterName);
+			        array1.push("&url=" + todb(url));
+			        
+			        clusterName = hostname + "/" + dcName + "/" + clusterName
+		        }
+
+		        array1.push("&clustername=" + todb(clusterName));
 		        
-		        array1.push("&clustername=" + todb(hostname + "/" + dcName + "/" + clusterName));
-		        
-		        var url;					
-		        if(hostname.indexOf("http://")==-1)
-		            url = "http://" + todb(hostname);
-		        else
-		            url = hostname;
-		        url += "/" + todb(dcName) + "/" + todb(clusterName);
-		        array1.push("&url=" + todb(url));
-									
 		        $.ajax({
-			       data: createURL("command=addExternalCluster" + array1.join("")),
+			       data: createURL("command=addCluster" + array1.join("")),
 			        dataType: "json",
 			        success: function(json) {
 			            $thisDialog.find("#spinning_wheel").hide();
@@ -331,7 +360,7 @@ function initAddClusterButton($button, currentPageInRightPanel, $leftmenuItem1) 
 					
 					    showMiddleMenu();
 					    
-                        clickClusterNodeAfterAddHost("new_cluster_radio", podId, hostname + "/" + dcName + "/" + clusterName, null, $thisDialog);
+                        clickClusterNodeAfterAddHost("new_cluster_radio", podId, clusterName, null, $thisDialog);
 			        },			
                     error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {							

@@ -73,7 +73,7 @@ import com.cloud.agent.transport.Response;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.commands.AddExternalClusterCmd;
+import com.cloud.api.commands.AddClusterCmd;
 import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
@@ -545,7 +545,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     }
     
     @Override
-    public List<? extends Host> discoverExternalCluster(AddExternalClusterCmd cmd) 
+    public List<? extends Host> discoverCluster(AddClusterCmd cmd) 
     	throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         Long dcId = cmd.getZoneId();
         Long podId = cmd.getPodId();
@@ -587,6 +587,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             throw new InvalidParameterValueException("Please specify a valid hypervisor name");
         }
         
+        Cluster.ClusterType clusterType = null;
+        if(cmd.getClusterType() != null && !cmd.getClusterType().isEmpty()) {
+        	clusterType = Cluster.ClusterType.valueOf(cmd.getClusterType());
+        }
+        if(clusterType == null)
+        	clusterType = Cluster.ClusterType.CloudManaged;
+        
         Discoverer discoverer = getMatchingDiscover(hypervisorType);
         if(discoverer == null) {
             throw new InvalidParameterValueException("Please specify a valid hypervisor");
@@ -596,7 +603,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         if (clusterName != null) {      
             ClusterVO cluster = new ClusterVO(dcId, podId, clusterName);
             cluster.setHypervisorType(cmd.getHypervisor());
-            cluster.setClusterType(Cluster.ClusterType.ExternalManaged);
+            
+            cluster.setClusterType(clusterType);
             try {
                 cluster = _clusterDao.persist(cluster);
             } catch (Exception e) {
@@ -607,6 +615,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             }
             clusterId = cluster.getId();
         }
+        
+        if(clusterType == Cluster.ClusterType.CloudManaged)
+        	return _hostDao.listByCluster(clusterId);
         
         boolean success = false;
         try {

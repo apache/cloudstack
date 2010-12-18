@@ -19,7 +19,7 @@ package com.cloud.resource;
 
 import java.util.List;
 
-import com.cloud.api.commands.AddExternalClusterCmd;
+import com.cloud.api.commands.AddClusterCmd;
 import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
@@ -55,7 +55,7 @@ public interface ResourceService {
      * @throws DiscoveryException
      * @throws InvalidParameterValueException
      */
-    List<? extends Host> discoverExternalCluster(AddExternalClusterCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+    List<? extends Host> discoverCluster(AddClusterCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
     
     List<? extends Host> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
     List<? extends Host> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
