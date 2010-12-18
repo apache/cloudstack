@@ -187,7 +187,13 @@ import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Session;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.BootloaderFailed;
 import com.xensource.xenapi.Types.IpConfigurationMode;
+import com.xensource.xenapi.Types.OperationNotAllowed;
+import com.xensource.xenapi.Types.OtherOperationInProgress;
+import com.xensource.xenapi.Types.UnknownBootloader;
+import com.xensource.xenapi.Types.VmBadPowerState;
+import com.xensource.xenapi.Types.VmIsTemplate;
 import com.xensource.xenapi.Types.VmPowerState;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
@@ -577,9 +583,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
         VM template = templates.iterator().next();
         
-        VM vm = template.createClone(conn, vmSpec.getName());
-        vm.setAffinity(conn, host);
-        
+        VM vm = template.createClone(conn, vmSpec.getName());       
         VM.Record vmr = vm.getRecord(conn);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Created VM " + vmr.uuid + " for " + vmSpec.getName());
@@ -795,7 +799,7 @@ public abstract class CitrixResourceBase implements ServerResource {
                 createVif(conn, vmName, vm, nic);
             }
             
-            vm.startOn(conn, host, false, true);
+            startVM(conn, host, vm, vmName);
             
             if (_canBridgeFirewall) {
                 String result = null;
@@ -2474,7 +2478,33 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
         return createVIF(conn, vm, mac, rate, devNum,  vlanNetwork);
     }
-
+    
+    void shutdownVM(Connection conn, VM vm, String vmName) throws XmlRpcException {
+        try {      
+            vm.cleanShutdown(conn);
+        } catch (Types.XenAPIException e) {
+            s_logger.debug("Unable to cleanShutdown VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString());
+            try {
+                vm.hardShutdown(conn);
+                return;
+            } catch (Exception e1) {
+                String msg = "Unable to hardShutdown VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString();
+                s_logger.warn(msg, e1);
+                throw new CloudRuntimeException(msg);
+            }
+        }
+    }
+    
+    void startVM(Connection conn, Host host, VM vm, String vmName) {
+        try {
+            vm.startOn(conn, host, false, true);
+        } catch (Exception e) {
+            String msg = "Unable to start VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString();
+            s_logger.warn(msg, e);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+    
     protected StopAnswer execute(final StopCommand cmd) {
         Connection conn = getConnection();
         String vmName = cmd.getVmName();
@@ -2529,45 +2559,26 @@ public abstract class CitrixResourceBase implements ServerResource {
                     if (vmr.powerState == VmPowerState.RUNNING) {
                         /* when stop a vm, set affinity to current xenserver */
                         vm.setAffinity(conn, vm.getResidentOn(conn));
-                        try {
-                            if (VirtualMachineName.isValidRouterName(vmName)) {
-                                if(cmd.getPrivateRouterIpAddress() != null){
-                                    long[] stats = getNetworkStats(conn, cmd.getPrivateRouterIpAddress());
-                                    bytesSent = stats[0];
-                                    bytesRcvd = stats[1];
-                                }
+                        if (VirtualMachineName.isValidRouterName(vmName)) {
+                            if (cmd.getPrivateRouterIpAddress() != null) {
+                                long[] stats = getNetworkStats(conn, cmd.getPrivateRouterIpAddress());
+                                bytesSent = stats[0];
+                                bytesRcvd = stats[1];
                             }
-                            if (_canBridgeFirewall) {
-                                String result = callHostPlugin(conn, "vmops", "destroy_network_rules_for_vm", "vmName", cmd.getVmName());
-                                if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
-                                    s_logger.warn("Failed to remove  network rules for vm " + cmd.getVmName());
-                                } else {
-                                    s_logger.info("Removed  network rules for vm " + cmd.getVmName());
-                                }
-                            }
-                            vm.cleanShutdown(conn);
-
-                        } catch (XenAPIException e) {
-                            s_logger.debug("Do Not support Clean Shutdown, fall back to hard Shutdown: " + e.toString());
-                            try {
-                                vm.hardShutdown(conn);
-                            } catch (XenAPIException e1) {
-                                String msg = "Hard Shutdown failed due to " + e1.toString();
-                                s_logger.warn(msg, e1);
-                                return new StopAnswer(cmd, msg);
-                            } catch (XmlRpcException e1) {
-                                String msg = "Hard Shutdown failed due to " + e1.getMessage();
-                                s_logger.warn(msg, e1);
-                                return new StopAnswer(cmd, msg);
-                            }
-                        } catch (XmlRpcException e) {
-                            String msg = "Clean Shutdown failed due to " + e.getMessage();
-                            s_logger.warn(msg, e);
-                            return new StopAnswer(cmd, msg);
                         }
+                        if (_canBridgeFirewall) {
+                            String result = callHostPlugin(conn, "vmops", "destroy_network_rules_for_vm", "vmName", cmd
+                                    .getVmName());
+                            if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+                                s_logger.warn("Failed to remove  network rules for vm " + cmd.getVmName());
+                            } else {
+                                s_logger.info("Removed  network rules for vm " + cmd.getVmName());
+                            }
+                        }
+                        shutdownVM(conn, vm, vmName);
                     }
                 } catch (Exception e) {
-                    String msg = "Catch exception " + e.getClass().toString() + " when stop VM:" + cmd.getVmName();
+                    String msg = "Catch exception " + e.getClass().getName() + " when stop VM:" + cmd.getVmName() + " due to " + e.toString();
                     s_logger.debug(msg);
                     return new StopAnswer(cmd, msg);
                 } finally {
