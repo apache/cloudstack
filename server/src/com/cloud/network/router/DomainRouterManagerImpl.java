@@ -20,6 +20,7 @@ package com.cloud.network.router;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +55,7 @@ import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
+import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
@@ -129,7 +131,6 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -580,41 +581,41 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         return startRouter(cmd.getId());
     }
 
-    private boolean resendRouterState(final DomainRouterVO router) {
-        if (router.getRole() == Role.DHCP_FIREWALL_LB_PASSWD_USERDATA) {
-			//source NAT address is stored in /proc/cmdline of the domR and gets
-			//reassigned upon powerup. Source NAT rule gets configured in StartRouter command
-        	final List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(router.getAccountId(), router.getDataCenterId(), null);
-			final List<String> ipAddrList = new ArrayList<String>();
-			for (final IPAddressVO ipVO : ipAddrs) {
-				ipAddrList.add(ipVO.getAddress());
-			}
-			if (!ipAddrList.isEmpty()) {
-			    try {
-    				final boolean success = _networkMgr.associateIP(router, ipAddrList, true, 0);
-                    if (!success) {
-                        return false;
-                    }
-                } catch (ConcurrentOperationException e) {
-                    s_logger.warn("unable to associate ip due to ", e);
-                    return false;
-                }
-			}
-			final List<PortForwardingRuleVO> fwRules = new ArrayList<PortForwardingRuleVO>();
-//FIXME:			for (final IPAddressVO ipVO : ipAddrs) {
-//				//We need only firewall rules that are either forwarding or for load balancers
-//				fwRules.addAll(_rulesDao.listIPForwarding(ipVO.getAddress(), true));
-//				fwRules.addAll(_rulesDao.listIpForwardingRulesForLoadBalancers(ipVO.getAddress()));
+//    private boolean resendRouterState(final DomainRouterVO router) {
+//        if (router.getRole() == Role.DHCP_FIREWALL_LB_PASSWD_USERDATA) {
+//			//source NAT address is stored in /proc/cmdline of the domR and gets
+//			//reassigned upon powerup. Source NAT rule gets configured in StartRouter command
+//        	final List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(router.getAccountId(), router.getDataCenterId(), null);
+//			final List<String> ipAddrList = new ArrayList<String>();
+//			for (final IPAddressVO ipVO : ipAddrs) {
+//				ipAddrList.add(ipVO.getAddress());
 //			}
-//			final List<PortForwardingRuleVO> result = _networkMgr.updateFirewallRules(router
-//					.getPublicIpAddress(), fwRules, router);
-//			if (result.size() != fwRules.size()) {
-//				return false;
+//			if (!ipAddrList.isEmpty()) {
+//			    try {
+//    				final boolean success = _networkMgr.associateIP(router, ipAddrList, true, 0);
+//                    if (!success) {
+//                        return false;
+//                    }
+//                } catch (ConcurrentOperationException e) {
+//                    s_logger.warn("unable to associate ip due to ", e);
+//                    return false;
+//                }
 //			}
-		}
-		return resendDhcpEntries(router) && resendVpnServerData(router);
-      
-    }
+//			final List<PortForwardingRuleVO> fwRules = new ArrayList<PortForwardingRuleVO>();
+////FIXME:			for (final IPAddressVO ipVO : ipAddrs) {
+////				//We need only firewall rules that are either forwarding or for load balancers
+////				fwRules.addAll(_rulesDao.listIPForwarding(ipVO.getAddress(), true));
+////				fwRules.addAll(_rulesDao.listIpForwardingRulesForLoadBalancers(ipVO.getAddress()));
+////			}
+////			final List<PortForwardingRuleVO> result = _networkMgr.updateFirewallRules(router
+////					.getPublicIpAddress(), fwRules, router);
+////			if (result.size() != fwRules.size()) {
+////				return false;
+////			}
+//		}
+//		return resendDhcpEntries(router) && resendVpnServerData(router);
+//      
+//    }
     
     private boolean resendDhcpEntries(final DomainRouterVO router){
     	final List<? extends UserVm> vms = _vmDao.listBy(router.getId(), State.Creating, State.Starting, State.Running, State.Stopping, State.Stopped, State.Migrating);
@@ -1987,35 +1988,53 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
 //    }
     
 
-    private Commands getAssociateIPCommands(final DomainRouterVO router, final List<? extends PublicIpAddress> ipAddrList, Commands cmds, long vmId) {        
-          
-        //Ip addresses have to be sorted before sending
-        Collections.sort(ipAddrList, new Comparator<IpAddress>() {
-          @Override
-          public int compare(IpAddress o1, IpAddress o2) {
-              return o1.getAddress().compareTo(o2.getAddress());
-          } });
-    
-         boolean firstIP = true;
-         
-         for (final PublicIpAddress ip: ipAddrList) {
+    private Commands getAssociateIPCommands(final DomainRouterVO router, final List<? extends PublicIpAddress> ips, Commands cmds, long vmId) {  
+        
+        //Ensure that in multiple vlans case we first send all ip addresses of vlan1, then all ip addresses of vlan2, etc..
+        Map<String, ArrayList<PublicIpAddress>> vlanIpMap = new HashMap<String, ArrayList<PublicIpAddress>>();
+        for (final PublicIpAddress ipAddress: ips) {
+            String vlanTag = ipAddress.getVlanTag();
+            ArrayList<PublicIpAddress> ipList = vlanIpMap.get(vlanTag);
+            if (ipList == null) {
+                ipList = new ArrayList<PublicIpAddress>();
+            }
+            ipList.add(ipAddress);
+            vlanIpMap.put(vlanTag, ipList);
+        }
+        
+        for (Map.Entry<String, ArrayList<PublicIpAddress>> vlanAndIp: vlanIpMap.entrySet()) {
+            List<PublicIpAddress> ipAddrList = vlanAndIp.getValue();
+            //Source nat ip address should always be sent first
+            Collections.sort(ipAddrList, new Comparator<PublicIpAddress>() {
+                @Override
+                public int compare(PublicIpAddress o1, PublicIpAddress o2) {
+                    boolean s1 = o1.isSourceNat();
+                    boolean s2 = o2.isSourceNat();
+                    return (s1 ^ s2) ? ((s1 ^ true) ? 1 : -1) : 0;
+                } });
              
-             boolean add = (ip.getState() == IpAddress.State.Releasing ? false : true);
-             boolean sourceNat = ip.isSourceNat();
-             String vlanId = ip.getVlanTag();
-             String vlanGateway = ip.getGateway();
-             String vlanNetmask = ip.getNetmask();
-             String vifMacAddress = ip.getMacAddress();
-            
-             String vmGuestAddress = null;
-             if(vmId!=0){
-                 vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
+             IpAddressTO[] ipsToSend = new IpAddressTO[ipAddrList.size()];
+             int i = 0;
+             boolean firstIP = true;
+             for (final PublicIpAddress ipAddr: ipAddrList) {
+                 
+                 boolean add = (ipAddr.getState() == IpAddress.State.Releasing ? false : true);
+                 boolean sourceNat = ipAddr.isSourceNat();
+                 String vlanId = ipAddr.getVlanTag();
+                 String vlanGateway = ipAddr.getGateway();
+                 String vlanNetmask = ipAddr.getNetmask();
+                 String vifMacAddress = ipAddr.getMacAddress();
+                 
+                 String vmGuestAddress = null;
+                 if(vmId!=0){
+                     vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
+                 }
+                 IpAddressTO ip = new IpAddressTO(ipAddr.getAddress(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress);
+                 ipsToSend[i++] = ip;
+                 firstIP = false;
              }
-
-             cmds.addCommand("IPAssocCommand", new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ip.getAddress(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress));
-
-             firstIP = false;
-         }
+             cmds.addCommand("IPAssocCommand", new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ipsToSend));
+        }
          return cmds;
     }
     

@@ -121,6 +121,7 @@ import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IPAssocCommand;
+import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
@@ -138,6 +139,7 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.ShareAnswer;
 import com.cloud.agent.api.storage.ShareCommand;
+import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StorageFilerTO;
@@ -1255,14 +1257,22 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     protected Answer execute(final IPAssocCommand cmd) {
         Connection conn = getConnection();
+        String[] results = new String[cmd.getIpAddresses().length];
+        int i = 0;
         try {
-            assignPublicIpAddress(conn, cmd.getRouterName(), cmd.getRouterIp(), cmd.getPublicIp(), cmd.isAdd(), cmd.isFirstIP(), cmd.isSourceNat(), cmd.getVlanId(),
-                    cmd.getVlanGateway(), cmd.getVlanNetmask(), cmd.getVifMacAddress(), cmd.getGuestIp());
+            IpAddressTO[] ips = cmd.getIpAddresses();   
+            for (IpAddressTO ip : ips) {
+                assignPublicIpAddress(conn, cmd.getRouterName(), cmd.getRouterIp(), ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(), ip.isSourceNat(), ip.getVlanId(),
+                        ip.getVlanGateway(), ip.getVlanNetmask(), ip.getVifMacAddress(), ip.getGuestIp());
+                results[i++] = ip.getPublicIp() + " - success";
+            }
         } catch (InternalErrorException e) {
-            return new Answer(cmd, false, e.getMessage());
+            s_logger.error(
+                    "Ip Assoc failure on applying one ip due to exception:  ", e);
+            results[i++] = IpAssocAnswer.errorResult;
         }
 
-        return new Answer(cmd);
+        return new IpAssocAnswer(cmd, results);
     }
 
     protected GetVncPortAnswer execute(GetVncPortCommand cmd) {

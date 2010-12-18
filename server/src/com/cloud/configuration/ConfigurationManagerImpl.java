@@ -529,7 +529,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @DB
     public Pod editPod(UpdatePodCmd cmd)  
     {
-    	
     	//Input validation 
     	String startIp = cmd.getStartIp();
     	String endIp = cmd.getEndIp();
@@ -2171,7 +2170,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         		stmt.executeUpdate();
         		stmt.close();
         	} catch (Exception ex) {
-        		s_logger.debug("Exception saving public IP range: " + ex);
+        		s_logger.warn("Exception saving public IP range: ", ex);
         		return false;
         	}
         	startIPLong += 1;

@@ -46,9 +46,11 @@ import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IPAssocCommand;
+import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.script.OutputInterpreter;
@@ -203,11 +205,19 @@ public class VirtualRoutingResource implements Manager {
 	}
 
     protected Answer execute(final IPAssocCommand cmd) {
-        final String result = assignPublicIpAddress(cmd.getRouterName(), cmd.getRouterIp(), cmd.getPublicIp(), cmd.isAdd(), cmd.isSourceNat(), cmd.getVlanId(), cmd.getVlanGateway(), cmd.getVlanNetmask());
-        if (result != null) {
-            return new Answer(cmd, false, result);
+        IpAddressTO[] ips = cmd.getIpAddresses();
+        String[] results = new String[cmd.getIpAddresses().length];
+        int i = 0;
+        String result = null;
+        for (IpAddressTO ip : ips) {
+            result = assignPublicIpAddress(cmd.getRouterName(), cmd.getRouterIp(), ip.getPublicIp(), ip.isAdd(), ip.isSourceNat(), ip.getVlanId(), ip.getVlanGateway(), ip.getVlanNetmask());
+            if (result != null) {
+                results[i++] = IpAssocAnswer.errorResult;
+            } else {
+                results[i++] = result;
+            }
         }
-        return new Answer(cmd);
+        return new IpAssocAnswer(cmd, results);
 	}
 
 	private String setLoadBalancerConfig(final String cfgFile,

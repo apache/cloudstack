@@ -3194,15 +3194,16 @@ public class ManagementServerImpl implements ManagementServer {
                         + " and parentId " + parentId);
                 return dbDomain;
             } catch (IllegalArgumentException ex) {
+                s_logger.warn("Failed to create domain ", ex);
             	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_CREATE, "Domain, " + name + " was not created with owner id = " + ownerId
                         + " and parentId " + parentId);
                 throw ex;
             }
         } else {
-        	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_CREATE, "Domain, " + name + " was not created with owner id = " + ownerId
+            EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_CREATE, "Domain, " + name + " was not created with owner id = " + ownerId
                     + " and parentId " + parentId);
+            throw new InvalidParameterValueException("Domain with name " + name + " already exists for the parent id=" + parentId);
         }
-        return null;
     }
 
     @Override

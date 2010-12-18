@@ -38,7 +38,6 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
@@ -101,8 +100,8 @@ import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.DomainRouterManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRuleVO;
@@ -395,7 +394,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
                 }
 
-                cmds.addCommand(new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ip.getAddress(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress));
+                //cmds.addCommand(new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ip.getAddress(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress));
 
                 firstIP = false;
             }
