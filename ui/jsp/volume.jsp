@@ -738,13 +738,7 @@
                         Zone:</label>
                     <select class="select" id="adv_search_zone">
                     </select>
-                </li>
-                <li id="adv_search_pod_li" style="display: none;">
-                    <label for="filter" id="adv_search_pod_label">
-                        Pod:</label>
-                    <select class="select" id="adv_search_pod">
-                    </select>
-                </li>
+                </li>              
                 <li id="adv_search_domain_li" style="display: none;">
                     <label for="filter">
                         Domain:</label>
