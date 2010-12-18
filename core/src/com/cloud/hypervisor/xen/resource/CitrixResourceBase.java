@@ -2335,20 +2335,9 @@ public abstract class CitrixResourceBase implements ServerResource {
             }
             for (VM vm : vms) {
                 try {
-                    vm.cleanReboot(conn);
-                } catch (XenAPIException e) {
-                    s_logger.debug("Do Not support Clean Reboot, fall back to hard Reboot: " + e.toString());
-                    try {
-                        vm.hardReboot(conn);
-                    } catch (XenAPIException e1) {
-                        s_logger.debug("Caught exception on hard Reboot " + e1.toString());
-                        return new RebootAnswer(cmd, "reboot failed: " + e1.toString());
-                    } catch (XmlRpcException e1) {
-                        s_logger.debug("Caught exception on hard Reboot " + e1.getMessage());
-                        return new RebootAnswer(cmd, "reboot failed");
-                    }
-                } catch (XmlRpcException e) {
-                    String msg = "Clean Reboot failed due to " + e.getMessage();
+                    rebootVM(conn, vm, vm.getNameLabel(conn));
+                } catch (Exception e) {
+                    String msg = e.toString();
                     s_logger.warn(msg, e);
                     return new RebootAnswer(cmd, msg);
                 }
@@ -2483,12 +2472,26 @@ public abstract class CitrixResourceBase implements ServerResource {
         try {      
             vm.cleanShutdown(conn);
         } catch (Types.XenAPIException e) {
-            s_logger.debug("Unable to cleanShutdown VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString());
+            s_logger.debug("Unable to cleanShutdown VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString() + ", try hard shutdown");
             try {
                 vm.hardShutdown(conn);
-                return;
             } catch (Exception e1) {
                 String msg = "Unable to hardShutdown VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString();
+                s_logger.warn(msg, e1);
+                throw new CloudRuntimeException(msg);
+            }
+        }
+    }
+    
+    void rebootVM(Connection conn, VM vm, String vmName) throws XmlRpcException {
+        try {
+            vm.cleanReboot(conn);
+        } catch (XenAPIException e) {
+            s_logger.debug("Unable to Clean Reboot VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString() + ", try hard reboot");
+            try {
+                vm.hardReboot(conn);
+            } catch (Exception e1) {
+                String msg = "Unable to hard Reboot VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString();
                 s_logger.warn(msg, e1);
                 throw new CloudRuntimeException(msg);
             }
