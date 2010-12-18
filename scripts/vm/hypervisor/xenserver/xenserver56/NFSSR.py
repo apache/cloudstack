@@ -1,10 +1,15 @@
-#!/usr/bin/env python
-# Copyright (c) 2005-2007 XenSource, Inc. All use and distribution of this
-# copyrighted material is governed by and subject to terms and conditions
-# as licensed by XenSource, Inc. All other rights reserved.
-# Xen, XenSource and XenEnterprise are either registered trademarks or
-# trademarks of XenSource Inc. in the United States and/or other countries.
+#!/usr/bin/python
+# Copyright (C) 2006-2007 XenSource Ltd.
+# Copyright (C) 2008-2009 Citrix Ltd.
 #
+# This program is free software; you can redistribute it and/or modify 
+# it under the terms of the GNU Lesser General Public License as published 
+# by the Free Software Foundation; version 2.1 only.
+#
+# This program is distributed in the hope that it will be useful, 
+# but WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
+# GNU Lesser General Public License for more details.
 #
 # FileSR: local-file storage repository
 
@@ -38,15 +43,6 @@ DRIVER_INFO = {
     'configuration': CONFIGURATION
     }
 
-def echo(fn):
-    def wrapped(*v, **k):
-        name = fn.__name__
-        util.SMlog("#### NFS enter  %s ####" % name )
-        res = fn(*v, **k)
-        util.SMlog("#### NFS exit  %s ####" % name )
-        return res
-    return wrapped
-
 
 # The mountpoint for the directory when performing an sr_probe.  All probes
 # are guaranteed to be serialised by xapi, so this single mountpoint is fine.
@@ -57,12 +53,11 @@ DEFAULT_TRANSPORT = "tcp"
 
 class NFSSR(FileSR.FileSR):
     """NFS file-based storage repository"""
-    
     def handles(type):
         return type == 'nfs'
     handles = staticmethod(handles)
 
-    @echo
+
     def load(self, sr_uuid):
         self.lock = Lock(vhdutil.LOCK_TYPE_SR, self.uuid)
         self.sr_vditype = SR.DEFAULT_TAP
@@ -76,7 +71,7 @@ class NFSSR(FileSR.FileSR):
         if self.dconf.has_key('useUDP') and self.dconf['useUDP'] == 'true':
             self.transport = "udp"
 
-    @echo
+
     def validate_remotepath(self, scan):
         if not self.dconf.has_key('serverpath'):
             if scan:
@@ -88,7 +83,7 @@ class NFSSR(FileSR.FileSR):
         if not self._isvalidpathstring(self.dconf['serverpath']):
             raise xs_errors.XenError('ConfigServerPathBad', \
                   opterr='serverpath is %s' % self.dconf['serverpath'])
-    @echo
+
     def check_server(self):
         try:
             nfs.check_server_tcp(self.remoteserver)
@@ -96,23 +91,22 @@ class NFSSR(FileSR.FileSR):
             raise xs_errors.XenError('NFSVersion',
                                      opterr=exc.errstr)
 
-    @echo
+
     def mount(self, mountpoint, remotepath):
         try:
             nfs.soft_mount(mountpoint, self.remoteserver, remotepath, self.transport)
         except nfs.NfsException, exc:
             raise xs_errors.XenError('NFSMount', opterr=exc.errstr)
 
-    @echo
+
     @FileSR.locking("SRUnavailable")
     def attach(self, sr_uuid):
         self.validate_remotepath(False)
         #self.remotepath = os.path.join(self.dconf['serverpath'], sr_uuid)
-        self.remotepath = self.dconf['serverpath']
         util._testHost(self.dconf['server'], NFSPORT, 'NFSTarget')
         self.mount_remotepath(sr_uuid)
 
-    @echo
+
     def mount_remotepath(self, sr_uuid):
         if not self._checkmount():
             self.check_server()
@@ -120,7 +114,7 @@ class NFSSR(FileSR.FileSR):
 
         return super(NFSSR, self).attach(sr_uuid)
 
-    @echo
+
     @FileSR.locking("SRUnavailable")
     def probe(self):
         # Verify NFS target and port
@@ -140,7 +134,7 @@ class NFSSR(FileSR.FileSR):
             except:
                 pass
 
-    @echo
+
     @FileSR.locking("SRUnavailable")
     def detach(self, sr_uuid):
         """Detach the SR: Unmounts and removes the mountpoint"""
@@ -159,7 +153,7 @@ class NFSSR(FileSR.FileSR):
 
         return super(NFSSR, self).detach(sr_uuid)
         
-    @echo
+
     @FileSR.locking("SRUnavailable")
     def create(self, sr_uuid, size):
         util._testHost(self.dconf['server'], NFSPORT, 'NFSTarget')
@@ -195,7 +189,6 @@ class NFSSR(FileSR.FileSR):
         #                % inst.code)
         self.detach(sr_uuid)
 
-    @echo
     @FileSR.locking("SRUnavailable")
     def delete(self, sr_uuid):
         # try to remove/delete non VDI contents first
@@ -222,20 +215,17 @@ class NFSSR(FileSR.FileSR):
         if not loadLocked:
             return NFSFileVDINolock(self, uuid)
         return NFSFileVDI(self, uuid)
-   
-    @echo 
+    
     def _checkmount(self):
         return util.ioretry(lambda: util.pathexists(self.path)) \
                and util.ioretry(lambda: util.ismount(self.path))
 
-    @echo
     def scan_exports(self, target):
         util.SMlog("scanning2 (target=%s)" % target)
         dom = nfs.scan_exports(target)
         print >>sys.stderr,dom.toprettyxml()
 
 class NFSFileVDI(FileSR.FileVDI):
-    @echo
     def attach(self, sr_uuid, vdi_uuid):
         try:
             vdi_ref = self.sr.srcmd.params['vdi_ref']
@@ -251,7 +241,6 @@ class NFSFileVDI(FileSR.FileVDI):
 
         return super(NFSFileVDI, self).attach(sr_uuid, vdi_uuid)
 
-    @echo
     def clone(self, sr_uuid, vdi_uuid):
         timestamp_before = int(util.get_mtime(self.sr.path))
         ret = super(NFSFileVDI, self).clone(sr_uuid, vdi_uuid)
