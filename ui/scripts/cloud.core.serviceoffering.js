@@ -75,11 +75,8 @@ function initAddServiceOfferingDialog() {
 			} 
 		}
 	});   
-		 
-    //add button ***
-    $("#midmenu_add_link").find("#label").text("Add Service Offering"); 
-    $("#midmenu_add_link").show();     
-    $("#midmenu_add_link").unbind("click").bind("click", function(event) {    
+		         
+    $("#add_serviceoffering_button").unbind("click").bind("click", function(event) {    
 		$dialogAddService.find("#add_service_name").val("");
 		$dialogAddService.find("#add_service_display").val("");
 		$dialogAddService.find("#add_service_cpucore").val("");

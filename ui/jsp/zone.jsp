@@ -245,9 +245,71 @@
 	        </div>
 	    </div>   
     </div>
-    <!-- Network tab (end)-->   
-    
+    <!-- Network tab (end)-->       
 </div>
+
+<!--  top buttons (begin) -->
+<div id="top_buttons">  
+    <div class="actionpanel_button_wrapper" id="add_cluster_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Cluster" /></div>
+            <div class="actionpanel_button_links">
+                Add Cluster
+            </div>
+        </div>
+    </div>
+    <div class="actionpanel_button_wrapper" id="add_host_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Host" /></div>
+            <div class="actionpanel_button_links">
+                Add Host
+            </div>
+        </div>
+    </div>
+    <div class="actionpanel_button_wrapper" id="add_primarystorage_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Primary Storage" /></div>
+            <div class="actionpanel_button_links">
+                Add Primary Storage
+            </div>
+        </div>
+    </div>
+    <div class="actionpanel_button_wrapper" id="add_secondarystorage_button"
+       >
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Secondary Storage" /></div>
+            <div class="actionpanel_button_links">
+                Add Secondary Storage
+            </div>
+        </div>
+    </div>
+    <div class="actionpanel_button_wrapper" id="add_pod_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add pod" /></div>
+            <div class="actionpanel_button_links">
+                Add pod
+            </div>
+        </div>
+    </div>     
+    <!--
+    <div class="actionpanel_button_wrapper" id="add_vlan_button" style="display: none;">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add VLAN" /></div>
+            <div class="actionpanel_button_links">
+                Add VLAN
+            </div>
+        </div>
+    </div>
+    -->
+</div>
+<!--  top buttons (end) -->
+
 
 <!-- ***** dialogs ***** (begin)-->
 <!-- Add Pod Dialog (begin) -->

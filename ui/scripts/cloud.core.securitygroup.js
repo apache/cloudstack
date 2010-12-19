@@ -57,10 +57,8 @@ function initAddSecurityGroupDialog() {
     var $dialogAddSecurityGroup = $("#dialog_add_security_group");
     var $detailsTab = $("#right_panel_content").find("#tab_content_details");             
      
-    //add button ***
-    $("#midmenu_add_link").find("#label").text("Add Security Group"); 
-    $("#midmenu_add_link").show();     
-    $("#midmenu_add_link").unbind("click").bind("click", function(event) {    
+    //add button ***        
+    $("#add_securitygroup_button").unbind("click").bind("click", function(event) {    
         $dialogAddSecurityGroup
 	    .dialog('option', 'buttons', {
 	        "Create": function() {		            	          

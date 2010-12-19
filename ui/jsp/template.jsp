@@ -233,6 +233,20 @@
 </div>
 <!-- template detail panel (end) -->
 
+<!--  top buttons (begin) -->
+<div id="top_buttons">
+    <div class="actionpanel_button_wrapper" id="add_template_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Template" /></div>
+            <div class="actionpanel_button_links">
+                Add Template
+            </div>
+        </div>
+    </div>
+</div>
+<!--  top buttons (end) -->
+
 <!-- Copy Template Dialog (begin) -->
 <div id="dialog_copy_template" title="Copy Template" style="display:none">
 	<p>Copy template <b id="copy_template_name_text">XXX</b> from zone <b id="copy_template_source_zone_text">XXX</b> to</p>

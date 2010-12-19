@@ -87,11 +87,8 @@ function initAddDiskOfferingDialog() {
 			} 
 		}
 	});   
-    
-    //add button ***
-    $("#midmenu_add_link").find("#label").text("Add Disk Offering"); 
-    $("#midmenu_add_link").show();     
-    $("#midmenu_add_link").unbind("click").bind("click", function(event) {    
+        
+    $("#add_diskoffering_button").unbind("click").bind("click", function(event) {    
 		$dialogAddDisk.find("#disk_name").val("");
 		$dialogAddDisk.find("#disk_description").val("");
 		$dialogAddDisk.find("#disk_disksize").val("");	

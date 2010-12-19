@@ -344,6 +344,29 @@
     <!--Statistics tab (end)--> 
 </div>
 
+<!--  top buttons (begin) -->
+<div id="top_buttons"> 
+    <div class="actionpanel_button_wrapper" id="add_host_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Host" /></div>
+            <div class="actionpanel_button_links">
+                Add Host
+            </div>
+        </div>
+    </div>
+    <div class="actionpanel_button_wrapper" id="add_primarystorage_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Primary Storage" /></div>
+            <div class="actionpanel_button_links">
+                Add Primary Storage
+            </div>
+        </div>
+    </div>
+</div>
+<!--  top buttons (end) -->
+
 <!--  Primary Storage tab template (begin) -->
 <div class="grid_container" id="primarystorage_tab_template" style="display: none">
     <div class="grid_header">

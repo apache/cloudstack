@@ -10,80 +10,6 @@
     CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
 %>
 
-<!--  nic tab template (begin) -->
-<div class="grid_container" id="nic_tab_template" style="display: none">	
-    <div class="grid_header">
-        <div class="grid_header_title" id="title">
-        </div>
-		<!--
-        <div class="grid_actionbox" id="volume_action_link">
-            <div class="grid_actionsdropdown_box" id="nic_action_menu" style="display: none;">
-                <ul class="actionsdropdown_boxlist" id="action_list">
-                </ul>
-            </div>
-        </div>
-        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; border: 1px solid #999; ">
-            <div class="gridheader_loader" id="icon">
-            </div>
-            <p id="description">
-                Waiting &hellip;
-            </p>
-        </div>    
-		-->
-    </div>
-    
-    <div class="grid_rows" id="after_action_info_container" style="display:none">
-        <div class="grid_row_cell" style="width: 90%; border: none;">
-            <div class="row_celltitles">
-                <strong id="after_action_info">Message will appear here</strong></div>
-        </div>
-    </div>
-        
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                IP:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="ip">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows odd">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                Gateway:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="gateway">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                Netmask:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="netmask">
-            </div>
-        </div>
-    </div>
-	<div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                Type:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="type">
-            </div>
-        </div>
-    </div>
-</div>
-<!--  nic tab template (end) -->
-
-
-
 <!-- VM detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
@@ -1038,6 +964,78 @@
 </div>
 <!-- VM Wizard - disk Offering template (end)-->
 
+<!--  nic tab template (begin) -->
+<div class="grid_container" id="nic_tab_template" style="display: none">	
+    <div class="grid_header">
+        <div class="grid_header_title" id="title">
+        </div>
+		<!--
+        <div class="grid_actionbox" id="volume_action_link">
+            <div class="grid_actionsdropdown_box" id="nic_action_menu" style="display: none;">
+                <ul class="actionsdropdown_boxlist" id="action_list">
+                </ul>
+            </div>
+        </div>
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; border: 1px solid #999; ">
+            <div class="gridheader_loader" id="icon">
+            </div>
+            <p id="description">
+                Waiting &hellip;
+            </p>
+        </div>    
+		-->
+    </div>
+    
+    <div class="grid_rows" id="after_action_info_container" style="display:none">
+        <div class="grid_row_cell" style="width: 90%; border: none;">
+            <div class="row_celltitles">
+                <strong id="after_action_info">Message will appear here</strong></div>
+        </div>
+    </div>
+        
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                IP:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="ip">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Gateway:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="gateway">
+            </div>
+        </div>
+    </div>
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Netmask:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="netmask">
+            </div>
+        </div>
+    </div>
+	<div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Type:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="type">
+            </div>
+        </div>
+    </div>
+</div>
+<!--  nic tab template (end) -->
+
 <!--  volume tab template (begin) -->
 <div class="grid_container" id="volume_tab_template" style="display: none">	
     <div class="grid_header">
@@ -1273,6 +1271,57 @@
     </div>
 </div>
 <!--  router tab template (end) -->
+
+<!--  top buttons (begin) -->
+<div id="top_buttons">
+    <div class="actionpanel_button_wrapper" id="add_vm_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add VM" /></div>
+            <div class="actionpanel_button_links">
+                Add VM
+            </div>
+        </div>
+    </div>
+
+    <div class="actionpanel_button_wrapper" id="start_vm_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/startvm_actionicon.png" alt="Start VM" /></div>
+            <div class="actionpanel_button_links">
+                <fmt:message key="label.vm.start" />
+            </div>
+        </div>
+    </div>
+    <div class="actionpanel_button_wrapper" id="stop_vm_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/stopvm_actionicon.png" alt="Stop VM" /></div>
+            <div class="actionpanel_button_links">
+                <fmt:message key="label.vm.stop" />
+            </div>
+        </div>
+    </div>
+    <div class="actionpanel_button_wrapper" id="reboot_vm_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/rebootvm_actionicon.png" alt="Reboot VM" /></div>
+            <div class="actionpanel_button_links">
+                <fmt:message key="label.vm.reboot" />
+            </div>
+        </div>
+    </div>
+    <div class="actionpanel_button_wrapper" id="destroy_vm_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/destroyvm_actionicon.png" alt="Destroy VM" /></div>
+            <div class="actionpanel_button_links">
+                <fmt:message key="label.vm.destroy" />
+            </div>
+        </div>
+    </div>
+</div>
+<!--  top buttons (end) -->
 
 <!--  ***** Dialogs (begin) ***** -->
 <!-- Detach ISO Dialog -->

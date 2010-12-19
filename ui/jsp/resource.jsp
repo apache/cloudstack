@@ -85,12 +85,33 @@
                 <div class="dbrow_cell" style="width: 10%; border: none;">
                 	<div id="add_primarystorage_shortcut" class="resadd_button" title="Add Primary Storage"></div>
                 </div>
-            </div>
-       
-
+            </div>       
+        </div>
     </div>
 </div>
 
+<!--  top buttons (begin) -->
+<div id="top_buttons">
+    <div class="actionpanel_button_wrapper" id="add_zone_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Zone" /></div>
+            <div class="actionpanel_button_links">
+                Add Zone
+            </div>
+        </div>
+    </div>    
+    <div class="actionpanel_button_wrapper" id="Update_SSL_Certificate_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Update SSL Certificate" /></div>
+            <div class="actionpanel_button_links">
+                Update SSL Certificate
+            </div>
+        </div>
+    </div>    
+</div>
+<!--  top buttons (end) -->
 
 <!-- Zone wizard (begin)-->
 <div id="wizard_overlay" class="ui-widget-overlay" style="display:none;"></div>

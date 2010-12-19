@@ -141,6 +141,37 @@
 
 </div>
 
+<!--  top buttons (begin) -->
+<div id="top_buttons">
+    <div class="actionpanel_button_wrapper" id="add_cluster_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Cluster" /></div>
+            <div class="actionpanel_button_links">
+                Add Cluster
+            </div>
+        </div>
+    </div>
+    <div class="actionpanel_button_wrapper" id="add_host_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Host" /></div>
+            <div class="actionpanel_button_links">
+                Add Host
+            </div>
+        </div>
+    </div>
+    <div class="actionpanel_button_wrapper" id="add_primarystorage_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Primary Storage" /></div>
+            <div class="actionpanel_button_links">
+                Add Primary Storage
+            </div>
+        </div>
+    </div>
+</div>
+<!--  top buttons (end) -->
 
 <!--  Network tab template (begin) -->
 <div class="grid_container" id="network_tab_template" style="display: none">

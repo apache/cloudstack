@@ -131,6 +131,20 @@
     <!--Ingress Rule tab (end)-->    
 </div>
 
+<!--  top buttons (begin) -->
+<div id="top_buttons">
+    <div class="actionpanel_button_wrapper" id="add_securitygroup_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Security Group" /></div>
+            <div class="actionpanel_button_links">
+                Add Security Group
+            </div>
+        </div>
+    </div>
+</div>
+<!--  top buttons (end) -->
+
 <!--  Ingress Rule tab template (begin) -->
 <div class="grid_container" id="ingressrule_tab_template" style="display: none">
     <div class="grid_header">

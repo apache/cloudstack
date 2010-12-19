@@ -195,7 +195,21 @@
     </div> 
     <!--Snapshot tab (end)-->
 </div>
-<!-- volume detail panel (end) -->
+
+<!--  top buttons (begin) -->
+<div id="top_buttons">
+    <div class="actionpanel_button_wrapper" id="add_volume_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Volume" /></div>
+            <div class="actionpanel_button_links">
+                Add Volume
+            </div>
+        </div>
+    </div>
+</div>
+<!--  top buttons (end) -->
+
 <!-- Create Template Dialog -->
 <div id="dialog_create_template" title="Create Template" style="display: none">
     <p>

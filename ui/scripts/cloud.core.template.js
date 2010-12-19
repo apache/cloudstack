@@ -81,10 +81,8 @@ function afterLoadTemplateJSP() {
 	else
 	    $("#dialog_add_template #add_template_featured_container, #dialog_edit_template #edit_template_featured_container").hide();		
 	
-	//add button ***
-	$("#midmenu_add_link").find("#label").text("Add Template"); 
-    $("#midmenu_add_link").show();     
-    $("#midmenu_add_link").unbind("click").bind("click", function(event) {        
+	//add button ***	   
+    $("#add_template_button").unbind("click").bind("click", function(event) {        
         $("#dialog_add_template")
 		.dialog('option', 'buttons', { 				
 			"Create": function() { 		

@@ -144,6 +144,20 @@
     </div>
 </div>
 
+<!--  top buttons (begin) -->
+<div id="top_buttons">
+    <div class="actionpanel_button_wrapper" id="add_diskoffering_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Disk Offering" /></div>
+            <div class="actionpanel_button_links">
+                Add Disk Offering
+            </div>
+        </div>
+    </div>
+</div>
+<!--  top buttons (end) -->
+
 <!-- Add Disk Offering Dialog -->
 <div id="dialog_add_disk" title="Add Disk Offering" style="display:none">
 	<p>Please fill in the following data to add a new disk Offering.</p>

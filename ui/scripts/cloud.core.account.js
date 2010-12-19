@@ -55,6 +55,10 @@ function afterLoadAccountJSP() {
         initDialog("dialog_enable_account");  
         initDialog("dialog_edit_user", 450);    
         initDialog("dialog_change_password", 450);    
+        initDialog("dialog_add_user", 450);
+        
+        bindAddAccountButton();
+        bindAddUserButton();   
     }
     
     // switch between different tabs 
@@ -129,7 +133,7 @@ function initTimezonesObj() {
     timezones['Pacific/Auckland']='[UTC+12:00] New Zealand Standard Time';
 }
 
-function initAddAccountDialog() {     
+function bindAddAccountButton() {     
     initDialog("dialog_add_account", 450);
                    
     var $dialogAddAccount = $("#dialog_add_account");
@@ -146,11 +150,8 @@ function initAddAccountDialog() {
 			}					    	
 		}
 	});		    
-       
-    //add button ***
-    $("#midmenu_add_link").find("#label").text("Add Account"); 
-    $("#midmenu_add_link").show();     
-    $("#midmenu_add_link").unbind("click").bind("click", function(event) {    		
+             
+    $("#add_account_button").unbind("click").bind("click", function(event) {    		
 		$dialogAddAccount
 		.dialog('option', 'buttons', { 					
 			"Create": function() { 	
@@ -239,23 +240,21 @@ function initAddAccountDialog() {
 	});
 }
 
-function initAddUserDialog() {     
-    initDialog("dialog_add_user", 450);
-                   
+function bindAddUserButton() {                 
     var $dialogAddUser = $("#dialog_add_user");
-           
-    //add button ***
-    $("#midmenu_add_link").find("#label").text("Add User"); 
-    $("#midmenu_add_link").show();     
-    $("#midmenu_add_link").unbind("click").bind("click", function(event) {    
+         
+    $("#add_user_button").show().unbind("click").bind("click", function(event) {   
         var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
         if($midmenuItem1 == null)
             return;
         
         var accountObj = $midmenuItem1.data("jsonObj");
         if(accountObj == null)
-            return;
-  
+            return;    
+         
+        if($("#tab_user").hasClass("off"))
+            $("#tab_user").click();     
+             
         $dialogAddUser.find("#account_name").text(accountObj.name);
             	
 		$dialogAddUser
@@ -372,10 +371,7 @@ function accountJsonToDetailsTab() {
     var jsonObj = $midmenuItem1.data("jsonObj");
     if(jsonObj == null)
         return;
-          
-    if(isAdmin()) 
-        initAddAccountDialog();         
-  
+   
     var $detailsTab = $("#right_panel_content").find("#tab_content_details");           
     $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $detailsTab.find("#id").text(fromdb(jsonObj.id));
@@ -447,10 +443,7 @@ function accountJsonToUserTab() {
 	
 	var jsonObj = $midmenuItem1.data("jsonObj");	
 	if(jsonObj == null)
-	    return;
-		    
-    if(isAdmin())
-        initAddUserDialog();           
+	    return;            
 	
 	var $thisTab = $("#right_panel_content").find("#tab_content_user");	    
 	$thisTab.find("#tab_container").hide(); 

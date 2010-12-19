@@ -17,19 +17,25 @@
  */
   
 function afterLoadClusterJSP($leftmenuItem1) {
-    clearAddButtonsOnTop();
+    var objCluster = $leftmenuItem1.data("jsonObj");
+    listMidMenuItems(("listHosts&type=Routing&clusterid="+objCluster.id), hostGetSearchParams, "listhostsresponse", "host", "jsp/host.jsp", afterLoadHostJSP, hostToMidmenu, hostToRightPanel, getMidmenuId, false, ("cluster_"+objCluster.id));    
+
+    /*
+    clearButtonsOnTop();
    
     initDialog("dialog_add_host");
     initDialog("dialog_add_pool");    
     bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	       
     
 	clusterJsonToRightPanel($leftmenuItem1);	
+	*/
 }
 
+/*
 function clusterJsonToRightPanel($leftmenuItem1) {
     var objCluster = $leftmenuItem1.data("jsonObj");
     
-    clearAddButtonsOnTop();
+    clearButtonsOnTop();
     if(objCluster.clustertype == "CloudManaged")
     	initAddHostButton($("#midmenu_add_host_button"), "cluster_page", $leftmenuItem1);
     else 
@@ -42,7 +48,9 @@ function clusterJsonToRightPanel($leftmenuItem1) {
     $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);
     clusterJsonToDetailsTab();    
 }
+*/
 
+/*
 function clusterJsonToDetailsTab() {	
     var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
     if($leftmenuItem1 == null)
@@ -71,4 +79,4 @@ function clusterJsonToDetailsTab() {
     $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));        
     $detailsTab.find("#podname").text(fromdb(jsonObj.podname));            
 }
-
+*/

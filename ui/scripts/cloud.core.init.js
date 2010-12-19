@@ -52,7 +52,7 @@ $(document).ready(function() {
 	$("#leftmenu_dashboard").bind("click", function(event) {
 	    selectLeftMenu($(this), false, function() {
 			clearMiddleMenu();
-			clearAddButtonsOnTop();
+			clearButtonsOnTop();
 			hideMiddleMenu();
 			
 			$("#right_panel").data("onRefreshFn", function() {
@@ -135,7 +135,7 @@ $(document).ready(function() {
 		    selectLeftSubMenu($(this));		
 		    hideMiddleMenu();			
 	        clearMiddleMenu();
-			clearAddButtonsOnTop();
+			clearButtonsOnTop();
 		    	
 		    $("#right_panel").data("onRefreshFn", function() {
 		        $("#leftmenu_global_setting").click();
@@ -164,7 +164,7 @@ $(document).ready(function() {
 		$("#leftmenu_physical_resource").bind("click", function(event) {
 			showMiddleMenu();
 			clearMiddleMenu();
-			clearAddButtonsOnTop();
+			clearButtonsOnTop();
 		   
 			expandOrCollapseZoneTree();
 			
@@ -173,7 +173,7 @@ $(document).ready(function() {
 		    });
 							
 		    if(currentRightPanelJSP != "jsp/resource.jsp") {    
-                clearAddButtonsOnTop();  
+                clearButtonsOnTop();  
                 removeDialogs();
                 $("#right_panel").load("jsp/resource.jsp", function(){     
                     currentRightPanelJSP = "jsp/resource.jsp";

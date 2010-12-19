@@ -19,6 +19,9 @@
  function afterLoadZoneJSP($leftmenuItem1) {
     hideMiddleMenu();  
         
+    var $topButtonContainer = clearButtonsOnTop();			    	       
+	$("#top_buttons").appendTo($topButtonContainer);     
+        
     initDialog("dialog_add_external_cluster_in_zone_page");
     initDialog("dialog_add_pod", 320); 
     initDialog("dialog_add_vlan_for_zone");
@@ -40,9 +43,9 @@
 }
 
 function zoneJsonToRightPanel($leftmenuItem1) {	                  
-    initAddPodButton($("#midmenu_add_pod_button"), $leftmenuItem1);                  
-    initAddVLANButton($("#midmenu_add_vlan_button"), $leftmenuItem1);
-    initAddSecondaryStorageButton($("#midmenu_add_secondarystorage_button"), $leftmenuItem1);
+    bindAddPodButton($("#add_pod_button"), $leftmenuItem1);                  
+    //bindAddVLANButton($("#add_vlan_button"), $leftmenuItem1);
+    bindAddSecondaryStorageButton($("#add_secondarystorage_button"), $leftmenuItem1);
           
     var pods;
     var zoneObj = $leftmenuItem1.data("jsonObj");
@@ -58,9 +61,9 @@ function zoneJsonToRightPanel($leftmenuItem1) {
         }        
     });
     if(pods != null && pods.length > 0) {
-        initAddClusterButtonOnZonePage($("#midmenu_add_cluster_button"), zoneId, zoneName); 
-        initAddHostButtonOnZonePage($("#midmenu_add_host_button"), zoneId, zoneName); 
-        initAddPrimaryStorageButtonOnZonePage($("#midmenu_add_primarystorage_button"), zoneId, zoneName);  
+        bindAddClusterButtonOnZonePage($("#add_cluster_button"), zoneId, zoneName); 
+        bindAddHostButtonOnZonePage($("#add_host_button"), zoneId, zoneName); 
+        bindAddPrimaryStorageButtonOnZonePage($("#add_primarystorage_button"), zoneId, zoneName);  
     }
 
     $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);      
@@ -372,7 +375,7 @@ function vlanJsonToTemplate(jsonObj, $template1, isNetwork) {
 } 	
 
 
-function initAddVLANButton($button, $leftmenuItem1) {    
+function bindAddVLANButton($button, $leftmenuItem1) {    
     $button.show();   
     $button.unbind("click").bind("click", function(event) {  
         if($("#tab_content_network").css("display") == "none")
@@ -572,7 +575,7 @@ function initAddVLANButton($button, $leftmenuItem1) {
 }
 
 
-function initAddSecondaryStorageButton($button, $leftmenuItem1) {    
+function bindAddSecondaryStorageButton($button, $leftmenuItem1) {    
     $button.show();      
     $button.unbind("click").bind("click", function(event) {
         if($("#tab_content_secondarystorage").css("display") == "none")
@@ -629,7 +632,7 @@ function initAddSecondaryStorageButton($button, $leftmenuItem1) {
     });
 }
 
-function initAddPodButton($button, $leftmenuItem1) {
+function bindAddPodButton($button, $leftmenuItem1) {
     $button.show();     
     $button.unbind("click").bind("click", function(event) {   
         var zoneObj = $leftmenuItem1.data("jsonObj"); 
@@ -980,13 +983,14 @@ function doEditZone2($actionLink, $detailsTab, $leftmenuItem1, $readonlyFields, 
 }
 
 
-function initAddClusterButtonOnZonePage($button, zoneId, zoneName) {
+function bindAddClusterButtonOnZonePage($button, zoneId, zoneName) {
     $button.show();
     $button.unbind("click").bind("click", function(event) {
         $dialogAddCluster = $("#dialog_add_external_cluster_in_zone_page");      
-        $dialogAddCluster.find("#info_container").hide();    
-        var $podSelect = $dialogAddCluster.find("#pod_dropdown");
-    	
+        $dialogAddCluster.find("#info_container").hide();          
+        $dialogAddCluster.find("#zone_name").text(zoneName);
+         
+        var $podSelect = $dialogAddCluster.find("#pod_dropdown");    	
         $.ajax({
             data: createURL("command=listPods&zoneid="+zoneId),
             dataType: "json",
@@ -1105,7 +1109,7 @@ function initAddClusterButtonOnZonePage($button, zoneId, zoneName) {
 }
 
 
-function initAddHostButtonOnZonePage($button, zoneId, zoneName) {
+function bindAddHostButtonOnZonePage($button, zoneId, zoneName) {
     $button.show();
    
     var $dialogAddHost = $("#dialog_add_host_in_zone_page");   
@@ -1295,7 +1299,7 @@ function initAddHostButtonOnZonePage($button, zoneId, zoneName) {
     });  
 }      
 
-function initAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
+function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
     $button.show();
 
 	var $dialogAddPool = $("#dialog_add_pool_in_zone_page");    

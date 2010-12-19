@@ -23,8 +23,7 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
-            <%=t.t("Details")%></div>
-		<!-- NOTE: Reenable this tab after 2.2 Beta 2 -->
+            <%=t.t("Details")%></div>		
 		<div class="content_tabs off" id="tab_port_forwarding">
             <%=t.t("Port Forwarding")%></div>
         <div class="content_tabs off" id="tab_load_balancer">
@@ -344,7 +343,19 @@
 </div>
 <!-- IP Address detail panel (end) -->
 
-
+<!--  top buttons (begin) -->
+<div id="top_buttons">
+    <div class="actionpanel_button_wrapper" id="acquire_new_ip_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Acquire New IP" /></div>
+            <div class="actionpanel_button_links">
+                Acquire New IP
+            </div>
+        </div>
+    </div>
+</div>
+<!--  top buttons (end) -->
 
 <!-- Load Balancer Template (begin) -->
 <div class="grid_rows odd" id="load_balancer_template" style="display:none">

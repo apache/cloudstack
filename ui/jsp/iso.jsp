@@ -220,6 +220,20 @@
 </div>
 <!-- ISO detail panel (end) -->
 
+<!--  top buttons (begin) -->
+<div id="top_buttons">
+    <div class="actionpanel_button_wrapper" id="add_iso_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add ISO" /></div>
+            <div class="actionpanel_button_links">
+                Add ISO
+            </div>
+        </div>
+    </div>
+</div>
+<!--  top buttons (end) -->
+
 <!-- Add ISO Dialog (begin) -->
 <div id="dialog_add_iso" title="Add ISO" style="display:none">		
 	<div class="dialog_formcontent">

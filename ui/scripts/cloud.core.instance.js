@@ -98,16 +98,16 @@ function afterLoadInstanceJSP() {
 		//initialize VM Wizard  
 		$doTemplateNo = $("#vm_popup_disk_offering_template_no");
 		$doTemplateCustom = $("#vm_popup_disk_offering_template_custom");
-		$doTemplateExisting = $("#vm_popup_disk_offering_template_existing");
-		//initVMWizard(); 
+		$doTemplateExisting = $("#vm_popup_disk_offering_template_existing");		
 		vmPopulateDropdown();
 		init = true;
 	}
 	
-	initStartVMButton();    
-	initStopVMButton(); 
-	initRebootVMButton();    
-	initDestroyVMButton();
+	initVMWizard();
+	bindStartVMButton();    
+	bindStopVMButton(); 
+	bindRebootVMButton();    
+	bindDestroyVMButton();
 		
 	if (isAdmin() || isDomainAdmin())
 			$("#right_panel_content").find("#tab_router,#tab_router").show();
@@ -117,13 +117,7 @@ function afterLoadInstanceJSP() {
 	var tabContentArray = [$("#tab_content_details"), $("#tab_content_nic"), $("#tab_content_volume"), $("#tab_content_statistics"), $("#tab_content_router")];
 	var afterSwitchFnArray = [vmJsonToDetailsTab, vmJsonToNicTab, vmJsonToVolumeTab, vmJsonToStatisticsTab, vmJsonToRouterTab];
 	switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);   
-			
-	//Add VM button
-	var $midLinks = $("#midmenu_add_links_container");
-	$midLinks.find("#midmenu_add_link #label").text("Add VM"); 
-	$midLinks.find("#midmenu_add_link, #midmenu_startvm_link, #midmenu_stopvm_link, #midmenu_rebootvm_link, #midmenu_destroyvm_link").show(); 
-	initVMWizard();
-    
+			   
     // dialogs
     initDialog("dialog_detach_iso_from_vm");       	
    	initDialog("dialog_attach_iso");  
@@ -161,9 +155,8 @@ function afterLoadInstanceJSP() {
     }
 }
 
-function initStartVMButton() {
-    $("#midmenu_startvm_link").show();   
-    $("#midmenu_startvm_link").bind("click", function(event) {            
+function bindStartVMButton() {    
+    $("#start_vm_button").bind("click", function(event) {            
         var itemCounts = 0;
         for(var id in selectedItemsInMidMenu) {
             itemCounts ++;
@@ -211,9 +204,8 @@ function initStartVMButton() {
     }); 	
 }
 
-function initStopVMButton() {
-    $("#midmenu_stopvm_link").show();   
-    $("#midmenu_stopvm_link").bind("click", function(event) {            
+function bindStopVMButton() {       
+    $("#stop_vm_button").bind("click", function(event) {            
         var itemCounts = 0;
         for(var id in selectedItemsInMidMenu) {
             itemCounts ++;
@@ -260,9 +252,8 @@ function initStopVMButton() {
     }); 	
 }
 
-function initRebootVMButton() {
-    $("#midmenu_rebootvm_link").show();   
-    $("#midmenu_rebootvm_link").bind("click", function(event) {            
+function bindRebootVMButton() {   
+    $("#reboot_vm_button").bind("click", function(event) {            
         var itemCounts = 0;
         for(var id in selectedItemsInMidMenu) {
             itemCounts ++;
@@ -309,9 +300,8 @@ function initRebootVMButton() {
     }); 
 }
 
-function initDestroyVMButton() {
-    $("#midmenu_destroyvm_link").show();   
-    $("#midmenu_destroyvm_link").bind("click", function(event) {            
+function bindDestroyVMButton() {    
+    $("#destroy_vm_button").bind("click", function(event) {            
         var itemCounts = 0;
         for(var id in selectedItemsInMidMenu) {
             itemCounts ++;
@@ -380,7 +370,7 @@ var vmPopupTemplatePageSize = 6; //max number of templates in VM wizard
 var currentStepInVmPopup = 1;
 function initVMWizard() {
     $vmPopup = $("#vm_popup");  
-    $("#midmenu_add_link").unbind("click").bind("click", function(event) {
+    $("#add_vm_button").unbind("click").bind("click", function(event) {
         vmWizardOpen();			
 	    $.ajax({
 		    data: createURL("command=listZones&available=true"),

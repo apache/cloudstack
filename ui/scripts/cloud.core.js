@@ -552,8 +552,7 @@ function setBooleanEditField(value, $field) {
 
 function clearMiddleMenu() {
     $("#midmenu_container").empty();
-    $("#midmenu_action_link").hide();
-    //clearAddButtonsOnTop();        
+    $("#midmenu_action_link").hide();    
     lastSearchType = null;
     $("#basic_search").find("#search_input").val("");
     $("#advanced_search_icon").removeClass("on");
@@ -562,32 +561,8 @@ function clearMiddleMenu() {
     $("#middle_menu_pagination").data("params", null);
 }
 
-function clearAddButtonsOnTop() {
-	// This button is re-used by all pages
-	var $addLinksContainer = $("#midmenu_add_links_container");
-    var addButton = $addLinksContainer.find("#midmenu_add_link").unbind("click").hide(); 
-    
-	$addLinksContainer.children().each(function() {
-		$(this).unbind("click").hide();
-	});
-	/*
-    $("#midmenu_add_zone_button").unbind("click").hide();   
-    $("#midmenu_add_host_button").unbind("click").hide();   
-    $("#midmenu_add_primarystorage_button").unbind("click").hide(); 
-    $("#midmenu_add_secondarystorage_button").unbind("click").hide(); 
-    $("#midmenu_add_pod_button").unbind("click").hide(); 
-    $("#midmenu_add_vlan_button").unbind("click").hide(); 
-    $("#midmenu_add_network_button").unbind("click").hide(); 
-    $("#midmenu_add_iprange_button").unbind("click").hide(); 
-    $("#midmenu_add_external_firewall_button").unbind("click").hide(); 
-    $("#midmenu_add_load_balancer_button").unbind("click").hide(); 
-    $("#midmenu_Update_SSL_Certificate_button").unbind("click").hide();   
-         
-    $("#midmenu_startvm_link").hide();     
-    $("#midmenu_stopvm_link").hide(); 
-    $("#midmenu_rebootvm_link").hide(); 
-    $("#midmenu_destroyvm_link").hide(); 
-	*/
+function clearButtonsOnTop() {
+	return $("#top_button_container").empty(); 
 }
 
 function clearRightPanel() {
@@ -1013,6 +988,12 @@ function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonR
 	if (currentRightPanelJSP != rightPanelJSP) {
 		$("#right_panel").load(rightPanelJSP, function(){     
 		    currentRightPanelJSP = rightPanelJSP;
+		    
+		    var $topButtonContainer = clearButtonsOnTop();			    	       
+		    $("#top_buttons").appendTo($topButtonContainer); 
+		    
+			removeDialogs();			
+								    
 			var $actionLink = $("#right_panel_content #tab_content_details #action_link");
 			$actionLink.bind("mouseover", function(event) {	    
 				$(this).find("#action_menu").show();    
@@ -1022,8 +1003,7 @@ function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonR
 				$(this).find("#action_menu").hide();    
 				return false;
 			});	   
-			removeDialogs();
-			clearAddButtonsOnTop();
+			
 			afterLoadRightPanelJSPFn();                
 			listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, 1);   			
 		});     

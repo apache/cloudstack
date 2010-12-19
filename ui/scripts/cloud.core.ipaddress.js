@@ -82,10 +82,8 @@ function afterLoadIpJSP() {
 		    }
 		}
 	});
-	
-	$("#midmenu_add_link").find("#label").text("Acquire New IP"); 
-	$("#midmenu_add_link").show();     
-    $("#midmenu_add_link").unbind("click").bind("click", function(event) {  
+	    
+    $("#acquire_new_ip_button").unbind("click").bind("click", function(event) {  
 		var submenuContent = $("#submenu_content_network");
 		$("#dialog_acquire_public_ip").dialog('option', 'buttons', {				
 			"Acquire": function() { 

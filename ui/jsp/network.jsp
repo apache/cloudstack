@@ -392,12 +392,51 @@
             <div id="tab_container">
             </div>
         </div> 
-        <!-- IP Allocation tab (end)-->        
-             
-    </div>
-    <!-- ***** Direct Network Page (end) ***** -->
-        
+        <!-- IP Allocation tab (end)-->   
+    </div>          
 </div>
+
+<!--  top buttons (begin) -->
+<div id="top_buttons"> 
+    <div class="actionpanel_button_wrapper" id="add_network_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Network" /></div>
+            <div class="actionpanel_button_links">
+                Add Network
+            </div>
+        </div>
+    </div>
+    <div class="actionpanel_button_wrapper" id="add_iprange_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add IP Range" /></div>
+            <div class="actionpanel_button_links">
+                Add IP Range
+            </div>
+        </div>
+    </div>
+    <div class="actionpanel_button_wrapper" id="add_external_firewall_button"
+       >
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Firewall" /></div>
+            <div class="actionpanel_button_links">
+                Add Firewall
+            </div>
+        </div>
+    </div>
+    <div class="actionpanel_button_wrapper" id="add_load_balancer_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Load Balancer" /></div>
+            <div class="actionpanel_button_links">
+                Add Load Balancer
+            </div>
+        </div>
+    </div>
+</div>
+<!--  top buttons (end) -->
 
 <!--  External Firewall template (begin) -->
 <div class="grid_container" id="externalfirewall_template" style="display: none">    

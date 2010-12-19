@@ -221,6 +221,20 @@
 
 <!-- domain detail panel (end) -->
 
+<!--  top buttons (begin) -->
+<div id="top_buttons">
+    <div class="actionpanel_button_wrapper" id="add_domain_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Domain" /></div>
+            <div class="actionpanel_button_links">
+                Add Domain
+            </div>
+        </div>
+    </div>
+</div>
+<!--  top buttons (end) -->
+
 <!-- admin account tab template (begin) -->
 <div class="grid_container" id="admin_account_tab_template" style="display: none">
     <div class="grid_header">

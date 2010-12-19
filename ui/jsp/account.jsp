@@ -167,6 +167,29 @@
 </div>
 <!-- account detail panel (end) -->
 
+<!--  top buttons (begin) -->
+<div id="top_buttons">
+    <div class="actionpanel_button_wrapper" id="add_account_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Account" /></div>
+            <div class="actionpanel_button_links">
+                Add Account
+            </div>
+        </div>
+    </div>
+    <div class="actionpanel_button_wrapper" id="add_user_button" style="display: none">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add User" /></div>
+            <div class="actionpanel_button_links">
+                Add User
+            </div>
+        </div>
+    </div>
+</div>
+<!--  top buttons (end) -->
+
 <!-- user tab template (begin) -->
 <div class="grid_container" id="user_tab_template" style="display: none">
     <div class="grid_header">

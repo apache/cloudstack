@@ -112,10 +112,8 @@ function initAddIsoDialog() {
 		}
 	});
     
-    //add button ***
-    $("#midmenu_add_link").find("#label").text("Add ISO"); 
-    $("#midmenu_add_link").show();     
-    $("#midmenu_add_link").unbind("click").bind("click", function(event) {     
+    //add button ***     
+    $("#add_iso_button").unbind("click").bind("click", function(event) {     
         $dialogAddIso
 	    .dialog('option', 'buttons', { 				
 		    "Create": function() { 	

@@ -19,6 +19,9 @@
  function afterLoadPodJSP($leftmenuItem1) {   
     hideMiddleMenu();	
  
+    var $topButtonContainer = clearButtonsOnTop();			    	       
+	$("#top_buttons").appendTo($topButtonContainer); 
+ 
     initDialog("dialog_add_external_cluster");
     initDialog("dialog_add_host");
     initDialog("dialog_add_pool");
@@ -39,9 +42,9 @@
 }
 
 function podJsonToRightPanel($leftmenuItem1) {	    
-    initAddClusterButton($("#midmenu_add_cluster_button"), "pod_page", $leftmenuItem1); 
-    initAddHostButton($("#midmenu_add_host_button"), "pod_page", $leftmenuItem1); 
-    initAddPrimaryStorageButton($("#midmenu_add_primarystorage_button"), "pod_page", $leftmenuItem1);  
+    bindAddClusterButton($("#add_cluster_button"), "pod_page", $leftmenuItem1); 
+    bindAddHostButton($("#add_host_button"), "pod_page", $leftmenuItem1); 
+    bindAddPrimaryStorageButton($("#add_primarystorage_button"), "pod_page", $leftmenuItem1);  
            
     $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);  
     $("#tab_details").click();   
@@ -105,7 +108,7 @@ function podJsonToDetailsTab() {
 	});	
     if(networkType == "Basic") { //basic-mode network (pod-wide VLAN)
         $("#tab_network").show();  
-        initAddPodVLANButton($("#midmenu_add_directIpRange_button"), $leftmenuItem1);  
+        bindAddPodVLANButton($("#midmenu_add_directIpRange_button"), $leftmenuItem1);  
     }
     else if(networkType == "Advanced") { //advanced-mode network (zone-wide VLAN)
         $("#tab_network").hide();
@@ -270,7 +273,7 @@ function refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId, hyp
     });     
 }      
 
-function initAddClusterButton($button, currentPageInRightPanel, $leftmenuItem1) {
+function bindAddClusterButton($button, currentPageInRightPanel, $leftmenuItem1) {
     $button.show();
     $button.unbind("click").bind("click", function(event) {
         dialogAddCluster = $("#dialog_add_external_cluster");      
@@ -383,7 +386,7 @@ function initAddClusterButton($button, currentPageInRightPanel, $leftmenuItem1) 
     });
 }
 
-function initAddHostButton($button, currentPageInRightPanel, $leftmenuItem1) {    
+function bindAddHostButton($button, currentPageInRightPanel, $leftmenuItem1) {    
     $button.show();
     $button.unbind("click").bind("click", function(event) {     
         dialogAddHost = $("#dialog_add_host");      
@@ -579,7 +582,7 @@ function clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, exist
     }         
 }
 
-function initAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenuItem1) {    
+function bindAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenuItem1) {    
     $button.show();   
     $button.unbind("click").bind("click", function(event) {   
         if($("#tab_content_primarystorage").length > 0 && $("#tab_content_primarystorage").css("display") == "none")
@@ -728,7 +731,7 @@ function initAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenu
     });             
 }
 
-function initAddPodVLANButton($button, $leftmenuItem1) {    
+function bindAddPodVLANButton($button, $leftmenuItem1) {    
     $button.find("#label").text("Add Direct IP Range"); 
     $button.show();   
     $button.unbind("click").bind("click", function(event) {   

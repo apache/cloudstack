@@ -177,6 +177,20 @@
     </div>
 </div>
 
+<!--  top buttons (begin) -->
+<div id="top_buttons">
+    <div class="actionpanel_button_wrapper" id="add_serviceoffering_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Service Offering" /></div>
+            <div class="actionpanel_button_links">
+                Add Service Offering
+            </div>
+        </div>
+    </div>
+</div>
+<!--  top buttons (end) -->
+
 <!-- Add Service Offering Dialog -->
 <div id="dialog_add_service" title="Add Service Offering" style="display:none">
 	<p>Please fill in the following data to add a new Service Offering.</p>

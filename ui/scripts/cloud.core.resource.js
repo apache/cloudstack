@@ -81,8 +81,7 @@ function buildZoneTree() {
 			default:				    		    
 			    selectRowInZoneTree($(this).find("#zone_header"));	
 			    
-			    if(currentRightPanelJSP != "jsp/zone.jsp") {    
-                    clearAddButtonsOnTop();  
+			    if(currentRightPanelJSP != "jsp/zone.jsp") {                       
 	                removeDialogs();
 	                
 	                var $thisNode = $(this);
@@ -108,8 +107,7 @@ function buildZoneTree() {
 	$("#network_header").unbind("click").bind("click", function(event) {	   
 	    selectRowInZoneTree($(this));	
 	    
-        if(currentRightPanelJSP != "jsp/network.jsp") {    
-            clearAddButtonsOnTop();  
+        if(currentRightPanelJSP != "jsp/network.jsp") {            
             removeDialogs();
             
             var $thisNode = $(this);    
@@ -157,8 +155,7 @@ function buildZoneTree() {
 			default:			
 			    selectRowInZoneTree($(this).find("#pod_header"));	    
 	            
-	            if(currentRightPanelJSP != "jsp/pod.jsp") {    
-                    clearAddButtonsOnTop();  
+	            if(currentRightPanelJSP != "jsp/pod.jsp") {                     
 	                removeDialogs();
 	                
 	                var $thisNode = $(this); 
@@ -183,8 +180,7 @@ function buildZoneTree() {
 	$("#leftmenu_cluster_node_template").unbind("click").bind("click", function(event) {
 	    selectRowInZoneTree($(this).find("#cluster_header"));	    
 	    
-        if(currentRightPanelJSP != "jsp/cluster.jsp") {    
-            clearAddButtonsOnTop();  
+        if(currentRightPanelJSP != "jsp/cluster.jsp") {            
             removeDialogs();
             
             var $thisNode = $(this); 
@@ -301,13 +297,14 @@ function clusterJSONToTreeNode(json, $clusterNode) {
 
 function afterLoadResourceJSP() {
     hideMiddleMenu();        
+     
+    var $topButtonContainer = clearButtonsOnTop();			    	       
+	$("#top_buttons").appendTo($topButtonContainer);  
         
-    $("#midmenu_add_zone_button").show();   
-    
     initAddZoneWizard();  
 	initAddZoneLinks();	 
     
-	initUpdateConsoleCertButton($("#midmenu_Update_SSL_Certificate_button"));
+	initUpdateConsoleCertButton($("#Update_SSL_Certificate_button"));
 	
 	initDialog("dialog_update_cert", 450);	
 	initDialog("dialog_add_pod_in_resource_page", 320); 	
@@ -590,7 +587,7 @@ function initAddHostShortcut() {
 }      
 
 function initAddZoneLinks() {     
-    $("#add_zone_shortcut,#midmenu_add_zone_button").unbind("click").bind("click", function(event) {              
+    $("#add_zone_shortcut,#add_zone_button").unbind("click").bind("click", function(event) {              
         if($("#leftmenu_physical_resource").find("#physical_resource_arrow").hasClass("expanded_close") == true)
 			expandOrCollapseZoneTree(); //if Physical Resource arrow shows closed (i.e. zonetree is hidden), expand and show zonetree.    
 			       

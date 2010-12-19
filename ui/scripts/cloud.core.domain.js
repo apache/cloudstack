@@ -119,8 +119,10 @@ function domainAccountJSONToTemplate(jsonObj, $template) {
 function afterLoadDomainJSP() {
     hideMiddleMenu();   
 	clearMiddleMenu();
-	clearAddButtonsOnTop();
-	   
+	
+	var $topButtonContainer = clearButtonsOnTop();			    	       
+	$("#top_buttons").appendTo($topButtonContainer); 
+		   
     if(isAdmin()) {
         initAddDomainDialog();
     }
@@ -136,12 +138,8 @@ function initAddDomainDialog() {
     initDialog("dialog_add_domain", 450);
     
     var $dialogAddDomain = $("#dialog_add_domain");              
-	
-    //add button ***
-    $("#midmenu_add_link").find("#label").text("Add Domain"); 
-    $("#midmenu_add_link").show();     
-    $("#midmenu_add_link").unbind("click").bind("click", function(event) {  
-    
+	   
+    $("#add_domain_button").unbind("click").bind("click", function(event) {     
         $dialogAddDomain.find("#add_domain_name").val("");
         
         $.ajax({

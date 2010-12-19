@@ -47,7 +47,10 @@ var zoneObj;
 function afterLoadNetworkJSP($leftmenuItem1) {        
     showMiddleMenu();    
     
-    initAddNetworkButton($("#midmenu_add_network_button"));
+    var $topButtonContainer = clearButtonsOnTop();			    	       
+	$("#top_buttons").appendTo($("#top_button_container").empty()); 
+    
+    bindAddNetworkButton($("#add_network_button"));
     
     //switch between different tabs - Public Network page
     var $publicNetworkPage = $("#public_network_page");
@@ -129,9 +132,9 @@ function publicNetworkToRightPanel($midmenuItem1) {
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);  
             
     $("#public_network_page").show();    
-    initAddIpRangeToPublicNetworkButton($("#midmenu_add_iprange_button"), $midmenuItem1);
-    initAddExternalFirewallButton($("#midmenu_add_external_firewall_button"), $midmenuItem1);
-    initAddLoadBalancerButton($("#midmenu_add_load_balancer_button"), $midmenuItem1);
+    bindAddIpRangeToPublicNetworkButton($("#add_iprange_button"), $midmenuItem1);
+    bindAddExternalFirewallButton($("#add_external_firewall_button"), $midmenuItem1);
+    bindAddLoadBalancerButton($("#add_load_balancer_button"), $midmenuItem1);
     
     $("#direct_network_page").hide();
     
@@ -374,7 +377,7 @@ var publicNetworkLoadBalancerActionMap = {
     }     
 }  
 
-function initAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {   
+function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {   
     var jsonObj = $midmenuItem1.data("jsonObj");      
     
     var $dialogAddIpRangeToPublicNetwork = $("#dialog_add_iprange_to_publicnetwork"); 
@@ -570,7 +573,7 @@ function initAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
     });
 }
 
-function initAddExternalFirewallButton($button, $midmenuItem1) {         
+function bindAddExternalFirewallButton($button, $midmenuItem1) {         
     var jsonObj = $midmenuItem1.data("jsonObj");      
     
     var $dialogAddExternalFirewall = $("#dialog_add_external_firewall"); 
@@ -715,7 +718,7 @@ var publicNetworkIpRangeActionMap = {
 }  
 
 
-function initAddLoadBalancerButton($button, $midmenuItem1) {         
+function bindAddLoadBalancerButton($button, $midmenuItem1) {         
     var jsonObj = $midmenuItem1.data("jsonObj");      
     
     var $dialogAddLoadBalancer = $("#dialog_add_load_balancer"); 
@@ -846,9 +849,9 @@ function directNetworkToRightPanel($midmenuItem1) {
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);  
             
     $("#direct_network_page").show();
-    initAddIpRangeToDirectNetworkButton($("#midmenu_add_iprange_button"), $midmenuItem1);
-    $("#midmenu_add_external_firewall_button").unbind("click").hide(); 
-    $("#midmenu_add_load_balancer_button").unbind("click").hide(); 
+    bindAddIpRangeToDirectNetworkButton($("#add_iprange_button"), $midmenuItem1);
+    $("#add_external_firewall_button").unbind("click").hide(); 
+    $("#add_load_balancer_button").unbind("click").hide(); 
     
     $("#public_network_page").hide();
     
@@ -996,7 +999,7 @@ var directNetworkIpRangeActionMap = {
     }    
 }  
 
-function initAddNetworkButton($button) {   
+function bindAddNetworkButton($button) {   
     if(zoneObj == null)
         return;
     
@@ -1194,7 +1197,7 @@ function initAddNetworkButton($button) {
     });
 }
 
-function initAddIpRangeToDirectNetworkButton($button, $midmenuItem1) {   
+function bindAddIpRangeToDirectNetworkButton($button, $midmenuItem1) {   
     var jsonObj = $midmenuItem1.data("jsonObj");       
         
     var $dialogAddIpRangeToDirectNetwork = $("#dialog_add_iprange_to_directnetwork");     
