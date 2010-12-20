@@ -429,9 +429,9 @@ function volumeJsonToSnapshotTab() {
 		data: createURL("command=listSnapshots&volumeid="+fromdb(jsonObj.id)),
 		dataType: "json",
 		success: function(json) {							    
-			var items = json.listsnapshotsresponse.snapshot;																						
-			if (items != null && items.length > 0) {
-			    var $container = $thisTab.find("#tab_container").empty();
+			var items = json.listsnapshotsresponse.snapshot;	
+			var $container = $thisTab.find("#tab_container").empty();																					
+			if (items != null && items.length > 0) {			    
 				var template = $("#snapshot_tab_template");				
 				for (var i = 0; i < items.length; i++) {
 					var newTemplate = template.clone(true);	               
