@@ -22,12 +22,14 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.IPAddressResponse;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
@@ -36,7 +38,7 @@ import com.cloud.network.Network;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Reapplies all ip addresses for the particular network", responseObject=IPAddressResponse.class)
-public class RestartNetworkCmd extends BaseCmd {
+public class RestartNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RestartNetworkCmd.class.getName());
     private static final String s_name = "restartnetworkresponse";
 
@@ -77,6 +79,24 @@ public class RestartNetworkCmd extends BaseCmd {
 
     public long getZoneId() {
         return zoneId;
+    }
+    
+    public String getEventDescription() {
+        return  "Restarting network: " + getNetworkId();
+    }
+    
+    public String getEventType() {
+        return EventTypes.NETWORK_RESTART;
+    }
+    
+    public long getEntityOwnerId() {
+        List<? extends Network> networks = _networkService.getVirtualNetworksOwnedByAccountInZone(getAccountName(), getDomainId(), getZoneId());
+        if (networks.size() == 0) {
+            assert (networks.size() <= 1) : "No virtual network is found";
+        }
+        assert (networks.size() <= 1) : "Too many virtual networks.  This logic should be obsolete";
+        
+        return networks.get(0).getAccountId();
     }
     
     public Long getNetworkId() {
