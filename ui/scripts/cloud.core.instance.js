@@ -1651,10 +1651,12 @@ function vmJsonToNicTab() {
 	var nics = jsonObj.nic;
 	var template = $("#nic_tab_template");
 	var $container = $thisTab.find("#tab_container").empty();
-	for (var i = 0; i < nics.length; i++) {
-		var newTemplate = template.clone(true);
-		vmNicJSONToTemplate(nics[i], newTemplate, i+1); 
-		$container.append(newTemplate.show());
+	if(nics != null && nics.length > 0) {
+	    for (var i = 0; i < nics.length; i++) {
+		    var newTemplate = template.clone(true);
+		    vmNicJSONToTemplate(nics[i], newTemplate, i+1); 
+		    $container.append(newTemplate.show());
+	    }
 	}
 }
 
@@ -1677,8 +1679,8 @@ function vmJsonToVolumeTab() {
 		dataType: "json",
 		success: function(json) {			    
 			var items = json.listvolumesresponse.volume;
-			if (items != null && items.length > 0) {
-				var $container = $thisTab.find("#tab_container").empty();
+			var $container = $thisTab.find("#tab_container").empty();
+			if (items != null && items.length > 0) {				
 				var template = $("#volume_tab_template");				
 				for (var i = 0; i < items.length; i++) {
 					var newTemplate = template.clone(true);
@@ -1742,8 +1744,8 @@ function vmJsonToRouterTab() {
 		dataType: "json",
 		success: function(json) {				      
 			var items = json.listroutersresponse.router;
-			if (items != null && items.length > 0) {
-				var $container = $thisTab.find("#tab_container").empty();
+			var $container = $thisTab.find("#tab_container").empty();
+			if (items != null && items.length > 0) {				
 				var template = $("#router_tab_template");				
 				for (var i = 0; i < items.length; i++) {
 					var newTemplate = template.clone(true);
