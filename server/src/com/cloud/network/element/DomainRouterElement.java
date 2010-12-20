@@ -53,6 +53,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.State;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -127,25 +128,42 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
 
     @Override
     public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+    
         DataCenter dc = _dataCenterDao.findById(config.getDataCenterId());
         if (canHandle(config.getGuestType(),dc)) {
-            if (rules != null && !rules.isEmpty()) {
-                if (rules.get(0).getPurpose() == Purpose.LoadBalancing) {
-                    //for load balancer we have to resend all lb rules for the network
-                    List<LoadBalancerVO> lbs = _lbDao.listByNetworkId(config.getId());
-                    List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
-                    for (LoadBalancerVO lb : lbs) {
-                        List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
-                        LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
-                        lbRules.add(loadBalancing);
+            
+            long networkId = config.getId();
+            DomainRouterVO router = _routerDao.findByNetworkConfiguration(networkId);
+            if (router == null) {
+                s_logger.warn("Unable to apply firewall rules, virtual router doesn't exist in the network " + config.getId());
+                throw new ResourceUnavailableException("Unable to apply firewall rules");
+            }
+            
+            if (router.getState() == State.Running || router.getState() == State.Starting) {
+                if (rules != null && !rules.isEmpty()) {
+                    if (rules.get(0).getPurpose() == Purpose.LoadBalancing) {
+                        //for load balancer we have to resend all lb rules for the network
+                        List<LoadBalancerVO> lbs = _lbDao.listByNetworkId(config.getId());
+                        List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
+                        for (LoadBalancerVO lb : lbs) {
+                            List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
+                            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
+                            lbRules.add(loadBalancing);
+                        }
+                        
+                        return _routerMgr.applyLBRules(config, lbRules);
+                    } else if (rules.get(0).getPurpose() == Purpose.PortForwarding) {
+                        return _routerMgr.applyPortForwardingRules(config, rules);
                     }
-                    
-                    return _routerMgr.applyLBRules(config, lbRules);
-                } else if (rules.get(0).getPurpose() == Purpose.PortForwarding) {
-                    return _routerMgr.applyPortForwardingRules(config, rules);
+                } else {
+                    return true;
                 }
-            } else {
+            } else if (router.getState() == State.Stopped || router.getState() == State.Stopping){
+                s_logger.debug("Router is in " + router.getState() + ", so not sending apply firewall rules commands to the backend");
                 return true;
+            } else {
+                s_logger.warn("Unable to apply firewall rules, virtual router is not in the right state " + router.getState());
+                throw new ResourceUnavailableException("Unable to apply firewall rules, domR is not in right state " + router.getState());
             }
         } 
         return false;

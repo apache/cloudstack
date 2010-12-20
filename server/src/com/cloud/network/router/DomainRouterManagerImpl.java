@@ -53,10 +53,12 @@ import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
+import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.RebootRouterCmd;
@@ -131,6 +133,7 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -2087,14 +2090,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     
     @Override
     public boolean applyLBRules(Network network, List<? extends FirewallRule> rules) {
-        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
-        if (router == null) {
-            s_logger.warn("Unable to apply lb rules, virtual router doesn't exist in the network " + network.getId());
-            throw new ResourceUnavailableException("Unable to apply lb rules");
-        }
-
-        if (router.getState() == State.Running || router.getState() == State.Starting) {
-
+        
+            DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
             Commands cmds = new Commands(OnError.Continue);
             LoadBalancerTO[] lbs = new LoadBalancerTO[rules.size()];
             int i = 0;
@@ -2115,20 +2112,23 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             
             //Send commands to router
             return sendCommandsToRouter(router, cmds);   
-            
-        } else if (router.getState() == State.Stopped || router.getState() == State.Stopping){
-            s_logger.debug("Router is in " + router.getState() + ", so not sending apply LB rules commands to the backend");
-            return true;
-        } else {
-            s_logger.warn("Unable to apply load balancer rules, virtual router is not in the right state " + router.getState());
-            throw new ResourceUnavailableException("Unable to apply load balancer rules, domR is not in right state " + router.getState());
-        }
+
     }
     
     @Override
     public boolean applyPortForwardingRules(Network network, List<? extends FirewallRule> rules) {
-        //TODO - apply port forwarding rules here
-        return true;
+        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
+        Commands cmds = new Commands(OnError.Continue);
+        List<PortForwardingRule> pfs = new ArrayList<PortForwardingRule>();
+        for (FirewallRule fwRule: rules) {
+            PortForwardingRule pf = (PortForwardingRule)fwRule;
+            pfs.add(pf);
+        }
+        SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(pfs);
+        cmds.addCommand(cmd);
+        
+        //Send commands to router
+        return sendCommandsToRouter(router, cmds); 
     }
 
     @Override
