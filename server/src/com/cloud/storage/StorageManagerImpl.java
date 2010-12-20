@@ -1652,6 +1652,20 @@ public class StorageManagerImpl implements StorageManager {
     }
 
     @Override
+    //TO DO - use this in AbstractpoolAllocator.checkPool.
+    public long calculateAllTemplateSizesInPool(StoragePoolVO pool){
+    	List<VMTemplateStoragePoolVO> templatePoolVOs = _vmTemplatePoolDao.listByPoolId(pool.getId());
+    	long totalAllocatedSize = 0l;
+    	long extraBytesPerVolume = 0l;
+	
+		for (VMTemplateStoragePoolVO templatePoolVO : templatePoolVOs) {	
+			long templateSize = templatePoolVO.getTemplateSize();
+			totalAllocatedSize += templateSize + extraBytesPerVolume;
+		}
+		return totalAllocatedSize;
+    }
+    
+    @Override
     public Answer sendToHostsOnStoragePool(Long poolId, Command cmd, String basicErrMsg) {
         return sendToHostsOnStoragePool(poolId, cmd, basicErrMsg, 1, 0, false);
     }

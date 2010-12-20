@@ -24,6 +24,7 @@ import java.util.Map;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.exception.InternalErrorException;
@@ -273,5 +274,10 @@ public interface StorageManager extends Manager {
     VolumeVO createVolumeFromSnapshot(long userId, long accountId, long snapshotId, String volumeName, long startEventId);
 
 	void createCapacityEntry(StoragePoolVO storagePool, long allocated);
+
+    /**
+     * Calculates the sum of all template sizes in the pool.
+     */
+	long calculateAllTemplateSizesInPool(StoragePoolVO pool);
 
 }

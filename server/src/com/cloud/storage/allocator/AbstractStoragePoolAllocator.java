@@ -173,6 +173,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 		
 		long totalAllocatedSize = sizes.second() + (long)sizes.first() * _extraBytesPerVolume;
 
+		// TO DO - abstract this out. The dashboard should also use the same calculation. (@AlertManagerImpl)
 		// Iterate through all templates on this storage pool
 		boolean tmpinstalled = false;
 		List<VMTemplateStoragePoolVO> templatePoolVOs;
@@ -213,7 +214,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
 		if ((pool.getCapacityBytes() * storageOverprovisioningFactor) < (totalAllocatedSize + askingSize)) {
 			if (s_logger.isDebugEnabled()) {
-				s_logger.debug("Found pool " + pool.getId() + " for storage, maxSize : " + (pool.getCapacityBytes() * storageOverprovisioningFactor) + ", totalSize : " + totalAllocatedSize + ", askingSize : " + askingSize);
+				s_logger.debug("Pool " + pool.getId() + " doesnt have sufficient allocation bandwidth, with maxAllocationSize : " + (pool.getCapacityBytes() * storageOverprovisioningFactor) + ", totalAllocatedSize : " + totalAllocatedSize + ", askingAllocationSize : " + askingSize);
 			}
 
 			return false;

@@ -381,6 +381,7 @@ public class AlertManagerImpl implements AlertManager {
             long disk = 0l;
             Pair<Long, Long> sizes = _volumeDao.getCountAndTotalByPool(pool.getId());
             disk = sizes.second();
+            disk += _storageMgr.calculateAllTemplateSizesInPool(pool);
             _storageMgr.createCapacityEntry(pool, disk);
         }
 
