@@ -49,9 +49,7 @@ function afterLoadNetworkJSP($leftmenuItem1) {
     
     var $topButtonContainer = clearButtonsOnTop();			    	       
 	$("#top_buttons").appendTo($("#top_button_container").empty()); 
-    
-    bindAddNetworkButton($("#add_network_button"));
-    
+        
     //switch between different tabs - Public Network page
     var $publicNetworkPage = $("#public_network_page");
     var tabArray = [$publicNetworkPage.find("#tab_details"), $publicNetworkPage.find("#tab_ipallocation"), $publicNetworkPage.find("#tab_firewall"), $publicNetworkPage.find("#tab_loadbalancer")];
@@ -73,7 +71,8 @@ function afterLoadNetworkJSP($leftmenuItem1) {
     initDialog("dialog_add_network_for_zone");
     initDialog("dialog_add_iprange_to_directnetwork");    
      
-    networkPopulateMiddleMenu($leftmenuItem1);       
+    networkPopulateMiddleMenu($leftmenuItem1);  
+    bindAddNetworkButton($("#add_network_button"));     
 }
 
 function networkPopulateMiddleMenu($leftmenuItem1) {
