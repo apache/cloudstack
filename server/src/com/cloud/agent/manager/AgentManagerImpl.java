@@ -1377,17 +1377,22 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         if (host.getClusterId() != null) {
             params.put("cluster", Long.toString(host.getClusterId()));
         }
+        
         String guid = null;
         ClusterVO cluster = _clusterDao.findById(host.getClusterId());
-        if ( cluster.getGuid() == null ) {
-            guid = host.getDetail("pool");
-        } else {
-            guid = cluster.getGuid();           
+        if(cluster.getHypervisorType() == Hypervisor.HypervisorType.XenServer) {
+	        if ( cluster.getGuid() == null ) {
+	            guid = host.getDetail("pool");
+	        } else {
+	            guid = cluster.getGuid();           
+	        }
+	        if( guid == null || guid.isEmpty() ) {
+	            throw new CloudRuntimeException("Can not find guid for cluster " + cluster.getId() + " name " + cluster.getName());
+	        }
+	        params.put("pool", guid);
         }
-        if( guid == null || guid.isEmpty() ) {
-            throw new CloudRuntimeException("Can not find guid for cluster " + cluster.getId() + " name " + cluster.getName());
-        }
-        params.put("pool", guid);
+        
+        
         params.put("ipaddress", host.getPrivateIpAddress());
         params.put("secondary.storage.vm", "false");
         params.put("max.template.iso.size", _configDao.getValue("max.template.iso.size"));
