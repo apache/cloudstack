@@ -53,6 +53,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase;
 import com.cloud.hypervisor.xen.resource.XcpServerResource;
+import com.cloud.hypervisor.xen.resource.XenServer56FP1Resource;
 import com.cloud.hypervisor.xen.resource.XenServerConnectionPool;
 import com.cloud.hypervisor.xen.resource.XenServerResource;
 import com.cloud.resource.Discoverer;
@@ -375,7 +376,10 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.0")) 
         	return new XenServerResource();
         
-        String msg = "Only support XCP 0.1.1 and XenServer 5.6 , but this one is " + prodBrand + " " + prodVersion;
+        if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.100")) 
+            return new XenServer56FP1Resource();
+        
+        String msg = "Only support XCP 0.1.1, XenServer 5.6 and XenServer 5.6 FP1 , but this one is " + prodBrand + " " + prodVersion;
         _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
         s_logger.debug(msg);
         throw new RuntimeException(msg);

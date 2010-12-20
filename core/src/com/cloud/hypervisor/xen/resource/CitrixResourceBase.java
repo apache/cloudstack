@@ -103,6 +103,8 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.SecurityIngressRuleAnswer;
+import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.StartAnswer;
@@ -433,6 +435,8 @@ public abstract class CitrixResourceBase implements ServerResource {
             return execute((VpnUsersCfgCommand)cmd);
         } else if (cmd instanceof CheckSshCommand) {
             return execute((CheckSshCommand)cmd);
+        } else if (cmd instanceof SecurityIngressRulesCmd) {
+            return execute((SecurityIngressRulesCmd) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -3194,10 +3198,6 @@ public abstract class CitrixResourceBase implements ServerResource {
         return com.cloud.host.Host.Type.Routing;
     }
     
-    protected boolean can_bridge_firewall(Connection conn) {
-        return false;
-    }
-
     protected boolean getHostInfo(Connection conn) throws IllegalArgumentException{
         try {
             Host myself = Host.getByUuid(conn, _host.uuid);
@@ -3662,6 +3662,39 @@ public abstract class CitrixResourceBase implements ServerResource {
             return new Answer(cmd, false, msg);
         }
 
+    }
+    
+    protected boolean can_bridge_firewall(Connection conn) {   
+        return Boolean.valueOf(callHostPlugin(conn, "vmops", "can_bridge_firewall", "host_uuid", _host.uuid));
+    }
+    
+    private Answer execute(SecurityIngressRulesCmd cmd) {
+        Connection conn = getConnection();
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Sending network rules command to " + _host.ip);
+        }
+
+        if (!_canBridgeFirewall) {
+            s_logger.info("Host " + _host.ip + " cannot do bridge firewalling");
+            return new SecurityIngressRuleAnswer(cmd, false, "Host " + _host.ip + " cannot do bridge firewalling");
+        }
+      
+        String result = callHostPlugin(conn, "vmops", "network_rules",
+                "vmName", cmd.getVmName(),
+                "vmIP", cmd.getGuestIp(),
+                "vmMAC", cmd.getGuestMac(),
+                "vmID", Long.toString(cmd.getVmId()),
+                "signature", cmd.getSignature(),
+                "seqno", Long.toString(cmd.getSeqNum()),
+                "rules", cmd.stringifyRules());
+
+        if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+            s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
+            return new SecurityIngressRuleAnswer(cmd, false, "programming network rules failed");
+        } else {
+            s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ", numrules=" + cmd.getRuleSet().length);
+            return new SecurityIngressRuleAnswer(cmd);
+        }
     }
 
     protected Answer execute(DeleteStoragePoolCommand cmd) {
