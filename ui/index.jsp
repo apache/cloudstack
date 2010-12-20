@@ -161,8 +161,8 @@
                                 </li>
                             </ol>
                             </form>
-                            <div class="searchpanel_advancebutton" id="advanced_search_icon">
-                                <fmt:message key="label.advanced"/></div>
+                          <div class="searchpanel_filterbutton" id="advanced_search_icon">
+                                </div>
                             <div id="advanced_search_container">
                             </div>
                         </div>
@@ -230,6 +230,7 @@
                 <!-- Mid Menu starts here-->
                 <div class="midmenu_panel" id="middle_menu">
                     <div class="midmenu_box" id="midmenu_box">
+                    	<div class="adv_searchpopup" style="display:none;"></div>
                         <div id="midmenu_spinning_wheel" class="midmenu_mainloaderbox" style="display: none;">
                             <div class="midmenu_mainloader_animatedicon">
                             </div>

@@ -1737,39 +1737,25 @@ a:hover {
 	width:223px;
 	height:27px;
 	float:left;
-	position:relative;
 	margin:0;
 	padding:0;
 	background:url(../images/actionpanel_border.gif) no-repeat top right;
 	list-style:none
 }
 
-.searchpanel_advancebutton {
-	width:55px;
-	height:12px;
+.searchpanel_filterbutton {
+	width:15px;
+	height:15px;
 	float:left;
-	margin:0 0 0 4px;
+	margin:5px 0 0 4px;
 	display:inline;
-	padding:7px 0 0 0;
-	color:#FFF;
-	font-size:10px;
-	text-align:left;
-	font-weight:normal;
+	background:url(../images/filter_downarrow.gif) no-repeat top left;
 	cursor:pointer;
 	cursor:hand;
 }
 
-.searchpanel_advancebutton.off {
-	color:#FFF;
-}
-
-.searchpanel_advancebutton.on {
-	background: url(../images/advance_highlighted.gif) no-repeat top left;
-	margin:6px 0 0 0;
-	color:#333;
-	padding:4px 0 0 3px;
-	width:57px;
-	height:12px;
+.searchpanel_advancebutton.close {
+	background:url(../images/filter_downarrow.gif) no-repeat top left;
 }
 
 .adv_searchpopup_highlighted_advancesearch {
@@ -1802,7 +1788,7 @@ a:hover {
 
 
 .searchpanel li{
-	width:155px;
+	width:186px;
 	height:auto;
 	float:left;
 	margin:5px 0 0 8px;
@@ -1811,7 +1797,7 @@ a:hover {
 }
 
 .searchpanel .text{
-	width:116px;
+	width:145px;
 	height:14px;
 	float:left;
 	background:#FFF repeat top left;
@@ -1841,31 +1827,30 @@ a:hover {
 }
 
 .search_textbg {
-	width:154px;
+	width:186px;
 	height:16px;
 	float:left;
-	background:url(../images/serach_textbox.gif) no-repeat top left;
+	background:url(../images/search_textbg.gif) no-repeat top left;
 	margin:0;
 	padding:0;
 }
 
 .adv_searchpopup {
-	width:268px;
-	height:auto;
+	width:100%;
+	height:100px;
 	float:left;
-	position:absolute;
-	top:22px;
-	left:8px;
+	background:#646464 url(../images/adv_searchbg.gif) repeat-x top left;
+	border-bottom:1px solid #2d2d2d;
 	margin:0;
 	padding:0;
-	z-index:1005;
+
 }
 
 .adv_searchpopup_top {
 	width:268px;
 	height:21px;
 	float:left;
-	background: url(../images/advancesearchpopup_top.png) no-repeat top left;
+	background:url(../images/advancesearchpopup_top.png) no-repeat top left;
 	margin:0;
 	padding:0;
 	overflow:hidden;
