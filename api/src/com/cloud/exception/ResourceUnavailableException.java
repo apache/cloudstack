@@ -18,28 +18,19 @@
 package com.cloud.exception;
 
 import com.cloud.utils.SerialVersionUID;
-import com.cloud.utils.exception.CloudRuntimeException;
 
-public class ResourceUnavailableException extends CloudRuntimeException {
+public class ResourceUnavailableException extends Exception {
     private static final long serialVersionUID = SerialVersionUID.ResourceUnavailableException;
 
     Class<?> _scope;
     long _id;
-    
-    public ResourceUnavailableException(String msg) {
-        super(msg);
-    }
-    
-    public ResourceUnavailableException(String msg, Throwable cause) {
-        super(msg, cause);
-    }
     
     public ResourceUnavailableException(String msg, Class<?> scope, long resourceId) {
         this(msg, scope, resourceId, null);
     }
     
     public ResourceUnavailableException(String msg, Class<?> scope, long resourceId, Throwable cause) {
-        super(msg, cause);
+        super(new StringBuilder("Resource [").append(scope).append(":").append(resourceId).append("] is unreachable: ").append(msg).toString(), cause);
         _scope = scope;
         _id = resourceId;
     }

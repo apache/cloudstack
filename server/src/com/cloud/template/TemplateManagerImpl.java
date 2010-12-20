@@ -34,7 +34,6 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DestroyCommand;
-import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.api.ApiDBUtils;
@@ -51,11 +50,10 @@ import com.cloud.api.commands.ExtractTemplateCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.async.executor.ExtractJobResultObject;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
@@ -735,10 +733,10 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	}
     	
     	if (srcSecHost == null) {
-    		throw new StorageUnavailableException("Source zone is not ready");
+    		throw new StorageUnavailableException("Source zone is not ready", DataCenter.class, sourceZoneId);
     	}
     	if (dstSecHost == null) {
-    		throw new StorageUnavailableException("Destination zone is not ready");
+    		throw new StorageUnavailableException("Destination zone is not ready", DataCenter.class, destZoneId);
     	}
     	
     	VMTemplateVO vmTemplate = _tmpltDao.findById(templateId);
@@ -847,8 +845,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         boolean success = copy(userId, isoId, sourceZoneId, destZoneId, eventId);
         
         VMTemplateVO copiedIso = null;
-        if (success) 
-        	copiedIso = _tmpltDao.findById(isoId);
+        if (success) {
+            copiedIso = _tmpltDao.findById(isoId);
+        }
        
         return copiedIso;
     }
@@ -881,8 +880,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         boolean success = copy(userId, templateId, sourceZoneId, destZoneId, eventId);
         
         VMTemplateVO copiedTemplate = null;
-        if (success) 
-        	copiedTemplate = _tmpltDao.findById(templateId);
+        if (success) {
+            copiedTemplate = _tmpltDao.findById(templateId);
+        }
        
         return copiedTemplate;
     }
@@ -1309,8 +1309,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	    }
     	}
         // If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null)
+        if (userId == null) {
             userId = new Long(1);
+        }
         
         return userId;
 	}

@@ -25,17 +25,14 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
-import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -110,7 +107,7 @@ public interface NetworkManager extends NetworkService {
     
     void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkVO, NicProfile>> networks) throws InsufficientCapacityException, ConcurrentOperationException;
 
-    void prepare(VirtualMachineProfile<? extends VMInstanceVO> profile, DeployDestination dest, ReservationContext context) throws InsufficientNetworkCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    void prepare(VirtualMachineProfile<? extends VMInstanceVO> profile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
     void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile);
     
     List<? extends Nic> getNics (VirtualMachine vm);

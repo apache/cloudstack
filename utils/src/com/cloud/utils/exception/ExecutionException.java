@@ -19,6 +19,13 @@ package com.cloud.utils.exception;
 
 import com.cloud.utils.SerialVersionUID;
 
+/**
+ * ExecutionException is a generic exception to indicate that execution has
+ * a problem so that the method can catch it and handle it properly.  This 
+ * exception should never be declared to be thrown out of
+ * a public method.  
+ *
+ */
 public class ExecutionException extends Exception {
     private static final long serialVersionUID = SerialVersionUID.ExecutionException;
     

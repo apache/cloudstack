@@ -50,7 +50,7 @@ public interface VirtualMachineManager extends Manager {
             Map<String, Object> params,
             DeploymentPlan plan,
             HypervisorType hyperType,
-            Account owner) throws InsufficientCapacityException, ResourceUnavailableException;
+            Account owner) throws InsufficientCapacityException;
     
     <T extends VMInstanceVO> T allocate(T vm,
             VMTemplateVO template,
@@ -60,7 +60,7 @@ public interface VirtualMachineManager extends Manager {
             List<Pair<NetworkVO, NicProfile>> networks,
             DeploymentPlan plan,
             HypervisorType hyperType,
-            Account owner) throws InsufficientCapacityException, ResourceUnavailableException;
+            Account owner) throws InsufficientCapacityException;
     
     <T extends VMInstanceVO> T allocate(T vm,
             VMTemplateVO template,
@@ -68,7 +68,7 @@ public interface VirtualMachineManager extends Manager {
             List<Pair<NetworkVO, NicProfile>> networkProfiles,
             DeploymentPlan plan,
             HypervisorType hyperType,
-            Account owner) throws InsufficientCapacityException, ResourceUnavailableException;
+            Account owner) throws InsufficientCapacityException;
     
     <T extends VMInstanceVO> T start(T vm, Map<String, Object> params, User caller, Account account, HypervisorType hyperType) throws InsufficientCapacityException, ResourceUnavailableException;
     
@@ -79,7 +79,6 @@ public interface VirtualMachineManager extends Manager {
     <T extends VMInstanceVO> void registerGuru(VirtualMachine.Type type, VirtualMachineGuru<T> guru);
 
 	boolean stateTransitTo(VMInstanceVO vm, Event e, Long id);
-
 	
     <T extends VMInstanceVO> T advanceStart(T vm, Map<String, Object> params, User caller, Account account, HypervisorType hyperType) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
     

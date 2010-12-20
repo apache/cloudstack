@@ -54,7 +54,6 @@ import com.cloud.event.EventVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -62,7 +61,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.dao.NetworkDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -89,7 +87,6 @@ import com.cloud.vm.ItWorkVO.Type;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -458,7 +455,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
         try {
             return advanceStop(vm, user, account);
         } catch (OperationTimedoutException e) {
-            throw new ResourceUnavailableException("Unable to stop vm because the operation to stop timed out", e);
+            throw new AgentUnavailableException("Unable to stop vm because the operation to stop timed out", vm.getHostId(), e);
         } catch (ConcurrentOperationException e) {
             throw new CloudRuntimeException("Unable to stop vm because of a concurrent operation", e);
         }

@@ -111,7 +111,7 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      * @throws ExecutionException 
      * @throws ResourceUnavailableException 
      */
-    T start(long vmId, long startEventId) throws InsufficientCapacityException, StorageUnavailableException, ConcurrentOperationException, ExecutionException;
+    T start(long vmId, long startEventId) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
 
     /**
      * stop the vm

@@ -451,9 +451,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	        } catch (InsufficientCapacityException e) {
 	            s_logger.warn("InsufficientCapacity", e);
 	            throw new CloudRuntimeException("Insufficient capacity exception", e);
-	        } catch (ResourceUnavailableException e) {
-	            s_logger.warn("Unable to contact resource", e);
-	            throw new CloudRuntimeException("Unable to contact resource", e);
 	        }
 	        
 	        Map<String, Object> context = new HashMap<String, Object>();

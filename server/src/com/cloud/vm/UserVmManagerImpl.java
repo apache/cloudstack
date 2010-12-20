@@ -814,25 +814,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
  
-	private void checkIfPoolAvailable(long vmId) throws StorageUnavailableException {
-		//check if the sp is up before starting
-        List<VolumeVO> rootVolList = _volsDao.findByInstanceAndType(vmId, VolumeType.ROOT); 
-        if(rootVolList == null || rootVolList.size() == 0){
-        	throw new StorageUnavailableException("Could not find the root disk for this vm to verify if the pool on which it exists is Up or not");
-        }else{
-        	Long poolId = rootVolList.get(0).getPoolId();//each vm has 1 root vol
-        	StoragePoolVO sp = _storagePoolDao.findById(poolId);
-        	if(sp == null){
-        		throw new StorageUnavailableException("Could not find the pool for the root disk of vm"+vmId+", to confirm if it is Up or not");
-        	}else{
-        		//found pool
-        		if(!sp.getStatus().equals(com.cloud.host.Status.Up) && !sp.getStatus().equals(com.cloud.host.Status.CancelMaintenance)){
-        			throw new StorageUnavailableException("Could not start the vm; the associated storage pool is in:"+sp.getStatus().toString()+" state");
-        		}
-        	}
-        }
-	}
-    
     private boolean rebootVirtualMachine(long userId, long vmId) {
         UserVmVO vm = _vmDao.findById(vmId);
 
@@ -1426,7 +1407,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     @Override
-    public UserVmVO start(long vmId, long startEventId) throws StorageUnavailableException, ConcurrentOperationException, ExecutionException {
+    public UserVmVO start(long vmId, long startEventId) throws StorageUnavailableException, ConcurrentOperationException {
         return null; // FIXME start(1L, vmId, null, null, startEventId);
     }
 
@@ -1556,10 +1537,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 s_logger.debug("Trying to migrate router to host " + vmHost.getName());
             }
             
-            if( !_storageMgr.share(vm, vols, vmHost, false) ) {
-                s_logger.warn("Can not share " + vm.toString() + " on host " + vmHost.getId());
-                throw new StorageUnavailableException("Can not share " + vm.toString() + " on host " + vmHost.getId());
-            }
+            _storageMgr.share(vm, vols, vmHost, false);
 
             Answer answer = _agentMgr.easySend(vmHost.getId(), cmd);
             if (answer != null && answer.getResult()) {

@@ -30,15 +30,18 @@ import com.cloud.utils.SerialVersionUID;
 public class StorageUnavailableException extends ResourceUnavailableException {
     private static final long serialVersionUID = SerialVersionUID.StorageUnavailableException;
 
-    public StorageUnavailableException(String msg) {
-        super(msg);
-    }
-    
     public StorageUnavailableException(String msg, long poolId) {
         this(msg, poolId, null);
     }
     public StorageUnavailableException(String msg, long poolId, Throwable cause) {
-        super(msg, StoragePool.class, poolId, cause);
+        this(msg, StoragePool.class, poolId, cause);
     }
     
+    public StorageUnavailableException(String msg, Class<?> scope, long resourceId) {
+        this(msg, scope, resourceId, null);
+    }
+    
+    public StorageUnavailableException(String msg, Class<?> scope, long resourceId, Throwable th) {
+        super(msg, scope, resourceId, th);
+    }
 }

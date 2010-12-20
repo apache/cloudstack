@@ -30,10 +30,14 @@ public class AgentUnavailableException extends ResourceUnavailableException {
     private static final long serialVersionUID = SerialVersionUID.AgentUnavailableException;
     
     public AgentUnavailableException(String msg, long agentId) {
-        super("Host " + agentId + ": " + msg, Host.class, agentId);
+        this(msg, agentId, null);
     }
     
     public AgentUnavailableException(long agentId) {
         this("Unable to reach host.", agentId);
+    }
+    
+    public AgentUnavailableException(String msg, long agentId, Throwable cause) {
+        super("Host " + agentId + ": " + msg, Host.class, agentId, cause);
     }
 }

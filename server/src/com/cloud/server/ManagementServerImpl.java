@@ -168,11 +168,11 @@ import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudAuthenticationException;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -255,6 +255,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
@@ -607,8 +608,9 @@ public class ManagementServerImpl implements ManagementServer {
 
         DomainVO domain = _domainDao.findById(domainId);
         String domainName = null;
-        if(domain != null)
-        	domainName = domain.getName();
+        if(domain != null) {
+            domainName = domain.getName();
+        }
         
         if (!userAccount.getState().equals("enabled") || !userAccount.getAccountState().equals("enabled")) {
             if (s_logger.isInfoEnabled()) {
@@ -4829,7 +4831,7 @@ public class ManagementServerImpl implements ManagementServer {
 			if(cert == null){
 				String msg = "Unable to obtain lock on the cert from uploadCertificate()";
 				s_logger.error(msg);
-				throw new ResourceUnavailableException(msg);
+				throw new ConcurrentOperationException(msg);
 			}else{
 	    		if(cert.getUpdated().equalsIgnoreCase("Y")){
 					 if(s_logger.isDebugEnabled()) {
@@ -4866,14 +4868,14 @@ public class ManagementServerImpl implements ManagementServer {
 				if(cpList.size() == 0){
 					String msg = "Unable to find any console proxies in the system for certificate update";
 					s_logger.warn(msg);
-					throw new ResourceUnavailableException(msg);
+					throw new ExecutionException(msg);
 				}
 				//get a list of all hosts in host table for type cp
 				List<HostVO> cpHosts = _hostDao.listByType(com.cloud.host.Host.Type.ConsoleProxy);
 				if(cpHosts.size() == 0){
 					String msg = "Unable to find any console proxy hosts in the system for certificate update";
 					s_logger.warn(msg);
-					throw new ResourceUnavailableException(msg);
+					throw new ExecutionException(msg);
 				}
 				//create a hashmap for fast lookup
 				Map<String,Long> hostNameToHostIdMap = new HashMap<String, Long>();
@@ -4921,7 +4923,7 @@ public class ManagementServerImpl implements ManagementServer {
 			}
 		}catch (Exception e) {
 			s_logger.warn("Failed to successfully update the cert across console proxies on management server:"+this.getId());			
-			if(e instanceof ResourceUnavailableException) {
+			if(e instanceof ExecutionException) {
                 throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
             } else if(e instanceof ManagementServerException) {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());

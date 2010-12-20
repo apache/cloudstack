@@ -29,8 +29,9 @@ public interface NetworkElement extends Adapter {
      * @param config fully specified network configuration.
      * @param offering network offering that originated the network configuration.
      * @return true if network configuration is now usable; false if not; null if not handled by this element.
+     * @throws InsufficientNetworkCapacityException TODO
      */
-    boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
     
     /**
      * Prepare for a nic to be added into this network.
@@ -44,7 +45,7 @@ public interface NetworkElement extends Adapter {
      * @throws ResourceUnavailableException
      * @throws InsufficientNetworkCapacityException
      */
-    boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientNetworkCapacityException;
+    boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
     
     /**
      * A nic is released from this network.

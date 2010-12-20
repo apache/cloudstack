@@ -103,7 +103,6 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -236,14 +235,14 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     private final boolean _shouldBeSnapshotCapable = true;
     
     @Override
-    public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) {
+    public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) throws StorageUnavailableException {
     	
         //if pool is in maintenance and it is the ONLY pool available; reject
         List<VolumeVO> rootVolForGivenVm = _volsDao.findByInstanceAndType(vm.getId(), VolumeType.ROOT);
         if(rootVolForGivenVm != null && rootVolForGivenVm.size() > 0){
         	boolean isPoolAvailable = isPoolAvailable(rootVolForGivenVm.get(0).getPoolId());	
         	if(!isPoolAvailable){
-        		return false;
+        	    throw new StorageUnavailableException("Can not share " + vm, rootVolForGivenVm.get(0).getPoolId());
         	}
         }
         
@@ -2241,7 +2240,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 			if(primaryStorage == null){
 				String msg = "Unable to obtain lock on the storage pool in preparePrimaryStorageForMaintenance()";
 				s_logger.error(msg);
-				throw new ResourceUnavailableException(msg);
+				throw new ExecutionException(msg);
 			}
         	
         	if (!primaryStorage.getStatus().equals(Status.Up) && !primaryStorage.getStatus().equals(Status.ErrorInMaintenance)) {
@@ -2395,7 +2394,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         	return _storagePoolDao.findById(primaryStorageId);
         	
         } catch (Exception e) { 
-        	if(e instanceof ResourceUnavailableException){
+        	if(e instanceof ExecutionException){
                 s_logger.error("Exception in enabling primary storage maintenance:",e);
         		throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
         	}
@@ -2438,7 +2437,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 			if(primaryStorage == null){
 				String msg = "Unable to obtain lock on the storage pool in cancelPrimaryStorageForMaintenance()";
 				s_logger.error(msg);
-				throw new ResourceUnavailableException(msg);
+				throw new ExecutionException(msg);
 			}
 			
 			if (primaryStorage.getStatus().equals(Status.Up)) {
@@ -2472,7 +2471,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 							{
 								String msg = "There was an error starting the console proxy id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
 								s_logger.warn(msg);
-								throw new ResourceUnavailableException(msg);
+								throw new ExecutionException(msg);
 							}
 						}
 						
@@ -2487,7 +2486,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 							{
 								String msg = "There was an error starting the ssvm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
 								s_logger.warn(msg);
-				        		throw new ResourceUnavailableException(msg);
+				        		throw new ExecutionException(msg);
 							}
 						}
 						
@@ -2503,26 +2502,26 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 								{
 									String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
 									s_logger.warn(msg);
-			    	        		throw new ResourceUnavailableException(msg);
+			    	        		throw new ExecutionException(msg);
 								}
 							} catch (StorageUnavailableException e) {
 								String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
 								s_logger.warn(msg,e);
-				        		throw new ResourceUnavailableException(msg);
+				        		throw new ExecutionException(msg);
 							} catch (InsufficientCapacityException e) {
 								String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
 								s_logger.warn(msg,e);
-				        		throw new ResourceUnavailableException(msg);				
+				        		throw new ExecutionException(msg);				
 							} catch (ConcurrentOperationException e) {
 								String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
 								s_logger.warn(msg,e);
 				            	primaryStorage.setStatus(Status.ErrorInMaintenance);
 				        		_storagePoolDao.persist(primaryStorage);
-				        		throw new ResourceUnavailableException(msg);
+				        		throw new ExecutionException(msg);
 							} catch (ExecutionException e) {
 								String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
 								s_logger.warn(msg,e);
-				        		throw new ResourceUnavailableException(msg);
+				        		throw new ExecutionException(msg);
 							}
 						}    				
 					}
@@ -2535,11 +2534,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 			} catch (InvalidParameterValueException e) {
 				String msg = "Error changing consoleproxy.restart back to false at end of cancel maintenance:";
 				s_logger.warn(msg,e);
-				throw new ResourceUnavailableException(msg);
+				throw new ExecutionException(msg);
 			} catch (CloudRuntimeException e) {
 				String msg = "Error changing consoleproxy.restart back to false at end of cancel maintenance:";
 				s_logger.warn(msg,e);
-				throw new ResourceUnavailableException(msg);
+				throw new ExecutionException(msg);
 			}
 			
 			//Change the storage state back to up
@@ -2548,19 +2547,15 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 			
 			return primaryStorage;
 		} catch (Exception e) {
-			if(e instanceof ResourceUnavailableException){
-            	primaryStorage.setStatus(Status.ErrorInMaintenance);
-        		_storagePoolDao.persist(primaryStorage);
+            primaryStorage.setStatus(Status.ErrorInMaintenance);
+            _storagePoolDao.persist(primaryStorage);
+			if(e instanceof ExecutionException){
 				throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
 			}	
 			else if(e instanceof InvalidParameterValueException){
-            	primaryStorage.setStatus(Status.ErrorInMaintenance);
-        		_storagePoolDao.persist(primaryStorage);
 				throw new ServerApiException(BaseCmd.PARAM_ERROR, e.getMessage());
 			}
 			else{//all other exceptions
-            	primaryStorage.setStatus(Status.ErrorInMaintenance);
-        		_storagePoolDao.persist(primaryStorage);
 				throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
 			}
 		}finally{

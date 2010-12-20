@@ -29,7 +29,6 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
@@ -50,6 +49,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -83,21 +83,17 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
-        if (canHandle(offering.getGuestIpType(), dest.getDataCenter())) {
-            DomainRouterVO router = _routerMgr.deployVirtualRouter(guestConfig, dest, context.getAccount());
-            if (router == null) {
-                throw new ResourceUnavailableException("Unable to deploy the router for " + guestConfig);
-            }
-            
-            return true;
-        } else {
+    public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
+        if (!canHandle(offering.getGuestIpType(), dest.getDataCenter())) {
             return false;
         }
+        _routerMgr.deployVirtualRouter(guestConfig, dest, context.getAccount());
+        
+        return true;
     }
 
     @Override
-    public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
+    public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (canHandle(config.getGuestType(), dest.getDataCenter())) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
@@ -136,7 +132,7 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
             DomainRouterVO router = _routerDao.findByNetworkConfiguration(networkId);
             if (router == null) {
                 s_logger.warn("Unable to apply firewall rules, virtual router doesn't exist in the network " + config.getId());
-                throw new ResourceUnavailableException("Unable to apply firewall rules");
+                throw new CloudRuntimeException("Unable to apply firewall rules");
             }
             
             if (router.getState() == State.Running || router.getState() == State.Starting) {
@@ -163,7 +159,7 @@ public class DomainRouterElement extends AdapterBase implements NetworkElement {
                 return true;
             } else {
                 s_logger.warn("Unable to apply firewall rules, virtual router is not in the right state " + router.getState());
-                throw new ResourceUnavailableException("Unable to apply firewall rules, domR is not in right state " + router.getState());
+                throw new CloudRuntimeException("Unable to apply firewall rules, domR is not in right state " + router.getState());
             }
         } 
         return false;

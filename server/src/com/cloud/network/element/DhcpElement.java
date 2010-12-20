@@ -27,7 +27,6 @@ import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
@@ -72,21 +71,16 @@ public class DhcpElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
-    public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
-        if (canHandle(offering.getGuestIpType(), dest)) {
-            DomainRouterVO router = _routerMgr.deployDhcp(guestConfig, dest, context.getAccount());
-            if (router == null) {
-                throw new ResourceUnavailableException("Unable to deploy the router for " + guestConfig);
-            }
-            return true;
-        
-        } else {
+    public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
+        if (!canHandle(offering.getGuestIpType(), dest)) {
             return false;
         }
+        _routerMgr.deployDhcp(guestConfig, dest, context.getAccount());
+        return true;
     }
 
     @Override
-    public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
+    public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (canHandle(config.getGuestType(), dest)) {
             
             if (vm.getType() != VirtualMachine.Type.User) {

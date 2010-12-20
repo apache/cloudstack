@@ -22,9 +22,9 @@ import java.util.Map;
 
 import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -33,7 +33,6 @@ import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
@@ -92,9 +91,9 @@ public interface DomainRouterManager extends Manager {
 	DomainRouterVO getRouter(long accountId, long zoneId);
 	DomainRouterVO getRouter(String publicIpAddress);
 	
-	DomainRouterVO deployVirtualRouter(Network guestConfig, DeployDestination dest, Account owner) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
+	VirtualRouter deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
 	
-	DomainRouterVO deployDhcp(Network guestConfig, DeployDestination dest, Account owner) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
+	VirtualRouter deployDhcp(Network guestNetwork, DeployDestination dest, Account owner) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
 	
 	RemoteAccessVpnVO startRemoteAccessVpn(RemoteAccessVpnVO vpnVO) throws ResourceUnavailableException;
 	
@@ -102,11 +101,11 @@ public interface DomainRouterManager extends Manager {
 
 	boolean deleteRemoteAccessVpn(RemoteAccessVpnVO vpnVO);
 	
-	DomainRouterVO addVirtualMachineIntoNetwork(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, ReservationContext context, Boolean startDhcp) throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException;
+	VirtualRouter addVirtualMachineIntoNetwork(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, ReservationContext context, Boolean startDhcp) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
     
-    boolean associateIP (Network network, List<? extends PublicIpAddress> ipAddress);
+    boolean associateIP (Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException;
     
-    boolean applyLBRules(Network network, List<? extends FirewallRule> rules);
-    boolean applyPortForwardingRules(Network network, List<? extends FirewallRule> rules);
+    boolean applyLBRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
+    boolean applyPortForwardingRules(Network network, List<? extends FirewallRule> rules) throws AgentUnavailableException;
     
 }

@@ -80,7 +80,6 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
@@ -1015,7 +1014,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @DB
-    protected Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientAddressCapacityException {
+    protected Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         Transaction.currentTxn();
         Pair<NetworkGuru, NetworkVO> implemented = new Pair<NetworkGuru, NetworkVO>(null, null);
 
@@ -1045,20 +1044,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             network.setDns1(result.getDns1());
             network.setDns2(result.getDns2());
             network.setMode(result.getMode());
-            network.setState(Network.State.Implemented);
+            network.setReservationId(context.getReservationId());
+            network.setState(Network.State.Implementing);
             _networksDao.update(networkId, network);
 
             for (NetworkElement element : _networkElements) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Asking " + element.getName() + " to implmenet " + network);
                 }
-                try {
-                    element.implement(network, offering, dest, context);
-                } catch (InsufficientCapacityException e) {
-                    throw new ResourceUnavailableException("Unable to start domain router for this VM", e);
-                }
+                element.implement(network, offering, dest, context);
             }
 
+            network.setState(Network.State.Implemented);
+            _networksDao.update(network.getId(), network);
             implemented.set(guru, network);
             return implemented;
         } finally {
@@ -1070,7 +1068,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public void prepare(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest, ReservationContext context) throws InsufficientNetworkCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    public void prepare(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
         for (NicVO nic : nics) {
             Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context);
@@ -2054,7 +2052,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException{
+    public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException {
         //This method reapplies Ip addresses, LoadBalancer and PortForwarding rules
         String accountName = cmd.getAccountName();
         long domainId = cmd.getDomainId();

@@ -26,8 +26,8 @@ import com.cloud.api.commands.CreateRemoteAccessVpnCmd;
 import com.cloud.api.commands.DeleteRemoteAccessVpnCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListNetworksCmd;
-import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.api.commands.RemoveVpnUserCmd;
+import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -87,7 +87,7 @@ public interface NetworkService {
     List<? extends Network> searchForNetworks(ListNetworksCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     boolean deleteNetwork(long networkId) throws InvalidParameterValueException, PermissionDeniedException;
     
-    boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException;
+    boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException;
     
     int getActiveNicsInNetwork(long networkId);
 }
