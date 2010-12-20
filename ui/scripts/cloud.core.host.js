@@ -259,6 +259,11 @@ function hostJsonToPrimaryStorageTab() {
     });	     
 } 
 
+function hostJsonClearPrimaryStorageTab() {   
+    var $thisTab = $("#right_panel_content").find("#tab_content_primarystorage");
+    $thisTab.find("#tab_container").empty();   
+} 
+
 function hostPrimaryStorageJSONToTemplate(jsonObj, $template) {
     $template.data("jsonObj", jsonObj);     
     $template.attr("id", "host_primarystorage_"+jsonObj.id).data("hostPrimarystorageId", jsonObj.id);        
@@ -422,6 +427,11 @@ function hostJsonToInstanceTab() {
 	});
 } 
 
+function hostJsonClearInstanceTab() {
+    var $thisTab = $("#right_panel_content").find("#tab_content_instance");
+    $thisTab.find("#tab_container").empty();   
+}
+
 function hostInstanceJSONToTemplate(jsonObj, template) {
     template.data("jsonObj", jsonObj);     
     template.attr("id", "host_instance_"+jsonObj.id).data("hostInstanceId", jsonObj.id);    
@@ -469,6 +479,11 @@ function hostJsonToRouterTab() {
 	});
 } 
 
+function hostJsonClearRouterTab() {
+    var $thisTab = $("#right_panel_content").find("#tab_content_router");
+    $thisTab.find("#tab_container").empty(); 
+}
+
 function hostJsonToStatisticsTab() {    
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     if($midmenuItem1 == null)
@@ -515,6 +530,21 @@ function hostJsonToStatisticsTab() {
     
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();  
+}
+
+function hostJsonClearStatisticsTab() {        
+    var $thisTab = $("#right_panel_content").find("#tab_content_statistics");  	
+    var $barChartContainer = $thisTab.find("#cpu_barchart");            
+    $barChartContainer.find("#cpunumber").text("");        
+    $barChartContainer.find("#cpuspeed").text("");    
+    $barChartContainer.find("#bar_chart").removeClass().addClass("db_barbox").css("width", "0%");    
+    $barChartContainer.find("#percentused").text("");               
+    $thisTab.find("#cpuallocated").text("");            
+    $thisTab.find("#memorytotal").text("");        
+    $thisTab.find("#memoryallocated").text("");      
+    $thisTab.find("#memoryused").text("");           
+    $thisTab.find("#networkkbsread").text("");        
+    $thisTab.find("#networkkbswrite").text("");       
 }
 
 function hostRouterJSONToTemplate(jsonObj, template) {
@@ -565,6 +595,11 @@ function hostJsonToSystemvmTab() {
 	});
 } 
 
+function hostJsonClearSystemvmTab() {
+    var $thisTab = $("#right_panel_content").find("#tab_content_systemvm");
+    $thisTab.find("#tab_container").empty(); 
+}
+
 function hostSystemvmJSONToTemplate(jsonObj, template) {
     template.data("jsonObj", jsonObj);     
     template.attr("id", "host_systemvm_"+jsonObj.id).data("hostSystemvmId", jsonObj.id);    
@@ -579,13 +614,20 @@ function hostSystemvmJSONToTemplate(jsonObj, template) {
 
 function hostClearRightPanel() {
     hostClearDetailsTab(); 
+    hostJsonClearPrimaryStorageTab();
+    hostJsonClearInstanceTab();
+    hostJsonClearRouterTab();
+    hostJsonClearSystemvmTab();
+    hostJsonClearStatisticsTab();
 }
 
 function hostClearDetailsTab() {
     var $thisTab = $("#right_panel_content").find("#tab_content_details");  
+    $thisTab.find("#grid_header_title").text("");
     $thisTab.find("#id").text("");
     $thisTab.find("#name").text("");
-    $thisTab.find("#state").text("");        
+    $thisTab.find("#state").text("");  
+    $thisTab.find("#type").text("");        
     $thisTab.find("#zonename").text(""); 
     $thisTab.find("#podname").text(""); 
     $thisTab.find("#clustername").text(""); 

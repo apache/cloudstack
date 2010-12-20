@@ -179,10 +179,11 @@ function buildZoneTree() {
 	
 	$("#leftmenu_cluster_node_template").unbind("click").bind("click", function(event) {
 	    selectRowInZoneTree($(this).find("#cluster_header"));	    
-	   	    	    
+	   	  
+	   	hostClearRightPanel();    	    
 	    var objCluster = $(this).data("jsonObj");
         listMidMenuItems(("listHosts&type=Routing&clusterid="+objCluster.id), hostGetSearchParams, "listhostsresponse", "host", "jsp/host.jsp", afterLoadHostJSP, hostToMidmenu, hostToRightPanel, getMidmenuId, false, ("cluster_"+objCluster.id));    
-	    
+	    	    
 	    return false;
 	});  
 }    
