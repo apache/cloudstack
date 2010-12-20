@@ -173,7 +173,7 @@ function podNetworkJsonToTemplate(jsonObj, template) {
     template.attr("id", "pod_VLAN_"+fromdb(jsonObj.id)).data("podVLANId", fromdb(jsonObj.id));    
     template.find("#grid_header_title").text(fromdb(jsonObj.description));			   
     template.find("#id").text(fromdb(jsonObj.id));    
-    template.find("#iprange").text(fromdb(jsonObj.description));
+    template.find("#iprange").text(fromdb(getIpRange(jsonObj.startip, jsonObj.endip)));
     template.find("#netmask").text(fromdb(jsonObj.netmask));
     template.find("#gateway").text(fromdb(jsonObj.gateway));
     template.find("#podname").text(fromdb(jsonObj.podname)); 
