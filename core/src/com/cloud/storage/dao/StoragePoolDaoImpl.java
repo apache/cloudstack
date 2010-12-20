@@ -304,6 +304,30 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	}
 	
 	@Override
+	public List<StoragePoolVO> findPoolsByHostTags(long dcId, long podId, Long clusterId, String[] tags, Boolean shared) {
+		List<StoragePoolVO> storagePools = null;
+	    if (tags == null || tags.length == 0) {
+	        storagePools = listBy(dcId, podId, clusterId);
+	    } else {
+	        Map<String, String> details = tagsToDetails(tags);
+	        storagePools =  findPoolsByDetails(dcId, podId, clusterId, details);
+	    }
+	    
+	    if (shared == null) {
+	    	return storagePools;
+	    } else {
+	    	List<StoragePoolVO> filteredStoragePools = new ArrayList<StoragePoolVO>(storagePools);
+	    	for (StoragePoolVO pool : storagePools) {
+	    		if (shared != pool.isShared()) {
+	    			filteredStoragePools.remove(pool);
+	    		}
+	    	}
+	    	
+	    	return filteredStoragePools;
+	    }
+	}
+	
+	@Override
 	@DB
 	public List<String> searchForStoragePoolDetails(long poolId, String value){
 		

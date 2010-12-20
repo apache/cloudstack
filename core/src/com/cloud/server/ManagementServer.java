@@ -281,7 +281,7 @@ public interface ManagementServer {
      * @return true if hosts were found; false if not.
      * @throws IllegalArgumentException
      */
-    List<? extends Host> discoverHosts(long dcId, Long podId, Long clusterId, String url, String username, String password) throws IllegalArgumentException, DiscoveryException;
+    List<? extends Host> discoverHosts(long dcId, Long podId, Long clusterId, String url, String username, String password, String hostTags) throws IllegalArgumentException, DiscoveryException;
 
     String updateAdminPassword(long userId, String oldPassword, String newPassword);
 
@@ -826,7 +826,7 @@ public interface ManagementServer {
      * @param hostId
      * @param guestOSCategoryId
      */
-    void updateHost(long hostId, long guestOSCategoryId) throws InvalidParameterValueException;
+    void updateHost(long hostId, long guestOSCategoryId, String hostTags) throws InvalidParameterValueException, UnsupportedOperationException;
     
     /**
      * Deletes a host
@@ -2182,4 +2182,12 @@ public interface ManagementServer {
 	String getHyperType();
 	
 	String getHashKey();
+	
+	/**
+	 * Returns a comma separated list of tags for the specified host
+	 * @param hostId
+	 * @return comma separated list of tags
+	 */
+	String getHostTags(long hostId);
+	
 }

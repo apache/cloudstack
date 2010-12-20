@@ -19,7 +19,7 @@ package com.cloud.host;
 
 import java.util.Date;
 import java.util.Map;
-
+import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
 import javax.persistence.DiscriminatorType;
@@ -130,6 +130,12 @@ public class HostVO implements Host {
     // Call host dao to load it.
     @Transient
     Map<String, String> details;
+    
+    // This is a delayed load value.  If the value is null,
+    // then this field has not been loaded yet.
+    // Call host dao to load it.
+    @Transient
+    List<String> hostTags;
     
     @Override
     public String getStorageIpAddressDeux() {
@@ -271,6 +277,14 @@ public class HostVO implements Host {
     
     public void setDetails(Map<String, String> details) {
         this.details = details;
+    }
+    
+    public List<String> getHostTags() {
+        return hostTags;
+    }
+   
+    public void setHostTags(List<String> hostTags) {
+        this.hostTags = hostTags;
     }
 
     @Column(name="data_center_id", nullable=false)

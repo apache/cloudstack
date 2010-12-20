@@ -137,5 +137,5 @@ public interface HostDao extends GenericDao<HostVO, Long> {
     
     void loadDetails(HostVO host);
 
-
+    void loadHostTags(HostVO host);
 }

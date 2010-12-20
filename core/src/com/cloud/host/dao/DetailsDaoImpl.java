@@ -17,6 +17,10 @@
  */
 package com.cloud.host.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,11 +32,14 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value=DetailsDao.class)
 public class DetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implements DetailsDao {
     protected final SearchBuilder<DetailVO> HostSearch;
     protected final SearchBuilder<DetailVO> DetailSearch;
+    
+    private final String FindHostDetailsByValue = "SELECT host_details.name FROM host_details WHERE host_id = ? and value = ?";    
     
     protected DetailsDaoImpl() {
         HostSearch = createSearchBuilder();
@@ -77,6 +84,31 @@ public class DetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implements De
         	delete(result.getId());
         }
     }
+    
+	public List<String> findHostDetailsbyValue(long hostId, String value){
+		
+	    StringBuilder sql = new StringBuilder(FindHostDetailsByValue);
+
+	    Transaction txn = Transaction.currentTxn();
+		PreparedStatement pstmt = null;
+	    try {
+	        pstmt = txn.prepareAutoCloseStatement(sql.toString());
+	        pstmt.setLong(1, hostId);
+	        pstmt.setString(2, value);
+
+	        ResultSet rs = pstmt.executeQuery();
+	        List<String> detailNames = new ArrayList<String>();
+
+	        while (rs.next()) {
+	        	detailNames.add(rs.getString("name"));
+	        }
+	        
+	        return detailNames;
+	    } catch (SQLException e) {
+	        throw new CloudRuntimeException("DB Exception on: " + pstmt.toString(), e);
+	    }
+
+	}
 
     @Override
     public void persist(long hostId, Map<String, String> details) {

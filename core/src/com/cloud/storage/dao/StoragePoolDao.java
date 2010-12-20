@@ -77,6 +77,8 @@ public interface StoragePoolDao extends GenericDao<StoragePoolVO, Long> {
     
     List<StoragePoolVO> findPoolsByTags(long dcId, long podId, Long clusterId, String[] tags, Boolean shared);
     
+    List<StoragePoolVO> findPoolsByHostTags(long dcId, long podId, Long clusterId, String[] hostTags, Boolean shared);
+    
     /**
      * Find pool by UUID.
      * 

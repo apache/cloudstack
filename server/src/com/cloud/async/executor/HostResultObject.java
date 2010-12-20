@@ -134,6 +134,9 @@ public class HostResultObject {
     
     @Param(name="networkkbswrite")
     private Long networkKbsWrite;
+    
+    @Param(name="hostTags")
+    private String hostTags;    
 
     public long getId(){
     	return this.id;
@@ -438,5 +441,13 @@ public class HostResultObject {
 
 	public void setNetworkKbsWrite(long networkKbsWrite){
 		this.networkKbsWrite = networkKbsWrite;
+	}
+	
+	public String getHostTags() {
+		return hostTags;
+	}
+
+	public void setHostTags(String hostTags) {
+		this.hostTags = hostTags;
 	}
 }

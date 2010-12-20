@@ -52,7 +52,7 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
         	return null;
         }
 
-		List<StoragePoolVO> pools = _storagePoolDao.findPoolsByTags(dc.getId(), pod.getId(), clusterId, dskCh.getTags(), null);
+		List<StoragePoolVO> pools = findPools(dskCh, offering, dc, pod, clusterId);
         if (pools.size() == 0) {
     		if (s_logger.isDebugEnabled()) {
     			s_logger.debug("No storage pools available for pod id : " + pod.getId());
@@ -80,4 +80,10 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
         	return null;
         }
 	}
+    
+    protected List<StoragePoolVO> findPools(DiskCharacteristicsTO dskCh, ServiceOffering offering, DataCenterVO dc, HostPodVO pod, Long clusterId){
+    	List<StoragePoolVO> pools = _storagePoolDao.findPoolsByTags(dc.getId(), pod.getId(), clusterId, dskCh.getTags(), null);
+    	return pools;
+    	
+    }
 }

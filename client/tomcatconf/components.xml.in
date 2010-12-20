@@ -114,7 +114,7 @@
             <adapter name="FirstFit" class="com.cloud.agent.manager.allocator.impl.FirstFitAllocator"/>
         </adapters>
         <adapters key="com.cloud.storage.allocator.StoragePoolAllocator">
-            <adapter name="LocalStorage" class="com.cloud.storage.allocator.LocalStoragePoolAllocator"/>
+			<adapter name="LocalStorage" class="com.cloud.storage.allocator.HostTagBasedLocalStoragePoolAllocator"/>            
             <adapter name="Storage" class="com.cloud.storage.allocator.FirstFitStoragePoolAllocator"/>
             <adapter name="Storage" class="com.cloud.storage.allocator.RandomStoragePoolAllocator"/>
             <adapter name="GarbageCollecting" class="com.cloud.storage.allocator.GarbageCollectingStoragePoolAllocator"/>

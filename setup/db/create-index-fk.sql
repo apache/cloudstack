@@ -46,6 +46,7 @@ ALTER TABLE `cloud`.`host` ADD INDEX `i_host__pod_id`(`pod_id`);
 ALTER TABLE `cloud`.`host` ADD CONSTRAINT `fk_host__cluster_id` FOREIGN KEY `fk_host__cluster_id`(`cluster_id`) REFERENCES `cloud`.`cluster`(`id`);
 
 ALTER TABLE `cloud`.`host_details` ADD CONSTRAINT `fk_host_details__host_id` FOREIGN KEY `fk_host_details__host_id`(`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`host_tags` ADD CONSTRAINT `fk_host_tags__host_id` FOREIGN KEY `fk_host_tags__host_id`(`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE;
 
 ALTER TABLE `cloud`.`storage_pool` ADD CONSTRAINT `fk_storage_pool__pod_id` FOREIGN KEY `fk_storage_pool__pod_id` (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`storage_pool` ADD INDEX `i_storage_pool__pod_id`(`pod_id`);

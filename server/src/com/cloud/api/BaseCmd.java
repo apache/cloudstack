@@ -397,7 +397,8 @@ public abstract class BaseCmd {
         CLUSTER_NAME("clustername", BaseCmd.TYPE_STRING, "clustername"),
         SCOPE("scope", BaseCmd.TYPE_STRING, "scope"),
         SUM_ACROSS_ZONE("sumacrosszone", BaseCmd.TYPE_BOOLEAN, "sumAcrossZone"),
-        EXCEPTION("exception", BaseCmd.TYPE_STRING, "excetpion");
+        EXCEPTION("exception", BaseCmd.TYPE_STRING, "excetpion"),
+        HOST_TAGS("hosttags", BaseCmd.TYPE_STRING, "hostTags");
 
         private final String _name;
         private final short _dataType;

@@ -49,6 +49,8 @@ public class AddHostCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.URL, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USERNAME, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PASSWORD, Boolean.TRUE));
+        //host_tags
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HOST_TAGS, Boolean.FALSE));
     }
 
     @Override
@@ -70,6 +72,8 @@ public class AddHostCmd extends BaseCmd {
         String password = (String)params.get(BaseCmd.Properties.PASSWORD.getName());
         Long clusterId = (Long)params.get(BaseCmd.Properties.CLUSTER_ID.getName());
         String clusterName = (String)params.get(BaseCmd.Properties.CLUSTER_NAME.getName());
+        //host_tags
+        String hostTags = (String)params.get(BaseCmd.Properties.HOST_TAGS.getName());
         
         if (clusterName != null && clusterId != null) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "Can't specify cluster by both id and name");
@@ -120,7 +124,7 @@ public class AddHostCmd extends BaseCmd {
                 clusterId = cluster.getId();
             }
             
-        	List<? extends Host> h = getManagementServer().discoverHosts(zoneId, podId, clusterId, url, username, password);
+        	List<? extends Host> h = getManagementServer().discoverHosts(zoneId, podId, clusterId, url, username, password, hostTags);
         	success = !h.isEmpty();
 
         	if(success)
@@ -203,6 +207,9 @@ public class AddHostCmd extends BaseCmd {
 	                    
 	                    // calculate memory utilized, we don't provide memory over commit
 	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.MEMORY_USED.getName(), mem));
+	                    
+	                    //host_tags
+	                    serverData.add(new Pair<String, Object>(BaseCmd.Properties.HOST_TAGS.getName(), getManagementServer().getHostTags(host.getId()))); 
 	    
 	                }
 	                if (host.getType().toString().equals("Storage")) {

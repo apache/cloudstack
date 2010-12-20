@@ -509,7 +509,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<? extends Host> discoverHosts(long dcId, Long podId, Long clusterId, String url, String username, String password) throws IllegalArgumentException, DiscoveryException {
+    public List<? extends Host> discoverHosts(long dcId, Long podId, Long clusterId, String url, String username, String password, String hostTags) throws IllegalArgumentException, DiscoveryException {
         URI uri;
         try {
             uri = new URI(url);
@@ -517,7 +517,7 @@ public class ManagementServerImpl implements ManagementServer {
             throw new IllegalArgumentException("Unable to convert the url" + url, e);
         }
         // TODO: parameter checks.
-        return _agentMgr.discoverHosts(dcId, podId, clusterId, uri, username, password);
+        return _agentMgr.discoverHosts(dcId, podId, clusterId, uri, username, password, hostTags);
     }
 
     @Override
@@ -534,6 +534,11 @@ public class ManagementServerImpl implements ManagementServer {
     	} else {
     		return null;
     	}
+    }
+    
+    @Override
+    public String getHostTags(long hostId) {
+    	return _agentMgr.getHostTags(hostId);    	
     }
     
     @Override
@@ -2886,17 +2891,17 @@ public class ManagementServerImpl implements ManagementServer {
         return _hostDao.findById(hostId);
     }
 
-    public void updateHost(long hostId, long guestOSCategoryId) throws InvalidParameterValueException {
+    public void updateHost(long hostId, long guestOSCategoryId, String hostTags) throws InvalidParameterValueException, UnsupportedOperationException {
     	// Verify that the guest OS Category exists
     	if (guestOSCategoryId > 0) {
     		if (_guestOSCategoryDao.findById(guestOSCategoryId) == null) {
     			throw new InvalidParameterValueException("Please specify a valid guest OS category.");
     		}
-    	}
+    	}   	
     	
-    	_agentMgr.updateHost(hostId, guestOSCategoryId);
+    	_agentMgr.updateHost(hostId, guestOSCategoryId, hostTags);
     }
-    
+        
     public boolean deleteHost(long hostId) {
         return _agentMgr.deleteHost(hostId);
     }

@@ -56,6 +56,9 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     @Enumerated(EnumType.STRING)
     private GuestIpType guestIpType;
     
+    @Column(name="host_tag")
+    private String hostTag;
+    
     protected ServiceOfferingVO() {
         super();
     }
@@ -140,5 +143,9 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 
 	public GuestIpType getGuestIpType() {
 		return guestIpType;
+	}
+	
+	public String getHostTag() {
+		return hostTag;
 	}
 }

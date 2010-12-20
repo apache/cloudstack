@@ -72,5 +72,10 @@ public interface ServiceOffering {
      * @return whether or not the service offering requires local storage
      */
     boolean getUseLocalStorage();
+    
+    /*
+     * @return tag that should be present on the host needed ; optional parameter
+     */
+    public String getHostTag();
 
 }

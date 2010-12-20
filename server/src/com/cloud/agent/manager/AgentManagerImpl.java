@@ -73,6 +73,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterIpAddressVO;
@@ -88,6 +89,7 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.ha.HighAvailabilityManager;
@@ -145,6 +147,7 @@ import com.cloud.vm.UserVm;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VmCharacteristics;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.host.dao.HostTagsDao;
 
 /**
  * Implementation of the Agent Manager. This class controls the connection to
@@ -197,6 +200,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     @Inject protected GuestOSCategoryDao _guestOSCategoryDao = null;
     @Inject protected DetailsDao _hostDetailsDao = null;
     @Inject protected ClusterDao _clusterDao;
+    @Inject protected HostTagsDao _hostTagsDao = null;
         
     private String _publicNic;
     private String _privateNic;
@@ -219,6 +223,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     @Inject
     protected UpgradeManager _upgradeMgr = null;
 
+    @Inject 
+    protected ConfigurationManager _configMgr;
+    
     protected int _retry = 2;
 
     protected String _name;
@@ -465,11 +472,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 
 
 
-    protected AgentAttache handleDirectConnect(ServerResource resource, StartupCommand[] startup, Map<String, String> details, boolean old) {
+    protected AgentAttache handleDirectConnect(ServerResource resource, StartupCommand[] startup, Map<String, String> details, boolean old, List<String> hostTags) {
         if (startup == null) {
             return null;
         }
-        HostVO server = createHost(startup, resource, details, old);
+        HostVO server = createHost(startup, resource, details, old, hostTags);
         if (server == null) {
             return null;
         }
@@ -482,9 +489,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
 
     @Override
-    public List<HostVO> discoverHosts(long dcId, Long podId, Long clusterId, URI url, String username, String password) throws IllegalArgumentException, DiscoveryException {
+    public List<HostVO> discoverHosts(long dcId, Long podId, Long clusterId, URI url, String username, String password, String hostTags) throws IllegalArgumentException, DiscoveryException {
         List<HostVO> hosts = new ArrayList<HostVO>();
         s_logger.info("Trying to add a new host at " + url + " in data center " + dcId);
+        
+        List<String> hostTagList = _configMgr.csvTagsToList(hostTags);
+
         Enumeration<Discoverer> en = _discoverers.enumeration();
         while (en.hasMoreElements()) {
             Discoverer discoverer = en.nextElement();
@@ -493,7 +503,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
                 for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
                     ServerResource resource = entry.getKey();
 
-                    AgentAttache attache = simulateStart(resource, entry.getValue(), true);
+                    AgentAttache attache = simulateStart(resource, entry.getValue(), true, hostTagList);
                     if (attache != null) {
                         hosts.add(_hostDao.findById(attache.getId()));
                     }
@@ -1042,7 +1052,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         _executor.execute(new SimulateStartTask(host.getId(), resource, host.getDetails(), actionDelegate));
     }
 
-    protected AgentAttache simulateStart(ServerResource resource, Map<String, String> details, boolean old) throws IllegalArgumentException{
+    protected AgentAttache simulateStart(ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags) throws IllegalArgumentException{
         StartupCommand[] cmds = resource.initialize();
         if (cmds == null )
             return null;
@@ -1052,7 +1062,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             s_logger.debug("Startup request from directly connected host: " + new Request(0, -1, -1, cmds, false).toString());
         }
         try {
-            attache = handleDirectConnect(resource, cmds, details, old);
+            attache = handleDirectConnect(resource, cmds, details, old, hostTags);
         }catch (IllegalArgumentException ex)
         {
         	s_logger.warn("Unable to connect due to ", ex);
@@ -1154,6 +1164,16 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     			return Long.parseLong(detail.getValue());
     		}
     	}
+    }
+    
+    @Override
+    public String getHostTags(long hostId){
+		List<String> hostTags = _hostTagsDao.gethostTags(hostId);
+		if (hostTags == null) {
+			return null;
+		} else {
+			return _configMgr.listToCsvTags(hostTags);
+		}
     }
 
     @Override
@@ -1462,7 +1482,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
     }
 
-    public HostVO createHost(final StartupCommand startup, ServerResource resource, Map<String, String> details, boolean directFirst) throws IllegalArgumentException {
+    public HostVO createHost(final StartupCommand startup, ServerResource resource, Map<String, String> details, boolean directFirst, List<String> hostTags) throws IllegalArgumentException {
         Host.Type type = null;
 
         if (startup instanceof StartupStorageCommand) {
@@ -1522,6 +1542,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         }
 
         server.setDetails(details);
+        server.setHostTags(hostTags);
 
         updateHost(server, startup, type, _nodeId);
         if (resource != null) {
@@ -1570,9 +1591,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         return server;
     }
 
-    public HostVO createHost(final StartupCommand[] startup, ServerResource resource, Map<String, String> details, boolean directFirst) throws IllegalArgumentException {
+    public HostVO createHost(final StartupCommand[] startup, ServerResource resource, Map<String, String> details, boolean directFirst, List<String> hostTags) throws IllegalArgumentException {
         StartupCommand firstCmd = startup[0];
-        HostVO result = createHost(firstCmd, resource, details, directFirst);
+        HostVO result = createHost(firstCmd, resource, details, directFirst, hostTags);
         if( result == null ) {
             return null;
         }
@@ -1580,7 +1601,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
 
     public AgentAttache handleConnect(final Link link, final StartupCommand[] startup) throws IllegalArgumentException {
-        HostVO server = createHost(startup, null, null, false);
+        HostVO server = createHost(startup, null, null, false, null);
         if ( server == null ) {
             return null;
         }
@@ -1647,20 +1668,56 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
     
     @Override
-    public void updateHost(long hostId, long guestOSCategoryId) {
+    public void updateHost(long hostId, long guestOSCategoryId, String hostTags) throws UnsupportedOperationException{
     	GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
     	Map<String, String> hostDetails = _hostDetailsDao.findDetails(hostId);
+
+    	boolean persistDetails = false;
+    	String currentOSCategory = hostDetails.get("guest.os.category.id");
     	
     	if (guestOSCategory != null) {
-    		// Save a new entry for guest.os.category.id
-    		hostDetails.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
+    		if(!String.valueOf(guestOSCategory.getId()).equals(currentOSCategory)){
+        		// Save a new entry for guest.os.category.id
+        		hostDetails.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
+        		persistDetails = true;
+    		}
     	} else {
     		// Delete any existing entry for guest.os.category.id
-    		hostDetails.remove("guest.os.category.id");
+    		if(currentOSCategory != null){
+    			hostDetails.remove("guest.os.category.id");
+    			persistDetails = true;
+    		}
     	}
     	
-    	_hostDetailsDao.persist(hostId, hostDetails);
+    	if(persistDetails){
+    		_hostDetailsDao.persist(hostId, hostDetails);
+    	}
+    	
+    	//update tags
+    	List<String> newHostTags = _configMgr.csvTagsToList(hostTags);
+    	List<String> oldHostTags = _hostTagsDao.gethostTags(hostId);
+
+    	if(areExistingHostTagsRemoved(hostId, newHostTags, oldHostTags)){
+    		//throw error - removing the existing host tags is not allowed
+    		throw new UnsupportedOperationException("Invalid Operation: Cannot remove existing host tags");
+    	}
+		//add the new tags to the host
+    	newHostTags.removeAll(oldHostTags);
+    	_hostTagsDao.persist(hostId, newHostTags);
     }
+    
+    private boolean areExistingHostTagsRemoved(long hostId, List<String> newHostTags, List<String> oldHostTags){
+    	boolean tagsRemoved = false;
+    	if(newHostTags.isEmpty() && !oldHostTags.isEmpty()){
+    		tagsRemoved = true;
+    	}else if(!newHostTags.isEmpty() && !oldHostTags.isEmpty()){
+  			if(!newHostTags.containsAll(oldHostTags)){
+  				tagsRemoved = true;
+  			}
+    	}
+    	return tagsRemoved;
+    }
+
 
     protected void updateHost(final HostVO host, final StartupCommand startup, final Host.Type type, final long msId) throws IllegalArgumentException {
         s_logger.debug("updateHost() called");
@@ -1890,7 +1947,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Simulating start for resource " + resource.getName() + " id " + id);
                 }
-                simulateStart(resource, details, false);
+                simulateStart(resource, details, false, null);
             } catch (Exception e) {
                 s_logger.warn("Unable to simulate start on resource " + id + " name " + resource.getName(), e);
             } finally {

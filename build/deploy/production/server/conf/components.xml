@@ -95,6 +95,7 @@
         <dao name="NetfsStoragePoolDao" class="com.cloud.storage.dao.NetfsStoragePoolDaoImpl"/>
         <dao name="StoragePoolDao" class="com.cloud.storage.dao.StoragePoolDaoImpl"/>
         <dao name="StoragePoolHostDao" class="com.cloud.storage.dao.StoragePoolHostDaoImpl"/>
+		<dao name="HostTagsDao" class="com.cloud.host.dao.HostTagsDaoImpl"/>
         
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
             <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.FirstFitRoutingAllocator"/>

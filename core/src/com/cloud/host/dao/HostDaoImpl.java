@@ -87,6 +87,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     
     protected final DetailsDaoImpl _detailsDao = ComponentLocator.inject(DetailsDaoImpl.class);
 
+    protected final HostTagsDaoImpl _hostTagsDao = ComponentLocator.inject(HostTagsDaoImpl.class);
+    
     public HostDaoImpl() {
         _vmHostDao = ComponentLocator.inject(VmHostDaoImpl.class);
     
@@ -327,6 +329,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
     
     @Override
+    public void loadHostTags(HostVO host){
+    	List<String> hostTags = _hostTagsDao.gethostTags(host.getId());
+    	host.setHostTags(hostTags);
+    }
+    
+    @Override
     public boolean updateStatus(HostVO host, Event event, long msId) {
         Status oldStatus = host.getStatus();
         long oldPingTime = host.getLastPinged();
@@ -488,6 +496,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         _detailsDao.persist(host.getId(), details);
     }
     
+    protected void saveHostTags(HostVO host) {
+        List<String> hostTags = host.getHostTags();
+        if (hostTags == null || (hostTags != null && hostTags.isEmpty())) {
+            return;
+        }
+        _hostTagsDao.persist(host.getId(), hostTags);
+    }
+    
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         if (!super.configure(name, params)) {
@@ -509,6 +525,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         HostVO dbHost = super.persist(host);
         saveDetails(host);
         loadDetails(dbHost);
+        saveHostTags(host);
+        loadHostTags(dbHost);
         
         txn.commit();
      
@@ -526,6 +544,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
         
         saveDetails(host);
+        saveHostTags(host);
         
         txn.commit();
      

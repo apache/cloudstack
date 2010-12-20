@@ -76,6 +76,7 @@ DROP TABLE IF EXISTS `cloud`.`cluster`;
 DROP TABLE IF EXISTS `cloud`.`netapp_volume`;
 DROP TABLE IF EXISTS `cloud`.`pool`;
 DROP TABLE IF EXISTS `cloud`.`lun`;
+DROP TABLE IF EXISTS `cloud`.`host_tags`;
 
 CREATE TABLE `cloud`.`cluster` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -388,6 +389,13 @@ CREATE TABLE `cloud`.`op_vm_host` (
   `id` bigint unsigned NOT NULL UNIQUE COMMENT 'foreign key to host_id',
   `vnc_ports` bigint unsigned NOT NULL DEFAULT '0' COMMENT 'vnc ports open on the host',
   `start_at` int(5) unsigned  NOT NULL DEFAULT '0' COMMENT 'Start the vnc port look up at this bit',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`host_tags` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id',
+  `tag` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -784,6 +792,7 @@ CREATE TABLE  `cloud`.`service_offering` (
   `mc_rate` smallint unsigned default 10 COMMENT 'mcast rate throttle mbits/s',
   `ha_enabled` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Enable HA',
   `guest_ip_type` varchar(255) NOT NULL DEFAULT 'Virtualized' COMMENT 'Type of guest network -- direct or virtualized',
+  `host_tag` varchar(255) COMMENT 'host tag specified by the service_offering',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

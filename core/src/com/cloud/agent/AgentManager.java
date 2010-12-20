@@ -29,6 +29,7 @@ import com.cloud.dc.PodCluster;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
@@ -158,8 +159,9 @@ public interface AgentManager extends Manager {
 	 * Updates a host
 	 * @param hostId
 	 * @param guestOSCategoryId
+	 * @param hostTags
 	 */
-	void updateHost(long hostId, long guestOSCategoryId);
+	void updateHost(long hostId, long guestOSCategoryId, String hostTags) throws UnsupportedOperationException;
 	
 	/**
      * Deletes a host
@@ -209,7 +211,14 @@ public interface AgentManager extends Manager {
     public boolean executeUserRequest(long hostId, Event event) throws AgentUnavailableException;
     public boolean reconnect(final long hostId) throws AgentUnavailableException;
     
-    public List<HostVO> discoverHosts(long dcId, Long podId, Long clusterId, URI url, String username, String password) throws DiscoveryException;
+    public List<HostVO> discoverHosts(long dcId, Long podId, Long clusterId, URI url, String username, String password, String hostTags) throws DiscoveryException;
 
 	Answer easySend(Long hostId, Command cmd, int timeout);
+	
+   /**
+	* Returns a comma separated list of tags for the specified host
+	* @param hostId
+	* @return comma separated list of tags
+	*/
+	String getHostTags(long hostId);
 }

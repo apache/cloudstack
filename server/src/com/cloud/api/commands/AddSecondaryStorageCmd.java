@@ -86,7 +86,7 @@ public class AddSecondaryStorageCmd extends BaseCmd {
     	
     	List<? extends Host> h = null;
         try {
-        	h = getManagementServer().discoverHosts(zoneId, null, null, url, null, null);
+        	h = getManagementServer().discoverHosts(zoneId, null, null, url, null, null, null);
         } catch (Exception ex) {
         	s_logger.error("Failed to add secondary storage: ", ex);
         	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Can't add secondary storage with url " + url);
