@@ -783,7 +783,7 @@
                 <form action="#" method="post">
                 <ol>
                     <li>
-                        <input class="text textwatermark" type="text" id="adv_search_name" value="by Name"/>
+                        <input class="text textwatermark" type="text" id="adv_search_name" value="by name"/>
                         
                     </li>
                     <li>

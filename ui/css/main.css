@@ -1963,7 +1963,7 @@ a:hover {
 }
 
 .adv_searchformbox li {
-	width:200px;
+	width:190px;
 	float:left;
 	clear:left; 
 	font-family:Arial, Helvetica, sans-serif;
@@ -1989,7 +1989,7 @@ a:hover {
 	float:left;
 	border: 1px solid #CCC;
 	height: 13px;
-	width: 192px;
+	width: 182px;
 	color:#666;
 	margin:0;
 	padding:1px 0 0 2px; 
@@ -2000,8 +2000,8 @@ a:hover {
 	font: normal 11px Arial, Helvetica, sans-serif;
 	position:relative;
 	color:#bcbcbc;
-	margin:1px 0 0 2px;
-	padding:0; 
+	padding:1px 0 0 2px; 
+	margin:0; 
 	font-weight:normal;
 }
 
@@ -2011,8 +2011,8 @@ a:hover {
 	font: normal 11px Arial, Helvetica, sans-serif; 
 	float:left; 
 	border: 1px solid #CCC; 
-	height: 17px; 
-	width: 196px;
+	height: 15px; 
+	width: 186px;
 	margin:0; 
 	padding:1px 0 0 2px; 
 	color:#666;

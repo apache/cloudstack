@@ -123,18 +123,11 @@
 <!-- event detail panel (end) -->
 
 <!-- advanced search template (begin) -->
-<div id="advanced_search_template" class="adv_searchpopup" style="display: none;">
-    <div class="adv_searchpopup_top">
-    	<h2>Advance Search</h2>
-    </div>
-    
-    <div class="adv_searchpopup_mid">
+<div id="advanced_search_template" class="adv_searchpopup_bg" style="display: none;">
         <div class="adv_searchformbox">
             <form action="#" method="post">
             <ol>
                 <li>
-                    <label>
-                        Type:</label>
                     <select class="select" id="adv_search_type">
                         <option value=""></option>
                         <option value="VM.CREATE">VM.CREATE</option>
@@ -212,8 +205,6 @@
                     </select>
                 </li>
                 <li>
-                    <label>
-                        Level:</label>
                     <select class="select" id="adv_search_level">
                         <option value=""></option>
                         <option value="INFO">INFO</option>
@@ -222,34 +213,20 @@
                     </select>
                 </li>
                 <li id="adv_search_domain_li" style="display: none;">
-                    <label>
-                        Domain:</label>
                     <select class="select" id="adv_search_domain">
                     </select>
                 </li>
                 <li id="adv_search_account_li" style="display: none;">
-                    <label>
-                        Account:</label>
-                    <input class="text" type="text" id="adv_search_account" />
+                    <input class="text textwatermark" type="text" id="adv_search_account" value="by account" />
                 </li>
                 <li>
-                    <label>
-                        Start Date:</label>
-                    <input class="text" type="text" id="adv_search_startdate" />
+                    <input class="text textwatermark" type="text" id="adv_search_startdate" value="by start date" />
                 </li>
                 <li>
-                    <label>
-                        End Date:</label>
-                    <input class="text" type="text" id="adv_search_enddate" />
+                    <input class="text textwatermark" type="text" id="adv_search_enddate" value="by end date" />
                 </li>
             </ol>
             </form>
-            <div class="adv_search_actionbox">
-                <div class="adv_searchpopup_button" id="adv_search_button">
-                </div>
-            </div>
          </div>
-    </div>
-    <div class="adv_searchpopup_bot"></div>
 </div>
 <!-- advanced search template (end) -->
