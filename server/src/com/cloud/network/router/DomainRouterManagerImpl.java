@@ -2099,8 +2099,16 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     
     @Override
     public boolean applyLBRules(Network network, List<? extends FirewallRule> rules) {
+        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
+        if (router == null) {
+            s_logger.warn("Unable to apply lb rules, virtual router doesn't exist in the network " + network.getId());
+            throw new ResourceUnavailableException("Unable to apply lb rules");
+        }
+
+        String routerControlIpAddress  = router.getPrivateIpAddress();
         
-            DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
+        if (router.getState() == State.Running || router.getState() == State.Starting) {
+
             Commands cmds = new Commands(OnError.Continue);
             LoadBalancerTO[] lbs = new LoadBalancerTO[rules.size()];
             int i = 0;

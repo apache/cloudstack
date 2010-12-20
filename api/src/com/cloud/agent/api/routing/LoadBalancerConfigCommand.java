@@ -25,12 +25,18 @@ import com.cloud.agent.api.to.LoadBalancerTO;
  */
 public class LoadBalancerConfigCommand extends RoutingCommand {
     LoadBalancerTO[] loadBalancers;
+    String routerIp;
     
-    public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers) {
+    public LoadBalancerConfigCommand(String routerControlIpAddress, LoadBalancerTO[] loadBalancers) {
     	this.loadBalancers = loadBalancers;
+    	this.routerIp = routerControlIpAddress;
     }
 
-    public LoadBalancerTO[] getLoadBalancers() {
+    public String getRouterIp() {
+		return routerIp;
+	}
+
+	public LoadBalancerTO[] getLoadBalancers() {
         return loadBalancers;
     }
 }
