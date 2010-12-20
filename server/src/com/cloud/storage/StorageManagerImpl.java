@@ -2881,8 +2881,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
     
     @Override
-    public void release(VirtualMachineProfile profile) {
-        // Right now we don't do anything.
+    public void release(VirtualMachineProfile<? extends VMInstanceVO> profile) {
+    	//Clean up volumes based on the profile's instance id
+    	List<VolumeVO> volumesForProfile = _volsDao.findByInstance(profile.getId());
+    	
+    	for(VolumeVO vol : volumesForProfile){
+    		destroyVolume(vol);
+    	}
     }
 }
 

@@ -278,5 +278,7 @@ public interface StorageManager extends Manager {
 
     
     void prepare(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException;
-    void release(VirtualMachineProfile<? extends VirtualMachine> vm);
+    //void release(VirtualMachineProfile<? extends VirtualMachine> vm);
+
+	void release(VirtualMachineProfile<? extends VMInstanceVO> profile);
 }
