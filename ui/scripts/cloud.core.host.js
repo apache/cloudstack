@@ -243,9 +243,9 @@ function hostJsonToPrimaryStorageTab() {
         data: createURL("command=listStoragePools&clusterid="+jsonObj.clusterid),
         dataType: "json",        
         success: function(json) {    
-            var items = json.liststoragepoolsresponse.storagepool;      
-            if(items != null && items.length > 0) {
-                var $container = $thisTab.find("#tab_container").empty();
+            var items = json.liststoragepoolsresponse.storagepool;   
+            var $container = $thisTab.find("#tab_container").empty();   
+            if(items != null && items.length > 0) {                
                 var $template = $("#primarystorage_tab_template"); 		
                 for(var i=0; i<items.length;i++) { 
                     var $newTemplate = $template.clone(true);	               
@@ -406,9 +406,9 @@ function hostJsonToInstanceTab() {
 		data: createURL("command=listVirtualMachines&hostid="+jsonObj.id),
 		dataType: "json",
 		success: function(json) {							    
-			var items = json.listvirtualmachinesresponse.virtualmachine;																						
-			if (items != null && items.length > 0) {
-			    var $container = $thisTab.find("#tab_container").empty();
+			var items = json.listvirtualmachinesresponse.virtualmachine;	
+			var $container = $thisTab.find("#tab_container").empty();																					
+			if (items != null && items.length > 0) {			    
 				var template = $("#instance_tab_template");				
 				for (var i = 0; i < items.length; i++) {
 					var newTemplate = template.clone(true);	               
@@ -453,9 +453,9 @@ function hostJsonToRouterTab() {
 		data: createURL("command=listRouters&hostid="+jsonObj.id),
 		dataType: "json",
 		success: function(json) {							    
-			var items = json.listroutersresponse.router;																						
-			if (items != null && items.length > 0) {
-			    var $container = $thisTab.find("#tab_container").empty();
+			var items = json.listroutersresponse.router;	
+			var $container = $thisTab.find("#tab_container").empty();																					
+			if (items != null && items.length > 0) {			    
 				var template = $("#router_tab_template");				
 				for (var i = 0; i < items.length; i++) {
 					var newTemplate = template.clone(true);	               
@@ -549,9 +549,9 @@ function hostJsonToSystemvmTab() {
 		data: createURL("command=listSystemVms&hostid="+jsonObj.id),
 		dataType: "json",
 		success: function(json) {							    
-			var items = json.listsystemvmsresponse.systemvm;																						
-			if (items != null && items.length > 0) {
-			    var $container = $thisTab.find("#tab_container").empty();
+			var items = json.listsystemvmsresponse.systemvm;	
+			var $container = $thisTab.find("#tab_container").empty();																					
+			if (items != null && items.length > 0) {			    
 				var template = $("#systemvm_tab_template");				
 				for (var i = 0; i < items.length; i++) {
 					var newTemplate = template.clone(true);	               
