@@ -319,26 +319,28 @@ function templateJsonToDetailsTab() {
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
     
-    // action Edit, Copy, Create VM 			
+    // "Edit Template", "Copy Template", "Create VM"
 	if ((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.templatetype == "SYSTEM" || jsonObj.isready == false) {
-		//$("#edit_button").hide();		
+	    //do nothing	
     }
     else {
         buildActionLinkForTab("Edit Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);      
-        //$("#edit_button").show();
+        
         buildActionLinkForTab("Copy Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);			
+        
         // For Beta2, this simply doesn't work without a network.
-		//buildActionLinkForTab("Create VM", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);	        
-        buildActionLinkForTab("Download Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		//buildActionLinkForTab("Create VM", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);	 		       
+        
         noAvailableActions = false;		
     }
 	
-	// action Delete 			
+	// "Download Template", "Delete Template"	
 	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
 		|| (jsonObj.isready == false && jsonObj.templatestatus != null && jsonObj.templatestatus.indexOf("% Downloaded") != -1) || jsonObj.templatetype == "SYSTEM") {
-		//template.find("#template_delete_container").hide();
+	    //do nothing	
     }
     else {
+        buildActionLinkForTab("Download Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);
         buildActionLinkForTab("Delete Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);
         noAvailableActions = false;	
     }

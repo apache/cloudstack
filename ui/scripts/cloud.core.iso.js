@@ -317,9 +317,9 @@ function isoJsonToDetailsTab() {
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
 
-    // "Edit", "Copy", "Create VM" 
+    // "Edit ISO", "Copy ISO"
 	if ((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == false) {		
-		//nothing happens
+		//do nothing
     }
     else {        
         buildActionLinkForTab("Edit ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
@@ -329,7 +329,7 @@ function isoJsonToDetailsTab() {
             buildActionLinkForTab("Copy ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	        
     }
 		
-	// "Create VM" 
+	// "Create VM"
 	// Commenting this out for Beta2 as it does not support the new network.
 	/*
 	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == false) || (jsonObj.bootable == false)) {
@@ -340,16 +340,15 @@ function isoJsonToDetailsTab() {
     }
 	*/
     
-	// "Delete" 
+	// "Download ISO", "Delete ISO"
 	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) || (jsonObj.isready == false && jsonObj.isostatus != null && jsonObj.isostatus.indexOf("% Downloaded") != -1)) {
+	    //do nothing
 	}
 	else {	    
+	    buildActionLinkForTab("Download ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
 	    buildActionLinkForTab("Delete ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
 	    noAvailableActions = false;
-	}    
-	
-	buildActionLinkForTab("Download ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
-    noAvailableActions = false;	
+	}    		   
 	
 	// no available actions 
 	if(noAvailableActions == true) {
