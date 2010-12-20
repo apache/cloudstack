@@ -91,6 +91,7 @@ DROP TABLE IF EXISTS `cloud`.`load_balancing_ip_map`;
 DROP TABLE IF EXISTS `cloud`.`load_balancing_rules`;
 DROP TABLE IF EXISTS `cloud`.`port_forwarding_rules`;
 DROP TABLE IF EXISTS `cloud`.`firewall_rules`;
+DROP TABLE IF EXISTS `cloud`.`usage_event`;
 
 CREATE TABLE `cloud`.`op_it_work` (
   `id` char(40) COMMENT 'id',
@@ -1249,6 +1250,21 @@ CREATE TABLE `cloud`.`instance_group_vm_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `group_id` bigint unsigned NOT NULL,
   `instance_id` bigint unsigned NOT NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `cloud`.`usage_event` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `type` varchar(32) NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,
+  `created` datetime NOT NULL,
+  `zone_id` bigint unsigned NOT NULL,
+  `resource_id` bigint unsigned,
+  `resource_name` varchar(255),
+  `offering_id` bigint unsigned,
+  `template_id` bigint unsigned,
+  `size` bigint unsigned,  
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
