@@ -839,7 +839,7 @@ function ipJsonToDetailsTab() {
     $thisTab.find("#vlanname").text(fromdb(ipObj.vlanname));    
     setBooleanReadField(ipObj.issourcenat, $thisTab.find("#source_nat")); 
     setNetworkTypeField(ipObj.forvirtualnetwork, $thisTab.find("#network_type"));    
-    
+    $thisTab.find("#associatednetworkid").text(fromdb(ipObj.associatednetworkid));
     $thisTab.find("#domain").text(fromdb(ipObj.domain));
     $thisTab.find("#account").text(fromdb(ipObj.account));
     $thisTab.find("#allocated").text(fromdb(ipObj.allocated));
