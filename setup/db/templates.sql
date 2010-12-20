@@ -157,6 +157,13 @@ INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (128, 10, 
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (129, 10, 'Ubuntu 8.10 (64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (130, 10, 'Ubuntu 8.04 (64-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (131, 10, 'Red Hat Enterprise Linux 2');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (132, 2, 'Debian GNU/Linux 6(32-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (133, 2, 'Debian GNU/Linux 6(64-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (134, 3, 'Oracle Enterprise Linux 5.5 (32-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (135, 3, 'Oracle Enterprise Linux 5.5 (64-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (136, 4, 'Red Hat Enterprise Linux 6.0 (32-bit)');
+INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (137, 4, 'Red Hat Enterprise Linux 6.0 (64-bit)');
+
 
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'CentOS 4.5 (32-bit)', 1);
 INSERT INTO `cloud`.`guest_os_hypervisor` (hypervisor_type, guest_os_name, guest_os_id) VALUES  ("XenServer", 'CentOS 4.6 (32-bit)', 2);

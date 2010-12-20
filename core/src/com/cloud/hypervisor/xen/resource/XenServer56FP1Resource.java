@@ -25,10 +25,6 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.SecurityIngressRuleAnswer;
-import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase;
 import com.xensource.xenapi.VM;
 import com.cloud.resource.ServerResource;
@@ -48,7 +44,7 @@ public class XenServer56FP1Resource extends CitrixResourceBase {
     
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
-    	return CitrixHelper.getXenServerGuestOsType(stdType);
+    	return CitrixHelper.getXenServer56FP1GuestOsType(stdType);
     }
 
     @Override
