@@ -454,9 +454,9 @@ function accountJsonToUserTab() {
 		data: createURL("command=listUsers&domainid="+fromdb(jsonObj.domainid)+"&account="+fromdb(jsonObj.name)),
 		dataType: "json",
 		success: function(json) {						    
-			var items = json.listusersresponse.user;																						
-			if (items != null && items.length > 0) {
-			    var $container = $thisTab.find("#tab_container").empty();
+			var items = json.listusersresponse.user;	
+			var $container = $thisTab.find("#tab_container").empty();																					
+			if (items != null && items.length > 0) {			    
 				var $template = $("#user_tab_template");				
 				for (var i = 0; i < items.length; i++) {
 					var $newTemplate = $template.clone(true);	               
@@ -472,7 +472,7 @@ function accountJsonToUserTab() {
 
 function accountJsonClearUserTab() {     
 	var $thisTab = $("#right_panel_content").find("#tab_content_user");	    
-	var $container = $thisTab.find("#tab_container").empty();
+	$thisTab.find("#tab_container").empty();
 } 
 
 function accountUserJSONToTemplate(jsonObj, $template) {
