@@ -873,7 +873,11 @@ function ipJsonToDetailsTab() {
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
     
-    if(isIpManageable(ipObj.domainid, ipObj.account) == true) {     
+    if(isIpManageable(ipObj.domainid, ipObj.account) == true) {    
+        ipPopulateVMarray(ipObj); //popoulate VM array    
+        var $vmSelect = $("#dialog_enable_static_NAT").find("#vm_dropdown").empty();		
+        ipPopulateVMDropdown($vmSelect);
+     
         if(ipObj.isstaticnat == true) {        
             buildActionLinkForTab("Disable Static NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);	
 			noAvailableActions = false;
@@ -889,15 +893,7 @@ function ipJsonToDetailsTab() {
     // no available actions 
 	if(noAvailableActions == true) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
-	}	
-      
-	//populate dropdown
-	var IpDomainid = ipObj.domainid;
-    var IpAccount = ipObj.account;
-    ipPopulateVMarray(IpDomainid, IpAccount); //popoulate VM array
-    
-    var $vmSelect = $("#dialog_enable_static_NAT").find("#vm_dropdown").empty();		
-    ipPopulateVMDropdown($vmSelect, IpDomainid, IpAccount);
+	}	    	    
 	
 	$thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();    
@@ -1095,11 +1091,9 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     if(ipObj == null)
         return;    
     var ipAddress = fromdb(ipObj.ipaddress);  
-    var IpDomainid = fromdb(ipObj.domainid);
-    var IpAccount = fromdb(ipObj.account);    
-    
+   
     var $vmSelect = $template.find("#row_container_edit #vm").empty();			    
-    ipPopulateVMDropdown($vmSelect, IpDomainid, IpAccount);
+    ipPopulateVMDropdown($vmSelect);
     $vmSelect.val(virtualMachineId);    
    	   	    	   
     var $rowContainer = $template.find("#row_container");      
@@ -1213,17 +1207,17 @@ function refreshCreatePortForwardingRow() {
     var ipObj = $midmenuItem1.data("jsonObj");
     if(ipObj == null)
         return;   
-    var IpDomainid = ipObj.domainid;
-    var IpAccount = ipObj.account;
-
+   
     var $vmSelect = $createPortForwardingRow.find("#vm").empty();		
-    ipPopulateVMDropdown($vmSelect, IpDomainid, IpAccount);
+    ipPopulateVMDropdown($vmSelect);
 }	
 
 var runningVMs, stoppedVMs;
-function ipPopulateVMarray(IpDomainid, IpAccount) {    
+function ipPopulateVMarray(ipObj) {    
+    var commandString = "command=listVirtualMachines&domainid="+ipObj.domainid+"&account="+ipObj.account+"&networkid="+ipObj.associatednetworkid;
+    
     $.ajax({
-	    data: createURL("command=listVirtualMachines&domainid="+IpDomainid+"&account="+IpAccount+"&state=Running"),
+	    data: createURL(commandString+"&state=Running"),
 	    dataType: "json",
 	    async: false,
 	    success: function(json) {			    
@@ -1232,7 +1226,7 @@ function ipPopulateVMarray(IpDomainid, IpAccount) {
     });	
     
     $.ajax({
-	    data: createURL("command=listVirtualMachines&domainid="+IpDomainid+"&account="+IpAccount+"&state=Stopped"),
+	    data: createURL(commandString+"&state=Stopped"),
 	    dataType: "json",
 	    async: false,
 	    success: function(json) {			    
@@ -1241,7 +1235,7 @@ function ipPopulateVMarray(IpDomainid, IpAccount) {
     });	
 }   
       
-function ipPopulateVMDropdown($vmSelect, IpDomainid, IpAccount) {    
+function ipPopulateVMDropdown($vmSelect) {    
     if (runningVMs != null && runningVMs.length > 0) {
 	    for (var i = 0; i < runningVMs.length; i++) {								
 	        var html = $("<option value='" + fromdb(runningVMs[i].id) + "'>" + getVmName(runningVMs[i].name, runningVMs[i].displayname) + "</option>");							        
