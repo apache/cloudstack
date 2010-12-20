@@ -33,8 +33,8 @@
     bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	 
     
     //switch between different tabs 
-    var tabArray = [$("#tab_details"), $("#tab_network")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_network")];
+    var tabArray = [$("#tab_details"), $("#tab_ipallocation")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_ipallocation")];
     var afterSwitchFnArray = [podJsonToDetailsTab, podJsonToNetworkTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
    
@@ -107,11 +107,11 @@ function podJsonToDetailsTab() {
 		}
 	});	
     if(networkType == "Basic") { //basic-mode network (pod-wide VLAN)
-        $("#tab_network, #add_iprange_button").show();  
+        $("#tab_ipallocation, #add_iprange_button").show();  
         bindAddIpRangeToPodButton($leftmenuItem1);  
     }
     else if(networkType == "Advanced") { //advanced-mode network (zone-wide VLAN)
-        $("#tab_network, #add_iprange_button").hide();
+        $("#tab_ipallocation, #add_iprange_button").hide();
         $("#midmenu_add_directIpRange_button").unbind("click").hide();         
     }
     
@@ -144,7 +144,7 @@ function podJsonToNetworkTab() {
     if(jsonObj == null) 
 	    return;	
      
-    var $thisTab = $("#right_panel_content #tab_content_network");
+    var $thisTab = $("#right_panel_content #tab_content_ipallocation");
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   		 
         
@@ -733,8 +733,8 @@ function bindAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenu
 
 function bindAddIpRangeToPodButton($leftmenuItem1) {       
     $("#add_iprange_button").unbind("click").bind("click", function(event) {   
-        if($("#tab_content_network").css("display") == "none")
-            $("#tab_network").click();    
+        if($("#tab_content_ipallocation").css("display") == "none")
+            $("#tab_ipallocation").click();    
             
         var podObj = $leftmenuItem1.data("jsonObj");               
         var zoneId = podObj.zoneid;        
@@ -787,7 +787,7 @@ function bindAddIpRangeToPodButton($leftmenuItem1) {
 					    podNetworkJsonToTemplate(item, $subgridItem); 	
 					    $subgridItem.find("#after_action_info").text("IP range was added successfully.");
                         $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  				                        
-	                    $("#tab_content_network").find("#tab_container").append($subgridItem.fadeIn("slow"));	
+	                    $("#tab_content_ipallocation").find("#tab_container").append($subgridItem.fadeIn("slow"));	
 					},
 				    error: function(XMLHttpResponse) {					        				        
 				        handleError(XMLHttpResponse, function() {				           

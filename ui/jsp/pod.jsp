@@ -22,8 +22,8 @@
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
             <%=t.t("details")%></div>
-        <div class="content_tabs off" id="tab_network">
-            <%=t.t("network")%></div>
+        <div class="content_tabs off" id="tab_ipallocation">
+            IP Allocation</div>
     </div>
     
     <!-- Details tab (start)-->
@@ -127,7 +127,7 @@
     <!-- Details tab (end)-->
         
  	<!-- Network tab (start)-->
-    <div style="display: none;" id="tab_content_network">
+    <div style="display: none;" id="tab_content_ipallocation">
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
               <div class="rightpanel_mainloaderbox">
                    <div class="rightpanel_mainloader_animatedicon"></div>
