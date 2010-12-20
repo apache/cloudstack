@@ -69,6 +69,7 @@ import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
+import com.cloud.async.AsyncJob.Type;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -1620,18 +1621,21 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         }
         //source NAT address is stored in /proc/cmdline of the domR and gets
 		//reassigned upon powerup. Source NAT rule gets configured in StartRouter command
-    	final List<IPAddressVO> userIps = _networkMgr.listPublicIpAddressesInVirtualNetwork(router.getAccountId(), router.getDataCenterId(), null);
-    	List<PublicIpAddress> publicIps = new ArrayList<PublicIpAddress>();
-        if (userIps != null && !userIps.isEmpty()) {
-            for (IPAddressVO userIp : userIps) {
-                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), userIp.getMacAddress());
-                publicIps.add((PublicIpAddress)publicIp);
+        //The command should be sent for domR only, skip for DHCP
+        if (router.getRole() == VirtualRouter.Role.DHCP_FIREWALL_LB_PASSWD_USERDATA) {
+            final List<IPAddressVO> userIps = _networkMgr.listPublicIpAddressesInVirtualNetwork(router.getAccountId(), router.getDataCenterId(), null);
+            List<PublicIpAddress> publicIps = new ArrayList<PublicIpAddress>();
+            if (userIps != null && !userIps.isEmpty()) {
+                for (IPAddressVO userIp : userIps) {
+                    PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), userIp.getMacAddress());
+                    publicIps.add((PublicIpAddress)publicIp);
+                }
+                
             }
-            
+            if (!publicIps.isEmpty()) {   
+                cmds = getAssociateIPCommands(router, publicIps, cmds, 0);               
+            }
         }
-		if (!publicIps.isEmpty()) {	  
-			cmds = getAssociateIPCommands(router, publicIps, cmds, 0);               
-		}
         return true;
     }
 

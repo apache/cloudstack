@@ -535,22 +535,23 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	String gateway = cmd.getGateway();
     	String netmask = cmd.getNetmask();
     	String cidr = null;
-    	if (gateway != null && netmask != null) {
-    	    cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
-    	}
     	Long id = cmd.getId();
     	String name = cmd.getPodName();
     	Long userId = UserContext.current().getUserId();
 
-    	if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }
-    	
     	//verify parameters
     	HostPodVO pod = _podDao.findById(id);;
     	if (pod == null) {
     		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find pod by id " + id);
     	}
+    	
+    	if (gateway == null) {
+    	    gateway = pod.getGateway();
+    	} 
+    	
+        if (netmask != null) {
+            cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
+        }
     	
     	long zoneId = pod.getDataCenterId();
     	DataCenterVO zone = _zoneDao.findById(zoneId);
