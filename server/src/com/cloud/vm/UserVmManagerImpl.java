@@ -1432,6 +1432,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     @Override
+    public UserVm startUserVm(long vmId) throws ConcurrentOperationException, ExecutionException, ResourceUnavailableException, InsufficientCapacityException {
+        return startVirtualMachine(vmId); 
+    }
+
+    @Override
     public boolean stop(UserVmVO vm, long startEventId) {
         return stop(1L, vm, startEventId);
     }

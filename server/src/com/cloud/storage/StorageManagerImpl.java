@@ -2499,7 +2499,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 							long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_VM_START, "starting user vm with Id: "+vmInstance.getId());
 							
 							try {
-								if(_userVmMgr.start(vmInstance.getId(), eventId) == null)
+								if(_userVmMgr.startUserVm(vmInstance.getId()) == null)
 								{
 									String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
 									s_logger.warn(msg);

@@ -20,7 +20,12 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.VirtualMachine.Event;
 
 /**
@@ -95,4 +100,7 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>{
     InstanceGroupVO getGroupForVm(long vmId);
     
     void removeInstanceFromGroup(long vmId);
+
+	UserVm startUserVm(long vmId) throws StorageUnavailableException,
+			ConcurrentOperationException, ExecutionException, ResourceUnavailableException, InsufficientCapacityException;
 }
