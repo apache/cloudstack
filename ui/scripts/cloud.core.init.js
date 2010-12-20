@@ -374,7 +374,7 @@ $(document).ready(function() {
     	    	      
 	        $advancedSearch.find("#adv_search_startdate, #adv_search_enddate").datepicker({dateFormat: 'yy-mm-dd'});
     	    	    	    
-	        $("#advanced_search_container").empty().append($advancedSearch.show());	 
+	        $("#adv_searchpopup").empty().append($advancedSearch.show());	 
 	    }
 	    	   
 	    return false;
