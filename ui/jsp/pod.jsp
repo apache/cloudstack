@@ -170,6 +170,15 @@
             </div>
         </div>
     </div>
+    <div class="actionpanel_button_wrapper" id="add_iprange_button" style="display: none">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add IP Range" /></div>
+            <div class="actionpanel_button_links">
+                Add IP Range
+            </div>
+        </div>
+    </div>
 </div>
 <!--  top buttons (end) -->
 
@@ -543,9 +552,9 @@
 </div>
 <!-- Add Primary Storage Dialog (end) -->
    
-<!-- Add VLAN IP Range Dialog for pod (begin) -->
-<div id="dialog_add_vlan_for_pod" title="Add Direct IP Range" style="display:none">
-	<p>Please enter the following info to add a new direct IP range on untagged VLAN to pod: <b><span id="pod_name_label"></span></b></p>
+<!-- Add IP Range to pod (begin) -->
+<div id="dialog_add_iprange_to_pod" title="Add IP Range to Pod" style="display:none">
+	<p>Add an IP range to pod: <b><span id="pod_name_label"></span></b></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form5">
 			<ol>				    		
@@ -587,5 +596,5 @@
             (info)</div>
     </div>
 </div>
-<!-- Add VLAN IP Range Dialog for pod (end) -->
+<!-- Add IP Range to pod (end) -->
 <!-- ***** dialogs (begin) ***** -->

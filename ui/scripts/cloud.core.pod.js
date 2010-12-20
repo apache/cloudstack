@@ -25,7 +25,7 @@
     initDialog("dialog_add_external_cluster");
     initDialog("dialog_add_host");
     initDialog("dialog_add_pool");
-    initDialog("dialog_add_vlan_for_pod");
+    initDialog("dialog_add_iprange_to_pod");
     
     // if hypervisor is KVM, limit the server option to NFS for now
     if (getHypervisorType() == 'kvm') 
@@ -107,11 +107,11 @@ function podJsonToDetailsTab() {
 		}
 	});	
     if(networkType == "Basic") { //basic-mode network (pod-wide VLAN)
-        $("#tab_network").show();  
-        bindAddPodVLANButton($("#midmenu_add_directIpRange_button"), $leftmenuItem1);  
+        $("#tab_network, #add_iprange_button").show();  
+        bindAddIpRangeToPodButton($leftmenuItem1);  
     }
     else if(networkType == "Advanced") { //advanced-mode network (zone-wide VLAN)
-        $("#tab_network").hide();
+        $("#tab_network, #add_iprange_button").hide();
         $("#midmenu_add_directIpRange_button").unbind("click").hide();         
     }
     
@@ -191,14 +191,14 @@ function podNetworkJsonToTemplate(jsonObj, template) {
 	var $actionMenu = $actionLink.find("#network_action_menu");
     $actionMenu.find("#action_list").empty();	
     
-    buildActionLinkForSubgridItem("Delete VLAN", podNetworkActionMap, $actionMenu, template);	
+    buildActionLinkForSubgridItem("Delete IP Range", podNetworkActionMap, $actionMenu, template);	
 }
 
 var podNetworkActionMap = {  
-    "Delete VLAN": {              
+    "Delete IP Range": {              
         api: "deleteVlanIpRange",     
         isAsyncJob: false,   
-        inProcessText: "Deleting VLAN....",
+        inProcessText: "Deleting IP Range....",
         afterActionSeccessFn: function(json, id, $subgridItem) {                 
             $subgridItem.slideUp("slow", function() {
                 $(this).remove();
@@ -731,10 +731,8 @@ function bindAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenu
     });             
 }
 
-function bindAddPodVLANButton($button, $leftmenuItem1) {    
-    $button.find("#label").text("Add Direct IP Range"); 
-    $button.show();   
-    $button.unbind("click").bind("click", function(event) {   
+function bindAddIpRangeToPodButton($leftmenuItem1) {       
+    $("#add_iprange_button").unbind("click").bind("click", function(event) {   
         if($("#tab_content_network").css("display") == "none")
             $("#tab_network").click();    
             
@@ -743,9 +741,9 @@ function bindAddPodVLANButton($button, $leftmenuItem1) {
         var podId = podObj.id;
         var podName = podObj.name;      
                 
-        $("#dialog_add_vlan_for_pod").find("#pod_name_label").text(podName);
+        $("#dialog_add_iprange_to_pod").find("#pod_name_label").text(podName);
                 
-        $("#dialog_add_vlan_for_pod")
+        $("#dialog_add_iprange_to_pod")
 	    .dialog('option', 'buttons', {
 	        "Add": function() {             
 	            var $thisDialog = $(this);		
@@ -787,7 +785,7 @@ function bindAddPodVLANButton($button, $leftmenuItem1) {
 					    var item = json.createvlaniprangeresponse.vlan;
 					    var $subgridItem = $("#network_tab_template").clone(true);
 					    podNetworkJsonToTemplate(item, $subgridItem); 	
-					    $subgridItem.find("#after_action_info").text("Direct VLAN was added successfully.");
+					    $subgridItem.find("#after_action_info").text("IP range was added successfully.");
                         $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  				                        
 	                    $("#tab_content_network").find("#tab_container").append($subgridItem.fadeIn("slow"));	
 					},
