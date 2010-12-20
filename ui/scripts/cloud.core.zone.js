@@ -22,7 +22,7 @@
     var $topButtonContainer = clearButtonsOnTop();			    	       
 	$("#top_buttons").appendTo($topButtonContainer);     
         
-    initDialog("dialog_add_external_cluster_in_zone_page");
+    initDialog("dialog_add_external_cluster_in_zone_page", 320);
     initDialog("dialog_add_pod", 320); 
     initDialog("dialog_add_vlan_for_zone");
     initDialog("dialog_add_secondarystorage"); 
