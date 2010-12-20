@@ -114,13 +114,15 @@
     
     <!-- Admin Account tab (start)-->
     <div style="display: none;" id="tab_content_admin_account">
-    		<div class="rightpanel_mainloader_panel" style="display:none;">
-                  <div class="rightpanel_mainloaderbox">
-                       <div class="rightpanel_mainloader_animatedicon"></div>
-                       <p>Loading &hellip;</p>    
-                  </div>               
-            </div>
-    </div>
+    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
+              <div class="rightpanel_mainloaderbox">
+                   <div class="rightpanel_mainloader_animatedicon"></div>
+                   <p>Loading &hellip;</p>    
+              </div>               
+        </div>
+        <div id="tab_container">
+        </div>
+    </div>     
     <!-- Admin Account tab (end)-->
     
     <!-- Resource Limits tab (start)-->

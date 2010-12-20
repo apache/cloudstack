@@ -469,15 +469,19 @@ function updateResourceLimitForDomain(domainId, type, max, $readonlyField) {
 	});
 }
 
-function listAdminAccounts(domainId) {   	   	
+function listAdminAccounts(domainId) {   
+    var $thisTab = $("#right_panel_content").find("#tab_content_admin_account");
+    $thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   
+    	    	   	
     var accountType = (domainId==1)? 1: 2; 	    		
     $.ajax({
 		cache: false,				
 	    data: createURL("command=listAccounts&domainid="+domainId+"&accounttype="+accountType),
 		dataType: "json",
 		success: function(json) {
-			var items = json.listaccountsresponse.account;		
-			var $container = $("#right_panel_content #tab_content_admin_account").empty();			
+			var items = json.listaccountsresponse.account;					
+			var $container = $thisTab.find("#tab_container").empty();	
 			if (items != null && items.length > 0) {					    
 				var $template = $("#admin_account_tab_template");				
 				for (var i = 0; i < items.length; i++) {
@@ -485,7 +489,9 @@ function listAdminAccounts(domainId) {
 	                domainAccountJSONToTemplate(items[i], $newTemplate); 
 	                $container.append($newTemplate.show());	
 				}				    				
-			} 			         
+			} 		
+			$thisTab.find("#tab_spinning_wheel").hide();    
+            $thisTab.find("#tab_container").show();						         
 		}		
 	});		
 }		
