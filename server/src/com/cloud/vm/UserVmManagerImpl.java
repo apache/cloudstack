@@ -2600,9 +2600,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 				isoPath = isoPathPair.first();
 			}
 			profile.setBootLoaderType(BootloaderType.CD);
-			
-			GuestOSVO guestOs = _guestOSDao.findById(template.getGuestOSId());
-			VolumeTO iso = new VolumeTO(profile.getId(), Volume.VolumeType.ISO, StorageResourceType.STORAGE_POOL, StoragePoolType.ISO, null, guestOs.getDisplayName(), null, isoPath,
+			VolumeTO iso = new VolumeTO(profile.getId(), Volume.VolumeType.ISO, StorageResourceType.STORAGE_POOL, StoragePoolType.ISO, null, template.getName(), null, isoPath,
 										0, null);
 			iso.setDeviceId(3);
 			profile.addDisk(iso);

@@ -528,7 +528,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
     }
     
-    protected VBD createVbd(Connection conn, VolumeTO volume, String vmName, VM vm, BootloaderType bootLoaderType, String guestOsDisplayName) throws XmlRpcException, XenAPIException {
+    protected VBD createVbd(Connection conn, VolumeTO volume, String vmName, VM vm, BootloaderType bootLoaderType) throws XmlRpcException, XenAPIException {
         VolumeType type = volume.getType();
         
         VDI vdi = mount(conn, vmName, volume);
@@ -542,25 +542,12 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
         if (type == VolumeType.ROOT && bootLoaderType == BootloaderType.PyGrub) {
             vbdr.bootable = true;
+        }else if(type == VolumeType.ISO && bootLoaderType == BootloaderType.CD) {
+        	vbdr.bootable = true;
         }
         
         vbdr.userdevice = Long.toString(volume.getDeviceId());
-        if (volume.getType() == VolumeType.ISO) {       	
-        	String guestOsTypeName = getGuestOsType(guestOsDisplayName, bootLoaderType == BootloaderType.CD);
-        	if(!(guestOsTypeName.startsWith("Windows") || guestOsTypeName.startsWith("Citrix") || guestOsTypeName.startsWith("Other"))){
-        		if(volume.getName() != null)
-        		{
-	        		String volumeGuestOsTypeName = getGuestOsType(volume.getName(), bootLoaderType == BootloaderType.CD);//NOTE: We set the vol name to guestOs.getDisplayName() in finalizeVirtualMachineProfile()
-	        		if(!(volumeGuestOsTypeName.startsWith("Windows") || volumeGuestOsTypeName.startsWith("Citrix") || volumeGuestOsTypeName.startsWith("Other"))){
-	        			vbdr.bootable = true;
-	        		}else{
-	        			vbdr.bootable = false;
-	        		}
-        		}else{
-        			vbdr.bootable = false;
-        		}
-        	}
-        	
+        if (volume.getType() == VolumeType.ISO) {
             vbdr.mode = Types.VbdMode.RO;
             vbdr.type = Types.VbdType.CD;
         } else {
@@ -788,7 +775,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             vm = createVmFromTemplate(conn, vmSpec, host);
             
             for (VolumeTO disk : vmSpec.getDisks()) {
-                createVbd(conn, disk, vmName, vm, vmSpec.getBootloader(), vmSpec.getOs());
+                createVbd(conn, disk, vmName, vm, vmSpec.getBootloader());
             }
             
             if (vmSpec.getType() != VirtualMachine.Type.User) {
