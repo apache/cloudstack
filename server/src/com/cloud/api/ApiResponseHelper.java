@@ -519,6 +519,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (host.getClusterId() != null) {
             ClusterVO cluster = ApiDBUtils.findClusterById(host.getClusterId());
             hostResponse.setClusterName(cluster.getName());
+            hostResponse.setClusterType(cluster.getClusterType().toString());
         }
 
         hostResponse.setLocalStorageActive(ApiDBUtils.isLocalStorageActiveOnHost(host));

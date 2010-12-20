@@ -728,9 +728,8 @@
                 <div id="cluster_datacenter_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-
             <li>
-                <label for="cluster_name">
+                <label for="cluster_name" id="cluster_name_label">
                     vCenter Cluster:</label>
                 <input class="text" type="text" name="cluster_name" id="cluster_name" />
                 <div id="cluster_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">

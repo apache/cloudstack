@@ -119,6 +119,9 @@ public class HostResponse extends BaseResponse {
 
     @SerializedName("clustername") @Param(description="the cluster name of the host")
     private String clusterName;
+    
+    @SerializedName("clustertype") @Param(description="the cluster type of the cluster that host belongs to")
+    private String clusterType;
 
     @SerializedName("islocalstorageactive") @Param(description="true if local storage is active, false otherwise")
     private Boolean localStorageActive;
@@ -388,6 +391,14 @@ public class HostResponse extends BaseResponse {
 
     public void setClusterName(String clusterName) {
         this.clusterName = clusterName;
+    }
+    
+    public String getClusterType() {
+    	return clusterType;
+    }
+    
+    public void setClusterType(String clusterType) {
+    	this.clusterType = clusterType;
     }
 
     public Boolean isLocalStorageActive() {

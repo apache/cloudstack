@@ -1012,14 +1012,17 @@ function bindAddClusterButtonOnZonePage($button, zoneId, zoneName) {
         		$dialogAddCluster.find("#type_dropdown").change();
         	} else {
         		$('li[input_group="vmware"]', $dialogAddCluster).hide();
+        		$("#cluster_name_label", $dialogAddCluster).text("Cluster:");
         	}
         }).change();
         
         $dialogAddCluster.find("#type_dropdown").change(function() {
         	if($(this).val() == "ExternalManaged") {
         		$('li[input_sub_group="external"]', $dialogAddCluster).show();
+        		$("#cluster_name_label", $dialogAddCluster).text("vCenter Cluster:");
         	} else {
         		$('li[input_sub_group="external"]', $dialogAddCluster).hide();
+        		$("#cluster_name_label", $dialogAddCluster).text("Cluster:");
         	}
         });
         

@@ -94,31 +94,66 @@
                     <option value="XenServer" SELECTED>Xen Server</option>		
                     <option value="KVM">KVM</option>										
                     <option value="VmWare">VMware</option>										
-                    <option value="">Auto</option>									
                 </select>
             </li>
-            <li>
+            <li input_group="general">
                 <label for="host_hostname">
                     Host name:</label>
                 <input class="text" type="text" name="host_hostname" id="host_hostname" />
                 <div id="host_hostname_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li>
+            <li input_group="general">
                 <label for="user_name">
                     User name:</label>
                 <input class="text" type="text" name="host_username" id="host_username" />
                 <div id="host_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li>
+            <li input_group="general">
                 <label for="user_name">
                     Password:</label>
                 <input class="text" type="password" name="host_password" id="host_password" autocomplete="off" />
                 <div id="host_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
+            <li input_group="vmware">
+                <label for="host_vcenter_address">
+                    vCenter Address:</label>
+                <input class="text" type="text" name="host_vcenter_address" id="host_vcenter_address" />
+                <div id="host_vcenter_address_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware">
+                <label for="host_vcenter_username">
+                    vCenter User:</label>
+                <input class="text" type="text" name="host_vcenter_username" id="host_vcenter_username" />
+                <div id="host_vcenter_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware">
+                <label for="host_vcenter_password">
+                    vCenter Password:</label>
+                <input class="text" type="password" name="host_vcenter_password" id="host_vcenter_password" autocomplete="off" />
+                <div id="host_vcenter_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware">
+                <label for="host_vcenter_dc">
+                    vCenter Datacenter:</label>
+                <input class="text" type="text" name="host_vcenter_dc" id="host_vcenter_dc" />
+                <div id="host_vcenter_dc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware">
+                <label for="host_vcenter_host">
+                    vCenter Host:</label>
+                <input class="text" type="text" name="host_vcenter_host" id="host_vcenter_host" />
+                <div id="host_vcenter_host_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
             <li id="cluster_options_container">
+                    <input type="radio" name="cluster" value="no_cluster_radio" />&nbsp;Standalone</label>
                 <label>
                     &nbsp;</label><span><u>Cluster Options</u></span> </li>
             <li id="new_cluster_radio_container">
@@ -137,7 +172,6 @@
             </li>
             <li id="no_cluster_radio_container">
                 <label>
-                    <input type="radio" name="cluster" value="no_cluster_radio" />&nbsp;Standalone</label>
                 <span style="padding-left: 20px"></span></li>
         </ol>
         </form>
