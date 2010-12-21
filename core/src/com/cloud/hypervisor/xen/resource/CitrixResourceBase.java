@@ -126,6 +126,7 @@ import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
+import com.cloud.agent.api.routing.RoutingCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
@@ -171,7 +172,6 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.script.Script;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachine;
@@ -191,9 +191,9 @@ import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Session;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.IpConfigurationMode;
 import com.xensource.xenapi.Types.VmPowerState;
 import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.Types.IpConfigurationMode;
 import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VIF;
@@ -933,9 +933,8 @@ public abstract class CitrixResourceBase implements ServerResource {
     protected SetPortForwardingRulesAnswer execute(SetPortForwardingRulesCommand cmd) {
         Connection conn = getConnection();
         String args;
-        String routerIp = cmd.getAccessDetail("router.ip");
-        String routerName = cmd.getAccessDetail("router.name");
-
+        String routerName = cmd.getAccessDetail(RoutingCommand.ROUTER_NAME);
+        String routerIp = cmd.getAccessDetail(RoutingCommand.ROUTER_IP);
         String[] results = new String[cmd.getRules().length];
         int i = 0;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
@@ -1252,10 +1251,13 @@ public abstract class CitrixResourceBase implements ServerResource {
         Connection conn = getConnection();
         String[] results = new String[cmd.getIpAddresses().length];
         int i = 0;
+        String routerName = cmd.getAccessDetail(RoutingCommand.ROUTER_NAME);
+        String routerIp = cmd.getAccessDetail(RoutingCommand.ROUTER_IP);
         try {
-            IpAddressTO[] ips = cmd.getIpAddresses();   
+            IpAddressTO[] ips = cmd.getIpAddresses(); 
             for (IpAddressTO ip : ips) {
-                assignPublicIpAddress(conn, cmd.getRouterName(), cmd.getRouterIp(), ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(), ip.isSourceNat(), ip.getVlanId(),
+                
+                assignPublicIpAddress(conn, routerName, routerIp, ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(), ip.isSourceNat(), ip.getVlanId(),
                         ip.getVlanGateway(), ip.getVlanNetmask(), ip.getVifMacAddress(), ip.getGuestIp());
                 results[i++] = ip.getPublicIp() + " - success";
             }

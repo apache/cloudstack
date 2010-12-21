@@ -52,6 +52,7 @@ import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
+import com.cloud.agent.api.routing.RoutingCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
@@ -2040,7 +2041,10 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
                  ipsToSend[i++] = ip;
                  firstIP = false;
              }
-             cmds.addCommand("IPAssocCommand", new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ipsToSend));
+             IPAssocCommand cmd = new IPAssocCommand(ipsToSend);
+             cmd.setAccessDetail(RoutingCommand.ROUTER_IP, router.getPrivateIpAddress());
+             cmd.setAccessDetail(RoutingCommand.ROUTER_NAME, router.getInstanceName());
+             cmds.addCommand("IPAssocCommand", cmd);
         }
          return cmds;
     }
@@ -2083,6 +2087,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             Commands cmds = new Commands(OnError.Continue);
             //We have to resend all already associated ip addresses
             cmds = getAssociateIPCommands(router, ipAddress, cmds, 0);
+            
             return sendCommandsToRouter(router, cmds);
         } else if (router.getState() == State.Stopped || router.getState() == State.Stopping){
             return true;
@@ -2112,6 +2117,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             }
             
             LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs);
+            cmd.setAccessDetail(RoutingCommand.ROUTER_IP, router.getPrivateIpAddress());
+            cmd.setAccessDetail(RoutingCommand.ROUTER_NAME, router.getInstanceName());
             cmds.addCommand(cmd);
             
             //Send commands to router
@@ -2129,6 +2136,8 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             pfs.add(pf);
         }
         SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(pfs);
+        cmd.setAccessDetail(RoutingCommand.ROUTER_IP, router.getPrivateIpAddress());
+        cmd.setAccessDetail(RoutingCommand.ROUTER_NAME, router.getInstanceName());
         cmds.addCommand(cmd);
         
         //Send commands to router

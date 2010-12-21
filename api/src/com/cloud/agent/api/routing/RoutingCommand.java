@@ -24,6 +24,9 @@ import com.cloud.agent.api.Command;
 public abstract class RoutingCommand extends Command {
     HashMap<String, String> accessDetails = new HashMap<String, String>(0);
     
+    public static final String ROUTER_NAME = "router.name";
+    public static final String ROUTER_IP = "router.ip";
+    
     protected RoutingCommand() {
         super();
     }

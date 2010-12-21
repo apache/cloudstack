@@ -25,36 +25,20 @@ import com.cloud.agent.api.to.IpAddressTO;
  *
  */
 public class IPAssocCommand extends RoutingCommand {
-
-	private String routerName;
-	private String routerIp;
+    
 	IpAddressTO[] ipAddresses;
 
 	protected IPAssocCommand() {
 	}
 	
-	public IPAssocCommand(String routerName, String privateIpAddress, IpAddressTO[] ips) {
-		this.setRouterName(routerName);
-		this.routerIp = privateIpAddress;
+	public IPAssocCommand(IpAddressTO[] ips) {
 		this.ipAddresses = ips;
-	}
-
-	public String getRouterIp() {
-		return routerIp;
 	}
 
     @Override
     public boolean executeInSequence() {
         return false;
     }
-
-	public void setRouterName(String routerName) {
-		this.routerName = routerName;
-	}
-
-	public String getRouterName() {
-		return routerName;
-	}
 
     public IpAddressTO[] getIpAddresses() {
         return ipAddresses;
