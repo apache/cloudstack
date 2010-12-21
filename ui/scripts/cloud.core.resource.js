@@ -389,15 +389,17 @@ function initAddPodShortcut() {
 			            $thisDialog.find("#spinning_wheel").hide();
 			            $thisDialog.dialog("close");
 			            
-			            var item = json.createpodresponse.pod; 			            		            				    
-		                var template = $("#leftmenu_pod_node_template").clone(true);
-		                podJSONToTreeNode(item, template);	
-		                var $zoneNode = $("#leftmenu_zone_tree").find("#tree_container").find("#zone_" + zoneId);	                   				
-		                $zoneNode.find("#zone_content").show();	
-		                $zoneNode.find("#pods_container").prepend(template.show());						
-		                $zoneNode.find("#zone_arrow").removeClass("white_nonexpanded_close").addClass("expanded_open");	
-                        template.fadeIn("slow");
-			             
+			            var item = json.createpodresponse.pod; 			
+		                var $zoneNode = $("#leftmenu_zone_tree").find("#tree_container").find("#zone_" + zoneId);			                		                		                
+				        if($zoneNode.find("#zone_arrow").hasClass("expanded_open")) {
+				            var template = $("#leftmenu_pod_node_template").clone(true);
+		                    podJSONToTreeNode(item, template);	     
+				            $zoneNode.find("#pods_container").prepend(template.fadeIn("slow"));		
+				        }
+				        else {	
+		                    $zoneNode.find("#zone_arrow").click();  //expand zone node to show the newly added pod
+		                }		
+			            			           			             
 			            var podTotal = parseInt($("#pod_total").text());
 		                podTotal++;
 		                $("#pod_total").text(podTotal.toString());  
