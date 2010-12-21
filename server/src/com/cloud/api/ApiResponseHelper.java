@@ -1819,14 +1819,14 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     @Override
-    public ListResponse<TemplateResponse> createIsoResponse(Set<Pair<Long,Long>> isoZonePairSet, boolean isAdmin, Account account)  {        
+    public ListResponse<TemplateResponse> createIsoResponse(Set<Pair<Long,Long>> isoZonePairSet, boolean isAdmin, Account account, Boolean isBootable)  {        
 
         ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
         List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
         
         for (Pair<Long,Long> isoZonePair : isoZonePairSet) {
         	VMTemplateVO iso = ApiDBUtils.findTemplateById(isoZonePair.first());
-            if ( iso.getTemplateType() == TemplateType.PERHOST ) {
+            if ( (isBootable == null || !isBootable) && iso.getTemplateType() == TemplateType.PERHOST ) {
                 TemplateResponse isoResponse = new TemplateResponse();
                 isoResponse.setId(iso.getId());
                 isoResponse.setName(iso.getName());
@@ -1837,10 +1837,14 @@ public class ApiResponseHelper implements ResponseGenerator {
                 isoResponse.setFeatured(iso.isFeatured());
                 isoResponse.setCrossZones(iso.isCrossZones());
                 isoResponse.setPublic(iso.isPublicTemplate());
+                isoResponse.setPasswordEnabled(false);
+                isoResponse.setDomainId(iso.getDomainId());
                 isoResponse.setObjectName("iso");
                 isoResponses.add(isoResponse);
                 response.setResponses(isoResponses);
-                continue;
+                
+                if(isBootable != null && !isBootable)
+                	continue; //fetch only non-bootable isos and return (for now only xen tools iso)
             }
            
             List<VMTemplateHostVO> isoHosts = ApiDBUtils.listTemplateHostBy(iso.getId(), isoZonePair.second());

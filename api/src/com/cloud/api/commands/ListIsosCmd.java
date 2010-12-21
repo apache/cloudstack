@@ -159,7 +159,7 @@ public class ListIsosCmd extends BaseListCmd {
             isAdmin = true;            
         }
 
-       ListResponse<TemplateResponse> response = _responseGenerator.createIsoResponse(isoZonePairSet, isAdmin, account);
+       ListResponse<TemplateResponse> response = _responseGenerator.createIsoResponse(isoZonePairSet, isAdmin, account, bootable);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

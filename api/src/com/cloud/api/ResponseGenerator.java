@@ -191,7 +191,7 @@ public interface ResponseGenerator {
 
     EventResponse createEventResponse(Event event);
 
-    ListResponse<TemplateResponse> createIsoResponse(Set<Pair<Long,Long>> isoZonePairSet, boolean onlyReady, Account account);
+    ListResponse<TemplateResponse> createIsoResponse(Set<Pair<Long,Long>> isoZonePairSet, boolean onlyReady, Account account, Boolean isBootable);
 
     TemplateResponse createIsoResponse(VirtualMachineTemplate result);
 
