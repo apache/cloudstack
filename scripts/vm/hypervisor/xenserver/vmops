@@ -1941,7 +1941,7 @@ def cleanup_rules():
   try:
     session = get_xapi_session()
 
-    chainscmd = "iptables-save | grep '^:' | awk '{print $1}' | cut -d':' -f2"
+    chainscmd = "iptables-save | grep '^:' | grep -v '.*-def' | awk '{print $1}' | cut -d':' -f2"
     chains = util.pread2(['/bin/bash', '-c', chainscmd]).split('\n')
     cleaned = 0
     cleanup = []
