@@ -19,6 +19,7 @@ package com.cloud.network;
 
 import java.util.List;
 
+import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 
 
@@ -32,4 +33,7 @@ public interface LoadBalancerConfigurator {
 	
 	public String [] generateConfiguration(List<PortForwardingRuleTO> fwRules);
 	public String [][] generateFwRules(List<PortForwardingRuleTO> fwRules);
+	
+	public String [] generateConfiguration(LoadBalancerConfigCommand lbCmd);
+	public String [][] generateFwRules(LoadBalancerConfigCommand lbCmd);
 }

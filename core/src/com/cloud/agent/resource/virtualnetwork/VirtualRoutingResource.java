@@ -49,11 +49,18 @@ import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
 import com.cloud.agent.api.routing.RoutingCommand;
+import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
+import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.PortForwardingRuleTO;
+import com.cloud.network.HAProxyConfigurator;
+import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
@@ -89,11 +96,12 @@ public class VirtualRoutingResource implements Manager {
 
     public Answer executeRequest(final Command cmd) {
         try {
-//        	if (cmd instanceof SetFirewallRuleCommand) {
-//                return execute((SetFirewallRuleCommand)cmd);
-//            }else 
-                if (cmd instanceof LoadBalancerCfgCommand) {
+        	if (cmd instanceof SetPortForwardingRulesCommand ) {
+                return execute((SetPortForwardingRulesCommand)cmd);
+            }else if (cmd instanceof LoadBalancerCfgCommand) {
                 return execute((LoadBalancerCfgCommand)cmd);
+            } else if (cmd instanceof LoadBalancerConfigCommand) {
+                return execute((LoadBalancerConfigCommand)cmd);
             } else if (cmd instanceof IPAssocCommand) {
                 return execute((IPAssocCommand)cmd);
             } else if (cmd instanceof CheckConsoleProxyLoadCommand) {
@@ -114,7 +122,66 @@ public class VirtualRoutingResource implements Manager {
         }
     }
 
-    protected Answer execute(VmDataCommand cmd) {
+    private Answer execute(SetPortForwardingRulesCommand cmd) {
+    	String routerIp = cmd.getAccessDetail(RoutingCommand.ROUTER_IP);
+        String routerName = cmd.getAccessDetail(RoutingCommand.ROUTER_NAME);
+
+        String[] results = new String[cmd.getRules().length];
+        int i = 0;
+        for (PortForwardingRuleTO rule : cmd.getRules()) {
+            String result = null;
+			if (rule.getProtocol().equalsIgnoreCase(NetUtils.NAT_PROTO)){
+				setStaticNat(!rule.revoked(), routerName, routerIp, rule.getSrcIp(), rule.getDstIp());
+            } else {
+                
+    	        result = setPortForwardRule(!rule.revoked(), routerName, routerIp, 
+    	        		                  rule.getProtocol(), rule.getSrcIp(), 
+    	        		                  Integer.toString(rule.getSrcPortRange()[0]), rule.getDstIp(), 
+    	        		                  Integer.toString(rule.getDstPortRange()[0]));
+    	       
+            }
+            results[i++] = (result == null || result.isEmpty()) ? "Failed" : null;
+        }
+
+        return new SetPortForwardingRulesAnswer(cmd, results);
+	}
+
+	private Answer execute(LoadBalancerConfigCommand cmd) {
+		String routerIp = cmd.getAccessDetail(RoutingCommand.ROUTER_IP);
+		File tmpCfgFile = null;
+    	try {
+    		String cfgFilePath = "";
+    		String routerIP = null;
+    		LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
+            String[] config = cfgtr.generateConfiguration(cmd);
+            String[][] rules = cfgtr.generateFwRules(cmd);
+    		if (routerIp != null) {
+    			tmpCfgFile = File.createTempFile(routerIp.replace('.', '_'), "cfg");
+				final PrintWriter out
+			   	= new PrintWriter(new BufferedWriter(new FileWriter(tmpCfgFile)));
+				for (int i=0; i < config.length; i++) {
+					out.println(config[i]);
+				}
+				out.close();
+				cfgFilePath = tmpCfgFile.getAbsolutePath();
+    		}
+			
+			final String result = setLoadBalancerConfig(cfgFilePath,
+											      rules[LoadBalancerConfigurator.ADD],
+											      rules[LoadBalancerConfigurator.REMOVE],
+											      routerIP);
+			
+			return new Answer(cmd, result == null, result);
+		} catch (final IOException e) {
+			return new Answer(cmd, false, e.getMessage());
+		} finally {
+			if (tmpCfgFile != null) {
+				tmpCfgFile.delete();
+			}
+		}
+	}
+
+	protected Answer execute(VmDataCommand cmd) {
     	List<String[]> vmData = cmd.getVmData();
     	
     	for (String[] vmDataEntry : vmData) {
@@ -381,37 +448,45 @@ public class VirtualRoutingResource implements Manager {
         return command.execute();
     }
 
-    public String setFirewallRules(final boolean enable, final String routerName, final String routerIpAddress, final String protocol,
-    							   final String publicIpAddress, final String publicPort, final String privateIpAddress, final String privatePort,
-    							   String oldPrivateIP,  String oldPrivatePort, String vlanNetmask) {
+    public String setPortForwardRule(final boolean enable, final String routerName, final String routerIpAddress, final String protocol,
+    							   final String publicIpAddress, final String publicPortRange, final String privateIpAddress, final String privatePortRange) {
         
     	if (routerIpAddress == null) {
-        	s_logger.warn("SetFirewallRuleCommand did nothing because Router IP address was null when creating rule for public IP: " + publicIpAddress);
+        	s_logger.warn("setPortForwardRule did nothing because Router IP address was null when creating rule for public IP: " + publicIpAddress);
             return null;    
         }
     	
-    	if (oldPrivateIP == null) {
-            oldPrivateIP = "";
-        }
-    	if (oldPrivatePort == null) {
-            oldPrivatePort = "";
-        }
-    	
+    
         final Script command = new Script(_firewallPath, _timeout, s_logger);
         
         command.add(enable ? "-A" : "-D");
         command.add("-P", protocol);
         command.add("-l", publicIpAddress);
-        command.add("-p", publicPort);
+        command.add("-p", publicPortRange);
         command.add("-n", routerName);
         command.add("-i", routerIpAddress);
         command.add("-r", privateIpAddress);
-        command.add("-d", privatePort);
-        command.add("-N", vlanNetmask);
-        command.add("-w", oldPrivateIP);
-        command.add("-x", oldPrivatePort);
+        command.add("-d", privatePortRange);
         
         return command.execute();
+    }
+    
+    public String setStaticNat(final boolean enable, final String routerName, final String routerIpAddress,
+    		final String publicIpAddress, final String privateIpAddress) {
+
+    	if (routerIpAddress == null) {
+    		s_logger.warn("setStaticNat did nothing because Router IP address was null when creating rule for public IP: " + publicIpAddress);
+    		return null;    
+    	}
+
+    	final Script command = new Script(_firewallPath, _timeout, s_logger);
+
+    	command.add(enable ? "-A" : "-D");
+    	command.add("-l", publicIpAddress);
+    	command.add("-n", routerName);
+    	command.add("-i", routerIpAddress);
+    	command.add("-G", privateIpAddress);
+    	return command.execute();
     }
     
     private boolean isBridgeExists(String bridgeName) {

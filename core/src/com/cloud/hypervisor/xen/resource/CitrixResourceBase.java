@@ -125,6 +125,7 @@ import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
+import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.RoutingCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
@@ -153,6 +154,8 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.HAProxyConfigurator;
+import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ServerResource;
@@ -349,6 +352,8 @@ public abstract class CitrixResourceBase implements ServerResource {
             return execute((SetPortForwardingRulesCommand) cmd);
         } else if (cmd instanceof LoadBalancerCfgCommand) {
             return execute((LoadBalancerCfgCommand) cmd);
+        } else if (cmd instanceof LoadBalancerConfigCommand) {
+            return execute((LoadBalancerConfigCommand) cmd);
         } else if (cmd instanceof IPAssocCommand) {
             return execute((IPAssocCommand) cmd);
         } else if (cmd instanceof CheckConsoleProxyLoadCommand) {
@@ -1026,6 +1031,66 @@ public abstract class CitrixResourceBase implements ServerResource {
 
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "LoadBalancerCfgCommand failed");
+        }
+
+        callHostPlugin(conn, "vmops", "deleteFile", "filepath", tmpCfgFilePath);
+
+        return new Answer(cmd);
+    }
+    
+    protected Answer execute(final LoadBalancerConfigCommand cmd) {
+        Connection conn = getConnection();
+        String routerIp = cmd.getAccessDetail(RoutingCommand.ROUTER_IP);
+
+        if (routerIp == null) {
+            return new Answer(cmd);
+        }
+        
+        LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
+        String[] config = cfgtr.generateConfiguration(cmd);
+        String[][] rules = cfgtr.generateFwRules(cmd);
+        String tmpCfgFilePath = "/tmp/" + routerIp.replace('.', '_') + ".cfg";
+        String tmpCfgFileContents = "";
+        for (int i = 0; i < config.length; i++) {
+            tmpCfgFileContents += config[i];
+            tmpCfgFileContents += "\n";
+        }
+
+        String result = callHostPlugin(conn, "vmops", "createFile", "filepath", tmpCfgFilePath, "filecontents", tmpCfgFileContents);
+
+        if (result == null || result.isEmpty()) {
+            return new Answer(cmd, false, "LoadBalancerConfigCommand failed to create HA proxy cfg file.");
+        }
+
+        String[] addRules = rules[LoadBalancerConfigurator.ADD];
+        String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
+
+        String args = "";
+        args += "-i " + routerIp;
+        args += " -f " + tmpCfgFilePath;
+
+        StringBuilder sb = new StringBuilder();
+        if (addRules.length > 0) {
+            for (int i = 0; i < addRules.length; i++) {
+                sb.append(addRules[i]).append(',');
+            }
+
+            args += " -a " + sb.toString();
+        }
+
+        sb = new StringBuilder();
+        if (removeRules.length > 0) {
+            for (int i = 0; i < removeRules.length; i++) {
+                sb.append(removeRules[i]).append(',');
+            }
+
+            args += " -d " + sb.toString();
+        }
+
+        result = callHostPlugin(conn, "vmops", "setLoadBalancerRule", "args", args);
+
+        if (result == null || result.isEmpty()) {
+            return new Answer(cmd, false, "LoadBalancerConfigCommand failed");
         }
 
         callHostPlugin(conn, "vmops", "deleteFile", "filepath", tmpCfgFilePath);

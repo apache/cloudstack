@@ -26,11 +26,12 @@ import com.cloud.agent.api.to.LoadBalancerTO;
 public class LoadBalancerConfigCommand extends RoutingCommand {
     LoadBalancerTO[] loadBalancers;
     
-    public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers) {
+    public LoadBalancerConfigCommand( LoadBalancerTO[] loadBalancers) {
     	this.loadBalancers = loadBalancers;
     }
 
-    public LoadBalancerTO[] getLoadBalancers() {
+   
+	public LoadBalancerTO[] getLoadBalancers() {
         return loadBalancers;
     }
 }
