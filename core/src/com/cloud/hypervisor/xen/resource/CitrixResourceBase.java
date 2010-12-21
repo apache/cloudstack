@@ -1040,7 +1040,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     
     protected Answer execute(final LoadBalancerConfigCommand cmd) {
         Connection conn = getConnection();
-        String routerIp = cmd.getAccessDetail("router.ip");
+        String routerIp = cmd.getAccessDetail(RoutingCommand.ROUTER_IP);
 
         if (routerIp == null) {
             return new Answer(cmd);
@@ -1049,7 +1049,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
         String[] config = cfgtr.generateConfiguration(cmd);
         String[][] rules = cfgtr.generateFwRules(cmd);
-        String tmpCfgFilePath = "/tmp/" + cmd.getRouterIp().replace('.', '_') + ".cfg";
+        String tmpCfgFilePath = "/tmp/" + routerIp.replace('.', '_') + ".cfg";
         String tmpCfgFileContents = "";
         for (int i = 0; i < config.length; i++) {
             tmpCfgFileContents += config[i];

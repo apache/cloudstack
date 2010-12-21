@@ -123,8 +123,8 @@ public class VirtualRoutingResource implements Manager {
     }
 
     private Answer execute(SetPortForwardingRulesCommand cmd) {
-    	String routerIp = cmd.getAccessDetail("router.ip");
-        String routerName = cmd.getAccessDetail("router.name");
+    	String routerIp = cmd.getAccessDetail(RoutingCommand.ROUTER_IP);
+        String routerName = cmd.getAccessDetail(RoutingCommand.ROUTER_NAME);
 
         String[] results = new String[cmd.getRules().length];
         int i = 0;
@@ -147,7 +147,7 @@ public class VirtualRoutingResource implements Manager {
 	}
 
 	private Answer execute(LoadBalancerConfigCommand cmd) {
-
+		String routerIp = cmd.getAccessDetail(RoutingCommand.ROUTER_IP);
 		File tmpCfgFile = null;
     	try {
     		String cfgFilePath = "";
@@ -155,8 +155,8 @@ public class VirtualRoutingResource implements Manager {
     		LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
             String[] config = cfgtr.generateConfiguration(cmd);
             String[][] rules = cfgtr.generateFwRules(cmd);
-    		if (cmd.getRouterIp() != null) {
-    			tmpCfgFile = File.createTempFile(cmd.getRouterIp().replace('.', '_'), "cfg");
+    		if (routerIp != null) {
+    			tmpCfgFile = File.createTempFile(routerIp.replace('.', '_'), "cfg");
 				final PrintWriter out
 			   	= new PrintWriter(new BufferedWriter(new FileWriter(tmpCfgFile)));
 				for (int i=0; i < config.length; i++) {
@@ -164,7 +164,6 @@ public class VirtualRoutingResource implements Manager {
 				}
 				out.close();
 				cfgFilePath = tmpCfgFile.getAbsolutePath();
-				routerIP = cmd.getRouterIp();
     		}
 			
 			final String result = setLoadBalancerConfig(cfgFilePath,
