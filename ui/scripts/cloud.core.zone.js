@@ -693,12 +693,16 @@ function bindAddPodButton($button, $leftmenuItem1) {
 			            $thisDialog.find("#spinning_wheel").hide();
 			            $thisDialog.dialog("close");
 			            
-			            var item = json.createpodresponse.pod; 			            		            				    
-		                var template = $("#leftmenu_pod_node_template").clone(true);
-		                podJSONToTreeNode(item, template);	
-		                var $zoneNode = $("#leftmenu_zone_tree").find("#tree_container").find("#zone_" + zoneObj.id);	 
-		                $zoneNode.find("#pods_container").prepend(template.show());			
-		                template.fadeIn("slow");
+			            var item = json.createpodresponse.pod; 	
+		                var $zoneNode = $("#leftmenu_zone_tree").find("#tree_container").find("#zone_" + zoneObj.id);			                		                		                
+				        if($zoneNode.find("#zone_arrow").hasClass("expanded_open")) {
+				            var template = $("#leftmenu_pod_node_template").clone(true);
+		                    podJSONToTreeNode(item, template);	     
+				            $zoneNode.find("#pods_container").prepend(template.fadeIn("slow"));		
+				        }
+				        else {	
+		                    $zoneNode.find("#zone_arrow").click();  //expand zone node to show the newly added pod
+		                }			               
 		                    			                                    
                         forceLogout = false;  // We don't force a logout if pod(s) exit.
 				        if (forceLogout) {
@@ -711,11 +715,7 @@ function bindAddPodButton($button, $leftmenuItem1) {
 							        } 
 						        }).dialog("open");
 				        }
-				        
-				        //expand zone node to show the newly added pod
-				        if($zoneNode.find("#zone_arrow").hasClass("expanded_close"))
-				            $zoneNode.find("#zone_arrow").click();  
-				            
+				        	            
 				        //Create IP Range 
                         if($thisDialog.find("#guestip_container").css("display") != "none") {       
 		                    var netmask = $thisDialog.find("#guestnetmask").val();
