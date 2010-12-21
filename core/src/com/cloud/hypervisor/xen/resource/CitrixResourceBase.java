@@ -472,7 +472,9 @@ public abstract class CitrixResourceBase implements ServerResource {
         vifr.MAC = nic.getMac();
         
         Pair<Network, String> network = getNetworkForTraffic(conn, nic.getType());
-        if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
+        if (nic.getBroadcastUri() != null && nic.getBroadcastUri().toString().contains("untagged")) {
+        	vifr.network = Network.getByUuid(conn, _host.publicNetwork);
+        } else if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
             URI broadcastUri = nic.getBroadcastUri();
             assert broadcastUri.getScheme().equals(BroadcastDomainType.Vlan.scheme());
             long vlan = Long.parseLong(broadcastUri.getHost());

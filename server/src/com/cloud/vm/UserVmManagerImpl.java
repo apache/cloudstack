@@ -2484,15 +2484,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             Long singleNetworkId = null;
             SearchBuilder<NetworkVO> sb = _networkDao.createSearchBuilder();
             sb.and("broadcastDomainType", sb.entity().getId(), SearchCriteria.Op.EQ);
-            sb.and("dataCenterId", sb.entity().getName(), SearchCriteria.Op.LIKE);
+            sb.and("dataCenterId", sb.entity().getName(), SearchCriteria.Op.EQ);
             SearchCriteria<NetworkVO> sc = sb.create();
             sc.setParameters("broadcastDomainType", BroadcastDomainType.Native);
             sc.setParameters("dataCenterId", dc.getId());
 
             List<NetworkVO> networks = _networkDao.search(sc, null);
-            if (networks!= null && !networks.isEmpty()) {
+            if (networks!= null && networks.isEmpty()) {
                 throw new InvalidParameterValueException("Unable to find a network to start a vm");
             } else {
+            	networkList = new ArrayList<Long>();
                 singleNetworkId = networks.get(0).getId();
                 networkList.add(singleNetworkId);
             }

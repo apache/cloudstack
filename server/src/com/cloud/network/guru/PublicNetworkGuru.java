@@ -3,6 +3,8 @@
  */
 package com.cloud.network.guru;
 
+import java.net.URI;
+
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -76,9 +78,15 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setIp4Address(ip.getAddress());
             nic.setGateway(ip.getGateway());
             nic.setNetmask(ip.getNetmask());
-            nic.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
+            if(ip.getVlanTag().equalsIgnoreCase("untagged"))
+            	nic.setIsolationUri(URI.create("vlan://untagged"));
+            else	
+            	nic.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
             nic.setBroadcastType(BroadcastDomainType.Vlan);
-            nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
+            if(!ip.getVlanTag().equalsIgnoreCase("untagged"))
+            	nic.setBroadcastUri(URI.create("vlan://untagged"));
+            else
+            	nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
             nic.setFormat(AddressFormat.Ip4);
             nic.setReservationId(String.valueOf(ip.getVlanTag()));
             nic.setMacAddress(ip.getMacAddress());
