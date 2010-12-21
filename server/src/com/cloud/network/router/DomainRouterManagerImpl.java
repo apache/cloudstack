@@ -2132,6 +2132,14 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             //Send commands to router
             return sendCommandsToRouter(router, cmds);   
 
+        } else if (router.getState() == State.Stopped || router.getState() == State.Stopping){
+            s_logger.debug("Router is in " + router.getState() + ", so not sending apply LB rules commands to the backend");
+            return true;
+        } else {
+            s_logger.warn("Unable to apply load balancer rules, virtual router is not in the right state " + router.getState());
+            throw new ResourceUnavailableException("Unable to apply load balancer rules, domR is not in right state " + router.getState());
+        }
+
     }
     
     @Override
