@@ -213,6 +213,7 @@ function podJsonClearRightPanel(jsonObj) {
 
 function podJsonClearDetailsTab(jsonObj) {	    
     var $thisTab = $("#right_panel_content #tab_content_details");  
+    $thisTab.find("#grid_header_title").text("");    
     $thisTab.find("#id").text("");
     
     $thisTab.find("#name").text("");
