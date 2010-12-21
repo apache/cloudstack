@@ -512,63 +512,10 @@
                             </div>
                         </div>
                     </div>
-                    
+                    <form>
                     <div class="vmpopup_offeringpanel" id="service_offering_container">
-                        <!--
-                        <div class="vmpopup_offeringbox">
-                            <input type="radio" name="radiogroup" class="radio" />
-                            <label class="label">
-                                X-Large Instance</label>
-                            <div class="vmpopup_offdescriptionbox">
-                                <div class="vmpopup_offdescriptionbox_top">
-                                </div>
-                                <div class="vmpopup_offdescriptionbox_bot">
-                                    <p>
-                                        4 x 2.00 Ghz CPU, 16.00 GB of Memory, High Availability Enabled</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="vmpopup_offeringbox">
-                            <input type="radio" name="radiogroup" class="radio" />
-                            <label class="label">
-                                Large Instance</label>
-                            <div class="vmpopup_offdescriptionbox">
-                                <div class="vmpopup_offdescriptionbox_top">
-                                </div>
-                                <div class="vmpopup_offdescriptionbox_bot">
-                                    <p>
-                                        4 x 2.00 Ghz CPU, 16.00 GB of Memory, High Availability Enabled</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="vmpopup_offeringbox">
-                            <input type="radio" name="radiogroup" class="radio" />
-                            <label class="label">
-                                Medium Instance</label>
-                            <div class="vmpopup_offdescriptionbox">
-                                <div class="vmpopup_offdescriptionbox_top">
-                                </div>
-                                <div class="vmpopup_offdescriptionbox_bot">
-                                    <p>
-                                        4 x 2.00 Ghz CPU, 16.00 GB of Memory, High Availability Enabled</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="vmpopup_offeringbox">
-                            <input type="radio" name="radiogroup" class="radio" />
-                            <label class="label">
-                                Small Instance</label>
-                            <div class="vmpopup_offdescriptionbox">
-                                <div class="vmpopup_offdescriptionbox_top">
-                                </div>
-                                <div class="vmpopup_offdescriptionbox_bot">
-                                    <p>
-                                        4 x 2.00 Ghz CPU, 16.00 GB of Memory, High Availability Enabled</p>
-                                </div>
-                            </div>
-                        </div>
-                        -->
                     </div>
+					</form>
                 </div>
                 <div class="vmpopup_navigationpanel">
                     <div class="vmpop_prevbutton" id="prev_step">
@@ -620,11 +567,14 @@
                             </div>
                         </div>
                     </div>
-                    
+                    <form>
                     <div class="vmpopup_offeringpanel" id="data_disk_offering_container" style="display: none">
                     </div>
+					</form>
+					<form>
                     <div class="vmpopup_offeringpanel" id="root_disk_offering_container" style="display: none">
                     </div>
+					</form>
                 </div>
                 <div class="vmpopup_navigationpanel">
                     <div class="vmpop_prevbutton" id="prev_step">
@@ -915,52 +865,60 @@
 <!-- VM Wizard - ISO template (end) -->
 
 <!-- VM Wizard - Service Offering template (begin) -->
-<div class="vmpopup_offeringbox" id="vm_popup_service_offering_template" style="display: none">
-    <input type="radio" name="service_offering_radio" class="radio" checked />
-    <label class="label" id="name">
-    </label>
-    <div class="vmpopup_offdescriptionbox">
-        <div class="vmpopup_offdescriptionbox_top">
-        </div>
-        <div class="vmpopup_offdescriptionbox_bot">
-            <p id="description">
-            </p>
-        </div>
-    </div>
+<div id="vm_popup_service_offering_template" style="display: none">
+	<div class="vmpopup_offeringbox">
+		<input type="radio" name="service_offering_radio" class="radio" checked />
+		<label class="label" id="name">
+		</label>
+		<div class="vmpopup_offdescriptionbox">
+			<div class="vmpopup_offdescriptionbox_top">
+			</div>
+			<div class="vmpopup_offdescriptionbox_bot">
+				<p id="description">
+				</p>
+			</div>
+		</div>
+	</div>
 </div>
 <!-- VM Wizard - Service Offering template (end) -->
 <!-- VM Wizard - disk Offering template (begin)-->
-<div class="vmpopup_offeringbox" id="vm_popup_disk_offering_template_no" style="display: none">
-    <input type="radio" class="radio" value="no" checked="checked" >
-    <label class="label">
-        No Thanks</label>
+<div id="vm_popup_disk_offering_template_no" style="display: none">
+	<div class="vmpopup_offeringbox">
+		<input type="radio" name="data_disk_offering_radio" class="radio" value="no" checked />
+		<label class="label">
+			No Thanks</label>
+	</div>
 </div>
-<div class="vmpopup_offeringbox" id="vm_popup_disk_offering_template_custom" style="display: none">
-    <input type="radio" class="radio" value="custom" checked="checked">
-    <label class="label" id="name">
-    </label>
-    <div class="vmpopup_offdescriptionbox_bot" style="background:none; border:none;">
-        <label class="label1" style="margin-left:33px; display:inline;">
-            Disk Size:</label>
-        <input type="text" id="custom_disk_size" class="text" />
-        <span>GB</span>
-       
-        <div id="custom_disk_size_errormsg" class="errormsg" style="display: none; margin-left:89px; display:inline;">
-        </div>
-     </div>
+<div id="vm_popup_disk_offering_template_custom" style="display: none">
+	<div class="vmpopup_offeringbox" >
+		<input type="radio" name="data_disk_offering_radio" checked class="radio" value="custom" />
+		<label class="label" id="name">
+		</label>
+		<div class="vmpopup_offdescriptionbox_bot" style="background:none; border:none;">
+			<label class="label1" style="margin-left:33px; display:inline;">
+				Disk Size:</label>
+			<input type="text" id="custom_disk_size" class="text" />
+			<span>GB</span>
+		   
+			<div id="custom_disk_size_errormsg" class="errormsg" style="display: none; margin-left:89px; display:inline;">
+			</div>
+		 </div>
+	</div>
 </div>
-<div class="vmpopup_offeringbox" id="vm_popup_disk_offering_template_existing" style="display: none">
-    <input type="radio" class="radio" checked="checked">
-    <label class="label" id="name">
-    </label>
-    <div class="vmpopup_offdescriptionbox">
-        <div class="vmpopup_offdescriptionbox_top">
-        </div>
-        <div class="vmpopup_offdescriptionbox_bot">
-            <p id="description">
-            </p>
-        </div>
-    </div>
+<div id="vm_popup_disk_offering_template_existing" style="display: none">
+	<div class="vmpopup_offeringbox" >
+		<input type="radio" name="data_disk_offering_radio" class="radio" checked />
+		<label class="label" id="name">
+		</label>
+		<div class="vmpopup_offdescriptionbox">
+			<div class="vmpopup_offdescriptionbox_top">
+			</div>
+			<div class="vmpopup_offdescriptionbox_bot">
+				<p id="description">
+				</p>
+			</div>
+		</div>
+	</div>
 </div>
 <!-- VM Wizard - disk Offering template (end)-->
 

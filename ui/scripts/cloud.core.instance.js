@@ -90,7 +90,7 @@ function instanceBuildSubMenu2(label, commandString) {
     $("#leftmenu_instance_group_container").append($newSubMenu.show());
 }
 
-var $doTemplateNo, $doTemplateCustom,$doTemplateExisting;
+var $doTemplateNo, $doTemplateCustom,$doTemplateExisting, $soTemplate;
 var init = false;
 var $selectedVmWizardTemplate;	
 function afterLoadInstanceJSP() {
@@ -98,7 +98,8 @@ function afterLoadInstanceJSP() {
 		//initialize VM Wizard  
 		$doTemplateNo = $("#vm_popup_disk_offering_template_no");
 		$doTemplateCustom = $("#vm_popup_disk_offering_template_custom");
-		$doTemplateExisting = $("#vm_popup_disk_offering_template_existing");		
+		$doTemplateExisting = $("#vm_popup_disk_offering_template_existing");
+		$soTemplate = $("#vm_popup_service_offering_template");
 		vmPopulateDropdown();
 		init = true;
 	}
@@ -397,17 +398,14 @@ function initVMWizard() {
 			    $container.empty();					    
 			    if (offerings != null && offerings.length > 0) {						    
 				    for (var i = 0; i < offerings.length; i++) {	
-					    var $t = $("#vm_popup_service_offering_template").clone();  						  
+					    var $t = $soTemplate.clone();  						  
 					    $t.find("input:radio[name=service_offering_radio]").val(offerings[i].id); 
 					    $t.find("#name").text(fromdb(offerings[i].name));
 					    $t.find("#description").text(fromdb(offerings[i].displaytext)); 						    
 					    if (i > 0)
 					        $t.find("input:radio[name=service_offering_radio]").removeAttr("checked");							
-					    $container.append($t.show());	
+					    $container.append($t.html());	
 				    }
-				    //Safari and Chrome are not smart enough to make checkbox checked if html markup is appended by JQuery.append(). So, the following 2 lines are added.		
-			        var html_all = $container.html();        
-                    $container.html(html_all); 
 			    }
 		    }
 		});
@@ -422,10 +420,8 @@ function initVMWizard() {
 		        var $rootDiskOfferingContainer = $("#root_disk_offering_container").empty();
 		        
 		        //***** data disk offering: "no, thanks", "custom", existing disk offerings in database (begin) ****************************************************
-		        //"no, thanks" radio button (default radio button in data disk offering)		               
-	            var $t = $doTemplateNo.clone(); 		            	     
-	            $t.find("input:radio").attr("name","data_disk_offering_radio");  
-	            $dataDiskOfferingContainer.append($t.show()); 
+		        //"no, thanks" radio button (default radio button in data disk offering)
+	            $dataDiskOfferingContainer.append($doTemplateNo.clone().html()); 
 		        		        
 		        //disk offerings from database
 		        if (offerings != null && offerings.length > 0) {						    
@@ -436,21 +432,16 @@ function initVMWizard() {
 			            else 
 				            $t = $doTemplateExisting.clone(); 	
 				        
-				        $t.data("jsonObj", offerings[i]).attr("id", "do"+offerings[i].id);				        
-				        $t.find("input:radio").attr("name","data_disk_offering_radio").removeAttr("checked").val(fromdb(offerings[i].id));	 	
+				        $t.data("jsonObj", offerings[i]);				        
+				        $t.find("input:radio[name=data_disk_offering_radio]").removeAttr("checked").val(fromdb(offerings[i].id));	
 			            $t.find("#name").text(fromdb(offerings[i].name));
-			            $t.find("#description").text(fromdb(offerings[i].displaytext)); 	 
-			            $dataDiskOfferingContainer.append($t.show());	
+			            $t.find("#description").text(fromdb(offerings[i].displaytext)); 
+			            $dataDiskOfferingContainer.append($t.html());	
 			        }
 		        }
-		        
-		        //Safari and Chrome are not smart enough to make checkbox checked if html markup is appended by JQuery.append(). So, the following 2 lines are added.		
-	            var html_all = $dataDiskOfferingContainer.html();        
-                $dataDiskOfferingContainer.html(html_all);                     
 		        //***** data disk offering: "no, thanks", "custom", existing disk offerings in database (end) *******************************************************
 		        		        	
 		        //***** root disk offering: "custom", existing disk offerings in database (begin) *******************************************************************
-		        		        
 		        //disk offerings from database
 		        if (offerings != null && offerings.length > 0) {						    
 			        for (var i = 0; i < offerings.length; i++) {	
@@ -461,19 +452,15 @@ function initVMWizard() {
 				            $t = $doTemplateExisting.clone(); 	
 				        
 				        $t.data("jsonObj", offerings[i]).attr("id", "do"+offerings[i].id);	
-				        var $offering = $t.find("input:radio").attr("name","root_disk_offering_radio").val(offerings[i].id);	 
+				        var $offering = $t.find("input:radio").val(offerings[i].id);	 
 				        if(i > 0) {
 				            $offering.removeAttr("checked");	
 						}
 				        $t.find("#name").text(fromdb(offerings[i].name));
 				        $t.find("#description").text(fromdb(offerings[i].displaytext)); 	 
-				        $rootDiskOfferingContainer.append($t.show());	
+				        $rootDiskOfferingContainer.append($t.html());	
 			        }
 		        }
-			    
-			    //Safari and Chrome are not smart enough to make checkbox checked if html markup is appended by JQuery.append(). So, the following 2 lines are added.		
-	            var html_all = $rootDiskOfferingContainer.html();        
-                $rootDiskOfferingContainer.html(html_all);                         
 			    //***** root disk offering: "custom", existing disk offerings in database (end) *********************************************************************	
 		    }
 	    });	
@@ -809,13 +796,13 @@ function initVMWizard() {
 	        }
 	        else {  //*** ISO ***	            
 	            // prevent a person from moving on if no disk offering is selected
-	            if($thisPopup.find("input:radio[name=root_disk_offering_radio]:checked").length == 0) {
+	            if($thisPopup.find("input:radio[name=data_disk_offering_radio]:checked").length == 0) {
 	                $thisPopup.find("#step3 #wiz_message #wiz_message_text").text("Please select a disk offering to continue");
 	                $thisPopup.find("#step3 #wiz_message").show();
 		            return false;
 		        }   
 	            $thisPopup.find("#wizard_review_disk_offering_label").text("Root Disk Offering:");
-	            var checkedRadioButton = $thisPopup.find("#root_disk_offering_container input[name=root_disk_offering_radio]:checked");	
+	            var checkedRadioButton = $thisPopup.find("#root_disk_offering_container input[name=data_disk_offering_radio]:checked");	
 		    }
 		          		        
 	        var $diskOfferingElement = checkedRadioButton.parent();	        	    
@@ -998,8 +985,8 @@ function initVMWizard() {
 			
 			var diskOfferingId, $diskOfferingElement;    						
 		    if ($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut")) {  //ISO
-		        diskOfferingId = $thisPopup.find("#root_disk_offering_container input[name=root_disk_offering_radio]:checked").val();	
-		        $diskOfferingElement = $thisPopup.find("#root_disk_offering_container input[name=root_disk_offering_radio]:checked").parent();
+		        diskOfferingId = $thisPopup.find("#root_disk_offering_container input[name=data_disk_offering_radio]:checked").val();	
+		        $diskOfferingElement = $thisPopup.find("#root_disk_offering_container input[name=data_disk_offering_radio]:checked").parent();
 		    }
 		    else { //template
 		        diskOfferingId = $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked").val();	
