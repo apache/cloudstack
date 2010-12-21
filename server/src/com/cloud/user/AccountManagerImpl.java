@@ -855,7 +855,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Found " + ips.size() + " public IP addresses for account with ID " + accountId);
                 }
-
+                
                 for (IPAddressVO ip : ips) {
                     List<PodVlanMapVO> podVlanMaps = _podVlanMapDao.listPodVlanMapsByVlan(ip.getVlanId());
                     if (podVlanMaps != null && podVlanMaps.size() != 0) {

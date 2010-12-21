@@ -2079,13 +2079,20 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
     public boolean associateIP (Network network, List<? extends PublicIpAddress> ipAddress) {
         DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
         if (router == null) {
+            //Return true only when domR entry exists, has Destroyed state and not null Removed field 
+            //because it happens just in case when this method is called as a part of account cleanup.
+            //In all other cases return false
+            router = _routerDao.findByNetworkConfigurationIncludingRemoved(network.getId());
+            if (router != null && router.getState() == State.Destroyed && router.isRemoved()) {
+                return true;
+            }
             s_logger.warn("Unable to associate ip addresses, virtual router doesn't exist in the network " + network.getId());
             throw new ResourceUnavailableException("Unable to assign ip addresses");
         }
         
         if (router.getState() == State.Running || router.getState() == State.Starting) {
             Commands cmds = new Commands(OnError.Continue);
-            //We have to resend all already associated ip addresses
+            //Have to resend all already associated ip addresses
             cmds = getAssociateIPCommands(router, ipAddress, cmds, 0);
             
             return sendCommandsToRouter(router, cmds);

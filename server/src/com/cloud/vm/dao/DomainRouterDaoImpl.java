@@ -36,7 +36,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
@@ -315,6 +314,14 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         SearchCriteria<DomainRouterVO> sc = NetworkConfigSearch.create();
         sc.setParameters("network", networkConfigurationId);
         return findOneBy(sc);
+    }
+    
+    
+    @Override
+    public DomainRouterVO findByNetworkConfigurationIncludingRemoved(long networkConfigurationId) {
+        SearchCriteria<DomainRouterVO> sc = NetworkConfigSearch.create();
+        sc.setParameters("network", networkConfigurationId);
+        return findOneIncludingRemovedBy(sc);
     }
 
     @Override

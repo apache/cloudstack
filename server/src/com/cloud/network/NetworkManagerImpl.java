@@ -1902,17 +1902,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
-        //for regular user don't allow to remove network when it's in any other states but allocated
-        if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-            if (network.getState() != Network.State.Allocated) {
-                throw new InvalidParameterValueException("Non-admin user can delete network in " + Network.State.Allocated + " state only.");
-            }    
-        } else {
-            if (!(network.getState() == Network.State.Allocated || network.getState() == Network.State.Setup)) {
-                throw new InvalidParameterValueException("Can delete network in " + Network.State.Allocated + " and " + Network.State.Setup + " states only.");
-            }    
-        }
-        
         //remove all the vlans associated with the network
         Transaction txn = Transaction.currentTxn();
         try {

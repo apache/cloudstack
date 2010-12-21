@@ -1101,6 +1101,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         Transaction txn = Transaction.currentTxn();
         try {
+            txn.start();
             // Create the new zone in the database
             DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain, domainId, zoneType);
             zone = _zoneDao.persist(zone);
