@@ -1040,12 +1040,12 @@ public abstract class CitrixResourceBase implements ServerResource {
     
     protected Answer execute(final LoadBalancerConfigCommand cmd) {
         Connection conn = getConnection();
-        String routerIp = cmd.getRouterIp();
+        String routerIp = cmd.getAccessDetail("router.ip");
 
         if (routerIp == null) {
             return new Answer(cmd);
         }
-
+        
         LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
         String[] config = cfgtr.generateConfiguration(cmd);
         String[][] rules = cfgtr.generateFwRules(cmd);
