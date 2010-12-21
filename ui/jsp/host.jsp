@@ -25,11 +25,11 @@
         <div class="content_tabs off" id="tab_primarystorage">
             Primary Storage</div>       
         <div class="content_tabs off" id="tab_instance">
-            <%=t.t("instance")%></div>
+            Instances</div>
         <div class="content_tabs off" id="tab_router">
-            <%=t.t("router")%></div>
+            Virtual Appliances</div>
         <div class="content_tabs off" id="tab_systemvm">
-            <%=t.t("system.vm")%></div>
+            System VMs</div>
         <div class="content_tabs off" id="tab_statistics">
             <%=t.t("statistics")%></div>
     </div>
@@ -565,6 +565,7 @@
             </div>
         </div>
     </div>
+	<!--
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
@@ -575,6 +576,7 @@
             </div>
         </div>
     </div>
+	-->
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
