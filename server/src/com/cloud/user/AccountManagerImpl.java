@@ -70,7 +70,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.router.DomainRouterManager;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.server.Criteria;
 import com.cloud.storage.StorageManager;
@@ -128,7 +128,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 	@Inject private StorageManager _storageMgr;
 	@Inject private TemplateManager _tmpltMgr;
 	@Inject private ConfigurationManager _configMgr;
-	@Inject private DomainRouterManager _routerMgr;
+	@Inject private VirtualNetworkApplianceManager _routerMgr;
 	
 	private final GlobalLock m_resourceCountLock = GlobalLock.getInternLock("resource.count");
 	

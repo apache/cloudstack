@@ -70,7 +70,7 @@ import com.cloud.network.dao.NetworkRuleConfigDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
 import com.cloud.network.lb.LoadBalancingRulesManagerImpl;
-import com.cloud.network.router.DomainRouterManagerImpl;
+import com.cloud.network.router.VirtualNetworkApplianceManagerImpl;
 import com.cloud.network.rules.RulesManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
 import com.cloud.network.security.SecurityGroupManagerImpl;
@@ -280,7 +280,7 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addManager("SnapshotScheduler", SnapshotSchedulerImpl.class);
         addManager("SecurityGroupManager", SecurityGroupManagerImpl.class);
         addManager("VmManager", VirtualMachineManagerImpl.class);
-        addManager("DomainRouterManager", DomainRouterManagerImpl.class);
+        addManager("DomainRouterManager", VirtualNetworkApplianceManagerImpl.class);
         addManager("EntityManager", EntityManagerImpl.class);
         addManager("LoadBalancingRulesManager", LoadBalancingRulesManagerImpl.class);
         addManager("RulesManager", RulesManagerImpl.class);

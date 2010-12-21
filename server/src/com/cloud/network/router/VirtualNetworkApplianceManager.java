@@ -45,7 +45,7 @@ import com.cloud.vm.VirtualMachineProfile;
  * NetworkManager manages the network for the different end users.
  *
  */
-public interface DomainRouterManager extends Manager {
+public interface VirtualNetworkApplianceManager extends Manager {
     public static final int DEFAULT_ROUTER_VM_RAMSIZE = 128;            // 128M
     public static final boolean USE_POD_VLAN = false;
     /**

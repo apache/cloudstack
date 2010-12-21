@@ -130,7 +130,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.router.DomainRouterManager;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.offering.NetworkOffering;
@@ -249,7 +249,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject InstanceGroupVMMapDao _groupVMMapDao;
     @Inject VirtualMachineManager _itMgr;
     @Inject NetworkDao _networkDao;
-    @Inject DomainRouterManager _routerMgr;
+    @Inject VirtualNetworkApplianceManager _routerMgr;
     @Inject NicDao _nicDao;
     @Inject RulesManager _rulesMgr;
     

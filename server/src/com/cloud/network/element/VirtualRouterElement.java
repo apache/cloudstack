@@ -39,7 +39,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.router.DomainRouterManager;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.service.Providers;
@@ -62,14 +62,14 @@ import com.cloud.vm.dao.UserVmDao;
 
 
 @Local(value=NetworkElement.class)
-public class DomainRouterElement extends AdapterBase implements NetworkElement {
-    private static final Logger s_logger = Logger.getLogger(DomainRouterElement.class);
+public class VirtualRouterElement extends AdapterBase implements NetworkElement {
+    private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
     
     @Inject NetworkDao _networkConfigDao;
     @Inject NetworkManager _networkMgr;
     @Inject LoadBalancingRulesManager _lbMgr;
     @Inject NetworkOfferingDao _networkOfferingDao;
-    @Inject DomainRouterManager _routerMgr;
+    @Inject VirtualNetworkApplianceManager _routerMgr;
     @Inject UserVmManager _userVmMgr;
     @Inject UserVmDao _userVmDao;
     @Inject DomainRouterDao _routerDao;

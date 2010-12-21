@@ -76,7 +76,7 @@
             <adapter name="First Fit" class="com.cloud.deploy.FirstFitPlanner"/>
         </adapters>
         <adapters key="com.cloud.network.element.NetworkElement">
-            <adapter name="DomainRouter" class="com.cloud.network.element.DomainRouterElement"/>
+            <adapter name="DomainRouter" class="com.cloud.network.element.VirtualRouterElement"/>
             <adapter name="Dhcp" class="com.cloud.network.element.DhcpElement"/>
         </adapters>
         <adapters key="com.cloud.acl.SecurityChecker">

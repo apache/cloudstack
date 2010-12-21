@@ -77,16 +77,12 @@ import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Vlan;
-import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
@@ -107,7 +103,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.DomainRouterService;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
@@ -119,6 +114,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.SshKeysDistriMonitor;
+import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
@@ -152,7 +148,6 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
-import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
@@ -169,7 +164,6 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -186,11 +180,12 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 
 /**
- * NetworkManagerImpl implements NetworkManager.
+ * VirtualNetworkApplianceManagerImpl manages the different types of
+ * virtual network appliances available in the Cloud Stack.
  */
-@Local(value = { DomainRouterManager.class, DomainRouterService.class })
-public class DomainRouterManagerImpl implements DomainRouterManager, DomainRouterService, VirtualMachineGuru<DomainRouterVO> {
-    private static final Logger s_logger = Logger.getLogger(DomainRouterManagerImpl.class);
+@Local(value = { VirtualNetworkApplianceManager.class, VirtualNetworkApplianceService.class })
+public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService, VirtualMachineGuru<DomainRouterVO> {
+    private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
 
     String _name;
     @Inject
@@ -333,126 +328,6 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
             return true;
         } else {
             return false;
-        }
-    }
-
-    @DB
-    public DomainRouterVO createDhcpServerForDirectlyAttachedGuests(long userId, long accountId, DataCenterVO dc, HostPodVO pod, Long candidateHost,
-            VlanVO guestVlan) throws ConcurrentOperationException {
-
-        final AccountVO account = _accountDao.findById(accountId);
-        boolean podVlan = guestVlan.getVlanType().equals(VlanType.DirectAttached) && guestVlan.getVlanTag().equals(Vlan.UNTAGGED);
-        long accountIdForDHCPServer = podVlan ? Account.ACCOUNT_ID_SYSTEM : accountId;
-        long domainIdForDHCPServer = podVlan ? DomainVO.ROOT_DOMAIN : account.getDomainId();
-        String domainNameForDHCPServer = podVlan ? "root" : _domainDao.findById(account.getDomainId()).getName();
-
-        final VMTemplateVO rtrTemplate = _templateDao.findRoutingTemplate();
-
-        final Transaction txn = Transaction.currentTxn();
-        DomainRouterVO router = null;
-        Long podId = pod.getId();
-        pod = _podDao.acquireInLockTable(podId, 20 * 60);
-        if (pod == null) {
-            throw new ConcurrentOperationException("Unable to acquire lock on pod " + podId);
-        }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Lock on pod " + podId + " is acquired");
-        }
-
-        final long id = _routerDao.getNextInSequence(Long.class, "id");
-        final String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(dc.getId());
-        final String mgmtMacAddress = macAddresses[0];
-        final String guestMacAddress = macAddresses[1];
-        final String name = VirtualMachineName.getRouterName(id, _instance).intern();
-
-        boolean routerLockAcquired = false;
-        try {
-            List<DomainRouterVO> rtrs = _routerDao.listByVlanDbId(guestVlan.getId());
-            assert rtrs.size() < 2 : "How did we get more than one router per vlan?";
-            if (rtrs.size() == 1) {
-                return rtrs.get(0);
-            }
-            String mgmtNetmask = NetUtils.getCidrNetmask(pod.getCidrSize());
-            final String guestIp = null;// _ipAddressDao.assignIpAddress(accountIdForDHCPServer,
-                                        // domainIdForDHCPServer,
-                                        // guestVlan.getId(),
-                                        // false).getAddress();
-
-            router = new DomainRouterVO(id, _offering.getId(), name, mgmtMacAddress, null, mgmtNetmask, _routerTemplateId,
-                    rtrTemplate.getGuestOSId(), guestMacAddress, guestIp, guestVlan.getVlanNetmask(), accountIdForDHCPServer, domainIdForDHCPServer,
-                    "FE:FF:FF:FF:FF:FF", null, "255.255.255.255", guestVlan.getId(), guestVlan.getVlanTag(), pod.getId(), dc.getId(), _routerRamSize,
-                    guestVlan.getVlanGateway(), domainNameForDHCPServer, dc.getDns1(), dc.getDns2());
-            router.setRole(Role.DHCP_USERDATA);
-            router.setVnet(guestVlan.getVlanTag());
-
-            router.setLastHostId(candidateHost);
-
-            txn.start();
-            router = _routerDao.persist(router);
-            router = _routerDao.acquireInLockTable(router.getId());
-            if (router == null) {
-                s_logger.debug("Unable to acquire lock on router " + id);
-                throw new CloudRuntimeException("Unable to acquire lock on router " + id);
-            }
-
-            routerLockAcquired = true;
-
-            txn.commit();
-
-            List<VolumeVO> vols = _storageMgr.create(account, router, rtrTemplate, dc, pod, _offering, null, 0);
-            if (vols == null) {
-                _ipAddressDao.unassignIpAddress(guestIp);
-                _routerDao.expunge(router.getId());
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to create dhcp server in storage host or pool in pod " + pod.getName() + " (id:" + pod.getId() + ")");
-                }
-            }
-
-            final EventVO event = new EventVO();
-            event.setUserId(userId);
-            event.setAccountId(accountIdForDHCPServer);
-            event.setType(EventTypes.EVENT_ROUTER_CREATE);
-
-            if (vols == null) {
-                event.setDescription("failed to create DHCP Server : " + router.getName());
-                event.setLevel(EventVO.LEVEL_ERROR);
-                _eventDao.persist(event);
-                throw new ExecutionException("Unable to create DHCP Server");
-            }
-            _itMgr.stateTransitTo(router, VirtualMachine.Event.OperationSucceeded, null);
-
-            s_logger.info("DHCP server created: id=" + router.getId() + "; name=" + router.getName() + "; vlan=" + guestVlan.getVlanTag() + "; pod="
-                    + pod.getName());
-
-            event.setDescription("successfully created DHCP Server : " + router.getName() + " with ip : " + router.getGuestIpAddress());
-            _eventDao.persist(event);
-
-            return router;
-        } catch (final Throwable th) {
-            if (th instanceof ExecutionException) {
-                s_logger.error("Error while starting router due to " + th.getMessage());
-            } else {
-                s_logger.error("Unable to create router", th);
-            }
-            txn.rollback();
-
-            if (router.getState() == State.Creating) {
-                _routerDao.expunge(router.getId());
-            }
-            return null;
-        } finally {
-            if (routerLockAcquired) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Releasing lock on router " + id);
-                }
-                _routerDao.releaseFromLockTable(id);
-            }
-            if (pod != null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Releasing lock on pod " + podId);
-                }
-                _podDao.releaseFromLockTable(pod.getId());
-            }
         }
     }
 
@@ -1052,7 +927,7 @@ public class DomainRouterManagerImpl implements DomainRouterManager, DomainRoute
         return true;
     }
 
-    protected DomainRouterManagerImpl() {
+    protected VirtualNetworkApplianceManagerImpl() {
     }
 
     @Override

@@ -36,16 +36,16 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.router.DomainRouterManager;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 
 
 
 public class SshKeysDistriMonitor implements Listener {
 	  private static final Logger s_logger = Logger.getLogger(SshKeysDistriMonitor.class);
-		private final DomainRouterManager _routerMgr;
+		private final VirtualNetworkApplianceManager _routerMgr;
 		private final HostDao _hostDao;
 		private ConfigurationDao _configDao;
-	    public SshKeysDistriMonitor(DomainRouterManager mgr, HostDao host, ConfigurationDao config) {
+	    public SshKeysDistriMonitor(VirtualNetworkApplianceManager mgr, HostDao host, ConfigurationDao config) {
 	    	this._routerMgr = mgr;
 	    	_hostDao = host;
 	    	_configDao = config;

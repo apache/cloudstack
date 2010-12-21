@@ -32,7 +32,7 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.router.DomainRouterManager;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.service.Providers;
 import com.cloud.offering.NetworkOffering;
@@ -56,7 +56,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement {
     
     @Inject NetworkDao _networkConfigDao;
     @Inject NetworkManager _networkMgr;
-    @Inject DomainRouterManager _routerMgr;
+    @Inject VirtualNetworkApplianceManager _routerMgr;
     @Inject UserVmManager _userVmMgr;
     @Inject UserVmDao _userVmDao;
     @Inject DomainRouterDao _routerDao;

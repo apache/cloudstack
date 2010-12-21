@@ -34,7 +34,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.DomainRouterService;
+import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.NetworkService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
@@ -99,7 +99,7 @@ public abstract class BaseCmd {
     public static SecurityGroupService _securityGroupMgr;
     public static SnapshotService _snapshotMgr;
     public static ConsoleProxyService _consoleProxyMgr;
-    public static DomainRouterService _routerService;
+    public static VirtualNetworkApplianceService _routerService;
     public static ResponseGenerator _responseGenerator;
     public static EntityManager _entityMgr;
     public static RulesService _rulesService;
@@ -119,7 +119,7 @@ public abstract class BaseCmd {
         _securityGroupMgr = locator.getManager(SecurityGroupService.class);
         _snapshotMgr = locator.getManager(SnapshotService.class);
         _consoleProxyMgr = locator.getManager(ConsoleProxyService.class);
-        _routerService = locator.getManager(DomainRouterService.class);
+        _routerService = locator.getManager(VirtualNetworkApplianceService.class);
         _entityMgr = locator.getManager(EntityManager.class);
         _rulesService = locator.getManager(RulesService.class);
         _lbService = locator.getManager(LoadBalancingRulesService.class);

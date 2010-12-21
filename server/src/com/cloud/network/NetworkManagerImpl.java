@@ -101,7 +101,7 @@ import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.router.DomainRouterManager;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
@@ -182,7 +182,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject NicDao _nicDao = null;
     @Inject RemoteAccessVpnDao _remoteAccessVpnDao = null;
     @Inject VpnUserDao _vpnUsersDao = null;
-    @Inject DomainRouterManager _routerMgr;
+    @Inject VirtualNetworkApplianceManager _routerMgr;
     @Inject RulesManager _rulesMgr;
     @Inject LoadBalancingRulesManager _lbMgr;
     @Inject FirewallRulesDao _firewallRulesDao;

@@ -3177,11 +3177,11 @@ public abstract class CitrixResourceBase implements ServerResource {
             }
             long avail = cap - lvmsr.getPhysicalUtilisation(conn);
             lvmsr.setNameLabel(conn, lvmuuid);
-            String name = "VMOps local storage pool in host : " + _host.uuid;
+            String name = "Cloud Stack Local Storage Pool for " + _host.uuid;
             lvmsr.setNameDescription(conn, name);
             Host host = Host.getByUuid(conn, _host.uuid);
             String address = host.getAddress(conn);
-            StoragePoolInfo pInfo = new StoragePoolInfo(name, address, SRType.LVM.toString(), SRType.LVM.toString(), StoragePoolType.LVM, cap, avail);
+            StoragePoolInfo pInfo = new StoragePoolInfo(lvmuuid, address, SRType.LVM.toString(), SRType.LVM.toString(), StoragePoolType.LVM, cap, avail);
             StartupStorageCommand cmd = new StartupStorageCommand();
             cmd.setPoolInfo(pInfo);
             cmd.setGuid(_host.uuid);

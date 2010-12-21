@@ -591,8 +591,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         if(cmd.getClusterType() != null && !cmd.getClusterType().isEmpty()) {
         	clusterType = Cluster.ClusterType.valueOf(cmd.getClusterType());
         }
-        if(clusterType == null)
-        	clusterType = Cluster.ClusterType.CloudManaged;
+        if(clusterType == null) {
+            clusterType = Cluster.ClusterType.CloudManaged;
+        }
         
         Discoverer discoverer = getMatchingDiscover(hypervisorType);
         if(discoverer == null) {
@@ -616,8 +617,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             clusterId = cluster.getId();
         }
         
-        if(clusterType == Cluster.ClusterType.CloudManaged)
-        	return _hostDao.listByCluster(clusterId);
+        if(clusterType == Cluster.ClusterType.CloudManaged) {
+            return _hostDao.listByCluster(clusterId);
+        }
         
         boolean success = false;
         try {
@@ -669,8 +671,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         Enumeration<Discoverer> en = _discoverers.enumeration();
         while (en.hasMoreElements()) {
             Discoverer discoverer = en.nextElement();
-        	if(discoverer.getHypervisorType() == hypervisorType)
-        		return discoverer;
+        	if(discoverer.getHypervisorType() == hypervisorType) {
+                return discoverer;
+            }
     	}
         return null;
     }
@@ -772,8 +775,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         while (en.hasMoreElements()) {
             Discoverer discoverer = en.nextElement();
             if(hypervisorType != null) {
-            	if(!discoverer.matchHypervisor(hypervisorType))
-            		continue;
+            	if(!discoverer.matchHypervisor(hypervisorType)) {
+                    continue;
+                }
             }
             
             Map<? extends ServerResource, Map<String, String>> resources = null;
@@ -1376,22 +1380,18 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         }
         if (host.getClusterId() != null) {
             params.put("cluster", Long.toString(host.getClusterId()));
+            String guid = null;
+            ClusterVO cluster = _clusterDao.findById(host.getClusterId());
+           if ( cluster.getGuid() == null ) {
+               guid = host.getDetail("pool");
+           } else {
+               guid = cluster.getGuid();           
+           }
+           if( guid == null || guid.isEmpty() ) {
+               throw new CloudRuntimeException("Can not find guid for cluster " + cluster.getId() + " name " + cluster.getName());
+           }
+           params.put("pool", guid);
         }
-        
-        String guid = null;
-        ClusterVO cluster = _clusterDao.findById(host.getClusterId());
-        if(cluster.getHypervisorType() == Hypervisor.HypervisorType.XenServer) {
-	        if ( cluster.getGuid() == null ) {
-	            guid = host.getDetail("pool");
-	        } else {
-	            guid = cluster.getGuid();           
-	        }
-	        if( guid == null || guid.isEmpty() ) {
-	            throw new CloudRuntimeException("Can not find guid for cluster " + cluster.getId() + " name " + cluster.getName());
-	        }
-	        params.put("pool", guid);
-        }
-        
         
         params.put("ipaddress", host.getPrivateIpAddress());
         params.put("secondary.storage.vm", "false");
@@ -1904,6 +1904,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         }
     }
     
+    @Override
     public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails) {
     	// Check if the zone exists in the system
         if (_dcDao.findById(zoneId) == null ){
@@ -1911,7 +1912,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         }
         
         Map<String, String> details = hostDetails;
-        String guid = (String) details.get("guid");
+        String guid = details.get("guid");
         List<HostVO> currentHosts = _hostDao.listBy(hostType, zoneId);
         for (HostVO currentHost : currentHosts) {
         	if (currentHost.getGuid().equals(guid)) {

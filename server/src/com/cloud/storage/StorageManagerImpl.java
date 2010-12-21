@@ -111,7 +111,7 @@ import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.router.DomainRouterManager;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -210,7 +210,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Inject protected DomainDao _domainDao;
     @Inject protected UserDao _userDao;
     @Inject protected ClusterDao _clusterDao;
-    @Inject protected DomainRouterManager _routerMgr;
+    @Inject protected VirtualNetworkApplianceManager _routerMgr;
     
     @Inject(adapter=StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
@@ -2783,13 +2783,14 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
             Pair<VolumeTO, StoragePool> created = createVolume(newVol, _diskOfferingDao.findById(newVol.getDiskOfferingId()), vm, vols, dest);
             if (created == null) {
+                long poolId = newVol.getPoolId();
                 newVol.setPoolId(null);
                 try {
                     _volsDao.update(newVol, Volume.Event.OperationFailed);
                 } catch (ConcurrentOperationException e) {
                     throw new CloudRuntimeException("Unable to update the failure on a volume: " + newVol, e);
                 }
-                throw new StorageUnavailableException("Unable to create " + newVol, newVol.getPoolId());
+                throw new StorageUnavailableException("Unable to create " + newVol, poolId);
             }
             created.first().setDeviceId(newVol.getDeviceId().intValue());
             newVol.setStatus(AsyncInstanceCreateStatus.Created);
