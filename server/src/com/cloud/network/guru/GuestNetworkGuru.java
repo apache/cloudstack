@@ -128,7 +128,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) {
-        assert (network.getState() == State.Allocated) : "Why implement are we implementing " + network;
+        assert (network.getState() == State.Implementing) : "Why are we implementing " + network;
         
         long dcId = dest.getDataCenter().getId();
         NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getGuestType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), network.getDataCenterId());

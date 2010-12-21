@@ -115,7 +115,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     
     @Inject(adapter=DeploymentPlanner.class)
     private Adapters<DeploymentPlanner> _planners;
-    private boolean _useNewNetworking;
     
     Map<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>>();
     Map<HypervisorType, HypervisorGuru> _hvGurus = new HashMap<HypervisorType, HypervisorGuru>();
@@ -302,8 +301,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
         
         _nodeId = _clusterMgr.getId();
         _clusterMgr.registerListener(this);
-        _useNewNetworking = Boolean.parseBoolean(configDao.getValue("use.new.networking"));
-        
+      
         setStateMachine();
         
         return true;
@@ -603,30 +601,16 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     
     @Override
     public boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long id) {
-    	if (_useNewNetworking) {
-    		if (vm instanceof UserVmVO) {
-    			return _stateMachine.transitTO(vm, e, id, _userVmDao);
-    		} else if (vm instanceof ConsoleProxyVO) {
-    			return _stateMachine.transitTO(vm, e, id, _consoleDao);
-    		} else if (vm instanceof SecondaryStorageVmVO) {
-    			return _stateMachine.transitTO(vm, e, id, _secondaryDao);
-    		} else if (vm instanceof DomainRouterVO) {
-    			return _stateMachine.transitTO(vm, e, id, _routerDao);
-    		} else {
-    			return _stateMachine.transitTO(vm, e, id, _vmDao);
-    		}
-    	} else {
-    		if (vm instanceof UserVmVO) {
-    			return _userVmDao.updateIf((UserVmVO)vm, e, id);
-    		} else if (vm instanceof ConsoleProxyVO) {
-    			return _consoleDao.updateIf((ConsoleProxyVO)vm, e, id);
-    		} else if (vm instanceof SecondaryStorageVmVO) {
-    			return _secondaryDao.updateIf((SecondaryStorageVmVO)vm, e, id);
-    		} else if (vm instanceof DomainRouterVO) {
-    			return _routerDao.updateIf((DomainRouterVO)vm, e, id);
-    		} else {
-    			return _vmDao.updateIf(vm, e, id);
-    		}
-    	}
+		if (vm instanceof UserVmVO) {
+			return _stateMachine.transitTO(vm, e, id, _userVmDao);
+		} else if (vm instanceof ConsoleProxyVO) {
+			return _stateMachine.transitTO(vm, e, id, _consoleDao);
+		} else if (vm instanceof SecondaryStorageVmVO) {
+			return _stateMachine.transitTO(vm, e, id, _secondaryDao);
+		} else if (vm instanceof DomainRouterVO) {
+			return _stateMachine.transitTO(vm, e, id, _routerDao);
+		} else {
+			return _stateMachine.transitTO(vm, e, id, _vmDao);
+		}
     }
 }

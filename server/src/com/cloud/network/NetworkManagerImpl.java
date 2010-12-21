@@ -1036,6 +1036,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+            network.setState(Network.State.Implementing);
+            network.setReservationId(context.getReservationId());
+            _networksDao.update(networkId, network);
 
             Network result = guru.implement(network, offering, dest, context);
             network.setCidr(result.getCidr());
@@ -1044,8 +1047,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             network.setDns1(result.getDns1());
             network.setDns2(result.getDns2());
             network.setMode(result.getMode());
-            network.setReservationId(context.getReservationId());
-            network.setState(Network.State.Implementing);
             _networksDao.update(networkId, network);
 
             for (NetworkElement element : _networkElements) {
