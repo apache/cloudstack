@@ -48,7 +48,7 @@ public class DiskOfferingResponse extends BaseResponse {
     @SerializedName("ismirrored")
     private Boolean mirrored;
 
-    @SerializedName("isCustomized")
+    @SerializedName("iscustomized")
     private Boolean customized;
     
     @SerializedName(ApiConstants.TAGS) @Param(description="the tags for the disk offering")

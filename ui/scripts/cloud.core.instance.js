@@ -431,7 +431,7 @@ function initVMWizard() {
 		        if (offerings != null && offerings.length > 0) {						    
 			        for (var i = 0; i < offerings.length; i++) {	
 			            var $t;
-			            if(offerings[i].isCustomized == true) 			                       
+			            if(offerings[i].iscustomized == true) 			                       
 		                    $t = $doTemplateCustom.clone();  			            
 			            else 
 				            $t = $doTemplateExisting.clone(); 	
@@ -455,7 +455,7 @@ function initVMWizard() {
 		        if (offerings != null && offerings.length > 0) {						    
 			        for (var i = 0; i < offerings.length; i++) {	
 			            var $t;
-			            if(offerings[i].isCustomized == true) 
+			            if(offerings[i].iscustomized == true) 
 			                $t = $doTemplateCustom.clone();  
 			            else 
 				            $t = $doTemplateExisting.clone(); 	
