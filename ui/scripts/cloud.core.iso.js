@@ -341,7 +341,7 @@ function isoJsonToDetailsTab() {
 	*/
     
 	// "Download ISO", "Delete ISO"
-	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) || (jsonObj.isready == false && jsonObj.isostatus != null && jsonObj.isostatus.indexOf("% Downloaded") != -1)) {
+	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) || (jsonObj.isready == false)) {
 	    //do nothing
 	}
 	else {	    

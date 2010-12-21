@@ -336,7 +336,7 @@ function templateJsonToDetailsTab() {
 	
 	// "Download Template", "Delete Template"	
 	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
-		|| (jsonObj.isready == false && jsonObj.templatestatus != null && jsonObj.templatestatus.indexOf("% Downloaded") != -1) || jsonObj.templatetype == "SYSTEM") {
+		|| (jsonObj.isready == false) || jsonObj.templatetype == "SYSTEM") {
 	    //do nothing	
     }
     else {
