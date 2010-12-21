@@ -78,15 +78,16 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setIp4Address(ip.getAddress());
             nic.setGateway(ip.getGateway());
             nic.setNetmask(ip.getNetmask());
-            if(ip.getVlanTag().equalsIgnoreCase("untagged"))
-            	nic.setIsolationUri(URI.create("vlan://untagged"));
-            else	
-            	nic.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
-            nic.setBroadcastType(BroadcastDomainType.Vlan);
-            if(!ip.getVlanTag().equalsIgnoreCase("untagged"))
-            	nic.setBroadcastUri(URI.create("vlan://untagged"));
-            else
-            	nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
+            if(ip.getVlanTag() != null && ip.getVlanTag().equalsIgnoreCase("untagged")) {
+                nic.setIsolationUri(URI.create("vlan://untagged"));
+                nic.setBroadcastUri(URI.create("vlan://untagged"));
+                nic.setBroadcastType(BroadcastDomainType.Native);
+            } else if (ip.getVlanTag() != null){
+                nic.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
+                nic.setBroadcastUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
+                nic.setBroadcastType(BroadcastDomainType.Vlan);
+            }
+            	
             nic.setFormat(AddressFormat.Ip4);
             nic.setReservationId(String.valueOf(ip.getVlanTag()));
             nic.setMacAddress(ip.getMacAddress());
