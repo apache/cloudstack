@@ -9,15 +9,12 @@
 # If [source path] starts with '/', then it is absolute path.
 # If [source path] starts with '~', then it is path relative to management server home directory.
 # If [source path] does not start with '/' or '~', then it is relative path to the location of the patch file. 
-qemu-dm-wrapper=/opt/xensource/libexec
 scsiutil.py=/opt/xensource/sm
 cleanup.py=/opt/xensource/sm
-vncterm-wrapper=/opt/xensource/libexec
 NFSSR.py=/opt/xensource/sm
 ISCSISR.py=/opt/xensource/sm
 LUNperVDI.py=/opt/xensource/sm
 nfs.py=/opt/xensource/sm
-iptables=/etc/sysconfig
 patch.tgz=..,0775,/opt/xensource/bin
 vmops=..,0755,/etc/xapi.d/plugins
 systemvm.zip=../../../../../vms,0755,/opt/xensource/bin
