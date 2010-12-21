@@ -17,10 +17,10 @@
  */
 package com.cloud.network;
 
-public interface VpnUser {
-    long getId();
+import com.cloud.acl.ControlledEntity;
 
-    long getAccountId();
+public interface VpnUser extends ControlledEntity{
+    long getId();
     
     String getAccountName();
 
@@ -28,5 +28,4 @@ public interface VpnUser {
 
     String getPassword();
 
-    long getDomainId();
 }

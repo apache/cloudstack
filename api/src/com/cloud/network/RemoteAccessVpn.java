@@ -17,13 +17,14 @@
  */
 package com.cloud.network;
 
+import com.cloud.acl.ControlledEntity;
+
 /**
  * @author ahuang
  *
  */
-public interface RemoteAccessVpn {
+public interface RemoteAccessVpn extends ControlledEntity {
     long getId();
-    long getAccountId();
     String getAccountName();
     String getVpnServerAddress();
     void setVpnServerAddress(String vpnServerAddress);
@@ -40,7 +41,5 @@ public interface RemoteAccessVpn {
     long getZoneId();
 
     String getLocalIp();
-
-    long getDomainId();
 
 }
