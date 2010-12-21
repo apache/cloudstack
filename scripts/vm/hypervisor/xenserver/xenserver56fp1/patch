@@ -1,0 +1,31 @@
+# This file specifies the files that need
+# to be transferred over to the XenServer.
+# The format of this file is as follows:
+# [Name of file]=[source path],[file permission],[destination path]
+# [destination path] is required.
+# If [file permission] is missing, 755 is assumed.
+# If [source path] is missing, it looks in the same
+# directory as the patch file.
+# If [source path] starts with '/', then it is absolute path.
+# If [source path] starts with '~', then it is path relative to management server home directory.
+# If [source path] does not start with '/' or '~', then it is relative path to the location of the patch file. 
+NFSSR.py=/opt/xensource/sm
+nfs.py=/opt/xensource/sm
+patch.tgz=..,0775,/opt/xensource/bin
+vmops=..,0755,/etc/xapi.d/plugins
+systemvm.zip=../../../../../vms,0755,/opt/xensource/bin
+hostvmstats.py=..,0755,/opt/xensource/sm
+network_info.sh=..,0755,/opt/xensource/bin
+prepsystemvm.sh=..,0755,/opt/xensource/bin
+setupxenserver.sh=..,0755,/opt/xensource/bin
+make_migratable.sh=..,0755,/opt/xensource/bin
+networkUsage.sh=..,0755,/opt/xensource/bin
+setup_iscsi.sh=..,0755,/opt/xensource/bin
+version=..,0755,/opt/xensource/bin
+pingtest.sh=../../..,0755,/opt/xensource/bin
+dhcp_entry.sh=../../../../network/domr/,0755,/opt/xensource/bin
+ipassoc.sh=../../../../network/domr/,0755,/opt/xensource/bin
+vm_data.sh=../../../../network/domr/,0755,/opt/xensource/bin
+save_password_to_domr.sh=../../../../network/domr/,0755,/opt/xensource/bin
+call_firewall.sh=../../../../network/domr/,0755,/opt/xensource/bin
+call_loadbalancer.sh=../../../../network/domr/,0755,/opt/xensource/bin
