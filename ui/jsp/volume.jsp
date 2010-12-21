@@ -260,6 +260,26 @@
     </div>
 </div>
 
+<!-- Download Volume Dialog (begin) -->
+<div id="dialog_download_volume" title="Download Volume" style="display: none">    
+  <!--Loading box-->
+  <div id="spinning_wheel" class="ui_dialog_loaderbox">
+      <div class="ui_dialog_loader">
+      </div>
+      <p>
+          Generating URL....</p>
+  </div>
+  <!--Confirmation msg box-->
+  <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+  <div id="info_container" class="ui_dialog_messagebox error" style="display: none;">
+      <div id="icon" class="ui_dialog_msgicon error">
+      </div>
+      <div id="info" class="ui_dialog_messagebox_text error">
+          (info)</div>
+  </div>
+</div>
+<!-- Download Volume Dialog (end) -->
+
 <!-- Create Snapshot Dialog (begin) -->
 <div id="dialog_create_snapshot" title="Create Snapshot" style="display: none">
     <p>

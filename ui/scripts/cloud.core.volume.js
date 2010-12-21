@@ -59,6 +59,7 @@ function afterLoadVolumeJSP() {
     initDialog("dialog_add_volume_from_snapshot");	
     initDialog("dialog_create_template_from_snapshot", 400);    
 	initDialog("dialog_confirmation_delete_snapshot");
+	initDialog("dialog_download_volume");
 	        
     $.ajax({
         data: createURL("command=listOsTypes"),
@@ -383,6 +384,7 @@ function volumeJsonToDetailsTab(){
         
     buildActionLinkForTab("Take Snapshot", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);	//show take snapshot
     buildActionLinkForTab("Recurring Snapshot", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);	//show Recurring Snapshot
+    buildActionLinkForTab("Download Volume", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);
     
     if(jsonObj.state != "Creating" && jsonObj.state != "Corrupted" && jsonObj.name != "attaching") {
         if(jsonObj.type=="ROOT") {
@@ -393,15 +395,15 @@ function volumeJsonToDetailsTab(){
         else { 
 	        if (jsonObj.virtualmachineid != null) {
 		        if (jsonObj.storagetype == "shared" && (jsonObj.vmstate == "Running" || jsonObj.vmstate == "Stopped")) {
-			        buildActionLinkForTab("Detach Disk", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab); //show detach disk
+			        buildActionLinkForTab("Detach Disk", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab); 
 		        }
 	        } else {
 		        // Disk not attached
 		        if (jsonObj.storagetype == "shared") {
-			        buildActionLinkForTab("Attach Disk", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);   //show attach disk
+			        buildActionLinkForTab("Attach Disk", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);   
     			    			  		    
 			        if(jsonObj.vmname == null || jsonObj.vmname == "none")
-			            buildActionLinkForTab("Delete Volume", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab); //show delete volume
+			            buildActionLinkForTab("Delete Volume", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab); 
 		        }
 	        }
         }
@@ -546,8 +548,82 @@ var volumeActionMap = {
     },
     "Recurring Snapshot": {                 
         dialogBeforeActionFn : doRecurringSnapshot 
-    }   
+    },
+    "Download Volume": {               
+        dialogBeforeActionFn : doDownloadVolume        
+    }        
 }   
+
+function doDownloadVolume($actionLink, $detailsTab, $midmenuItem1) { 
+	var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+	var zoneId = jsonObj.zoneid;							
+	
+    var apiCommand = "command=extractVolume&id="+id+"&zoneid="+zoneId+"&mode=HTTP_DOWNLOAD";
+   
+    var $dialogDownloadVolume = $("#dialog_download_volume");
+    $spinningWheel = $dialogDownloadVolume.find("#spinning_wheel");
+    $spinningWheel.show();
+    var $infoContainer = $dialogDownloadVolume.find("#info_container");
+    $infoContainer.hide();	
+   
+    $dialogDownloadVolume
+	.dialog('option', 'buttons', {	
+	    "Close": function() {				        
+		    $(this).dialog("close");
+	    }				
+	}).dialog("open");	
+			  
+    $.ajax({
+        data: createURL(apiCommand),
+        dataType: "json",           
+        success: function(json) {	                           	                        
+            var jobId = json.extractvolumeresponse.jobid;                  			                        
+            var timerKey = "asyncJob_" + jobId;					                       
+            $("body").everyTime(
+                2000,  //this API returns fast. So, set 2 seconds instead of 10 seconds.
+                timerKey,
+                function() {
+                    $.ajax({
+                        data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+                        dataType: "json",									                    					                    
+                        success: function(json) {		                                                     							                       
+	                        var result = json.queryasyncjobresultresponse;										                   
+	                        if (result.jobstatus == 0) {
+		                        return; //Job has not completed
+	                        } else {		                            									                    
+		                        $("body").stopTime(timerKey);				                        
+		                        $spinningWheel.hide(); 		                 		                          			                                             
+		                        if (result.jobstatus == 1) { // Succeeded 			                            
+		                            $infoContainer.removeClass("error");
+		                            $infoContainer.find("#icon,#info").removeClass("error");		                      
+		                            var url = fromdb(json.queryasyncjobresultresponse.jobresult.volume.url);	
+		                            var htmlMsg = "Please click <a href='" + url + "'>" + url + "</a>" + " to download volume";                          
+		                            $infoContainer.find("#info").html(htmlMsg);
+		                            $infoContainer.show();		                        
+		                        } else if (result.jobstatus == 2) { // Failed	
+		                            handleErrorInDialog2(fromdb(result.jobresult.errortext), $dialogDownloadVolume);		                        
+		                        }											                    
+	                        }
+                        },
+                        error: function(XMLHttpResponse) {	                            
+	                        $("body").stopTime(timerKey);	
+							handleError(XMLHttpResponse, function() {
+							    handleErrorInDialog(XMLHttpResponse, $dialogDownloadVolume);									
+							});
+                        }
+                    });
+                },
+                0
+            );
+        },
+        error: function(XMLHttpResponse) {
+			handleError(XMLHttpResponse, function() {
+				handleErrorInDialog(XMLHttpResponse, $dialogDownloadVolume);			
+			});
+        }
+    });  	
+}
 
 function doCreateTemplateFromVolume($actionLink, $detailsTab, $midmenuItem1) {       
     var jsonObj = $midmenuItem1.data("jsonObj");
