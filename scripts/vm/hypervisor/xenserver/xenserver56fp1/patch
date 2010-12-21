@@ -9,12 +9,12 @@
 # If [source path] starts with '/', then it is absolute path.
 # If [source path] starts with '~', then it is path relative to management server home directory.
 # If [source path] does not start with '/' or '~', then it is relative path to the location of the patch file. 
-NFSSR.py=../xenserver56,755,/opt/xensource/sm
-nfs.py=../xenserver56,755,/opt/xensource/sm
+NFSSR.py=/opt/xensource/sm
+nfs.py=/opt/xensource/sm
 vmops=..,0755,/etc/xapi.d/plugins
 vmopsSnapshot=..,0755,/etc/xapi.d/plugins
-systemvm.iso=../../../../../vms,0644,/opt/xensource/packages/iso
 hostvmstats.py=..,0755,/opt/xensource/sm
+systemvm.iso=../../../../../vms,0644,/opt/xensource/packages/iso
 id_rsa.cloud=..,0600,/root/.ssh
 network_info.sh=..,0755,/opt/xensource/bin
 setupxenserver.sh=..,0755,/opt/xensource/bin
