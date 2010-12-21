@@ -213,35 +213,19 @@
 </div>
 
 <!-- advanced search template (begin) -->
-<div id="advanced_search_template" class="adv_searchpopup" style="display: none;">
-    <div class="adv_searchpopup_top">
-    	<h2>Advance Search</h2>
-    </div>
-    
-    <div class="adv_searchpopup_mid">
-        <div class="adv_searchformbox">
-            <form action="#" method="post">
-            <ol>
-                <li>
-                    <label>
-                        Name:</label>
-                    <input class="text" type="text" id="adv_search_name" />
-                </li>           
-                <li id="adv_search_domain_li" style="display: none;">
-                    <label>
-                        Domain:</label>
-                    <select class="select" id="adv_search_domain">
-                    </select>
-                </li>           
-            </ol>
-            </form>
-        
-            <div class="adv_search_actionbox">
-                <div class="adv_searchpopup_button" id="adv_search_button">
-                </div>
-            </div>
+<div class="adv_searchpopup_bg" id="advanced_search_template" style="display:none;">
+            <div class="adv_searchformbox">
+                <form action="#" method="post">
+                <ol>
+                    <li>
+                        <input class="text textwatermark" type="text" id="adv_search_name" value="by name" />
+                    </li>           
+                    <li id="adv_search_domain_li" style="display: none;">
+                        <select class="select" id="adv_search_domain">
+                        </select>
+                    </li>           
+                </ol>
+                </form>
          </div>
-    </div>
-    <div class="adv_searchpopup_bot"></div>
 </div>
 <!-- advanced search template (end) -->
