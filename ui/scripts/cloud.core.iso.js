@@ -697,7 +697,7 @@ function doDownloadISO($actionLink, $detailsTab, $midmenuItem1) {
 		                        if (result.jobstatus == 1) { // Succeeded 			                            
 		                            $infoContainer.removeClass("error");
 		                            $infoContainer.find("#icon,#info").removeClass("error");		                      
-		                            var url = fromdb(json.queryasyncjobresultresponse.jobresult.iso.url);	
+		                            var url = decodeURIComponent(json.queryasyncjobresultresponse.jobresult.iso.url);	
 		                            var htmlMsg = "Please click <a href='" + url + "'>" + url + "</a>" + " to download ISO";                          
 		                            $infoContainer.find("#info").html(htmlMsg);
 		                            $infoContainer.show();		                        
