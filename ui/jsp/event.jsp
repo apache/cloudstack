@@ -123,7 +123,7 @@
 <!-- event detail panel (end) -->
 
 <!-- advanced search template (begin) -->
-<div id="advanced_search_template" class="adv_searchpopup_bg" style="display: none;">
+<div id="advanced_search_popup" class="adv_searchpopup_bg" style="display: none;">
         <div class="adv_searchformbox">
             <form action="#" method="post">
             <ol>

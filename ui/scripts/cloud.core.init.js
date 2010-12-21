@@ -250,11 +250,12 @@ $(document).ready(function() {
 	    else {	    
 	        $(this).addClass("on");	    
 	
-	        var $advancedSearch = $("#advanced_search_template").clone().attr("id", "advanced_search_popup");
+	        var $advancedSearchPopup = $("#advanced_search_popup");
     	    
-	        $advancedSearch.unbind("click").bind("click", function(event) {
+	        $advancedSearchPopup.unbind("click").bind("click", function(event) {
 	            var $target = $(event.target);
-	            var targetId = $target.attr("id");	        
+	            var targetId = $target.attr("id");	 
+	            /*       
 	            if(targetId == "advanced_search_close") {
 	                $(this).hide();
 	                return false;
@@ -270,23 +271,28 @@ $(document).ready(function() {
     	            $(this).hide();
 	                return false;
 	            }
+	            */
 	            return true;
 	        });
     	    	
-	        $advancedSearch.unbind("keypress").bind("keypress", function(event) {	       
+	        $advancedSearchPopup.unbind("keypress").bind("keypress", function(event) {	       
 	            event.stopPropagation();   
 	            if(event.keyCode == keycode_Enter) { 
-	                event.preventDefault();
-	                $(this).find("#adv_search_button").click();
+	                event.preventDefault();	  		                                      
+	                var params = $("#middle_menu_pagination").data("params");
+	                if(params == null)
+	                    return;	        	    
+	                lastSearchType = "advanced_search";  	                
+	                listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);    	                            
 	            }	
 	        });	
     	    	    
 	        if(isAdmin() || isDomainAdmin())
-	            $advancedSearch.find("#adv_search_domain_li, #adv_search_account_li, #adv_search_pod_li").show();
+	            $advancedSearchPopup.find("#adv_search_domain_li, #adv_search_account_li, #adv_search_pod_li").show();
 	        else
-	            $advancedSearch.find("#adv_search_domain_li, #adv_search_account_li, #adv_search_pod_li").hide(); 
+	            $advancedSearchPopup.find("#adv_search_domain_li, #adv_search_account_li, #adv_search_pod_li").hide(); 
     	    
-            var zoneSelect = $advancedSearch.find("#adv_search_zone");	    
+            var zoneSelect = $advancedSearchPopup.find("#adv_search_zone");	    
 	        if(zoneSelect.length>0) {  //if zone dropdown is found on Advanced Search dialog 	    		
 	            $.ajax({
 		            data: createURL("command=listZones&available=true"),
@@ -303,9 +309,9 @@ $(document).ready(function() {
 		            }
 	            });
         		
-	            var podSelect = $advancedSearch.find("#adv_search_pod").empty();	
-	            var podLabel = $advancedSearch.find("#adv_search_pod_label");
-	            if(podSelect.length>0 && $advancedSearch.find("#adv_search_pod_li").css("display")!="none") {		        
+	            var podSelect = $advancedSearchPopup.find("#adv_search_pod").empty();	
+	            var podLabel = $advancedSearchPopup.find("#adv_search_pod_label");
+	            if(podSelect.length>0 && $advancedSearchPopup.find("#adv_search_pod_li").css("display")!="none") {		        
 	                zoneSelect.bind("change", function(event) { 	            
 		                var zoneId = $(this).val();
 		                if (zoneId == null || zoneId.length == 0) {			            
@@ -337,8 +343,8 @@ $(document).ready(function() {
 	            }
 	        }
         	
-	        var domainSelect = $advancedSearch.find("#adv_search_domain");	
-	        if(domainSelect.length>0 && $advancedSearch.find("#adv_search_domain_li").css("display")!="none") {
+	        var domainSelect = $advancedSearchPopup.find("#adv_search_domain");	
+	        if(domainSelect.length>0 && $advancedSearchPopup.find("#adv_search_domain_li").css("display")!="none") {
 	            var domainSelect = domainSelect.empty();			
 	            $.ajax({
 		            data: createURL("command=listDomains&available=true"),
@@ -354,7 +360,7 @@ $(document).ready(function() {
 	            });		    
 	        } 	
         	    	
-	        var vmSelect = $advancedSearch.find("#adv_search_vm");	
+	        var vmSelect = $advancedSearchPopup.find("#adv_search_vm");	
 	        if(vmSelect.length>0) {		   
 	            vmSelect.empty();		
 	            vmSelect.append("<option value=''></option>"); 	
@@ -372,9 +378,9 @@ $(document).ready(function() {
 	            });		    
 	        } 	  
     	    	      
-	        $advancedSearch.find("#adv_search_startdate, #adv_search_enddate").datepicker({dateFormat: 'yy-mm-dd'});
+	        $advancedSearchPopup.find("#adv_search_startdate, #adv_search_enddate").datepicker({dateFormat: 'yy-mm-dd'});
     	    	    	    
-	        $("#advanced_search_container").empty().append($advancedSearch.show());	 
+	        $("#advanced_search_container").empty().append($advancedSearchPopup.show());	 
 	    }
 	    	   
 	    return false;
