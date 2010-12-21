@@ -970,7 +970,7 @@ function doEditZone2($actionLink, $detailsTab, $leftmenuItem1, $readonlyFields, 
 	    moreCriteria.push("&dns1="+todb(dns1));
 	
 	var dns2 = $detailsTab.find("#dns2_edit").val();
-	if (dns2 != null && dns2.length > 0 && dns2 != jsonObj.dns2) 
+	if (dns2 != jsonObj.dns2) //dns2 can be an empty string
 		moreCriteria.push("&dns2="+todb(dns2));	
 	
 	var internaldns1 = $detailsTab.find("#internaldns1_edit").val();
@@ -978,7 +978,7 @@ function doEditZone2($actionLink, $detailsTab, $leftmenuItem1, $readonlyFields, 
 	    moreCriteria.push("&internaldns1="+todb(internaldns1));
 	
 	var internaldns2 = $detailsTab.find("#internaldns2_edit").val();	
-	if (internaldns2 != null && internaldns2.length > 0 && internaldns2 != jsonObj.internaldns2) 
+	if (internaldns2 != jsonObj.internaldns2) //internaldns2 can be an empty string
 		moreCriteria.push("&internaldns2="+todb(internaldns2));						
 	
 	var vlan;				
