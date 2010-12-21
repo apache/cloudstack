@@ -59,7 +59,7 @@ public class XenServerResource extends CitrixResourceBase {
     @Override
     protected List<File> getPatchFiles() {      
         List<File> files = new ArrayList<File>();
-        String patch = "scripts/vm/hypervisor/xenserver/xenserver56oss/patch";      
+        String patch = "scripts/vm/hypervisor/xenserver/xenserver56/patch";      
         String patchfilePath = Script.findScript("" , patch);
         if ( patchfilePath == null ) {
             throw new CloudRuntimeException("Unable to find patch file " + patch);
