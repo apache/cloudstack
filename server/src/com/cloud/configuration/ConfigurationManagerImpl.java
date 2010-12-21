@@ -834,20 +834,20 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	}
     	
     	// Check IP validity for DNS addresses
-    	
-		if (dns1 != null  && !NetUtils.isValidIp(dns1)) {
+    	// Empty strings is a valid input -- hence the length check
+		if (dns1 != null  && dns1.length() > 0 && !NetUtils.isValidIp(dns1)) {
 			throw new InvalidParameterValueException("Please enter a valid IP address for DNS1");
 		}
 		
-		if (dns2 != null  && !NetUtils.isValidIp(dns2)) {
+		if (dns2 != null  && dns2.length() > 0 && !NetUtils.isValidIp(dns2)) {
 			throw new InvalidParameterValueException("Please enter a valid IP address for DNS2");
 		}
 		
-		if (internalDns1 != null  && !NetUtils.isValidIp(internalDns1)) {
+		if ((internalDns1 != null && internalDns1.length() > 0 && !NetUtils.isValidIp(internalDns1))) {
 			throw new InvalidParameterValueException("Please enter a valid IP address for internal DNS1");
 		}
 		
-		if (internalDns2 != null  && !NetUtils.isValidIp(internalDns2)) {
+		if (internalDns2 != null  && internalDns2.length() > 0 && !NetUtils.isValidIp(internalDns2)) {
 			throw new InvalidParameterValueException("Please enter a valid IP address for internal DNS2");
 		}
     }
