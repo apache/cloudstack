@@ -85,18 +85,18 @@ public class VirtualRoutingResource implements Manager {
     private String _publicEthIf;
     private String _privateEthIf;
 
-    
-	private int _timeout;
-	private int _startTimeout;
-	private String _scriptsDir;
-	private String _name;
-	private int _sleep;
-	private int _retry;
-	private int _port;
+
+    private int _timeout;
+    private int _startTimeout;
+    private String _scriptsDir;
+    private String _name;
+    private int _sleep;
+    private int _retry;
+    private int _port;
 
     public Answer executeRequest(final Command cmd) {
         try {
-        	if (cmd instanceof SetPortForwardingRulesCommand ) {
+            if (cmd instanceof SetPortForwardingRulesCommand ) {
                 return execute((SetPortForwardingRulesCommand)cmd);
             }else if (cmd instanceof LoadBalancerCfgCommand) {
                 return execute((LoadBalancerCfgCommand)cmd);
@@ -105,17 +105,17 @@ public class VirtualRoutingResource implements Manager {
             } else if (cmd instanceof IPAssocCommand) {
                 return execute((IPAssocCommand)cmd);
             } else if (cmd instanceof CheckConsoleProxyLoadCommand) {
-            	return execute((CheckConsoleProxyLoadCommand)cmd);
+                return execute((CheckConsoleProxyLoadCommand)cmd);
             } else if(cmd instanceof WatchConsoleProxyLoadCommand) {
-            	return execute((WatchConsoleProxyLoadCommand)cmd);
+                return execute((WatchConsoleProxyLoadCommand)cmd);
             }  else if (cmd instanceof SavePasswordCommand) {
-            	return execute((SavePasswordCommand)cmd);
+                return execute((SavePasswordCommand)cmd);
             }  else if (cmd instanceof DhcpEntryCommand) {
-            	return execute((DhcpEntryCommand)cmd);
+                return execute((DhcpEntryCommand)cmd);
             } else if (cmd instanceof VmDataCommand) {
-            	return execute ((VmDataCommand)cmd);
+                return execute ((VmDataCommand)cmd);
             } else {
-            	return Answer.createUnsupportedCommandAnswer(cmd);
+                return Answer.createUnsupportedCommandAnswer(cmd);
             }
         } catch (final IllegalArgumentException e) {
             return new Answer(cmd, false, e.getMessage());
@@ -123,154 +123,154 @@ public class VirtualRoutingResource implements Manager {
     }
 
     private Answer execute(SetPortForwardingRulesCommand cmd) {
-    	String routerIp = cmd.getAccessDetail(RoutingCommand.ROUTER_IP);
+        String routerIp = cmd.getAccessDetail(RoutingCommand.ROUTER_IP);
         String routerName = cmd.getAccessDetail(RoutingCommand.ROUTER_NAME);
 
         String[] results = new String[cmd.getRules().length];
         int i = 0;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
             String result = null;
-			if (rule.getProtocol().equalsIgnoreCase(NetUtils.NAT_PROTO)){
-				setStaticNat(!rule.revoked(), routerName, routerIp, rule.getSrcIp(), rule.getDstIp());
+            if (rule.getProtocol().equalsIgnoreCase(NetUtils.NAT_PROTO)){
+                setStaticNat(!rule.revoked(), routerName, routerIp, rule.getSrcIp(), rule.getDstIp());
             } else {
-                
-    	        result = setPortForwardRule(!rule.revoked(), routerName, routerIp, 
-    	        		                  rule.getProtocol(), rule.getSrcIp(), 
-    	        		                  Integer.toString(rule.getSrcPortRange()[0]), rule.getDstIp(), 
-    	        		                  Integer.toString(rule.getDstPortRange()[0]));
-    	       
+
+                result = setPortForwardRule(!rule.revoked(), routerName, routerIp, 
+                        rule.getProtocol(), rule.getSrcIp(), 
+                        Integer.toString(rule.getSrcPortRange()[0]), rule.getDstIp(), 
+                        Integer.toString(rule.getDstPortRange()[0]));
+
             }
             results[i++] = (result == null || result.isEmpty()) ? "Failed" : null;
         }
 
         return new SetPortForwardingRulesAnswer(cmd, results);
-	}
+    }
 
-	private Answer execute(LoadBalancerConfigCommand cmd) {
-		String routerIp = cmd.getAccessDetail(RoutingCommand.ROUTER_IP);
-		File tmpCfgFile = null;
-    	try {
-    		String cfgFilePath = "";
-    		String routerIP = null;
-    		LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
+    private Answer execute(LoadBalancerConfigCommand cmd) {
+        String routerIp = cmd.getAccessDetail(RoutingCommand.ROUTER_IP);
+        File tmpCfgFile = null;
+        try {
+            String cfgFilePath = "";
+            String routerIP = null;
+            LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
             String[] config = cfgtr.generateConfiguration(cmd);
             String[][] rules = cfgtr.generateFwRules(cmd);
-    		if (routerIp != null) {
-    			tmpCfgFile = File.createTempFile(routerIp.replace('.', '_'), "cfg");
-				final PrintWriter out
-			   	= new PrintWriter(new BufferedWriter(new FileWriter(tmpCfgFile)));
-				for (int i=0; i < config.length; i++) {
-					out.println(config[i]);
-				}
-				out.close();
-				cfgFilePath = tmpCfgFile.getAbsolutePath();
-    		}
-			
-			final String result = setLoadBalancerConfig(cfgFilePath,
-											      rules[LoadBalancerConfigurator.ADD],
-											      rules[LoadBalancerConfigurator.REMOVE],
-											      routerIP);
-			
-			return new Answer(cmd, result == null, result);
-		} catch (final IOException e) {
-			return new Answer(cmd, false, e.getMessage());
-		} finally {
-			if (tmpCfgFile != null) {
-				tmpCfgFile.delete();
-			}
-		}
-	}
+            if (routerIp != null) {
+                tmpCfgFile = File.createTempFile(routerIp.replace('.', '_'), "cfg");
+                final PrintWriter out
+                = new PrintWriter(new BufferedWriter(new FileWriter(tmpCfgFile)));
+                for (int i=0; i < config.length; i++) {
+                    out.println(config[i]);
+                }
+                out.close();
+                cfgFilePath = tmpCfgFile.getAbsolutePath();
+            }
 
-	protected Answer execute(VmDataCommand cmd) {
-    	List<String[]> vmData = cmd.getVmData();
-    	
-    	for (String[] vmDataEntry : vmData) {
-    		String folder = vmDataEntry[0];
-    		String file = vmDataEntry[1];
-    		String data = vmDataEntry[2];
-    		File tmpFile = null;
-    		
-    		byte[] dataBytes = null;
-    		if (data != null) {
-    			if (folder.equals("userdata")) {
-    				dataBytes = Base64.decodeBase64(data);//userdata is supplied in url-safe unchunked mode
-    			} else {
-    				dataBytes = data.getBytes();
-    			}
-    			
-    			try {
-            		tmpFile = File.createTempFile("vmdata_", null);
-            		FileOutputStream outStream = new FileOutputStream(tmpFile);
-            		outStream.write(dataBytes); 
-        			outStream.close();
-            	} catch (IOException e) {
-            		String tmpDir = System.getProperty("java.io.tmpdir");
-            		s_logger.warn("Failed to create temporary file: is " + tmpDir + " full?", e);
-            		return new Answer(cmd, false, "Failed to create or write to temporary file: is " + tmpDir + " full? " + e.getMessage() );
-            	}
-    		}
-    		    		               
-        	final Script command  = new Script(_vmDataPath, _timeout, s_logger);
-        	command.add("-r", cmd.getRouterPrivateIpAddress());
-        	command.add("-v", cmd.getVmIpAddress());
-        	command.add("-F", folder);
-        	command.add("-f", file);
-        	
-        	if (tmpFile != null) {
-        		command.add("-d", tmpFile.getAbsolutePath());
-        	}
-        	
-        	final String result = command.execute();
-        	
-        	if (tmpFile != null) {
-        		boolean deleted = tmpFile.delete();
-        		if (!deleted) {
-        			s_logger.warn("Failed to clean up temp file after sending vmdata");
-        			tmpFile.deleteOnExit();
-        		}
-        	}
-        	
-        	if (result != null) {
-        		return new Answer(cmd, false, result);        	
-        	}        	
-        	
-    	}
-    	
-    	return new Answer(cmd);
-	}
+            final String result = setLoadBalancerConfig(cfgFilePath,
+                    rules[LoadBalancerConfigurator.ADD],
+                    rules[LoadBalancerConfigurator.REMOVE],
+                    routerIP);
 
-	protected Answer execute(final LoadBalancerCfgCommand cmd) {
-    	
-		File tmpCfgFile = null;
-    	try {
-    		String cfgFilePath = "";
-    		String routerIP = null;
-    		
-    		if (cmd.getRouterIp() != null) {
-    			tmpCfgFile = File.createTempFile(cmd.getRouterIp().replace('.', '_'), "cfg");
-				final PrintWriter out
-			   	= new PrintWriter(new BufferedWriter(new FileWriter(tmpCfgFile)));
-				for (int i=0; i < cmd.getConfig().length; i++) {
-					out.println(cmd.getConfig()[i]);
-				}
-				out.close();
-				cfgFilePath = tmpCfgFile.getAbsolutePath();
-				routerIP = cmd.getRouterIp();
-    		}
-			
-			final String result = setLoadBalancerConfig(cfgFilePath,
-											      cmd.getAddFwRules(), cmd.getRemoveFwRules(),
-											      routerIP);
-			
-			return new Answer(cmd, result == null, result);
-		} catch (final IOException e) {
-			return new Answer(cmd, false, e.getMessage());
-		} finally {
-			if (tmpCfgFile != null) {
-				tmpCfgFile.delete();
-			}
-		}
-	}
+            return new Answer(cmd, result == null, result);
+        } catch (final IOException e) {
+            return new Answer(cmd, false, e.getMessage());
+        } finally {
+            if (tmpCfgFile != null) {
+                tmpCfgFile.delete();
+            }
+        }
+    }
+
+    protected Answer execute(VmDataCommand cmd) {
+        List<String[]> vmData = cmd.getVmData();
+
+        for (String[] vmDataEntry : vmData) {
+            String folder = vmDataEntry[0];
+            String file = vmDataEntry[1];
+            String data = vmDataEntry[2];
+            File tmpFile = null;
+
+            byte[] dataBytes = null;
+            if (data != null) {
+                if (folder.equals("userdata")) {
+                    dataBytes = Base64.decodeBase64(data);//userdata is supplied in url-safe unchunked mode
+                } else {
+                    dataBytes = data.getBytes();
+                }
+
+                try {
+                    tmpFile = File.createTempFile("vmdata_", null);
+                    FileOutputStream outStream = new FileOutputStream(tmpFile);
+                    outStream.write(dataBytes); 
+                    outStream.close();
+                } catch (IOException e) {
+                    String tmpDir = System.getProperty("java.io.tmpdir");
+                    s_logger.warn("Failed to create temporary file: is " + tmpDir + " full?", e);
+                    return new Answer(cmd, false, "Failed to create or write to temporary file: is " + tmpDir + " full? " + e.getMessage() );
+                }
+            }
+
+            final Script command  = new Script(_vmDataPath, _timeout, s_logger);
+            command.add("-r", cmd.getRouterPrivateIpAddress());
+            command.add("-v", cmd.getVmIpAddress());
+            command.add("-F", folder);
+            command.add("-f", file);
+
+            if (tmpFile != null) {
+                command.add("-d", tmpFile.getAbsolutePath());
+            }
+
+            final String result = command.execute();
+
+            if (tmpFile != null) {
+                boolean deleted = tmpFile.delete();
+                if (!deleted) {
+                    s_logger.warn("Failed to clean up temp file after sending vmdata");
+                    tmpFile.deleteOnExit();
+                }
+            }
+
+            if (result != null) {
+                return new Answer(cmd, false, result);        	
+            }        	
+
+        }
+
+        return new Answer(cmd);
+    }
+
+    protected Answer execute(final LoadBalancerCfgCommand cmd) {
+
+        File tmpCfgFile = null;
+        try {
+            String cfgFilePath = "";
+            String routerIP = null;
+
+            if (cmd.getRouterIp() != null) {
+                tmpCfgFile = File.createTempFile(cmd.getRouterIp().replace('.', '_'), "cfg");
+                final PrintWriter out
+                = new PrintWriter(new BufferedWriter(new FileWriter(tmpCfgFile)));
+                for (int i=0; i < cmd.getConfig().length; i++) {
+                    out.println(cmd.getConfig()[i]);
+                }
+                out.close();
+                cfgFilePath = tmpCfgFile.getAbsolutePath();
+                routerIP = cmd.getRouterIp();
+            }
+
+            final String result = setLoadBalancerConfig(cfgFilePath,
+                    cmd.getAddFwRules(), cmd.getRemoveFwRules(),
+                    routerIP);
+
+            return new Answer(cmd, result == null, result);
+        } catch (final IOException e) {
+            return new Answer(cmd, false, e.getMessage());
+        } finally {
+            if (tmpCfgFile != null) {
+                tmpCfgFile.delete();
+            }
+        }
+    }
 
     protected Answer execute(final IPAssocCommand cmd) {
         IpAddressTO[] ips = cmd.getIpAddresses();
@@ -288,126 +288,126 @@ public class VirtualRoutingResource implements Manager {
             }
         }
         return new IpAssocAnswer(cmd, results);
-	}
+    }
 
-	private String setLoadBalancerConfig(final String cfgFile,
-			final String[] addRules, final String[] removeRules, String routerIp) {
-		
-		if (routerIp == null) {
+    private String setLoadBalancerConfig(final String cfgFile,
+            final String[] addRules, final String[] removeRules, String routerIp) {
+
+        if (routerIp == null) {
             routerIp = "none";
         }
-		
+
         final Script command = new Script(_loadbPath, _timeout, s_logger);
-        
+
         command.add("-i", routerIp);
         command.add("-f", cfgFile);
-        
+
         StringBuilder sb = new StringBuilder();
         if (addRules.length > 0) {
-        	for (int i=0; i< addRules.length; i++) {
-        		sb.append(addRules[i]).append(',');
-        	}
-        	command.add("-a", sb.toString());
+            for (int i=0; i< addRules.length; i++) {
+                sb.append(addRules[i]).append(',');
+            }
+            command.add("-a", sb.toString());
         }
-        
+
         sb = new StringBuilder();
         if (removeRules.length > 0) {
-        	for (int i=0; i< removeRules.length; i++) {
-        		sb.append(removeRules[i]).append(',');
-        	}
-        	command.add("-d", sb.toString());
+            for (int i=0; i< removeRules.length; i++) {
+                sb.append(removeRules[i]).append(',');
+            }
+            command.add("-d", sb.toString());
         }
-        
+
         return command.execute();
-	}
+    }
 
     protected synchronized Answer execute(final SavePasswordCommand cmd) {
-    	final String password = cmd.getPassword();
-    	final String routerPrivateIPAddress = cmd.getRouterPrivateIpAddress();
-    	final String vmName = cmd.getVmName();
-    	final String vmIpAddress = cmd.getVmIpAddress();
-    	final String local =  vmName;
+        final String password = cmd.getPassword();
+        final String routerPrivateIPAddress = cmd.getRouterPrivateIpAddress();
+        final String vmName = cmd.getVmName();
+        final String vmIpAddress = cmd.getVmIpAddress();
+        final String local =  vmName;
 
-    	// Run save_password_to_domr.sh
+        // Run save_password_to_domr.sh
         final String result = savePassword(routerPrivateIPAddress, vmIpAddress, password, local);
         if (result != null) {
-        	return new Answer(cmd, false, "Unable to save password to DomR.");
+            return new Answer(cmd, false, "Unable to save password to DomR.");
         } else {
-        	return new Answer(cmd);
+            return new Answer(cmd);
         }
     }
-    
-    protected synchronized Answer execute (final DhcpEntryCommand cmd) {
-    	final Script command  = new Script(_dhcpEntryPath, _timeout, s_logger);
-    	command.add("-r", cmd.getRouterPrivateIpAddress());
-    	command.add("-v", cmd.getVmIpAddress());
-    	command.add("-m", cmd.getVmMac());
-    	command.add("-n", cmd.getVmName());
 
-    	final String result = command.execute();
-    	return new Answer(cmd, result==null, result);
+    protected synchronized Answer execute (final DhcpEntryCommand cmd) {
+        final Script command  = new Script(_dhcpEntryPath, _timeout, s_logger);
+        command.add("-r", cmd.getRouterPrivateIpAddress());
+        command.add("-v", cmd.getVmIpAddress());
+        command.add("-m", cmd.getVmMac());
+        command.add("-n", cmd.getVmName());
+
+        final String result = command.execute();
+        return new Answer(cmd, result==null, result);
     }
-    
+
     protected Answer execute(final CheckConsoleProxyLoadCommand cmd) {
-    	return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());
+        return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());
     }
 
     protected Answer execute(final WatchConsoleProxyLoadCommand cmd) {
-    	return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());
+        return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());
     }
 
     private Answer executeProxyLoadScan(final Command cmd, final long proxyVmId, final String proxyVmName, final String proxyManagementIp, final int cmdPort) {
         String result = null;
 
-		final StringBuffer sb = new StringBuffer();
-		sb.append("http://").append(proxyManagementIp).append(":" + cmdPort).append("/cmd/getstatus");
+        final StringBuffer sb = new StringBuffer();
+        sb.append("http://").append(proxyManagementIp).append(":" + cmdPort).append("/cmd/getstatus");
 
-		boolean success = true;
-		try {
-			final URL url = new URL(sb.toString());
-			final URLConnection conn = url.openConnection();
+        boolean success = true;
+        try {
+            final URL url = new URL(sb.toString());
+            final URLConnection conn = url.openConnection();
 
-			final InputStream is = conn.getInputStream();
-			final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-			final StringBuilder sb2 = new StringBuilder();
-			String line = null;
-			try {
-				while ((line = reader.readLine()) != null) {
+            final InputStream is = conn.getInputStream();
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            final StringBuilder sb2 = new StringBuilder();
+            String line = null;
+            try {
+                while ((line = reader.readLine()) != null) {
                     sb2.append(line + "\n");
                 }
-				result = sb2.toString();
-			} catch (final IOException e) {
-				success = false;
-			} finally {
-				try {
-					is.close();
-				} catch (final IOException e) {
-					s_logger.warn("Exception when closing , console proxy address : " + proxyManagementIp);
-					success = false;
-				}
-			}
-		} catch(final IOException e) {
-			s_logger.warn("Unable to open console proxy command port url, console proxy address : " + proxyManagementIp);
-			success = false;
-		}
+                result = sb2.toString();
+            } catch (final IOException e) {
+                success = false;
+            } finally {
+                try {
+                    is.close();
+                } catch (final IOException e) {
+                    s_logger.warn("Exception when closing , console proxy address : " + proxyManagementIp);
+                    success = false;
+                }
+            }
+        } catch(final IOException e) {
+            s_logger.warn("Unable to open console proxy command port url, console proxy address : " + proxyManagementIp);
+            success = false;
+        }
 
-    	return new ConsoleProxyLoadAnswer(cmd, proxyVmId, proxyVmName, success, result);
+        return new ConsoleProxyLoadAnswer(cmd, proxyVmId, proxyVmName, success, result);
     }
 
 
 
 
     public synchronized String savePassword(final String privateIpAddress, final String vmIpAddress, final String password, final String localPath) {
-    	final Script command  = new Script(_savepasswordPath, _startTimeout, s_logger);
-    	command.add("-r", privateIpAddress);
-    	command.add("-v", vmIpAddress);
-    	command.add("-p", password);
-    	command.add(localPath);
+        final Script command  = new Script(_savepasswordPath, _startTimeout, s_logger);
+        command.add("-r", privateIpAddress);
+        command.add("-v", vmIpAddress);
+        command.add("-p", password);
+        command.add(localPath);
 
-    	return command.execute();
+        return command.execute();
     }
 
-    
+
     public String assignPublicIpAddress(final String vmName, final long id, final String vnet, final String privateIpAddress, final String macAddress, final String publicIpAddress) {
 
         final Script command = new Script(_ipassocPath, _timeout, s_logger);
@@ -425,40 +425,40 @@ public class VirtualRoutingResource implements Manager {
 
         final Script command = new Script(_ipassocPath, _timeout, s_logger);
         if (add) {
-        	command.add("-A");
+            command.add("-A");
         } else {
-        	command.add("-D");
+            command.add("-D");
         }
         if (sourceNat) {
-        	command.add("-f");
+            command.add("-f");
         }
         command.add("-i", privateIpAddress);
         command.add("-l", publicIpAddress);
         command.add("-r", vmName);
-        
+
         command.add("-n", vlanNetmask);
-        
+
         command.add("-c", "eth2");
-        
+
         if (vlanId != null) {
-        	command.add("-v", vlanId);
-        	command.add("-g", vlanGateway);
+            command.add("-v", vlanId);
+            command.add("-g", vlanGateway);
         }
 
         return command.execute();
     }
 
     public String setPortForwardRule(final boolean enable, final String routerName, final String routerIpAddress, final String protocol,
-    							   final String publicIpAddress, final String publicPortRange, final String privateIpAddress, final String privatePortRange) {
-        
-    	if (routerIpAddress == null) {
-        	s_logger.warn("setPortForwardRule did nothing because Router IP address was null when creating rule for public IP: " + publicIpAddress);
+            final String publicIpAddress, final String publicPortRange, final String privateIpAddress, final String privatePortRange) {
+
+        if (routerIpAddress == null) {
+            s_logger.warn("setPortForwardRule did nothing because Router IP address was null when creating rule for public IP: " + publicIpAddress);
             return null;    
         }
-    	
-    
+
+
         final Script command = new Script(_firewallPath, _timeout, s_logger);
-        
+
         command.add(enable ? "-A" : "-D");
         command.add("-P", protocol);
         command.add("-l", publicIpAddress);
@@ -467,168 +467,168 @@ public class VirtualRoutingResource implements Manager {
         command.add("-i", routerIpAddress);
         command.add("-r", privateIpAddress);
         command.add("-d", privatePortRange);
-        
+
         return command.execute();
     }
-    
+
     public String setStaticNat(final boolean enable, final String routerName, final String routerIpAddress,
-    		final String publicIpAddress, final String privateIpAddress) {
+            final String publicIpAddress, final String privateIpAddress) {
 
-    	if (routerIpAddress == null) {
-    		s_logger.warn("setStaticNat did nothing because Router IP address was null when creating rule for public IP: " + publicIpAddress);
-    		return null;    
-    	}
+        if (routerIpAddress == null) {
+            s_logger.warn("setStaticNat did nothing because Router IP address was null when creating rule for public IP: " + publicIpAddress);
+            return null;    
+        }
 
-    	final Script command = new Script(_firewallPath, _timeout, s_logger);
+        final Script command = new Script(_firewallPath, _timeout, s_logger);
 
-    	command.add(enable ? "-A" : "-D");
-    	command.add("-l", publicIpAddress);
-    	command.add("-n", routerName);
-    	command.add("-i", routerIpAddress);
-    	command.add("-G", privateIpAddress);
-    	return command.execute();
+        command.add(enable ? "-A" : "-D");
+        command.add("-l", publicIpAddress);
+        command.add("-n", routerName);
+        command.add("-i", routerIpAddress);
+        command.add("-G", privateIpAddress);
+        return command.execute();
     }
-    
+
     private boolean isBridgeExists(String bridgeName) {
-    	Script command = new Script("/bin/sh", _timeout);
-    	command.add("-c");
-    	command.add("brctl show|grep " + bridgeName);
-    	final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-    	String result = command.execute(parser);
-    	if (result != null || parser.getLine() == null) {
-    		return false;
-    	} else {
-    		return true;
-    	}
-    }
-    
-    private void deleteBridge(String brName) {
-    	Script cmd = new Script("/bin/sh", _timeout);
-    	cmd.add("-c");
-    	cmd.add("ifconfig " + brName + " down;brctl delbr " + brName);
-    	cmd.execute();
-    }
-    
-    private boolean isDNSmasqRunning(String dnsmasqName) {
-    	Script cmd = new Script("/bin/sh", _timeout);
-    	cmd.add("-c");
-    	cmd.add("ls -l /var/run/libvirt/network/" + dnsmasqName + ".pid");
-    	String result = cmd.execute();
-    	if (result != null) {
-    		return false;
-    	} else {
+        Script command = new Script("/bin/sh", _timeout);
+        command.add("-c");
+        command.add("brctl show|grep " + bridgeName);
+        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+        String result = command.execute(parser);
+        if (result != null || parser.getLine() == null) {
+            return false;
+        } else {
             return true;
         }
     }
-    
+
+    private void deleteBridge(String brName) {
+        Script cmd = new Script("/bin/sh", _timeout);
+        cmd.add("-c");
+        cmd.add("ifconfig " + brName + " down;brctl delbr " + brName);
+        cmd.execute();
+    }
+
+    private boolean isDNSmasqRunning(String dnsmasqName) {
+        Script cmd = new Script("/bin/sh", _timeout);
+        cmd.add("-c");
+        cmd.add("ls -l /var/run/libvirt/network/" + dnsmasqName + ".pid");
+        String result = cmd.execute();
+        if (result != null) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     private void stopDnsmasq(String dnsmasqName) {
-    	Script cmd = new Script("/bin/sh", _timeout);
-    	cmd.add("-c");
-    	cmd.add("kill -9 `cat /var/run/libvirt/network/"  + dnsmasqName +".pid`");
-    	cmd.execute();
+        Script cmd = new Script("/bin/sh", _timeout);
+        cmd.add("-c");
+        cmd.add("kill -9 `cat /var/run/libvirt/network/"  + dnsmasqName +".pid`");
+        cmd.execute();
     }
-    
+
     public void cleanupPrivateNetwork(String privNwName, String privBrName){
-    	if (isDNSmasqRunning(privNwName)) {
-    		stopDnsmasq(privNwName);
-    	}
-    	if (isBridgeExists(privBrName)) {
-    		deleteBridge(privBrName);
-    	}
-    	
-    	
+        if (isDNSmasqRunning(privNwName)) {
+            stopDnsmasq(privNwName);
+        }
+        if (isBridgeExists(privBrName)) {
+            deleteBridge(privBrName);
+        }
+
+
     }
-    
-//    protected Answer execute(final SetFirewallRuleCommand cmd) {
-//    	String args;
-//    	if(cmd.getProtocol().toLowerCase().equals(NetUtils.NAT_PROTO)){
-//    		//1:1 NAT needs instanceip;publicip;domrip;op
-//    		if(cmd.isCreate()) {
-//                args = "-A";
-//            } else {
-//                args = "-D";
-//            }
-//
-//    		args += " -l " + cmd.getPublicIpAddress();
-//    		args += " -i " + cmd.getRouterIpAddress();
-//    		args += " -r " + cmd.getPrivateIpAddress();
-//    		args += " -G " + cmd.getProtocol();
-//    	}else{
-//    		if (cmd.isEnable()) {
-//    			args = "-A";
-//    		} else {
-//    			args = "-D";
-//    		}
-//
-//    		args += " -P " + cmd.getProtocol().toLowerCase();
-//    		args += " -l " + cmd.getPublicIpAddress();
-//    		args += " -p " + cmd.getPublicPort();
-//    		args += " -n " + cmd.getRouterName();
-//    		args += " -i " + cmd.getRouterIpAddress();
-//    		args += " -r " + cmd.getPrivateIpAddress();
-//    		args += " -d " + cmd.getPrivatePort();
-//    		args += " -N " + cmd.getVlanNetmask();
-//
-//    		String oldPrivateIP = cmd.getOldPrivateIP();
-//    		String oldPrivatePort = cmd.getOldPrivatePort();
-//
-//    		if (oldPrivateIP != null) {
-//    			args += " -w " + oldPrivateIP;
-//    		}
-//
-//    		if (oldPrivatePort != null) {
-//    			args += " -x " + oldPrivatePort;
-//    		}
-//    	}
-//
-//    	final Script command = new Script(_firewallPath, _timeout, s_logger);
-//    	String [] argsArray = args.split(" ");
-//    	for (String param : argsArray) {
-//    		command.add(param);
-//    	}
-//    	String result = command.execute();
-//    	return new Answer(cmd, result == null, result);
-//    }
-    
+
+    //    protected Answer execute(final SetFirewallRuleCommand cmd) {
+    //    	String args;
+    //    	if(cmd.getProtocol().toLowerCase().equals(NetUtils.NAT_PROTO)){
+    //    		//1:1 NAT needs instanceip;publicip;domrip;op
+    //    		if(cmd.isCreate()) {
+    //                args = "-A";
+    //            } else {
+    //                args = "-D";
+    //            }
+    //
+    //    		args += " -l " + cmd.getPublicIpAddress();
+    //    		args += " -i " + cmd.getRouterIpAddress();
+    //    		args += " -r " + cmd.getPrivateIpAddress();
+    //    		args += " -G " + cmd.getProtocol();
+    //    	}else{
+    //    		if (cmd.isEnable()) {
+    //    			args = "-A";
+    //    		} else {
+    //    			args = "-D";
+    //    		}
+    //
+    //    		args += " -P " + cmd.getProtocol().toLowerCase();
+    //    		args += " -l " + cmd.getPublicIpAddress();
+    //    		args += " -p " + cmd.getPublicPort();
+    //    		args += " -n " + cmd.getRouterName();
+    //    		args += " -i " + cmd.getRouterIpAddress();
+    //    		args += " -r " + cmd.getPrivateIpAddress();
+    //    		args += " -d " + cmd.getPrivatePort();
+    //    		args += " -N " + cmd.getVlanNetmask();
+    //
+    //    		String oldPrivateIP = cmd.getOldPrivateIP();
+    //    		String oldPrivatePort = cmd.getOldPrivatePort();
+    //
+    //    		if (oldPrivateIP != null) {
+    //    			args += " -w " + oldPrivateIP;
+    //    		}
+    //
+    //    		if (oldPrivatePort != null) {
+    //    			args += " -x " + oldPrivatePort;
+    //    		}
+    //    	}
+    //
+    //    	final Script command = new Script(_firewallPath, _timeout, s_logger);
+    //    	String [] argsArray = args.split(" ");
+    //    	for (String param : argsArray) {
+    //    		command.add(param);
+    //    	}
+    //    	String result = command.execute();
+    //    	return new Answer(cmd, result == null, result);
+    //    }
+
     protected String getDefaultScriptsDir() {
         return "scripts/network/domr/dom0";
     }
-    
+
     protected String findScript(final String script) {
         return Script.findScript(_scriptsDir, script);
     }
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
-    	_name = name;
+        _name = name;
 
         _scriptsDir = (String)params.get("domr.scripts.dir");
         if (_scriptsDir == null) {
-        	if(s_logger.isInfoEnabled()) {
+            if(s_logger.isInfoEnabled()) {
                 s_logger.info("VirtualRoutingResource _scriptDir can't be initialized from domr.scripts.dir param, use default" );
             }
             _scriptsDir = getDefaultScriptsDir();
         }
-        
-    	if(s_logger.isInfoEnabled()) {
+
+        if(s_logger.isInfoEnabled()) {
             s_logger.info("VirtualRoutingResource _scriptDir to use: " + _scriptsDir);
         }
-        
+
         String value = (String)params.get("scripts.timeout");
         _timeout = NumbersUtil.parseInt(value, 120) * 1000;
-        
+
         value = (String)params.get("start.script.timeout");
         _startTimeout = NumbersUtil.parseInt(value, 360) * 1000;
-        
+
         value = (String)params.get("ssh.sleep");
         _sleep = NumbersUtil.parseInt(value, 10) * 1000;
-        
+
         value = (String)params.get("ssh.retry");
         _retry = NumbersUtil.parseInt(value, 24);
-        
+
         value = (String)params.get("ssh.port");
         _port = NumbersUtil.parseInt(value, 3922);
-        
+
         _ipassocPath = findScript("ipassoc.sh");
         if (_ipassocPath == null) {
             throw new ConfigurationException("Unable to find the ipassoc.sh");
@@ -652,19 +652,19 @@ public class VirtualRoutingResource implements Manager {
 
         _savepasswordPath = findScript("save_password_to_domr.sh");
         if(_savepasswordPath == null) {
-        	throw new ConfigurationException("Unable to find save_password_to_domr.sh");
+            throw new ConfigurationException("Unable to find save_password_to_domr.sh");
         }
-        
+
         _dhcpEntryPath = findScript("dhcp_entry.sh");
         if(_dhcpEntryPath == null) {
-        	throw new ConfigurationException("Unable to find dhcp_entry.sh");
+            throw new ConfigurationException("Unable to find dhcp_entry.sh");
         }
-        
+
         _vmDataPath = findScript("vm_data.sh");
         if(_vmDataPath == null) {
-        	throw new ConfigurationException("Unable to find user_data.sh");
+            throw new ConfigurationException("Unable to find user_data.sh");
         }
-        
+
         _publicEthIf = (String)params.get("public.network.device");
         if (_publicEthIf == null) {
             _publicEthIf = "xenbr1";
@@ -673,16 +673,16 @@ public class VirtualRoutingResource implements Manager {
 
         _privateEthIf = (String)params.get("private.network.device");
         if (_privateEthIf == null) {
-        	_privateEthIf = "xenbr0";
+            _privateEthIf = "xenbr0";
         }
         _privateEthIf = _privateEthIf.toLowerCase();
-        
+
         return true;
     }
 
 
     public String connect(final String ipAddress) {
-    	return connect(ipAddress, _port);
+        return connect(ipAddress, _port);
     }
 
     public String connect(final String ipAddress, final int port) {
@@ -694,7 +694,7 @@ public class VirtualRoutingResource implements Manager {
                 }
                 sch = SocketChannel.open();
                 sch.configureBlocking(true);
-                
+
                 final InetSocketAddress addr = new InetSocketAddress(ipAddress, port);
                 sch.connect(addr);
                 return null;
@@ -714,31 +714,31 @@ public class VirtualRoutingResource implements Manager {
             } catch (final InterruptedException e) {
             }
         }
-        
+
         s_logger.debug("Unable to logon to " + ipAddress);
-        
+
         return "Unable to connect";
     }
-    
-    
-	@Override
-	public String getName() {
-		return _name;
-	}
+
+
+    @Override
+    public String getName() {
+        return _name;
+    }
 
 
 
-	@Override
-	public boolean start() {
-		return true;
-	}
+    @Override
+    public boolean start() {
+        return true;
+    }
 
 
 
-	@Override
-	public boolean stop() {
-		return true;
-	}
+    @Override
+    public boolean stop() {
+        return true;
+    }
 
 
 }

@@ -1933,7 +1933,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new ResourceUnavailableException("Unable to apply lb rules", DataCenter.class, network.getDataCenterId());
         }
 
-        String routerControlIpAddress  = router.getPrivateIpAddress();
         
         if (router.getState() == State.Running || router.getState() == State.Starting) {
 
