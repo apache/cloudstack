@@ -213,7 +213,7 @@
 </div>
 
 <!-- advanced search template (begin) -->
-<div class="adv_searchpopup_bg" id="advanced_search_template" style="display:none;">
+<div class="adv_searchpopup_bg" id="advanced_search_popup" style="display:none;">
             <div class="adv_searchformbox">
                 <form action="#" method="post">
                 <ol>

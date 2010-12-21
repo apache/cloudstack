@@ -1489,7 +1489,7 @@
 <!--  ***** Dialogs (end) ***** -->
 
 <!-- advanced search templates (begin) -->
-<div id="advanced_search_template_general" class="adv_searchpopup_bg" style="display: none;">
+<div id="advanced_search_popup_general" class="adv_searchpopup_bg" style="display: none;">
         <div class="adv_searchformbox">
             <form action="#" method="post">
             <ol>
@@ -1527,7 +1527,7 @@
         </div>
 </div>
 
-<div id="advanced_search_template_nostate" class="adv_searchpopup_bg" style="display: none;">
+<div id="advanced_search_popup_nostate" class="adv_searchpopup_bg" style="display: none;">
 
         <div class="adv_searchformbox">
             <form action="#" method="post">
@@ -1555,7 +1555,7 @@
 
 </div>
 
-<div id="advanced_search_template_nodomainaccount" class="adv_searchpopup_bg" style="display: none;">
+<div id="advanced_search_popup_nodomainaccount" class="adv_searchpopup_bg" style="display: none;">
         <div class="adv_searchformbox">
             <form action="#" method="post">
             <ol>
