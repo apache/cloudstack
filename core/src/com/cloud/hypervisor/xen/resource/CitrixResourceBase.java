@@ -4907,7 +4907,7 @@ public abstract class CitrixResourceBase implements ServerResource {
                 try {
                     snapshotSr = createNfsSRbyURI(conn, new URI(snapshotMountpoint), false);
                     VDI snapshotVdi = getVDIbyUuid(conn, snapshotUuid);
-                    VDI backedVdi = snapshotVdi.copy(conn, snapshotSr);
+                    VDI backedVdi = cloudVDIcopy(conn, snapshotVdi, snapshotSr);
                     snapshotBackupUuid = backedVdi.getUuid(conn);
                     success = true;
                 } finally {

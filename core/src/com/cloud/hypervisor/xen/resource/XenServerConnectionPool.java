@@ -17,7 +17,6 @@
  */
 package com.cloud.hypervisor.xen.resource;
 
-import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
 import java.util.HashMap;
