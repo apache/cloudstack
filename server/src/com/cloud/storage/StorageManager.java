@@ -281,4 +281,6 @@ public interface StorageManager extends Manager {
     //void release(VirtualMachineProfile<? extends VirtualMachine> vm);
 
 	void release(VirtualMachineProfile<? extends VMInstanceVO> profile);
+
+	void cleanupVolumes(Long vmId);
 }

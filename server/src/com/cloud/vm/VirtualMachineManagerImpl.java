@@ -67,6 +67,7 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
@@ -257,6 +258,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
             return false;
         }
         
+    	//Clean up volumes based on the vm's instance id
+    	_storageMgr.cleanupVolumes(vm.getId());
+
         VirtualMachineGuru<T> guru = getVmGuru(vm);
         vm = guru.findById(vm.getId());
 
@@ -569,6 +573,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.DestroyRequested, State.Destroyed);
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.StopRequested, State.Stopped);
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.AgentReportStopped, State.Stopped);
+    	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.OperationFailed, State.Error);
     	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.OperationRetry, State.Starting);
     	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.OperationSucceeded, State.Running);
     	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.OperationFailed, State.Stopped);

@@ -1979,7 +1979,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	private void updateVmStateForFailedVmCreation(Long vmId) {
 		UserVmVO vm = _vmDao.findById(vmId);
 		if(vm != null){
-			if(vm.getState().equals(State.Creating)){
+			if(vm.getState().equals(State.Stopped)){
 				_itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailed, null);
 			}
 		}
@@ -2519,12 +2519,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UserVmVO vm = new UserVmVO(id, instanceName, cmd.getDisplayName(),
                                    template.getId(), template.getGuestOSId(), offering.getOfferHA(), domainId, owner.getId(), offering.getId(), userData, hostName);
 
-        try{
-	        if (_itMgr.allocate(vm, template, offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, cmd.getHypervisor(), owner) == null) {
-	            return null;
-	        }
-        }finally{
-        	updateVmStateForFailedVmCreation(id);
+
+        if (_itMgr.allocate(vm, template, offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, cmd.getHypervisor(), owner) == null) {
+            return null;
         }
         
         if (s_logger.isDebugEnabled()) {
@@ -2556,8 +2553,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	    
 	    AccountVO owner = _accountDao.findById(vm.getAccountId());
 	    
-	    vm = _itMgr.start(vm, null, caller, owner, cmd.getHypervisor());
-	    vm.setPassword(password);
+	    try {
+			vm = _itMgr.start(vm, null, caller, owner, cmd.getHypervisor());
+		} finally {
+			updateVmStateForFailedVmCreation(vm.getId());
+		}
+		vm.setPassword(password);
 	    return vm;
 	}
 	
