@@ -395,7 +395,7 @@ def cleanup_rules_for_dead_vms():
 def cleanup_rules():
   try:
 
-    chainscmd = "iptables-save | grep '^:' | awk '{print $1}' | cut -d':' -f2"
+    chainscmd = "iptables-save | grep '^:' | grep '.*-def' | awk '{print $1}' | cut -d':' -f2"
     chains = execute(chainscmd).split('\n')
     cleaned = 0
     cleanup = []
