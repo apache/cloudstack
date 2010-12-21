@@ -1006,8 +1006,6 @@ function bindAddNetworkButton($button) {
      
     //***** binding Event Handler (begin) ******    
     $dialogAddNetworkForZone.find("#add_publicip_vlan_network_name_container, #add_publicip_vlan_network_desc_container").show();	
-			
-	$dialogAddNetworkForZone.find("#add_publicip_vlan_pod_container").hide();		
 								
 	$dialogAddNetworkForZone.find("#add_publicip_vlan_scope").empty().append('<option value="zone-wide">zone-wide</option>').append('<option value="account-specific">account-specific</option>');
 	 						
@@ -1048,25 +1046,6 @@ function bindAddNetworkButton($button) {
 			
 		} 
 		else {	
-			$dialogAddNetworkForZone.find("#add_publicip_vlan_pod_container").show();				
-			
-			var podSelect = $dialogAddNetworkForZone.find("#add_publicip_vlan_pod").empty();		
-			$.ajax({
-			    data: createURL("command=listPods&zoneId="+zoneObj.id),
-				dataType: "json",
-				async: false,
-				success: function(json) {
-					var pods = json.listpodsresponse.pod;						
-					if (pods != null && pods.length > 0) {
-						for (var i = 0; i < pods.length; i++) {
-							podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 
-						}
-					} else {
-						podSelect.append("<option value=''>No available pods</option>"); 
-					}
-				}
-			});
-			
 			var domainSelect = $dialogAddNetworkForZone.find("#add_publicip_vlan_domain").empty();	
 			if(zoneObj.domainid != null) { //list only domains under zoneObj.domainid
 			    domainSelect.append("<option value='" + zoneObj.domainid + "'>" + fromdb(zoneObj.domain) + "</option>"); 	

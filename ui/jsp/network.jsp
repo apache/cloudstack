@@ -938,13 +938,7 @@
                     <option value="account-specific">account-specific</option>
                     -->
                 </select>
-            </li>
-            <li style="display: none" id="add_publicip_vlan_pod_container">
-                <label for="user_name">
-                    Pod:</label>
-                <select class="select" name="add_publicip_vlan_pod" id="add_publicip_vlan_pod">
-                </select>
-            </li>
+            </li>           
             <li style="display: none" id="add_publicip_vlan_domain_container">
                 <label for="user_name">
                     Domain:</label>
