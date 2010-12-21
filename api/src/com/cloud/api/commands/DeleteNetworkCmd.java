@@ -26,6 +26,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.exception.InvalidParameterValueException;
 
 @Implementation(description="Deletes a network", responseObject=SuccessResponse.class)
 public class DeleteNetworkCmd extends BaseCmd{
@@ -60,6 +61,11 @@ public class DeleteNetworkCmd extends BaseCmd{
     
     @Override
     public void execute(){
+        //Don't allow to delete network via api call when it has vms assigned to it
+        int nicCount = _networkService.getActiveNicsInNetwork(id);
+        if (nicCount > 0) {
+            throw new InvalidParameterValueException("Unable to remove the network id=" + id + " as it has active Nics.");
+        }
         boolean result = _networkService.deleteNetwork(id);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

@@ -2116,4 +2116,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         return success;
     }
+    
+    @Override
+    public int getActiveNicsInNetwork(long networkId) {
+        return _networksDao.getActiveNicsIn(networkId);
+    }
 }

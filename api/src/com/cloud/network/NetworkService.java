@@ -88,4 +88,6 @@ public interface NetworkService {
     boolean deleteNetwork(long networkId) throws InvalidParameterValueException, PermissionDeniedException;
     
     boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException;
+    
+    int getActiveNicsInNetwork(long networkId);
 }
