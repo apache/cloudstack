@@ -211,8 +211,6 @@
             <form action="#" method="post">
             <ol>
                 <li>
-                    <label>
-                        Name:</label>
                     <input class="text textwatermark" type="text" id="adv_search_name" value="by name" />
                 </li>
                 <li>
