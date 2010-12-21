@@ -1754,8 +1754,8 @@ a:hover {
 	cursor:hand;
 }
 
-.searchpanel_advancebutton.close {
-	background:url(../images/filter_downarrow.gif) no-repeat top left;
+.searchpanel_advancebutton.up {
+	background:url(../images/filter_uparrow.gif) no-repeat top left;
 }
 
 .adv_searchpopup_highlighted_advancesearch {
@@ -2439,7 +2439,7 @@ a:hover.search_button {
 }
 
 .midmenu_content.selected {
-	background:#838383 url(../images/leftmenu_selected.gif) repeat-x top left;
+	background:#345265 url(../images/midmenu_selected.gif) repeat-x top left;
 	color:#FFF;
 
 }
