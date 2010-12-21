@@ -66,8 +66,6 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
         for (StoragePoolVO pool: pools) {
         	if (checkPool(avoid, pool, dskCh, template, null, vm, sc)) {
         		return pool;
-        	} else {
-        		pools.remove(pool);
         	}
         }
         
@@ -75,10 +73,6 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
 			s_logger.debug("Unable to find any storage pool");
 		}
         
-        if (_dontMatter && pools.size() > 0) {
-        	return pools.get(0);
-        } else {
-        	return null;
-        }
+        return null;
 	}
 }
