@@ -1334,18 +1334,20 @@ public abstract class CitrixResourceBase implements ServerResource {
 
         return new IpAssocAnswer(cmd, results);
     }
-
+    
     protected GetVncPortAnswer execute(GetVncPortCommand cmd) {
         Connection conn = getConnection();
         try {
             Set<VM> vms = VM.getByNameLabel(conn, cmd.getName());
-            return new GetVncPortAnswer(cmd, getVncPort(conn, vms.iterator().next()));
-        } catch (XenAPIException e) {
-            s_logger.warn("Unable to get vnc port " + e.toString(), e);
-            return new GetVncPortAnswer(cmd, e.toString());
+            if(vms.size() == 1) {
+                return new GetVncPortAnswer(cmd, getVncPort(conn, vms.iterator().next()));
+            } else {
+                return new GetVncPortAnswer(cmd, "There are " + vms.size() + " VMs named " + cmd.getName());
+            }
         } catch (Exception e) {
-            s_logger.warn("Unable to get vnc port ", e);
-            return new GetVncPortAnswer(cmd, e.getMessage());
+            String msg = "Unable to get vnc port due to " + e.toString();
+            s_logger.warn(msg, e);
+            return new GetVncPortAnswer(cmd, msg);
         }
     }
 
