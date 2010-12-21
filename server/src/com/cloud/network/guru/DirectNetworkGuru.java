@@ -74,8 +74,12 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                 config.setBroadcastUri(userSpecified.getBroadcastUri());
                 config.setState(State.Setup);
             }
+            
+            if (userSpecified.getBroadcastDomainType() != null) {
+                config.setBroadcastDomainType(userSpecified.getBroadcastDomainType());
+            }
         }
-        
+       
         config.setDns1(dc.getDns1());
         config.setDns2(dc.getDns2());
         
