@@ -530,7 +530,34 @@
                 </div>
                 <div id="add_pod_endip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
+            </li>            
+            <li id="guestip_container" style="display: none">
+                <label style="width: 115px;">
+                    Guest IP Range:</label>
+                <input class="text" style="width: 92px" type="text" id="startguestip" /><span>-</span>
+                <input class="text" style="width: 92px" type="text" id="endguestip" />
+                <div id="startguestip_errormsg" class="dialog_formcontent_errormsg" style="display: none;
+                    margin-left: 133px;">
+                </div>
+                <div id="endguestip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
             </li>
+            <li id="guestnetmask_container" style="display: none">
+                <label style="width: 115px;">
+                    Guest Netmask:</label>
+                <input class="text" type="text" id="guestnetmask" />
+                <div id="guestnetmask_errormsg" class="dialog_formcontent_errormsg" style="display: none;
+                    margin-left: 0;">
+                </div>
+            </li>
+            <li id="guestgateway_container" style="display: none">
+                <label style="width: 115px;">
+                    Guest Gateway:</label>
+                <input class="text" type="text" id="guestgateway" />
+                <div id="guestgateway_errormsg" class="dialog_formcontent_errormsg" style="display: none;
+                    margin-left: 0;">
+                </div>
+            </li>             
         </ol>
         </form>
     </div>

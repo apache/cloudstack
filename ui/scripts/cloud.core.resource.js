@@ -294,7 +294,7 @@ function afterLoadResourceJSP() {
 	initUpdateConsoleCertButton($("#Update_SSL_Certificate_button"));
 	
 	initDialog("dialog_update_cert", 450);	
-	initDialog("dialog_add_pod_in_resource_page", 320); 	
+	initDialog("dialog_add_pod_in_resource_page", 370); 	
     initDialog("dialog_add_host_in_resource_page");  
     initDialog("dialog_add_pool_in_resource_page");
 		
@@ -306,10 +306,13 @@ function afterLoadResourceJSP() {
 }
 
 function initAddPodShortcut() {
-    var $zoneDropdown = $("#dialog_add_pod_in_resource_page").find("#zone_dropdown");
+    var $dialogAddPod = $("#dialog_add_pod_in_resource_page");
+
+    var $zoneDropdown = $dialogAddPod.find("#zone_dropdown");
     $.ajax({
 	    data: createURL("command=listZones&available=true"),
 	    dataType: "json",
+	    async: false,
 	    success: function(json) {
 	        var items = json.listzonesresponse.zone;			
 			if (items != null && items.length > 0) {	
@@ -318,13 +321,30 @@ function initAddPodShortcut() {
 			}	
 	    }
 	});    
-
+    
+    $zoneDropdown.bind("change", function(event) {
+	    var zoneId = $(this).val();	    
+	    $.ajax({
+	        data: createURL("command=listZones&id="+zoneId),
+	        dataType: "json",	        
+	        success: function(json) {	            
+	            var zoneObj = json.listzonesresponse.zone[0];		           
+	            if(zoneObj.networktype == "Basic") { //basic-mode network (pod-wide VLAN)
+                    $dialogAddPod.find("#guestip_container, #guestnetmask_container, #guestgateway_container").show();
+                }
+                else if(zoneObj.networktype == "Advanced") { //advanced-mode network (zone-wide VLAN)
+                    $dialogAddPod.find("#guestip_container, #guestnetmask_container, #guestgateway_container").hide();     
+                }  	                    
+	        }
+	    });	    
+    });    
+    $zoneDropdown.change();
+  
     $("#add_pod_shortcut").unbind("click").bind("click", function(event) {           
-        $("#dialog_add_pod_in_resource_page").find("#info_container").hide();	
-        $("#dialog_add_pod_in_resource_page").find("#add_pod_name,#add_pod_netmask,#add_pod_startip,add_pod_endip").val("");
-        $("#add_pod_gateway").val("");
-		
-        $("#dialog_add_pod_in_resource_page")
+        $dialogAddPod.find("#info_container").hide();	
+        //$dialogAddPod.find("#add_pod_name, #dd_pod_gateway,#add_pod_netmask,#add_pod_startip,add_pod_endip").val("");
+        		
+        $dialogAddPod
         .dialog('option', 'buttons', { 				
 	        "Add": function() {		
 	            var $thisDialog = $(this);
@@ -337,6 +357,10 @@ function initAddPodShortcut() {
 		        isValid &= validateIp("Start IP Range", $thisDialog.find("#add_pod_startip"), $thisDialog.find("#add_pod_startip_errormsg"));  //required
 		        isValid &= validateIp("End IP Range", $thisDialog.find("#add_pod_endip"), $thisDialog.find("#add_pod_endip_errormsg"), true);  //optional
 		        isValid &= validateIp("Gateway", $thisDialog.find("#add_pod_gateway"), $thisDialog.find("#add_pod_gateway_errormsg"));  //required when creating
+		        
+		        if($thisDialog.find("#guestip_container").css("display") != "none")
+                    isValid &= addZoneWizardValidateGuestIPRange($thisDialog);
+		        
 		        if (!isValid) 
 		            return;			
                 
@@ -389,6 +413,40 @@ function initAddPodShortcut() {
 							        } 
 						        }).dialog("open");
 				        }
+				            
+				        //Create IP Range 
+                        if($thisDialog.find("#guestip_container").css("display") != "none") {       
+		                    var netmask = $thisDialog.find("#guestnetmask").val();
+		                    var startip = $thisDialog.find("#startguestip").val();
+		                    var endip = $thisDialog.find("#endguestip").val();	
+		                    var guestgateway = $thisDialog.find("#guestgateway").val();
+                    				
+		                    var array1 = [];
+		                    array1.push("&vlan=untagged");	
+		                    array1.push("&zoneid=" + zoneId);
+		                    array1.push("&podId=" + item.id);	
+		                    array1.push("&forVirtualNetwork=false"); //direct VLAN	
+		                    array1.push("&gateway="+todb(guestgateway));
+		                    array1.push("&netmask="+todb(netmask));	
+		                    array1.push("&startip="+todb(startip));
+		                    if(endip != null && endip.length > 0)
+		                        array1.push("&endip="+todb(endip));
+                            
+                            $.ajax({
+		                        data: createURL("command=createVlanIpRange" + array1.join("")),
+			                    dataType: "json",
+			                    async: false,
+			                    success: function(json) { 	                    			                			    
+				                    //var item = json.createvlaniprangeresponse.vlan;				                    			
+			                    },		   
+		                        error: function(XMLHttpResponse) {					                    
+				                    handleError(XMLHttpResponse, function() {
+					                    handleErrorInDialog(XMLHttpResponse, $thisDialog);	
+				                    });				                    			
+                                }
+		                    });		
+                        }	  
+				        
 			        },
 		            error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {

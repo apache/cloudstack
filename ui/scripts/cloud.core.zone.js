@@ -632,8 +632,7 @@ function bindAddSecondaryStorageButton($button, $leftmenuItem1) {
     });
 }
 
-function bindAddPodButton($button, $leftmenuItem1) {
-    $button.show();     
+function bindAddPodButton($button, $leftmenuItem1) {       
     $button.unbind("click").bind("click", function(event) {   
         var zoneObj = $leftmenuItem1.data("jsonObj"); 
         
