@@ -27,11 +27,11 @@
         </div>
         <div class="grid_container" id="system_wide_capacity_container">
             <div class="grid_header">
-                <div class="grid_header_cell" style="width: 60%; border: none;">
+                <div class="grid_header_cell" style="width: 50%; border: none;">
                     <div class="grid_header_title">
                         System Wide Capacity</div>
                 </div>
-                <div class="grid_header_cell" style="width: 40%; border: none;">
+                <div class="grid_header_cell" style="width: 50%; border: none;">
                     <div class="grid_header_formbox">
                         <label for="zone" class="label">
                             Zone:</label>
