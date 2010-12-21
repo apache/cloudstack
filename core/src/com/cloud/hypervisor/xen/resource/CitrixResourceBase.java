@@ -2132,20 +2132,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             }
             for (VM vm : vms) {
                 try {
-                    vm.cleanReboot(conn);
-                } catch (XenAPIException e) {
-                    s_logger.debug("Do Not support Clean Reboot, fall back to hard Reboot: " + e.toString());
-                    try {
-                        vm.hardReboot(conn);
-                    } catch (XenAPIException e1) {
-                        s_logger.debug("Caught exception on hard Reboot " + e1.toString());
-                        return new RebootAnswer(cmd, "reboot failed: " + e1.toString());
-                    } catch (XmlRpcException e1) {
-                        s_logger.debug("Caught exception on hard Reboot " + e1.getMessage());
-                        return new RebootAnswer(cmd, "reboot failed");
-                    }
-                } catch (XmlRpcException e) {
-                    String msg = "Clean Reboot failed due to " + e.getMessage();
+                    rebootVM(conn, vm, vm.getNameLabel(conn));
+                } catch (Exception e) {
+                    String msg = e.toString();
                     s_logger.warn(msg, e);
                     return new RebootAnswer(cmd, msg);
                 }
@@ -2476,12 +2465,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             /* set action after crash as destroy */
             vm.setActionsAfterCrash(conn, Types.OnCrashBehaviour.DESTROY);
 
-            vm.start(conn, false, true);
-
-            if (!vm.getResidentOn(conn).getUuid(conn).equals(_host.uuid)) {
-                startvmfailhandle(vm, null);
-                throw new Exception("can not start VM " + cmd.getVmName() + " On host " + _host.ip);
-            }
+            startVM(conn, host, vm, cmd.getVmName());
 
             if (_canBridgeFirewall) {
                 String result = callHostPlugin("default_network_rules", "vmName", cmd.getVmName(), "vmIP", cmd
@@ -2552,6 +2536,47 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return createVIF(conn, vm, mac, rate, devNum,  vlanNetwork);
     }
 
+    
+    void shutdownVM(Connection conn, VM vm, String vmName) throws XmlRpcException {
+        try {      
+            vm.cleanShutdown(conn);
+        } catch (Types.XenAPIException e) {
+            s_logger.debug("Unable to cleanShutdown VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString() + ", try hard shutdown");
+            try {
+                vm.hardShutdown(conn);
+            } catch (Exception e1) {
+                String msg = "Unable to hardShutdown VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString();
+                s_logger.warn(msg, e1);
+                throw new CloudRuntimeException(msg);
+            }
+        }
+    }
+    
+    void rebootVM(Connection conn, VM vm, String vmName) throws XmlRpcException {
+        try {
+            vm.cleanReboot(conn);
+        } catch (XenAPIException e) {
+            s_logger.debug("Unable to Clean Reboot VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString() + ", try hard reboot");
+            try {
+                vm.hardReboot(conn);
+            } catch (Exception e1) {
+                String msg = "Unable to hard Reboot VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString();
+                s_logger.warn(msg, e1);
+                throw new CloudRuntimeException(msg);
+            }
+        }
+    }
+    
+    void startVM(Connection conn, Host host, VM vm, String vmName) {
+        try {
+            vm.startOn(conn, host, false, true);
+        } catch (Exception e) {
+            String msg = "Unable to start VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString();
+            s_logger.warn(msg, e);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+    
     protected StopAnswer execute(final StopCommand cmd) {
         String vmName = cmd.getVmName();
         try {
@@ -2604,43 +2629,24 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                     if (vmr.powerState == VmPowerState.RUNNING) {
                         /* when stop a vm, set affinity to current xenserver */
                         vm.setAffinity(conn, vm.getResidentOn(conn));
-                        try {
-                            if (VirtualMachineName.isValidRouterName(vmName)) {
-                                long[] stats = getNetworkStats(vmName);
-                                bytesSent = stats[0];
-                                bytesRcvd = stats[1];
-                            }
-                            if (_canBridgeFirewall) {
-                                String result = callHostPlugin("destroy_network_rules_for_vm", "vmName", cmd.getVmName());
-                                if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
-                                    s_logger.warn("Failed to remove  network rules for vm " + cmd.getVmName());
-                                } else {
-                                    s_logger.info("Removed  network rules for vm " + cmd.getVmName());
-                                }
-                            }
-                            vm.cleanShutdown(conn);
-
-                        } catch (XenAPIException e) {
-                            s_logger.debug("Do Not support Clean Shutdown, fall back to hard Shutdown: " + e.toString());
-                            try {
-                                vm.hardShutdown(conn);
-                            } catch (XenAPIException e1) {
-                                String msg = "Hard Shutdown failed due to " + e1.toString();
-                                s_logger.warn(msg, e1);
-                                return new StopAnswer(cmd, msg);
-                            } catch (XmlRpcException e1) {
-                                String msg = "Hard Shutdown failed due to " + e1.getMessage();
-                                s_logger.warn(msg, e1);
-                                return new StopAnswer(cmd, msg);
-                            }
-                        } catch (XmlRpcException e) {
-                            String msg = "Clean Shutdown failed due to " + e.getMessage();
-                            s_logger.warn(msg, e);
-                            return new StopAnswer(cmd, msg);
+                        if (VirtualMachineName.isValidRouterName(vmName)) {
+                            long[] stats = getNetworkStats(vmName);
+                            bytesSent = stats[0];
+                            bytesRcvd = stats[1];
                         }
+                        if (_canBridgeFirewall) {
+                            String result = callHostPlugin("destroy_network_rules_for_vm", "vmName", cmd.getVmName());
+                            if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+                                s_logger.warn("Failed to remove  network rules for vm " + cmd.getVmName());
+                            } else {
+                                s_logger.info("Removed  network rules for vm " + cmd.getVmName());
+                            }
+                        }
+                        shutdownVM(conn, vm, vmName);
                     }
+
                 } catch (Exception e) {
-                    String msg = "Catch exception " + e.getClass().toString() + " when stop VM:" + cmd.getVmName();
+                    String msg = "Catch exception " + e.getClass().toString() + " when stop VM:" + cmd.getVmName()+ " due to " + e.toString();
                     s_logger.debug(msg);
                     return new StopAnswer(cmd, msg);
                 } finally {
@@ -2903,13 +2909,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             /* set action after crash as destroy */
             vm.setActionsAfterCrash(conn, Types.OnCrashBehaviour.DESTROY);
 
-            vm.start(conn, false, true);
+            startVM(conn, host, vm, vmName);
             
-            if (!vm.getResidentOn(conn).getUuid(conn).equals(_host.uuid)) {
-                startvmfailhandle(vm, null);
-                throw new Exception("can not start VM " + vmName + " On host " + _host.ip);
-            }
-
             if (_canBridgeFirewall) {
                 String result = callHostPlugin("default_network_rules_systemvm", "vmName", vmName);
                 if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
