@@ -1796,7 +1796,14 @@ var vmVolumeActionMap = {
         dialogBeforeActionFn : doCreateTemplateFromVmVolume,
         inProcessText: "Creating template....",
         afterActionSeccessFn: function(json, id, $subgridItem) {}         
-    }  
+    },
+    "Take Snapshot": { 
+        isAsyncJob: true,
+        asyncJobResponse: "createsnapshotresponse",            
+        dialogBeforeActionFn : doTakeSnapshotFromVmVolume,
+        inProcessText: "Taking Snapshot....",
+        afterActionSeccessFn: function(json, id, $subgridItem) {}         
+    }
 }     
 
 function vmNicJSONToTemplate(json, $template, index) {
@@ -1836,6 +1843,9 @@ function vmVolumeJSONToTemplate(json, $template) {
 	var $actionMenu = $actionLink.find("#volume_action_menu");
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
+     
+    buildActionLinkForSubgridItem("Take Snapshot", vmVolumeActionMap, $actionMenu, $template);	 
+    noAvailableActions = false;		
      
     var hasCreateTemplate = false;        
 	if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
@@ -1988,6 +1998,23 @@ function doCreateTemplateFromVmVolume($actionLink, $subgridItem) {
 		} 
 	}).dialog("open");
 }   
+
+function doTakeSnapshotFromVmVolume($actionLink, $subgridItem) {  
+    $("#dialog_info")
+    .text("Please confirm you want to create snapshot for this volume")					
+    .dialog('option', 'buttons', { 					    
+	    "Confirm": function() { 	
+	        $(this).dialog("close");	
+	    	
+            var id = $subgridItem.data("jsonObj").id;	
+			var apiCommand = "command=createSnapshot&volumeid="+id;
+	    	doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem);
+	    },
+	    "Cancel": function() { 					        
+		    $(this).dialog("close"); 
+	    } 
+    }).dialog("open");	  
+}		
 
 //***** Routers tab (begin) ***************************************************************************************
 var vmRouterActionMap = {      
