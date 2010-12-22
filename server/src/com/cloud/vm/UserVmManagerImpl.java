@@ -1109,6 +1109,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (!destroy(vm)) {
         	return false;
         }
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
+        _usageEventDao.persist(usageEvent);
         cleanNetworkRules(userId, vmId);
         
         // Mark the VM's disks as destroyed
@@ -1388,6 +1390,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         _eventDao.persist(event);
 
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
+        _usageEventDao.persist(usageEvent);
+        
         if (_storageMgr.unshare(vm, null) == null) {
             s_logger.warn("Unable to set share to false for " + vm.toString());
         }
