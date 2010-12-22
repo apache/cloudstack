@@ -591,8 +591,8 @@ public abstract class CitrixResourceBase implements ServerResource {
         vm.removeFromOtherConfig(conn, "disks");
         vm.setNameLabel(conn, vmSpec.getName());
         setMemory(conn, vm, vmSpec.getMinRam());
-        vm.setVCPUsAtStartup(conn, (long)vmSpec.getCpus());
         vm.setVCPUsMax(conn, (long)vmSpec.getCpus());
+        vm.setVCPUsAtStartup(conn, (long)vmSpec.getCpus());
         
         Map<String, String> vcpuParams = new HashMap<String, String>();
 
