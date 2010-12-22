@@ -3290,7 +3290,7 @@ a:hover.search_button {
 
 
 .grid_actionbox {
-	width:76px;
+	width:87px;
 	height:20px;
 	float:right;
 	position:relative;
@@ -3303,6 +3303,19 @@ a:hover.search_button {
 
 .grid_actionbox:hover {
 	background:url(../images/grid_actions_hover.gif) no-repeat top left;
+}
+
+.grid_actionbox p{
+	width:auto;
+	height:autox;
+	float:left;
+	margin:4px 0 0 25px;
+	color:#FFF;
+	font-size:11px;
+	font-weight:normal;
+	text-align:left;
+	display:inline;
+	padding:0;
 }
 
 .gridheader_loaderbox {
@@ -3481,7 +3494,7 @@ a:hover.search_button {
 	height:auto;
 	float:left;
 	position:absolute;
-	background:#FFF repeat top left;
+	background:#414141 repeat top left;
 	border:1px solid #CCC;
 	top:17px;
 	right:0;
@@ -3504,33 +3517,35 @@ a:hover.search_button {
 	height:auto;
 	float:left;
 	text-align:left;
-	background:#FFF url(../images/actiondd_bg.gif) repeat-x top left;
+	background:#414141 repeat-x top left;
 	color:#CCC;
 	font-size:11px;
 	font-weight:normal;
 	margin:0 0 0 0;
 	padding:6px 0 5px 3px;
+	border-bottom:1px dashed #666;
 	list-style:none;
 }
 
 .actionsdropdown_boxlist li:hover{
-	background:#e6e6e6 repeat top left;
+	background:#7f7f7f repeat top left;
+	color:#CCC;
 }
 
 .actionsdropdown_boxlist a{
 	text-decoration:none;
-	color:#2c8bbc;
+	color:#FFF;
 }
 
 
 .actionsdropdown_boxlist a:link, actionsdropdown_boxlist a:visited {
 	text-decoration:none;
-	color:#2c8bbc;
+	color:#FFF;
 }
 
 .actionsdropdown_boxlist a:hover{
 	text-decoration:none;
-	color:#2c8bbc;
+	color:#FFF;
 }
 
 .dbrow {
