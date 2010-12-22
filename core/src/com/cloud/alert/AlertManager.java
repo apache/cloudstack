@@ -20,7 +20,6 @@ package com.cloud.alert;
 
 import com.cloud.capacity.CapacityVO;
 import com.cloud.utils.component.Manager;
-import com.cloud.vm.VMInstanceVO;
 
 public interface AlertManager extends Manager {
     public static final short ALERT_TYPE_MEMORY = CapacityVO.CAPACITY_TYPE_MEMORY;
@@ -46,7 +45,5 @@ public interface AlertManager extends Manager {
 
     void clearAlert(short alertType, long dataCenterId, long podId);
     void sendAlert(short alertType, long dataCenterId, Long podId, String subject, String body);
-    void recalculateCapacity();
-	long calcHostAllocatedCpuMemoryCapacity(long hostId, short capacityType);
-	boolean skipCalculation(VMInstanceVO vm);
+    void recalculateCapacity();	
 }

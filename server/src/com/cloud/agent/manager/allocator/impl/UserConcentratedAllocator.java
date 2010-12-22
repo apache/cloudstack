@@ -54,6 +54,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.State;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -75,7 +76,7 @@ public class UserConcentratedAllocator implements PodAllocator {
     @Inject CapacityDao _capacityDao;
     @Inject ConfigurationDao _configDao;
     @Inject VMInstanceDao _vmInstanceDao;
-    @Inject AlertManager _alertMgr = null;
+    @Inject UserVmManager _vmMgr;
     
     Random _rand = new Random(System.currentTimeMillis());
  
@@ -169,7 +170,7 @@ public class UserConcentratedAllocator implements PodAllocator {
                     // for CPU/Memory, we now switch to static allocation
                     //
                     if ((capacity.getTotalCapacity() -
-                            _alertMgr.calcHostAllocatedCpuMemoryCapacity(capacity.getHostOrPoolId(), capacityType)) >= capacityNeeded) {
+                            _vmMgr.calcHostAllocatedCpuMemoryCapacity(capacity.getHostOrPoolId(), capacityType)) >= capacityNeeded) {
 
                         hostCandidate[0] = capacity.getHostOrPoolId();
                         enoughCapacity = true;

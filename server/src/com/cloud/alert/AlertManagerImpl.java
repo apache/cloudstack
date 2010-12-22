@@ -79,6 +79,7 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -105,12 +106,10 @@ public class AlertManagerImpl implements AlertManager {
     private AlertDao _alertDao;
     private HostDao _hostDao;
     @Inject protected StorageManager _storageMgr;
+    @Inject UserVmManager _vmMgr;
     private ServiceOfferingDao _offeringsDao;
     private CapacityDao _capacityDao;
-    private VMInstanceDao _vmDao;
-    private DomainRouterDao _routerDao;
-    private ConsoleProxyDao _consoleProxyDao;
-    private SecondaryStorageVmDao _secStorgaeVmDao;
+    private VMInstanceDao _vmDao;    
     private UserVmDao _userVmDao;
     private DataCenterDao _dcDao;
     private HostPodDao _podDao;
@@ -128,11 +127,7 @@ public class AlertManagerImpl implements AlertManager {
     private double _storageAllocCapacityThreshold = 0.75;
     private double _publicIPCapacityThreshold = 0.75;
     private double _privateIPCapacityThreshold = 0.75;
-    private int _hoursToSkipStoppedVMs = 24;
-
-    private int _routerRamSize;
-    private int _proxyRamSize;
-    private int _secStorageVmRamSize;
+    
     private final GlobalLock m_capacityCheckLock = GlobalLock.getInternLock("capacity.check");
 
     @Override
@@ -207,10 +202,7 @@ public class AlertManagerImpl implements AlertManager {
             s_logger.error("Unable to get the VM Instance dao.");
             return false;
         }
-        _routerDao = locator.getDao(DomainRouterDao.class);
-        _consoleProxyDao = locator.getDao(ConsoleProxyDao.class);
-        _secStorgaeVmDao = locator.getDao(SecondaryStorageVmDao.class);
-        
+                
         _userVmDao = locator.getDao(UserVmDao.class);
         if (_userVmDao == null) {
             s_logger.error("Unable to get the UserVm dao.");
@@ -281,13 +273,6 @@ public class AlertManagerImpl implements AlertManager {
             	_cpuOverProvisioningFactor = 1;
             }
         }
-
-        _routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), 128);
-        _proxyRamSize = NumbersUtil.parseInt(configs.get("consoleproxy.ram.size"), ConsoleProxyManager.DEFAULT_PROXY_VM_RAMSIZE);
-        _secStorageVmRamSize = NumbersUtil.parseInt(configs.get("secstorage.vm.ram.size"), SecondaryStorageManagerImpl.DEFAULT_SS_VM_RAMSIZE);
-        
-        String value = configs.get("capacity.skipcounting.hours");
-		_hoursToSkipStoppedVMs = NumbersUtil.parseInt(value, 24);
 
         _timer = new Timer("CapacityChecker");
 
@@ -365,8 +350,8 @@ public class AlertManagerImpl implements AlertManager {
             if (host.getType() != Host.Type.Routing) {
                 continue;
             }
-            long cpu = calcHostAllocatedCpuMemoryCapacity(host.getId(), CapacityVO.CAPACITY_TYPE_CPU);
-            long usedMemory = calcHostAllocatedCpuMemoryCapacity(host.getId(), CapacityVO.CAPACITY_TYPE_MEMORY);            
+            long cpu = _vmMgr.calcHostAllocatedCpuMemoryCapacity(host.getId(), CapacityVO.CAPACITY_TYPE_CPU);
+            long usedMemory = _vmMgr.calcHostAllocatedCpuMemoryCapacity(host.getId(), CapacityVO.CAPACITY_TYPE_MEMORY);            
             long totalMemory = host.getTotalMemory();
 
             CapacityVO newMemoryCapacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), usedMemory, totalMemory, CapacityVO.CAPACITY_TYPE_MEMORY);
@@ -434,83 +419,7 @@ public class AlertManagerImpl implements AlertManager {
         }
     }
 
-    @Override
-    public boolean skipCalculation(VMInstanceVO vm) {
-    	if(vm.getState() == State.Expunging) {
-    		if(s_logger.isDebugEnabled())
-    			s_logger.debug("Skip counting capacity for Expunging VM : " + vm.getInstanceName());
-    		return true;
-    	}
-    	
-    	if(vm.getState() == State.Destroyed && vm.getType() != VirtualMachine.Type.User)
-    		return true;
-    	
-    	if(vm.getState() == State.Stopped || vm.getState() == State.Destroyed) {
-    		// for stopped/Destroyed VMs, we will skip counting it if it hasn't been used for a while
-    		
-    		long millisecondsSinceLastUpdate = DateUtil.currentGMTTime().getTime() - vm.getUpdateTime().getTime();
-    		if(millisecondsSinceLastUpdate > _hoursToSkipStoppedVMs*3600000L) {
-    			if(s_logger.isDebugEnabled())
-    				s_logger.debug("Skip counting vm " + vm.getInstanceName() + " in capacity allocation as it has been stopped for " + millisecondsSinceLastUpdate/60000 + " minutes");
-    			return true;
-    		}
-    	}
-    	return false;
-    }
-    
-    /**
-     * 
-     * @param hostId Host id to calculate against
-     * @param capacityType CapacityVO.CAPACITY_TYPE_MEMORY or CapacityVO.CAPACITY_TYPE_CPU
-     * @return
-     */
-    @Override
-    public long calcHostAllocatedCpuMemoryCapacity(long hostId, short capacityType) {
-        assert(capacityType == CapacityVO.CAPACITY_TYPE_MEMORY || capacityType == CapacityVO.CAPACITY_TYPE_CPU) : "Invalid capacity type passed in calcHostAllocatedCpuCapacity()";
-    	
-        List<VMInstanceVO> vms = _vmDao.listByLastHostId(hostId);
-        long usedCapacity = 0;
-        for (VMInstanceVO vm : vms) {
-        	if(skipCalculation(vm))
-        		continue;
-        	
-            ServiceOffering so = null;
-        	if(vm.getType() == VirtualMachine.Type.User) {
-        		UserVmVO userVm = _userVmDao.findById(vm.getId());
-        		if (userVm == null) {
-        		    continue;
-        		}
-        		so = _offeringsDao.findById(userVm.getServiceOfferingId());
-        	} else if(vm.getType() == VirtualMachine.Type.ConsoleProxy) {
-        		so = new ServiceOfferingVO("Fake Offering For DomP", 1,
-    				_proxyRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
-        	} else if(vm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
-        		so = new ServiceOfferingVO("Fake Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
-        	} else if(vm.getType() == VirtualMachine.Type.DomainRouter) {
-                so = new ServiceOfferingVO("Fake Offering For DomR", 1, _routerRamSize, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
-        	} else {
-        		assert(false) : "Unsupported system vm type";
-                so = new ServiceOfferingVO("Fake Offering For unknow system VM", 1, 128, 0, 0, 0, false, null, GuestIpType.Virtualized, false, true, null);
-        	}
-            
-            if(capacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {
-            	usedCapacity += so.getRamSize() * 1024L * 1024L;
-            	
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Counting memory capacity used by vm: " + vm.getId() + ", size: " + so.getRamSize() + "MB, host: " + hostId + ", currently counted: " + usedCapacity + " Bytes");
-                }
-            } else if(capacityType == CapacityVO.CAPACITY_TYPE_CPU) {
-            	usedCapacity += so.getCpu() * so.getSpeed();
-            	
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Counting cpu capacity used by vm: " + vm.getId() + ", cpu: " + so.getCpu() + ", speed: " + so.getSpeed() + ", currently counted: " + usedCapacity + " Bytes");
-                }
-            }
-        }
         
-    	return usedCapacity;
-    }
-    
     class CapacityChecker extends TimerTask {
         @Override
 		public void run() {
