@@ -901,14 +901,14 @@
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>            
-			<li style="display: none" id="add_publicip_vlan_network_name_container">
+			<li>
                 <label for="user_name">
                     Network Name:</label>
                 <input class="text" type="text" name="add_publicip_vlan_network_name" id="add_publicip_vlan_network_name" />
                 <div id="add_publicip_vlan_network_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-			<li style="display: none" id="add_publicip_vlan_network_desc_container">
+			<li>
                 <label for="user_name">
                     Network Desc:</label>
                 <input class="text" type="text" name="add_publicip_vlan_network_desc" id="add_publicip_vlan_network_desc" />
@@ -932,11 +932,9 @@
             <li id="add_publicip_vlan_scope_container">
                 <label for="add_publicip_vlan_scope">
                     Scope:</label>
-                <select class="select" name="add_publicip_vlan_scope" id="add_publicip_vlan_scope">
-                    <!--  
+                <select class="select" id="add_publicip_vlan_scope">                    
                     <option value="zone-wide">zone-wide</option>
-                    <option value="account-specific">account-specific</option>
-                    -->
+                    <option value="account-specific">account-specific</option>                   
                 </select>
             </li>           
             <li style="display: none" id="add_publicip_vlan_domain_container">
