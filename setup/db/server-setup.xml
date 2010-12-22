@@ -127,21 +127,21 @@
       <domainId>1</domainId>
       <name>Small Disk</name>
       <displayText>Small Disk [16GB Disk]</displayText>
-      <diskSpace>16000</diskSpace>
+      <diskSpace>16384</diskSpace>
     </diskOffering>
     <diskOffering>
       <id>2</id>
       <domainId>1</domainId>
       <name>Medium Disk</name>
       <displayText>Medium Disk [32GB Disk]</displayText>
-      <diskSpace>32000</diskSpace>
+      <diskSpace>32768</diskSpace>
     </diskOffering>
     <diskOffering>
       <id>3</id>
       <domainId>1</domainId>
       <name>Large Disk</name>
       <displayText>Large Disk [64GB Disk]</displayText>
-      <diskSpace>64000</diskSpace>
+      <diskSpace>65536</diskSpace>
     </diskOffering>
   </diskOfferings>
 
