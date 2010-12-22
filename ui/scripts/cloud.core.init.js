@@ -17,6 +17,26 @@
  */
 
 $(document).ready(function() { 
+	function initUI() {
+		var context = $.urlParam('lp');
+		if (context != null) { 
+			if (context == 'instance') {
+				$("#leftmenu_instances").click();
+				$("#leftmenu_instances_my_instances").click();
+			} else if (context == 'volume') {
+				$("#leftmenu_storage").click();
+				$("#leftmenu_volume").click();
+			} else if (context == 'ip') {
+				$("#leftmenu_network").click();
+				$("#leftmenu_ip").click();
+			} else {
+				$("#leftmenu_dashboard").click();
+			}
+		} else {
+			$("#leftmenu_dashboard").click();
+		}
+	}	
+
 	$(".leftmenu_content_flevel").hover(
 		function() {
 			$(this).find(".leftmenu_arrows_firstlevel_open").show();
@@ -597,9 +617,9 @@ $(document).ready(function() {
 				
 				$("#main_username").text(g_username);
 				$("#login_wrapper").hide();				
-				showLeftNavigationBasedOnRole();				
+				showLeftNavigationBasedOnRole();
+				initUI();
 				$("#main").show();	
-				$("#leftmenu_dashboard").click();
 			},
 			error: function() {
 				$("#account_password").val("");
@@ -672,8 +692,8 @@ $(document).ready(function() {
 		success: function(json) {
 			buildSecondLevelNavigation();
 			$("#main_username").text(g_username);
-			$("#leftmenu_dashboard").click();	
-			showLeftNavigationBasedOnRole();												
+			showLeftNavigationBasedOnRole();
+			initUI();
 			$("#main").show();
 		},
 		error: function(xmlHTTP) {
