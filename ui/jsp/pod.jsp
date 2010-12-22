@@ -187,7 +187,7 @@
     <div class="grid_header">
         <div class="grid_header_title" id="grid_header_title">
         </div>
-        <div class="grid_actionbox" id="network_action_link">
+        <div class="grid_actionbox" id="network_action_link"><p>Actions</p>
             <div class="grid_actionsdropdown_box" id="network_action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
