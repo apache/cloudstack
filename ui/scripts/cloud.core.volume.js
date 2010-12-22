@@ -57,7 +57,7 @@ function afterLoadVolumeJSP() {
     initDialog("dialog_add_volume");	
     initDialog("dialog_attach_volume");	
     initDialog("dialog_add_volume_from_snapshot");	
-    initDialog("dialog_create_template_from_snapshot", 400);    
+    initDialog("dialog_create_template_from_snapshot", 450);    
 	initDialog("dialog_confirmation_delete_snapshot");
 	initDialog("dialog_download_volume");
 	        
@@ -1028,17 +1028,29 @@ function doCreateTemplateFromSnapshotInVolumePage($actionLink, $subgridItem) {
          var isValid = true;					
          isValid &= validateString("Name", thisDialog.find("#name"), thisDialog.find("#name_errormsg"), false);		
          isValid &= validateString("Display Text", thisDialog.find("#display_text"), thisDialog.find("#display_text_errormsg"), false);				         		          		
-         if (!isValid) return;                  	                                             
+         if (!isValid) 
+             return;                  	                                             
          
          thisDialog.dialog("close");	
          
+         var array1 = [];
          var name = thisDialog.find("#name").val();	 
+         array1.push("&name="+todb(name));
+         
          var displayText = thisDialog.find("#display_text").val();	 
+         array1.push("&displaytext="+todb(displayText));
+         
          var osTypeId = thisDialog.find("#os_type").val(); 	  
-         var password = thisDialog.find("#password").val();	                                         
+         array1.push("&ostypeid="+osTypeId);
+         
+         var isPublic = thisDialog.find("#ispublic").val();
+         array1.push("&isPublic="+isPublic);
+         
+         var password = thisDialog.find("#password").val();	
+         array1.push("&passwordEnabled="+password);                                         
        
          var id = jsonObj.id;
-         var apiCommand = "command=createTemplate&snapshotid="+id+"&name="+todb(name)+"&displaytext="+todb(displayText)+"&ostypeid="+osTypeId+"&passwordEnabled="+password;    	 
+         var apiCommand = "command=createTemplate&snapshotid="+id+array1.join("");    	 
     	 doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem);				
      },
      "Cancel": function() {	                         

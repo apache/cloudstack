@@ -738,7 +738,15 @@
 					<label>OS Type:</label>
 					<select class="select" id="os_type">
 					</select>
-				</li>		
+				</li>				
+				<li>
+	                <label for="ispublic">
+	                    Public:</label>
+	                <select class="select" name="ispublic" id="ispublic">
+	                    <option value="false">No</option>
+	                    <option value="true">Yes</option>
+	                </select>
+	            </li>						
 				<li>
 					<label>Password Enabled?:</label>
 					<select class="select" id="password">						
