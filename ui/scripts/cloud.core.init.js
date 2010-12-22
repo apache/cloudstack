@@ -278,24 +278,11 @@ $(document).ready(function() {
         	    
 	            $advancedSearchPopup.unbind("click").bind("click", function(event) {
 	                var $target = $(event.target);
-	                var targetId = $target.attr("id");	 
-	                /*       
-	                if(targetId == "advanced_search_close") {
-	                    $(this).hide();
-	                    return false;
-	                }
-	                else if(targetId == "adv_search_button") {    	        
-    	                var params = $("#middle_menu_pagination").data("params");
-	                    if(params == null)
-	                        return;	        	    
-	                    lastSearchType = "advanced_search";  
-	                    //$("#basic_search").find("#search_input").val("");
-	                    listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);
-    	                $("#advanced_search_icon").removeClass("up");
-    	                $(this).hide();
-	                    return false;
-	                }
-	                */
+	                var targetId = $target.attr("id");              	                
+	                if($target.hasClass("textwatermark")) {
+	                    $target.val("");
+	                    $target.removeClass("textwatermark");    
+	                }	                	              
 	                return true;
 	            });
         	    	
