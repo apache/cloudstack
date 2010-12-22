@@ -46,7 +46,7 @@
 	            <div class="grid_container">
 	        	    <div class="grid_header">
 	            	    <div id="grid_header_title" class="grid_header_title">Title</div>
-	                       <div class="grid_actionbox" id="action_link">
+	                       <div class="grid_actionbox" id="action_link"><p>Actions</p>
 	                        <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                            <ul class="actionsdropdown_boxlist" id="action_list">
 	                                <li><%=t.t("no.available.actions")%></li>
@@ -281,7 +281,7 @@
 	            <div class="grid_container">
 	        	    <div class="grid_header">
 	            	    <div id="grid_header_title" class="grid_header_title">Title</div>
-	                       <div class="grid_actionbox" id="action_link">
+	                       <div class="grid_actionbox" id="action_link"><p>Actions</p>
 	                        <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                            <ul class="actionsdropdown_boxlist" id="action_list">
 	                                <li><%=t.t("no.available.actions")%></li>
@@ -443,7 +443,7 @@
 	<div class="grid_header">
         <div class="grid_header_title" id="grid_header_title">
         </div>
-        <div class="grid_actionbox" id="firewall_action_link">
+        <div class="grid_actionbox" id="firewall_action_link"><p>Actions</p>
             <div class="grid_actionsdropdown_box" id="firewall_action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
@@ -494,7 +494,7 @@
 	<div class="grid_header">
         <div class="grid_header_title" id="grid_header_title">
         </div>
-        <div class="grid_actionbox" id="loadbalancer_action_link">
+        <div class="grid_actionbox" id="loadbalancer_action_link"><p>Actions</p>
             <div class="grid_actionsdropdown_box" id="loadbalancer_action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
@@ -544,7 +544,7 @@
 	<div class="grid_header">
         <div class="grid_header_title" id="grid_header_title">
         </div>
-        <div class="grid_actionbox" id="iprange_action_link">
+        <div class="grid_actionbox" id="iprange_action_link"><p>Actions</p>
             <div class="grid_actionsdropdown_box" id="iprange_action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
