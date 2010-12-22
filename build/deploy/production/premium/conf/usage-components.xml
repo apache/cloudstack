@@ -29,7 +29,6 @@
             <param name="cache.size">50</param>
             <param name="cache.time.to.live">-1</param>
         </dao>
-        <dao name="Events" class="com.cloud.event.dao.EventDaoImpl"/>
         <dao name="UserStats" class="com.cloud.user.dao.UserStatisticsDaoImpl"/>
         <dao name="IP Addresses" class="com.cloud.network.dao.IPAddressDaoImpl"/>
         <dao name="Usage" class="com.cloud.usage.dao.UsageDaoImpl"/>
@@ -41,6 +40,8 @@
         <dao name="Usage IPAddress" class="com.cloud.usage.dao.UsageIPAddressDaoImpl"/>
         <dao name="Usage Job" class="com.cloud.usage.dao.UsageJobDaoImpl"/>
         <dao name="Configuration" class="com.cloud.configuration.dao.ConfigurationDaoImpl"/>
+        <dao name="Usage Event" class="com.cloud.event.dao.UsageEventDaoImpl"/>
+        <manager name="Usage alert manager" class="com.cloud.usage.UsageAlertManagerImpl"/>
         <manager name="usage manager" class="com.cloud.usage.UsageManagerImpl">
             <param name="period">DAILY</param> <!-- DAILY, WEEKLY, MONTHLY; how often it creates usage records -->
         </manager>

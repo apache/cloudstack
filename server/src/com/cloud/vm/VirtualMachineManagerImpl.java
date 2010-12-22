@@ -76,6 +76,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -434,8 +435,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
                     if (!stateTransitTo(vm, Event.OperationSucceeded, dest.getHost().getId())) {
                         throw new CloudRuntimeException("Unable to transition to a new state.");
                     }
-                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
-                    _usageEventDao.persist(usageEvent);
+                    if(vm instanceof UserVm){
+                        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
+                        _usageEventDao.persist(usageEvent);
+                    }
                     return vm;
                 }
                 s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + answers[0].getDetails());

@@ -700,6 +700,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         if (createdVolume.getPath() != null) {
             event.setDescription("Created volume: "+ createdVolume.getName() + " with size: " + sizeMB + " MB in pool: " + poolName + " from snapshot id: " + snapshotId);
             event.setLevel(EventVO.LEVEL_INFO);
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, templateId , sizeMB);
+            _usageEventDao.persist(usageEvent);
         }
         else {
             details = "CreateVolume From Snapshot for snapshotId: " + snapshotId + " failed at the backend, reason " + details;
@@ -2684,6 +2686,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         
         vol = _volsDao.persist(vol);
         
+        if(vm instanceof UserVm){
+            long sizeMB = size / (1024 * 1024);
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), null , sizeMB);
+            _usageEventDao.persist(usageEvent);
+        }
         return toDiskProfile(vol, offering);
     }
     
@@ -2716,6 +2723,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         
         vol = _volsDao.persist(vol);
         
+        if(vm instanceof UserVm){
+            long sizeMB = vol.getSize() / (1024 * 1024);
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), template.getId() , sizeMB);
+            _usageEventDao.persist(usageEvent);
+        }
         return toDiskProfile(vol, offering);
     }
     

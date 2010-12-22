@@ -255,7 +255,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new CloudRuntimeException("Found address to allocate but unable to update: " + addr);
         }
         if(!sourceNat){
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getAccountId(), dcId, -1, addr.getAddress());
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getAccountId(), dcId, 0, addr.getAddress());
             _usageEventDao.persist(usageEvent);
         }
         
@@ -673,7 +673,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             _ipAddressDao.unassignIpAddress(ipAddress);
             s_logger.debug("released a public ip: " + ipAddress);    
             if(!ip.isSourceNat()){       
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ownerId, ip.getDataCenterId(), -1, ipAddress);
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ownerId, ip.getDataCenterId(), 0, ipAddress);
                 _usageEventDao.persist(usageEvent);
             }
         }
