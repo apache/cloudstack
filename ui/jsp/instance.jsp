@@ -49,7 +49,7 @@
 	        <div class="grid_container" style="display: block;">            
 	            <div class="grid_header">
 	            	<div id="title" class="grid_header_title">Title</div>
-	                    <div class="grid_actionbox" id="action_link">
+	                    <div class="grid_actionbox" id="action_link"> <p> Actions</p>
 	                        <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                            <ul class="actionsdropdown_boxlist" id="action_list">
 	                                <li><%=t.t("no.available.actions")%></li>
@@ -928,7 +928,7 @@
         <div class="grid_header_title" id="title">
         </div>
 		<!--
-        <div class="grid_actionbox" id="volume_action_link">
+        <div class="grid_actionbox" id="volume_action_link"><p>Actions</p>
             <div class="grid_actionsdropdown_box" id="nic_action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
@@ -999,7 +999,7 @@
     <div class="grid_header">
         <div class="grid_header_title" id="title">
         </div>
-        <div class="grid_actionbox" id="volume_action_link">
+        <div class="grid_actionbox" id="volume_action_link"><p>Actions</p>
             <div class="grid_actionsdropdown_box" id="volume_action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
@@ -1088,7 +1088,7 @@
     <div class="grid_header">
         <div class="grid_header_title" id="title">
         </div>
-        <div class="grid_actionbox" id="router_action_link">
+        <div class="grid_actionbox" id="router_action_link"><p>Actions</p>
             <div class="grid_actionsdropdown_box" id="router_action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>

@@ -44,7 +44,7 @@
 	        <div class="grid_container">
 	        	<div class="grid_header">
 	            	<div id="grid_header_title" class="grid_header_title">(title)</div>
-	                <div class="grid_actionbox" id="action_link">
+	                <div class="grid_actionbox" id="action_link"><p>Actions</p>
 	                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                        <ul class="actionsdropdown_boxlist" id="action_list">
 	                            <li><%=t.t("no.available.actions")%></li>
@@ -331,7 +331,7 @@
 			<div class="grid_container">
 	        	<div class="grid_header">
 	            	<div id="grid_header_title" class="grid_header_title">VPN Users</div>
-	                <div class="grid_actionbox" id="vpn_action_link">
+	                <div class="grid_actionbox" id="vpn_action_link"><p>Actions</p>
 	                    <div class="grid_actionsdropdown_box" id="vpn_action_menu" style="display: none;">
 	                        <ul class="actionsdropdown_boxlist" id="action_list">
 	                            <li><%=t.t("no.available.actions")%></li>
