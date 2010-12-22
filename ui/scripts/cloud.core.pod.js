@@ -500,7 +500,7 @@ function bindAddHostButton($button, currentPageInRightPanel, $leftmenuItem1) {
 			        array1.push("&password="+todb(password));
 				    
 			        var hostname = trim($thisDialog.find("#host_vcenter_address").val());
-			        hostname += "/" + trim($thisDialog.find("#host_vcente_dc").val());
+			        hostname += "/" + trim($thisDialog.find("#host_vcenter_dc").val());
 			        hostname += "/" + trim($thisDialog.find("#host_vcenter_host").val());
 			        
 			        var url;					
