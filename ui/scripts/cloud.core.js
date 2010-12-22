@@ -557,7 +557,7 @@ function clearMiddleMenu() {
     $("#midmenu_action_link").hide();    
     lastSearchType = null;
     $("#basic_search").find("#search_input").val("");
-    $("#advanced_search_icon").removeClass("on");
+    $("#advanced_search_icon").removeClass("up");
     $("#advanced_search_container").empty();
     $("#midmenu_prevbutton, #midmenu_nextbutton").hide();
     $("#middle_menu_pagination").data("params", null);

@@ -263,12 +263,12 @@ $(document).ready(function() {
 	
 	//advanced search	
 	$("#advanced_search_icon").unbind("click").bind("click", function(event) {
-	    if($(this).hasClass("on")) {
-	        $(this).removeClass("on");
+	    if($(this).hasClass("up")) {
+	        $(this).removeClass("up");
 	        $("#advanced_search_container").empty();
 	    }
 	    else {	    
-	        $(this).addClass("on");	    
+	        $(this).addClass("up");	    
 	
 	        var $advancedSearchPopup = $("#advanced_search_popup");
     	    
@@ -287,7 +287,7 @@ $(document).ready(function() {
 	                lastSearchType = "advanced_search";  
 	                //$("#basic_search").find("#search_input").val("");
 	                listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);
-    	            $("#advanced_search_icon").removeClass("on");
+    	            $("#advanced_search_icon").removeClass("up");
     	            $(this).hide();
 	                return false;
 	            }
