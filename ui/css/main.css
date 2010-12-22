@@ -3494,8 +3494,9 @@ a:hover.search_button {
 	height:auto;
 	float:left;
 	position:absolute;
-	background:#414141 repeat top left;
-	border:1px solid #CCC;
+	background:#444444 repeat top left;
+	border-bottom:1px solid #666;
+	border-left:1px solid #666;
 	top:17px;
 	right:0;
 	margin:0;
@@ -3517,7 +3518,7 @@ a:hover.search_button {
 	height:auto;
 	float:left;
 	text-align:left;
-	background:#414141 repeat-x top left;
+	background:#444444 repeat-x top left;
 	color:#CCC;
 	font-size:11px;
 	font-weight:normal;
