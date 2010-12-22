@@ -29,7 +29,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.async.AsyncCommandQueued;
-import com.cloud.event.EventUtils;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -38,7 +37,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
-import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
@@ -105,14 +103,6 @@ public class ApiDispatcher {
     public void dispatch(BaseCmd cmd, Map<String, String> params) {
         setupParameters(cmd, params);
         try {
-            if(cmd instanceof BaseAsyncCmd){
-                // save the started event  
-                Long userId = new Long(params.get("ctxUserId"));
-                BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmd;
-                Long startId = new Long(params.get("starteventid"));
-                EventUtils.saveStartedEvent((userId == null) ? User.UID_SYSTEM : userId, asyncCmd.getEntityOwnerId(),
-                        asyncCmd.getEventType(), "Starting async job for "+asyncCmd.getEventDescription(), startId);
-            }
             cmd.execute();
         } catch (Throwable t) {
             if (t instanceof  InvalidParameterValueException || t instanceof IllegalArgumentException) {

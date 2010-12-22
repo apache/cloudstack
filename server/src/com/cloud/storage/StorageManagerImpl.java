@@ -92,7 +92,9 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
+import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.DiscoveryException;
@@ -211,6 +213,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Inject protected UserDao _userDao;
     @Inject protected ClusterDao _clusterDao;
     @Inject protected VirtualNetworkApplianceManager _routerMgr;
+    @Inject protected UsageEventDao _usageEventDao;    
+
     
     @Inject(adapter=StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
@@ -830,6 +834,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             volume.setPodId(pod.getId());
             volume.setState(Volume.State.Ready);
             _volsDao.persist(volume);
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOffering.getId(), null , dskCh.getSize());
+            _usageEventDao.persist(usageEvent);
+
         }
         txn.commit();
         return volume;
@@ -1906,6 +1913,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                     event.setParameters(eventParams);
                     event.setState(Event.State.Completed);
                     _eventDao.persist(event);
+                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOffering.getId(), null , sizeMB);
+                    _usageEventDao.persist(usageEvent);
 /*
                 } else {
                     event.setDescription("Unable to create a volume for " + volume);
@@ -1943,6 +1952,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         event.setDescription("Volume " +volume.getName()+ " deleted");
         event.setLevel(EventVO.LEVEL_INFO);
         _eventDao.persist(event);
+        
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), null, null , null);
+        _usageEventDao.persist(usageEvent);
 
         // Delete the recurring snapshot policies for this volume.
         _snapshotMgr.deletePoliciesForVolume(volumeId);

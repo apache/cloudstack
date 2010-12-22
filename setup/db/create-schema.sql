@@ -1257,7 +1257,6 @@ CREATE TABLE  `cloud`.`usage_event` (
   `id` bigint unsigned NOT NULL auto_increment,
   `type` varchar(32) NOT NULL,
   `account_id` bigint unsigned NOT NULL,
-  `domain_id` bigint unsigned NOT NULL,
   `created` datetime NOT NULL,
   `zone_id` bigint unsigned NOT NULL,
   `resource_id` bigint unsigned,

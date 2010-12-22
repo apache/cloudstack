@@ -61,7 +61,9 @@ import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
+import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -158,6 +160,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Inject AsyncJobManager _asyncMgr;
     @Inject UserVmManager _vmMgr;
     @Inject ConfigurationDao _configDao;
+    @Inject UsageEventDao _usageEventDao;    
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     
     @Override

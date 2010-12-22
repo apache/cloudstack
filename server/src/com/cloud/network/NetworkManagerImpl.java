@@ -74,7 +74,9 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
+import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -188,6 +190,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject FirewallRulesDao _firewallRulesDao;
     @Inject LoadBalancerDao _lbDao;
     @Inject PortForwardingRulesDao _pfRulesDao;
+    @Inject UsageEventDao _usageEventDao;
 
     @Inject(adapter=NetworkGuru.class)
     Adapters<NetworkGuru> _networkGurus;
@@ -250,6 +253,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         if (!_ipAddressDao.update(addr.getAddress(), addr)) {
             throw new CloudRuntimeException("Found address to allocate but unable to update: " + addr);
+        }
+        if(!sourceNat){
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getAccountId(), dcId, -1, addr.getAddress());
+            _usageEventDao.persist(usageEvent);
         }
         
         txn.commit();
@@ -664,7 +671,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         if (success) {
             _ipAddressDao.unassignIpAddress(ipAddress);
-            s_logger.debug("released a public ip: " + ipAddress);
+            s_logger.debug("released a public ip: " + ipAddress);    
+            if(!ip.isSourceNat()){       
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ownerId, ip.getDataCenterId(), -1, ipAddress);
+                _usageEventDao.persist(usageEvent);
+            }
         }
         
         final EventVO event = new EventVO();
