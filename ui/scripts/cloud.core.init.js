@@ -263,15 +263,15 @@ $(document).ready(function() {
 	
 	//advanced search	
 	$("#advanced_search_icon").unbind("click").bind("click", function(event) {
-	    if($(this).hasClass("up")) {
-	        $(this).removeClass("up");	        
-	        $("#advanced_search_container").find("#advanced_search_popup").hide();
+	    if($(this).hasClass("up")) {  //clicking up-arrow          
+	        $("#advanced_search_container").find("#advanced_search_popup").slideUp("500");
+	        $(this).removeClass("up");	//change arrow from up to down
 	    }
-	    else {	    
-	        $(this).addClass("up");	  
+	    else {  //clicking down-arrow 
+	        $(this).addClass("up");	    //change arrow from down to up
 	          
 	        if($("#advanced_search_container").find("#advanced_search_popup").length > 0) {
-	            $("#advanced_search_container").find("#advanced_search_popup").show();
+	            $("#advanced_search_container").find("#advanced_search_popup").slideDown("500");
 	        }
 	        else {	
 	            var $advancedSearchPopup = $("#advanced_search_popup");
@@ -391,7 +391,7 @@ $(document).ready(function() {
         	    	      
 	            $advancedSearchPopup.find("#adv_search_startdate, #adv_search_enddate").datepicker({dateFormat: 'yy-mm-dd'});
         	    	    	    
-	            $("#advanced_search_container").empty().append($advancedSearchPopup.show());	 
+	            $("#advanced_search_container").empty().append($advancedSearchPopup.slideDown("500"));	 
 	        }
 	    }
 	    	   
