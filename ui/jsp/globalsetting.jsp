@@ -49,7 +49,7 @@
 	            		<div class="grid_header_title">Description</div>
 	                </div>                
 	                <div class="grid_header_cell" style="width:15%; border:none;">
-	            		<div id="action_link" class="grid_actionbox">
+	            		<div id="action_link" class="grid_actionbox"><p>Actions</p>
 	                        <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                            <ul class="actionsdropdown_boxlist" id="action_list">
 	                                <li><%=t.t("no.available.actions")%></li>
