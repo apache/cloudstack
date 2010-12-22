@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -87,6 +88,8 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.Availability;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -1781,7 +1784,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                    throw new CloudRuntimeException("Failed to create a vlan");
                }
            }  
-           txn.commit();
+           txn.commit(); 
+           
            return networks.get(0);
        } catch (Exception ex) {
            s_logger.warn("Unexpected exception while creating network ", ex);
@@ -1878,7 +1882,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         sc.addAnd("accountId", SearchCriteria.Op.SC, ssc);
         
-        return _networksDao.search(sc, searchFilter);
+        List<NetworkVO> networks =  _networksDao.search(sc, searchFilter);
+        
+        return networks;
     }
     
     @Override @DB
@@ -2131,4 +2137,43 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public int getActiveNicsInNetwork(long networkId) {
         return _networksDao.getActiveNicsIn(networkId);
     }
+    
+    @Override
+    public Map<Service, Map<Capability, String>> getZoneCapabilities(long zoneId) {
+        DataCenterVO dc = _dcDao.findById(zoneId);
+        if (dc == null) {
+            throw new InvalidParameterValueException("Zone id=" + dc.getId() + " doesn't exist in the system.");
+        }
+        
+        //Get all service providers from the datacenter
+        Map<Service,String> providers = new HashMap<Service,String>();
+        providers.put(Service.Firewall, dc.getFirewallProvider());
+        providers.put(Service.Lb, dc.getLoadBalancerProvider());
+        providers.put(Service.Vpn, dc.getVpnProvider());
+        providers.put(Service.Dns, dc.getDnsProvider());
+        providers.put(Service.Gateway, dc.getGatewayProvider());
+        providers.put(Service.UserData, dc.getUserDataProvider());
+        providers.put(Service.Dhcp, dc.getDhcpProvider());
+        
+        Map<Service, Map<Capability, String>> networkCapabilities = new HashMap<Service, Map<Capability, String>>();
+        
+        for (NetworkElement element : _networkElements) {
+            if (providers.isEmpty()) {
+                break;
+            }
+            Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();
+            if (elementCapabilities != null) {
+                Iterator<Service> it = providers.keySet().iterator();
+                while (it.hasNext()) {
+                    Service service = it.next();
+                    if (providers.get(service).equals(element.getProvider().getName())) {
+                        networkCapabilities.put(service, elementCapabilities.get(service));
+                        it.remove();
+                    }
+                }
+            }
+        }
+        return networkCapabilities;
+    }
+    
 }

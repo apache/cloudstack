@@ -28,7 +28,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
-import com.cloud.network.service.Providers;
+import com.cloud.network.Network.Provider;
 
 @Entity
 @Table(name="data_center")
@@ -77,13 +77,13 @@ public class DataCenterVO implements DataCenter {
     NetworkType networkType;
     
     @Column(name="dns_provider")
-    private String dnsProvider = "VirtualRouter";
+    private String dnsProvider = Provider.VirtualRouter.getName();
     
     @Column(name="dhcp_provider")
-    private String dhcpProvider = "VirtualRouter"; 
+    private String dhcpProvider = Provider.VirtualRouter.getName(); 
     
     @Column(name="gateway_provider")
-    private String gatewayProvider = "VirtualRouter";
+    private String gatewayProvider = Provider.VirtualRouter.getName();
     
     @Column(name="vpn_provider")
     private String vpnProvider;
@@ -163,13 +163,13 @@ public class DataCenterVO implements DataCenter {
         this.domain = domain;
         this.domainId = domainId;
         this.networkType = zoneType;
-        loadBalancerProvider = Providers.VirtualRouter;
-        firewallProvider = Providers.VirtualRouter;
-        dhcpProvider = Providers.VirtualRouter;
-        dnsProvider = Providers.VirtualRouter;
-        gatewayProvider = Providers.VirtualRouter;
-        vpnProvider = Providers.VirtualRouter;
-        userDataProvider = Providers.VirtualRouter;
+        loadBalancerProvider = Provider.VirtualRouter.getName();
+        firewallProvider = Provider.VirtualRouter.getName();
+        dhcpProvider = Provider.VirtualRouter.getName();
+        dnsProvider = Provider.VirtualRouter.getName();
+        gatewayProvider = Provider.VirtualRouter.getName();
+        vpnProvider = Provider.VirtualRouter.getName();
+        userDataProvider = Provider.VirtualRouter.getName();
     }
     
     @Override

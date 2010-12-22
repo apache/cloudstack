@@ -4,6 +4,7 @@
 package com.cloud.network.element;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -11,6 +12,9 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.NetworkOffering;
@@ -24,6 +28,11 @@ import com.cloud.vm.VirtualMachineProfile;
  * Represents one network element that exists in a network.
  */
 public interface NetworkElement extends Adapter {
+    
+    Map<Service, Map<Capability, String>> getCapabilities();
+    
+    Provider getProvider();
+    
     /**
      * Implement the network configuration as specified. 
      * @param config fully specified network configuration.

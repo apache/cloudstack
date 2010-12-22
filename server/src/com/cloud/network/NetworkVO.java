@@ -130,7 +130,7 @@ public class NetworkVO implements Network {
     Date created;
     
     @Column(name="reservation_id")
-    String reservationId;
+    String reservationId;  
     
     public NetworkVO() {
     }

@@ -142,12 +142,12 @@ public class UserVmResponse extends BaseResponse {
     @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
     
+    @SerializedName("nic")  @Param(description="the list of nics associated with vm")
+    private List<NicResponse> nics;
+    
     public Long getObjectId() {
     	return getId();
     }
-
-    @SerializedName("nic")  @Param(description="the list of nics associated with vm")
-    private List<NicResponse> nics;
     
     public Long getId() {
         return id;

@@ -18,6 +18,7 @@
 package com.cloud.network;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DeployDestination;
@@ -26,6 +27,8 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Service;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -123,4 +126,6 @@ public interface NetworkManager extends NetworkService {
 	String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 
 	boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
+	
+	Map<Service, Map<Capability, String>> getZoneCapabilities(long zoneId);
 }

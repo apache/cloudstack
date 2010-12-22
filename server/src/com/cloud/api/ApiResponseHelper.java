@@ -34,6 +34,7 @@ import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.AsyncJobResponse;
+import com.cloud.api.response.CapabilityResponse;
 import com.cloud.api.response.CapacityResponse;
 import com.cloud.api.response.ClusterResponse;
 import com.cloud.api.response.ConfigurationResponse;
@@ -60,6 +61,7 @@ import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
+import com.cloud.api.response.ServiceResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.api.response.StoragePoolResponse;
@@ -97,6 +99,8 @@ import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
@@ -2209,7 +2213,36 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setRelated(network.getRelated());
         response.setDns1(network.getDns1());
         response.setDns2(network.getDns2());
-
+        
+        //populate capability
+        Map<Service, Map<Capability, String>>  serviceCapabilitiesMap = ApiDBUtils.getZoneCapabilities(network.getDataCenterId());
+        List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
+        if (serviceCapabilitiesMap != null) {
+            for (Service service : serviceCapabilitiesMap.keySet()) {
+                ServiceResponse serviceResponse = new ServiceResponse();
+                serviceResponse.setName(service.getName());
+                
+                //set list of capabilities for the service
+                List<CapabilityResponse> capabilityResponses = new ArrayList<CapabilityResponse>();
+                Map<Capability, String> serviceCapabilities = serviceCapabilitiesMap.get(service);
+                if (serviceCapabilities != null) {
+                    for (Capability capability : serviceCapabilities.keySet()) {
+                        CapabilityResponse capabilityResponse = new CapabilityResponse();
+                        String capabilityValue = serviceCapabilities.get(capability);
+                        capabilityResponse.setName(capability.getName());
+                        capabilityResponse.setValue(capabilityValue);
+                        capabilityResponse.setObjectName("capability");
+                        capabilityResponses.add(capabilityResponse);
+                    }
+                    serviceResponse.setCapabilities(capabilityResponses);
+                }
+                
+                serviceResponse.setObjectName("service");
+                serviceResponses.add(serviceResponse);
+            }
+        }
+        response.setServices(serviceResponses);
+        
         Account account = ApiDBUtils.findAccountById(network.getAccountId());
         if (account != null) {
             response.setAccountName(account.getAccountName());

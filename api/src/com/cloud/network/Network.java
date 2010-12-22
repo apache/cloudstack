@@ -20,6 +20,73 @@ import com.cloud.utils.fsm.StateMachine;
  * owned by an account. 
  */
 public interface Network extends ControlledEntity {
+    
+    public static class Service {
+        
+        public static final Service Vpn = new Service("Vpn");
+        public static final Service Dhcp = new Service("Dhcp");
+        public static final Service Dns = new Service("Dns");
+        public static final Service Gateway = new Service("Gateway");
+        public static final Service Firewall = new Service("Firewall", Capability.PortForwarding, Capability.StaticNat);
+        public static final Service Lb = new Service("Lb");
+        public static final Service UserData = new Service("UserData");
+        
+        private String name;
+        private Capability[] caps;
+
+        public Service(String name, Capability... caps) {
+            this.name = name;
+        }  
+       
+        public String getName() {
+            return name;
+        }
+        
+        public Capability[] getCapabilities() {
+            return caps;
+        }
+    }
+    
+    public static class Provider {
+        
+        public static final Provider VirtualRouter = new Provider("VirtualRouter");
+        public static final Provider DhcpServer = new Provider("DhcpServer");
+        public static final Provider ExternalFirewall = new Provider("ExternalFirewall");
+        public static final Provider ExternalLoadBalancer = new Provider("ExternalLoadBalancer");
+        
+        private String name;
+        
+        public Provider(String name) {
+            this.name = name;
+        }
+        
+        public String getName() {
+            return name;
+        }
+    }
+    
+    public static class Capability {
+        
+        public static final Capability PortForwarding = new Capability("PortForwarding");
+        public static final Capability StaticNat = new Capability("StaticNat");
+        public static final Capability SupportedProtocols = new Capability("SupportedProtocols");
+        public static final Capability SupportedLBAlgorithms = new Capability("SupportedLBAlgorithms");
+        public static final Capability Vpn = new Capability("VPN");
+        public static final Capability MultipleIps = new Capability("MultipleIps");
+        public static final Capability SupportedSourceNatTypes = new Capability("SupportedSourceNatTypes");
+        public static final Capability SupportedVpnTypes = new Capability("SupportedVpnTypes");
+        
+        private String name;
+        
+        public Capability(String name) {
+            this.name = name;
+        }
+        
+        public String getName() {
+            return name;
+        }
+    }
+    
     enum Event {
         ImplementNetwork,
         DestroyNetwork,
@@ -114,4 +181,5 @@ public interface Network extends ControlledEntity {
     boolean isShared();
     
     String getReservationId();
+
 }
