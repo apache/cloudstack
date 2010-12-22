@@ -1754,7 +1754,7 @@ a:hover {
 	cursor:hand;
 }
 
-.searchpanel_advancebutton.up {
+.searchpanel_filterbutton.up {
 	background:url(../images/filter_uparrow.gif) no-repeat top left;
 }
 
