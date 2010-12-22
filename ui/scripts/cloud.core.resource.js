@@ -324,6 +324,8 @@ function initAddPodShortcut() {
     
     $zoneDropdown.bind("change", function(event) {
 	    var zoneId = $(this).val();	    
+	    if(zoneId == null)
+	        return;
 	    $.ajax({
 	        data: createURL("command=listZones&id="+zoneId),
 	        dataType: "json",	        
@@ -484,6 +486,8 @@ function initAddHostShortcut() {
 	
     $dialogAddHost.find("#zone_dropdown").bind("change", function(event) {
 	    var zoneId = $(this).val();
+	    if(zoneId == null)
+	        return;
 	    $.ajax({
 	        data: createURL("command=listPods&zoneId="+zoneId),
 		    dataType: "json",
