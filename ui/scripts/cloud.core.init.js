@@ -264,143 +264,148 @@ $(document).ready(function() {
 	//advanced search	
 	$("#advanced_search_icon").unbind("click").bind("click", function(event) {
 	    if($(this).hasClass("up")) {
-	        $(this).removeClass("up");
-	        $("#advanced_search_container").empty();
+	        $(this).removeClass("up");	        
+	        $("#advanced_search_container").find("#advanced_search_popup").hide();
 	    }
 	    else {	    
-	        $(this).addClass("up");	    
-	
-	        var $advancedSearchPopup = $("#advanced_search_popup");
-    	    
-	        $advancedSearchPopup.unbind("click").bind("click", function(event) {
-	            var $target = $(event.target);
-	            var targetId = $target.attr("id");	 
-	            /*       
-	            if(targetId == "advanced_search_close") {
-	                $(this).hide();
-	                return false;
-	            }
-	            else if(targetId == "adv_search_button") {    	        
-    	            var params = $("#middle_menu_pagination").data("params");
-	                if(params == null)
-	                    return;	        	    
-	                lastSearchType = "advanced_search";  
-	                //$("#basic_search").find("#search_input").val("");
-	                listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);
-    	            $("#advanced_search_icon").removeClass("up");
-    	            $(this).hide();
-	                return false;
-	            }
-	            */
-	            return true;
-	        });
-    	    	
-	        $advancedSearchPopup.unbind("keypress").bind("keypress", function(event) {	       
-	            event.stopPropagation();   
-	            if(event.keyCode == keycode_Enter) { 
-	                event.preventDefault();	  		                                      
-	                var params = $("#middle_menu_pagination").data("params");
-	                if(params == null)
-	                    return;	        	    
-	                lastSearchType = "advanced_search";  	                
-	                listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);    	                            
-	            }	
-	        });	
-    	    	    
-	        if(isAdmin() || isDomainAdmin())
-	            $advancedSearchPopup.find("#adv_search_domain_li, #adv_search_account_li, #adv_search_pod_li").show();
-	        else
-	            $advancedSearchPopup.find("#adv_search_domain_li, #adv_search_account_li, #adv_search_pod_li").hide(); 
-    	    
-            var zoneSelect = $advancedSearchPopup.find("#adv_search_zone");	    
-	        if(zoneSelect.length>0) {  //if zone dropdown is found on Advanced Search dialog 	    		
-	            $.ajax({
-		            data: createURL("command=listZones&available=true"),
-		            dataType: "json",
-		            success: function(json) {
-			            var zones = json.listzonesresponse.zone;			   
-			            zoneSelect.empty();					
-			            zoneSelect.append("<option value=''></option>"); 
-			            if (zones != null && zones.length > 0) {
-			                for (var i = 0; i < zones.length; i++) {
-				                zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
-			                }
-			            }
-		            }
-	            });
-        		
-	            var podSelect = $advancedSearchPopup.find("#adv_search_pod").empty();	
-	            var podLabel = $advancedSearchPopup.find("#adv_search_pod_label");
-	            if(podSelect.length>0 && $advancedSearchPopup.find("#adv_search_pod_li").css("display")!="none") {		        
-	                zoneSelect.bind("change", function(event) { 	            
-		                var zoneId = $(this).val();
-		                if (zoneId == null || zoneId.length == 0) {			            
-		                    podLabel.css("color", "gray");	
-		                    podSelect.attr("disabled", "disabled");	 
-		                    podSelect.empty();	        
-		                } else {		            
-		                    podLabel.css("color", "black");	
-		                    podSelect.removeAttr("disabled");
-		                    $.ajax({
-				            data: createURL("command=listPods&zoneId="+zoneId+""),
-			                    dataType: "json",
-			                    async: false,
-			                    success: function(json) {
-				                    var pods = json.listpodsresponse.pod;	
-				                    podSelect.empty();			            
-				                    if (pods != null && pods.length > 0) {
-				                        for (var i = 0; i < pods.length; i++) {
-					                        podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 
-				                        }
-				                    }
-			                    }
-		                    });
-		                }
-		                return false;		        
-	                });		
-        	        
-	                zoneSelect.change();
-	            }
+	        $(this).addClass("up");	  
+	          
+	        if($("#advanced_search_container").find("#advanced_search_popup").length > 0) {
+	            $("#advanced_search_container").find("#advanced_search_popup").show();
 	        }
-        	
-	        var domainSelect = $advancedSearchPopup.find("#adv_search_domain");	
-	        if(domainSelect.length>0 && $advancedSearchPopup.find("#adv_search_domain_li").css("display")!="none") {
-	            var domainSelect = domainSelect.empty();			
-	            $.ajax({
-		            data: createURL("command=listDomains&available=true"),
-		            dataType: "json",
-		            success: function(json) {			        
-			            var domains = json.listdomainsresponse.domain;			 
-			            if (domains != null && domains.length > 0) {
-			                for (var i = 0; i < domains.length; i++) {
-				                domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
-			                }
-			            }
-		            }
-	            });		    
-	        } 	
+	        else {	
+	            var $advancedSearchPopup = $("#advanced_search_popup");
+        	    
+	            $advancedSearchPopup.unbind("click").bind("click", function(event) {
+	                var $target = $(event.target);
+	                var targetId = $target.attr("id");	 
+	                /*       
+	                if(targetId == "advanced_search_close") {
+	                    $(this).hide();
+	                    return false;
+	                }
+	                else if(targetId == "adv_search_button") {    	        
+    	                var params = $("#middle_menu_pagination").data("params");
+	                    if(params == null)
+	                        return;	        	    
+	                    lastSearchType = "advanced_search";  
+	                    //$("#basic_search").find("#search_input").val("");
+	                    listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);
+    	                $("#advanced_search_icon").removeClass("up");
+    	                $(this).hide();
+	                    return false;
+	                }
+	                */
+	                return true;
+	            });
         	    	
-	        var vmSelect = $advancedSearchPopup.find("#adv_search_vm");	
-	        if(vmSelect.length>0) {		   
-	            vmSelect.empty();		
-	            vmSelect.append("<option value=''></option>"); 	
-	            $.ajax({
-		            data: createURL("command=listVirtualMachines"),
-		            dataType: "json",
-		            success: function(json) {			        
-			            var items = json.listvirtualmachinesresponse.virtualmachine;		 
-			            if (items != null && items.length > 0) {
-			                for (var i = 0; i < items.length; i++) {
-				                vmSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>"); 
+	            $advancedSearchPopup.unbind("keypress").bind("keypress", function(event) {	       
+	                event.stopPropagation();   
+	                if(event.keyCode == keycode_Enter) { 
+	                    event.preventDefault();	  		                                      
+	                    var params = $("#middle_menu_pagination").data("params");
+	                    if(params == null)
+	                        return;	        	    
+	                    lastSearchType = "advanced_search";  	                
+	                    listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);    	                            
+	                }	
+	            });	
+        	    	    
+	            if(isAdmin() || isDomainAdmin())
+	                $advancedSearchPopup.find("#adv_search_domain_li, #adv_search_account_li, #adv_search_pod_li").show();
+	            else
+	                $advancedSearchPopup.find("#adv_search_domain_li, #adv_search_account_li, #adv_search_pod_li").hide(); 
+        	    
+                var zoneSelect = $advancedSearchPopup.find("#adv_search_zone");	    
+	            if(zoneSelect.length>0) {  //if zone dropdown is found on Advanced Search dialog 	    		
+	                $.ajax({
+		                data: createURL("command=listZones&available=true"),
+		                dataType: "json",
+		                success: function(json) {
+			                var zones = json.listzonesresponse.zone;			   
+			                zoneSelect.empty();					
+			                zoneSelect.append("<option value=''></option>"); 
+			                if (zones != null && zones.length > 0) {
+			                    for (var i = 0; i < zones.length; i++) {
+				                    zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
+			                    }
 			                }
-			            }
-		            }
-	            });		    
-	        } 	  
-    	    	      
-	        $advancedSearchPopup.find("#adv_search_startdate, #adv_search_enddate").datepicker({dateFormat: 'yy-mm-dd'});
-    	    	    	    
-	        $("#advanced_search_container").empty().append($advancedSearchPopup.show());	 
+		                }
+	                });
+            		
+	                var podSelect = $advancedSearchPopup.find("#adv_search_pod").empty();	
+	                var podLabel = $advancedSearchPopup.find("#adv_search_pod_label");
+	                if(podSelect.length>0 && $advancedSearchPopup.find("#adv_search_pod_li").css("display")!="none") {		        
+	                    zoneSelect.bind("change", function(event) { 	            
+		                    var zoneId = $(this).val();
+		                    if (zoneId == null || zoneId.length == 0) {			            
+		                        podLabel.css("color", "gray");	
+		                        podSelect.attr("disabled", "disabled");	 
+		                        podSelect.empty();	        
+		                    } else {		            
+		                        podLabel.css("color", "black");	
+		                        podSelect.removeAttr("disabled");
+		                        $.ajax({
+				                data: createURL("command=listPods&zoneId="+zoneId+""),
+			                        dataType: "json",
+			                        async: false,
+			                        success: function(json) {
+				                        var pods = json.listpodsresponse.pod;	
+				                        podSelect.empty();			            
+				                        if (pods != null && pods.length > 0) {
+				                            for (var i = 0; i < pods.length; i++) {
+					                            podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 
+				                            }
+				                        }
+			                        }
+		                        });
+		                    }
+		                    return false;		        
+	                    });		
+            	        
+	                    zoneSelect.change();
+	                }
+	            }
+            	
+	            var domainSelect = $advancedSearchPopup.find("#adv_search_domain");	
+	            if(domainSelect.length>0 && $advancedSearchPopup.find("#adv_search_domain_li").css("display")!="none") {
+	                var domainSelect = domainSelect.empty();			
+	                $.ajax({
+		                data: createURL("command=listDomains&available=true"),
+		                dataType: "json",
+		                success: function(json) {			        
+			                var domains = json.listdomainsresponse.domain;			 
+			                if (domains != null && domains.length > 0) {
+			                    for (var i = 0; i < domains.length; i++) {
+				                    domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
+			                    }
+			                }
+		                }
+	                });		    
+	            } 	
+            	    	
+	            var vmSelect = $advancedSearchPopup.find("#adv_search_vm");	
+	            if(vmSelect.length>0) {		   
+	                vmSelect.empty();		
+	                vmSelect.append("<option value=''></option>"); 	
+	                $.ajax({
+		                data: createURL("command=listVirtualMachines"),
+		                dataType: "json",
+		                success: function(json) {			        
+			                var items = json.listvirtualmachinesresponse.virtualmachine;		 
+			                if (items != null && items.length > 0) {
+			                    for (var i = 0; i < items.length; i++) {
+				                    vmSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>"); 
+			                    }
+			                }
+		                }
+	                });		    
+	            } 	  
+        	    	      
+	            $advancedSearchPopup.find("#adv_search_startdate, #adv_search_enddate").datepicker({dateFormat: 'yy-mm-dd'});
+        	    	    	    
+	            $("#advanced_search_container").empty().append($advancedSearchPopup.show());	 
+	        }
 	    }
 	    	   
 	    return false;
