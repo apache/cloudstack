@@ -169,23 +169,29 @@
 					<label>OS Type:</label>
 					<select class="select" id="os_type">
 					</select>
-				</li>		
+				</li>				
+				<li>
+	                <label for="create_template_public">
+	                    Public:</label>
+	                <select class="select" id="ispublic">
+	                    <option value="false">No</option>
+	                    <option value="true">Yes</option>
+	                </select>
+	            </li>						
 				<li>
 					<label>Password Enabled?:</label>
 					<select class="select" id="password">						
 						<option value="false">No</option>
 						<option value="true">Yes</option>
 					</select>
-				</li>
-				
+				</li>				
 				<li id="isfeatured_container" style="display:none">
 					<label>Featured?:</label>
 					<select class="select" id="isfeatured">
 					    <option value="false">No</option>
 						<option value="true">Yes</option>						
 					</select>
-				</li>
-				
+				</li>				
 			</ol>
 		</form>
 	</div>

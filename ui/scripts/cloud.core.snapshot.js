@@ -257,6 +257,9 @@ function doCreateTemplateFromSnapshotInSnapshotPage($actionLink, $detailsTab, $m
          var osTypeId = thisDialog.find("#os_type").val(); 	  
          array1.push("&ostypeid="+osTypeId);
          
+         var isPublic = thisDialog.find("#ispublic").val();
+         array1.push("&isPublic="+isPublic);
+         
          var password = thisDialog.find("#password").val();	       
          array1.push("&passwordEnabled="+password);                                 
      
