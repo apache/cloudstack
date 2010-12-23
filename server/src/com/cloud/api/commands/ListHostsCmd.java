@@ -181,7 +181,10 @@ public class ListHostsCmd extends BaseCmd {
                 serverData.add(new Pair<String, Object>(BaseCmd.Properties.MEMORY_ALLOCATED.getName(), Long.valueOf(mem).toString()));
                 
                 // calculate memory utilized, we don't provide memory over commit
-                serverData.add(new Pair<String, Object>(BaseCmd.Properties.MEMORY_USED.getName(), mem));                
+                serverData.add(new Pair<String, Object>(BaseCmd.Properties.MEMORY_USED.getName(), mem));
+                
+                //host_tags
+                serverData.add(new Pair<String, Object>(BaseCmd.Properties.HOST_TAGS.getName(), getManagementServer().getHostTags(server.getId()))); 
             }
             if (server.getType().toString().equals("Storage")) {
                 serverData.add(new Pair<String, Object>(BaseCmd.Properties.DISK_SIZE_TOTAL.getName(), Long.valueOf(server.getTotalSize()).toString()));

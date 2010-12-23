@@ -1668,56 +1668,21 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
     }
     
     @Override
-    public void updateHost(long hostId, long guestOSCategoryId, String hostTags) throws UnsupportedOperationException{
+    public void updateHost(long hostId, long guestOSCategoryId){
     	GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
     	Map<String, String> hostDetails = _hostDetailsDao.findDetails(hostId);
-
-    	boolean persistDetails = false;
-    	String currentOSCategory = hostDetails.get("guest.os.category.id");
     	
     	if (guestOSCategory != null) {
-    		if(!String.valueOf(guestOSCategory.getId()).equals(currentOSCategory)){
-        		// Save a new entry for guest.os.category.id
-        		hostDetails.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
-        		persistDetails = true;
-    		}
+    		// Save a new entry for guest.os.category.id
+    		hostDetails.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
     	} else {
     		// Delete any existing entry for guest.os.category.id
-    		if(currentOSCategory != null){
-    			hostDetails.remove("guest.os.category.id");
-    			persistDetails = true;
-    		}
+    		hostDetails.remove("guest.os.category.id");
     	}
     	
-    	if(persistDetails){
-    		_hostDetailsDao.persist(hostId, hostDetails);
-    	}
-    	
-    	//update tags
-    	List<String> newHostTags = _configMgr.csvTagsToList(hostTags);
-    	List<String> oldHostTags = _hostTagsDao.gethostTags(hostId);
+   		_hostDetailsDao.persist(hostId, hostDetails);
 
-    	if(areExistingHostTagsRemoved(hostId, newHostTags, oldHostTags)){
-    		//throw error - removing the existing host tags is not allowed
-    		throw new UnsupportedOperationException("Invalid Operation: Cannot remove existing host tags");
-    	}
-		//add the new tags to the host
-    	newHostTags.removeAll(oldHostTags);
-    	_hostTagsDao.persist(hostId, newHostTags);
     }
-    
-    private boolean areExistingHostTagsRemoved(long hostId, List<String> newHostTags, List<String> oldHostTags){
-    	boolean tagsRemoved = false;
-    	if(newHostTags.isEmpty() && !oldHostTags.isEmpty()){
-    		tagsRemoved = true;
-    	}else if(!newHostTags.isEmpty() && !oldHostTags.isEmpty()){
-  			if(!newHostTags.containsAll(oldHostTags)){
-  				tagsRemoved = true;
-  			}
-    	}
-    	return tagsRemoved;
-    }
-
 
     protected void updateHost(final HostVO host, final StartupCommand startup, final Host.Type type, final long msId) throws IllegalArgumentException {
         s_logger.debug("updateHost() called");

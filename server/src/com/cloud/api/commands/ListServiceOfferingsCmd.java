@@ -119,7 +119,8 @@ public class ListServiceOfferingsCmd extends BaseCmd {
             offeringData.add(new Pair<String, Object>(BaseCmd.Properties.STORAGE_TYPE.getName(), storageType));
             offeringData.add(new Pair<String, Object>(BaseCmd.Properties.OFFER_HA.getName(), offering.getOfferHA()));
             offeringData.add(new Pair<String, Object>(BaseCmd.Properties.USE_VIRTUAL_NETWORK.getName(), (offering.getGuestIpType().equals(GuestIpType.Virtualized))));
-            offeringData.add(new Pair<String, Object>(BaseCmd.Properties.TAGS.getName(), (offering.getTags())));      
+            offeringData.add(new Pair<String, Object>(BaseCmd.Properties.TAGS.getName(), (offering.getTags())));
+            offeringData.add(new Pair<String, Object>(BaseCmd.Properties.HOST_TAGS.getName(), (offering.getHostTag())));
 
             soTag[i++] = offeringData;
         }

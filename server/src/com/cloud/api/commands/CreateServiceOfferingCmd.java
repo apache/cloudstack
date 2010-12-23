@@ -47,6 +47,7 @@ public class CreateServiceOfferingCmd extends BaseCmd{
 		s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USE_VIRTUAL_NETWORK, Boolean.FALSE));
 		s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.USER_ID, Boolean.FALSE));
 		s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.TAGS, Boolean.FALSE));
+		s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HOST_TAGS, Boolean.FALSE));
 	}
 	
 	@Override
@@ -76,6 +77,7 @@ public class CreateServiceOfferingCmd extends BaseCmd{
 		Boolean useVirtualNetwork = (Boolean) params.get(BaseCmd.Properties.USE_VIRTUAL_NETWORK.getName());
 		Long userId = (Long)params.get(BaseCmd.Properties.USER_ID.getName());
 		String tags = (String)params.get(BaseCmd.Properties.TAGS.getName());
+		String hostTag = (String)params.get(BaseCmd.Properties.HOST_TAGS.getName());
 
 		if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -122,7 +124,7 @@ public class CreateServiceOfferingCmd extends BaseCmd{
 		
 		ServiceOfferingVO offering = null;
 		try {
-			offering = getManagementServer().createServiceOffering(userId, name, cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), displayText, localStorageRequired, offerHA, useVirtualNetwork, tags);
+			offering = getManagementServer().createServiceOffering(userId, name, cpuNumber.intValue(), memory.intValue(), cpuSpeed.intValue(), displayText, localStorageRequired, offerHA, useVirtualNetwork, tags, hostTag);
 		} catch (Exception ex) {
 			s_logger.error("Exception creating service offering", ex);
 	        throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create service offering " + name + ":  internal error.");
@@ -144,6 +146,7 @@ public class CreateServiceOfferingCmd extends BaseCmd{
             returnValues.add(new Pair<String, Object>(BaseCmd.Properties.OFFER_HA.getName(), offering.getOfferHA()));
             returnValues.add(new Pair<String, Object>(BaseCmd.Properties.USE_VIRTUAL_NETWORK.getName(), (offering.getGuestIpType().equals(GuestIpType.Virtualized))));
             returnValues.add(new Pair<String, Object>(BaseCmd.Properties.TAGS.getName(), offering.getTags()));
+            returnValues.add(new Pair<String, Object>(BaseCmd.Properties.HOST_TAGS.getName(), offering.getHostTag()));
         }
         return returnValues;
 	}

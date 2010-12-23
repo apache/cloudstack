@@ -161,7 +161,7 @@ public interface AgentManager extends Manager {
 	 * @param guestOSCategoryId
 	 * @param hostTags
 	 */
-	void updateHost(long hostId, long guestOSCategoryId, String hostTags) throws UnsupportedOperationException;
+	void updateHost(long hostId, long guestOSCategoryId);
 	
 	/**
      * Deletes a host

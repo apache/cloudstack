@@ -76,6 +76,6 @@ public interface ServiceOffering {
     /*
      * @return tag that should be present on the host needed ; optional parameter
      */
-    public String getHostTag();
+    String getHostTag();
 
 }

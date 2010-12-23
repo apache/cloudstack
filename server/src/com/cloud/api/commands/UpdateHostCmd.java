@@ -50,8 +50,6 @@ public class UpdateHostCmd extends BaseCmd {
     static {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ID, Boolean.TRUE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.OS_CATEGORY_ID, Boolean.FALSE));
-        //host_tags
-        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.HOST_TAGS, Boolean.FALSE));
     }
 
     @Override
@@ -71,8 +69,6 @@ public class UpdateHostCmd extends BaseCmd {
     public List<Pair<String, Object>> execute(Map<String, Object> params) {
         Long id = (Long)params.get(BaseCmd.Properties.ID.getName());
         Long guestOSCategoryId = (Long)params.get(BaseCmd.Properties.OS_CATEGORY_ID.getName());
-        //host_tags
-        String hostTags = (String)params.get(BaseCmd.Properties.HOST_TAGS.getName());
         
         if (guestOSCategoryId == null) {
         	guestOSCategoryId = new Long(-1);
@@ -88,10 +84,7 @@ public class UpdateHostCmd extends BaseCmd {
        
         List<Pair<String, Object>> returnValues = new ArrayList<Pair<String, Object>>();
         try {
-        	getManagementServer().updateHost(id, guestOSCategoryId, hostTags);
-        } catch(UnsupportedOperationException uex){
-        	s_logger.error("Failed to update host: ", uex);
-        	throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "Failed to update host: " + uex.getMessage());
+        	getManagementServer().updateHost(id, guestOSCategoryId);
         } catch (Exception ex) {
         	s_logger.error("Failed to update host: ", ex);
         	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update host: " + ex.getMessage());

@@ -826,7 +826,7 @@ public interface ManagementServer {
      * @param hostId
      * @param guestOSCategoryId
      */
-    void updateHost(long hostId, long guestOSCategoryId, String hostTags) throws InvalidParameterValueException, UnsupportedOperationException;
+    void updateHost(long hostId, long guestOSCategoryId) throws InvalidParameterValueException;
     
     /**
      * Deletes a host
@@ -964,7 +964,7 @@ public interface ManagementServer {
      * @param useVirtualNetwork
      * @return the new ServiceOfferingVO
      */
-    ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags);
+    ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags, String hostTag);
     
     /**
      * Persists a pricing object

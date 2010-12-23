@@ -2891,7 +2891,7 @@ public class ManagementServerImpl implements ManagementServer {
         return _hostDao.findById(hostId);
     }
 
-    public void updateHost(long hostId, long guestOSCategoryId, String hostTags) throws InvalidParameterValueException, UnsupportedOperationException {
+    public void updateHost(long hostId, long guestOSCategoryId) throws InvalidParameterValueException {
     	// Verify that the guest OS Category exists
     	if (guestOSCategoryId > 0) {
     		if (_guestOSCategoryDao.findById(guestOSCategoryId) == null) {
@@ -2899,7 +2899,7 @@ public class ManagementServerImpl implements ManagementServer {
     		}
     	}   	
     	
-    	_agentMgr.updateHost(hostId, guestOSCategoryId, hostTags);
+    	_agentMgr.updateHost(hostId, guestOSCategoryId);
     }
         
     public boolean deleteHost(long hostId) {
@@ -4196,8 +4196,8 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags) {
-        return _configMgr.createServiceOffering(userId, name, cpu, ramSize, speed, displayText, localStorageRequired, offerHA, useVirtualNetwork, tags);
+    public ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags, String hostTag) {
+        return _configMgr.createServiceOffering(userId, name, cpu, ramSize, speed, displayText, localStorageRequired, offerHA, useVirtualNetwork, tags, hostTag);
     }
     
     @Override

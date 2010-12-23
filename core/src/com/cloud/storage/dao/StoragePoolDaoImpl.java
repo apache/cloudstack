@@ -62,6 +62,10 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	private final String DetailsSqlSuffix = ") GROUP BY storage_pool_details.pool_id HAVING COUNT(storage_pool_details.name) >= ?";
 	private final String FindPoolTagDetails = "SELECT storage_pool_details.name FROM storage_pool_details WHERE pool_id = ? and value = ?";
 	
+	private static final String PoolsByHostTag = "SELECT storage_pool.* from (host_tags JOIN storage_pool_host_ref ON host_tags.host_id = storage_pool_host_ref.host_id AND host_tags.tag = ?) JOIN storage_pool " +
+												 "ON storage_pool.id = storage_pool_host_ref.pool_id WHERE storage_pool.removed is null and storage_pool.data_center_id = ? and (storage_pool.pod_id = ? or storage_pool.pod_id is null)";
+	
+	
     protected StoragePoolDaoImpl() {
     	NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
@@ -304,27 +308,34 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 	}
 	
 	@Override
-	public List<StoragePoolVO> findPoolsByHostTags(long dcId, long podId, Long clusterId, String[] tags, Boolean shared) {
-		List<StoragePoolVO> storagePools = null;
-	    if (tags == null || tags.length == 0) {
-	        storagePools = listBy(dcId, podId, clusterId);
-	    } else {
-	        Map<String, String> details = tagsToDetails(tags);
-	        storagePools =  findPoolsByDetails(dcId, podId, clusterId, details);
+	public List<StoragePoolVO> findPoolsByHostTag(long dcId, long podId, Long clusterId, String hostTag) {
+		
+		StringBuilder sql = new StringBuilder(PoolsByHostTag);
+	    if (clusterId != null) {
+	        sql.append(" and (storage_pool.cluster_id = ? OR storage_pool.cluster_id IS NULL)");
 	    }
 	    
-	    if (shared == null) {
-	    	return storagePools;
-	    } else {
-	    	List<StoragePoolVO> filteredStoragePools = new ArrayList<StoragePoolVO>(storagePools);
-	    	for (StoragePoolVO pool : storagePools) {
-	    		if (shared != pool.isShared()) {
-	    			filteredStoragePools.remove(pool);
-	    		}
-	    	}
-	    	
-	    	return filteredStoragePools;
+	    Transaction txn = Transaction.currentTxn();
+	    PreparedStatement pstmt = s_initStmt;
+	    try {
+	        pstmt = txn.prepareAutoCloseStatement(sql.toString());
+	        int i = 1;
+	        pstmt.setString(i++, hostTag);
+	        pstmt.setLong(i++, dcId);
+	        pstmt.setLong(i++, podId);
+	        if (clusterId != null) {
+	            pstmt.setLong(i++, clusterId);
+	        }
+	        ResultSet rs = pstmt.executeQuery();
+	        List<StoragePoolVO> pools = new ArrayList<StoragePoolVO>();
+	        while (rs.next()) {
+	            pools.add(toEntityBean(rs, false));
+	        }
+	        return pools;
+	    } catch (SQLException e) {
+	        throw new CloudRuntimeException("Unable to execute " + pstmt.toString(), e);
 	    }
+
 	}
 	
 	@Override

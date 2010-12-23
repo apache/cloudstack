@@ -10,6 +10,7 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import com.cloud.service.ServiceOffering;
+import com.cloud.service.ServiceOffering.GuestIpType;
 
 @Entity
 @Table(name="service_offering_21")
@@ -38,6 +39,9 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
     @Enumerated(EnumType.STRING)
     private GuestIpType guestIpType;
     
+    @Column(name="host_tag")
+    private String hostTag;
+    
     protected ServiceOffering21VO() {
         super();
     }
@@ -52,6 +56,11 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
         this.offerHA = offerHA;
         this.guestIpType = guestIpType;
     }
+    
+    public ServiceOffering21VO(String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, GuestIpType guestIpType, boolean useLocalStorage, boolean recreatable, String tags, String hostTag) {
+    	this(name, cpu, ramSize, speed, rateMbps, multicastRateMbps, offerHA, displayText, guestIpType, useLocalStorage, recreatable, tags);
+    	this.hostTag = hostTag;
+    }    
 
 	@Override
 	public boolean getOfferHA() {
@@ -123,4 +132,12 @@ public class ServiceOffering21VO extends DiskOffering21VO implements ServiceOffe
 	public GuestIpType getGuestIpType() {
 		return guestIpType;
 	}
+	
+	public void setHostTag(String hostTag) {
+		this.hostTag = hostTag;
+	}	
+	
+	public String getHostTag() {
+		return hostTag;
+	}	
 }
