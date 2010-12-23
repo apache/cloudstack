@@ -24,8 +24,8 @@ function eventGetSearchParams() {
         moreCriteria.push("&keyword="+todb(searchInput));	       
     }     
 
-	var $advancedSearchPopup = $("#advanced_search_popup");
-	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {		    
+	var $advancedSearchPopup = $("#advanced_search_container").find("#advanced_search_popup");
+	if ($advancedSearchPopup.length > 0 && $advancedSearchPopup.css("display") != "none" ) {		    
 	    var type = $advancedSearchPopup.find("#adv_search_type").val();							
 		if (type!=null && trim(type).length > 0) 
 			moreCriteria.push("&type="+todb(type));		
