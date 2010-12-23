@@ -234,6 +234,15 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         lb.setState(FirewallRule.State.Revoke);
         _lbDao.persist(lb);
         
+        List<LoadBalancerVMMapVO> maps = _lb2VmMapDao.listByLoadBalancerId(loadBalancerId);
+        if (maps != null) {
+            for (LoadBalancerVMMapVO map : maps) {
+                map.setRevoke(true);
+                _lb2VmMapDao.persist(map);
+                s_logger.debug("Set load balancer rule for revoke: rule id " + loadBalancerId + ", vmId " + map.getInstanceId());
+            }  
+        }
+        
         if (apply) {
             try {
                 applyLoadBalancerConfig(loadBalancerId);
