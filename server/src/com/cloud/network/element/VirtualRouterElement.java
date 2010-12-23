@@ -204,6 +204,7 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement 
         //Set capabilities for Firewall service
         Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();
         firewallCapabilities.put(Capability.PortForwarding, "true");
+        firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
         firewallCapabilities.put(Capability.StaticNat, "true");
         firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp");
         firewallCapabilities.put(Capability.MultipleIps, "true");

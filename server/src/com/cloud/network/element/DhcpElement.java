@@ -143,7 +143,6 @@ public class DhcpElement extends AdapterBase implements NetworkElement{
         capabilities.put(Service.Dns, null);
         capabilities.put(Service.UserData, null);
         capabilities.put(Service.Dhcp, null);
-        capabilities.put(Service.Gateway, null);
         
         return capabilities;
     }
