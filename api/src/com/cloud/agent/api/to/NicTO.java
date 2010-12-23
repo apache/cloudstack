@@ -7,7 +7,6 @@ public class NicTO extends NetworkTO {
     int deviceId;
     Integer networkRateMbps;
     Integer networkRateMulticastMbps;
-    String bootParams;
     boolean defaultNic;
 
     public NicTO() {
@@ -26,16 +25,12 @@ public class NicTO extends NetworkTO {
         return networkRateMbps;
     }
     
+    public void setNetworkRateMbps(Integer networkRateMbps) {
+        this.networkRateMbps = networkRateMbps;
+    }
+    
     public Integer getNetworkRateMulticastMbps() {
         return networkRateMulticastMbps;
-    }
-    
-    public String getBootParams() {
-        return bootParams;
-    }
-    
-    public void setBootParams(String bootParams) {
-        this.bootParams = bootParams;
     }
     
     public boolean isDefaultNic() {

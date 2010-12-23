@@ -447,7 +447,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
     }
     
-    Pair<Network, String> getNetworkForTraffic(Connection conn, TrafficType type) throws XenAPIException, XmlRpcException {
+    Pair<Network, String> getNativeNetworkForTraffic(Connection conn, TrafficType type) throws XenAPIException, XmlRpcException {
         if (type == TrafficType.Guest) {
             return new Pair<Network, String>(Network.getByUuid(conn, _host.guestNetwork), _host.guestPif);
         } else if (type == TrafficType.Control) {
@@ -466,6 +466,22 @@ public abstract class CitrixResourceBase implements ServerResource {
         throw new CloudRuntimeException("Unsupported network type: " + type);
     }
     
+    protected Network getNetwork(Connection conn, NicTO nic) throws XenAPIException, XmlRpcException {
+        Pair<Network, String> network = getNativeNetworkForTraffic(conn, nic.getType());
+        if (nic.getBroadcastUri() != null && nic.getBroadcastUri().toString().contains("untagged")) {
+            return network.first();
+        } else if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
+            URI broadcastUri = nic.getBroadcastUri();
+            assert broadcastUri.getScheme().equals(BroadcastDomainType.Vlan.scheme());
+            long vlan = Long.parseLong(broadcastUri.getHost());
+            return enableVlanNetwork(conn, vlan, network.first(), network.second());
+        } else if (nic.getBroadcastType() == BroadcastDomainType.Native || nic.getBroadcastType() == BroadcastDomainType.LinkLocal) {
+            return network.first();
+        } 
+        
+        throw new CloudRuntimeException("Unable to support this type of network broadcast domain: " + nic.getBroadcastUri());
+    }
+    
     protected VIF createVif(Connection conn, String vmName, VM vm, NicTO nic) throws XmlRpcException, XenAPIException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating VIF for " + vmName + " on nic " + nic);
@@ -475,18 +491,8 @@ public abstract class CitrixResourceBase implements ServerResource {
         vifr.VM = vm;
         vifr.device = Integer.toString(nic.getDeviceId());
         vifr.MAC = nic.getMac();
-        
-        Pair<Network, String> network = getNetworkForTraffic(conn, nic.getType());
-        if (nic.getBroadcastUri() != null && nic.getBroadcastUri().toString().contains("untagged")) {
-        	vifr.network = Network.getByUuid(conn, _host.publicNetwork);
-        } else if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
-            URI broadcastUri = nic.getBroadcastUri();
-            assert broadcastUri.getScheme().equals(BroadcastDomainType.Vlan.scheme());
-            long vlan = Long.parseLong(broadcastUri.getHost());
-            vifr.network = enableVlanNetwork(conn, vlan, network.first(), network.second());
-        } else if (nic.getBroadcastType() == BroadcastDomainType.Native || nic.getBroadcastType() == BroadcastDomainType.LinkLocal) {
-            vifr.network = network.first();
-        } 
+
+        vifr.network = getNetwork(conn, nic);
         
         if (nic.getNetworkRateMbps() != null) {
             vifr.qosAlgorithmType = "ratelimit";
@@ -1232,7 +1238,19 @@ public abstract class CitrixResourceBase implements ServerResource {
                     throw new InternalErrorException("There were no more available slots for a new VIF on router: " + router.getNameLabel(conn));
                 }
                 
-                correctVif = createVIF(conn, router, vifMacAddress, vlanId, 0, vifDeviceNum, true);              
+                NicTO nic = new NicTO();
+                nic.setMac(vifMacAddress);
+                nic.setType(TrafficType.Public);
+                if (vlanId == null) {
+                    nic.setBroadcastType(BroadcastDomainType.Native);
+                } else {
+                    nic.setBroadcastType(BroadcastDomainType.Vlan);
+                    nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlanId));
+                }
+                nic.setDeviceId(Integer.parseInt(vifDeviceNum));
+                nic.setNetworkRateMbps(200);
+                
+                correctVif = createVif(conn, vmName, router, nic);
                 correctVif.plug(conn);
                 // Add iptables rule for network usage
                 networkUsage(conn, privateIpAddress, "addVif", "eth" + correctVif.getDevice(conn));
@@ -1301,7 +1319,6 @@ public abstract class CitrixResourceBase implements ServerResource {
             s_logger.warn(msg, e);
             throw new InternalErrorException(msg);
         }
-
     }
 
     protected String networkUsage(Connection conn, final String privateIpAddress, final String option, final String vif) {
@@ -1819,8 +1836,38 @@ public abstract class CitrixResourceBase implements ServerResource {
         return new CheckVirtualMachineAnswer(cmd, state, vncPort);
     }
 
-    protected PrepareForMigrationAnswer execute(final PrepareForMigrationCommand cmd) {
+    protected PrepareForMigrationAnswer execute(PrepareForMigrationCommand cmd) {
         Connection conn = getConnection();
+        
+        VirtualMachineTO vm = cmd.getVirtualMachine();
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Preparing host for migrating " + vm);
+        }
+        
+        VolumeTO[] disks = vm.getDisks();
+        NicTO[] nics = vm.getNics();
+        try {
+            for (VolumeTO disk : disks) {
+                //TODO: Anthony will change this for handling ISO attached VMs.
+                mount(conn, vm.getName(), disk);
+            }
+            
+            for (NicTO nic : nics) {
+                getNetwork(conn, nic);
+            }
+            synchronized (_vms) {
+                _vms.put(vm.getName(), State.Migrating);
+            }
+            
+            return new PrepareForMigrationAnswer(cmd);
+        } catch (XenAPIException e) {
+            s_logger.warn("Unable to prepare for migration ", e);
+            return new PrepareForMigrationAnswer(cmd, e);
+        } catch (XmlRpcException e) {
+            s_logger.warn("Unable to prepare for migration ", e);
+            return new PrepareForMigrationAnswer(cmd, e);
+        }
+        
         /*
          * 
          * String result = null;
@@ -1918,7 +1965,6 @@ public abstract class CitrixResourceBase implements ServerResource {
 //            s_logger.warn(msg, e);
 //            return new PrepareForMigrationAnswer(cmd, false, msg);
 //        }
-        return null;
     }
 
     public PrimaryStorageDownloadAnswer execute(final PrimaryStorageDownloadCommand cmd) {
@@ -2503,41 +2549,6 @@ public abstract class CitrixResourceBase implements ServerResource {
         vm.setMemoryStaticMax(conn, memsize);
     }
 
-    protected VIF createVIF(Connection conn, VM vm, String mac, int rate, String devNum, Network network) throws XenAPIException, XmlRpcException,
-    InternalErrorException {
-        VIF.Record vifr = new VIF.Record();
-        vifr.VM = vm;
-        vifr.device = devNum;
-        vifr.MAC = mac;
-        vifr.network = network;
-        if ( rate == 0 ) {
-            rate = 200;
-        }
-        vifr.qosAlgorithmType = "ratelimit";
-        vifr.qosAlgorithmParams = new HashMap<String, String>();
-        // convert mbs to kilobyte per second 
-        vifr.qosAlgorithmParams.put("kbps", Integer.toString(rate * 1024));
-        return VIF.create(conn, vifr);
-    }
-
-    protected VIF createVIF(Connection conn, VM vm, String mac, String vlanTag, int rate, String devNum, boolean isPub) throws XenAPIException, XmlRpcException,
-            InternalErrorException {
-
-        String nwUuid = (isPub ? _host.publicNetwork : _host.guestNetwork);
-        String pifUuid = (isPub ? _host.publicPif : _host.guestPif);
-        Network vlanNetwork = null;
-        if ("untagged".equalsIgnoreCase(vlanTag)) {
-            vlanNetwork = Network.getByUuid(conn, nwUuid);
-        } else {
-            vlanNetwork = enableVlanNetwork(conn, Long.valueOf(vlanTag), pifUuid);
-        }
-
-        if (vlanNetwork == null) {
-            throw new InternalErrorException("Failed to enable VLAN network with tag: " + vlanTag);
-        }
-        return createVIF(conn, vm, mac, rate, devNum,  vlanNetwork);
-    }
-    
     void shutdownVM(Connection conn, VM vm, String vmName) throws XmlRpcException {
         try {      
             vm.cleanShutdown(conn);
@@ -2960,26 +2971,6 @@ public abstract class CitrixResourceBase implements ServerResource {
         return getVDIbyUuid(conn, volumePath);
     }
     
-    protected List<Ternary<SR, VDI, VolumeVO>> mount(Connection conn, List<VolumeVO> vos) {
-        ArrayList<Ternary<SR, VDI, VolumeVO>> mounts = new ArrayList<Ternary<SR, VDI, VolumeVO>>(vos.size());
-
-        for (VolumeVO vol : vos) {
-            String vdiuuid = vol.getPath();
-            SR sr = null;
-            VDI vdi = null;
-            // Look up the VDI
-            vdi = getVDIbyUuid(conn, vdiuuid);
-
-            Ternary<SR, VDI, VolumeVO> ter = new Ternary<SR, VDI, VolumeVO>(sr, vdi, vol);
-            if( vol.getVolumeType() == VolumeType.ROOT ) {
-                mounts.add(0, ter);
-            } else {
-                mounts.add(ter);
-            }
-        }
-        return mounts;
-    }
-
     protected Network getNetworkByName(Connection conn, String name) throws BadServerResponse, XenAPIException, XmlRpcException {
         Set<Network> networks = Network.getByNameLabel(conn, name);
         if (networks.size() > 0) {

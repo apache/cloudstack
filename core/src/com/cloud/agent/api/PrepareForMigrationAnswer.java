@@ -21,7 +21,15 @@ public class PrepareForMigrationAnswer extends Answer {
     protected PrepareForMigrationAnswer() {
     }
     
-    public PrepareForMigrationAnswer(PrepareForMigrationCommand cmd, boolean result, String detail) {
-        super(cmd, result, detail);
+    public PrepareForMigrationAnswer(PrepareForMigrationCommand cmd, String detail) {
+        super(cmd, false, detail);
+    }
+    
+    public PrepareForMigrationAnswer(PrepareForMigrationCommand cmd, Exception ex) {
+        super(cmd, ex);
+    }
+    
+    public PrepareForMigrationAnswer(PrepareForMigrationCommand cmd) {
+        super(cmd, true, null);
     }
 }

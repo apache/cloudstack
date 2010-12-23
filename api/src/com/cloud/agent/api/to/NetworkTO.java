@@ -33,7 +33,6 @@ public class NetworkTO {
     protected String mac;
     protected String dns1;
     protected String dns2;
-    protected Long vlan;
     protected BroadcastDomainType broadcastType;
     protected TrafficType type;
     protected URI broadcastUri;
@@ -48,14 +47,6 @@ public class NetworkTO {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
-    }
-
-    public Long getVlan() {
-        return vlan;
-    }
-
-    public void setVlan(Long vlan) {
-        this.vlan = vlan;
     }
 
     public BroadcastDomainType getBroadcastType() {
@@ -102,7 +93,7 @@ public class NetworkTO {
      * @param mac mac address
      */
     public NetworkTO(String ip, String netmask, String mac) {
-        this(ip, null, netmask, mac, null, null, null);
+        this(ip, netmask, mac, null, null, null);
     }
     
     /**
@@ -117,14 +108,13 @@ public class NetworkTO {
      * @param dns1
      * @param dns2
      */
-    public NetworkTO(String ip, Long vlan, String netmask, String mac, String gateway, String dns1, String dns2) {
+    public NetworkTO(String ip, String netmask, String mac, String gateway, String dns1, String dns2) {
         this.ip = ip;
         this.netmask = netmask;
         this.mac = mac;
         this.gateway = gateway;
         this.dns1 = dns1;
         this.dns2 = dns2;
-        this.vlan = vlan;
     }
 
     public String getIp() {

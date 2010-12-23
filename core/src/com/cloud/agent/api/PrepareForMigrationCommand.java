@@ -23,7 +23,6 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.storage.VolumeVO;
 
 public class PrepareForMigrationCommand extends StartCommand {
-    String vnet;
     
     protected PrepareForMigrationCommand() {
     }
@@ -34,11 +33,6 @@ public class PrepareForMigrationCommand extends StartCommand {
     
     public PrepareForMigrationCommand(String vmName, String vnet, String[] storageHosts, List<VolumeVO> vols, boolean mirrored) {
         //super(vmName, storageHosts, vols, mirrored);
-        this.vnet = vnet;
-    }
-    
-    public String getVnet() {
-        return vnet;
     }
     
     @Override
