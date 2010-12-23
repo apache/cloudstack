@@ -932,7 +932,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     }
 
     protected SetupAnswer execute(SetupCommand cmd) {
-        return new SetupAnswer(cmd);
+        return new SetupAnswer(cmd, false);
     }
 
     protected SetPortForwardingRulesAnswer execute(SetPortForwardingRulesCommand cmd) {

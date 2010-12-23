@@ -18,17 +18,21 @@
 package com.cloud.agent.api;
 
 public class SetupAnswer extends Answer {
+    // indicate if agent reconnect is needed after setup command
+    private boolean _reconnect;
     public SetupAnswer() {}
 
-    public SetupAnswer(SetupCommand cmd) {
+    public SetupAnswer(SetupCommand cmd, boolean reconnect) {
         super(cmd, true, null);
+        _reconnect = reconnect;
     }
-    
-    public SetupAnswer(SetupCommand cmd, boolean result, String details) {
-        super(cmd, result, details);
-    }
-    
+
     public SetupAnswer(SetupCommand cmd, String details) {
         super(cmd, false, details);
+        _reconnect = true;
     }
+    public boolean needReconnect() {
+        return _reconnect;
+    }
+    
 }
