@@ -23,12 +23,12 @@ public interface Network extends ControlledEntity {
     
     public static class Service {
         
-        public static final Service Vpn = new Service("Vpn");
+        public static final Service Vpn = new Service("Vpn", Capability.SupportedVpnTypes);
         public static final Service Dhcp = new Service("Dhcp");
         public static final Service Dns = new Service("Dns");
         public static final Service Gateway = new Service("Gateway");
-        public static final Service Firewall = new Service("Firewall", Capability.PortForwarding, Capability.StaticNat);
-        public static final Service Lb = new Service("Lb");
+        public static final Service Firewall = new Service("Firewall", Capability.PortForwarding, Capability.StaticNat, Capability.SupportedProtocols, Capability.MultipleIps, Capability.SupportedSourceNatTypes);
+        public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedProtocols);
         public static final Service UserData = new Service("UserData");
         
         private String name;
@@ -70,8 +70,7 @@ public interface Network extends ControlledEntity {
         public static final Capability PortForwarding = new Capability("PortForwarding");
         public static final Capability StaticNat = new Capability("StaticNat");
         public static final Capability SupportedProtocols = new Capability("SupportedProtocols");
-        public static final Capability SupportedLBAlgorithms = new Capability("SupportedLBAlgorithms");
-        public static final Capability Vpn = new Capability("VPN");
+        public static final Capability SupportedLBAlgorithms = new Capability("SupportedLbAlgorithms");
         public static final Capability MultipleIps = new Capability("MultipleIps");
         public static final Capability SupportedSourceNatTypes = new Capability("SupportedSourceNatTypes");
         public static final Capability SupportedVpnTypes = new Capability("SupportedVpnTypes");

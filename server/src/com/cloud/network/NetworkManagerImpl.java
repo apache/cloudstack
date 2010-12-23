@@ -754,11 +754,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemVmStorageNetwork, storageNetworkOffering);
 
-        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, GuestIpType.Virtual, false, false, rateMbps, multicastRateMbps, null, true, Availability.Required);
+        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, GuestIpType.Virtual, false, false, rateMbps, multicastRateMbps, null, true, Availability.Required, false, false, false, false, false, false, false);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
-        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Public, GuestIpType.Direct, false, false, rateMbps, multicastRateMbps, null, true, Availability.Required);
+        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Public, GuestIpType.Direct, false, false, rateMbps, multicastRateMbps, null, true, Availability.Required, false, false, false, false, false, false, false);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
-        NetworkOfferingVO defaultGuestDirectPodBasedNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectPodBasedNetworkOffering, "DirectPodBased", TrafficType.Public, GuestIpType.DirectPodBased, true, false, rateMbps, multicastRateMbps, null, true, Availability.Required);
+        NetworkOfferingVO defaultGuestDirectPodBasedNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectPodBasedNetworkOffering, "DirectPodBased", TrafficType.Public, GuestIpType.DirectPodBased, true, false, rateMbps, multicastRateMbps, null, true, Availability.Required, false, false, false, false, false, false, false);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectPodBasedNetworkOffering);
         
         AccountsUsingNetworkSearch = _accountDao.createSearchBuilder();
@@ -2166,9 +2166,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 Iterator<Service> it = providers.keySet().iterator();
                 while (it.hasNext()) {
                     Service service = it.next();
-                    if (providers.get(service).equals(element.getProvider().getName())) {
-                        networkCapabilities.put(service, elementCapabilities.get(service));
-                        it.remove();
+                    if (providers.get(service).equalsIgnoreCase(element.getProvider().getName())) {
+                        if (elementCapabilities.containsKey(service)) {
+                            networkCapabilities.put(service, elementCapabilities.get(service));
+                            it.remove();
+                        }
                     }
                 }
             }

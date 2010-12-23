@@ -80,4 +80,18 @@ public interface NetworkOffering {
     boolean isSystemOnly();
     
     Availability getAvailability();
+    
+    boolean isDnsService();
+    
+    boolean isGatewayService();
+    
+    boolean isFirewallService();
+    
+    boolean isLbService();
+    
+    boolean isUserdataService();
+    
+    boolean isVpnService();
+    
+    boolean isDhcpService();
 }

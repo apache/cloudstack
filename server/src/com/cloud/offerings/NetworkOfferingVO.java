@@ -94,6 +94,27 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name="availability")
     @Enumerated(value=EnumType.STRING)
     Availability availability;
+    
+    @Column(name="dns_service")
+    boolean dnsService;
+    
+    @Column(name="gateway_service")
+    boolean gatewayService;
+    
+    @Column(name="firewall_service")
+    boolean firewallService;
+    
+    @Column(name="lb_service")
+    boolean lbService;
+    
+    @Column(name="userdata_service")
+    boolean userdataService;
+    
+    @Column(name="vpn_service")
+    boolean vpnService;
+    
+    @Column(name="dhcp_service")
+    boolean dhcpService;
 
     @Override
     public String getDisplayText() {
@@ -226,8 +247,71 @@ public class NetworkOfferingVO implements NetworkOffering {
     public void setAvailability(Availability availability) {
         this.availability = availability;
     }
+    
+    @Override
+    public boolean isDnsService() {
+        return dnsService;
+    }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, GuestIpType type, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability) {
+    public void setDnsService(boolean dnsService) {
+        this.dnsService = dnsService;
+    }
+
+    @Override
+    public boolean isGatewayService() {
+        return gatewayService;
+    }
+
+    public void setGatewayService(boolean gatewayService) {
+        this.gatewayService = gatewayService;
+    }
+    
+    @Override
+    public boolean isFirewallService() {
+        return firewallService;
+    }
+
+    public void setFirewallService(boolean firewallService) {
+        this.firewallService = firewallService;
+    }
+
+    @Override
+    public boolean isLbService() {
+        return lbService;
+    }
+
+    public void setLbService(boolean lbService) {
+        this.lbService = lbService;
+    }
+
+    @Override
+    public boolean isUserdataService() {
+        return userdataService;
+    }
+
+    public void setUserdataService(boolean userdataService) {
+        this.userdataService = userdataService;
+    }
+    
+    @Override
+    public boolean isVpnService() {
+        return vpnService;
+    }
+
+    public void setVpnService(boolean vpnService) {
+        this.vpnService = vpnService;
+    }
+    
+    @Override
+    public boolean isDhcpService() {
+        return dhcpService;
+    }
+
+    public void setDhcpService(boolean dhcpService) {
+        this.dhcpService = dhcpService;
+    }
+
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, GuestIpType type, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, boolean lbService, boolean gatewayService, boolean dhcpService, boolean firewallService, boolean dnsService, boolean userDataService, boolean vpnService) {
         this.name = name;
         this.displayText = displayText;
         this.guestIpType = type;
@@ -239,10 +323,17 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.specifyVlan = specifyVlan;
         this.isDefault = isDefault;
         this.availability = availability;
+        this.gatewayService = gatewayService;
+        this.lbService = lbService;
+        this.dnsService = dnsService;
+        this.dhcpService = dhcpService;
+        this.firewallService = firewallService;
+        this.vpnService = vpnService;
+        this.userdataService = userDataService;
     }
     
     public NetworkOfferingVO(ServiceOfferingVO offering) {
-        this("Network Offering for " + offering.getName(), "Network Offering for " + offering.getDisplayText(), TrafficType.Guest, offering.getGuestIpType(), false, false, offering.getRateMbps(), offering.getMulticastRateMbps(), null, false, Availability.Required);
+        this("Network Offering for " + offering.getName(), "Network Offering for " + offering.getDisplayText(), TrafficType.Guest, offering.getGuestIpType(), false, false, offering.getRateMbps(), offering.getMulticastRateMbps(), null, false, Availability.Required, false, false, false, false, false, false, false);
         this.serviceOfferingId = offering.getId();
     }
     
@@ -254,7 +345,7 @@ public class NetworkOfferingVO implements NetworkOffering {
      * @param type
      */
     public NetworkOfferingVO(String name, TrafficType trafficType, GuestIpType type) {
-        this(name, "System Offering for " + name, trafficType, type, true, false, null, null, null, false, Availability.Required);
+        this(name, "System Offering for " + name, trafficType, type, true, false, null, null, null, false, Availability.Required, false, false, false, false, false, false, false);
     }
     
     @Override

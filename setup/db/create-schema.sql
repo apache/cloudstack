@@ -212,6 +212,13 @@ CREATE TABLE `cloud`.`network_offerings` (
   `removed` datetime DEFAULT NULL COMMENT 'time the entry was removed',
   `default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is default',
   `availability` varchar(255) NOT NULL COMMENT 'availability of the network',
+  `dns_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides dns service',
+  `gateway_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides gateway service',
+  `firewall_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides firewall service',
+  `lb_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides lb service',
+  `userdata_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides user data service',
+  `vpn_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides vpn service',
+  `dhcp_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides dhcp service',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

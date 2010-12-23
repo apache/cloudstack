@@ -2638,7 +2638,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));      
         tags = cleanupTags(tags);
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, type, false, specifyVlan, networkRate, multicastRate, maxConnections, false, availability);
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, type, false, specifyVlan, networkRate, multicastRate, maxConnections, false, availability, false, false, false, false, false, false, false);
         
         if ((offering = _networkOfferingDao.persist(offering)) != null) {
             saveConfigurationEvent(userId, null, EventTypes.EVENT_NETWORK_OFFERING_CREATE, "Successfully created new network offering with name: " + name + ".", "noId=" + offering.getId(), "name=" + name,
