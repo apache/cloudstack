@@ -262,6 +262,13 @@ $(document).ready(function() {
 	});
 	
 	//advanced search	
+    var LeftMenuAdvancedSearchMap = {
+        "leftmenu_instances_my_instances": "advanced_search_popup_nodomainaccount",
+        "leftmenu_instances_running_instances": "advanced_search_popup_nostate",
+        "leftmenu_instances_stopped_instances": "advanced_search_popup_nostate",
+        "leftmenu_instances_destroyed_instances": "advanced_search_popup_nostate"
+    }	
+		
 	$("#advanced_search_icon").unbind("click").bind("click", function(event) {
 	    if($(this).hasClass("up")) {  //clicking up-arrow          
 	        $("#advanced_search_container").find("#advanced_search_popup").slideUp("500");
@@ -273,8 +280,13 @@ $(document).ready(function() {
 	        if($("#advanced_search_container").find("#advanced_search_popup").length > 0) {
 	            $("#advanced_search_container").find("#advanced_search_popup").slideDown("500");
 	        }
-	        else {	
-	            var $advancedSearchPopup = $("#hidden_container").find("#advanced_search_popup");
+	        else {		            
+	            var $advancedSearchPopup;
+	            if(currentLeftMenuId in LeftMenuAdvancedSearchMap)
+	                $advancedSearchPopup = $("#hidden_container").find("#"+LeftMenuAdvancedSearchMap[currentLeftMenuId]);
+	            else
+	                $advancedSearchPopup = $("#hidden_container").find("#advanced_search_popup");  //default
+	                
 	            $("#advanced_search_container").append($advancedSearchPopup.slideDown("500"));	 
         	    
 	            $advancedSearchPopup.unbind("click").bind("click", function(event) {
