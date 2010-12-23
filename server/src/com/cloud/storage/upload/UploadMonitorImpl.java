@@ -306,7 +306,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 	            hostname = hostname + ".realhostip.com";
 	            scheme = "https";
 	        }
-	        return scheme + "://" + hostname + path.substring(path.lastIndexOf("/")); 
+	        return scheme + "://" + hostname + "/copy" + path.substring(path.lastIndexOf("/")); 
 	    }
 	
 
@@ -320,7 +320,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 			throws ConfigurationException {
 		_name = name;
         final Map<String, String> configs = _configDao.getConfiguration("ManagementServer", params);
-        _sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
+        //_sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
         
         String cert = configs.get("secstorage.secure.copy.cert");
         if ("realhostip.com".equalsIgnoreCase(cert)) {

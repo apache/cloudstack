@@ -156,6 +156,7 @@ public class UploadManagerImpl implements UploadManager {
        private String parentDir;
        private Adapters<Processor> _processors;
        private String publicTemplateRepo;
+       private String extractMountPoint = "/mnt/SecStorage/extractmnt";
        private StorageLayer _storage;
        private int installTimeoutPerGig;
        private boolean _sslCopy;
@@ -332,7 +333,7 @@ public class UploadManagerImpl implements UploadManager {
         // Create the directory structure so that its visible under apache server root
         Script command = new Script("mkdir", s_logger);
         command.add("-p");
-        command.add("/var/www/html/");
+        command.add("/var/www/html/copy");
         String result = command.execute();
         if (result != null) {
             String errorString = "Error in creating directory =" + result;
@@ -344,7 +345,7 @@ public class UploadManagerImpl implements UploadManager {
         cmd.getInstallPath();
         command = new Script("/bin/bash", s_logger);
         command.add("-c");
-        command.add("ln -sf " + publicTemplateRepo + cmd.getInstallPath() + " /var/www/html/");
+        command.add("ln -sf " + extractMountPoint + File.separator + cmd.getInstallPath() + " /var/www/html/copy/");
         result = command.execute();
         if (result != null) {
             String errorString = "Error in linking  err=" + result; 
@@ -365,7 +366,7 @@ public class UploadManagerImpl implements UploadManager {
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
         //We just need to remove the UUID.vhd
-        command.add("unlink /var/www/html/" +path.substring(path.lastIndexOf(File.separator) + 1));
+        command.add("unlink /var/www/html/copy/" +path.substring(path.lastIndexOf(File.separator) + 1));
         String result = command.execute();
         if (result != null) {
             String errorString = "Error in deleting =" + result;
@@ -438,8 +439,8 @@ public class UploadManagerImpl implements UploadManager {
         configureFolders(name, params);
         String inSystemVM = (String)params.get("secondary.storage.vm");
         if (inSystemVM != null && "true".equalsIgnoreCase(inSystemVM)) {
-        	//s_logger.info("UploadManager: starting additional services since we are inside system vm");
-        	//startAdditionalServices();
+        	s_logger.info("UploadManager: starting additional services since we are inside system vm");
+        	startAdditionalServices();
         	//blockOutgoingOnPrivate();
         }
 
@@ -460,6 +461,37 @@ public class UploadManagerImpl implements UploadManager {
         return true;
 	}
 	
+	private void startAdditionalServices() {
+    	
+		
+		Script command = new Script("rm", s_logger);
+		command.add("-rf");
+    	command.add(extractMountPoint);
+    	String result = command.execute();
+    	if (result != null) {
+    		s_logger.warn("Error in creating file " +extractMountPoint+ " ,error: " + result );
+    		return;
+    	}
+    	
+		command = new Script("touch", s_logger);
+    	command.add(extractMountPoint);
+    	result = command.execute();
+    	if (result != null) {
+    		s_logger.warn("Error in creating file " +extractMountPoint+ " ,error: " + result );
+    		return;
+    	}
+    	
+    	command = new Script("/bin/bash", s_logger);
+		command.add("-c");
+    	command.add("ln -sf " + parentDir + " " +extractMountPoint);
+    	result = command.execute();
+    	if (result != null) {
+    		s_logger.warn("Error in linking  err=" + result );
+    		return;
+    	}
+		
+	}
+
 	protected void configureFolders(String name, Map<String, Object> params) throws ConfigurationException {
         parentDir = (String) params.get("template.parent");
         if (parentDir == null) {
@@ -573,20 +605,6 @@ public class UploadManagerImpl implements UploadManager {
             // ignore
         }
     }
-
-    private void blockOutgoingOnPrivate() {
-    	Script command = new Script("/bin/bash", s_logger);
-    	String intf = "eth1";
-    	command.add("-c");
-    	command.add("iptables -A OUTPUT -o " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "80" + " -j REJECT;" +
-    			"iptables -A OUTPUT -o " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j REJECT;");
-
-    	String result = command.execute();
-    	if (result != null) {
-    		s_logger.warn("Error in blocking outgoing to port 80/443 err=" + result );
-    		return;
-    	}		
-	}
 
   private boolean checkAndStartApache() {
     			  
