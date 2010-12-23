@@ -801,6 +801,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     			selectSql += " AND taken IS NOT NULL";
     		}
     		
+    		if(tableName.equals("user_ip_address")){
+    			selectSql += " AND state!='Free'";
+    		}
+    		
+    		if (tableName.equals("op_dc_ip_address_alloc")) {
+    			selectSql += " AND taken IS NOT NULL";
+    		}
+    		
             Transaction txn = Transaction.currentTxn();
     		try {
                 PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
