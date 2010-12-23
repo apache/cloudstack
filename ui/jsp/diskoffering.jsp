@@ -212,20 +212,23 @@
 	</div>
 </div>
 
-<!-- advanced search template (begin) -->
-<div class="adv_searchpopup_bg" id="advanced_search_popup" style="display:none;">
-            <div class="adv_searchformbox">
-                <form action="#" method="post">
-                <ol>
-                    <li>
-                        <input class="text textwatermark" type="text" id="adv_search_name" value="by name" />
-                    </li>           
-                    <li id="adv_search_domain_li" style="display: none;">
-                        <select class="select" id="adv_search_domain">
-                        </select>
-                    </li>           
-                </ol>
-                </form>
-         </div>
+
+<div id="hidden_container">
+    <!-- advanced search popup (begin) -->
+    <div class="adv_searchpopup_bg" id="advanced_search_popup" style="display: none;">
+        <div class="adv_searchformbox">
+            <form action="#" method="post">
+            <ol>
+                <li>
+                    <input class="text textwatermark" type="text" id="adv_search_name" value="by name" />
+                </li>
+                <li id="adv_search_domain_li" style="display: none;">
+                    <select class="select" id="adv_search_domain">
+                    </select>
+                </li>
+            </ol>
+            </form>
+        </div>
+    </div>
+    <!-- advanced search popup (end) -->
 </div>
-<!-- advanced search template (end) -->

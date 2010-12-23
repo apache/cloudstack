@@ -205,8 +205,9 @@
 </div>
 
 
-<!-- advanced search template (begin) -->
-<div id="advanced_search_popup" class="adv_searchpopup_bg" style="display: none;">
+<div id="hidden_container">
+    <!-- advanced search popup (begin) -->
+    <div id="advanced_search_popup" class="adv_searchpopup_bg" style="display: none;">
         <div class="adv_searchformbox">
             <form action="#" method="post">
             <ol>
@@ -227,7 +228,7 @@
                         <option value="Error">Error</option>
                         <option value="Unknown">Unknown</option>
                     </select>
-                </li>            
+                </li>
                 <li>
                     <select class="select" id="adv_search_zone">
                     </select>
@@ -235,10 +236,10 @@
                 <li id="adv_search_pod_li" style="display: none;">
                     <select class="select" id="adv_search_pod">
                     </select>
-                </li>           
+                </li>
             </ol>
             </form>
-         </div>
-
+        </div>
+    </div>
+    <!-- advanced search popup (end) -->
 </div>
-<!-- advanced search template (end) -->

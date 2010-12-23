@@ -122,8 +122,9 @@
 </div>
 <!-- event detail panel (end) -->
 
-<!-- advanced search template (begin) -->
-<div id="advanced_search_popup" class="adv_searchpopup_bg" style="display: none;">
+<div id="hidden_container">
+    <!-- advanced search popup (begin) -->
+    <div id="advanced_search_popup" class="adv_searchpopup_bg" style="display: none;">
         <div class="adv_searchformbox">
             <form action="#" method="post">
             <ol>
@@ -157,7 +158,7 @@
                         <option value="NET.IPRELEASE">NET.IPRELEASE</option>
                         <option value="NET.RULEADD">NET.RULEADD</option>
                         <option value="NET.RULEDELETE">NET.RULEDELETE</option>
-                        <option value="NET.RULEMODIFY">NET.RULEMODIFY</option>                   
+                        <option value="NET.RULEMODIFY">NET.RULEMODIFY</option>
                         <option value="PF.SERVICE.APPLY">PF.SERVICE.APPLY</option>
                         <option value="PF.SERVICE.REMOVE">PF.SERVICE.REMOVE</option>
                         <option value="SECGROUP.APPLY">SECGROUP.APPLY</option>
@@ -227,6 +228,7 @@
                 </li>
             </ol>
             </form>
-         </div>
+        </div>
+    </div>
+    <!-- advanced search popup (end) -->
 </div>
-<!-- advanced search template (end) -->

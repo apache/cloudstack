@@ -82,17 +82,18 @@
 </div>
 <!-- alert detail panel (end) -->
 
-
-<!-- advanced search template (begin) -->
-<div id="advanced_search_popup" class="adv_searchpopup_bg" style="display: none;">
-    	<div class="adv_searchformbox">
+<div id="hidden_container">
+    <!-- advanced search popup (begin) -->
+    <div id="advanced_search_popup" class="adv_searchpopup_bg" style="display: none;">
+        <div class="adv_searchformbox">
             <form action="#" method="post">
             <ol>
                 <li>
                     <input class="text textwatermark" type="text" id="adv_search_type" value="by type" />
-                </li>            
+                </li>
             </ol>
             </form>
-         </div>
+        </div>
+    </div>
+    <!-- advanced search popup (end) -->
 </div>
-<!-- advanced search template (end) -->

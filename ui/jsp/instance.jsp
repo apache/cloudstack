@@ -1488,14 +1488,16 @@
 
 <!--  ***** Dialogs (end) ***** -->
 
-<!-- advanced search templates (begin) -->
-<div id="advanced_search_popup_general" class="adv_searchpopup_bg" style="display: none;">
+<div id="hidden_container">
+    <!-- advanced search popup (begin) -->
+    <div id="advanced_search_popup_general" class="adv_searchpopup_bg" style="display: none;">
         <div class="adv_searchformbox">
             <form action="#" method="post">
             <ol>
                 <li>
-                    <input class="text textwatermark" type="text" name="adv_search_name" id="adv_search_name" value="by name"/>
-                </li>           
+                    <input class="text textwatermark" type="text" name="adv_search_name" id="adv_search_name"
+                        value="by name" />
+                </li>
                 <li>
                     <select class="select" id="adv_search_state">
                         <option value=""></option>
@@ -1510,11 +1512,11 @@
                         <option value="Error">Error</option>
                         <option value="Unknown">Unknown</option>
                     </select>
-                </li>            
+                </li>
                 <li>
                     <select class="select" id="adv_search_zone">
                     </select>
-                </li>            
+                </li>
                 <li id="adv_search_domain_li" style="display: none;">
                     <select class="select" id="adv_search_domain">
                     </select>
@@ -1525,22 +1527,19 @@
             </ol>
             </form>
         </div>
-</div>
-
-<div id="advanced_search_popup_nostate" class="adv_searchpopup_bg" style="display: none;">
-
+    </div>
+    <div id="advanced_search_popup_nostate" class="adv_searchpopup_bg" style="display: none;">
         <div class="adv_searchformbox">
             <form action="#" method="post">
             <ol>
                 <li>
-
-                    <input class="text textwatermark" type="text" name="adv_search_name" id="adv_search_name"  value="by name"/>
-                </li>            
+                    <input class="text textwatermark" type="text" name="adv_search_name" id="adv_search_name"
+                        value="by name" />
+                </li>
                 <li>
-
                     <select class="select" id="adv_search_zone">
                     </select>
-                </li>            
+                </li>
                 <li id="adv_search_domain_li" style="display: none;">
                     <select class="select" id="adv_search_domain">
                     </select>
@@ -1550,20 +1549,17 @@
                 </li>
             </ol>
             </form>
-            
-         </div>
-
-</div>
-
-<div id="advanced_search_popup_nodomainaccount" class="adv_searchpopup_bg" style="display: none;">
+        </div>
+    </div>
+    <div id="advanced_search_popup_nodomainaccount" class="adv_searchpopup_bg" style="display: none;">
         <div class="adv_searchformbox">
             <form action="#" method="post">
             <ol>
                 <li>
-                    <input class="text textwatermark" type="text" name="adv_search_name" id="adv_search_name"  value="by name"/>
-                </li>           
+                    <input class="text textwatermark" type="text" name="adv_search_name" id="adv_search_name"
+                        value="by name" />
+                </li>
                 <li>
-
                     <select class="select" id="adv_search_state">
                         <option value=""></option>
                         <option value="Creating">Creating</option>
@@ -1577,14 +1573,14 @@
                         <option value="Error">Error</option>
                         <option value="Unknown">Unknown</option>
                     </select>
-                </li>            
+                </li>
                 <li>
-
                     <select class="select" id="adv_search_zone">
                     </select>
-                </li>   
+                </li>
             </ol>
             </form>
-         </div>
+        </div>
+    </div>
+    <!-- advanced search popup (end) -->
 </div>
-<!-- advanced search templates (end) -->
