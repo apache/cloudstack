@@ -26,8 +26,6 @@ import com.cloud.network.Networks.TrafficType;
  */
 public interface NetworkOffering {
     
-    public static final long PUBLIC_NETWORK_OFFERING_ID = 1;
-    
     public enum GuestIpType {
     	Virtual,
     	Direct,
