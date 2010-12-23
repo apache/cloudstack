@@ -1338,7 +1338,7 @@ a:hover {
 }
 
 .language_dropdownpanel p {
-	width:auto;
+	width:64px;
 	height:auto;
 	float:left;
 	color:#FFF;
@@ -2057,6 +2057,17 @@ a.search_button {
 
 a:hover.search_button {
 	background:url(../images/searchicon_button_hover.jpg) no-repeat top left;
+}
+
+
+
+
+.actionpanel_rightbutton_container {
+	width:18%;
+	height:27px;
+	float:right;
+	margin:0;
+	padding:0;
 }
 
 .actionpanel_button_wrapper{
