@@ -4153,48 +4153,42 @@ public abstract class CitrixResourceBase implements ServerResource {
                     if (!SRType.LVMOISCSI.equals(sr.getType(conn))) {
                         continue;
                     }
-
                     Set<PBD> pbds = sr.getPBDs(conn);
                     if (pbds.isEmpty()) {
                         continue;
                     }
-
                     PBD pbd = pbds.iterator().next();
-
                     Map<String, String> dc = pbd.getDeviceConfig(conn);
-
                     if (dc == null) {
                         continue;
                     }
-
                     if (dc.get("target") == null) {
                         continue;
                     }
-
                     if (dc.get("targetIQN") == null) {
                         continue;
                     }
-
                     if (dc.get("lunid") == null) {
                         continue;
                     }
-
                     if (target.equals(dc.get("target")) && targetiqn.equals(dc.get("targetIQN")) && lunid.equals(dc.get("lunid"))) {
                         if (checkSR(conn, sr)) {
                             return sr;
                         }
                         throw new CloudRuntimeException("SR check failed for storage pool: " + pool.getUuid() + "on host:" + _host.uuid);
                     }
-
                 }
                 deviceConfig.put("target", target);
                 deviceConfig.put("targetIQN", targetiqn);
 
                 Host host = Host.getByUuid(conn, _host.uuid);
+                Map<String, String> smConfig = new HashMap<String, String>();
+                String type = SRType.LVMOISCSI.toString();
+                String poolId = Long.toString(pool.getId());
                 SR sr = null;
                 try {
-                    sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), Long.toString(pool.getId()), SRType.LVMOISCSI.toString(), "user", true,
-                            new HashMap<String, String>());
+                    sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), poolId, type, "user", true,
+                            smConfig);
                 } catch (XenAPIException e) {
                     String errmsg = e.toString();
                     if (errmsg.contains("SR_BACKEND_FAILURE_107")) {
@@ -4224,13 +4218,29 @@ public abstract class CitrixResourceBase implements ServerResource {
                         s_logger.warn(msg, e);
                         throw new CloudRuntimeException(msg, e);
                     }
-                }
+                }              
                 deviceConfig.put("SCSIid", scsiid);
-                sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), Long.toString(pool.getId()), SRType.LVMOISCSI.toString(), "user", true,
-                        new HashMap<String, String>());
+
+                String result = SR.probe(conn, host, deviceConfig, type , smConfig);
+                String pooluuid = null;
+                if( result.indexOf("<UUID>") != -1) {
+                    pooluuid = result.substring(result.indexOf("<UUID>") + 6, result.indexOf("</UUID>")).trim();
+                }
+                if( pooluuid == null || pooluuid.length() != 36) {
+                    sr = SR.create(conn, host, deviceConfig, new Long(0), pool.getUuid(), poolId, type, "user", true,
+                        smConfig);
+                } else {
+                    sr = SR.introduce(conn, pooluuid, pool.getUuid(), poolId, 
+                            type, "user", true, smConfig);
+                    PBD.Record rec = new PBD.Record();
+                    rec.deviceConfig = deviceConfig;
+                    rec.host = host;
+                    rec.SR = sr;
+                    PBD pbd = PBD.create(conn, rec);
+                    pbd.plug(conn);
+                }
                 sr.scan(conn);
                 return sr;
-
             } catch (XenAPIException e) {
                 String msg = "Unable to create Iscsi SR  " + deviceConfig + " due to  " + e.toString();
                 s_logger.warn(msg, e);
@@ -5190,6 +5200,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             }
             throw new CloudRuntimeException("SR check failed for storage pool: " + pool.getUuid() + "on host:" + _host.uuid);
         } else {
+            
 	
 	        if (pool.getType() == StoragePoolType.NetworkFilesystem) {
                 return getNfsSR(conn, pool);
