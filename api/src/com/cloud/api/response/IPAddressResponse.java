@@ -62,6 +62,9 @@ public class IPAddressResponse extends BaseResponse {
     @SerializedName("associatednetworkid") @Param(description="the ID of the Network associated with the IP address")
     private Long associatedNetworkId;
     
+    @SerializedName("networkid") @Param(description="the ID of the Network where ip belongs to")
+    private Long networkId;
+    
     public String getIpAddress() {
         return ipAddress;
     }
@@ -166,4 +169,11 @@ public class IPAddressResponse extends BaseResponse {
         this.associatedNetworkId = networkId;
     }
 
+    public Long getNetworkId() {
+        return networkId;
+    }
+
+    public void setNetworkId(Long networkId) {
+        this.networkId = networkId;
+    }
 }

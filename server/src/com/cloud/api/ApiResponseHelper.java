@@ -594,13 +594,14 @@ public class ApiResponseHelper implements ResponseGenerator {
     public IPAddressResponse createIPAddressResponse(IpAddress ipAddress) {
         VlanVO vlan = ApiDBUtils.findVlanById(ipAddress.getVlanId());
         boolean forVirtualNetworks = vlan.getVlanType().equals(VlanType.VirtualNetwork);
+        long zoneId = ipAddress.getDataCenterId();
 
         IPAddressResponse ipResponse = new IPAddressResponse();
         ipResponse.setIpAddress(ipAddress.getAddress());
         if (ipAddress.getAllocatedTime() != null) {
             ipResponse.setAllocated(ipAddress.getAllocatedTime());
         }
-        ipResponse.setZoneId(ipAddress.getDataCenterId());
+        ipResponse.setZoneId(zoneId);
         ipResponse.setZoneName(ApiDBUtils.findZoneById(ipAddress.getDataCenterId()).getName());
         ipResponse.setSourceNat(ipAddress.isSourceNat());
 
@@ -615,7 +616,13 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setForVirtualNetwork(forVirtualNetworks);
         ipResponse.setStaticNat(ipAddress.isOneToOneNat());
         
+        //Network id the ip is associated with
         ipResponse.setAssociatedNetworkId(ipAddress.getAssociatedNetworkId());
+        
+        //Network id the ip belongs to
+        long networkId = ApiDBUtils.getPublicNetworkIdByZone(zoneId);
+        ipResponse.setNetworkId(networkId);
+        
 
         // show this info to admin only
         Account account = UserContext.current().getAccount();
