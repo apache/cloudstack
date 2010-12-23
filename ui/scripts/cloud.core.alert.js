@@ -24,10 +24,10 @@ function alertGetSearchParams() {
         moreCriteria.push("&keyword="+todb(searchInput));	       
     }     
 
-	var $advancedSearchPopup = $("#advanced_search_popup");
-	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {
+	var $advancedSearchPopup = $("#advanced_search_container").find("#advanced_search_popup");
+	if ($advancedSearchPopup.length > 0 && $advancedSearchPopup.css("display") != "none" ) {	
 	    var type = $advancedSearchPopup.find("#adv_search_type").val();							
-		if (type!=null && type.length > 0) 
+		if ($advancedSearchPopup.find("#adv_search_type").hasClass("textwatermark") == false && type!=null && type.length > 0) 
 			moreCriteria.push("&type="+todb(type));			
 	} 	
 	
