@@ -25,9 +25,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
-import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
-import com.cloud.event.EventVO;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.vm.UserVmVO;
@@ -75,10 +72,7 @@ public class RebootVMExecutor extends VMOperationExecutor {
 	
 	public void processAnswer(VMOperationListener listener, long agentId, long seq, Answer answer) {
 		UserVmVO vm = listener.getVm();
-		VMOperationParam param = listener.getParam();
 		AsyncJobManager asyncMgr = getAsyncJobMgr();
-		ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
-        String params = "id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId();
 		
 		boolean jobStatusUpdated = false;
 		try {
@@ -89,16 +83,11 @@ public class RebootVMExecutor extends VMOperationExecutor {
 	    		asyncMgr.completeAsyncJob(getJob().getId(), 
 	        		AsyncJobResult.STATUS_SUCCEEDED, 0, VMExecutorHelper.composeResultObject(asyncMgr.getExecutorContext().getManagementServer(), vm, null));
 	    		jobStatusUpdated = true;	            
-	            EventUtils.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_REBOOT,
-	            		"Successfully rebooted VM instance : " + vm.getName(), params, param.getEventId());
 	    	} else {
 	    		asyncMgr.completeAsyncJob(getJob().getId(), 
 	            		AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, "Agent is unable to execute the command");
 	    		
 	    		jobStatusUpdated = true;
-	    		EventUtils.saveEvent(param.getUserId(), param.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_REBOOT,
-	            		"Failed to reboot VM instance : " + vm.getName(), params, param.getEventId());
-	            
 	    	}
 	    	    		
 		} catch(Exception e) {
@@ -134,24 +123,13 @@ public class RebootVMExecutor extends VMOperationExecutor {
 	
 	private void processDisconnectAndTimeout(VMOperationListener listener, String resultMessage) {
 		
-		UserVmVO vm = listener.getVm();
-		VMOperationParam param = listener.getParam();
 		AsyncJobManager asyncMgr = getAsyncJobMgr(); 
 		
-        EventVO event = new EventVO();
-        event.setUserId(param.getUserId());
-        event.setAccountId(vm.getAccountId());
-        event.setType(EventTypes.EVENT_VM_REBOOT);
-        event.setParameters("id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
-        event.setDescription("failed to reboot VM instance : " + vm.getName() + " due to " + resultMessage);
-        event.setLevel(EventVO.LEVEL_ERROR);
-
         boolean jobStatusUpdated = false;
         try {
 			asyncMgr.completeAsyncJob(getJob().getId(), 
 	        		AsyncJobResult.STATUS_FAILED, 0, resultMessage);
 			jobStatusUpdated = true;
-			asyncMgr.getExecutorContext().getEventDao().persist(event);
         } catch (Exception e) {
         	s_logger.error("Unexpected exception " + e.getMessage(), e);
         	if(!jobStatusUpdated)

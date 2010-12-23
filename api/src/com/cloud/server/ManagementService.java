@@ -417,5 +417,9 @@ public interface ManagementService {
      * @throws IllegalArgumentException
      */
     boolean unregisterPreallocatedLun(DeletePreallocatedLunCmd cmd) throws IllegalArgumentException;
+    
+    public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId);
+    
+    public Long saveCompletedEvent(Long userId, Long accountId, String level, String type, String description, long startEventId);
 
 }

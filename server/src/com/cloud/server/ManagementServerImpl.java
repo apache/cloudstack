@@ -765,14 +765,9 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach, long startEventId) {
+    public boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach) {
     	UserVmVO vm = _userVmDao.findById(vmId);
     	VMTemplateVO iso = _templateDao.findById(isoId);
-    	if(attach){
-    		EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_ISO_ATTACH, "Attaching ISO: "+isoId+" to Vm: "+vmId, startEventId);
-    	} else {
-    		EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_ISO_DETACH, "Detaching ISO: "+isoId+" from Vm: "+vmId, startEventId);
-    	}
         boolean success = _vmMgr.attachISOToVM(vmId, isoId, attach);
 
         if (success) {
@@ -782,19 +777,6 @@ public class ManagementServerImpl implements ManagementServer {
                 vm.setIsoId(null);
             }
             _userVmDao.update(vmId, vm);
-
-            if (attach) {
-            	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ISO_ATTACH, "Successfully attached ISO: " + iso.getName() + " to VM with ID: " + vmId,
-                        null, startEventId);
-            } else {
-            	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ISO_DETACH, "Successfully detached ISO from VM with ID: " + vmId, null, startEventId);
-            }
-        } else {
-            if (attach) {
-            	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ISO_ATTACH, "Failed to attach ISO: " + iso.getName() + " to VM with ID: " + vmId, null, startEventId);
-            } else {
-            	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ISO_DETACH, "Failed to detach ISO from VM with ID: " + vmId, null, startEventId);
-            }
         }
         return success;
     }
@@ -2043,10 +2025,10 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     @Override
-    public boolean copyTemplate(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) {
+    public boolean copyTemplate(long userId, long templateId, long sourceZoneId, long destZoneId) {
     	boolean success = false;
 		try {
-			success = _tmpltMgr.copy(userId, templateId, sourceZoneId, destZoneId, startEventId);
+			success = _tmpltMgr.copy(userId, templateId, sourceZoneId, destZoneId);
 		} catch (Exception e) {
 			s_logger.warn("Unable to copy template " + templateId + " from zone " + sourceZoneId + " to " + destZoneId , e);
 			success = false;
@@ -2994,19 +2976,19 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public ConsoleProxyVO startConsoleProxy(long instanceId, long startEventId) {
-        return _consoleProxyMgr.startProxy(instanceId, startEventId);
+    public ConsoleProxyVO startConsoleProxy(long instanceId) {
+        return _consoleProxyMgr.startProxy(instanceId);
     }
 
     @Override
-    public ConsoleProxyVO stopConsoleProxy(long instanceId, long startEventId) {
-        _consoleProxyMgr.stopProxy(instanceId, startEventId);
+    public ConsoleProxyVO stopConsoleProxy(long instanceId) {
+        _consoleProxyMgr.stopProxy(instanceId);
         return _consoleProxyDao.findById(instanceId);
     }
 
     @Override
-    public ConsoleProxyVO rebootConsoleProxy(long instanceId, long startEventId) {
-        _consoleProxyMgr.rebootProxy(instanceId, startEventId);
+    public ConsoleProxyVO rebootConsoleProxy(long instanceId) {
+        _consoleProxyMgr.rebootProxy(instanceId);
         return _consoleProxyDao.findById(instanceId);
     }
 
@@ -4112,22 +4094,22 @@ public class ManagementServerImpl implements ManagementServer {
         return _domainDao.isChildDomain(parentId, childId);
     }
 
-    public SecondaryStorageVmVO startSecondaryStorageVm(long instanceId, long startEventId) {
-        return _secStorageVmMgr.startSecStorageVm(instanceId, startEventId);
+    public SecondaryStorageVmVO startSecondaryStorageVm(long instanceId) {
+        return _secStorageVmMgr.startSecStorageVm(instanceId);
     }
 
-    public SecondaryStorageVmVO stopSecondaryStorageVm(long instanceId, long startEventId) {
-        _secStorageVmMgr.stopSecStorageVm(instanceId, startEventId);
+    public SecondaryStorageVmVO stopSecondaryStorageVm(long instanceId) {
+        _secStorageVmMgr.stopSecStorageVm(instanceId);
         return _secStorageVmDao.findById(instanceId);
     }
 
-    public SecondaryStorageVmVO rebootSecondaryStorageVm(long instanceId, long startEventId) {
-        _secStorageVmMgr.rebootSecStorageVm(instanceId, startEventId);
+    public SecondaryStorageVmVO rebootSecondaryStorageVm(long instanceId) {
+        _secStorageVmMgr.rebootSecStorageVm(instanceId);
         return _secStorageVmDao.findById(instanceId);
     }
 
-    public boolean destroySecondaryStorageVm(long instanceId, long startEventId) {
-        return _secStorageVmMgr.destroySecStorageVm(instanceId, startEventId);
+    public boolean destroySecondaryStorageVm(long instanceId) {
+        return _secStorageVmMgr.destroySecStorageVm(instanceId);
     }
 
 	@Override
@@ -4229,11 +4211,9 @@ public class ManagementServerImpl implements ManagementServer {
         }
 		
 		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
-			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "Starting console proxy with Id: "+id);
-			return startConsoleProxy(id, eventId);
+			return startConsoleProxy(id);
 		} else {
-			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "Starting secondary storage Vm Id: "+id);
-			return startSecondaryStorageVm(id, eventId);
+			return startSecondaryStorageVm(id);
 		}
 	}
 
@@ -4249,11 +4229,9 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         if (systemVm.getType() == VirtualMachine.Type.ConsoleProxy) {
-            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_PROXY_START, "Starting console proxy with Id: "+vmId);
-            return startConsoleProxy(vmId, eventId);
+            return startConsoleProxy(vmId);
         } else if (systemVm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
-            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_SSVM_START, "Starting secondary storage Vm Id: "+vmId);
-            return startSecondaryStorageVm(vmId, eventId);
+            return startSecondaryStorageVm(vmId);
         } else {
             throw new InvalidParameterValueException("Unable to find a system vm: " + vmId);
         }
@@ -4274,11 +4252,9 @@ public class ManagementServerImpl implements ManagementServer {
 
         // FIXME: We need to return the system VM from this method, so what do we do with the boolean response from stopConsoleProxy and stopSecondaryStorageVm?
         if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
-            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_PROXY_STOP, "stopping console proxy with Id: "+vmId);
-            return stopConsoleProxy(vmId, eventId);
+            return stopConsoleProxy(vmId);
         } else {
-            long eventId = EventUtils.saveScheduledEvent(callerId, callerAccountId, EventTypes.EVENT_SSVM_STOP, "stopping secondary storage Vm Id: "+vmId);
-            return stopSecondaryStorageVm(vmId, eventId);
+            return stopSecondaryStorageVm(vmId);
         }
     }
 
@@ -4294,11 +4270,9 @@ public class ManagementServerImpl implements ManagementServer {
 
         // FIXME: We need to return the system VM from this method, so what do we do with the boolean response from stopConsoleProxy and stopSecondaryStorageVm?
 		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
-			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_STOP, "stopping console proxy with Id: "+id);
-			return stopConsoleProxy(id, eventId);
+			return stopConsoleProxy(id);
 		} else {
-			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_STOP, "stopping secondary storage Vm Id: "+id);
-			return stopSecondaryStorageVm(id, eventId);
+			return stopSecondaryStorageVm(id);
 		}
 	}
 
@@ -4311,11 +4285,9 @@ public class ManagementServerImpl implements ManagementServer {
         }
 		
 		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
-			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "Rebooting console proxy with Id: "+cmd.getId());
-			return rebootConsoleProxy(cmd.getId(), eventId);
+			return rebootConsoleProxy(cmd.getId());
 		} else {
-			long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_REBOOT, "Rebooting secondary storage vm with Id: "+cmd.getId());
-			return rebootSecondaryStorageVm(cmd.getId(), eventId);
+			return rebootSecondaryStorageVm(cmd.getId());
 		}
 	}
 
@@ -4817,6 +4789,16 @@ public class ManagementServerImpl implements ManagementServer {
         event = _eventDao.persist(event);
         return event.getId();
     }
+    
+    public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId) 
+    {
+        return EventUtils.saveStartedEvent(userId, accountId, type, description, startEventId);
+    }
+    
+    public Long saveCompletedEvent(Long userId, Long accountId, String level, String type, String description, long startEventId) 
+    {
+        return EventUtils.saveEvent(userId, accountId, level, type, description, startEventId);
+    }
 
     @Override @DB
     public String uploadCertificate(UploadCustomCertificateCmd cmd) throws ServerApiException{
@@ -4895,7 +4877,7 @@ public class ManagementServerImpl implements ManagementServer {
 							{
 								//we have the cert copied over on cpvm
 								long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy with Id: "+cp.getId());    				
-								_consoleProxyMgr.rebootProxy(cp.getId(), eventId);
+								_consoleProxyMgr.rebootProxy(cp.getId());
 								//when cp reboots, the context will be reinit with the new cert
 								if(s_logger.isDebugEnabled()) {
                                     s_logger.debug("Successfully updated custom certificate on console proxy vm id:"+cp.getId()+" ,console proxy host id:"+cpHostId);

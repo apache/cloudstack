@@ -106,7 +106,7 @@ public interface TemplateManager {
      * @throws StorageUnavailableException 
      * @throws InvalidParameterValueException 
      */
-    boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) throws StorageUnavailableException;
+    boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId) throws StorageUnavailableException;
     
     /**
      * Deletes a template from secondary storage servers

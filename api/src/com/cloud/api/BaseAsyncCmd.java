@@ -19,6 +19,8 @@ package com.cloud.api;
 
 import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.async.AsyncJob;
+import com.cloud.user.User;
+import com.cloud.user.UserContext;
 
 /**
  * A base command for supporting asynchronous API calls.  When an API command is received, the command will be
@@ -91,5 +93,35 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     
     public AsyncJob.Type getInstanceType() {
     	return AsyncJob.Type.None;
+    }
+    
+    protected long saveStartedEvent(){
+        return saveStartedEvent(getEventType(), "Executing job for "+getEventDescription(), getStartEventId());
+    }
+    
+    protected long saveStartedEvent(String eventType, String description, Long startEventId){
+        UserContext ctx = UserContext.current();
+        Long userId = ctx.getUserId();
+        userId = (userId == null) ? User.UID_SYSTEM : userId;
+        Long startEvent = startEventId;
+        if(startEvent == null){
+            startEvent = 0L;
+        }
+        return _mgr.saveStartedEvent((userId == null) ? User.UID_SYSTEM : userId, getEntityOwnerId(), eventType, description, startEvent);
+    }
+    
+    protected long saveCompletedEvent(String level, String description){
+        return saveCompletedEvent(level, getEventType(), description, getStartEventId());
+    }
+    
+    protected long saveCompletedEvent(String level, String eventType,  String description, Long startEventId){
+        UserContext ctx = UserContext.current();
+        Long userId = ctx.getUserId();
+        userId = (userId == null) ? User.UID_SYSTEM : userId;
+        Long startEvent = startEventId;
+        if(startEvent == null){
+            startEvent = 0L;
+        }
+        return _mgr.saveCompletedEvent((userId == null) ? User.UID_SYSTEM : userId, getEntityOwnerId(), level, eventType, description, startEvent);
     }
 }

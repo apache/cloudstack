@@ -309,9 +309,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
        
         if (result) {
             userVm.setPassword(password);
-        	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_RESETPASSWORD, "successfully reset password for VM : " + userVm.getName(), null);
-        } else {
-        	EventUtils.saveEvent(userId, userVm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_RESETPASSWORD, "unable to reset password for VM : " + userVm.getName(), null);
         }
       
         return userVm;
@@ -334,12 +331,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
 	        if (_routerMgr.savePasswordToRouter(vmInstance.getDomainRouterId(), vmInstance.getPrivateIpAddress(), password)) {
 	            // Need to reboot the virtual machine so that the password gets redownloaded from the DomR, and reset on the VM
+	            long startId = EventUtils.saveStartedEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_REBOOT, "Reboot vm with id:"+vmId);
 	        	if (!rebootVirtualMachine(userId, vmId)) {
+	        	    EventUtils.saveEvent(userId, vmInstance.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_REBOOT, "Failed to reboot vm with id:"+vmId, startId);
 	        		if (vmInstance.getState() == State.Stopped) {
 	        			return true;
 	        		}
 	        		return false;
 	        	} else {
+	                EventUtils.saveEvent(userId, vmInstance.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_REBOOT, "Successfully rebooted vm with id:"+vmId, startId);
 	        		return true;
 	        	}
 	        } else {
@@ -354,7 +354,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
     
     @Override
-    public boolean stopVirtualMachine(long userId, long vmId, long eventId) {
+    public boolean stopVirtualMachine(long userId, long vmId) {
         boolean status = false;
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Stopping vm=" + vmId);
@@ -367,16 +367,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             return true;
         }
 
-        EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+vmId, eventId);
+        long startEventId = EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+vmId);
         
-        status = stop(userId, vm, 0);
+        status = stop(userId, vm);
        
         if(status){
-            EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_STOP, "Successfully stopped VM instance : " + vmId);
+            EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_STOP, "Successfully stopped VM instance : " + vmId, startEventId);
             return status;
             }
         else {
-            EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_STOP, "Error stopping VM instance : " + vmId);
+            EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_STOP, "Error stopping VM instance : " + vmId, startEventId);
             return status;
         }
     }
@@ -463,17 +463,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     	    }
     	}
 
-        long startEventId = EventUtils.saveScheduledEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_ATTACH, "attaching volume: "+volumeId+" to Vm: "+vmId);
-
-        EventVO event = new EventVO();
-        event.setType(EventTypes.EVENT_VOLUME_ATTACH);
-        event.setUserId(1L);
-        event.setAccountId(volume.getAccountId());
-        event.setState(Event.State.Started);
-        event.setStartId(startEventId);
-        event.setDescription("Attaching volume: "+volumeId+" to Vm: "+vmId);
-        _eventDao.persist(event);
-        
         VolumeVO rootVolumeOfVm = null;
         List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId, VolumeType.ROOT);
         if (rootVolumesOfVm.size() != 1) {
@@ -602,12 +591,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     		}
     	}
 
-    	event = new EventVO();
-        event.setAccountId(volume.getAccountId());
-        event.setUserId(1L);
-        event.setType(EventTypes.EVENT_VOLUME_ATTACH);
-        event.setState(Event.State.Completed);
-        event.setStartId(startEventId);
         if (!sendCommand || (answer != null && answer.getResult())) {
     		// Mark the volume as attached
             if( sendCommand ) {
@@ -615,13 +598,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             } else {
                 _volsDao.attachVolume(volume.getId(), vmId, deviceId);
             }
-            if(!vm.getName().equals(vm.getDisplayName())) {
-                event.setDescription("Volume: " +volume.getName()+ " successfully attached to VM: "+vm.getName()+"("+vm.getDisplayName()+")");
-            } else {
-                event.setDescription("Volume: " +volume.getName()+ " successfully attached to VM: "+vm.getName());
-            }
-            event.setLevel(EventVO.LEVEL_INFO);
-            _eventDao.persist(event);
             return _volsDao.findById(volumeId);
     	} else {
     		if (answer != null) {
@@ -706,8 +682,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         	throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
         }
         
-        long eventId = EventUtils.saveScheduledEvent(1L, volume.getAccountId(), EventTypes.EVENT_VOLUME_DETACH, "detaching volume: "+volumeId+" from Vm: "+vmId);
-    	
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
         if(asyncExecutor != null) {
         	AsyncJobVO job = asyncExecutor.getJob();
@@ -743,7 +717,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         event.setUserId(1L);
         event.setType(EventTypes.EVENT_VOLUME_DETACH);
         event.setState(Event.State.Completed);
-        event.setStartId(eventId);
 		if (!sendCommand || (answer != null && answer.getResult())) {
 			// Mark the volume as detached
     		_volsDao.detachVolume(volume.getId());
@@ -826,32 +799,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             return false;
         }
 
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(vm.getAccountId());
-        event.setType(EventTypes.EVENT_VM_REBOOT);
-        event.setParameters("id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
-
         if (vm.getState() == State.Running && vm.getHostId() != null) {
             RebootCommand cmd = new RebootCommand(vm.getInstanceName());
             RebootAnswer answer = (RebootAnswer)_agentMgr.easySend(vm.getHostId(), cmd);
            
             if (answer != null) {
-            	if(!vm.getName().equals(vm.getDisplayName())) {
-                    event.setDescription("Successfully rebooted VM instance : " + vm.getName()+"("+vm.getDisplayName()+")");
-                } else {
-                    event.setDescription("Successfully rebooted VM instance : " + vm.getName());
-                }
-                _eventDao.persist(event);
                 return true;
             } else {
-            	if(!vm.getName().equals(vm.getDisplayName())) {
-                    event.setDescription("failed to reboot VM instance : " + vm.getName()+"("+vm.getDisplayName()+")");
-                } else {
-                    event.setDescription("failed to reboot VM instance : " + vm.getName());
-                }
-                event.setLevel(EventVO.LEVEL_ERROR);
-                _eventDao.persist(event);
                 return false;
             }
         } else {
@@ -926,9 +880,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         											 "current service offering. Current service offering tags: " + currentTags + "; " +
         											 "new service offering tags: " + newTags);
         }
-
-        // FIXME:  save this eventId somewhere as part of the async process?
-		/*long eventId = */EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_UPGRADE, "upgrading Vm with Id: "+vmInstance.getId());
 
 		UserVmVO vmForUpdate = _vmDao.createForUpdate();
 		vmForUpdate.setServiceOfferingId(serviceOfferingId);
@@ -1087,24 +1038,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             s_logger.debug("Destroying vm " + vmId);
         }
         
-        if (!stop(userId, vm, 0)) {
-        	s_logger.error("Unable to stop vm so we can't destroy it: " + vmId);
-        	return false;
-        }
+        long startEventId = EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+vmId);
         
+        if (!stop(userId, vm)) {
+            s_logger.error("Unable to stop vm so we can't destroy it: " + vmId);
+            EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_STOP, "Error stopping VM instance : " + vmId, startEventId);
+            return false;
+        } else {
+            EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_STOP, "Successfully stopped VM instance : " + vmId, startEventId);
+        }
+       
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(vm.getAccountId());
-        event.setType(EventTypes.EVENT_VM_DESTROY);
-        event.setParameters("id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
-        if(!vm.getName().equals(vm.getDisplayName())) {
-            event.setDescription("Successfully destroyed VM instance : " + vm.getName()+"("+vm.getDisplayName()+")");
-        } else {
-            event.setDescription("Successfully destroyed VM instance : " + vm.getName());
-        }
-        _eventDao.persist(event);
 
         _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
 
@@ -1166,12 +1111,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             s_logger.debug("Recovering vm " + vmId);
         }
 
-        EventVO event = new EventVO();
-        event.setUserId(1L);
-        event.setAccountId(vm.getAccountId());
-        event.setType(EventTypes.EVENT_VM_CREATE);
-        event.setParameters("id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
-        
         Transaction txn = Transaction.currentTxn();
         AccountVO account = null;
     	txn.start();
@@ -1187,13 +1126,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (_accountMgr.resourceLimitExceeded(account, ResourceType.user_vm)) {
         	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of virtual machines for account: " + account.getAccountName() + " has been exceeded.");
         	rae.setResourceType("vm");
-        	event.setLevel(EventVO.LEVEL_ERROR);
-        	if(!vm.getName().equals(vm.getDisplayName())) {
-                event.setDescription("Failed to recover VM instance : " + vm.getName()+"("+vm.getDisplayName()+")" + "; the resource limit for account: " + account.getAccountName() + " has been exceeded.");
-            } else {
-                event.setDescription("Failed to recover VM instance : " + vm.getName() + "; the resource limit for account: " + account.getAccountName() + " has been exceeded.");
-            }
-        	_eventDao.persist(event);
         	txn.commit();
         	throw rae;
         }
@@ -1231,14 +1163,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         _accountMgr.incrementResourceCount(account.getId(), ResourceType.volume, new Long(volumes.size()));
-        
-        event.setLevel(EventVO.LEVEL_INFO);
-        if(!vm.getName().equals(vm.getDisplayName())) {
-            event.setDescription("successfully recovered VM instance : " + vm.getName()+"("+vm.getDisplayName()+")");
-        } else {
-            event.setDescription("successfully recovered VM instance : " + vm.getName());
-        }
-        _eventDao.persist(event);
         
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
         _usageEventDao.persist(usageEvent);
@@ -1344,12 +1268,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     
     @Override
     public void completeStopCommand(UserVmVO instance) {
-    	completeStopCommand(1L, instance, VirtualMachine.Event.AgentReportStopped, 0);
+    	completeStopCommand(1L, instance, VirtualMachine.Event.AgentReportStopped);
     }
     
     @Override
     @DB
-    public void completeStopCommand(long userId, UserVmVO vm, VirtualMachine.Event e, long startEventId) {
+    public void completeStopCommand(long userId, UserVmVO vm, VirtualMachine.Event e) {
         Transaction txn = Transaction.currentTxn();
         try {
         	String vnet = vm.getVnet();
@@ -1378,20 +1302,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new CloudRuntimeException("Error during stop: ", th);
         }
 
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(vm.getAccountId());
-        event.setType(EventTypes.EVENT_VM_STOP);
-        event.setState(Event.State.Completed);
-        event.setStartId(startEventId);
-        event.setParameters("id="+vm.getId() + "\n" + "vmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
-        if(!vm.getName().equals(vm.getDisplayName())) {
-            event.setDescription("Successfully stopped VM instance : " + vm.getName()+"("+vm.getDisplayName()+")");
-        } else {
-            event.setDescription("Successfully stopped VM instance : " + vm.getName());
-        }
-        _eventDao.persist(event);
-
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
         _usageEventDao.persist(usageEvent);
         
@@ -1418,7 +1328,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     @Override
-    public UserVmVO start(long vmId, long startEventId) throws StorageUnavailableException, ConcurrentOperationException {
+    public UserVmVO start(long vmId) throws StorageUnavailableException, ConcurrentOperationException {
         return null; // FIXME start(1L, vmId, null, null, startEventId);
     }
 
@@ -1428,11 +1338,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     @Override
-    public boolean stop(UserVmVO vm, long startEventId) {
-        return stop(1L, vm, startEventId);
+    public boolean stop(UserVmVO vm) {
+        return stop(1L, vm);
     }
 
-    private boolean stop(long userId, UserVmVO vm, long startEventId) {
+    private boolean stop(long userId, UserVmVO vm) {
         State state = vm.getState();
         if (state == State.Stopped) {
             if (s_logger.isDebugEnabled()) {
@@ -1456,13 +1366,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         	return false;
         }
 
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(vm.getAccountId());
-        event.setType(EventTypes.EVENT_VM_STOP);
-        event.setStartId(startEventId);
-        event.setParameters("id="+vm.getId() + "\n" + "vmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
-
         StopCommand stop = new StopCommand(vm, vm.getInstanceName(), vm.getVnet());
 
         boolean stopped = false;
@@ -1480,16 +1383,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         if (stopped) {
-        	completeStopCommand(userId, vm, VirtualMachine.Event.OperationSucceeded, 0);
+        	completeStopCommand(userId, vm, VirtualMachine.Event.OperationSucceeded);
         } else
         {
-        	if(!vm.getName().equals(vm.getDisplayName())) {
-                event.setDescription("failed to stop VM instance : " + vm.getName()+"("+vm.getDisplayName()+")");
-            } else {
-                event.setDescription("failed to stop VM instance : " + vm.getName());
-            }
-            event.setLevel(EventVO.LEVEL_ERROR);
-            _eventDao.persist(event);
             _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationFailed, vm.getHostId());
             s_logger.error("Unable to stop vm " + vm.getName());
         }
@@ -1839,11 +1735,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                                            true,
                                            hyperType);        
 
-        // FIXME:  scheduled events should get saved when the command is actually scheduled, not when it starts executing, need another callback
-        //         for when the command is scheduled?  Could this fit into the setup / execute / response lifecycle?  Right after setup you would
-        //         know your job is being scheduled, so you could save this kind of event in setup after verifying params.
-        /*long eventId = */EventUtils.saveScheduledEvent(userId, volume.getAccountId(), EventTypes.EVENT_TEMPLATE_CREATE, "creating template" +name);
-
         return _templateDao.persist(privateTemplate);
     }
 
@@ -2110,7 +2001,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         _vmDao.updateVM(id, displayName, ha);
 
          // create a event for the change in HA Enabled flag
-        EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_VM_UPDATE, "Successfully updated virtual machine: "+vm.getName()+". "+description, null);
+        EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_VM_UPDATE, "Successfully updated virtual machine: "+vm.getName()+". "+description);
         return _vmDao.findById(id);
     }
 
@@ -2138,15 +2029,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         userId = accountAndUserValidation(vmId, account, userId, vmInstance);
         
-        EventUtils.saveScheduledEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_REBOOT, "Rebooting Vm with Id: "+vmId);
-        
         boolean status = rebootVirtualMachine(userId, vmId);
         
         if (status) {
-        	EventUtils.saveEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_REBOOT, "Successfully rebooted vm with id:"+vmId);
         	return _vmDao.findById(vmId);
         } else {
-        	EventUtils.saveEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_REBOOT, "Failed to reboot vm with id:"+vmId);
         	throw new CloudRuntimeException("Failed to reboot vm with id: " + vmId);
         }
 	}
@@ -2676,7 +2563,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
         
-        long eventId = EventUtils.saveScheduledEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+ vmId);
         userId = accountAndUserValidation(vmId, caller, userId, vm);
         UserVO user = _userDao.findById(userId);
 
@@ -2714,8 +2600,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
         }
 
-        long eventId = EventUtils.saveScheduledEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_START, "Starting Vm with Id: "+vmId);
-        
         userId = accountAndUserValidation(vmId, account, userId, vm);
         UserVO user = _userDao.findById(userId);
         VolumeVO disk = _volsDao.findByInstance(vmId).get(0);
@@ -2737,18 +2621,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         userId = accountAndUserValidation(vmId, account, userId, vm);
         User caller = _userDao.findById(userId);
         
-        EventUtils.saveScheduledEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Destroying Vm with Id: "+vmId);
-        
         boolean status;
         status = _itMgr.destroy(vm, caller, account);
         
         if (status) {
-            EventUtils.saveEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Successfully destroyed vm with id:"+vmId);
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
             _usageEventDao.persist(usageEvent);
             return _vmDao.findById(vmId);
         } else {
-            EventUtils.saveEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Failed to destroy vm with id:"+vmId);
             throw new CloudRuntimeException("Failed to destroy vm with id " + vmId);
         }
     }

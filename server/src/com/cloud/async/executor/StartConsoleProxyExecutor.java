@@ -45,7 +45,7 @@ public class StartConsoleProxyExecutor extends VMOperationExecutor {
 			return true;
 		} else {
 	    	try {
-	    		ConsoleProxyVO proxy = managementServer.startConsoleProxy(param.getVmId(), param.getEventId());
+	    		ConsoleProxyVO proxy = managementServer.startConsoleProxy(param.getVmId());
 	    		if(proxy != null)
 	    			asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_SUCCEEDED, 0, 
 						ConsoleProxyExecutorHelper.composeResultObject(managementServer, proxy));

@@ -139,7 +139,6 @@ import com.cloud.storage.snapshot.SnapshotScheduler;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -2295,11 +2294,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         				//make sure it is not restarted again, update config to set flag to false
         				_configMgr.updateConfiguration(userId, "consoleproxy.restart", "false");
         				
-        				//create a dummy event
-        				long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_STOP, "stopping console proxy with Id: "+vmInstance.getId());
-        		        
         				//call the consoleproxymanager
-        				if(!_consoleProxyMgr.stopProxy(vmInstance.getId(), eventId))
+        				if(!_consoleProxyMgr.stopProxy(vmInstance.getId()))
             			{
         				    String errorMsg = "There was an error stopping the console proxy id: "+vmInstance.getId()+" ,cannot enable storage maintenance";
             				s_logger.warn(errorMsg);
@@ -2309,13 +2305,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             			}
         				else if(restart)
         				{
-    						//create a dummy event
-    						long eventId1 = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "starting console proxy with Id: "+vmInstance.getId());
-    						
     						//Restore config val for consoleproxy.restart to true
     						_configMgr.updateConfiguration(userId, "consoleproxy.restart", "true");
     						
-    						if(_consoleProxyMgr.startProxy(vmInstance.getId(), eventId1)==null)
+    						if(_consoleProxyMgr.startProxy(vmInstance.getId())==null)
     						{
     						    String errorMsg = "There was an error starting the console proxy id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance";
     							s_logger.warn(errorMsg);
@@ -2330,9 +2323,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         			if(vmInstance.getType().equals(VirtualMachine.Type.User))
         			{
         				//create a dummy event
-        				long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_VM_STOP, "stopping user vm with Id: "+vmInstance.getId());
-        				
-        				if(!_userVmMgr.stopVirtualMachine(userId, vmInstance.getId(),eventId))
+        				if(!_userVmMgr.stopVirtualMachine(userId, vmInstance.getId()))
         				{
         				    String errorMsg = "There was an error stopping the user vm id: "+vmInstance.getId()+" ,cannot enable storage maintenance";
         					s_logger.warn(errorMsg);
@@ -2345,10 +2336,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         			//if the instance is of type secondary storage vm, call the secondary storage vm manager
         			if(vmInstance.getType().equals(VirtualMachine.Type.SecondaryStorageVm))
         			{           				
-        				//create a dummy event
-        				long eventId1 = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_STOP, "stopping ssvm with Id: "+vmInstance.getId());
-
-        				if(!_secStorageMgr.stopSecStorageVm(vmInstance.getId(), eventId1))
+        				if(!_secStorageMgr.stopSecStorageVm(vmInstance.getId()))
         				{
         				    String errorMsg = "There was an error stopping the ssvm id: "+vmInstance.getId()+" ,cannot enable storage maintenance";
         					s_logger.warn(errorMsg);
@@ -2358,9 +2346,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         				}
         				else if(restart)
         				{
-    						//create a dummy event and restart the ssvm immediately
-    						long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "starting ssvm with Id: "+vmInstance.getId());
-    						if(_secStorageMgr.startSecStorageVm(vmInstance.getId(), eventId)==null)
+    						if(_secStorageMgr.startSecStorageVm(vmInstance.getId())==null)
     						{
     						    String errorMsg = "There was an error starting the ssvm id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance";
     							s_logger.warn(errorMsg);
@@ -2374,10 +2360,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
            			//if the instance is of type domain router vm, call the network manager
         			if(vmInstance.getType().equals(VirtualMachine.Type.DomainRouter))
         			{   
-        				//create a dummy event
-        				long eventId2 = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_STOP, "stopping domain router with Id: "+vmInstance.getId());
-
-        				if(!_routerMgr.stopRouter(vmInstance.getId(), eventId2))
+        				if(!_routerMgr.stopRouter(vmInstance.getId(), 0))
         				{
         				    String errorMsg = "There was an error stopping the domain router id: "+vmInstance.getId()+" ,cannot enable primary storage maintenance";
         					s_logger.warn(errorMsg);
@@ -2387,8 +2370,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         				}
            				else if(restart)
         				{
-    						//create a dummy event and restart the domr immediately
-    						long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "starting domr with Id: "+vmInstance.getId());
 // FIXME    						if(_routerMgr.startRouter(vmInstance.getId(), eventId)==null)
 //    						{
 //    						    String errorMsg = "There was an error starting the domain router id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance";
@@ -2478,10 +2459,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 						if(vmInstance.getType().equals(VirtualMachine.Type.ConsoleProxy))
 						{
 							
-							//create a dummy event
-							long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_START, "starting console proxy with Id: "+vmInstance.getId());
-							
-							if(_consoleProxyMgr.startProxy(vmInstance.getId(), eventId) == null)
+							if(_consoleProxyMgr.startProxy(vmInstance.getId()) == null)
 							{
 								String msg = "There was an error starting the console proxy id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
 								s_logger.warn(msg);
@@ -2493,10 +2471,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 						if(vmInstance.getType().equals(VirtualMachine.Type.SecondaryStorageVm))
 						{
 							
-							//create a dummy event
-							long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "starting ssvm with Id: "+vmInstance.getId());
-							
-							if(_secStorageMgr.startSecStorageVm(vmInstance.getId(), eventId) == null)
+							if(_secStorageMgr.startSecStorageVm(vmInstance.getId()) == null)
 							{
 								String msg = "There was an error starting the ssvm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
 								s_logger.warn(msg);
@@ -2507,9 +2482,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 						//if the instance is of type user vm, call the user vm manager
 						if(vmInstance.getType().equals(VirtualMachine.Type.User))
 						{
-							
-							//create a dummy event
-							long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_VM_START, "starting user vm with Id: "+vmInstance.getId());
 							
 							try {
 								if(_userVmMgr.startUserVm(vmInstance.getId()) == null)

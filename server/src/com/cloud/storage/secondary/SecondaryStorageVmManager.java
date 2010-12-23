@@ -28,10 +28,10 @@ public interface SecondaryStorageVmManager extends Manager {
 	
 	public static final String ALERT_SUBJECT = "secondarystoragevm-alert";
 		
-	public SecondaryStorageVmVO startSecStorageVm(long ssVmVmId, long startEventId);
-	public boolean stopSecStorageVm(long ssVmVmId, long startEventId);
-	public boolean rebootSecStorageVm(long ssVmVmId, long startEventId);
-	public boolean destroySecStorageVm(long ssVmVmId, long startEventId);
+	public SecondaryStorageVmVO startSecStorageVm(long ssVmVmId);
+	public boolean stopSecStorageVm(long ssVmVmId);
+	public boolean rebootSecStorageVm(long ssVmVmId);
+	public boolean destroySecStorageVm(long ssVmVmId);
 	public void onAgentConnect(Long dcId, StartupCommand cmd);
 	public boolean  generateFirewallConfiguration(Long agentId);
 	public boolean generateSetupCommand(Long zoneId);

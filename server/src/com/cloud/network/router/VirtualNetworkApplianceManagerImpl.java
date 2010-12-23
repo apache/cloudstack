@@ -108,14 +108,14 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.Networks.BroadcastDomainType;
-import com.cloud.network.Networks.IsolationType;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.SshKeysDistriMonitor;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VpnUserVO;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.IsolationType;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -362,7 +362,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 return true;
             }
 
-            if (!stop(router, 0)) {
+            if (!stop(router)) {
                 s_logger.debug("Unable to stop the router: " + routerId);
                 return false;
             }
@@ -634,7 +634,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             s_logger.debug("Stopping router " + routerId);
         }
 
-        return stop(_routerDao.findById(routerId), eventId);
+        return stop(_routerDao.findById(routerId));
     }
 
     @Override
@@ -656,10 +656,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new PermissionDeniedException("Unable to stop router with id " + routerId + ". Permission denied");
         }
 
-        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_STOP,
-                "stopping Router with Id: " + routerId);
-
-        boolean success = stopRouter(routerId, eventId);
+        boolean success = stopRouter(routerId, 0);
 
         if (success) {
             return _routerDao.findById(routerId);
@@ -738,7 +735,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public boolean rebootRouter(final long routerId, long startEventId) {
+    public boolean rebootRouter(final long routerId) {
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
         if (asyncExecutor != null) {
             AsyncJobVO job = asyncExecutor.getJob();
@@ -754,21 +751,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (router == null || router.getState() == State.Destroyed) {
             return false;
         }
-
-        EventVO event = new EventVO();
-        event.setUserId(1L);
-        event.setAccountId(router.getAccountId());
-        event.setType(EventTypes.EVENT_ROUTER_REBOOT);
-        event.setState(Event.State.Started);
-        event.setDescription("Rebooting Router with Id: " + routerId);
-        event.setStartId(startEventId);
-        _eventDao.persist(event);
-
-        event = new EventVO();
-        event.setUserId(1L);
-        event.setAccountId(router.getAccountId());
-        event.setType(EventTypes.EVENT_ROUTER_REBOOT);
-        event.setStartId(startEventId);
 
         return false;
 
@@ -812,10 +794,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), router.getDomainId())) {
             throw new PermissionDeniedException("Unable to reboot domain router with id " + routerId + ". Permission denied");
         }
-        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_REBOOT,
-                "rebooting Router with Id: " + routerId);
 
-        if (rebootRouter(routerId, eventId)) {
+        if (rebootRouter(routerId)) {
             return _routerDao.findById(routerId);
         } else {
             throw new CloudRuntimeException("Fail to reboot router " + routerId);
@@ -1028,25 +1008,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     @DB
-    public boolean stop(DomainRouterVO router, long eventId) {
+    public boolean stop(DomainRouterVO router) {
         long routerId = router.getId();
 
         router = _routerDao.acquireInLockTable(routerId);
         if (router == null) {
             s_logger.debug("Unable to acquire lock on router " + routerId);
             return false;
-        }
-
-        EventVO event = new EventVO();
-        event.setUserId(1L);
-        event.setAccountId(router.getAccountId());
-        event.setType(EventTypes.EVENT_ROUTER_STOP);
-        event.setState(Event.State.Started);
-        event.setDescription("Stopping Router with Id: " + routerId);
-        event.setStartId(eventId);
-        event = _eventDao.persist(event);
-        if (eventId == 0) {
-            eventId = event.getId();
         }
 
         try {
@@ -1067,11 +1035,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 return true;
             }
 
-            event = new EventVO();
+            EventVO event = new EventVO();
             event.setUserId(1L);
             event.setAccountId(router.getAccountId());
             event.setType(EventTypes.EVENT_ROUTER_STOP);
-            event.setStartId(eventId);
 
             if (!_itMgr.stateTransitTo(router, VirtualMachine.Event.StopRequested, hostId)) {
                 s_logger.debug("VM " + router.toString() + " is not in a state to be stopped.");
@@ -1773,8 +1740,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         _accountMgr.checkAccess(account, router);
 
-        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_ROUTER_START,
-                "starting Router with Id: " + routerId);
         UserVO user = _userDao.findById(UserContext.current().getUserId());
         return this.start(router, user, account);
     }
@@ -1805,8 +1770,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
 
         _accountMgr.checkAccess(account, router);
-
-        long eventId = EventUtils.saveScheduledEvent(userId, accountId, EventTypes.EVENT_ROUTER_STOP, "stopping Router with Id: " + routerId);
 
         UserVO user = _userDao.findById(context.getUserId());
 
@@ -1988,7 +1951,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public DomainRouterVO start(long vmId, long startEventId) throws InsufficientCapacityException, StorageUnavailableException,
+    public DomainRouterVO start(long vmId) throws InsufficientCapacityException, StorageUnavailableException,
             ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;

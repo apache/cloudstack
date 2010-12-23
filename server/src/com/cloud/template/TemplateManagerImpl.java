@@ -57,7 +57,6 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
@@ -74,22 +73,22 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Upload;
-import com.cloud.storage.Upload.Type;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.Upload.Type;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -719,7 +718,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     
     @Override
     @DB
-    public boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId) throws StorageUnavailableException {
+    public boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId) throws StorageUnavailableException {
     	HostVO srcSecHost = _storageMgr.getSecondaryStorageHost(sourceZoneId);
     	HostVO dstSecHost = _storageMgr.getSecondaryStorageHost(destZoneId);
     	DataCenterVO destZone = _dcDao.findById(destZoneId);
@@ -751,15 +750,6 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         if (srcTmpltHost == null || srcTmpltHost.getDestroyed() || srcTmpltHost.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
 	      	throw new InvalidParameterValueException("Please specify a template that is installed on secondary storage host: " + srcSecHost.getName());
 	      }
-        
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(vmTemplate.getAccountId());
-        event.setType(EventTypes.EVENT_TEMPLATE_COPY);
-        event.setState(Event.State.Started);
-        event.setDescription("Copying template with Id: "+templateId);
-        event.setStartId(startEventId);
-        event = _eventDao.persist(event);
         
         // Event details
         String params = "id=" + templateId + "\ndcId="+destZoneId+"\nsize="+srcTmpltHost.getSize();
@@ -822,7 +812,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	
         UsageEventVO usageEvent = new UsageEventVO(copyEventType, account.getId(), destZoneId, templateId, null, null, null, srcTmpltHost.getSize());
         _usageEventDao.persist(usageEvent);
-        saveEvent(userId, account.getId(), account.getDomainId(), copyEventType, copyEventDescription, EventVO.LEVEL_INFO, params, startEventId);
+        saveEvent(userId, account.getId(), account.getDomainId(), copyEventType, copyEventDescription, EventVO.LEVEL_INFO, params);
     	return true;
     }
       
@@ -849,8 +839,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         String errMsg = "Unable to copy ISO " + isoId;
         userId = accountAndUserValidation(account, userId, null, iso, errMsg);
         
-        long eventId = EventUtils.saveScheduledEvent(userId, iso.getAccountId(), EventTypes.EVENT_ISO_COPY, "copying iso with Id: " + isoId +" from zone: " + sourceZoneId +" to: " + destZoneId);
-        boolean success = copy(userId, isoId, sourceZoneId, destZoneId, eventId);
+        boolean success = copy(userId, isoId, sourceZoneId, destZoneId);
         
         VMTemplateVO copiedIso = null;
         if (success) {
@@ -884,8 +873,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         String errMsg = "Unable to copy template " + templateId;
         userId = accountAndUserValidation(account, userId, null, template, errMsg);
         
-        long eventId = EventUtils.saveScheduledEvent(userId, template.getAccountId(), EventTypes.EVENT_TEMPLATE_COPY, "copying template with Id: " + templateId+" from zone: " + sourceZoneId +" to: " + destZoneId);
-        boolean success = copy(userId, templateId, sourceZoneId, destZoneId, eventId);
+        boolean success = copy(userId, templateId, sourceZoneId, destZoneId);
         
         VMTemplateVO copiedTemplate = null;
         if (success) {

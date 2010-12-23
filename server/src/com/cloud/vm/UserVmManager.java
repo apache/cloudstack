@@ -64,11 +64,10 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>{
      * Stops the virtual machine
      * @param userId the id of the user performing the action
      * @param vmId
-     * @param eventId -- id of the scheduled event for stopping vm
      * @return true if stopped; false if problems.
      */
-    boolean stopVirtualMachine(long userId, long vmId, long eventId);
-    void completeStopCommand(long userId, UserVmVO vm, Event e, long startEventId);
+    boolean stopVirtualMachine(long userId, long vmId);
+    void completeStopCommand(long userId, UserVmVO vm, Event e);
     
 
     /**

@@ -46,6 +46,17 @@ public class EventUtils {
     	return event.getId();
     }
 
+    public static Long saveStartedEvent(Long userId, Long accountId, String type, String description) {
+        EventVO event = new EventVO();
+        event.setUserId(userId);
+        event.setAccountId(accountId);
+        event.setType(type);
+        event.setState(Event.State.Started);
+        event.setDescription(description);
+        event = _eventDao.persist(event);
+        return event.getId();
+    }
+    
     public static Long saveEvent(Long userId, Long accountId, String level, String type, String description) {
         EventVO event = new EventVO();
         event.setUserId(userId);

@@ -160,7 +160,7 @@ public interface ManagementServer extends ManagementService {
      * @param attach whether to attach or detach the iso from the instance
      * @return
      */
-    boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach, long startEventId);
+    boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach);
 
     /**
      * Retrieves a host by id
@@ -303,7 +303,7 @@ public interface ManagementServer extends ManagementService {
      * @return true if success
      * @throws InternalErrorException
      */
-    boolean copyTemplate(long userId, long templateId, long sourceZoneId, long destZoneId, long startEventId);
+    boolean copyTemplate(long userId, long templateId, long sourceZoneId, long destZoneId);
 
     /**
      * Finds a template by the specified ID.
@@ -379,9 +379,9 @@ public interface ManagementServer extends ManagementService {
     void logoutUser(Long userId);
 
 	ConsoleProxyInfo getConsoleProxy(long dataCenterId, long userVmId);
-	ConsoleProxyVO startConsoleProxy(long instanceId, long startEventId);
-	ConsoleProxyVO stopConsoleProxy(long instanceId, long startEventId);
-	ConsoleProxyVO rebootConsoleProxy(long instanceId, long startEventId);
+	ConsoleProxyVO startConsoleProxy(long instanceId);
+	ConsoleProxyVO stopConsoleProxy(long instanceId);
+	ConsoleProxyVO rebootConsoleProxy(long instanceId);
 	String getConsoleAccessUrlRoot(long vmId);
 	ConsoleProxyVO findConsoleProxyById(long instanceId);
 	VMInstanceVO findSystemVMById(long instanceId);

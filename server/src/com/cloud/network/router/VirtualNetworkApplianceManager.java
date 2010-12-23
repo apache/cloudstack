@@ -72,7 +72,7 @@ public interface VirtualNetworkApplianceManager extends Manager {
     
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
 
-    boolean rebootRouter(long routerId, long eventId);
+    boolean rebootRouter(long routerId);
     
     /**
      * @param hostId get all of the virtual machine routers on a host.

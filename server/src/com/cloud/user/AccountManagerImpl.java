@@ -41,19 +41,18 @@ import com.cloud.api.commands.DisableUserCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.ListResourceLimitsCmd;
-import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
+import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.Domain;
@@ -820,10 +819,14 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             }
 
             for (UserVmVO vm : vms) {
+                long startEventId = EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Destroyed VM instance : " + vm.getName(), 0);
                 if (!_vmMgr.destroyVirtualMachine(userId, vm.getId())) {
                     s_logger.error("Unable to destroy vm: " + vm.getId());
                     accountCleanupNeeded = true;
-                } 
+                    EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_DESTROY, "Unable to destroy vm: " + vm.getId(), startEventId);
+                } else {
+                    EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_DESTROY, "Successfully destroyed VM instance : " + vm.getName(), startEventId);
+                }
             }
             
             // Mark the account's volumes as destroyed
@@ -955,7 +958,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         boolean success = true;
         for (UserVmVO vm : vms) {
             try {
-                success = (success && _vmMgr.stop(vm, 0));
+                success = (success && _vmMgr.stop(vm));
             } catch (AgentUnavailableException aue) {
                 s_logger.warn("Agent running on host " + vm.getHostId() + " is unavailable, unable to stop vm " + vm.getName());
                 success = false;

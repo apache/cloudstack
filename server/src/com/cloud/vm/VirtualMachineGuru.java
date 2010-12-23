@@ -111,7 +111,7 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      * @throws ExecutionException 
      * @throws ResourceUnavailableException 
      */
-    T start(long vmId, long startEventId) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    T start(long vmId) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
 
     /**
      * stop the vm
@@ -120,7 +120,7 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      * @return true if stopped and false if not.
      * @throws AgentUnavailableException if the agent is unavailable.
      */
-    boolean stop(T vm, long startEventId) throws AgentUnavailableException;
+    boolean stop(T vm) throws AgentUnavailableException;
     
     /**
      * Produce a cleanup command to be sent to the agent to cleanup anything

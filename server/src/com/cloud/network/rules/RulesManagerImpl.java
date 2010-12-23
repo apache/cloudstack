@@ -248,8 +248,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 description = "failed to create new " + ruleName + " rule [" + newRule.getSourceIpAddress() + ":" + newRule.getSourcePortStart() + "]->["
                 + newRule.getDestinationIpAddress() + ":" + newRule.getDestinationPortStart() + "]" + " " + newRule.getProtocol();
             }
-
-            EventUtils.saveEvent(UserContext.current().getUserId(), vm.getAccountId(), level, EventTypes.EVENT_NET_RULE_ADD, description);
         }
     }
     
@@ -302,15 +300,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
         description.append(" ").append(rule.getProtocol());
 
-        // save off an event for removing the network rule
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(rule.getAccountId());
-        event.setType(EventTypes.EVENT_NET_RULE_DELETE);
-        event.setDescription(description.toString());
-        event.setLevel(EventVO.LEVEL_INFO);
-        _eventDao.persist(event);
-        
         txn.commit();
     }
     

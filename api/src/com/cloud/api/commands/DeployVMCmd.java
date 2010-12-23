@@ -205,12 +205,22 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_VM_CREATE;
+        return EventTypes.EVENT_VM_START;
     }
 
     @Override
+    public String getCreateEventType() {
+        return EventTypes.EVENT_VM_CREATE;
+    }
+    
+    @Override
+    public String getCreateEventDescription() {
+        return "creating Vm";
+    }
+    
+    @Override
     public String getEventDescription() {
-        return  "deploying Vm";
+        return  "starting Vm";
     }
     
     @Override
@@ -264,4 +274,5 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         } 
     }
+
 }

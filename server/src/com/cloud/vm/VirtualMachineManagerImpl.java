@@ -50,6 +50,7 @@ import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
@@ -59,18 +60,17 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.stateListener.VMStateListener;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
@@ -260,10 +260,15 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Destroying vm " + vm);
         }
+        long userId = caller.getId();
+        long startEventId = EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+vm.getId());
         
         if (!stop(vm, caller, account)) {
             s_logger.error("Unable to stop vm so we can't destroy it: " + vm);
+            EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_STOP, "Error stopping VM instance : " + vm.getId(), startEventId);
             return false;
+        } else {
+            EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_STOP, "Successfully stopped VM instance : " + vm.getId(), startEventId);
         }
         
     	//Clean up volumes based on the vm's instance id
@@ -503,13 +508,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
         }
         
         String reservationId = vm.getReservationId();
-
-        EventVO event = new EventVO();
-        event.setUserId(user.getId());
-        event.setAccountId(vm.getAccountId());
-        event.setType(EventTypes.EVENT_VM_STOP);
-        event.setStartId(1); // FIXME:
-        event.setParameters("id="+vm.getId() + "\n" + "vmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
 
         StopCommand stop = new StopCommand(vm, vm.getInstanceName(), null);
 

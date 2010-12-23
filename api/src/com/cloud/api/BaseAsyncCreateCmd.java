@@ -23,4 +23,12 @@ public abstract class BaseAsyncCreateCmd extends BaseAsyncCmd {
         response.setResponseName(getCommandName());
         return _responseGenerator.toSerializedString(response, getResponseType());
     }
+
+    public String getCreateEventType() {
+        return null;
+    }
+
+    public String getCreateEventDescription() {
+        return null;
+    }
 }

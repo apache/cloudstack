@@ -49,7 +49,7 @@ public class CopyTemplateExecutor extends BaseAsyncJobExecutor {
     	ManagementServer managementServer = asyncMgr.getExecutorContext().getManagementServer();
  
 		try {
-			boolean success = managementServer.copyTemplate(param.getUserId(), param.getTemplateId(), param.getSourceZoneId(), param.getDestZoneId(), param.getEventId());
+			boolean success = managementServer.copyTemplate(param.getUserId(), param.getTemplateId(), param.getSourceZoneId(), param.getDestZoneId());
 
 			if (success) {
 				VMTemplateVO template = managementServer.findTemplateById(param.getTemplateId());

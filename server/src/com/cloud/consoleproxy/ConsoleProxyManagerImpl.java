@@ -80,7 +80,6 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
@@ -91,8 +90,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
-import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
+import com.cloud.host.Host.Type;
 import com.cloud.host.dao.HostDao;
 import com.cloud.info.ConsoleProxyConnectionInfo;
 import com.cloud.info.ConsoleProxyInfo;
@@ -116,9 +115,9 @@ import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
@@ -345,7 +344,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         try {
             if (proxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                 try {
-                    proxy = startProxy(proxyVmId, 0);
+                    proxy = startProxy(proxyVmId);
 
                     if (proxy == null) {
                         //
@@ -366,7 +365,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                         if (s_logger.isInfoEnabled()) {
                             s_logger.info("Unable to start console proxy, proxy vm Id : " + proxyVmId + " will recycle it and restart a new one");
                         }
-                        destroyProxy(proxyVmId, 0);
+                        destroyProxy(proxyVmId);
                         return null;
                     } else {
                         if (s_logger.isTraceEnabled()) {
@@ -532,9 +531,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     }
     
     @Override
-    public ConsoleProxyVO startProxy(long proxyVmId, long startEventId) {
+    public ConsoleProxyVO startProxy(long proxyVmId) {
         try {
-            return start(proxyVmId, startEventId);
+            return start(proxyVmId);
         } catch (StorageUnavailableException e) {
             s_logger.warn("Exception while trying to start console proxy", e);
             return null;
@@ -548,7 +547,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     }
 
     @Override
-    public ConsoleProxyVO start(long proxyVmId, long startEventId) throws ResourceUnavailableException, InsufficientCapacityException {
+    public ConsoleProxyVO start(long proxyVmId) throws ResourceUnavailableException, InsufficientCapacityException {
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
         Account systemAcct = _accountMgr.getSystemAccount();
         User systemUser = _accountMgr.getSystemUser();
@@ -1056,7 +1055,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                                 try {
                                     if (proxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                                         try {
-                                            readyProxy = start(readyProxy.getId(), 0);
+                                            readyProxy = start(readyProxy.getId());
                                         } finally {
                                             proxyLock.unlock();
                                         }
@@ -1258,7 +1257,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             try {
                 if (proxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                     try {
-                        proxy = startProxy(proxyVmId, 0);
+                        proxy = startProxy(proxyVmId);
                     } finally {
                         proxyLock.unlock();
                     }
@@ -1279,7 +1278,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 }
 
                 if (proxyFromStoppedPool) {
-                    destroyProxy(proxyVmId, 0);
+                    destroyProxy(proxyVmId);
                 }
             } else {
                 if (s_logger.isInfoEnabled()) {
@@ -1454,7 +1453,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     }
 
     @Override
-    public boolean stopProxy(long proxyVmId, long startEventId) {
+    public boolean stopProxy(long proxyVmId) {
 
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
         if (asyncExecutor != null) {
@@ -1479,7 +1478,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
          * proxyVmId, startEventId);
          */
         try {
-            return stop(proxy, startEventId);
+            return stop(proxy);
         } catch (AgentUnavailableException e) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Stopping console proxy " + proxy.getName() + " failed : exception " + e.toString());
@@ -1489,7 +1488,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     }
 
     @Override
-    public boolean rebootProxy(long proxyVmId, long startEventId) {
+    public boolean rebootProxy(long proxyVmId) {
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
         if (asyncExecutor != null) {
             AsyncJobVO job = asyncExecutor.getJob();
@@ -1532,7 +1531,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 event.setAccountId(Account.ACCOUNT_ID_SYSTEM);
                 event.setType(EventTypes.EVENT_PROXY_REBOOT);
                 event.setLevel(EventVO.LEVEL_INFO);
-                event.setStartId(startEventId);
+               // event.setStartId(startEventId);
                 event.setDescription("Console proxy rebooted - " + proxy.getName());
                 _eventDao.persist(event);
                 return true;
@@ -1546,24 +1545,24 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 event.setAccountId(Account.ACCOUNT_ID_SYSTEM);
                 event.setType(EventTypes.EVENT_PROXY_REBOOT);
                 event.setLevel(EventVO.LEVEL_ERROR);
-                event.setStartId(startEventId);
+               // event.setStartId(startEventId);
                 event.setDescription("Rebooting console proxy failed - " + proxy.getName());
                 _eventDao.persist(event);
                 return false;
             }
         } else {
-            return startProxy(proxyVmId, 0) != null;
+            return startProxy(proxyVmId) != null;
         }
     }
 
     @Override
     public boolean destroy(ConsoleProxyVO proxy) throws AgentUnavailableException {
-        return destroyProxy(proxy.getId(), 0);
+        return destroyProxy(proxy.getId());
     }
 
     @Override
     @DB
-    public boolean destroyProxy(long vmId, long startEventId) {
+    public boolean destroyProxy(long vmId) {
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
         if (asyncExecutor != null) {
             AsyncJobVO job = asyncExecutor.getJob();
@@ -1621,7 +1620,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 event.setAccountId(Account.ACCOUNT_ID_SYSTEM);
                 event.setType(EventTypes.EVENT_PROXY_DESTROY);
                 event.setLevel(EventVO.LEVEL_INFO);
-                event.setStartId(startEventId);
+                //event.setStartId(startEventId);
                 event.setDescription("Console proxy destroyed - " + vm.getName());
                 _eventDao.persist(event);
 
@@ -1672,7 +1671,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     }
 
     @Override
-    public boolean stop(ConsoleProxyVO proxy, long startEventId) throws AgentUnavailableException {
+    public boolean stop(ConsoleProxyVO proxy) throws AgentUnavailableException {
         if (!_itMgr.stateTransitTo(proxy, VirtualMachine.Event.StopRequested, proxy.getHostId())) {
             s_logger.debug("Unable to stop console proxy: " + proxy.toString());
             return false;
@@ -1703,7 +1702,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                             event.setAccountId(Account.ACCOUNT_ID_SYSTEM);
                             event.setType(EventTypes.EVENT_PROXY_STOP);
                             event.setLevel(EventVO.LEVEL_ERROR);
-                            event.setStartId(startEventId);
+                            //event.setStartId(startEventId);
                             event.setDescription("Stopping console proxy failed due to negative answer from agent - " + proxy.getName());
                             _eventDao.persist(event);
                             return false;
@@ -1721,7 +1720,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                         event.setAccountId(Account.ACCOUNT_ID_SYSTEM);
                         event.setType(EventTypes.EVENT_PROXY_STOP);
                         event.setLevel(EventVO.LEVEL_INFO);
-                        event.setStartId(startEventId);
+                        //event.setStartId(startEventId);
                         event.setDescription("Console proxy stopped - " + proxy.getName());
                         _eventDao.persist(event);
                         return true;
@@ -1731,7 +1730,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                         event.setAccountId(Account.ACCOUNT_ID_SYSTEM);
                         event.setType(EventTypes.EVENT_PROXY_STOP);
                         event.setLevel(EventVO.LEVEL_ERROR);
-                        event.setStartId(startEventId);
+                        //event.setStartId(startEventId);
                         event.setDescription("Stopping console proxy failed due to operation time out - " + proxy.getName());
                         _eventDao.persist(event);
                         throw new AgentUnavailableException(proxy.getHostId());
@@ -1999,9 +1998,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a console proxy with id " + proxyId);
         }
         
-        long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_DESTROY, "destroying console proxy with Id: "+proxyId);
-        
-        return destroyProxy(proxyId, eventId);
+        return destroyProxy(proxyId);
         
     }
 
@@ -2137,8 +2134,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 						if(updateCertAns.getResult() == true)
 						{
 							//we have the cert copied over on cpvm
-							long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy with Id: "+consoleProxy.getId());    				
-							rebootProxy(consoleProxy.getId(), eventId);
+							rebootProxy(consoleProxy.getId());
 							//when cp reboots, the context will be reinit with the new cert 
 							s_logger.info("Successfully rebooted console proxy resource after custom certificate application for proxy:"+cmd.getProxyVmId());
 							return true;
@@ -2155,18 +2151,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 			return false;//no cert entry in the db record
 		}
 		return false;//cert already applied in previous cycles
-    }
-    
-    private Long saveScheduledEvent(Long userId, Long accountId, String type, String description) 
-    {
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(accountId);
-        event.setType(type);
-        event.setState(Event.State.Scheduled);
-        event.setDescription("Scheduled async job for "+description);
-        event = _eventDao.persist(event);
-        return event.getId();
     }
     
     @Override

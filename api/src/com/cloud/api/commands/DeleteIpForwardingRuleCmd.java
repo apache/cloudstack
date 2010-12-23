@@ -79,7 +79,7 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_NET_RULE_ADD;
+        return EventTypes.EVENT_NET_RULE_DELETE;
     }
 
     @Override

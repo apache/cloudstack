@@ -440,7 +440,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         }
 
         try {
-            VMInstanceVO started = mgr.start(vm.getId(), 0);
+            VMInstanceVO started = mgr.start(vm.getId());
             if (started != null) {
                 s_logger.info("VM is now restarted: " + vmId + " on " + started.getHostId());
                 return null;
@@ -866,7 +866,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         try {
         	if (work.getWorkType() == WorkType.Stop) {
 	            if (vm.getHostId() != null) {
-	                if (mgr.stop(vm, 0)) {
+	                if (mgr.stop(vm)) {
 	                	s_logger.info("Successfully stopped " + vm.toString());
 	                    return null;
 	                }

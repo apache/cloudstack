@@ -253,22 +253,22 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     }
 
     @Override
-    public ConsoleProxyVO startProxy(long proxyVmId, long startEventId) {
+    public ConsoleProxyVO startProxy(long proxyVmId) {
         return null;
     }
 
     @Override
-    public boolean destroyProxy(long proxyVmId, long startEventId) {
+    public boolean destroyProxy(long proxyVmId) {
         return false;
     }
 
     @Override
-    public boolean rebootProxy(long proxyVmId, long startEventId) {
+    public boolean rebootProxy(long proxyVmId) {
         return false;
     }
 
     @Override
-    public boolean stopProxy(long proxyVmId, long startEventId) {
+    public boolean stopProxy(long proxyVmId) {
         return false;
     }
 
@@ -324,13 +324,13 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     }
 
     @Override
-    public ConsoleProxyVO start(long vmId, long startEventId) throws InsufficientCapacityException, StorageUnavailableException,
+    public ConsoleProxyVO start(long vmId) throws InsufficientCapacityException, StorageUnavailableException,
             ConcurrentOperationException {
         return null;
     }
 
     @Override
-    public boolean stop(ConsoleProxyVO vm, long startEventId) throws AgentUnavailableException {
+    public boolean stop(ConsoleProxyVO vm) throws AgentUnavailableException {
         return false;
     }
 
