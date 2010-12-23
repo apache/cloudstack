@@ -1670,10 +1670,10 @@ a:hover {
 }
 
 .leftmenu_arrows_firstlevel_open {
-	width:14px;
-	height:12px;
+	width:16px;
+	height:14px;
 	float:right;
-	margin:0 4px 0 0;
+	margin:-2px 4px 0 0;
 	background:url(../images/leftmenu_maindownarrow.png) no-repeat top left;
 	padding:0;
 }
