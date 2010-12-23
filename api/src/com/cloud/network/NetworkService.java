@@ -90,4 +90,5 @@ public interface NetworkService {
     boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException;
     
     int getActiveNicsInNetwork(long networkId);
+    
 }

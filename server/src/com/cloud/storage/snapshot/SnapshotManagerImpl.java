@@ -59,7 +59,9 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
+import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -138,6 +140,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     @Inject protected AsyncJobManager _asyncMgr;
     @Inject protected AccountManager _accountMgr;
     @Inject protected ClusterDao _clusterDao;
+    @Inject private UsageEventDao _usageEventDao;
     String _name;
     private int _totalRetries;
     private int _pauseInterval;
@@ -524,6 +527,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 event.setDescription("Backed up snapshot id: " + snapshotId + " to secondary for volume:" + volumeId);
                 event.setLevel(EventVO.LEVEL_INFO);                
                 event.setParameters(eventParams);
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), volume.getDataCenterId(), snapshotId, snapshotName, null, null, volume.getSize());
+                _usageEventDao.persist(usageEvent);
 
             }
             else {
@@ -769,6 +774,12 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         event.setLevel(success ? EventVO.LEVEL_INFO : EventVO.LEVEL_ERROR);
         _eventDao.persist(event);
 
+        if(success){
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), volume.getDataCenterId(), snapshotId, snapshot.getName(), null, null, volume.getSize());
+            _usageEventDao.persist(usageEvent);
+        }
+
+
         return success;
 
     }
@@ -955,6 +966,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         	        event.setParameters(eventParams);
         	        event.setLevel(EventVO.LEVEL_INFO);
         	        _eventDao.persist(event);
+                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), volume.getDataCenterId(), snapshot.getId(), snapshot.getName(), null, null, volume.getSize());
+                    _usageEventDao.persist(usageEvent);
         	    }
         	}
         }

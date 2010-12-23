@@ -43,7 +43,9 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
+import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
@@ -103,6 +105,9 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 	private AgentManager _agentMgr;
     @Inject
     ConfigurationDao _configDao;
+    
+    @Inject 
+    private UsageEventDao _usageEventDao;
 
 	private String _name;
 	private Boolean _sslCopy = new Boolean(false);
@@ -374,6 +379,8 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             event.setParameters(eventParams);
             event.setLevel(EventVO.LEVEL_INFO);
             _eventDao.persist(event);
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, template.getAccountId(), host.getDataCenterId(), template.getId(), template.getName(), null, null , size);
+            _usageEventDao.persist(usageEvent);
         } 
         
 		if (vmTemplateHost != null) {

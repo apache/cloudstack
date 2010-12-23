@@ -2139,7 +2139,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			
 		}
 		
-		 HostStatsEntry hostStats = new HostStatsEntry(cmd.getHostId(), cpuUtil, rx, tx, numCpus, "host", totMem, freeMem, 0, 0);
+		 HostStatsEntry hostStats = new HostStatsEntry(cmd.getHostId(), cpuUtil, rx, tx, "host", totMem, freeMem, 0, 0);
 		return new GetHostStatsAnswer(cmd, hostStats);
 	}
 

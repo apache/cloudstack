@@ -51,6 +51,8 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
+import com.cloud.event.UsageEventVO;
+import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -74,6 +76,7 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -113,6 +116,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     @Inject private DomainRouterDao _routerDao;
     @Inject private ConsoleProxyDao _consoleDao;
     @Inject private SecondaryStorageVmDao _secondaryDao;
+    @Inject private UsageEventDao _usageEventDao;
     
     @Inject(adapter=DeploymentPlanner.class)
     private Adapters<DeploymentPlanner> _planners;
@@ -431,6 +435,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
                     if (!stateTransitTo(vm, Event.OperationSucceeded, dest.getHost().getId())) {
                         throw new CloudRuntimeException("Unable to transition to a new state.");
                     }
+                    if(vm instanceof UserVm){
+                        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
+                        _usageEventDao.persist(usageEvent);
+                    }
                     return vm;
                 }
                 s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + answers[0].getDetails());
@@ -504,6 +512,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
             stopped = answer.getResult();
             if (!stopped) {
                 throw new CloudRuntimeException("Unable to stop the virtual machine due to " + answer.getDetails());
+            } else {
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
+                _usageEventDao.persist(usageEvent);
             }
         } finally {
             if (!stopped) {

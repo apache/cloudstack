@@ -15,24 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.agent.api;
+package com.cloud.event;
 
-public class SetupAnswer extends Answer {
-    // indicate if agent reconnect is needed after setup command
-    private boolean _reconnect;
-    public SetupAnswer() {}
+import java.util.Date;
 
-    public SetupAnswer(SetupCommand cmd, boolean reconnect) {
-        super(cmd, true, null);
-        _reconnect = reconnect;
-    }
+public interface UsageEvent {
+    long getId();
+    String getType();
 
-    public SetupAnswer(SetupCommand cmd, String details) {
-        super(cmd, false, details);
-        _reconnect = true;
-    }
-    public boolean needReconnect() {
-        return _reconnect;
-    }
-    
+    Date getCreateDate();
+    long getAccountId();
+    Long getSize();
+    Long getTemplateId();
+    Long getOfferingId();
+    long getResourceId();
+    long getZoneId();
 }

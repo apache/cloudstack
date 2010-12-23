@@ -2,6 +2,7 @@ package com.cloud.api;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.async.AsyncJobManager;
@@ -32,6 +33,8 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Service;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
@@ -506,6 +509,10 @@ public class ApiDBUtils {
     
     public static NetworkVO findNetworkById(long id) {
         return _networkDao.findById(id);
+    }
+    
+    public static Map<Service, Map<Capability, String>> getZoneCapabilities(long zoneId) {
+        return _networkMgr.getZoneCapabilities(zoneId);
     }
     
 }

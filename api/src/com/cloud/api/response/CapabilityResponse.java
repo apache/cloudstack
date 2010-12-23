@@ -15,10 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.network.service;
+package com.cloud.api.response;
 
-public class Providers {
-    public final static String VirtualRouter = "VirtualRouter";
-    public final static String ExternalFirewall = "ExternalFirewall";
-    public final static String ExternalLoadBalancer = "ExternalLoadBalancer";
+import com.cloud.api.ApiConstants;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
+
+public class CapabilityResponse extends BaseResponse {
+
+    @SerializedName(ApiConstants.NAME) @Param(description="the capability name")
+    private String name;
+    
+    @SerializedName(ApiConstants.VALUE) @Param(description="the capability value")
+    private String value;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
 }

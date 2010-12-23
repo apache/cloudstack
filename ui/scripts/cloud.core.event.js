@@ -24,8 +24,8 @@ function eventGetSearchParams() {
         moreCriteria.push("&keyword="+todb(searchInput));	       
     }     
 
-	var $advancedSearchPopup = $("#advanced_search_popup");
-	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {		    
+	var $advancedSearchPopup = $("#advanced_search_container").find("#advanced_search_popup");
+	if ($advancedSearchPopup.length > 0 && $advancedSearchPopup.css("display") != "none" ) {		    
 	    var type = $advancedSearchPopup.find("#adv_search_type").val();							
 		if (type!=null && trim(type).length > 0) 
 			moreCriteria.push("&type="+todb(type));		
@@ -40,18 +40,19 @@ function eventGetSearchParams() {
 			    moreCriteria.push("&domainid="+todb(domainId));	
 	    }
     	
-    	if ($advancedSearchPopup.find("#adv_search_account_li").css("display") != "none") {	
+    	if ($advancedSearchPopup.find("#adv_search_account_li").css("display") != "none" 
+    	    && $advancedSearchPopup.find("#adv_search_account").hasClass("textwatermark") == false) {	
 		    var account = $advancedSearchPopup.find("#adv_search_account").val();					
 		    if (account!=null && account.length > 0) 
 			    moreCriteria.push("&account="+todb(account));	
 		}
 		
 		var startdate = $advancedSearchPopup.find("#adv_search_startdate").val();						
-		if (startdate!=null && startdate.length > 0) 
+		if ($advancedSearchPopup.find("#adv_search_startdate").hasClass("textwatermark") == false && startdate!=null && startdate.length > 0) 
 			moreCriteria.push("&startdate="+todb(startdate));	
 		
 		var enddate = $advancedSearchPopup.find("#adv_search_enddate").val();			
-		if (enddate!=null && enddate.length > 0) 
+		if ($advancedSearchPopup.find("#adv_search_enddate").hasClass("textwatermark") == false && enddate!=null && enddate.length > 0) 
 			moreCriteria.push("&enddate="+todb(enddate));	
 	} 
 		

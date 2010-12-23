@@ -15,24 +15,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.agent.api;
 
-public class SetupAnswer extends Answer {
-    // indicate if agent reconnect is needed after setup command
-    private boolean _reconnect;
-    public SetupAnswer() {}
+package com.cloud.event.dao;
 
-    public SetupAnswer(SetupCommand cmd, boolean reconnect) {
-        super(cmd, true, null);
-        _reconnect = reconnect;
-    }
+import java.util.Date;
+import java.util.List;
 
-    public SetupAnswer(SetupCommand cmd, String details) {
-        super(cmd, false, details);
-        _reconnect = true;
-    }
-    public boolean needReconnect() {
-        return _reconnect;
-    }
+import com.cloud.event.UsageEventVO;
+import com.cloud.exception.UsageServerException;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.SearchCriteria;
+
+public interface UsageEventDao extends GenericDao<UsageEventVO, Long> {
     
+    public List<UsageEventVO> searchAllUsageEvents(SearchCriteria<UsageEventVO> sc, Filter filter);
+
+    public List<UsageEventVO> listLatestEvents(Date recentEventDate, Date endDate);
+
+    public List<UsageEventVO> listAllEvents(Date endDate);
+
+    public List<UsageEventVO> getLatestEventDate();
+    
+    List<UsageEventVO> getRecentEvents(Date endDate) throws UsageServerException;
+
 }

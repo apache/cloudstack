@@ -61,7 +61,9 @@ import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
+import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -127,6 +129,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+
 @Local(value={TemplateManager.class, TemplateService.class})
 public class TemplateManagerImpl implements TemplateManager, Manager, TemplateService {
     private final static Logger s_logger = Logger.getLogger(TemplateManagerImpl.class);
@@ -158,6 +161,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Inject AsyncJobManager _asyncMgr;
     @Inject UserVmManager _vmMgr;
     @Inject ConfigurationDao _configDao;
+    @Inject UsageEventDao _usageEventDao;
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     
     @Override
@@ -338,9 +342,11 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         }
         
         if((!url.toLowerCase().endsWith("vhd"))&&(!url.toLowerCase().endsWith("vhd.zip"))
-        	&&(!url.toLowerCase().endsWith("vhd.bz2"))&&(!url.toLowerCase().endsWith("vhd.gz") 
+        	&&(!url.toLowerCase().endsWith("vhd.bz2"))&&(!url.toLowerCase().endsWith("vhd.gz")) 
         	&&(!url.toLowerCase().endsWith("qcow2"))&&(!url.toLowerCase().endsWith("qcow2.zip"))
-        	&&(!url.toLowerCase().endsWith("qcow2.bz2"))&&(!url.toLowerCase().endsWith("qcow2.gz")))){
+        	&&(!url.toLowerCase().endsWith("qcow2.bz2"))&&(!url.toLowerCase().endsWith("qcow2.gz"))
+        	&&(!url.toLowerCase().endsWith("ova"))&&(!url.toLowerCase().endsWith("ova.zip"))
+        	&&(!url.toLowerCase().endsWith("ova.bz2"))&&(!url.toLowerCase().endsWith("ova.gz"))){
         	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid "+format.toLowerCase());
         }
         	
@@ -814,6 +820,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         
     	_downloadMonitor.copyTemplate(vmTemplate, srcSecHost, dstSecHost);
     	
+        UsageEventVO usageEvent = new UsageEventVO(copyEventType, account.getId(), destZoneId, templateId, null, null, null, srcTmpltHost.getSize());
+        _usageEventDao.persist(usageEvent);
         saveEvent(userId, account.getId(), account.getDomainId(), copyEventType, copyEventDescription, EventVO.LEVEL_INFO, params, startEventId);
     	return true;
     }
@@ -960,6 +968,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 					
 					String zoneParams = params + "\ndcId=" + sZoneId;
 					saveEvent(userId, account.getId(), account.getDomainId(), eventType, description + template.getName() + " succesfully deleted.", EventVO.LEVEL_INFO, zoneParams, 0);
+					UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), sZoneId, templateId, null, null, null, null);
+					_usageEventDao.persist(usageEvent);
 				} finally {
 					if (lock != null) {
 						_tmpltHostDao.releaseFromLockTable(lock.getId());

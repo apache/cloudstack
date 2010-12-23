@@ -26,43 +26,28 @@ import com.cloud.host.HostStats;
 public class HostStatsEntry implements HostStats {
 	
 	long hostId;
+	String entityType;
 	double cpuUtilization;
 	double networkReadKBs;
 	double networkWriteKBs;
-	int numCpus;
-	String entityType;
     double totalMemoryKBs;
     double freeMemoryKBs;
-    double xapiMemoryUsageKBs;    
-	double averageLoad;
     
     public HostStatsEntry() {
     }
     
-    public HostStatsEntry(long hostId,double cpuUtilization, double networkReadKBs, double networkWriteKBs, int numCPUs, String entityType,
-    						double totalMemoryKBs, double freeMemoryKBs, double xapiMemoryUsageKBs, double averageLoad) 
+    public HostStatsEntry(long hostId,double cpuUtilization, double networkReadKBs, double networkWriteKBs, String entityType,
+		double totalMemoryKBs, double freeMemoryKBs, double xapiMemoryUsageKBs, double averageLoad) 
     {
+        this.hostId = hostId;
+        this.entityType = entityType;
         this.cpuUtilization = cpuUtilization;
         this.networkReadKBs = networkReadKBs;
         this.networkWriteKBs = networkWriteKBs;
-        this.numCpus = numCPUs;
-        this.entityType = entityType;
         this.totalMemoryKBs = totalMemoryKBs;
         this.freeMemoryKBs = freeMemoryKBs;
-        this.xapiMemoryUsageKBs = xapiMemoryUsageKBs;
-        this.averageLoad = averageLoad;
-        this.hostId = hostId;
     }
 
-	@Override
-    public double getAverageLoad() {
-    	return averageLoad;
-    }
-    
-    public void setAverageLoad(double averageLoad) {
-    	this.averageLoad = averageLoad;
-    }    
-   
 	@Override
     public double getNetworkReadKBs() {
     	return networkReadKBs;
@@ -79,10 +64,6 @@ public class HostStatsEntry implements HostStats {
     
     public void setNetworkWriteKBs(double networkWriteKBs) {
     	this.networkWriteKBs = networkWriteKBs;
-    }
-        
-    public void setNumCpus(int numCpus) {
-    	this.numCpus = numCpus;
     }
 
 	@Override
@@ -113,15 +94,6 @@ public class HostStatsEntry implements HostStats {
     }
     
 	@Override
-    public double getXapiMemoryUsageKBs(){
-    	return this.xapiMemoryUsageKBs;
-    }
-    
-    public void setXapiMemoryUsageKBs(double xapiMemoryUsageKBs){
-    	this.xapiMemoryUsageKBs = xapiMemoryUsageKBs;
-    }
-
-	@Override
 	public double getCpuUtilization() {
 		return this.cpuUtilization;
 	}
@@ -136,13 +108,11 @@ public class HostStatsEntry implements HostStats {
 	}
 
 	@Override
-	public int getNumCpus() {
-		return numCpus;
-	}
-
-	@Override
 	public HostStats getHostStats() {
-		// TODO Auto-generated method stub
-		return null;
+		return this;
+	}
+	
+	public void setHostId(long hostId) {
+		this.hostId = hostId;
 	}
 }

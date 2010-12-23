@@ -1,5 +1,7 @@
 package com.cloud.api.response;
 
+import java.util.List;
+
 import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -102,6 +104,9 @@ public class NetworkResponse extends BaseResponse{
     
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain associated with the network")
     private String domain;
+    
+    @SerializedName("service") @Param(description="the list of services")
+    private List<ServiceResponse> services;
 
     public Long getId() {
         return id;
@@ -310,6 +315,12 @@ public class NetworkResponse extends BaseResponse{
     public void setNetworkOfferingAvailability(String networkOfferingAvailability) {
         this.networkOfferingAvailability = networkOfferingAvailability;
     }
-    
-    
+
+    public List<ServiceResponse> getServices() {
+        return services;
+    }
+
+    public void setServices(List<ServiceResponse> services) {
+        this.services = services;
+    }
 }

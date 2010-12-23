@@ -18,7 +18,9 @@
 package com.cloud.network.element;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
 
@@ -32,6 +34,9 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -42,7 +47,6 @@ import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.service.Providers;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -65,6 +69,8 @@ import com.cloud.vm.dao.UserVmDao;
 public class VirtualRouterElement extends AdapterBase implements NetworkElement {
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
     
+    private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
+    
     @Inject NetworkDao _networkConfigDao;
     @Inject NetworkManager _networkMgr;
     @Inject LoadBalancingRulesManager _lbMgr;
@@ -76,10 +82,9 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement 
     @Inject DataCenterDao _dataCenterDao;
     @Inject LoadBalancerDao _lbDao;
     
-    
     private boolean canHandle(GuestIpType ipType, DataCenter dc) {
         String provider = dc.getGatewayProvider();
-        return (ipType == GuestIpType.Virtual && provider.equals(Providers.VirtualRouter));
+        return (ipType == GuestIpType.Virtual && provider.equals(Provider.VirtualRouter.getName()));
     }
 
     @Override
@@ -173,6 +178,50 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement 
         } else {
             return false;
         }
+    }
+    
+
+    @Override
+    public Provider getProvider() {
+        return Provider.VirtualRouter;
+    }
+    
+    @Override
+    public Map<Service, Map<Capability, String>> getCapabilities() {
+        return capabilities;
+    }
+    
+    private static Map<Service, Map<Capability, String>> setCapabilities() {
+        Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
+        
+        //Set capabilities for LB service
+        Map<Capability, String> lbCapabilities = new HashMap<Capability, String>();
+        lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn,sourceip");
+        lbCapabilities.put(Capability.SupportedProtocols, "tcp, udp");
+        
+        capabilities.put(Service.Lb, lbCapabilities);
+        
+        //Set capabilities for Firewall service
+        Map<Capability, String> firewallCapabilities = new HashMap<Capability, String>();
+        firewallCapabilities.put(Capability.PortForwarding, "true");
+        firewallCapabilities.put(Capability.StaticNat, "true");
+        firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp");
+        firewallCapabilities.put(Capability.MultipleIps, "true");
+        firewallCapabilities.put(Capability.SupportedSourceNatTypes, "per account");
+        
+        capabilities.put(Service.Firewall, firewallCapabilities);
+        
+        //Set capabilities for vpn
+        Map<Capability, String> vpnCapabilities = new HashMap<Capability, String>();
+        vpnCapabilities.put(Capability.SupportedVpnTypes, "pptp,l2tp,ipsec");
+        
+        capabilities.put(Service.Vpn, vpnCapabilities);
+        capabilities.put(Service.Dns, null);
+        capabilities.put(Service.UserData, null);
+        capabilities.put(Service.Dhcp, null);
+        capabilities.put(Service.Gateway, null);
+        
+        return capabilities;
     }
 
 }

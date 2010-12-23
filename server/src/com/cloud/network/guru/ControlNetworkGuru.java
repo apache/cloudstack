@@ -99,7 +99,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
             return;
         }
         
-        String ip = _dcDao.allocateLinkLocalIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), vm.getId(), context.getReservationId());
+        String ip = _dcDao.allocateLinkLocalIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), nic.getId(), context.getReservationId());
         nic.setIp4Address(ip);
         nic.setMacAddress(NetUtils.long2Mac(NetUtils.ip2Long(ip) | (14l << 40)));
         nic.setNetmask("255.255.0.0");

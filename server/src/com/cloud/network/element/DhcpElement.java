@@ -17,7 +17,9 @@
  */
 package com.cloud.network.element;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
 
@@ -29,12 +31,14 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.service.Providers;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.uservm.UserVm;
@@ -51,8 +55,10 @@ import com.cloud.vm.dao.UserVmDao;
 
 
 @Local(value=NetworkElement.class)
-public class DhcpElement extends AdapterBase implements NetworkElement {
+public class DhcpElement extends AdapterBase implements NetworkElement{
     private static final Logger s_logger = Logger.getLogger(DhcpElement.class);
+    
+    private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
     
     @Inject NetworkDao _networkConfigDao;
     @Inject NetworkManager _networkMgr;
@@ -64,10 +70,10 @@ public class DhcpElement extends AdapterBase implements NetworkElement {
     private boolean canHandle(GuestIpType ipType, DeployDestination dest) {
         DataCenter dc = dest.getDataCenter();
         String provider = dc.getGatewayProvider();
-        if (!dc.getDhcpProvider().equals(Providers.VirtualRouter)) {
+        if (!dc.getDhcpProvider().equals(Provider.VirtualRouter.getName())) {
             return false; 
         }
-        return ((ipType == GuestIpType.Virtual && !provider.equals(Providers.VirtualRouter)) || (ipType == GuestIpType.Direct || ipType == GuestIpType.DirectPodBased));
+        return ((ipType == GuestIpType.Virtual && !provider.equals(Provider.VirtualRouter.getName())) || (ipType == GuestIpType.Direct || ipType == GuestIpType.DirectPodBased));
     }
 
     @Override
@@ -100,7 +106,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement {
     public boolean release(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) {
         return true;
     }
-
+    
     @Override
     public boolean shutdown(Network config, ReservationContext context) throws ConcurrentOperationException {
         DomainRouterVO router = _routerDao.findByNetworkConfiguration(config.getId());
@@ -112,11 +118,33 @@ public class DhcpElement extends AdapterBase implements NetworkElement {
 
     @Override
     public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-        return true;
+        return false;
     }
 
     @Override
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-        return true;
+        return false;
+    }
+    
+    
+    @Override
+    public Provider getProvider() {
+        return Provider.DhcpServer;
+    }
+    
+    @Override
+    public Map<Service, Map<Capability, String>> getCapabilities() {
+        return capabilities;
+    }
+    
+    private static Map<Service, Map<Capability, String>> setCapabilities() {
+        Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
+        
+        capabilities.put(Service.Dns, null);
+        capabilities.put(Service.UserData, null);
+        capabilities.put(Service.Dhcp, null);
+        capabilities.put(Service.Gateway, null);
+        
+        return capabilities;
     }
 }

@@ -13,7 +13,7 @@ INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type,
     VALUES (7, 'centos53-x64', 'centos53-x64', 1, now(), 'builtin', 0, 64, 1, 'http://download.cloud.com/releases/2.2.0/CentOS5.3-x86_64.ova', 'f6f881b7f2292948d8494db837fe0f47', 0, 'centos53-x64', 'OVA', 12, 1, 1, 'VMware');
 
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
-    VALUES (8, 'routing-8', 'SystemVM Template (VMWare)', 0, now(), 'system', 0, 32, 1, 'http://download.cloud.com/releases/2.2.0/systemvm.vmdk.bz2', '7ebe04f68583f30064d187069faf7b0f', 0, 'SystemVM Template VMWare', 'OVA', 15, 0, 1, 'VMware');
+    VALUES (8, 'routing-8', 'SystemVM Template (VMWare)', 0, now(), 'system', 0, 32, 1, 'http://download.cloud.com/releases/2.2.0/systemvm.ova', 'ee3dc55e94e23a0490310bb78cf8cc76', 0, 'SystemVM Template VMWare', 'OVA', 15, 0, 1, 'VMware');
 
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (1, 'CentOS');
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (2, 'Debian');

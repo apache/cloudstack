@@ -92,7 +92,9 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
+import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.DiscoveryException;
@@ -211,6 +213,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Inject protected UserDao _userDao;
     @Inject protected ClusterDao _clusterDao;
     @Inject protected VirtualNetworkApplianceManager _routerMgr;
+    @Inject protected UsageEventDao _usageEventDao;    
+
     
     @Inject(adapter=StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
@@ -696,6 +700,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         if (createdVolume.getPath() != null) {
             event.setDescription("Created volume: "+ createdVolume.getName() + " with size: " + sizeMB + " MB in pool: " + poolName + " from snapshot id: " + snapshotId);
             event.setLevel(EventVO.LEVEL_INFO);
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, templateId , sizeMB);
+            _usageEventDao.persist(usageEvent);
         }
         else {
             details = "CreateVolume From Snapshot for snapshotId: " + snapshotId + " failed at the backend, reason " + details;
@@ -830,6 +836,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             volume.setPodId(pod.getId());
             volume.setState(Volume.State.Ready);
             _volsDao.persist(volume);
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOffering.getId(), null , dskCh.getSize());
+            _usageEventDao.persist(usageEvent);
+
         }
         txn.commit();
         return volume;
@@ -1906,6 +1915,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                     event.setParameters(eventParams);
                     event.setState(Event.State.Completed);
                     _eventDao.persist(event);
+                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOffering.getId(), null , sizeMB);
+                    _usageEventDao.persist(usageEvent);
 /*
                 } else {
                     event.setDescription("Unable to create a volume for " + volume);
@@ -1943,6 +1954,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         event.setDescription("Volume " +volume.getName()+ " deleted");
         event.setLevel(EventVO.LEVEL_INFO);
         _eventDao.persist(event);
+        
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), null, null , null);
+        _usageEventDao.persist(usageEvent);
 
         // Delete the recurring snapshot policies for this volume.
         _snapshotMgr.deletePoliciesForVolume(volumeId);
@@ -2672,6 +2686,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         
         vol = _volsDao.persist(vol);
         
+        if(vm instanceof UserVm){
+            long sizeMB = size / (1024 * 1024);
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), null , sizeMB);
+            _usageEventDao.persist(usageEvent);
+        }
         return toDiskProfile(vol, offering);
     }
     
@@ -2704,6 +2723,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         
         vol = _volsDao.persist(vol);
         
+        if(vm instanceof UserVm){
+            long sizeMB = vol.getSize() / (1024 * 1024);
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), template.getId() , sizeMB);
+            _usageEventDao.persist(usageEvent);
+        }
         return toDiskProfile(vol, offering);
     }
     

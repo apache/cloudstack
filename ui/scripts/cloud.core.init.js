@@ -263,39 +263,26 @@ $(document).ready(function() {
 	
 	//advanced search	
 	$("#advanced_search_icon").unbind("click").bind("click", function(event) {
-	    if($(this).hasClass("up")) {
-	        $(this).removeClass("up");	        
-	        $("#advanced_search_container").find("#advanced_search_popup").hide();
+	    if($(this).hasClass("up")) {  //clicking up-arrow          
+	        $("#advanced_search_container").find("#advanced_search_popup").slideUp("500");
+	        $(this).removeClass("up");	//change arrow from up to down
 	    }
-	    else {	    
-	        $(this).addClass("up");	  
+	    else {  //clicking down-arrow 
+	        $(this).addClass("up");	    //change arrow from down to up
 	          
 	        if($("#advanced_search_container").find("#advanced_search_popup").length > 0) {
-	            $("#advanced_search_container").find("#advanced_search_popup").show();
+	            $("#advanced_search_container").find("#advanced_search_popup").slideDown("500");
 	        }
 	        else {	
 	            var $advancedSearchPopup = $("#advanced_search_popup");
         	    
 	            $advancedSearchPopup.unbind("click").bind("click", function(event) {
 	                var $target = $(event.target);
-	                var targetId = $target.attr("id");	 
-	                /*       
-	                if(targetId == "advanced_search_close") {
-	                    $(this).hide();
-	                    return false;
-	                }
-	                else if(targetId == "adv_search_button") {    	        
-    	                var params = $("#middle_menu_pagination").data("params");
-	                    if(params == null)
-	                        return;	        	    
-	                    lastSearchType = "advanced_search";  
-	                    //$("#basic_search").find("#search_input").val("");
-	                    listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);
-    	                $("#advanced_search_icon").removeClass("up");
-    	                $(this).hide();
-	                    return false;
-	                }
-	                */
+	                var targetId = $target.attr("id");              	                
+	                if($target.hasClass("textwatermark")) {
+	                    $target.val("");
+	                    $target.removeClass("textwatermark");    
+	                }	                	              
 	                return true;
 	            });
         	    	
@@ -404,7 +391,7 @@ $(document).ready(function() {
         	    	      
 	            $advancedSearchPopup.find("#adv_search_startdate, #adv_search_enddate").datepicker({dateFormat: 'yy-mm-dd'});
         	    	    	    
-	            $("#advanced_search_container").empty().append($advancedSearchPopup.show());	 
+	            $("#advanced_search_container").empty().append($advancedSearchPopup.slideDown("500"));	 
 	        }
 	    }
 	    	   

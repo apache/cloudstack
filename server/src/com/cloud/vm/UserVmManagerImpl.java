@@ -103,7 +103,9 @@ import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
+import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -252,6 +254,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject VirtualNetworkApplianceManager _routerMgr;
     @Inject NicDao _nicDao;
     @Inject RulesManager _rulesMgr;
+    @Inject UsageEventDao _usageEventDao;
     
     private IpAddrAllocator _IpAllocator;
     ScheduledExecutorService _executor = null;
@@ -1106,7 +1109,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (!destroy(vm)) {
         	return false;
         }
-        
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
+        _usageEventDao.persist(usageEvent);
         cleanNetworkRules(userId, vmId);
         
         // Mark the VM's disks as destroyed
@@ -1234,6 +1238,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         _eventDao.persist(event);
         
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
+        _usageEventDao.persist(usageEvent);
         txn.commit();
         
         return _vmDao.findById(vmId);
@@ -1384,6 +1390,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         _eventDao.persist(event);
 
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
+        _usageEventDao.persist(usageEvent);
+        
         if (_storageMgr.unshare(vm, null) == null) {
             s_logger.warn("Unable to set share to false for " + vm.toString());
         }
@@ -2527,6 +2536,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Successfully allocated DB entry for " + vm);
         }
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, accountId, dc.getId(), vm.getId(), vm.getName(), offering.getId(), template.getId(), null);
+        _usageEventDao.persist(usageEvent);
         return vm;
 	}
 	
@@ -2718,6 +2729,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         
         if (status) {
             EventUtils.saveEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Successfully destroyed vm with id:"+vmId);
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
+            _usageEventDao.persist(usageEvent);
             return _vmDao.findById(vmId);
         } else {
             EventUtils.saveEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Failed to destroy vm with id:"+vmId);

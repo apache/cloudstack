@@ -36,7 +36,9 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
+import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
@@ -105,6 +107,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     @Inject AccountDao _accountDao;
     @Inject DomainDao _domainDao;
     @Inject NicDao _nicDao;
+    @Inject UsageEventDao _usageEventDao;
 
     @Override @DB
     public boolean assignToLoadBalancer(long loadBalancerId, List<Long> instanceIds) {
@@ -241,6 +244,8 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         }
         
         _rulesDao.remove(lb.getId());
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_LOAD_BALANCER_DELETE, lb.getAccountId(), 0 , lb.getId(), null);
+        _usageEventDao.persist(usageEvent);
         s_logger.debug("Load balancer with id " + lb.getId() + " is removed successfully");
         return true;
     }
@@ -327,6 +332,8 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
                 String params = "id=" + newRule.getId() + "\ndcId=" + ipAddr.getDataCenterId();
                 event.setParameters(params);
                 event.setLevel(EventVO.LEVEL_INFO);
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_LOAD_BALANCER_CREATE, ipAddr.getAllocatedToAccountId(), ipAddr.getDataCenterId(), newRule.getId(), null);
+                _usageEventDao.persist(usageEvent);
             }
             _eventDao.persist(event);
         }

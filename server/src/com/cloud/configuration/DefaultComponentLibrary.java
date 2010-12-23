@@ -52,6 +52,7 @@ import com.cloud.dc.dao.PodVlanMapDaoImpl;
 import com.cloud.dc.dao.VlanDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.event.dao.EventDaoImpl;
+import com.cloud.event.dao.UsageEventDaoImpl;
 import com.cloud.ha.HighAvailabilityManagerImpl;
 import com.cloud.ha.dao.HighAvailabilityDaoImpl;
 import com.cloud.host.dao.DetailsDaoImpl;
@@ -113,12 +114,12 @@ import com.cloud.user.dao.UserStatisticsDaoImpl;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapter;
 import com.cloud.utils.component.ComponentLibrary;
-import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.ItWorkDaoImpl;
-import com.cloud.vm.VirtualMachineManagerImpl;
 import com.cloud.vm.UserVmManagerImpl;
+import com.cloud.vm.VirtualMachineManagerImpl;
 import com.cloud.vm.dao.ConsoleProxyDaoImpl;
 import com.cloud.vm.dao.DomainRouterDaoImpl;
 import com.cloud.vm.dao.InstanceGroupDaoImpl;
@@ -231,6 +232,7 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addDao("ItWorkDao", ItWorkDaoImpl.class);
         addDao("FirewallRulesDao", FirewallRulesDaoImpl.class);
         addDao("PortForwardingRulesDao", PortForwardingRulesDaoImpl.class);
+        addDao("UsageEventDao", UsageEventDaoImpl.class);
     }
 
     Map<String, ComponentInfo<Manager>> _managers = new HashMap<String, ComponentInfo<Manager>>();
