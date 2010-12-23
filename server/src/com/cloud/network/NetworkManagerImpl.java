@@ -2142,7 +2142,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public Map<Service, Map<Capability, String>> getZoneCapabilities(long zoneId) {
         DataCenterVO dc = _dcDao.findById(zoneId);
         if (dc == null) {
-            throw new InvalidParameterValueException("Zone id=" + dc.getId() + " doesn't exist in the system.");
+            throw new InvalidParameterValueException("Zone id=" + zoneId + " doesn't exist in the system.");
         }
         
         //Get all service providers from the datacenter
@@ -2168,7 +2168,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     Service service = it.next();
                     if (providers.get(service).equalsIgnoreCase(element.getProvider().getName())) {
                         if (elementCapabilities.containsKey(service)) {
-                            networkCapabilities.put(service, elementCapabilities.get(service));
+                            Map<Capability, String> capabilities = elementCapabilities.get(service);
+                            //Verify if Service support capability
+                            if (capabilities != null) {
+                                for (Capability capability : capabilities.keySet()) {          
+                                    assert(service.containsCapability(capability)) : "Capability " + capability.getName() + " is not supported by the service " + service.getName();
+                                }
+                            }
+                            networkCapabilities.put(service, capabilities);
                             it.remove();
                         }
                     }

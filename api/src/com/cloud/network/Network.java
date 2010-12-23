@@ -36,6 +36,7 @@ public interface Network extends ControlledEntity {
 
         public Service(String name, Capability... caps) {
             this.name = name;
+            this.caps = caps;
         }  
        
         public String getName() {
@@ -44,6 +45,21 @@ public interface Network extends ControlledEntity {
         
         public Capability[] getCapabilities() {
             return caps;
+        }
+        
+        public boolean containsCapability(Capability cap) {
+            boolean success = false;
+            if (caps != null) {
+                int length = caps.length;
+                for (int i = 0; i< length; i++) {
+                    if (caps[i].getName().equalsIgnoreCase(cap.getName())) {
+                        success = true;
+                        break;
+                    }
+                }
+            } 
+            
+            return success;
         }
     }
     
