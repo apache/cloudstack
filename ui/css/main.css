@@ -3508,13 +3508,13 @@ a:hover.search_button {
 	width:173px;
 	height:auto;
 	float:left;
-	margin:0 0 5px 6px;
+	margin:2px 0 5px 6px;
 	padding:0 0 10px 0;
 	list-style:none;
 }
 
 .actionsdropdown_boxlist li{
-	width:171px;
+	width:168px;
 	height:auto;
 	float:left;
 	text-align:left;
