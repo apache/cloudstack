@@ -832,7 +832,21 @@ function ipJsonToDetailsTab() {
             }
         }
     });        
-       
+        
+    if(ipObj.networkid != null) {  
+        $.ajax({            
+            data: createURL("command=listNetworks&id="+ipObj.networkid+"&isSystem=true"),
+            dataType: "json",
+            async: false,
+            success: function(json) {                          
+                var items = json.listnetworksresponse.network;
+                if(items != null && items.length > 0) {                   
+                    $midmenuItem1.data("networkObj", items[0]);    
+                }
+            }
+        });       
+    }
+          
     $thisTab.find("#grid_header_title").text(fromdb(ipObj.ipaddress));       
     $thisTab.find("#ipaddress").text(fromdb(ipObj.ipaddress));
     $thisTab.find("#zonename").text(fromdb(ipObj.zonename));
