@@ -776,26 +776,26 @@
 
 <!-- dialogs (end) -->
 
-<!-- advanced search template (begin) -->
-
-<div class="adv_searchpopup_bg" id="advanced_search_popup" style="display:none;">
-            <div class="adv_searchformbox">
-                <form action="#" method="post">
-                <ol>
-                    <li>
-                        <input class="text textwatermark" type="text" id="adv_search_name" value="by name"/>
-                        
-                    </li>
-                    <li>
-                        <select class="select" id="adv_search_role">
-                            <option value=""></option>                    
-                            <option value="0">User</option>
-                            <option value="2">Domain-Admin</option>
-                            <option value="1">Admin</option>
-                        </select>
-                    </li>
-                </ol>
-                </form>
-            </div>
- </div>
-<!-- advanced search template (end) -->
+<div id="hidden_container">   
+    <!-- advanced search popup (begin) -->
+    <div class="adv_searchpopup_bg" id="advanced_search_popup" style="display: none;">
+        <div class="adv_searchformbox">
+            <form action="#" method="post">
+            <ol>
+                <li>
+                    <input class="text textwatermark" type="text" id="adv_search_name" value="by name" />
+                </li>
+                <li>
+                    <select class="select" id="adv_search_role">
+                        <option value=""></option>
+                        <option value="0">User</option>
+                        <option value="2">Domain-Admin</option>
+                        <option value="1">Admin</option>
+                    </select>
+                </li>
+            </ol>
+            </form>
+        </div>
+    </div>    
+    <!-- advanced search popup (end) -->
+</div>
