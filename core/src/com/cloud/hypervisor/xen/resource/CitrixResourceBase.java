@@ -1395,7 +1395,7 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     protected HostStatsEntry getHostStats(Connection conn, GetHostStatsCommand cmd, String hostGuid, long hostId) {
 
-        HostStatsEntry hostStats = new HostStatsEntry(hostId, 0, 0, 0, 0, "host", 0, 0, 0, 0);
+        HostStatsEntry hostStats = new HostStatsEntry(hostId, 0, 0, 0, "host", 0, 0, 0, 0);
         Object[] rrdData = getRRDData(conn, 1); // call rrd method with 1 for host
 
         if (rrdData == null) {
@@ -1448,21 +1448,25 @@ public abstract class CitrixResourceBase implements ServerResource {
                 }
 
                 if (param.contains("cpu")) {
-                    hostStats.setNumCpus(hostStats.getNumCpus() + 1);
+                    // hostStats.setNumCpus(hostStats.getNumCpus() + 1);
                     hostStats.setCpuUtilization(hostStats.getCpuUtilization() + getDataAverage(dataNode, col, numRows));
                 }
 
+/*                
                 if (param.contains("loadavg")) {
                     hostStats.setAverageLoad((hostStats.getAverageLoad() + getDataAverage(dataNode, col, numRows)));
                 }
+*/                
             }
         }
 
         // add the host cpu utilization
+/*        
         if (hostStats.getNumCpus() != 0) {
             hostStats.setCpuUtilization(hostStats.getCpuUtilization() / hostStats.getNumCpus());
             s_logger.debug("Host cpu utilization " + hostStats.getCpuUtilization());
         }
+*/        
 
         return hostStats;
     }

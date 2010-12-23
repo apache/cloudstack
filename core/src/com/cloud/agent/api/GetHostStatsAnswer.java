@@ -17,8 +17,6 @@
  */
 package com.cloud.agent.api;
 
-import java.util.HashMap;
-
 import com.cloud.host.HostStats;
 
 /**
@@ -28,18 +26,9 @@ import com.cloud.host.HostStats;
 public class GetHostStatsAnswer extends Answer implements HostStats {
 	
 	HostStatsEntry hostStats;
-	
-	double cpuUtilization;
-	double networkReadKBs;
-	double networkWriteKBs;
-	int numCPUs;
-	String entityType;
-    double totalMemoryKBs;
-    double freeMemoryKBs;
-    double xapiMemoryUsageKBs;    
-	double averageLoad;
-	
+
     protected GetHostStatsAnswer() {
+    	hostStats = new HostStatsEntry();
     }
         
 	public GetHostStatsAnswer(GetHostStatsCommand cmd, HostStatsEntry hostStatistics) {
@@ -48,67 +37,51 @@ public class GetHostStatsAnswer extends Answer implements HostStats {
 	}
 	
     public GetHostStatsAnswer(GetHostStatsCommand cmd, double cpuUtilization, double freeMemoryKBs, double totalMemoryKBs, double networkReadKBs, 
-    		double networkWriteKBs, String entityType, double xapiMemoryUsageKBs, double averageLoad, int numCPUs) {
+    		double networkWriteKBs, String entityType) {
         super(cmd);
-    
-        this.cpuUtilization = cpuUtilization;
-        this.freeMemoryKBs = freeMemoryKBs;
-        this.totalMemoryKBs = totalMemoryKBs;
-        this.networkReadKBs = networkReadKBs;
-        this.networkWriteKBs = networkWriteKBs;
-        this.entityType = entityType;
-        this.xapiMemoryUsageKBs = xapiMemoryUsageKBs;
-        this.numCPUs = numCPUs;
+        hostStats = new HostStatsEntry();
+        
+        hostStats.setCpuUtilization(cpuUtilization);
+        hostStats.setFreeMemoryKBs(freeMemoryKBs);
+        hostStats.setTotalMemoryKBs(totalMemoryKBs);
+        hostStats.setNetworkReadKBs(networkReadKBs);
+        hostStats.setNetworkWriteKBs(networkWriteKBs);
+        hostStats.setEntityType(entityType);
     }
     
     @Override
     public double getUsedMemory() {
-    	return (totalMemoryKBs - freeMemoryKBs);
+    	return hostStats.getUsedMemory();
     }
     
     @Override
     public double getFreeMemoryKBs() {
-        return freeMemoryKBs;
+        return hostStats.getFreeMemoryKBs();
     }
     
     @Override
     public double getTotalMemoryKBs() {
-    	return totalMemoryKBs;
+    	return hostStats.getTotalMemoryKBs();
     }
     
     @Override
     public double getCpuUtilization() {
-        return cpuUtilization;
+        return hostStats.getCpuUtilization();
     }
     
     @Override
     public double getNetworkReadKBs() {
-    	return networkReadKBs;
+    	return hostStats.getNetworkReadKBs();
     }
     
     @Override
     public double getNetworkWriteKBs() {
-    	return networkWriteKBs;
+    	return hostStats.getNetworkWriteKBs();
     }
 
 	@Override
-	public double getAverageLoad() {
-		return averageLoad;
-	}
-
-	@Override
 	public String getEntityType() {
-		return entityType;
-	}
-
-	@Override
-	public double getXapiMemoryUsageKBs() {
-		return xapiMemoryUsageKBs;
-	}
-
-	@Override
-	public int getNumCpus(){
-		return numCPUs;
+		return hostStats.getEntityType();
 	}
 
 	@Override
