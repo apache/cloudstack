@@ -161,38 +161,34 @@
 </div>
 
 
-
-<!-- advanced search template (begin) -->
-<div id="advanced_search_popup" class="adv_searchpopup_bg" style="display: none;">
+<div id="hidden_container">
+    <!-- advanced search popup (begin) -->
+    <div id="advanced_search_popup" class="adv_searchpopup_bg" style="display: none;">
         <div class="adv_searchformbox">
             <form action="#" method="post">
             <ol>
                 <li>
                     <label>
                         Name:</label>
-                    <input class="text textwatermark" type="text" id="adv_search_name" value="by name"/>
+                    <input class="text textwatermark" type="text" id="adv_search_name" value="by name" />
                 </li>
-                
                 <li>
                     <select class="select" id="adv_search_availability">
                         <option value=""></option>
                         <option value="Required">Required</option>
                         <option value="Optional">Optional</option>
-                        <option value="Unavailable">Unavailable</option>					
+                        <option value="Unavailable">Unavailable</option>
                     </select>
                 </li>
-                
                 <li>
                     <select class="select" id="adv_search_type">
                         <option value=""></option>
                         <option value="Virtual">Virtual</option>
                         <option value="Direct">Direct</option>
-                        <option value="DirectPodBased">DirectPodBased</option>					
+                        <option value="DirectPodBased">DirectPodBased</option>
                     </select>
                 </li>
-                
                 <li>
-
                     <select class="select" id="adv_search_traffictype">
                         <option value=""></option>
                         <option value="Public">Public</option>
@@ -200,13 +196,12 @@
                         <option value="Storage">Storage</option>
                         <option value="Management">Management</option>
                         <option value="Control">Control</option>
-                        <option value="Vpn">Vpn</option>					
+                        <option value="Vpn">Vpn</option>
                     </select>
                 </li>
-               
             </ol>
             </form>
-          </div>
+        </div>
+    </div>
+    <!-- advanced search popup (end) -->
 </div>
-<!-- advanced search template (end) -->
-

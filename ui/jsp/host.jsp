@@ -1063,39 +1063,39 @@
 </div>
 
 
-<!-- advanced search template (begin) -->
-<div class="adv_searchpopup_bg" id="advanced_search_popup" style="display:none;">
-            <div class="adv_searchformbox">
-                <form action="#" method="post">
-                <ol>
-                    <li>
-                        <input class="text  textwatermark" type="text" id="adv_search_name" value="by name" />
-                    </li>
-                    
-                    <li>
-                        <select class="select" id="adv_search_state">
-                            <option value=""></option>
-                            <option value="Up">Up</option>
-                            <option value="Down">Down</option>
-                            <option value="Disconnected">Disconnected</option>
-                            <option value="Updating">Updating</option>
-                            <option value="Alert">Alert</option>
-                            <option value="PrepareForMaintenance">PrepareForMaintenance</option>
-                            <option value="Maintenance">Maintenance</option>
-                            <option value="ErrorInMaintenance">ErrorInMaintenance</option>
-                        </select>
-                    </li>
-                    
-                    <li>
-                        <select class="select" id="adv_search_zone">
-                        </select>
-                    </li>
-                    <li id="adv_search_pod_li" style="display: none;">
-                        <select class="select" id="adv_search_pod">
-                        </select>
-                    </li>           
-                </ol>
-                </form>
-         </div>
+<div id="hidden_container">
+    <!-- advanced search popup (begin) -->
+    <div class="adv_searchpopup_bg" id="advanced_search_popup" style="display: none;">
+        <div class="adv_searchformbox">
+            <form action="#" method="post">
+            <ol>
+                <li>
+                    <input class="text  textwatermark" type="text" id="adv_search_name" value="by name" />
+                </li>
+                <li>
+                    <select class="select" id="adv_search_state">
+                        <option value=""></option>
+                        <option value="Up">Up</option>
+                        <option value="Down">Down</option>
+                        <option value="Disconnected">Disconnected</option>
+                        <option value="Updating">Updating</option>
+                        <option value="Alert">Alert</option>
+                        <option value="PrepareForMaintenance">PrepareForMaintenance</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="ErrorInMaintenance">ErrorInMaintenance</option>
+                    </select>
+                </li>
+                <li>
+                    <select class="select" id="adv_search_zone">
+                    </select>
+                </li>
+                <li id="adv_search_pod_li" style="display: none;">
+                    <select class="select" id="adv_search_pod">
+                    </select>
+                </li>
+            </ol>
+            </form>
+        </div>
+    </div>
+    <!-- advanced search popup (end) -->
 </div>
-<!-- advanced search template (end) -->
