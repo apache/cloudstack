@@ -129,7 +129,7 @@
                     </p>
                     <div class="language_dropdownpanel">
                     	<div class="language_icon"></div>
-                        <p>International</p>
+                        <p>English</p>
                         <div class="language_ddarrow"></div>
                         <div class="language_dropdownbox" style="display:none;">
                         	<ul>
