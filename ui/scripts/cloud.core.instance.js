@@ -136,24 +136,7 @@ function afterLoadInstanceJSP() {
     initDialog("dialog_confirmation_restore_vm");    
     initDialog("dialog_confirmation_start_router");
     initDialog("dialog_confirmation_stop_router");
-    initDialog("dialog_confirmation_reboot_router");
-    
-    //customize advanced search 
-    switch(currentLeftMenuId) {
-        case "leftmenu_instances_my_instances":
-            $("#advanced_search_template_nodomainaccount").attr("id", "advanced_search_template");
-            break;
-            
-        case "leftmenu_instances_running_instances":
-        case "leftmenu_instances_stopped_instances":
-        case "leftmenu_instances_destroyed_instances":
-            $("#advanced_search_template_nostate").attr("id", "advanced_search_template");
-            break;
-            
-        default:
-            $("#advanced_search_template_general").attr("id", "advanced_search_template");
-            break;
-    }
+    initDialog("dialog_confirmation_reboot_router");    
 }
 
 function bindStartVMButton() {    

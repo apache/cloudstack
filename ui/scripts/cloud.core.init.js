@@ -261,34 +261,22 @@ $(document).ready(function() {
 	    }		    
 	});
 	
-	//advanced search	
-    var LeftMenuAdvancedSearchMap = {
-        "leftmenu_instances_my_instances": "advanced_search_popup_nodomainaccount",
-        "leftmenu_instances_running_instances": "advanced_search_popup_nostate",
-        "leftmenu_instances_stopped_instances": "advanced_search_popup_nostate",
-        "leftmenu_instances_destroyed_instances": "advanced_search_popup_nostate"
-    }	
-		
+	//advanced search	   
 	$("#advanced_search_icon").unbind("click").bind("click", function(event) {
 	    if($(this).hasClass("up")) {  //clicking up-arrow          
-	        $("#advanced_search_container").find("#advanced_search_popup").slideUp("500");
+	        getAdvancedSearchPopupInSearchContainer().slideUp("500");
 	        $(this).removeClass("up");	//change arrow from up to down
 	    }
 	    else {  //clicking down-arrow 
 	        $(this).addClass("up");	    //change arrow from down to up
-	          
-	        if($("#advanced_search_container").find("#advanced_search_popup").length > 0) {
-	            $("#advanced_search_container").find("#advanced_search_popup").slideDown("500");
+	         	              
+	        if(getAdvancedSearchPopupInSearchContainer().length > 0) {
+	            getAdvancedSearchPopupInSearchContainer().slideDown("500");
 	        }
-	        else {		            
-	            var $advancedSearchPopup;
-	            if(currentLeftMenuId in LeftMenuAdvancedSearchMap)
-	                $advancedSearchPopup = $("#hidden_container").find("#"+LeftMenuAdvancedSearchMap[currentLeftMenuId]);
-	            else
-	                $advancedSearchPopup = $("#hidden_container").find("#advanced_search_popup");  //default
-	                
-	            $("#advanced_search_container").append($advancedSearchPopup.slideDown("500"));	 
-        	    
+	        else {	
+	            var $advancedSearchPopup = getAdvancedSearchPopupInHiddenContainer();
+	            $advancedSearchPopup.slideDown("500").appendTo($("#advanced_search_container"));
+	            	                    	    
 	            $advancedSearchPopup.unbind("click").bind("click", function(event) {
 	                var $target = $(event.target);
 	                var targetId = $target.attr("id");              	                

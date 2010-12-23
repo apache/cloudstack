@@ -552,13 +552,38 @@ function setBooleanEditField(value, $field) {
         $field.hide();
 }
 
+ var LeftMenuAdvancedSearchMap = {
+    "leftmenu_instances_my_instances": "advanced_search_popup_nodomainaccount",
+    "leftmenu_instances_running_instances": "advanced_search_popup_nostate",
+    "leftmenu_instances_stopped_instances": "advanced_search_popup_nostate",
+    "leftmenu_instances_destroyed_instances": "advanced_search_popup_nostate"
+}			
+
+function getAdvancedSearchPopup($container) {
+    var $advancedSearchPopup;    
+    if(currentLeftMenuId in LeftMenuAdvancedSearchMap)
+        $advancedSearchPopup = $container.find("#"+LeftMenuAdvancedSearchMap[currentLeftMenuId]);
+    else
+        $advancedSearchPopup = $container.find("#advanced_search_popup");  //default
+    return $advancedSearchPopup;
+}
+
+function getAdvancedSearchPopupInHiddenContainer() {
+    return getAdvancedSearchPopup($("#hidden_container"));
+}
+
+function getAdvancedSearchPopupInSearchContainer() {
+    return getAdvancedSearchPopup($("#advanced_search_container"));
+}
+
 function clearMiddleMenu() {
     $("#midmenu_container").empty();
-    $("#midmenu_action_link").hide();    
-    lastSearchType = null;
+    $("#midmenu_action_link").hide();       
     $("#basic_search").find("#search_input").val("");
     $("#advanced_search_icon").removeClass("up");    
-    $("#advanced_search_container").find("#advanced_search_popup").hide().appendTo($("#hidden_container"));    
+       
+	getAdvancedSearchPopupInSearchContainer().hide().appendTo($("#hidden_container"));                     
+    
     $("#midmenu_prevbutton, #midmenu_nextbutton").hide();
     $("#middle_menu_pagination").data("params", null);
 }
