@@ -972,7 +972,7 @@ public class SnapshotManagerImpl implements SnapshotManager {
                 }
                 else if (answer != null) {
                     if (answer.getDetails() != null) {
-                        details = answer.getDetails();
+                        details = "Snapshot deletion failed. Snapshot Id: "+snapshotId;
                     }
                     s_logger.error(details);
                 }
