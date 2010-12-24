@@ -35,6 +35,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.vm.State;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
@@ -61,6 +62,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected final SearchBuilder<VMInstanceVO> IdTypesSearch;
     protected final SearchBuilder<VMInstanceVO> HostIdTypesSearch;
     protected final SearchBuilder<VMInstanceVO> HostIdUpTypesSearch;
+    protected final SearchBuilder<VMInstanceVO> HostUpSearch;
     
     protected final Attribute _updateTimeAttr;
 
@@ -76,6 +78,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         
         LastHostSearch = createSearchBuilder();
         LastHostSearch.and("lastHost", LastHostSearch.entity().getLastHostId(), SearchCriteria.Op.EQ);
+        LastHostSearch.and("state", LastHostSearch.entity().getState(), SearchCriteria.Op.EQ);
         LastHostSearch.done();
        
         ZoneSearch = createSearchBuilder();
@@ -128,6 +131,11 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         HostIdUpTypesSearch.and("types", HostIdUpTypesSearch.entity().getType(), SearchCriteria.Op.IN);
         HostIdUpTypesSearch.and("states", HostIdUpTypesSearch.entity().getState(), SearchCriteria.Op.NIN);
         HostIdUpTypesSearch.done();
+        
+        HostUpSearch = createSearchBuilder();
+        HostUpSearch.and("host", HostUpSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+        HostUpSearch.and("states", HostUpSearch.entity().getState(), SearchCriteria.Op.IN);
+        HostUpSearch.done();
         
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
@@ -184,14 +192,6 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         return listBy(sc);
     }
     
-    @Override
-	public List<VMInstanceVO> listByLastHostId(long hostId) {
-        SearchCriteria<VMInstanceVO> sc = LastHostSearch.create();
-        sc.setParameters("lastHost", hostId);
-        
-        return listBy(sc);
-	}
-
     @Override
     public List<VMInstanceVO> listByZoneId(long zoneId) {
         SearchCriteria<VMInstanceVO> sc = ZoneSearch.create();
@@ -270,6 +270,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
     
     @Override
+    public List<VMInstanceVO> listUpByHostId(Long hostId) {
+        SearchCriteria<VMInstanceVO> sc = HostUpSearch.create();
+        sc.setParameters("host", hostId);
+        sc.setParameters("states", new Object[] {State.Starting, State.Running});
+        return listBy(sc);
+    }
+    
+    @Override
     public List<VMInstanceVO> listByTypes(Type... types) {
         SearchCriteria<VMInstanceVO> sc = TypesSearch.create();
         sc.setParameters("types", (Object[]) types);
@@ -325,4 +333,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     	}
     	return result > 0;
     }
+    
+    @Override
+	public List<VMInstanceVO> listByLastHostId(Long hostId) {
+		SearchCriteria<VMInstanceVO> sc = LastHostSearch.create();
+		sc.setParameters("lastHost", hostId);
+		sc.setParameters("state", State.Stopped);
+		return listBy(sc);
+	}
 }

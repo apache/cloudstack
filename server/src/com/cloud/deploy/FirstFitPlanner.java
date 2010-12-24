@@ -185,8 +185,10 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     			if (reservedCpu >= cpu && reservedMem >= ram) {
     				capacityCpu.setReservedCapacity(reservedCpu - cpu);
     				capacityMem.setReservedCapacity(reservedMem - ram);        
-    				capacityCpu.setUsedCapacity(usedCpu + cpu);
-    				capacityMem.setUsedCapacity(usedMem + ram);
+    				if ((usedCpu + reservedCpu + cpu <= totalCpu) && (reservedMem + usedMem + ram <= totalMem)) {
+    					capacityCpu.setUsedCapacity(usedCpu + cpu);
+    					capacityMem.setUsedCapacity(usedMem + ram);
+    				}
     				success = true;
     			}		
     		} else {

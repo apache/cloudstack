@@ -65,6 +65,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.stateListener.VMStateListener;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
@@ -86,6 +87,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.ItWorkVO.Type;
 import com.cloud.vm.VirtualMachine.Event;
@@ -120,6 +122,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     
     @Inject(adapter=DeploymentPlanner.class)
     private Adapters<DeploymentPlanner> _planners;
+    @Inject(adapter=StateListener.class)
+    private Adapters<StateListener<State, VirtualMachine.Event, VMInstanceVO>> _stateListner;
     
     Map<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>>();
     Map<HypervisorType, HypervisorGuru> _hvGurus = new HashMap<HypervisorType, HypervisorGuru>();
@@ -370,22 +374,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
         @SuppressWarnings("unchecked")
         VirtualMachineGuru<T> vmGuru = (VirtualMachineGuru<T>)_vmGurus.get(vm.getType());
         
-        
         vm.setReservationId(work.getId());
-        
-        if (!stateTransitTo(vm, Event.StartRequested, null)) {
-            throw new ConcurrentOperationException("Unable to start vm "  + vm + " due to concurrent operations");
-        }
         
         ExcludeList avoids = new ExcludeList();
         int retry = _retry;
         DeployDestination dest = null;
         while (retry-- != 0) { // It's != so that it can match -1.      	
-        	/*this will release resource allocated on dest host*/
-        	if (retry < (_retry -1)) {
-        		stateTransitTo(vm, Event.OperationRetry, dest.getHost().getId());
-        	}
-        	
         	VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, null, params, hyperType);
         	  
             for (DeploymentPlanner planner : _planners) {
@@ -398,8 +392,18 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
             }
             
             if (dest == null) {
-            	stateTransitTo(vm, Event.OperationFailed, null);
+            	if (retry != (_retry -1)) {
+            		stateTransitTo(vm, Event.OperationFailed, null);
+            	}
                 throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId());
+            }
+            
+            if (retry == (_retry -1)) {
+            	if (!stateTransitTo(vm, Event.StartRequested, dest.getHost().getId())) {
+            		throw new ConcurrentOperationException("Unable to start vm "  + vm + " due to concurrent operations");
+            	}
+            } else {
+            	stateTransitTo(vm, Event.OperationRetry, dest.getHost().getId());
             }
             
             vm.setDataCenterId(dest.getDataCenter().getId());
@@ -409,7 +413,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
                 _storageMgr.prepare(vmProfile, dest);
                 _networkMgr.prepare(vmProfile, dest, context);
             } catch (ConcurrentOperationException e) {
-            	stateTransitTo(vm, Event.OperationFailed, dest.getHost().getId());
+            	stateTransitTo(vm, Event.OperationFailed, null);
                 throw e;
             } catch (ResourceUnavailableException e) {
                 s_logger.warn("Unable to contact storage.", e);
@@ -420,7 +424,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
                 avoids.add(e);
                 continue;
             } catch (RuntimeException e) {
-            	stateTransitTo(vm, Event.OperationFailed, dest.getHost().getId());
+            	stateTransitTo(vm, Event.OperationFailed, null);
             	return null;
             }
             
@@ -454,7 +458,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
             }
         }
         
-        stateTransitTo(vm, Event.OperationFailed, dest.getHost().getId());
+        stateTransitTo(vm, Event.OperationFailed, null);
         
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creation complete for VM " + vm);
@@ -615,7 +619,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     	_stateMachine.addTransition(State.Expunging, VirtualMachine.Event.OperationFailed, State.Expunging);
     	_stateMachine.addTransition(State.Expunging, VirtualMachine.Event.ExpungeOperation, State.Expunging);
     	
-    	_stateMachine.registerListener(new VMStateListener(_capacityDao, _offeringDao));
+    	_stateMachine.registerListeners(_stateListner);
     }
     
     @Override

@@ -229,7 +229,8 @@ public class UserConcentratedAllocator implements PodAllocator {
     private long calcHostAllocatedCpuMemoryCapacity(long hostId, short capacityType) {
         assert(capacityType == CapacityVO.CAPACITY_TYPE_MEMORY || capacityType == CapacityVO.CAPACITY_TYPE_CPU) : "Invalid capacity type passed in calcHostAllocatedCpuCapacity()";
     	
-        List<VMInstanceVO> vms = _vmInstanceDao.listByLastHostId(hostId);
+        //List<VMInstanceVO> vms = _vmInstanceDao.listByLastHostId(hostId);
+        List<VMInstanceVO> vms = null;
         long usedCapacity = 0;
         for (VMInstanceVO vm : vms) {
         	if(skipCalculation(vm))
