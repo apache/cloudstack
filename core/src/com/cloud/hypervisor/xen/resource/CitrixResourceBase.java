@@ -901,8 +901,8 @@ public abstract class CitrixResourceBase implements ServerResource {
             }
             Map<Host, Host.Record> hostMap = Host.getAllRecords(conn);
             if (hostMap.size() == 1) {
-                s_logger.debug("There's no one to take over as master");
-                return new MaintainAnswer(cmd,false, "Only master in the pool");
+                s_logger.debug("There is the last host in pool " + poolr.uuid );
+                return new MaintainAnswer(cmd);
             }
             Host newMaster = null;
             Host.Record newMasterRecord = null;
@@ -5434,6 +5434,16 @@ public abstract class CitrixResourceBase implements ServerResource {
                 s_logger.debug("host " + hostuuid + " has already been ejected from pool " + _host.pool);
                 return new Answer(cmd);
             }
+            
+            Pool pool = Pool.getAll(conn).iterator().next();
+            Pool.Record poolr = pool.getRecord(conn);
+
+            Host.Record masterRec = poolr.master.getRecord(conn);
+            if (hostuuid.equals(masterRec.uuid)) {
+                s_logger.debug("This is last host to eject, so don't need to eject: " + hostuuid);
+                return new Answer(cmd);
+            }
+            
             Host host = Host.getByUuid(conn, hostuuid);
             // remove all tags cloud stack add before eject
             Host.Record hr = host.getRecord(conn);

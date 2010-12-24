@@ -854,14 +854,24 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             if ( attache != null ) {
                 handleDisconnect(attache, Status.Event.Remove, false);
             }
-            //delete host details
+            // delete host details
             _hostDetailsDao.deleteDetails(hostId);
 
             host.setGuid(null);
+            Long clusterId = host.getClusterId();
             host.setClusterId(null);
             _hostDao.update(host.getId(), host);
-            
+
             _hostDao.remove(hostId);
+            if (clusterId != null) {
+                List<HostVO> hosts = _hostDao.listByCluster(clusterId);
+                if (hosts.size() == 0) {
+                    ClusterVO cluster = _clusterDao.findById(clusterId);
+                    cluster.setGuid(null);
+                    _clusterDao.update(clusterId, cluster);
+                }
+
+            }
             
             //delete the associated primary storage from db
             ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
