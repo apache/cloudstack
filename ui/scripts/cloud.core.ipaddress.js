@@ -333,18 +333,26 @@ function ipToRightPanel($midmenuItem1) {
         $("#tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();	
     }
     else { //ipObj.isstaticnat == false  
-        if(ipObj.forvirtualnetwork == true) { //(public network)
-            //Port Forwarding tab, Load Balancer tab
+        if(ipObj.forvirtualnetwork == true) { //(public network)            
             if(isIpManageable(ipObj.domainid, ipObj.account) == true) {   
+	            //Port Forwarding tab
 	            if(networkObj != null && networkObj.service[0].capability[0].name == "PortForwarding" && networkObj.service[0].capability[0].value == "true")
 	                $("#tab_port_forwarding").show();   
 	            else
 	                $("#tab_port_forwarding").hide();
 	            
-	            $("#tab_load_balancer").show();
-		        // Only show VPN tab if the IP is the source nat IP
+	            //Load Balancer tab	            
+	            if(networkObj != null && networkObj.service[6].name == "Lb")
+	                $("#tab_load_balancer").show();
+	            else
+	                $("#tab_load_balancer").hide();	                 	            
+		        
+		        //VPN tab
 		        if (ipObj.issourcenat == true) {
-			        $("#tab_vpn").show();
+		            if(networkObj.service[3].name == "Vpn")
+			            $("#tab_vpn").show();
+			        else
+			            $("#tab_vpn").hide();
 		        }             
             } 
             else { 
