@@ -313,7 +313,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                 // Increment the number of public IPs for this accountId in the database
                 _accountMgr.incrementResourceCount(ownerId, ResourceType.public_ip);
-                event.setParameters("address=" + ip.getAddress() + "\nsourceNat=true\ndcId="+dcId);
                 event.setDescription("Acquired a public ip: " + ip.getAddress());
                 _eventDao.persist(event);
             } else {
@@ -351,7 +350,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (ip == null) {
                 txn.rollback();
                 event.setLevel(EventVO.LEVEL_ERROR);
-                event.setParameters("dcId=" + dcId);
                 event.setDescription("Failed to acquire a public ip.");
                 _eventDao.persist(event);
                 s_logger.error("Unable to get source nat ip address for account " + ownerId);
@@ -681,13 +679,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
-        final EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(ip.getAllocatedToAccountId());
-        event.setType(EventTypes.EVENT_NET_IP_RELEASE);
-        event.setParameters("address=" + ipAddress + "\nsourceNat="+ip.isSourceNat());
-        event.setDescription("released a public ip: " + ipAddress);
-        _eventDao.persist(event);
+
+        EventUtils.saveEvent(userId, ip.getAllocatedToAccountId(), EventTypes.EVENT_NET_IP_RELEASE, "released a public ip: " + ipAddress);
         
         return success;
     }

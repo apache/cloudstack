@@ -377,8 +377,6 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             } else {
                 event.setDescription("Successfully created load balancer " + lb.getName() + " on ip address " + srcIp + "[" + srcPortStart + "->"
                         + defPortStart + "]");
-                String params = "id=" + newRule.getId() + "\ndcId=" + ipAddr.getDataCenterId();
-                event.setParameters(params);
                 event.setLevel(EventVO.LEVEL_INFO);
                 UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_LOAD_BALANCER_CREATE, ipAddr.getAllocatedToAccountId(), ipAddr.getDataCenterId(), newRule.getId(), null);
                 _usageEventDao.persist(usageEvent);

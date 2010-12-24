@@ -712,11 +712,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     		}
     	}
     	
-        EventVO event = new EventVO();
-        event.setAccountId(volume.getAccountId());
-        event.setUserId(1L);
-        event.setType(EventTypes.EVENT_VOLUME_DETACH);
-        event.setState(Event.State.Completed);
 		if (!sendCommand || (answer != null && answer.getResult())) {
 			// Mark the volume as detached
     		_volsDao.detachVolume(volume.getId());
@@ -725,14 +720,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     			_volsDao.update(volume.getId(), volume);
     		}
     		
-            if(!vm.getName().equals(vm.getDisplayName())) {
-                event.setDescription("Volume: " +volume.getName()+ " successfully detached from VM: "+vm.getName()+"("+vm.getDisplayName()+")");
-            } else {
-                event.setDescription("Volume: " +volume.getName()+ " successfully detached from VM: "+vm.getName());
-            }
-            event.setLevel(EventVO.LEVEL_INFO);
-            _eventDao.persist(event);
-            
             return _volsDao.findById(volumeId);
     	} else {
     		
@@ -1002,13 +989,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     			_ipAddressDao.unassignIpAddress(userVm.getGuestIpAddress());
             	s_logger.debug("Released guest IP address=" + userVm.getGuestIpAddress() + " vmName=" + userVm.getName() +  " dcId=" + userVm.getDataCenterId());
 
-    			EventVO event = new EventVO();
-            	event.setUserId(User.UID_SYSTEM);
-            	event.setAccountId(userVm.getAccountId());
-            	event.setType(EventTypes.EVENT_NET_IP_RELEASE);
-            	event.setParameters("guestIPaddress=" + userVm.getGuestIpAddress() + "\nvmName=" + userVm.getName() +  "\ndcId=" + userVm.getDataCenterId());
-            	event.setDescription("released a public ip: " + userVm.getGuestIpAddress());
-            	_eventDao.persist(event);
+            	EventUtils.saveEvent(User.UID_SYSTEM, userVm.getAccountId(), EventTypes.EVENT_NET_IP_RELEASE, "released a public ip: " + userVm.getGuestIpAddress());
     		} else {
     			if (_IpAllocator != null && _IpAllocator.exteralIpAddressAllocatorEnabled()) {
         			String guestIp = userVm.getGuestIpAddress();
@@ -1151,15 +1132,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
             diskOfferingId = volume.getDiskOfferingId();
             long sizeMB = volume.getSize()/(1024*1024);
-            String eventParams = "id=" + volume.getId() +"\ndoId="+diskOfferingId+"\ntId="+templateId+"\ndcId="+volume.getDataCenterId()+"\nsize="+sizeMB;
-            EventVO volEvent = new EventVO();
-            volEvent.setAccountId(volume.getAccountId());
-            volEvent.setUserId(1L);
-            volEvent.setType(EventTypes.EVENT_VOLUME_CREATE);
-            volEvent.setParameters(eventParams);
             StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
-            volEvent.setDescription("Created volume: "+ volume.getName() +" with size: " + sizeMB + " MB in pool: " + pool.getName());
-            _eventDao.persist(volEvent);
+            EventUtils.saveEvent(User.UID_SYSTEM, volume.getAccountId(), EventTypes.EVENT_VOLUME_CREATE, "Created volume: "+ volume.getName() +" with size: " + sizeMB + " MB in pool: " + pool.getName());
+            
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, templateId , sizeMB);
+            _usageEventDao.persist(usageEvent);
         }
         
         _accountMgr.incrementResourceCount(account.getId(), ResourceType.volume, new Long(volumes.size()));

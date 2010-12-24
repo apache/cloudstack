@@ -112,7 +112,7 @@ public interface AccountManager extends Manager {
     
     void checkAccess(Account account, ControlledEntity... entities) throws PermissionDeniedException;
 
-	boolean deleteAccountInternal(long accountId, long startEventId);
+	boolean deleteAccountInternal(long accountId);
 
 	UserVO createUser(CreateUserCmd cmd);
 

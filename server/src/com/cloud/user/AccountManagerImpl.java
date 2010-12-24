@@ -751,7 +751,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     }
     
     @Override
-    public boolean deleteAccountInternal(long accountId, long startEventId) {
+    public boolean deleteAccountInternal(long accountId) {
         boolean result = false;
         
         try {        	
@@ -779,13 +779,6 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         } catch (Exception e) {
             s_logger.error("exception deleting account: " + accountId, e);            
             return false;
-        }finally{
-            String description = "Account:" + accountId ;
-            if(result){
-            	EventUtils.saveEvent(UserContext.current().getUserId(), accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_ACCOUNT_DELETE, "Successfully deleted " +description, startEventId);
-            }else{
-            	EventUtils.saveEvent(UserContext.current().getUserId(), accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_ACCOUNT_DELETE, "Error deleting " +description, startEventId);
-            }
         }
     }
     
@@ -1356,7 +1349,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         	return true;
         }
         
-        return deleteAccountInternal(accountId, cmd.getStartEventId());
+        return deleteAccountInternal(accountId);
     }
     
     
@@ -1500,7 +1493,13 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             throw new InvalidParameterValueException("Account id : " + user.getAccountId() + " is a system account, delete for user associated with this account is not allowed");
         }
         
-        return _userDao.remove(id);
+        boolean success = _userDao.remove(id);
+        if(success){
+            EventUtils.saveEvent(new Long(1), new Long(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_DELETE, "Deleted User, " + user.getUsername() + " for accountId = " + user.getAccountId());
+        } else {
+            EventUtils.saveEvent(new Long(1), new Long(1), EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_DELETE, "Failed to delete User, " + user.getUsername() + " for accountId = " + user.getAccountId());
+        }
+        return success;
 	}
 
 }

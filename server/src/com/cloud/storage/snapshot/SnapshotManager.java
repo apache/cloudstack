@@ -43,7 +43,7 @@ public interface SnapshotManager {
      * @param cmd the API command wrapping the parameters for creating the snapshot (mainly volumeId) 
      * @return the Snapshot that was created
      */
-    SnapshotVO createSnapshotImpl(Long volumeId, Long policyId, Long startEventId, Long snapshotId) throws ResourceAllocationException;
+    SnapshotVO createSnapshotImpl(Long volumeId, Long policyId, Long snapshotId) throws ResourceAllocationException;
 
     /**
      * After successfully creating a snapshot of a volume, copy the snapshot to the secondary storage for 
@@ -53,7 +53,7 @@ public interface SnapshotManager {
      * @param startEventId event id of the scheduled event for this snapshot
      * @return True if the snapshot was successfully backed up. 
      */
-    public boolean backupSnapshotToSecondaryStorage(SnapshotVO snapshot, long startEventId);
+    public boolean backupSnapshotToSecondaryStorage(SnapshotVO snapshot);
     
     /**
      * Once a snapshot has completed, 
@@ -120,7 +120,7 @@ public interface SnapshotManager {
 
     SnapshotPolicyVO getPolicyForVolume(long volumeId);
 
-    boolean destroySnapshotBackUp(long userId, long snapshotId, long policyId);
+    boolean destroySnapshotBackUp(long snapshotId, long policyId);
 
     /**
      * Create a snapshot of a volume

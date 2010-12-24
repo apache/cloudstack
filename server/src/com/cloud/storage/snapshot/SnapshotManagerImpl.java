@@ -327,7 +327,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     }
     
     @Override @DB
-    public SnapshotVO createSnapshotImpl(Long volumeId, Long policyId, Long snapshotId, Long startEventId) throws ResourceAllocationException {
+    public SnapshotVO createSnapshotImpl(Long volumeId, Long policyId, Long snapshotId) throws ResourceAllocationException {
     	VolumeVO v = _volsDao.findById(volumeId);
     	if ( v != null && _volsDao.getHypervisorType(v.getId()).equals(HypervisorType.KVM)) {
     		/*KVM needs to lock on the vm of volume, because it takes snapshot on behalf of vm, not volume*/
@@ -373,7 +373,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 	    	snapshot = createSnapshotOnPrimary(volume, policyId, snapshotId);
 	        if (snapshot != null && snapshot.getStatus() == Snapshot.Status.CreatedOnPrimary ) {
                 snapshotId = snapshot.getId();
-	            backedUp = backupSnapshotToSecondaryStorage(snapshot, startEventId);
+	            backedUp = backupSnapshotToSecondaryStorage(snapshot);
 	            if (!backedUp) {
 	                throw new CloudRuntimeException("Created snapshot: " + snapshotId + " on primary but failed to backup on secondary");
 	            }
@@ -394,8 +394,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         Long volumeId = cmd.getVolumeId();
         Long policyId = cmd.getPolicyId();
         Long snapshotId = cmd.getEntityId();
-        Long startEventId = cmd.getStartEventId();
-        return createSnapshotImpl(volumeId, policyId, snapshotId, startEventId);
+        return createSnapshotImpl(volumeId, policyId, snapshotId);
     }
 
     private SnapshotVO updateDBOnCreate(Long id, String snapshotPath, long preSnapshotId) {
@@ -428,7 +427,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             // It has entered backupSnapshotToSecondaryStorage.
             // But we have no idea whether it was backed up or not.
             // So call backupSnapshotToSecondaryStorage again.
-            backupSnapshotToSecondaryStorage(snapshot, 0);
+            backupSnapshotToSecondaryStorage(snapshot);
             break;
         case BackedUp:
             // No need to do anything as snapshot has already been backed up.
@@ -436,7 +435,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     }
 
     @Override @DB
-    public boolean backupSnapshotToSecondaryStorage(SnapshotVO ss, long startEventId) {
+    public boolean backupSnapshotToSecondaryStorage(SnapshotVO ss) {
         Long userId = getSnapshotUserId();
         long snapshotId = ss.getId();
         SnapshotVO snapshot = _snapshotDao.acquireInLockTable(snapshotId);
@@ -454,7 +453,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             String primaryStoragePoolNameLabel = _storageMgr.getPrimaryStorageNameLabel(volume);
             Long dcId                          = volume.getDataCenterId();
             Long accountId                     = volume.getAccountId();
-            EventUtils.saveStartedEvent(userId, accountId, EventTypes.EVENT_SNAPSHOT_CREATE, "Start creating snapshot for volume:"+volumeId, startEventId);
             
             String secondaryStoragePoolUrl = _storageMgr.getSecondaryStorageURL(volume.getDataCenterId());
             String snapshotUuid = snapshot.getPath();
@@ -511,23 +509,11 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             Transaction txn = Transaction.currentTxn();
             txn.start();
                        
-            // Create an event
-            EventVO event = new EventVO();
-            event.setUserId(userId);
-            event.setAccountId(volume.getAccountId());
-            event.setType(EventTypes.EVENT_SNAPSHOT_CREATE);
-            event.setStartId(startEventId);
-            String snapshotName = snapshot.getName();
-            
             if (backedUp) {
                 snapshot.setBackupSnapshotId(backedUpSnapshotUuid);
                 snapshot.setStatus(Snapshot.Status.BackedUp);
                 _snapshotDao.update(snapshotId, snapshot);
-                String eventParams = "id=" + snapshotId + "\nssName=" + snapshotName +"\nsize=" + volume.getSize()+"\ndcId=" + volume.getDataCenterId();
-                event.setDescription("Backed up snapshot id: " + snapshotId + " to secondary for volume:" + volumeId);
-                event.setLevel(EventVO.LEVEL_INFO);                
-                event.setParameters(eventParams);
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), volume.getDataCenterId(), snapshotId, snapshotName, null, null, volume.getSize());
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), volume.getDataCenterId(), snapshotId, snapshot.getName(), null, null, volume.getSize());
                 _usageEventDao.persist(usageEvent);
 
             }
@@ -540,11 +526,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 // 3) backupSnapshotToSecondaryStorage of the next snapshot
                 // will take care of cleaning up the state of this snapshot
                 _snapshotDao.remove(snapshotId);
-                event.setLevel(EventVO.LEVEL_ERROR);
-                event.setDescription("Failed to backup snapshot id: " + snapshotId + " to secondary for volume:" + volumeId);
             }
-            // Save the event
-            _eventDao.persist(event);
             txn.commit();
             
             return backedUp;
@@ -601,7 +583,13 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             s_logger.debug("Max snaps: "+ policy.getMaxSnaps() + " exceeded for snapshot policy with Id: " + policyId + ". Deleting oldest snapshot: " + oldSnapId);
             // Excess snapshot. delete it asynchronously
             //destroySnapshotAsync(userId, volumeId, oldSnapId, policyId);
-            deleteSnapshotInternal(oldSnapId, policyId, userId);
+            // create the event
+            long startEventId = EventUtils.saveStartedEvent(userId, oldestSnapshot.getAccountId(), EventTypes.EVENT_SNAPSHOT_DELETE, "Deleting snapshot with Id:"+oldSnapId);
+            if(deleteSnapshotInternal(oldSnapId, policyId)){
+                EventUtils.saveEvent(userId, oldestSnapshot.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_SNAPSHOT_DELETE, "Deleted snapshot with Id:"+oldSnapId, startEventId);
+            } else {
+                EventUtils.saveEvent(userId, oldestSnapshot.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_SNAPSHOT_DELETE, "Failed to delete snapshot with Id:"+oldSnapId, startEventId);
+            }
             snaps.remove(oldestSnapshot);
         }
         
@@ -633,7 +621,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
     @Override @DB
     public boolean deleteSnapshot(DeleteSnapshotCmd cmd) {
-    	Long userId = getSnapshotUserId();
     	Long snapshotId = cmd.getId();
     	
         //Verify parameters
@@ -651,7 +638,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
         boolean status = true; 
         if (Type.MANUAL.ordinal() == snapshotCheck.getSnapshotType()) {
-            status = deleteSnapshotInternal(snapshotId, Snapshot.MANUAL_POLICY_ID, userId);
+            status = deleteSnapshotInternal(snapshotId, Snapshot.MANUAL_POLICY_ID);
 
             if (!status) {
                 s_logger.warn("Failed to delete snapshot");
@@ -661,7 +648,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             List<SnapshotPolicyVO> policies = listPoliciesforVolume(snapshotCheck.getVolumeId());
             
             for (SnapshotPolicyVO policy : policies) {
-                status = deleteSnapshotInternal(snapshotId, policy.getId(), userId);
+                status = deleteSnapshotInternal(snapshotId, policy.getId());
                 
                 if (!status) {
                     s_logger.warn("Failed to delete snapshot");
@@ -673,7 +660,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         return status;
     }
 
-	private boolean deleteSnapshotInternal(Long snapshotId, Long policyId, Long userId) {
+	private boolean deleteSnapshotInternal(Long snapshotId, Long policyId) {
 	    if (s_logger.isDebugEnabled()) {
 	        s_logger.debug("Calling deleteSnapshot for snapshotId: " + snapshotId + " and policyId " + policyId);
 	    }
@@ -699,14 +686,14 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             while (lastSnapshot.getRemoved() != null) {
                 String BackupSnapshotId = lastSnapshot.getBackupSnapshotId();
                 if (BackupSnapshotId != null) {
-                    if (destroySnapshotBackUp(userId, lastId, policyId)) {
+                    if (destroySnapshotBackUp(lastId, policyId)) {
 
                     } else {
                         s_logger.debug("Destroying snapshot backup failed " + lastSnapshot);
                         break;
                     }
                 }
-                postDeleteSnapshot(userId, lastId, policyId);
+                postDeleteSnapshot(lastId, policyId);
                 lastId = lastSnapshot.getPrevSnapshotId();
                 if (lastId == 0) {
                     break;
@@ -723,7 +710,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     }
 
     @Override @DB
-    public boolean destroySnapshotBackUp(long userId, long snapshotId, long policyId) {
+    public boolean destroySnapshotBackUp(long snapshotId, long policyId) {
         boolean success = false;
         String details = null;
         SnapshotVO snapshot = _snapshotDao.findByIdIncludingRemoved(snapshotId);
@@ -762,18 +749,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             s_logger.error(details);
         }
 
-        // create the event
-        String eventParams = "id=" + snapshotId;
-        EventVO event = new EventVO();
-        
-        event.setUserId(userId);
-        event.setAccountId((snapshot != null) ? snapshot.getAccountId() : 0);
-        event.setType(EventTypes.EVENT_SNAPSHOT_DELETE);
-        event.setDescription(details);
-        event.setParameters(eventParams);
-        event.setLevel(success ? EventVO.LEVEL_INFO : EventVO.LEVEL_ERROR);
-        _eventDao.persist(event);
-
         if(success){
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), volume.getDataCenterId(), snapshotId, snapshot.getName(), null, null, volume.getSize());
             _usageEventDao.persist(usageEvent);
@@ -785,7 +760,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     }
 
     @DB
-    protected void postDeleteSnapshot(long userId, long snapshotId, long policyId) {
+    protected void postDeleteSnapshot(long snapshotId, long policyId) {
         // Remove the snapshot from the snapshots table and the snap_policy_ref table.
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -957,15 +932,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         	    	_accountMgr.decrementResourceCount(accountId, ResourceType.snapshot);
         	    	
         	        //Log event after successful deletion
-        	        String eventParams = "id=" + snapshot.getId();
-        	        EventVO event = new EventVO();
-        	        event.setUserId(1L);
-        	        event.setAccountId(snapshot.getAccountId());
-        	        event.setType(EventTypes.EVENT_SNAPSHOT_DELETE);
-        	        event.setDescription("Successfully deleted snapshot " + snapshot.getId() + " for volumeId: " + snapshot.getVolumeId());
-        	        event.setParameters(eventParams);
-        	        event.setLevel(EventVO.LEVEL_INFO);
-        	        _eventDao.persist(event);
+        	        EventUtils.saveEvent(User.UID_SYSTEM, snapshot.getAccountId(), EventTypes.EVENT_SNAPSHOT_DELETE, "Successfully deleted snapshot " + snapshot.getId() + " for volumeId: " + snapshot.getVolumeId());
                     UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), volume.getDataCenterId(), snapshot.getId(), snapshot.getName(), null, null, volume.getSize());
                     _usageEventDao.persist(usageEvent);
         	    }

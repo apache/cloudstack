@@ -85,7 +85,7 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         User user = _responseGenerator.findUserById(getId());
-        return (user != null ? ("User " + user.getUsername() + " (id: " + user.getId() + ") and accountId = " + user.getAccountId()) : "user delete, but this user does not exist in the system");
+        return (user != null ? ("deleting User " + user.getUsername() + " (id: " + user.getId() + ") and accountId = " + user.getAccountId()) : "user delete, but this user does not exist in the system");
     }
 	
     @Override

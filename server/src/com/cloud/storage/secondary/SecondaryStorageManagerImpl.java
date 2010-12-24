@@ -64,6 +64,7 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
@@ -123,6 +124,7 @@ import com.cloud.utils.net.NfsUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachine;
@@ -227,8 +229,12 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	
 	@Override
 	public SecondaryStorageVmVO startSecStorageVm(long secStorageVmId) {
+	    boolean started = false;
+	    long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START, "Starting secondary storage Vm with Id: "+secStorageVmId);
 		try {
-			return start(secStorageVmId);
+		    SecondaryStorageVmVO ssvm = start(secStorageVmId);
+		    started = true;
+		    return ssvm;
 		} catch (StorageUnavailableException e) {
 			s_logger.warn("Exception while trying to start secondary storage vm", e);
 			return null;
@@ -240,6 +246,12 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			return null;
 		} catch (ResourceUnavailableException e) {
 			return null;
+		} finally {
+		    if(started){
+		        EventUtils.saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_INFO, EventTypes.EVENT_SSVM_START, "Started secondary storage Vm with Id: "+secStorageVmId, startEventId);
+		    } else {
+		        EventUtils.saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_ERROR, EventTypes.EVENT_SSVM_START, "Failed to start secondary storage Vm with Id: "+secStorageVmId, startEventId);
+		    }
 		}
 	}
 	
@@ -369,6 +381,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             s_logger.debug("Assign secondary storage vm from a newly started instance for request from data center : " + dataCenterId);
         }
 
+		long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_CREATE, "Creating secondary storage Vm in zone : "+dataCenterId);
 		Map<String, Object> context = createSecStorageVmInstance(dataCenterId);
 
 		long secStorageVmId = (Long) context.get("secStorageVmId");
@@ -381,7 +394,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			if (context.get("publicIpAddress") != null) {
                 freePublicIpAddress((String) context.get("publicIpAddress"), dataCenterId, 0);
             }
-
+			EventUtils.saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_ERROR, EventTypes.EVENT_SSVM_CREATE, "Failed to create secondary storage Vm in zone : "+dataCenterId, startEventId);
 			return null;
 		}
 
@@ -393,6 +406,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 					SecStorageVmAlertEventArgs.SSVM_CREATED,
 					dataCenterId, secStorageVmId, secStorageVm, null)
 			);
+			EventUtils.saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_INFO, EventTypes.EVENT_SSVM_CREATE, "Successfully created secondary storage Vm "+ secStorageVm.getName() +" in zone : "+dataCenterId, startEventId);
 			return secStorageVm;
 		} else {
 			if (s_logger.isDebugEnabled()) {
@@ -406,17 +420,16 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 					dataCenterId, secStorageVmId, null, "Unable to allocate storage")
 			);
 			destroySecStorageVmDBOnly(secStorageVmId);
+			EventUtils.saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_ERROR, EventTypes.EVENT_SSVM_CREATE, "Failed to create secondary storage Vm in zone : "+dataCenterId, startEventId);
 		}
 		return null;
 	}
 	
 	 protected Map<String, Object> createSecStorageVmInstance(long dataCenterId) {
-		 long startEventId = saveStartedEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_CREATE, "Creating secondary storage Vm in zone : "+dataCenterId, 0);
 		 HostVO secHost = _hostDao.findSecondaryStorageHost(dataCenterId);
 	        if (secHost == null) {
 				String msg = "No secondary storage available in zone " + dataCenterId + ", cannot create secondary storage vm";
 				s_logger.warn(msg);
-				saveFailedEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_CREATE, msg, startEventId);
 	        	throw new CloudRuntimeException(msg);
 	        }
 	        
@@ -1174,13 +1187,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 }
 
 				_secStorageVmDao.remove(vmId);
-				final EventVO event = new EventVO();
-				event.setUserId(User.UID_SYSTEM);
-				event.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-				event.setType(EventTypes.EVENT_SSVM_DESTROY);
-				event.setLevel(EventVO.LEVEL_INFO);
-				event.setDescription("Secondary Storage Vm destroyed - " + secStorageVm.getName());
-				_eventDao.persist(event);
+				EventUtils.saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_DESTROY, "Secondary Storage Vm destroyed - " + secStorageVm.getName());
 			}
 			txn.commit();
 			return true;
@@ -1383,34 +1390,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		return "secStorageVm." + id;
 	}
 	
-	private Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId) {
-	    EventVO event = new EventVO();
-	    event.setUserId(userId);
-	    event.setAccountId(accountId);
-	    event.setType(type);
-	    event.setState(Event.State.Started);
-	    event.setDescription(description);
-	    event.setStartId(startEventId);
-	    event = _eventDao.persist(event);
-	    if(event != null) {
-            return event.getId();
-        }
-	    return null;
-	}
-	
-	private void saveFailedEvent(Long userId, Long accountId, String type, String description, long startEventId) {
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(accountId);
-        event.setType(type);
-        event.setState(Event.State.Completed);
-        event.setLevel(EventVO.LEVEL_ERROR);
-        event.setDescription(description);
-        event.setStartId(startEventId);
-        _eventDao.persist(event);
-        return;
-    }
-
 	@Override
 	public SecondaryStorageVmVO findByName(String name) {
 		if (!VirtualMachineName.isValidSecStorageVmName(name, null)) {

@@ -1939,21 +1939,19 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     return;
                 }
 
-                String params = "\nsourceNat=" + false + "\ndcId=" + zoneId;
-
                 // Associate the IP's to DomR
                 boolean success = _networkMgr.associateIP(router,ipAddrsList, true, 0);
                 String errorMsg = "Unable to assign public IP address pool";
                 if (!success) {
                     s_logger.debug(errorMsg);
                      for(String ip : ipAddrsList){
-                         EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_NET_IP_ASSIGN, "Unable to assign public IP " +ip, params);
+                         EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_NET_IP_ASSIGN, "Unable to assign public IP " +ip);
                      }
                     throw new CloudRuntimeException(errorMsg);
                 }
                 txn.commit();
                 for(String ip : ipAddrsList){
-                    EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_NET_IP_ASSIGN, "Successfully assigned account IP " +ip, params);
+                    EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_NET_IP_ASSIGN, "Successfully assigned account IP " +ip);
                 }
             }
             } catch (CloudRuntimeException iee) {

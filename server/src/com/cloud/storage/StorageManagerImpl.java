@@ -91,6 +91,7 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
@@ -139,6 +140,7 @@ import com.cloud.storage.snapshot.SnapshotScheduler;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -644,20 +646,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
 
     @DB
-    protected VolumeVO createVolumeFromSnapshot(VolumeVO volume, long snapshotId, long startEventId) {
-        EventVO event = new EventVO();
-        event.setUserId(UserContext.current().getUserId());
-        event.setAccountId(volume.getAccountId());
-        event.setType(EventTypes.EVENT_VOLUME_CREATE);
-        event.setState(Event.State.Started);
-        event.setStartId(startEventId);
-        event.setDescription("Creating volume from snapshot with id: "+snapshotId);
-        _eventDao.persist(event);
+    protected VolumeVO createVolumeFromSnapshot(VolumeVO volume, long snapshotId) {
 
         // By default, assume failure.
         VolumeVO createdVolume = null;
-        String details = null;
-        Long volumeId = null;
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId); // Precondition: snapshot is not null and not removed.
         Long origVolumeId = snapshot.getVolumeId();
         VolumeVO originalVolume = _volsDao.findById(origVolumeId); // NOTE: Original volume could be destroyed and removed.
@@ -666,15 +658,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             template = _templateDao.findById(originalVolume.getTemplateId());
         }
 
-        // everything went well till now
-        DataCenterVO dc = _dcDao.findById(originalVolume.getDataCenterId());
-
         Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(volume, snapshot, template, originalVolume.getSize());
         createdVolume = volumeDetails.first();
-        if (createdVolume != null) {
-            volumeId = createdVolume.getId();
-        }
-        details = volumeDetails.second();
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -687,27 +672,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         diskOfferingId = originalVolume.getDiskOfferingId();
         long sizeMB = createdVolume.getSize()/(1024*1024);
 
-        String poolName = _storagePoolDao.findById(createdVolume.getPoolId()).getName();
-        String eventParams = "id=" + volumeId +"\ndoId="+diskOfferingId+"\ntId="+templateId+"\ndcId="+originalVolume.getDataCenterId()+"\nsize="+sizeMB;
-        event = new EventVO();
-        event.setAccountId(volume.getAccountId());
-        event.setUserId(UserContext.current().getUserId());
-        event.setType(EventTypes.EVENT_VOLUME_CREATE);
-        event.setParameters(eventParams);
-        event.setStartId(startEventId);
-        event.setState(Event.State.Completed);
         if (createdVolume.getPath() != null) {
-            event.setDescription("Created volume: "+ createdVolume.getName() + " with size: " + sizeMB + " MB in pool: " + poolName + " from snapshot id: " + snapshotId);
-            event.setLevel(EventVO.LEVEL_INFO);
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, templateId , sizeMB);
             _usageEventDao.persist(usageEvent);
         }
-        else {
-            details = "CreateVolume From Snapshot for snapshotId: " + snapshotId + " failed at the backend, reason " + details;
-            event.setDescription(details);
-            event.setLevel(EventVO.LEVEL_ERROR);
-        }
-        _eventDao.persist(event);
         txn.commit();
         return createdVolume;
     }
@@ -859,9 +827,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         txn.start();
         if (Storage.ImageFormat.ISO == template.getFormat()) {
             rootVol = new VolumeVO(VolumeType.ROOT, vm.getId(), vm.getInstanceName() + "-ROOT", dc.getId(), pod.getId(), account.getId(), account.getDomainId(),(size>0)? size : diskOffering.getDiskSizeInBytes());
-
-        	createStartedEvent(account, rootVol);
-        	
             rootVol.setDiskOfferingId(diskOffering.getId());
             rootVol.setSourceType(SourceType.Template);
             rootVol.setSourceId(template.getId());
@@ -869,9 +834,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             rootVol = _volsDao.persist(rootVol);
         } else {
             rootVol = new VolumeVO(VolumeType.ROOT, vm.getId(), template.getId(), vm.getInstanceName() + "-ROOT", dc.getId(), pod.getId(), account.getId(), account.getDomainId(), offering.isRecreatable());
-         
-        	createStartedEvent(account, rootVol);
-            
             rootVol.setDiskOfferingId(offering.getId());
             rootVol.setTemplateId(template.getId());
             rootVol.setSourceId(template.getId());
@@ -881,9 +843,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             
             if ((diskOffering != null && diskOffering.getDiskSizeInBytes() > 0) || (diskOffering != null && diskOffering.isCustomized())) {
                 dataVol = new VolumeVO(VolumeType.DATADISK, vm.getId(), vm.getInstanceName() + "-DATA", dc.getId(), pod.getId(), account.getId(), account.getDomainId(), (size>0)? size : diskOffering.getDiskSizeInBytes());
-                
-                createStartedEvent(account, dataVol);
-                
                 dataVol.setDiskOfferingId(diskOffering.getId());
                 dataVol.setSourceType(SourceType.DiskOffering);
                 dataVol.setSourceId(diskOffering.getId());
@@ -924,17 +883,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
     }
 
-	private void createStartedEvent(Account account, VolumeVO rootVol) {
-		EventVO event1 = new EventVO();
-		event1.setAccountId(account.getId());
-		event1.setUserId(1L);
-		event1.setType(EventTypes.EVENT_VOLUME_CREATE);
-		event1.setState(Event.State.Started);
-		event1.setDescription("Create volume: " + rootVol.getName()+ "started");
-		_eventDao.persist(event1);
-	}
-    
-
     @Override
     public long createUserVM(Account account, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, ServiceOfferingVO offering, DiskOfferingVO diskOffering,
             List<StoragePoolVO> avoids, long size) {
@@ -954,25 +902,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         	{
         		s_logger.warn("Error updating the attached value for volume "+v.getId()+":"+e);
         	}
-        	
-            long templateId = -1;
-            long doId = v.getDiskOfferingId();
-        	if(v.getVolumeType() == VolumeType.ROOT && Storage.ImageFormat.ISO != template.getFormat()){
-        	        templateId = template.getId();
-        	        doId = -1;
-        	}
-        	
-        	long volumeId = v.getId();
-        	// Create an event
-            long sizeMB = v.getSize() / (1024 * 1024);
-        	String eventParams = "id=" + volumeId + "\ndoId=" + doId + "\ntId=" + templateId + "\ndcId=" + dc.getId() + "\nsize=" + sizeMB;
-        	EventVO event = new EventVO();
-        	event.setAccountId(account.getId());
-        	event.setUserId(1L);
-        	event.setType(EventTypes.EVENT_VOLUME_CREATE);
-        	event.setParameters(eventParams);
-        	event.setDescription("Created volume: " + v.getName() + " with size: " + sizeMB + " MB");
-        	_eventDao.persist(event);
         }
         
         return volumes.get(0).getPoolId();
@@ -1853,10 +1782,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     public VolumeVO createVolume(CreateVolumeCmd cmd) {
         VolumeVO volume = _volsDao.findById(cmd.getEntityId());
 //        VolumeVO createdVolume = null;
-        Long userId = UserContext.current().getUserId();
 
         if (cmd.getSnapshotId() != null) {
-            return createVolumeFromSnapshot(volume, cmd.getSnapshotId(), cmd.getStartEventId());
+            return createVolumeFromSnapshot(volume, cmd.getSnapshotId());
         } else {
             DataCenterVO dc = _dcDao.findById(cmd.getZoneId());
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(cmd.getDiskOfferingId());
@@ -1880,12 +1808,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 }
 
 */
-                // Create an event
-                EventVO event = new EventVO();
-                event.setAccountId(volume.getAccountId());
-                event.setUserId(userId);
-                event.setType(EventTypes.EVENT_VOLUME_CREATE);
-                event.setStartId(cmd.getStartEventId());
 /*
                 Transaction txn = Transaction.currentTxn();
 
@@ -1906,14 +1828,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 //                    long sizeMB = createdVolume.getSize() / (1024 * 1024);
 //                    StoragePoolVO pool = _storagePoolDao.findById(createdVolume.getPoolId());
 //                    String eventParams = "id=" + createdVolume.getId() + "\ndoId=" + diskOffering.getId() + "\ntId=" + -1 + "\ndcId=" + dc.getId() + "\nsize=" + sizeMB;
-                    String eventParams = "id=" + volume.getId() + "\ndoId=" + diskOffering.getId() + "\ntId=" + -1 + "\ndcId=" + dc.getId() + "\nsize=" + sizeMB;
-                    event.setLevel(EventVO.LEVEL_INFO);
 //                    event.setDescription("Created volume: " + createdVolume.getName() + " with size: " + sizeMB + " MB in pool: " + pool.getName());
 //                    event.setDescription("Created volume: " + createdVolume.getName() + " with size: " + sizeMB + " MB");
-                    event.setDescription("Created volume: " + volume.getName() + " with size: " + sizeMB + " MB");
-                    event.setParameters(eventParams);
-                    event.setState(Event.State.Completed);
-                    _eventDao.persist(event);
                     UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOffering.getId(), null , sizeMB);
                     _usageEventDao.persist(usageEvent);
 /*
@@ -1944,15 +1860,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         Long volumeId = volume.getId();
         _volsDao.destroyVolume(volumeId);
         
-        String eventParams = "id=" + volumeId;
-        EventVO event = new EventVO();
-        event.setAccountId(volume.getAccountId());
-        event.setUserId(1L);
-        event.setType(EventTypes.EVENT_VOLUME_DELETE);
-        event.setParameters(eventParams);
-        event.setDescription("Volume " +volume.getName()+ " deleted");
-        event.setLevel(EventVO.LEVEL_INFO);
-        _eventDao.persist(event);
+        EventUtils.saveEvent(User.UID_SYSTEM, volume.getAccountId(), EventTypes.EVENT_VOLUME_DELETE, "Volume " +volume.getName()+ " deleted");
         
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), null, null , null);
         _usageEventDao.persist(usageEvent);
@@ -2660,6 +2568,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         
         if(vm instanceof UserVm){
             long sizeMB = size / (1024 * 1024);
+            
+            EventUtils.saveEvent(User.UID_SYSTEM, vol.getAccountId(), EventTypes.EVENT_VOLUME_CREATE, "Created volume: "+ vol.getName() +" with size: " + sizeMB + " MB");
+            
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), null , sizeMB);
             _usageEventDao.persist(usageEvent);
         }
@@ -2697,6 +2608,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         
         if(vm instanceof UserVm){
             long sizeMB = vol.getSize() / (1024 * 1024);
+            
+            EventUtils.saveEvent(User.UID_SYSTEM, vol.getAccountId(), EventTypes.EVENT_VOLUME_CREATE, "Created volume: "+ vol.getName() +" with size: " + sizeMB + " MB");
+            
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), template.getId() , sizeMB);
             _usageEventDao.persist(usageEvent);
         }

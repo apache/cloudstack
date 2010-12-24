@@ -3207,17 +3207,13 @@ public class ManagementServerImpl implements ManagementServer {
                 if ((cleanup != null) && cleanup.booleanValue()) {
                     boolean success = cleanupDomain(domainId, ownerId);
                     if (!success) {
-                    	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_DELETE, "Failed to clean up domain resources and sub domains, domain with id " + domainId + " was not deleted.");
                         s_logger.error("Failed to clean up domain resources and sub domains, delete failed on domain " + domain.getName() + " (id: " + domainId + ").");
                         return false;
                     }
                 } else {
                     if (!_domainDao.remove(domainId)) {
-                    	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_DELETE, "Domain with id " + domainId + " was not deleted");
                         s_logger.error("Delete failed on domain " + domain.getName() + " (id: " + domainId + "); please make sure all users and sub domains have been removed from the domain before deleting");
                         return false;
-                    } else {
-                    	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_DELETE, "Domain with id " + domainId + " was deleted");
                     }
                 }
             } else {
@@ -3251,7 +3247,14 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
             List<AccountVO> accounts = _accountDao.search(sc, null);
             for (AccountVO account : accounts) {
-                	success = (success && _accountMgr.deleteAccountInternal(account.getAccountId(), 0));
+                success = (success && _accountMgr.deleteAccountInternal(account.getAccountId()));
+                String description = "Account:" + account.getAccountId();
+                if(success){
+                    EventUtils.saveEvent(User.UID_SYSTEM, account.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ACCOUNT_DELETE, "Successfully deleted " +description);
+                }else{
+                    EventUtils.saveEvent(User.UID_SYSTEM, account.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ACCOUNT_DELETE, "Error deleting " +description);
+                }
+
             }
         }
 
