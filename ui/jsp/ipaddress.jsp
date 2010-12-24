@@ -305,10 +305,12 @@
 	                    <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 15%;">
-	                    <select id="algorithm_select" class="select" style="width: 70%;">                       
+	                    <select id="algorithm_select" class="select" style="width: 70%;">       
+	                        <!--                
 							<option value="roundrobin">roundrobin</option>
 	                        <option value="leastconn">leastconn</option>
 	                        <option value="source">source</option>
+	                        -->  
 	                    </select>
 	                </div>
 	                <div class="grid_row_cell" style="width: 29%;">

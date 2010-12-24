@@ -425,6 +425,8 @@ function ipJsonToLoadBalancerTab() {
     if(ipObj == null)
         return;
    
+    var networkObj = $midmenuItem1.data("networkObj");
+   
     var ipAddress = ipObj.ipaddress;
     if(ipAddress == null || ipAddress.length == 0)
         return;          
@@ -432,7 +434,14 @@ function ipJsonToLoadBalancerTab() {
     var $thisTab = $("#right_panel_content #tab_content_load_balancer");  
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
-		
+			
+	if(networkObj.service[6].name == "Lb" && networkObj.service[6].capability[0].name == "SupportedLbAlgorithms") {
+       var algorithms = networkObj.service[6].capability[0].value;  //e.g. "roundrobin,leastconn,sourceip"        
+       var array1 = algorithms.split(",");
+       var $algorithmField = $("#create_load_balancer_row").find("#algorithm_select").empty();
+       for(var i=0; i<array1.length; i++)
+           $algorithmField.append("<option value='"+array1[i]+"'>"+array1[i]+"</option>")
+    }  	
     refreshCreateLoadBalancerRow();            
         
     $.ajax({
