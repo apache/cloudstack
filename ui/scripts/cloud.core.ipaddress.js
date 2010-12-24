@@ -349,11 +349,14 @@ function ipToRightPanel($midmenuItem1) {
 		        
 		        //VPN tab
 		        if (ipObj.issourcenat == true) {
-		            if(networkObj.service[3].name == "Vpn")
+		            if(networkObj != null && networkObj.service[3].name == "Vpn")
 			            $("#tab_vpn").show();
 			        else
 			            $("#tab_vpn").hide();
-		        }             
+		        }   
+		        else {
+		            $("#tab_vpn").hide();
+		        }          
             } 
             else { 
 	            $("#tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();	    
@@ -841,6 +844,8 @@ function ipJsonToDetailsTab() {
     if(ipObj == null)
         return;
     
+    var networkObj = $midmenuItem1.data("networkObj");
+    
     var ipaddress = ipObj.ipaddress;   
     if(ipaddress == null || ipaddress.length == 0)
         return;
@@ -913,7 +918,9 @@ function ipJsonToDetailsTab() {
 			noAvailableActions = false;
         } else {  
 			if(ipObj.issourcenat != true) {    
-				buildActionLinkForTab("Enable Static NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);
+			    if(networkObj != null && networkObj.service[0].capability[1].name == "StaticNat" && networkObj.service[0].capability[1].value == "true")
+				    buildActionLinkForTab("Enable Static NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);
+				    
 				buildActionLinkForTab("Release IP", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);
 				noAvailableActions = false;
 			}
