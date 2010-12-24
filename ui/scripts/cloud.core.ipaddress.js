@@ -308,6 +308,22 @@ function isIpManageable(domainid, account) {
 function ipToRightPanel($midmenuItem1) {       
     var ipObj = $midmenuItem1.data("jsonObj");
     
+    var networkObj;
+    if(ipObj.networkid != null) {  
+        $.ajax({            
+            data: createURL("command=listNetworks&id="+ipObj.networkid+"&isSystem=true"),
+            dataType: "json",
+            async: false,
+            success: function(json) {                          
+                var items = json.listnetworksresponse.network;
+                if(items != null && items.length > 0) {  
+                    networkObj = items[0];                
+                    $midmenuItem1.data("networkObj", networkObj);    
+                }
+            }
+        });       
+    }
+    
     copyActionInfoFromMidMenuToRightPanel($midmenuItem1);
     
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
@@ -319,8 +335,13 @@ function ipToRightPanel($midmenuItem1) {
     else { //ipObj.isstaticnat == false  
         if(ipObj.forvirtualnetwork == true) { //(public network)
             //Port Forwarding tab, Load Balancer tab
-            if(isIpManageable(ipObj.domainid, ipObj.account) == true) {     
-	            $("#tab_port_forwarding, #tab_load_balancer").show();
+            if(isIpManageable(ipObj.domainid, ipObj.account) == true) {   
+	            if(networkObj != null && networkObj.service[0].capability[0].name == "PortForwarding" && networkObj.service[0].capability[0].value == "true")
+	                $("#tab_port_forwarding").show();   
+	            else
+	                $("#tab_port_forwarding").hide();
+	            
+	            $("#tab_load_balancer").show();
 		        // Only show VPN tab if the IP is the source nat IP
 		        if (ipObj.issourcenat == true) {
 			        $("#tab_vpn").show();
@@ -832,21 +853,7 @@ function ipJsonToDetailsTab() {
             }
         }
     });        
-        
-    if(ipObj.networkid != null) {  
-        $.ajax({            
-            data: createURL("command=listNetworks&id="+ipObj.networkid+"&isSystem=true"),
-            dataType: "json",
-            async: false,
-            success: function(json) {                          
-                var items = json.listnetworksresponse.network;
-                if(items != null && items.length > 0) {                   
-                    $midmenuItem1.data("networkObj", items[0]);    
-                }
-            }
-        });       
-    }
-          
+   
     $thisTab.find("#grid_header_title").text(fromdb(ipObj.ipaddress));       
     $thisTab.find("#ipaddress").text(fromdb(ipObj.ipaddress));
     $thisTab.find("#zonename").text(fromdb(ipObj.zonename));
