@@ -124,7 +124,7 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement 
         if (router == null) {
             return true;
         }
-        return _routerMgr.stopRouter(router.getId(), 1);
+        return _routerMgr.stopRouter(router.getId());
     }
 
     @Override

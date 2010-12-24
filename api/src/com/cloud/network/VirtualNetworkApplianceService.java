@@ -53,7 +53,7 @@ public interface VirtualNetworkApplianceService {
      * @throws ResourceUnavailableException 
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    VirtualRouter stopRouter(long routerId) throws ResourceUnavailableException, ConcurrentOperationException;
+    VirtualRouter stopDomainRouter(long routerId) throws ResourceUnavailableException, ConcurrentOperationException;
     
     /**
      * Reboots domain router

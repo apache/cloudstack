@@ -345,15 +345,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return false;
         }
 
-        EventVO event = new EventVO();
-        event.setUserId(User.UID_SYSTEM);
-        event.setAccountId(router.getAccountId());
-        event.setType(EventTypes.EVENT_ROUTER_DESTROY);
-        event.setState(Event.State.Started);
-        event.setParameters("id=" + routerId);
-        event.setDescription("Starting to destroy router : " + router.getName());
-        event = _eventDao.persist(event);
-
         try {
             if (router.getState() == State.Destroyed || router.getState() == State.Expunging || router.getRemoved() != null) {
                 if (s_logger.isDebugEnabled()) {
@@ -362,10 +353,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 return true;
             }
 
+            long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, router.getAccountId(), EventTypes.EVENT_ROUTER_STOP, "Starting to stop router : " + router.getName());
             if (!stop(router)) {
                 s_logger.debug("Unable to stop the router: " + routerId);
+                EventUtils.saveEvent(User.UID_SYSTEM, router.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_STOP, "Unable to stop router: " + router.getName(), startEventId);
                 return false;
+            } else {
+                EventUtils.saveEvent(User.UID_SYSTEM, router.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_STOP, "successfully stopped router : " + router.getName(), startEventId);
             }
+            
             router = _routerDao.findById(routerId);
             if (!_itMgr.stateTransitTo(router, VirtualMachine.Event.DestroyRequested, router.getHostId())) {
                 s_logger.debug("VM " + router.toString() + " is not in a state to be destroyed.");
@@ -389,15 +385,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Successfully destroyed router: " + routerId);
         }
-
-        EventVO completedEvent = new EventVO();
-        completedEvent.setUserId(User.UID_SYSTEM);
-        completedEvent.setAccountId(router.getAccountId());
-        completedEvent.setType(EventTypes.EVENT_ROUTER_DESTROY);
-        completedEvent.setStartId(event.getId());
-        completedEvent.setParameters("id=" + routerId);
-        completedEvent.setDescription("successfully destroyed router : " + router.getName());
-        _eventDao.persist(completedEvent);
 
         return true;
     }
@@ -619,7 +606,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public boolean stopRouter(final long routerId, long eventId) {
+    public boolean stopRouter(final long routerId) {
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
         if (asyncExecutor != null) {
             AsyncJobVO job = asyncExecutor.getJob();
@@ -633,15 +620,23 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Stopping router " + routerId);
         }
-
-        return stop(_routerDao.findById(routerId));
+        DomainRouterVO router = _routerDao.findById(routerId);
+        long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, router.getAccountId(), EventTypes.EVENT_ROUTER_STOP, "Starting to stop router : " + router.getName());
+        if (!stop(router)) {
+            s_logger.debug("Unable to stop the router: " + routerId);
+            EventUtils.saveEvent(User.UID_SYSTEM, router.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_STOP, "Unable to stop router: " + router.getName(), startEventId);
+            return false;
+        } else {
+            EventUtils.saveEvent(User.UID_SYSTEM, router.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_STOP, "successfully stopped router : " + router.getName(), startEventId);
+            return true;
+        }
     }
 
     @Override
     public VirtualRouter stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException,
             ResourceUnavailableException, ConcurrentOperationException {
         if (_useNewNetworking) {
-            return stopRouter(cmd.getId());
+            return stopDomainRouter(cmd.getId());
         }
         Long routerId = cmd.getId();
         Account account = UserContext.current().getAccount();
@@ -656,7 +651,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new PermissionDeniedException("Unable to stop router with id " + routerId + ". Permission denied");
         }
 
-        boolean success = stopRouter(routerId, 0);
+        boolean success = stopRouter(routerId);
 
         if (success) {
             return _routerDao.findById(routerId);
@@ -1208,7 +1203,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 s_logger.info("Found " + ids.size() + " routers to stop. ");
 
                 for (final Long id : ids) {
-                    stopRouter(id, 0);
+                    stopRouter(id);
                 }
                 s_logger.info("Done my job.  Time to rest.");
             } catch (Exception e) {
@@ -1314,6 +1309,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         DomainRouterVO router = _routerDao.findByNetworkConfiguration(guestNetwork.getId());
         if (router == null) {
+            long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, owner.getId(), EventTypes.EVENT_ROUTER_CREATE, "Starting to create router for accountId : " +owner.getAccountId());
             long id = _routerDao.getNextInSequence(Long.class, "id");
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Creating the router " + id);
@@ -1357,9 +1353,26 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), _template.getId(),
                     _template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA());
             router = _itMgr.allocate(router, _template, _offering, networks, plan, null, owner);
+            if(router != null){
+                EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_CREATE, "successfully create router : " + router.getName(), startEventId);  
+            } else {
+                EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_CREATE, "router creation failed", startEventId);
+            }
+
         }
 
-        return _itMgr.start(router, null, _accountService.getSystemUser(), _accountService.getSystemAccount(), null);
+        
+        State state = router.getState();
+        if (state != State.Starting && state != State.Running) {
+            long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, owner.getId(), EventTypes.EVENT_ROUTER_START, "Starting router : " +router.getName());
+            router = _itMgr.start(router, null, _accountService.getSystemUser(), _accountService.getSystemAccount(), null);
+            if(router != null){
+                EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_START, "successfully started router : " + router.getName(), startEventId);  
+            } else {
+                EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_START, "failed to start router", startEventId);
+            }
+        }
+        return router;
     }
 
     @Override
@@ -1377,6 +1390,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         DomainRouterVO router = _routerDao.findByNetworkConfiguration(guestNetwork.getId());
         if (router == null) {
+            long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, owner.getId(), EventTypes.EVENT_ROUTER_CREATE, "Starting to create router for accountId : " +owner.getAccountId()); 
             long id = _routerDao.getNextInSequence(Long.class, "id");
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Creating the router " + id);
@@ -1396,9 +1410,23 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     _template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA());
             router.setRole(Role.DHCP_USERDATA);
             router = _itMgr.allocate(router, _template, _offering, networks, plan, null, owner);
+            if(router != null){
+                EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_CREATE, "successfully create router : " + router.getName(), startEventId);  
+            } else {
+                EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_CREATE, "router creation failed", startEventId);
+            }
         }
-
-        return _itMgr.start(router, null, _accountService.getSystemUser(), _accountService.getSystemAccount(), null);
+        State state = router.getState();
+        if (state != State.Starting && state != State.Running) {
+            long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, owner.getId(), EventTypes.EVENT_ROUTER_START, "Starting router : " +router.getName());
+            router = _itMgr.start(router, null, _accountService.getSystemUser(), _accountService.getSystemAccount(), null);
+            if(router != null){
+                EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_START, "successfully started router : " + router.getName(), startEventId);  
+            } else {
+                EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_START, "failed to start router", startEventId);
+            }
+        }
+        return router;
     }
 
     @Override
@@ -1757,7 +1785,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
      *             , PermissionDeniedException
      */
     @Override
-    public VirtualRouter stopRouter(long routerId) throws ResourceUnavailableException, ConcurrentOperationException {
+    public VirtualRouter stopDomainRouter(long routerId) throws ResourceUnavailableException, ConcurrentOperationException {
         UserContext context = UserContext.current();
         Account account = context.getAccount();
         long accountId = account.getId();

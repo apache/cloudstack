@@ -819,7 +819,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             }
 
             for (UserVmVO vm : vms) {
-                long startEventId = EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Destroyed VM instance : " + vm.getName(), 0);
+                long startEventId = EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Destroyed VM instance : " + vm.getName());
                 if (!_vmMgr.destroyVirtualMachine(userId, vm.getId())) {
                     s_logger.error("Unable to destroy vm: " + vm.getId());
                     accountCleanupNeeded = true;
@@ -846,9 +846,13 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 
             boolean routersCleanedUp = true;
             for (DomainRouterVO router : routers) {
+                long startEventId = EventUtils.saveStartedEvent(userId, router.getAccountId(), EventTypes.EVENT_ROUTER_DESTROY, "Starting to destroy router : " + router.getName());
                 if (!_routerMgr.destroyRouter(router.getId())) {
                     s_logger.error("Unable to destroy router: " + router.getId());
                     routersCleanedUp = false;
+                    EventUtils.saveEvent(userId, router.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_DESTROY, "Unable to destroy router: " + router.getName(), startEventId);
+                } else {
+                    EventUtils.saveEvent(userId, router.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_DESTROY, "successfully destroyed router : " + router.getName(), startEventId);
                 }
             }
 
@@ -967,7 +971,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 
         List<DomainRouterVO> routers = _routerDao.listBy(accountId);
         for (DomainRouterVO router : routers) {
-            success = (success && _routerMgr.stopRouter(router.getId(), 0));
+            success = (success && _routerMgr.stopRouter(router.getId()));
         }
 
         return success;

@@ -68,7 +68,7 @@ public interface VirtualNetworkApplianceManager extends Manager {
     
     boolean destroyRouter(long routerId);
     
-    boolean stopRouter(long routerId, long eventId);
+    boolean stopRouter(long routerId);
     
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
 

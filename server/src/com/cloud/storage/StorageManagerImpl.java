@@ -2360,7 +2360,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
            			//if the instance is of type domain router vm, call the network manager
         			if(vmInstance.getType().equals(VirtualMachine.Type.DomainRouter))
         			{   
-        				if(!_routerMgr.stopRouter(vmInstance.getId(), 0))
+        				if(!_routerMgr.stopRouter(vmInstance.getId()))
         				{
         				    String errorMsg = "There was an error stopping the domain router id: "+vmInstance.getId()+" ,cannot enable primary storage maintenance";
         					s_logger.warn(errorMsg);

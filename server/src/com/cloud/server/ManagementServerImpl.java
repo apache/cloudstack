@@ -4219,9 +4219,6 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public VirtualMachine startSystemVm(long vmId) {
-        UserContext context = UserContext.current();
-        long callerId = context.getUserId();
-        long callerAccountId = context.getAccount().getId(); 
         
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(vmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
         if (systemVm == null) {
@@ -4239,10 +4236,6 @@ public class ManagementServerImpl implements ManagementServer {
     
     @Override
     public VirtualMachine stopSystemVm(long vmId) {
-        UserContext context = UserContext.current();
-        
-        long callerId = context.getUserId();
-        long callerAccountId = context.getAccount().getId();
         
         // verify parameters      
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(vmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
