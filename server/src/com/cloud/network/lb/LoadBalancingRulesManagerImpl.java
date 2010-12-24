@@ -19,6 +19,7 @@ package com.cloud.network.lb;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -219,6 +220,44 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
        
         return true;
     }
+    
+    
+    @Override
+    public boolean removeVmFromLoadBalancers(long instanceId) {
+        boolean success = true;
+        List<LoadBalancerVMMapVO> maps = _lb2VmMapDao.listByInstanceId(instanceId);
+        if (maps == null || maps.isEmpty()) {
+            return true;
+        }
+        
+        Map<Long, List<Long>> lbsToReconfigure = new HashMap<Long, List<Long>>();
+        
+        //first set all existing lb mappings with Revoke state
+        for (LoadBalancerVMMapVO map: maps) {
+            long lbId = map.getLoadBalancerId();
+            List<Long> instances = lbsToReconfigure.get(lbId);
+            if (instances == null) {
+                instances = new ArrayList<Long>();
+            }
+            instances.add(map.getInstanceId());
+            lbsToReconfigure.put(lbId, instances);
+            
+            map.setRevoke(true);
+            _lb2VmMapDao.persist(map);
+            s_logger.debug("Set load balancer rule for revoke: rule id " + map.getLoadBalancerId() + ", vmId " + instanceId);
+        }
+        
+        //Reapply all lbs that had the vm assigned
+        if (lbsToReconfigure != null) {
+            for (Map.Entry<Long, List<Long>> lb : lbsToReconfigure.entrySet()) {
+                if (!removeFromLoadBalancer(lb.getKey(), lb.getValue())) {
+                    success = false;
+                }
+            }
+        }
+        return success;
+    }
+    
 
     @Override
     public boolean deleteLoadBalancerRule(long loadBalancerId, boolean apply) {

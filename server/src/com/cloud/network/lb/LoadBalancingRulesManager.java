@@ -25,4 +25,11 @@ import com.cloud.utils.net.Ip;
 public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
     boolean removeAllLoadBalanacers(Ip ip);
     List<LbDestination> getExistingDestinations(long lbId);
+    
+    /**
+     * Remove vm from all load balancers
+     * @param vmId
+     * @return true if removal is successful
+     */
+    boolean removeVmFromLoadBalancers(long vmId);
 }

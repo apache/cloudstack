@@ -132,6 +132,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.SecurityGroupManager;
@@ -254,6 +255,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject VirtualNetworkApplianceManager _routerMgr;
     @Inject NicDao _nicDao;
     @Inject RulesManager _rulesMgr;
+    @Inject LoadBalancingRulesManager _lbMgr;
     @Inject UsageEventDao _usageEventDao;
     
     private IpAddrAllocator _IpAllocator;
@@ -1603,8 +1605,21 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             try {
                 vols = _volsDao.findByInstanceIdDestroyed(vmId);
                 _storageMgr.destroy(vm, vols);
+                 
+                //cleanup port forwarding rules
+                if (_rulesMgr.revokePortForwardingRule(vmId)) {
+                    s_logger.debug("Port forwarding rules are removed successfully as a part of vm id=" + vmId + " expunge");
+                } else {
+                    s_logger.warn("Fail to remove port forwarding rules as a part of vm id=" + vmId + " expunge");
+                }
                 
-                _rulesMgr.revokePortForwardingRule(vmId);
+                //cleanup load balancer rules
+                if (_lbMgr.removeVmFromLoadBalancers(vmId)) {
+                    s_logger.debug("LB rules are removed successfully as a part of vm id=" + vmId + " expunge");
+                } else {
+                    s_logger.warn("Fail to remove lb rules as a part of vm id=" + vmId + " expunge");
+                }
+                
                 _vmDao.remove(vm.getId());
                 _networkGroupMgr.removeInstanceFromGroups(vm.getId());
                 removeInstanceFromGroup(vm.getId());
