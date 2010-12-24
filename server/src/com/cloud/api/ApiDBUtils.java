@@ -32,10 +32,10 @@ import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
@@ -43,7 +43,6 @@ import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
-import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -537,6 +536,15 @@ public class ApiDBUtils {
             throw new InvalidParameterValueException("Unable to find public network in zone " + zoneId);
         }
         return networks.get(0).getId();
+    }
+
+    public static Long getVlanNetworkId(long vlanId) {
+        VlanVO vlan = _vlanDao.findById(vlanId);
+        if (vlan != null) {
+            return vlan.getNetworkId();
+        } else {
+            return null;
+        }
     }
     
 }
