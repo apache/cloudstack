@@ -61,6 +61,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -823,9 +824,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         
         if (tags != null) {
         	if (tags.trim().isEmpty()) {
-        		offering.setTagsArray(csvTagsToList(null));
+        		offering.setTagsArray(StringUtils.csvTagsToList(null));
         	} else {
-        		offering.setTagsArray(csvTagsToList(tags));
+        		offering.setTagsArray(StringUtils.csvTagsToList(tags));
         	}     	
         }
         
@@ -857,9 +858,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	
     	if (tags != null) {
         	if (tags.trim().isEmpty()) {
-        		diskOffering.setTagsArray(csvTagsToList(null));
+        		diskOffering.setTagsArray(StringUtils.csvTagsToList(null));
         	} else {
-        		diskOffering.setTagsArray(csvTagsToList(tags));
+        		diskOffering.setTagsArray(StringUtils.csvTagsToList(tags));
         	}     	
         }
     	
@@ -1170,34 +1171,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 		}
 		
 		return success;
-    }
-    
-    public List<String> csvTagsToList(String tags) {
-    	List<String> tagsList = new ArrayList<String>();
-    	
-    	if (tags != null) {
-            String[] tokens = tags.split(",");
-            for (int i = 0; i < tokens.length; i++) {
-                tagsList.add(tokens[i].trim());
-            }
-        }
-    	
-    	return tagsList;
-    }
-    
-    public String listToCsvTags(List<String> tagsList) {
-    	String tags = "";
-    	if (tagsList.size() > 0) {
-    		for (int i = 0; i < tagsList.size(); i++) {
-    			tags += tagsList.get(i);
-    			if (i != tagsList.size() - 1) {
-    				tags += ",";
-    			}
-    		}
-    	} 
-    	
-    	return tags;
-    }
+    }   
     
     private String cleanupTags(String tags) {
     	if (tags != null) {

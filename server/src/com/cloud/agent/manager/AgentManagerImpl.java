@@ -142,6 +142,7 @@ import com.cloud.utils.nio.HandlerFactory;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
+import com.cloud.utils.StringUtils;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVm;
 import com.cloud.vm.VMInstanceVO;
@@ -493,7 +494,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
         List<HostVO> hosts = new ArrayList<HostVO>();
         s_logger.info("Trying to add a new host at " + url + " in data center " + dcId);
         
-        List<String> hostTagList = _configMgr.csvTagsToList(hostTags);
+        List<String> hostTagList = StringUtils.csvTagsToList(hostTags);
 
         Enumeration<Discoverer> en = _discoverers.enumeration();
         while (en.hasMoreElements()) {
@@ -1172,7 +1173,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
 		if (hostTags == null) {
 			return null;
 		} else {
-			return _configMgr.listToCsvTags(hostTags);
+			return StringUtils.listToCsvTags(hostTags);
 		}
     }
 

@@ -205,20 +205,6 @@ public interface ConfigurationManager extends Manager {
 	String changePrivateIPRange(boolean add, long podId, String startIP, String endIP) throws InvalidParameterValueException;
 	
 	/**
-	 * Converts a comma separated list of tags to a List
-	 * @param tags
-	 * @return List of tags
-	 */
-	List<String> csvTagsToList(String tags);
-	
-	/**
-	 * Converts a List of tags to a comma separated list
-	 * @param tags
-	 * @return String containing a comma separated list of tags
-	 */
-	String listToCsvTags(List<String> tags);
-	
-	/**
 	 * Returns a flag that describes whether the manager is being used in a Premium context or not.
 	 * @return true for Premium, false for not
 	 */

@@ -18,7 +18,9 @@
 
 package com.cloud.utils;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 // StringUtils exists in Apache Commons Lang, but rather than import the entire JAR to our system, for now
 // just implement the method needed
@@ -38,4 +40,44 @@ public class StringUtils {
         }
         return sb.toString();
     }
+    
+	/**
+	 * Converts a comma separated list of tags to a List
+	 * @param tags
+	 * @return List of tags
+	 */
+    
+    public static List<String> csvTagsToList(String tags) {
+    	List<String> tagsList = new ArrayList<String>();
+    	
+    	if (tags != null) {
+            String[] tokens = tags.split(",");
+            for (int i = 0; i < tokens.length; i++) {
+                tagsList.add(tokens[i].trim());
+            }
+        }
+    	
+    	return tagsList;
+    }
+    
+	
+    /**
+	 * Converts a List of tags to a comma separated list
+	 * @param tags
+	 * @return String containing a comma separated list of tags
+	 */
+    
+    public static String listToCsvTags(List<String> tagsList) {
+    	String tags = "";
+    	if (tagsList.size() > 0) {
+    		for (int i = 0; i < tagsList.size(); i++) {
+    			tags += tagsList.get(i);
+    			if (i != tagsList.size() - 1) {
+    				tags += ",";
+    			}
+    		}
+    	} 
+    	
+    	return tags;
+    }    
 }

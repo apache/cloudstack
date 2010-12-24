@@ -312,7 +312,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
 		
 		StringBuilder sql = new StringBuilder(PoolsByHostTag);
 	    if (clusterId != null) {
-	        sql.append(" and (storage_pool.cluster_id = ? OR storage_pool.cluster_id IS NULL)");
+	        sql.append(" and (storage_pool.cluster_id = ?)");
 	    }
 	    
 	    Transaction txn = Transaction.currentTxn();

@@ -2717,8 +2717,8 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         // Check that the service offering being upgraded to has all the tags of the current service offering
-        List<String> currentTags = _configMgr.csvTagsToList(currentServiceOffering.getTags());
-        List<String> newTags = _configMgr.csvTagsToList(newServiceOffering.getTags());
+        List<String> currentTags = StringUtils.csvTagsToList(currentServiceOffering.getTags());
+        List<String> newTags = StringUtils.csvTagsToList(newServiceOffering.getTags());
         if (!newTags.containsAll(currentTags)) {
         	throw new InvalidParameterValueException("Unable to upgrade virtual machine; the new service offering does not have all the tags of the " +
         											 "current service offering. Current service offering tags: " + currentTags + "; " +
