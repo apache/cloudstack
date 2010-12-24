@@ -438,9 +438,12 @@ function ipJsonToLoadBalancerTab() {
 	if(networkObj.service[6].name == "Lb" && networkObj.service[6].capability[0].name == "SupportedLbAlgorithms") {
        var algorithms = networkObj.service[6].capability[0].value;  //e.g. "roundrobin,leastconn,sourceip"        
        var array1 = algorithms.split(",");
-       var $algorithmField = $("#create_load_balancer_row").find("#algorithm_select").empty();
-       for(var i=0; i<array1.length; i++)
-           $algorithmField.append("<option value='"+array1[i]+"'>"+array1[i]+"</option>")
+       var $algorithmField1 = $("#create_load_balancer_row").find("#algorithm_select").empty();
+       var $algorithmField2 = $("#load_balancer_template").find("#row_container_edit").find("#algorithm_select").empty();
+       for(var i=0; i<array1.length; i++) {
+           $algorithmField1.append("<option value='"+array1[i]+"'>"+array1[i]+"</option>");
+           $algorithmField2.append("<option value='"+array1[i]+"'>"+array1[i]+"</option>");
+       }
     }  	
     refreshCreateLoadBalancerRow();            
         

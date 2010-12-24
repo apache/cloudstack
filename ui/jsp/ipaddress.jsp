@@ -427,10 +427,12 @@
             <div class="row_celltitles" id="private_port"></div>
         </div>
         <div class="grid_row_cell" style="width: 15%;">
-            <select id="algorithm_select" class="select" style="width: 70%;">                       
+            <select id="algorithm_select" class="select" style="width: 70%;">   
+                <!--                   
 				<option value="roundrobin">roundrobin</option>
                 <option value="leastconn">leastconn</option>
                 <option value="source">source</option>
+                -->   
             </select>
         </div>
         <div class="grid_row_cell" style="width: 29%;">
