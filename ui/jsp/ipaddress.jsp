@@ -232,8 +232,10 @@
 	                </div>
 	                <div class="grid_row_cell" style="width: 15%; padding: 1px;">  
 	                   <select class="select" id="protocol" style="width:70%;">
+	                       <!--  
 	                       <option value="TCP">TCP</option>
 	                       <option value="UDP">UDP</option>
+	                       -->
 	                   </select>
 	                </div>
 	                <div class="grid_row_cell" style="width: 25%; padding: 1px;">                   

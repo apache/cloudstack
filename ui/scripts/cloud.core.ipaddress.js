@@ -376,7 +376,9 @@ function ipJsonToPortForwardingTab() {
     var ipObj = $midmenuItem1.data("jsonObj");
     if(ipObj == null)
         return;   
-    
+        
+    var networkObj = $midmenuItem1.data("networkObj");
+      
     var ipAddress = ipObj.ipaddress;
     if(ipAddress == null || ipAddress.length == 0)
         return;    
@@ -385,6 +387,13 @@ function ipJsonToPortForwardingTab() {
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   		
    
+    if(networkObj.service[0].capability[4].name	== "SupportedProtocols") {
+        var protocols = networkObj.service[0].capability[4].value.toUpperCase();  //e.g. "tcp,udp" => "TCP,UDP"         
+        var array1 = protocols.split(",");
+        var $protocolField = $("#create_port_forwarding_row").find("#protocol").empty();
+        for(var i=0; i<array1.length; i++)
+            $protocolField.append("<option value='"+array1[i]+"'>"+array1[i]+"</option>")
+    }  
     refreshCreatePortForwardingRow();         
            		
     $.ajax({
@@ -1232,19 +1241,18 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     });   
 }	  
 
-function refreshCreatePortForwardingRow() {      
-    var $createPortForwardingRow = $("#create_port_forwarding_row");      
-    $createPortForwardingRow.find("#public_port").val("");
-    $createPortForwardingRow.find("#private_port").val("");
-    $createPortForwardingRow.find("#protocol").val("TCP");  		    
-       
+function refreshCreatePortForwardingRow() {    
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     if($midmenuItem1 == null)
         return;    
     var ipObj = $midmenuItem1.data("jsonObj");
     if(ipObj == null)
-        return;   
-   
+        return;     
+      
+    var $createPortForwardingRow = $("#create_port_forwarding_row");      
+    $createPortForwardingRow.find("#public_port").val("");
+    $createPortForwardingRow.find("#private_port").val("");
+    
     var $vmSelect = $createPortForwardingRow.find("#vm").empty();		
     ipPopulateVMDropdown($vmSelect);
 }	
