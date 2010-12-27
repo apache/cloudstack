@@ -27,8 +27,6 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
-import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -147,7 +145,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         IPAddressVO ipAddress = _ipAddressDao.findById(ipAddr);
         
         Ip dstIp = rule.getDestinationIpAddress();
-        Long instanceId = null;
         long networkId;
         UserVmVO vm = null;
         Network network = null;

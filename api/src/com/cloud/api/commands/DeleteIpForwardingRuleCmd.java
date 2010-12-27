@@ -29,7 +29,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.user.Account;
 
 @Implementation(description="Deletes an ip forwarding rule", responseObject=SuccessResponse.class)
 public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
@@ -44,6 +43,10 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the id of the forwarding rule")
     private Long id;
 
+    
+    // unexposed parameter needed for events logging
+    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, expose=false)
+    private Long ownerId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -74,7 +77,10 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        if (ownerId == null) {
+            ownerId = _entityMgr.findById(PortForwardingRule.class, id).getAccountId();
+        }
+        return ownerId;
     }
 
     @Override

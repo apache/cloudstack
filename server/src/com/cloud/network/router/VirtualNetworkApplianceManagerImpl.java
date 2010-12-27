@@ -84,7 +84,6 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
@@ -108,14 +107,14 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.IsolationType;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.SshKeysDistriMonitor;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VpnUserVO;
-import com.cloud.network.Networks.BroadcastDomainType;
-import com.cloud.network.Networks.IsolationType;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -1902,13 +1901,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new ResourceUnavailableException("Unable to assign ip addresses", DataCenter.class, network.getDataCenterId());
         }
 
-        if (router.getState() == State.Running || router.getState() == State.Starting) {
+        if (router.getState() == State.Running) {
             Commands cmds = new Commands(OnError.Continue);
             //Have to resend all already associated ip addresses
             cmds = getAssociateIPCommands(router, ipAddress, cmds, 0);
             
             return sendCommandsToRouter(router, cmds);
-        } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
+        } else if (router.getState() == State.Stopped) {
             return true;
         } else {
             s_logger.warn("Unable to associate ip addresses, virtual router is not in the right state " + router.getState());

@@ -20,16 +20,18 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.PortForwardingRule;
 
 @Implementation(description="Deletes a port forwarding rule", responseObject=SuccessResponse.class)
-public class DeletePortForwardingRuleCmd extends BaseCmd {
+public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePortForwardingRuleCmd.class.getName());
     private static final String s_name = "deleteportforwardingruleresponse";
 
@@ -40,7 +42,9 @@ public class DeletePortForwardingRuleCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the port forwarding rule")
     private Long id;
 
-
+    // unexposed parameter needed for events logging
+    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, expose=false)
+    private Long ownerId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -48,14 +52,31 @@ public class DeletePortForwardingRuleCmd extends BaseCmd {
     public Long getId() {
         return id;
     }
-
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_NET_RULE_DELETE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  ("Deleting port forwarding rule for id=" + id);
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        if (ownerId == null) {
+            ownerId = _entityMgr.findById(PortForwardingRule.class, id).getAccountId();
+        }
+        return ownerId;
     }
 	
     @Override
