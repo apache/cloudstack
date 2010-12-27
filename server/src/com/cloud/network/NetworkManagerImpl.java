@@ -1632,10 +1632,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         String gateway = cmd.getGateway();
         String startIP = cmd.getStartIp();
         String endIP = cmd.getEndIp();
-        String vlanNetmask = cmd.getNetmask();
+        String netmask = cmd.getNetmask();
         String cidr = null;
-        if (gateway != null && vlanNetmask != null) {
-            cidr = NetUtils.ipAndNetMaskToCidr(gateway, vlanNetmask);
+        if (gateway != null && netmask != null) {
+            cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
         }
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
@@ -1644,6 +1644,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         String displayText = cmd.getDisplayText();
         Boolean isShared = cmd.getIsShared();
         Account owner = null;
+        Long ownerId = null;
         
         //if end ip is not specified, default it to startIp 
         if (endIP == null && startIP != null) {
@@ -1677,8 +1678,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 owner = ctxAccount;
             }
         } else {
+            //regular user can't create networks for anybody else but himself
             owner = ctxAccount;
         }
+        
+        ownerId = owner.getId();
         
         //Don't allow to create network with vlan that already exists in the system
         if (networkOffering.getGuestIpType() == GuestIpType.Direct && vlanId != null) {
@@ -1764,20 +1768,35 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                }
            }
            
-           //Don't pass owner to create vlan when network offering is of type Direct
+           //Don't pass owner to create vlan when network offering is of type Direct - done to prevent accountVlanMap entry creation when vlan is mapped to network
            if (networkOffering.getGuestIpType() == GuestIpType.Direct) {
                owner = null;
            }
            
            if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN && networkOffering.getGuestIpType() == GuestIpType.Direct && startIP != null && endIP != null && gateway != null) {
                //Create vlan ip range
-               Vlan vlan = _configMgr.createVlanAndPublicIpRange(userId, zoneId, null, startIP, endIP, gateway, vlanNetmask, false, vlanId, owner, networkId);
+               Vlan vlan = _configMgr.createVlanAndPublicIpRange(userId, zoneId, null, startIP, endIP, gateway, netmask, false, vlanId, owner, networkId);
                if (vlan == null) {
                    txn.rollback();
                    throw new CloudRuntimeException("Failed to create a vlan");
                }
            }  
            txn.commit(); 
+           
+           String eventMsg = "Successfully created network " + name + " (networkOfferingId=" + networkOfferingId + ", isShared=" + isShared + ", ownerId=" + ownerId + ", netmask=" + netmask + ", startIP=" + startIP + ", endIP=" + endIP + ", gateway=" + gateway + ", vlan=" + vlanId + ")";
+           if (networks != null && !networks.isEmpty()) {
+               _configMgr.saveConfigurationEvent(userId, ownerId, EventTypes.EVENT_NETWORK_CREATE, eventMsg, 
+                       "dcId=" + zoneId,
+                       "networkOfferingId=" + networkOfferingId,
+                       "name=" + name,
+                       "isShared=" + isShared,
+                       "ownerId=" + ownerId,
+                       "networkGateway=" + gateway,
+                       "networkNetmask=" + netmask, 
+                       "startIP=" + startIP,
+                       "endIP=" + endIP,
+                       "vlan=" + vlanId);
+           }
            
            return networks.get(0);
        } catch (Exception ex) {
@@ -1891,6 +1910,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("unable to find network " + networkId);
         } 
         
+        Long ownerId = network.getAccountId();
+        Long zoneId = network.getDataCenterId();
+        String name = network.getName();
+        
         //Perform permission check
         if (account != null) {
             if (!isAdmin(account.getType())) {
@@ -1929,6 +1952,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             _networksDao.remove(networkId);
             
             txn.commit();
+            
+            String eventMsg = "Successfully deleted network " + name + " (id=" + networkId + ")";
+            _configMgr.saveConfigurationEvent(userId, ownerId, EventTypes.EVENT_NETWORK_DELETE, eventMsg, "id=" + networkId, "dcId=" + zoneId, "accountId=" + ownerId);
+         
+            
             return true;
         } catch (Exception ex) {
             txn.rollback();
@@ -1979,7 +2007,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         txn.start();
         if (success) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unsuccessfully shutdown the network.");
             }
             NetworkGuru guru = _networkGurus.get(network.getGuruName());
             guru.destroy(network, _networkOfferingDao.findById(network.getNetworkOfferingId()));

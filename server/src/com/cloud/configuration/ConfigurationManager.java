@@ -185,5 +185,7 @@ public interface ConfigurationManager extends Manager {
     Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
     
     void createDefaultNetworks(long zoneId) throws ConcurrentOperationException;
+    
+    Long saveConfigurationEvent(long userId, Long accountId, String type, String description, String... paramsList);
 	
 }

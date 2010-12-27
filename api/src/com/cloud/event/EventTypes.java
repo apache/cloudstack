@@ -55,7 +55,9 @@ public class EventTypes {
     public static final String EVENT_NET_RULE_ADD = "NET.RULEADD";
     public static final String EVENT_NET_RULE_DELETE = "NET.RULEDELETE";
     public static final String EVENT_NET_RULE_MODIFY = "NET.RULEMODIFY";
-
+    public static final String EVENT_NETWORK_CREATE = "NETWORK.CREATE";
+    public static final String EVENT_NETWORK_DELETE = "NETWORK.DELETE";
+    
     // Load Balancers
     public static final String EVENT_ASSIGN_TO_LOAD_BALANCER_RULE = "LB.ASSIGN.TO.RULE";
     public static final String EVENT_REMOVE_FROM_LOAD_BALANCER_RULE = "LB.REMOVE.FROM.RULE";

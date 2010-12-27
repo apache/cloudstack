@@ -2438,7 +2438,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
     }
     
-    private Long saveConfigurationEvent(long userId, Long accountId, String type, String description, String... paramsList) {
+    @Override
+    public Long saveConfigurationEvent(long userId, Long accountId, String type, String description, String... paramsList) {
     	UserVO user = _userDao.findById(userId);
     	long accountIdToUse = (accountId != null) ? accountId : user.getAccountId();
     	
