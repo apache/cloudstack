@@ -24,12 +24,8 @@ function volumeGetSearchParams() {
         moreCriteria.push("&keyword="+todb(searchInput));	       
     }       
 
-	var $advancedSearchPopup = $("#advanced_search_popup");
-	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {
-	    var name = $advancedSearchPopup.find("#adv_search_name").val();							
-		if (name!=null && trim(name).length > 0) 
-			moreCriteria.push("&name="+todb(name));	
-		
+	var $advancedSearchPopup = getAdvancedSearchPopupInSearchContainer();
+	if ($advancedSearchPopup.length > 0 && $advancedSearchPopup.css("display") != "none" ) {   
 		var zone = $advancedSearchPopup.find("#adv_search_zone").val();	
 	    if (zone!=null && zone.length > 0) 
 			moreCriteria.push("&zoneId="+zone);	
@@ -40,7 +36,8 @@ function volumeGetSearchParams() {
 			    moreCriteria.push("&domainid="+domainId);	
     	}	
     	
-		if ($advancedSearchPopup.find("#adv_search_account_li").css("display") != "none") {	
+		if ($advancedSearchPopup.find("#adv_search_account_li").css("display") != "none" 
+    	    && $advancedSearchPopup.find("#adv_search_account").hasClass("textwatermark") == false) {	
 		    var account = $advancedSearchPopup.find("#adv_search_account").val();		
 		    if (account!=null && account.length > 0) 
 			    moreCriteria.push("&account="+account);		
