@@ -284,7 +284,7 @@ public class VirtualRoutingResource implements Manager {
             if (result != null) {
                 results[i++] = IpAssocAnswer.errorResult;
             } else {
-                results[i++] = result;
+                results[i++] = ip.getPublicIp() + " - success";;
             }
         }
         return new IpAssocAnswer(cmd, results);
