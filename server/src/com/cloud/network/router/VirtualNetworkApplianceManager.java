@@ -73,6 +73,8 @@ public interface VirtualNetworkApplianceManager extends Manager {
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
 
     boolean rebootRouter(long routerId);
+
+    VirtualRouter startRouter(long routerId) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException;
     
     /**
      * @param hostId get all of the virtual machine routers on a host.
