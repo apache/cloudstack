@@ -130,17 +130,17 @@ public class VirtualRoutingResource implements Manager {
         int i = 0;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
             String result = null;
-            if (rule.getProtocol().equalsIgnoreCase(NetUtils.NAT_PROTO)){
-                setStaticNat(!rule.revoked(), routerName, routerIp, rule.getSrcIp(), rule.getDstIp());
+            if (rule.getProtocol().toLowerCase().equalsIgnoreCase(NetUtils.NAT_PROTO)){
+                setStaticNat(!rule.revoked(), rule.getProtocol(), routerIp, rule.getSrcIp(), rule.getDstIp());
             } else {
 
                 result = setPortForwardRule(!rule.revoked(), routerName, routerIp, 
-                        rule.getProtocol(), rule.getSrcIp(), 
+                        rule.getProtocol().toLowerCase(), rule.getSrcIp(), 
                         Integer.toString(rule.getSrcPortRange()[0]), rule.getDstIp(), 
                         Integer.toString(rule.getDstPortRange()[0]));
 
             }
-            results[i++] = (result == null || result.isEmpty()) ? "Failed" : null;
+            results[i++] = (!(result == null || result.isEmpty())) ? "Failed" : null;
         }
 
         return new SetPortForwardingRulesAnswer(cmd, results);
@@ -471,7 +471,7 @@ public class VirtualRoutingResource implements Manager {
         return command.execute();
     }
 
-    public String setStaticNat(final boolean enable, final String routerName, final String routerIpAddress,
+    public String setStaticNat(final boolean enable, final String protocal, final String routerIpAddress,
             final String publicIpAddress, final String privateIpAddress) {
 
         if (routerIpAddress == null) {
@@ -483,9 +483,9 @@ public class VirtualRoutingResource implements Manager {
 
         command.add(enable ? "-A" : "-D");
         command.add("-l", publicIpAddress);
-        command.add("-n", routerName);
+        command.add("-G", protocal);
         command.add("-i", routerIpAddress);
-        command.add("-G", privateIpAddress);
+        command.add("-r", privateIpAddress);
         return command.execute();
     }
 
