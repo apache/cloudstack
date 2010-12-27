@@ -158,7 +158,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             List<? extends Nic> nics = _networkMgr.getNics(vm);
             for (Nic nic : nics) {
                 Network ntwk = _networkMgr.getNetwork(nic.getNetworkId());
-                if (ntwk.getGuestType() == GuestIpType.Virtual) {
+                if (ntwk.getGuestType() == GuestIpType.Virtual && nic.getIp4Address() != null) {
                     network = ntwk;
                     dstIp = new Ip(nic.getIp4Address());
                     break;
@@ -166,7 +166,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             }
             
             if (network == null) {
-                throw new CloudRuntimeException("Unable to find ip address to map to in " + vmId);
+                throw new CloudRuntimeException("Unable to find ip address to map to in vm id=" + vmId);
             }
         } else {
             network = _networkMgr.getNetwork(rule.getNetworkId());
