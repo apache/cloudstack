@@ -440,9 +440,11 @@ function ipJsonToLoadBalancerTab() {
     var $thisTab = $("#right_panel_content #tab_content_load_balancer");  
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
-			
-	if(networkObj.service[6].name == "Lb" && networkObj.service[6].capability[0].name == "SupportedLbAlgorithms") {
-       var algorithms = networkObj.service[6].capability[0].value;  //e.g. "roundrobin,leastconn,sourceip"        
+		
+	var lbServiceObj = ipFindNetworkServiceByName("Lb", networkObj);
+	var supportedLbAlgorithmsCapabilityObj = ipFindCapabilityByName("SupportedLbAlgorithms", lbServiceObj);		
+	if(lbServiceObj != null && supportedLbAlgorithmsCapabilityObj != null) {
+       var algorithms = supportedLbAlgorithmsCapabilityObj.value;  //e.g. "roundrobin,leastconn,sourceip"        
        var array1 = algorithms.split(",");
        var $algorithmField1 = $("#create_load_balancer_row").find("#algorithm_select").empty();
        var $algorithmField2 = $("#load_balancer_template").find("#row_container_edit").find("#algorithm_select").empty();
