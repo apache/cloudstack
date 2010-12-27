@@ -334,22 +334,26 @@ function ipToRightPanel($midmenuItem1) {
     }
     else { //ipObj.isstaticnat == false  
         if(ipObj.forvirtualnetwork == true) { //(public network)            
-            if(isIpManageable(ipObj.domainid, ipObj.account) == true) {   
+            if(isIpManageable(ipObj.domainid, ipObj.account) == true) {           
 	            //Port Forwarding tab
-	            if(networkObj != null && networkObj.service[0].capability[0].name == "PortForwarding" && networkObj.service[0].capability[0].value == "true")
+	            var firewallServiceObj = ipFindNetworkServiceByName("Firewall", networkObj);
+			    var portForwardingCapabilityObj = ipFindCapabilityByName("PortForwarding", firewallServiceObj);
+	            if(firewallServiceObj != null && portForwardingCapabilityObj != null && portForwardingCapabilityObj.value == "true")
 	                $("#tab_port_forwarding").show();   
 	            else
 	                $("#tab_port_forwarding").hide();
 	            
-	            //Load Balancer tab	            
-	            if(networkObj != null && networkObj.service[6].name == "Lb")
+	            //Load Balancer tab	  
+	            var lbServiceObj = ipFindNetworkServiceByName("Lb", networkObj);			    	                      
+	            if(lbServiceObj != null)
 	                $("#tab_load_balancer").show();
 	            else
 	                $("#tab_load_balancer").hide();	                 	            
 		        
 		        //VPN tab
+		        var vpnServiceObj = ipFindNetworkServiceByName("Vpn", networkObj);	      
 		        if (ipObj.issourcenat == true) {
-		            if(networkObj != null && networkObj.service[3].name == "Vpn")
+		            if(vpnServiceObj != null)
 			            $("#tab_vpn").show();
 			        else
 			            $("#tab_vpn").hide();
@@ -386,9 +390,11 @@ function ipJsonToPortForwardingTab() {
     var $thisTab = $("#right_panel_content #tab_content_port_forwarding");  
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   		
-   
-    if(networkObj.service[0].capability[4].name	== "SupportedProtocols") {
-        var protocols = networkObj.service[0].capability[4].value.toUpperCase();  //e.g. "tcp,udp" => "TCP,UDP"         
+
+    var firewallServiceObj = ipFindNetworkServiceByName("Firewall", networkObj);
+	var supportedProtocolsCapabilityObj = ipFindCapabilityByName("SupportedProtocols", firewallServiceObj);    
+    if(supportedProtocolsCapabilityObj != null) {
+        var protocols = supportedProtocolsCapabilityObj.value.toUpperCase();  //e.g. "tcp,udp" => "TCP,UDP"         
         var array1 = protocols.split(",");
         var $protocolField = $("#create_port_forwarding_row").find("#protocol").empty();
         for(var i=0; i<array1.length; i++)
@@ -938,8 +944,10 @@ function ipJsonToDetailsTab() {
             buildActionLinkForTab("Disable Static NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);	
 			noAvailableActions = false;
         } else {  
-			if(ipObj.issourcenat != true) {    
-			    if(networkObj != null && networkObj.service[0].capability[1].name == "StaticNat" && networkObj.service[0].capability[1].value == "true")
+			if(ipObj.issourcenat != true) {   					    
+			    var firewallServiceObj = ipFindNetworkServiceByName("Firewall", networkObj);
+			    var staticNatCapabilityObj = ipFindCapabilityByName("StaticNat", firewallServiceObj);
+			    if(firewallServiceObj != null && staticNatCapabilityObj != null && staticNatCapabilityObj.value == "true")
 				    buildActionLinkForTab("Enable Static NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);
 				    
 				buildActionLinkForTab("Release IP", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);
@@ -955,6 +963,24 @@ function ipJsonToDetailsTab() {
 	
 	$thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();    
+}
+
+function ipFindNetworkServiceByName(pName, networkObj) {    
+    for(var i=0; i<networkObj.service.length; i++) {
+        var networkServiceObj = networkObj.service[i];
+        if(networkServiceObj.name == pName)
+            return networkServiceObj;
+    }
+    return null;
+}
+
+function ipFindCapabilityByName(pName, networkServiceObj) {    
+    for(var i=0; i<networkServiceObj.capability.length; i++) {
+        var capabilityObj = networkServiceObj.capability[i];
+        if(capabilityObj.name == pName)
+            return capabilityObj;
+    }
+    return null;
 }
 
 function ipClearDetailsTab() {
