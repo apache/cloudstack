@@ -397,11 +397,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	vmInstance.add(2, "there are virtual machines running in this pod");
     	tablesToCheck.add(vmInstance);
     	
-    	List<String> alert = new ArrayList<String>();
-		alert.add(0, "alert");
-		alert.add(1, "pod_id");
-		alert.add(2, "there are alerts for this pod");
-		tablesToCheck.add(alert);
+//    	List<String> alert = new ArrayList<String>();
+//		alert.add(0, "alert");
+//		alert.add(1, "pod_id");
+//		alert.add(2, "there are alerts for this pod");
+//		tablesToCheck.add(alert);
     	
     	for (List<String> table : tablesToCheck) {
     		String tableName = table.get(0);
@@ -418,7 +418,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     		}
     		
     		String selectSql = "SELECT * FROM `" + dbName + "`.`" + tableName + "` WHERE " + column + " = ?";
-    		
+
+    		if(tableName.equals("host")){
+    			selectSql += " and removed IS NULL";
+    		}
+    		    		
             Transaction txn = Transaction.currentTxn();
     		try {
                 PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);

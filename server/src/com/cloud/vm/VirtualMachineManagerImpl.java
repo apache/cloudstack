@@ -586,6 +586,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     	_stateMachine.addTransition(State.Creating, VirtualMachine.Event.OperationFailed, State.Error);
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.StartRequested, State.Starting);
     	_stateMachine.addTransition(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging);
+    	_stateMachine.addTransition(State.Error, VirtualMachine.Event.ExpungeOperation, State.Expunging);
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.DestroyRequested, State.Destroyed);
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.StopRequested, State.Stopped);
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.AgentReportStopped, State.Stopped);

@@ -1470,7 +1470,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             vm.setGuestNetmask(null);
             vm.setGuestMacAddress(null);
     		if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, null)) {
-    			s_logger.info("vm " + vmId + " is skipped because it is no longer in Destroyed state");
+    			s_logger.info("vm " + vmId + " is skipped because it is no longer in Destroyed or Error state");
     			continue;
     		}
 
