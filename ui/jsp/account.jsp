@@ -781,10 +781,7 @@
     <div class="adv_searchpopup_bg" id="advanced_search_popup" style="display: none;">
         <div class="adv_searchformbox">
             <form action="#" method="post">
-            <ol>
-                <li>
-                    <input class="text textwatermark" type="text" id="adv_search_name" value="by name" />
-                </li>
+            <ol>               
                 <li>
                     <select class="select" id="adv_search_role">
                         <option value=""></option>

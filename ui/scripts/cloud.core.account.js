@@ -27,23 +27,18 @@ var adminUserId = 2;
 function accountGetSearchParams() {
     var moreCriteria = [];	
 
-	var $advancedSearchPopup = $("#advanced_search_popup");
-	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {
-	    var name = $advancedSearchPopup.find("#adv_search_name").val();							
-		if (name != null && name.length > 0) 
-			moreCriteria.push("&name="+todb(name));	
-		
+	var searchInput = $("#basic_search").find("#search_input").val();	 
+    if (searchInput != null && searchInput.length > 0) {	           
+        moreCriteria.push("&keyword="+todb(searchInput));	       
+    }     
+
+	var $advancedSearchPopup = getAdvancedSearchPopupInSearchContainer();
+	if ($advancedSearchPopup.length > 0 && $advancedSearchPopup.css("display") != "none" ) {	
 		var role = $advancedSearchPopup.find("#adv_search_role").val();	
 		if (role != null && role.length > 0) 
 				moreCriteria.push("&accounttype="+role);	
 	} 
-	else {     			    		
-	    var searchInput = $("#basic_search").find("#search_input").val();	 
-        if (lastSearchType == "basic_search" && searchInput != null && searchInput.length > 0) {	           
-            moreCriteria.push("&keyword="+todb(searchInput));	       
-        }        
-	}
-	
+		
 	return moreCriteria.join("");          
 }
 
