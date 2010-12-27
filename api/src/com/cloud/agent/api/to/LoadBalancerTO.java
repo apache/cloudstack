@@ -46,6 +46,9 @@ public class LoadBalancerTO {
         }
     }
     
+    protected LoadBalancerTO() {
+    }
+    
     public String getSrcIp() {
         return srcIp;
     }
@@ -85,6 +88,9 @@ public class LoadBalancerTO {
             this.destPort = destPort;
             this.revoked = revoked;
             this.alreadyAdded = alreadyAdded;
+        }
+        
+        protected DestinationTO() {
         }
         
         public String getDestIp() {

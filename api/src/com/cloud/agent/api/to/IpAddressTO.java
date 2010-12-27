@@ -1,5 +1,6 @@
 package com.cloud.agent.api.to;
 
+
 public class IpAddressTO {
     
     private String publicIp;
@@ -24,6 +25,9 @@ public class IpAddressTO {
         this.vlanNetmask = vlanNetmask;
         this.vifMacAddress = vifMacAddress;
         this.guestIp = guestIp;
+    }
+    
+    protected IpAddressTO() {
     }
 
     public String getGuestIp(){
