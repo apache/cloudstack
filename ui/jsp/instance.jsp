@@ -1493,11 +1493,7 @@
     <div id="advanced_search_popup" class="adv_searchpopup_bg" style="display: none;">
         <div class="adv_searchformbox">
             <form action="#" method="post">
-            <ol>
-                <li>
-                    <input class="text textwatermark" type="text" name="adv_search_name" id="adv_search_name"
-                        value="by name" />
-                </li>
+            <ol>               
                 <li>
                     <select class="select" id="adv_search_state">
                         <option value=""></option>
@@ -1531,11 +1527,7 @@
     <div id="advanced_search_popup_nostate" class="adv_searchpopup_bg" style="display: none;">
         <div class="adv_searchformbox">
             <form action="#" method="post">
-            <ol>
-                <li>
-                    <input class="text textwatermark" type="text" name="adv_search_name" id="adv_search_name"
-                        value="by name" />
-                </li>
+            <ol>                
                 <li>
                     <select class="select" id="adv_search_zone">
                     </select>
@@ -1554,11 +1546,7 @@
     <div id="advanced_search_popup_nodomainaccount" class="adv_searchpopup_bg" style="display: none;">
         <div class="adv_searchformbox">
             <form action="#" method="post">
-            <ol>
-                <li>
-                    <input class="text textwatermark" type="text" name="adv_search_name" id="adv_search_name"
-                        value="by name" />
-                </li>
+            <ol>                
                 <li>
                     <select class="select" id="adv_search_state">
                         <option value=""></option>

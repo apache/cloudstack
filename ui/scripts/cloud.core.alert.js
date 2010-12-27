@@ -24,7 +24,7 @@ function alertGetSearchParams() {
         moreCriteria.push("&keyword="+todb(searchInput));	       
     }     
 
-	var $advancedSearchPopup = $("#advanced_search_container").find("#advanced_search_popup");
+	var $advancedSearchPopup = getAdvancedSearchPopupInSearchContainer();
 	if ($advancedSearchPopup.length > 0 && $advancedSearchPopup.css("display") != "none" ) {	
 	    var type = $advancedSearchPopup.find("#adv_search_type").val();							
 		if ($advancedSearchPopup.find("#adv_search_type").hasClass("textwatermark") == false && type!=null && type.length > 0) 
