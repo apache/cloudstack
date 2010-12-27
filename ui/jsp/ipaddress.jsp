@@ -730,11 +730,7 @@
     <div class="adv_searchpopup_bg" id="advanced_search_popup" style="display: none;">
         <div class="adv_searchformbox">
             <form action="#" method="post">
-            <ol>
-                <li>
-                    <input class="text textwatermark" type="text" name="adv_search_name" id="adv_search_ipaddress"
-                        value="by name" />
-                </li>
+            <ol>                
                 <li>
                     <select class="select" id="adv_search_zone">
                     </select>

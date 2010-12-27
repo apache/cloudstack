@@ -19,12 +19,14 @@
 function ipGetSearchParams() {
     var moreCriteria = [];	
 
-	var $advancedSearchPopup = $("#advanced_search_popup");
-	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {
-	    var ipaddress = $advancedSearchPopup.find("#adv_search_ipaddress").val();							
-		if (ipaddress!=null && trim(ipaddress).length > 0) 
-			moreCriteria.push("&ipaddress="+todb(ipaddress));	
-		
+	var searchInput = $("#basic_search").find("#search_input").val();	 
+    if (searchInput != null && searchInput.length > 0) {	           
+        moreCriteria.push("&keyword="+todb(searchInput));	       
+    }     
+
+	var $advancedSearchPopup = getAdvancedSearchPopupInSearchContainer();
+	if ($advancedSearchPopup.length > 0 && $advancedSearchPopup.css("display") != "none" ) {		
+
 		var zone = $advancedSearchPopup.find("#adv_search_zone").val();	
 	    if (zone!=null && zone.length > 0) 
 			moreCriteria.push("&zoneId="+zone);	
@@ -35,18 +37,13 @@ function ipGetSearchParams() {
 			    moreCriteria.push("&domainid="+domainId);	
     	}	
     	
-		if ($advancedSearchPopup.find("#adv_search_account_li").css("display") != "none") {	
+		if ($advancedSearchPopup.find("#adv_search_account_li").css("display") != "none" 
+    	    && $advancedSearchPopup.find("#adv_search_account").hasClass("textwatermark") == false) {	
 		    var account = $advancedSearchPopup.find("#adv_search_account").val();		
 		    if (account!=null && account.length > 0) 
 			    moreCriteria.push("&account="+account);		
 		}	
-	} 
-	else {     			    		
-	    var searchInput = $("#basic_search").find("#search_input").val();	 
-        if (lastSearchType == "basic_search" && searchInput != null && searchInput.length > 0) {	           
-            moreCriteria.push("&keyword="+todb(searchInput));	       
-        }        
-	}
+	} 	
 	
 	return moreCriteria.join("");          
 }
