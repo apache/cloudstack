@@ -67,7 +67,6 @@ public class EventTypes {
     public static final String EVENT_ACCOUNT_DISABLE = "ACCOUNT.DISABLE";
     public static final String EVENT_ACCOUNT_CREATE = "ACCOUNT.CREATE";
     public static final String EVENT_ACCOUNT_DELETE = "ACCOUNT.DELETE";
-
     
 	// UserVO Events
 	public static final String EVENT_USER_LOGIN = "USER.LOGIN";
@@ -179,5 +178,7 @@ public class EventTypes {
     
     //Network
     public static final String NETWORK_RESTART = "NETWORK.RESTART";
-
+    
+    //Custom certificates
+	public static final String EVENT_UPLOAD_CUSTOM_CERTIFICATE = "UPLOAD.CUSTOM.CERTIFICATE";
 }

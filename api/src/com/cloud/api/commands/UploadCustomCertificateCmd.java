@@ -44,7 +44,7 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_VOLUME_CREATE;
+        return EventTypes.EVENT_UPLOAD_CUSTOM_CERTIFICATE;
     }
 
     @Override
