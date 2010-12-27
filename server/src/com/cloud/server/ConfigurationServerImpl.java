@@ -53,6 +53,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.Availability;
@@ -151,8 +152,13 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 //				_configDao.update("network.type", "vlan");
 //				s_logger.debug("ConfigurationServer changed the network type to \"vlan\".");
 				
-				_configDao.update("hypervisor.type", "xenserver");
-				s_logger.debug("ConfigurationServer changed the hypervisor type to \"xenserver\".");
+				// Default value is set as KVM because of FOSS build, when we are
+				// running under premium, autoset to XenServer if we know it is from FOSS settings
+				String value = _configDao.getValue(Config.HypervisorDefaultType.key());
+				if (value == null || value.equalsIgnoreCase(HypervisorType.KVM.toString())) {
+					_configDao.update("hypervisor.type", "xenserver");
+					s_logger.debug("ConfigurationServer changed the hypervisor type to \"xenserver\".");
+				}
 				
 				_configDao.update("secondary.storage.vm", "true");
 				s_logger.debug("ConfigurationServer made secondary storage vm required.");
