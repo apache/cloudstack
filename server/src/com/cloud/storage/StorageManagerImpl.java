@@ -2795,7 +2795,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     public void cleanupVolumes(Long vmId){
         List<VolumeVO> volumesForVm = _volsDao.findByInstance(vmId);    	
     	for(VolumeVO vol : volumesForVm){
-    		destroyVolume(vol);
+    		if(vol.getVolumeType().equals(VolumeType.ROOT)){
+    			destroyVolume(vol);
+    		} else {
+    			//data volume
+    			_volsDao.detachVolume(vol.getId());
+    		}
     	}
     }
 }
