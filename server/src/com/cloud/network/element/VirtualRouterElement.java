@@ -196,7 +196,7 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement 
         
         //Set capabilities for LB service
         Map<Capability, String> lbCapabilities = new HashMap<Capability, String>();
-        lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn,sourceip");
+        lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn,source");
         lbCapabilities.put(Capability.SupportedProtocols, "tcp, udp");
         
         capabilities.put(Service.Lb, lbCapabilities);
