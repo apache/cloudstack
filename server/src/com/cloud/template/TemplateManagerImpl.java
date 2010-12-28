@@ -1253,16 +1253,17 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	} else {
     		startEventId = EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_ISO_DETACH, "Detaching ISO: "+isoId+" from Vm: "+vmId, startEventId);
     	}
+
         boolean success = _vmMgr.attachISOToVM(vmId, isoId, attach);
-
+        
+        if (attach) {
+            vm.setIsoId(iso.getId());
+        } else {
+            vm.setIsoId(null);
+        }
+        _userVmDao.update(vmId, vm);
+        
         if (success) {
-            if (attach) {
-                vm.setIsoId(iso.getId());
-            } else {
-                vm.setIsoId(null);
-            }
-            _userVmDao.update(vmId, vm);
-
             if (attach) {
             	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ISO_ATTACH, "Successfully attached ISO: " + iso.getName() + " to VM with ID: " + vmId,
                         null, startEventId);
