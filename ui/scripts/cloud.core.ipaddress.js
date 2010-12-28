@@ -1186,18 +1186,53 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
         var $spinningWheel = $rowContainer.find("#spinning_wheel");		
         $spinningWheel.find("#description").text("Revoking....");	
         $spinningWheel.show();   
-        $.ajax({						
-	       data: createURL("command=deletePortForwardingRule&id="+fromdb(jsonObj.id)),
-            dataType: "json",
-            success: function(json) {             
-                $template.find("#state").text("Revoked");	
-                $spinningWheel.hide(); 			
+             
+        $.ajax({
+            data: createURL("command=deletePortForwardingRule&id="+fromdb(jsonObj.id)),
+            dataType: "json",           
+            success: function(json) {	                                  	                        
+                var jobId = json.deleteportforwardingruleresponse.jobid;                  			                        
+                var timerKey = "asyncJob_" + jobId;					                       
+                $("body").everyTime(
+                    10000,
+                    timerKey,
+                    function() {
+                        $.ajax({
+                            data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+	                        dataType: "json",									                    					                    
+	                        success: function(json) {		                                                     							                       
+		                        var result = json.queryasyncjobresultresponse;										                   
+		                        if (result.jobstatus == 0) {
+			                        return; //Job has not completed
+		                        } else {
+			                        $("body").stopTime(timerKey);
+			                        $spinningWheel.hide();   
+									if (result.jobstatus == 1) { // Succeeded										   
+										$template.slideUp("slow", function() {
+											$(this).remove();													
+										});									
+									} else if (result.jobstatus == 2) { // Failed		
+									    $("#dialog_error").text("Revoking port forwarding rule failed.").dialog("open");								
+										//$("#dialog_error").text(fromdb(???)).dialog("open");
+									}							                    
+		                        }
+	                        },
+	                        error: function(XMLHttpResponse) {	 
+		                        $("body").stopTime(timerKey);
+								$spinningWheel.hide();   
+								handleError(XMLHttpResponse);		         
+	                        }
+                        });
+                    },
+                    0
+                );
             },
-            error: function(XMLHttpResponse) {
-                handleError(XMLHttpResponse);
-                $spinningWheel.hide(); 
+            error: function(XMLHttpResponse) {				
+				$spinningWheel.hide();   
+				handleError(XMLHttpResponse);				
             }
-        });	     
+        });    
+                 
         return false;
     });
     
