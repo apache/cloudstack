@@ -48,7 +48,7 @@ function buildZoneTree() {
 		
 		switch (action) {
 			case "zone_arrow" :				    
-			    var $loadingContainer = $zoneNode.find("#loading_container").show();
+			    var $loadingContainer = $zoneNode.find("#zone_loading_container").show();
                 var $zoneArrow = $zoneNode.find("#zone_arrow").hide();			
 			    
 			    var zoneObj = $zoneNode.data("jsonObj");
@@ -147,7 +147,10 @@ function buildZoneTree() {
 		var name = $podNode.data("name");
 		
 		switch (action) {
-			case "pod_arrow" :				    		    
+			case "pod_arrow" :				    
+			    var $loadingContainer = $podNode.find("#pod_loading_container").show();
+                var $podArrow = $podNode.find("#pod_arrow").hide();
+						    		    
 			    var podObj = $podNode.data("jsonObj");
 			    var $podContent = $podNode.find("#pod_content");					 	   
 				if(target.hasClass("expanded_close")) {						
@@ -159,8 +162,13 @@ function buildZoneTree() {
 					target.removeClass("expanded_open").addClass("expanded_close");	
 					$podContent.hide();		
 					$podContent.find("#clusters_container").empty();									
-				}	
+				}
+				
+				$loadingContainer.hide();
+                $podArrow.show();
+					
 			    break;
+			    
 			default:			
 			    selectRowInZoneTree($(this).find("#pod_header"));	    
 	            

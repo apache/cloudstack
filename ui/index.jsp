@@ -808,7 +808,7 @@
         -->
 	        <div id="zone_header" class="leftmenu_content">  
 	            <div class="leftmenu_thirdindent">
-                	<div class="leftmenu_arrowloader" id="loading_container" style="display:none;"></div>
+                	<div class="leftmenu_arrowloader" id="zone_loading_container" style="display:none;"></div>
 	                <div class="leftmenu_arrows white_nonexpanded_close" id="zone_arrow">
 	                </div>	                
 	                <span id="zone_name_label"><fmt:message key="label.zone"/>: </span>
@@ -835,14 +835,18 @@
     <!-- Zone Template (end) -->
 	<!-- Pod Template (begin) -->    
     <div class="leftmenu_expandedlist" id="leftmenu_pod_node_template" style="display:none">
+        <!--  
     	<div class="leftmenu_loadingbox" style="display:none;"  id="loading_container">
         	<div class="leftmenu_loader"></div>
             <p> <fmt:message key="label.adding.pod"/> &hellip; </p>
         </div>
+        -->
+        <!--
         <div id="row_container">
+        -->
 	        <div id="pod_header" class="leftmenu_content">
 	            <div class="leftmenu_fourthindent">
-                	<div class="leftmenu_arrowloader" id="loading_container" style="display:none;"></div>
+                	<div class="leftmenu_arrowloader" id="pod_loading_container" style="display:none;"></div>
 	                <div class="leftmenu_arrows white_nonexpanded_close" id="pod_arrow">
 	                </div>	               
 	                <span id="pod_name_label"><fmt:message key="label.pod"/>: </span>
@@ -853,7 +857,9 @@
 	            <div id="clusters_container">
 	            </div>
 	        </div>
+	    <!--
 	    </div>
+	    -->
     </div>
     <!-- Pod Template (end) -->
 	<!-- Cluster Template (begin) -->    
