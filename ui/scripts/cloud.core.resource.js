@@ -1154,7 +1154,8 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
                     
 	                if(!$clusterSelect.val())
 	                	$("option", $clusterSelect)[0].attr("selected", "selected");
-                    
+	                $clusterSelect.change();
+	                
                     $dialogAddPool.find("input[value=existing_cluster_radio]").attr("checked", true);
                 }
                 else {
@@ -1207,10 +1208,11 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 		        isValid &= validateDropDownBox("Pod", $thisDialog.find("#pod_dropdown"), $thisDialog.find("#pod_dropdown_errormsg"));						    
 			    isValid &= validateDropDownBox("Cluster", $thisDialog.find("#cluster_select"), $thisDialog.find("#cluster_select_errormsg"), false);  //required, reset error text					    				
 			    isValid &= validateString("Name", $thisDialog.find("#add_pool_name"), $thisDialog.find("#add_pool_name_errormsg"));
-			    isValid &= validateString("Server", $thisDialog.find("#add_pool_nfs_server"), $thisDialog.find("#add_pool_nfs_server_errormsg"));	
 				if (protocol == "nfs") {
+				    isValid &= validateString("Server", $thisDialog.find("#add_pool_nfs_server"), $thisDialog.find("#add_pool_nfs_server_errormsg"));	
 					isValid &= validateString("Path", $thisDialog.find("#add_pool_path"), $thisDialog.find("#add_pool_path_errormsg"));	
 				} else if(protocol == "iscsi") {
+				    isValid &= validateString("Server", $thisDialog.find("#add_pool_nfs_server"), $thisDialog.find("#add_pool_nfs_server_errormsg"));	
 					isValid &= validateString("Target IQN", $thisDialog.find("#add_pool_iqn"), $thisDialog.find("#add_pool_iqn_errormsg"));	
 					isValid &= validateString("LUN #", $thisDialog.find("#add_pool_lun"), $thisDialog.find("#add_pool_lun_errormsg"));	
 				} else if(protocol == "vmfs") {

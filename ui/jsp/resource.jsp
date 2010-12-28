@@ -717,7 +717,7 @@
                     <option value="vmfs">VMFS</option>
                 </select>
             </li>
-            <li>
+            <li id="add_pool_server_container">
                 <label for="add_pool_nfs_server">
                     Server:</label>
                 <input class="text" type="text" name="add_pool_nfs_server" id="add_pool_nfs_server" />
