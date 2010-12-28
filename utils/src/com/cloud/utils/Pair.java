@@ -21,6 +21,10 @@ public class Pair<T, U> {
     T t;
     U u;
     
+    protected Pair() {
+    	
+    }
+    
     public Pair(T t, U u) {
         this.t = t;
         this.u = u;

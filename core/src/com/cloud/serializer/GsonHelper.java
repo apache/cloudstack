@@ -23,9 +23,11 @@ import java.util.List;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.transport.ArrayTypeAdaptor;
 import com.cloud.agent.transport.VolListTypeAdaptor;
 import com.cloud.storage.VolumeVO;
+import com.cloud.utils.Pair;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 

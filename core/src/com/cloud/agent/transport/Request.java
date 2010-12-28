@@ -25,11 +25,13 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -85,6 +87,7 @@ public class Request {
         final Type listType = new TypeToken<List<VolumeVO>>() {}.getType();
         s_gBuilder.registerTypeAdapter(listType, new VolListTypeAdaptor());
         s_gBuilder.registerTypeAdapter(new TypeToken<List<PortConfig>>() {}.getType(), new SecStorageFirewallCfgCommand.PortConfigListTypeAdaptor());
+        s_gBuilder.registerTypeAdapter(new TypeToken<Pair<Long, Long>>() {}.getType(), new PingRoutingWithNwGroupsCommand.NwGroupsCommandTypeAdaptor());
         s_logger.info("Builder inited.");
     }
 
