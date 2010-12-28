@@ -553,6 +553,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	    gateway = pod.getGateway();
     	} 
     	
+    	if (netmask == null) {
+    		netmask = NetUtils.getCidrNetmask(pod.getCidrSize());
+    	}
+    	
         if (netmask != null) {
             cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
         }
