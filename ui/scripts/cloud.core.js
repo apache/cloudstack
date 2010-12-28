@@ -940,6 +940,7 @@ function getMidmenuId(jsonObj) {
 }
 
 var lastSearchType;
+var currentCommandString;
 function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, page) {                
 	var params = {
         "commandString": commandString,
@@ -956,9 +957,9 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
 	
 	(page > 1)? $("#midmenu_prevbutton").show(): $("#midmenu_prevbutton").hide();
 	
-	var $container = $("#midmenu_container").empty(); 
-	if(isMultipleSelectionInMidMenu == true)
-        $container = createMultipleSelectionSubContainer();
+	//var $container = $("#midmenu_container").empty(); 
+	//if(isMultipleSelectionInMidMenu == true)
+    //    $container = createMultipleSelectionSubContainer();
        
     var count = 0;    
     $.ajax({
@@ -966,7 +967,11 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
         data: createURL("command="+commandString+getSearchParamsFn()+"&pagesize="+midmenuItemCount+"&page="+page),
         dataType: "json",
         async: false,
-        success: function(json) {   
+        success: function(json) {  
+			var $container = $("#midmenu_container").empty(); 
+			if(isMultipleSelectionInMidMenu == true)
+				$container = createMultipleSelectionSubContainer();
+		
             selectedItemsInMidMenu = {};                           
             var items = json[jsonResponse1][jsonResponse2];      
             if(items != null && items.length > 0) {
