@@ -48,12 +48,12 @@ function buildZoneTree() {
 		
 		switch (action) {
 			case "zone_arrow" :				    
+			    var $loadingContainer = $zoneNode.find("#loading_container").show();
+                var $zoneArrow = $zoneNode.find("#zone_arrow").hide();			
+			    
 			    var zoneObj = $zoneNode.data("jsonObj");
 			    var $zoneContent = $zoneNode.find("#zone_content");				  	   
-				if(target.hasClass("expanded_close")) {						
-					target.removeClass("expanded_close").addClass("expanded_open");							
-					$zoneContent.show();	
-									
+				if(target.hasClass("expanded_close")) {										
 					$.ajax({
                         data: createURL("command=listPods&zoneid="+zoneObj.id),
 	                    dataType: "json",
@@ -69,13 +69,19 @@ function buildZoneTree() {
 			                    }			                    
 		                    }		    
 	                    }
-                    });                    
+                    });                     
+                    target.removeClass("expanded_close").addClass("expanded_open");							
+					$zoneContent.show();					                   
 				} 
-				else if(target.hasClass("expanded_open")) {					
+				else if(target.hasClass("expanded_open")) {	
+				    $zoneContent.find("#pods_container").empty();					
 					target.removeClass("expanded_open").addClass("expanded_close");					
-					$zoneContent.hide();
-					$zoneContent.find("#pods_container").empty();	
-				}				
+					$zoneContent.hide();					
+				}	
+				
+				$loadingContainer.hide();
+                $zoneArrow.show();				
+							
 				break;					
 			
 			default:				    		    

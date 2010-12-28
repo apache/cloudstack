@@ -797,11 +797,15 @@
     
     <!-- Zone Template (begin) --> 
     <div class="leftmenu_expandedlist" id="leftmenu_zone_node_template" style="display:none">
+     	<!--  
      	<div class="leftmenu_loadingbox" style="display:none;" id="loading_container">
         	<div class="leftmenu_loader"></div>
             <p> <fmt:message key="label.adding.zone"/> &hellip; </p>
         </div>
+        -->
+        <!--  
         <div id="row_container">
+        -->
 	        <div id="zone_header" class="leftmenu_content">  
 	            <div class="leftmenu_thirdindent">
                 	<div class="leftmenu_arrowloader" id="loading_container" style="display:none;"></div>
@@ -824,7 +828,9 @@
 		        </div>	
 	            	                       
 	        </div>
+	    <!--  
 		</div>
+		-->
     </div>
     <!-- Zone Template (end) -->
 	<!-- Pod Template (begin) -->    
