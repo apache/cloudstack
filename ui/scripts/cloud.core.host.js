@@ -68,8 +68,7 @@ function hostToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function hostToRightPanel($midmenuItem1) {         
-    if(currentRightPanelJSP != "jsp/host.jsp") {    
-        clearAddButtonsOnTop();  
+    if(currentRightPanelJSP != "jsp/host.jsp") {            
         removeDialogs();
         $("#right_panel").load("jsp/host.jsp", function(){     
             currentRightPanelJSP = "jsp/host.jsp";
