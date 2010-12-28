@@ -80,6 +80,7 @@ import org.apache.http.protocol.ResponseServer;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.response.ApiResponseSerializer;
+import com.cloud.api.response.ExceptionResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobManager;
@@ -270,18 +271,29 @@ public class ApiServer implements HttpRequestHandler {
                 String responseText = handleRequest(parameterMap, true, responseType, sb);
                 sb.append(" 200 " + ((responseText == null) ? 0 : responseText.length()));
 
-                writeResponse(response, responseText, false, responseType);
+                writeResponse(response, responseText, HttpStatus.SC_OK, responseType, null);
             } catch (ServerApiException se) {
-                try {
-                    response.setStatusCode(se.getErrorCode());
-                    response.setReasonPhrase(se.getDescription());
-                    BasicHttpEntity body = new BasicHttpEntity();
-                    body.setContentType("text/xml");
-                    String responseStr = "<error>"+se.getErrorCode()+" : "+se.getDescription()+"</error>";
-                    body.setContent(new ByteArrayInputStream(responseStr.getBytes("UTF-8")));
-                    response.setEntity(body);
+                String responseName = null;
+                String cmdClassName = null;
 
-                    sb.append(" " + se.getErrorCode() + " " + responseStr.length());
+                try {
+                    if (se.getErrorCode() == BaseCmd.UNSUPPORTED_ACTION_ERROR) {
+                        responseName = "errorresponse";
+                    } else {
+                        String cmdName = ((String[])parameterMap.get("command"))[0];
+                        cmdClassName = _apiCommands.getProperty(cmdName);
+                        Class claz = Class.forName(cmdClassName);
+                        responseName = ((BaseCmd)claz.newInstance()).getCommandName();
+                    }
+                    
+                    ExceptionResponse apiResponse = new ExceptionResponse();
+                    apiResponse.setErrorCode(se.getErrorCode());
+                    apiResponse.setErrorText(se.getDescription());
+                    apiResponse.setResponseName(responseName);
+                    String responseText = ApiResponseSerializer.toSerializedString(apiResponse, responseType);
+                    
+                    writeResponse(response, responseText, se.getErrorCode(), responseType, se.getDescription());
+                    sb.append(" " + se.getErrorCode() + " " + responseText.length());
                 } catch (Exception e) {
                     s_logger.error("IO Exception responding to http request", e);
                 }
@@ -312,7 +324,7 @@ public class ApiServer implements HttpRequestHandler {
                         s_logger.trace("   key: " + keyStr + ", value: " + ((value == null) ? "'null'" : value[0]));
                     }
                 }
-                response = buildErrorResponse("invalid request, no command sent", responseType);
+                throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "Invalid request, no command sent");
             } else {
                 Map<String, String> paramMap = new HashMap<String, String>();
                 Set keys = params.keySet();
@@ -347,10 +359,10 @@ public class ApiServer implements HttpRequestHandler {
                     response = queueCommand(cmdObj, paramMap);
                     buildAuditTrail(auditTrailSb, command[0], response);
                 } else {
-                    String errorString = " unknown API command: " + ((command == null) ? "null" : command[0]);
+                    String errorString = "Unknown API command: " + ((command == null) ? "null" : command[0]);
                     s_logger.warn(errorString);
                     auditTrailSb.append(" " +errorString);
-                    response = buildErrorResponse(errorString, responseType);
+                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, errorString);
                 }
             }
         } catch (Exception ex) {
@@ -529,7 +541,6 @@ public class ApiServer implements HttpRequestHandler {
             	
             }
             
-
             // - build a request string with sorted params, make sure it's all lowercase
             // - sign the request, verify the signature is the same
             List<String> parameterNames = new ArrayList<String>();
@@ -559,7 +570,6 @@ public class ApiServer implements HttpRequestHandler {
                 }
             }
             
-
             // if api/secret key are passed to the parameters
             if ((signature == null) || (apiKey == null)) {
                 if (s_logger.isDebugEnabled()) {
@@ -653,10 +663,6 @@ public class ApiServer implements HttpRequestHandler {
         	}
         	
         	Account account = _ms.findAccountById(userAcct.getAccountId());
-
-//            String networkType = _ms.getConfigurationValue("network.type");
-//            if (networkType == null) 
-//            	networkType = "vnet";
             
             String hypervisorType = _ms.getConfigurationValue("hypervisor.type");
             if (hypervisorType == null) 
@@ -679,7 +685,6 @@ public class ApiServer implements HttpRequestHandler {
             session.setAttribute("account", account.getAccountName());
             session.setAttribute("domainid", account.getDomainId());
             session.setAttribute("type", Short.valueOf(account.getType()).toString());
-//            session.setAttribute("networktype", networkType);
             session.setAttribute("hypervisortype", hypervisorType);
             session.setAttribute("directattachsecuritygroupsenabled", directAttachSecurityGroupsEnabled);
             session.setAttribute("systemvmuselocalstorage", systemVmUseLocalStorage);
@@ -741,9 +746,10 @@ public class ApiServer implements HttpRequestHandler {
     }
 
     // FIXME: rather than isError, we might was to pass in the status code to give more flexibility
-    private void writeResponse(HttpResponse resp, final String responseText, final boolean isError, String responseType) {
+    private void writeResponse(HttpResponse resp, final String responseText, final int statusCode, String responseType, String reasonPhrase) {
         try {
-            resp.setStatusCode(isError? HttpStatus.SC_INTERNAL_SERVER_ERROR : HttpStatus.SC_OK);
+            resp.setStatusCode(statusCode);
+            resp.setReasonPhrase(reasonPhrase);
 
             BasicHttpEntity body = new BasicHttpEntity();
             if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
@@ -767,22 +773,6 @@ public class ApiServer implements HttpRequestHandler {
             s_logger.error("error!", ex);
         }
     }
-
-    private String buildErrorResponse(String errorStr, String responseType) {
-        StringBuffer sb = new StringBuffer();
-        if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-            // JSON response
-            sb.append("{ \"error\" : { \"description\" : \"" + errorStr + "\" } }");
-        } else {
-            sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
-            sb.append("<error><description>");
-            sb.append(errorStr);
-            sb.append("</description></error>");
-        }
-        return sb.toString();
-    }
-
-
 
     // FIXME:  the following two threads are copied from http://svn.apache.org/repos/asf/httpcomponents/httpcore/trunk/httpcore/src/examples/org/apache/http/examples/ElementalHttpServer.java
     //         we have to cite a license if we are using this code directly, so we need to add the appropriate citation or modify the code to be very specific to our needs
