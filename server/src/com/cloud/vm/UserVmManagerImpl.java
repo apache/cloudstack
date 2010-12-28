@@ -2495,23 +2495,25 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		return true;
 	}
 	
-    @Override
-    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
-        return true;
-    }
+	@Override
+	public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
+		UserVmVO userVm = profile.getVirtualMachine();
+		List<NicVO> nics = _nicDao.listBy(userVm.getId());
+		for (NicVO nic : nics) {
+			NetworkVO network = _networkDao.findById(nic.getNetworkId());
+			if (network.getTrafficType() == TrafficType.Guest) {
+				userVm.setPrivateIpAddress(nic.getIp4Address());
+				userVm.setPrivateNetmask(nic.getNetmask());
+				userVm.setPrivateMacAddress(nic.getMacAddress());
+			}
+		}
+		_vmDao.update(userVm.getId(), userVm);
+	
+		return true;
+	}
 
     @Override
     public boolean finalizeStart(Commands cmds, VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
-    	UserVmVO userVm = profile.getVirtualMachine();
-		 List<NicVO> nics = _nicDao.listBy(userVm.getId());
-        for (NicVO nic : nics) {
-        	NetworkVO network = _networkDao.findById(nic.getNetworkId());
-        	if (network.getTrafficType() == TrafficType.Guest) {
-        		userVm.setPrivateIpAddress(nic.getIp4Address());
-        		userVm.setPrivateNetmask(nic.getNetmask());
-        		userVm.setPrivateMacAddress(nic.getMacAddress());
-        	}
-        }
         return true;
     }
     

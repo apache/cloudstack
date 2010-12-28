@@ -1509,6 +1509,26 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		NicProfile controlNic = (NicProfile)profile.getParameter("control.nic");
         CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20);
         cmds.addCommand("checkSsh", check);
+        
+        SecondaryStorageVmVO secVm = profile.getVirtualMachine();
+		 List<NicVO> nics = _nicDao.listBy(secVm.getId());
+        for (NicVO nic : nics) {
+        	NetworkVO network = _networkDao.findById(nic.getNetworkId());
+        	if (network.getTrafficType() == TrafficType.Public) {
+        		secVm.setPublicIpAddress(nic.getIp4Address());
+        		secVm.setPublicNetmask(nic.getNetmask());
+        		secVm.setPublicMacAddress(nic.getMacAddress());
+        	} else if (network.getTrafficType() == TrafficType.Control) {
+        		secVm.setGuestIpAddress(nic.getIp4Address());
+        		secVm.setGuestNetmask(nic.getNetmask());
+        		secVm.setGuestMacAddress(nic.getMacAddress());
+        	} else if (network.getTrafficType() == TrafficType.Management) {
+        		secVm.setPrivateIpAddress(nic.getIp4Address());
+        		secVm.setPrivateNetmask(nic.getNetmask());
+        		secVm.setPrivateMacAddress(nic.getMacAddress());
+        	}
+        }
+        _secStorageVmDao.update(secVm.getId(), secVm);
         return true;
 	}
 
@@ -1521,24 +1541,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
 			return false;
 		}
-		SecondaryStorageVmVO secVm = profile.getVirtualMachine();
-		 List<NicVO> nics = _nicDao.listBy(secVm.getId());
-         for (NicVO nic : nics) {
-         	NetworkVO network = _networkDao.findById(nic.getNetworkId());
-         	if (network.getTrafficType() == TrafficType.Public) {
-         		secVm.setPublicIpAddress(nic.getIp4Address());
-         		secVm.setPublicNetmask(nic.getNetmask());
-         		secVm.setPublicMacAddress(nic.getMacAddress());
-         	} else if (network.getTrafficType() == TrafficType.Control) {
-         		secVm.setGuestIpAddress(nic.getIp4Address());
-         		secVm.setGuestNetmask(nic.getNetmask());
-         		secVm.setGuestMacAddress(nic.getMacAddress());
-         	} else if (network.getTrafficType() == TrafficType.Management) {
-         		secVm.setPrivateIpAddress(nic.getIp4Address());
-         		secVm.setPrivateNetmask(nic.getNetmask());
-         		secVm.setPrivateMacAddress(nic.getMacAddress());
-         	}
-         }
+		
 		return true;
 	}
 

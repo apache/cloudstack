@@ -116,7 +116,7 @@ def destroy_network_rules_for_vm(vm_name):
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
         vmchain =  '-'.join(vm_name.split('-')[:-1])
-        vmchain_default =  '-'.join(vm_name.split('-')[:-2]) + "-def"
+        vmchain_default =  '-'.join(vm_name.split('-')[:-1]) + "-def"
 
     destroy_ebtables_rules(vmchain)
     
@@ -201,8 +201,6 @@ def default_network_rules_systemvm(vm_name):
     vifs = getVifs(vm_name)
     domid = getvmId(vm_name)
     vmchain = vm_name
-    if vm_name.startswith('r-'):
-        vmchain = '-'.join(vm_name.split('-')[:-1])
  
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
   
@@ -234,7 +232,6 @@ def default_network_rules(vm_name, vm_ip, vm_id, vm_mac):
     vmName = vm_name 
     domID = getvmId(vm_name)
     delete_rules_for_vm_in_bridge_firewall_chain(vmName)
-    vm_name =  '-'.join(vm_name.split('-')[:-1])
     vmchain = vm_name
     vmchain_default = '-'.join(vmchain.split('-')[:-1]) + "-def"
     
@@ -282,7 +279,7 @@ def default_network_rules(vm_name, vm_ip, vm_id, vm_mac):
 def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
     vm_name = vmName
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
-        vm_name =  '-'.join(vm_name.split('-')[:-2])
+        vm_name =  '-'.join(vm_name.split('-')[:-1])
     
     vmchain = vm_name
     
@@ -294,52 +291,6 @@ def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
             execute("iptables " + cmd)
         except:
               logging.exception("Ignoring failure to delete rules for vm " + vmName)
-
-'''  
-def network_rules_for_rebooted_vm(vmName):
-    vm_name = vmName
-    vifs = getVifs(vmName) 
-    logging.debug("Found a rebooted VM -- reprogramming rules for  " + vmName)
-    
-    delete_rules_for_vm_in_bridge_firewall_chain(vmName)
-    if 1 in [ vm_name.startswith(c) for c in ['r-', 's-', 'v-'] ]:
-        default_network_rules_systemvm(session, {"vmName":vmName})
-        return True
-    
-    vmchain = '-'.join(vm_name.split('-')[:-1])
-    vmchain_default = '-'.join(vm_name.split('-')[:-2]) + "-def"
-
-    for v in vifs:
-        iptables('-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default)
-        iptables('-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default)
-
-    #change antispoof rule in vmchain
-    try:
-        delcmd = "iptables -S " +  vmchain_default + " | grep  physdev-in | sed 's/-A/-D/'"
-        inscmd = "iptables -S " +  vmchain_default + " | grep  physdev-in | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' | sed 's/-A/-I/'"
-        inscmd2 = "iptables -S " +  vmchain_default + " | grep  physdev-in | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' | sed 's/-A/-I/'"
-        
-        ipts = []
-        for cmd in [delcmd, inscmd, inscmd2]:
-            cmds = bash('-c', cmd.split(' ')).split('\n')
-            cmds.pop()
-            for c in cmds:
-                    ipt = c.split(' ')
-                    ipt.pop()
-                    ipts.append(ipt)
-        
-        for ipt in ipts:
-            try:
-                iptables(ipt)
-            except:
-                logging.debug("Failed to rewrite antispoofing rules for vm " + vmName)
-    except:
-        logging.debug("No rules found for vm " + vmchain)
-
-
-    rewrite_rule_log_for_vm(vmName, curr_domid)
-    return True
-'''  
 
 def rewrite_rule_log_for_vm(vm_name, new_domid):
     logfilename = "/var/run/cloud/" + vm_name +".log"
@@ -395,16 +346,13 @@ def cleanup_rules_for_dead_vms():
 def cleanup_rules():
   try:
 
-    chainscmd = "iptables-save | grep '^:' | grep '.*-def' | awk '{print $1}' | cut -d':' -f2"
+    chainscmd = "iptables-save | grep '^:' | grep -v '.*-def' | awk '{print $1}' | cut -d':' -f2"
     chains = execute(chainscmd).split('\n')
     cleaned = 0
     cleanup = []
     for chain in chains:
         if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
-            if chain.startswith('i-') or chain.startswith('r-'):
-                vm_name = chain + '-untagged'
-            else:
-                vm_name = chain
+            vm_name = chain
                 
             cmd = "virsh list |grep " + vm_name 
             try:
@@ -421,7 +369,7 @@ def cleanup_rules():
                 cleanup.append(vm_name)
                 
     for vmname in cleanup:
-        destroy_network_rules_for_vm({'vmName':vmname})
+        destroy_network_rules_for_vm(vmname)
                     
     logging.debug("Cleaned up rules for " + str(len(cleanup)) + " chains")                
   except:

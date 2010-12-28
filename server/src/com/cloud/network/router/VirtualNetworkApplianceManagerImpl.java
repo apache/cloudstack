@@ -1524,6 +1524,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         		router.setPrivateMacAddress(nic.getMacAddress());
         	}
         }
+        _routerDao.update(router.getId(), router);
         //source NAT address is stored in /proc/cmdline of the domR and gets
 		//reassigned upon powerup. Source NAT rule gets configured in StartRouter command
         //The command should be sent for domR only, skip for DHCP

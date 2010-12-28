@@ -2010,16 +2010,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     	NicProfile controlNic = (NicProfile)profile.getParameter("control.nic");
         CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20);
         cmds.addCommand("checkSsh", check);
-        return true;
-    }
-    
-    @Override
-    public boolean finalizeStart(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
-        CheckSshAnswer answer = (CheckSshAnswer)cmds.getAnswer("checkSsh");
-        if (!answer.getResult()) {
-            s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
-            return false;
-        }
         
         ConsoleProxyVO proxy = profile.getVirtualMachine();
         List<NicVO> nics = _nicDao.listBy(proxy.getId());
@@ -2038,6 +2028,17 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         		proxy.setPrivateNetmask(nic.getNetmask());
         		proxy.setPrivateMacAddress(nic.getMacAddress());
         	}
+        }
+        _consoleProxyDao.update(proxy.getId(), proxy);
+        return true;
+    }
+    
+    @Override
+    public boolean finalizeStart(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
+        CheckSshAnswer answer = (CheckSshAnswer)cmds.getAnswer("checkSsh");
+        if (!answer.getResult()) {
+            s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
+            return false;
         }
         
         return true;
