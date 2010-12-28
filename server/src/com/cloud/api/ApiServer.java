@@ -412,6 +412,13 @@ public class ApiServer implements HttpRequestHandler {
             job.setCmdInfo(ApiGsonHelper.getBuilder().create().toJson(params));
 
             long jobId = _asyncMgr.submitAsyncJob(job);
+            
+            if (jobId == 0L) {
+                String errorMsg = "Unable to schedule async job for command " + job.getCmd();
+                s_logger.warn(errorMsg);
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, errorMsg);
+            }
+            
             if (objectId != null) {
                 return ((BaseAsyncCreateCmd)asyncCmd).getResponse(jobId, objectId);
             }

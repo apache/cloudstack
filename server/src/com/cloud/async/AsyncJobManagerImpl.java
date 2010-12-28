@@ -127,11 +127,12 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
                 s_logger.debug("submit async job-" + job.getId() + ", details: " + job.toString());
             }
     	    return job.getId();
-    	} catch(Exception e) {
-    	    s_logger.error("Unexpected exception: ", e);
+    	} catch(Exception e) { 
     	    txt.rollback();
+    	    String errMsg = "Unable to schedule async job for command " + job.getCmd() + ", unexpected exception.";
+            s_logger.warn(errMsg, e);
+            throw new CloudRuntimeException(errMsg);
     	}
-    	return 0L;
     }
 
     @Override @DB
