@@ -775,7 +775,7 @@
                     </select>
                 </li>
                 <li id="adv_search_account_li" style="display: none;">
-                    <input class="text textwatermark" type="text" id="adv_search_account" value="textwatermark" />
+                    <input class="text textwatermark" type="text" id="adv_search_account" value="by account" />
                 </li>
             </ol>
             </form>

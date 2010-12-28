@@ -1536,8 +1536,8 @@
                     <select class="select" id="adv_search_domain">
                     </select>
                 </li>
-                <li id="adv_search_account_li" style="display: none;">
-                    <input class="text" type="text" id="adv_search_account" />
+                <li id="adv_search_account_li" style="display: none;">                    
+                    <input class="text textwatermark" type="text" id="adv_search_account" value="by account" />
                 </li>
             </ol>
             </form>
