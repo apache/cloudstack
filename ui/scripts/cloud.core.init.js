@@ -182,18 +182,15 @@ $(document).ready(function() {
 		});
 		
 		$("#leftmenu_physical_resource").bind("click", function(event) {
-			showMiddleMenu();
-			clearMiddleMenu();
-			clearButtonsOnTop();
-		   
-			expandOrCollapseZoneTree();
 			
-			$("#right_panel").data("onRefreshFn", function() {
-		        $("#leftmenu_physical_resource").click();
-		    });
 							
-		    if(currentRightPanelJSP != "jsp/resource.jsp") {    
-                clearButtonsOnTop();  
+		    if(currentRightPanelJSP != "jsp/resource.jsp") { 
+				expandOrCollapseZoneTree();
+			
+				$("#right_panel").data("onRefreshFn", function() {
+					$("#leftmenu_physical_resource").click();
+				});
+                //clearButtonsOnTop();  
                 removeDialogs();
                 $("#right_panel").load("jsp/resource.jsp", function(){     
                     currentRightPanelJSP = "jsp/resource.jsp";
