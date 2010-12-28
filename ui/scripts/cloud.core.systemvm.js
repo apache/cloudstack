@@ -19,12 +19,13 @@
  function systemVmGetSearchParams() {
      var moreCriteria = [];	
 
-	var $advancedSearchPopup = $("#advanced_search_popup");
-	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {
-	    var name = $advancedSearchPopup.find("#adv_search_name").val();							
-		if (name!=null && trim(name).length > 0) 
-			moreCriteria.push("&name="+todb(name));	
-		
+	var searchInput = $("#basic_search").find("#search_input").val();	 
+    if (searchInput != null && searchInput.length > 0) {	           
+        moreCriteria.push("&keyword="+todb(searchInput));	       
+    }     
+
+	var $advancedSearchPopup = getAdvancedSearchPopupInSearchContainer();
+	if ($advancedSearchPopup.length > 0 && $advancedSearchPopup.css("display") != "none" ) {	   
 		var state = $advancedSearchPopup.find("#adv_search_state").val();
 		if (state!=null && state.length > 0) 
 			moreCriteria.push("&state="+todb(state));		
@@ -38,13 +39,7 @@
 	        if (pod!=null && pod.length > 0) 
 			    moreCriteria.push("&podId="+pod);
         }       
-	} 
-	else {     			    		
-	    var searchInput = $("#basic_search").find("#search_input").val();	 
-        if (lastSearchType == "basic_search" && searchInput != null && searchInput.length > 0) {	           
-            moreCriteria.push("&keyword="+todb(searchInput));	       
-        }        
-	}
+	} 	
 	
 	return moreCriteria.join("");          
  }
