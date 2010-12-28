@@ -34,6 +34,7 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Implementation(responseObject=StoragePoolResponse.class, description="Creates a template of a virtual machine. " +
 																															"The virtual machine must be in a STOPPED state. " +
@@ -179,14 +180,18 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     
     @Override
     public void execute(){
-        VirtualMachineTemplate template = _userVmService.createPrivateTemplate(this);
-        if (template != null) {
-            TemplateResponse response = _responseGenerator.createTemplateResponse(template, snapshotId, volumeId);
-            response.setResponseName(getCommandName());
-            
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create template");
+        try {
+            VirtualMachineTemplate template = _userVmService.createPrivateTemplate(this);
+            if (template != null) {
+                TemplateResponse response = _responseGenerator.createTemplateResponse(template, snapshotId, volumeId);
+                response.setResponseName(getCommandName());      
+                this.setResponseObject(response);
+            } else {
+                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create template");
+            }
+        } catch (Exception e) {
+            _userVmService.deletePrivateTemplateRecord(this.getEntityId());
+            throw new CloudRuntimeException(e.toString());
         }
     }
 }

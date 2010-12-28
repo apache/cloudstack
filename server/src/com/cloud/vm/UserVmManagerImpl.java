@@ -1581,6 +1581,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 //            }
 //        }
     }
+    
+    @Override
+    public void deletePrivateTemplateRecord(Long templateId){
+        if ( templateId != null) {
+            _templateDao.remove(templateId);
+        }
+    }
+
 
     @Override
     public VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
@@ -1721,7 +1729,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (userId == null) {
             userId = User.UID_SYSTEM;
         }
-
+        long templateId = command.getEntityId();
         Long volumeId = command.getVolumeId();
         Long snapshotId = command.getSnapshotId();
         SnapshotVO snapshot = null;
@@ -1745,13 +1753,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (s_logger.isInfoEnabled()) {
                 s_logger.info(msg);
             }
-            _templateDao.remove(command.getEntityId()); // Mark it removed so that templates with the same name can be created subsequently. Bug 7366
             throw new CloudRuntimeException(msg);
         }
 
         SnapshotCommand cmd = null;        
         VMTemplateVO privateTemplate = null;
-    	long templateId = command.getEntityId();
     	long zoneId = volume.getDataCenterId();
     	String uniqueName = getRandomPrivateTemplateName();
 
@@ -1788,6 +1794,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             volume = _volsDao.findById(volumeId);
             if( volume == null ) {
                 throw new CloudRuntimeException("Unable to find volume for Id " + volumeId);
+            }
+            if( volume.getPoolId() == null ) {
+                _templateDao.remove(templateId);
+                throw new CloudRuntimeException("Volume " + volumeId + " is empty, can't create template on it");
             }
             Long instanceId = volume.getInstanceId();
             if (instanceId != null){

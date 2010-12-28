@@ -154,4 +154,6 @@ public interface UserVmService {
     UserVm stopVirtualMachine(long vmId) throws ConcurrentOperationException;
     
     UserVm startVirtualMachine(long vmId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+
+    void deletePrivateTemplateRecord(Long templateId);
 }
