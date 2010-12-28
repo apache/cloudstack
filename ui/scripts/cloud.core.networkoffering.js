@@ -29,11 +29,7 @@ function networkOfferingGetSearchParams() {
         var availability = $advancedSearchPopup.find("#adv_search_availability").val();				
 	    if (availability!=null && availability.length > 0) 
 		    moreCriteria.push("&availability="+todb(availability));	
-		    
-		var type = $advancedSearchPopup.find("#adv_search_type").val();				
-	    if (type!=null && type.length > 0) 
-		    moreCriteria.push("&type="+todb(type));	
-		    
+		
 		var traffictype = $advancedSearchPopup.find("#adv_search_traffictype").val();				
 	    if (traffictype!=null && traffictype.length > 0) 
 		    moreCriteria.push("&traffictype="+todb(traffictype));	        

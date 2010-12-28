@@ -174,15 +174,7 @@
                         <option value="Optional">Optional</option>
                         <option value="Unavailable">Unavailable</option>
                     </select>
-                </li>
-                <li>
-                    <select class="select" id="adv_search_type">
-                        <option value=""></option>
-                        <option value="Virtual">Virtual</option>
-                        <option value="Direct">Direct</option>
-                        <option value="DirectPodBased">DirectPodBased</option>
-                    </select>
-                </li>
+                </li>               
                 <li>
                     <select class="select" id="adv_search_traffictype">
                         <option value=""></option>
