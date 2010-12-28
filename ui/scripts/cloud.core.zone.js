@@ -1360,6 +1360,7 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
     bindEventHandlerToDialogAddPool($dialogAddPool);	
        
 	var $podSelect = $dialogAddPool.find("#pod_dropdown");
+    var mapClusters = {};
     
     $podSelect.bind("change", function(event) {			   
         var podId = $(this).val();
@@ -1369,11 +1370,19 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
         $.ajax({
 	       data: createURL("command=listClusters&podid=" + podId),
             dataType: "json",
+            async: false,
             success: function(json) {			            
                 var items = json.listclustersresponse.cluster;
-                if(items != null && items.length > 0) {			                
-                    for(var i=0; i<items.length; i++) 			                    
-                        $clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		      
+                if(items != null && items.length > 0) {			
+	            	mapClusters = {};
+                    for(var i=0; i<items.length; i++) {
+	                	mapClusters["cluster_"+items[i].id] = items[i];
+                        $clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
+                    }
+                    
+	                if(!$clusterSelect.val())
+	                	$("option", $clusterSelect)[0].attr("selected", "selected");
+                    
                     $dialogAddPool.find("input[value=existing_cluster_radio]").attr("checked", true);
                 }
                 else {
@@ -1382,7 +1391,33 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
                 }
             }
         });
-    });        
+    });
+    
+    $("#cluster_select", $dialogAddPool).change(function() {
+    	
+    	var curOption = $(this).val();
+    	if(!curOption)
+    		return false;
+    	
+    	var $protocolSelector = $("#add_pool_protocol", $dialogAddPool);
+    	var objCluster = mapClusters['cluster_'+curOption];
+    	
+    	if(objCluster.hypervisortype == "KVM") {
+    		$protocolSelector.empty();
+    		$protocolSelector.append('<option value="nfs">NFS</option>');
+    	} else if(objCluster.hypervisortype == "XenServer") {
+    		$protocolSelector.empty();
+			$protocolSelector.append('<option value="nfs">NFS</option>');
+			$protocolSelector.append('<option value="iscsi">ISCSI</option>');
+    	} else if(objCluster.hypervisortype == "VmWare") {
+    		$protocolSelector.empty();
+			$protocolSelector.append('<option value="nfs">NFS</option>');
+			$protocolSelector.append('<option value="vmfs">VMFS datastore</option>');
+    	}
+    	
+    	$protocolSelector.change();
+    }).change();
+    
     
     $button.unbind("click").bind("click", function(event) { 
         $dialogAddPool.find("#zone_name").text(zoneName);        
@@ -1417,11 +1452,14 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
 			    isValid &= validateDropDownBox("Cluster", $thisDialog.find("#cluster_select"), $thisDialog.find("#cluster_select_errormsg"), false);  //required, reset error text					    				
 			    isValid &= validateString("Name", $thisDialog.find("#add_pool_name"), $thisDialog.find("#add_pool_name_errormsg"));
 			    isValid &= validateString("Server", $thisDialog.find("#add_pool_nfs_server"), $thisDialog.find("#add_pool_nfs_server_errormsg"));	
-				if (protocol == "nfs" || protocol == "vmfs") {
+				if (protocol == "nfs") {
 					isValid &= validateString("Path", $thisDialog.find("#add_pool_path"), $thisDialog.find("#add_pool_path_errormsg"));	
-				} else {
+				} else if(protocol == "iscsi") {
 					isValid &= validateString("Target IQN", $thisDialog.find("#add_pool_iqn"), $thisDialog.find("#add_pool_iqn_errormsg"));	
 					isValid &= validateString("LUN #", $thisDialog.find("#add_pool_lun"), $thisDialog.find("#add_pool_lun_errormsg"));	
+				} else if(protocol == "vmfs") {
+					isValid &= validateString("vCenter Datacenter", $thisDialog.find("#add_pool_vmfs_dc"), $thisDialog.find("#add_pool_vmfs_dc_errormsg"));	
+					isValid &= validateString("vCenter Datastore", $thisDialog.find("#add_pool_vmfs_ds"), $thisDialog.find("#add_pool_vmfs_ds_errormsg"));	
 				}
 				isValid &= validateString("Tags", $thisDialog.find("#add_pool_tags"), $thisDialog.find("#add_pool_tags_errormsg"), true);	//optional
 			    if (!isValid) 
@@ -1456,10 +1494,11 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
 						path = "/" + path; 
 					url = nfsURL(server, path);
 				} else if (protocol == "vmfs") {
-					var path = trim($thisDialog.find("#add_pool_path").val());
+					var path = trim($thisDialog.find("#add_pool_vmfs_dc").val());
 					if(path.substring(0,1)!="/")
 						path = "/" + path; 
-					url = vmfsURL(server, path);
+					path += "/" + trim($thisDialog.find("#add_pool_vmfs_ds").val())
+					url = vmfsURL("dummy", path);
 				} else {
 					var iqn = trim($thisDialog.find("#add_pool_iqn").val());
 					if(iqn.substring(0,1)!="/")

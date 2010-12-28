@@ -832,25 +832,39 @@
                 <div id="add_pool_nfs_server_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li id="add_pool_path_container">
+            <li id="add_pool_path_container" input_group="nfs">
                 <label for="add_pool_path">
                     Path:</label>
                 <input class="text" type="text" name="add_pool_path" id="add_pool_path" />
                 <div id="add_pool_path_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li id="add_pool_iqn_container" style="display: none">
+            <li id="add_pool_iqn_container" style="display: none" input_group="iscsi">
                 <label for="add_pool_iqn">
                     Target IQN:</label>
                 <input class="text" type="text" name="add_pool_iqn" id="add_pool_iqn" />
                 <div id="add_pool_iqn_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li id="add_pool_lun_container" style="display: none">
+            <li id="add_pool_lun_container" style="display: none" input_group="iscsi">
                 <label for="add_pool_lun">
                     LUN #:</label>
                 <input class="text" type="text" name="add_pool_lun" id="add_pool_lun" />
                 <div id="add_pool_lun_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmfs">
+                <label for="add_pool_vmfs_dc">
+                    vCenter Datacenter:</label>
+                <input class="text" type="text" name="add_pool_vmfs_dc" id="add_pool_vmfs_dc" />
+                <div id="add_pool_vmfs_dc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmfs">
+                <label for="add_pool_vmfs_ds">
+                    vCenter Datastore:</label>
+                <input class="text" type="text" name="add_pool_vmfs_ds" id="add_pool_vmfs_ds" />
+                <div id="add_pool_vmfs_ds_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li id="add_pool_tags_container">
