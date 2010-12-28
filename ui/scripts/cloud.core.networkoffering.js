@@ -17,14 +17,15 @@
  */
 
 function networkOfferingGetSearchParams() {
-   var moreCriteria = [];	
+    var moreCriteria = [];	
    
-	var $advancedSearchPopup = $("#advanced_search_popup");
-	if (lastSearchType == "advanced_search" && $advancedSearchPopup.length > 0) {
-	    var name = $advancedSearchPopup.find("#adv_search_name").val();							
-		if (name!=null && trim(name).length > 0) 
-			moreCriteria.push("&name="+todb(name));		
-        
+	var searchInput = $("#basic_search").find("#search_input").val();	 
+    if (searchInput != null && searchInput.length > 0) {	           
+        moreCriteria.push("&keyword="+todb(searchInput));	       
+    }     
+
+	var $advancedSearchPopup = getAdvancedSearchPopupInSearchContainer();
+	if ($advancedSearchPopup.length > 0 && $advancedSearchPopup.css("display") != "none" ) {	
         var availability = $advancedSearchPopup.find("#adv_search_availability").val();				
 	    if (availability!=null && availability.length > 0) 
 		    moreCriteria.push("&availability="+todb(availability));	
@@ -37,13 +38,7 @@ function networkOfferingGetSearchParams() {
 	    if (traffictype!=null && traffictype.length > 0) 
 		    moreCriteria.push("&traffictype="+todb(traffictype));	        
        
-	} 
-	else {     			    		
-	    var searchInput = $("#basic_search").find("#search_input").val();	 
-        if (lastSearchType == "basic_search" && searchInput != null && searchInput.length > 0) {	           
-            moreCriteria.push("&keyword="+todb(searchInput));	       
-        }        
-	}
+	} 	
 		
 	return moreCriteria.join("");         
 }

@@ -166,12 +166,7 @@
     <div id="advanced_search_popup" class="adv_searchpopup_bg" style="display: none;">
         <div class="adv_searchformbox">
             <form action="#" method="post">
-            <ol>
-                <li>
-                    <label>
-                        Name:</label>
-                    <input class="text textwatermark" type="text" id="adv_search_name" value="by name" />
-                </li>
+            <ol>                
                 <li>
                     <select class="select" id="adv_search_availability">
                         <option value=""></option>
