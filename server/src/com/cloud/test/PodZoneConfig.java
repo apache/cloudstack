@@ -183,7 +183,7 @@ public class PodZoneConfig {
 		"Unable to start DB connection to read vlan DB id. Please contact Cloud Support.");
     }
 	
-	public List<String> modifyVlan(String zone, boolean add, String vlanId, String vlanGateway, String vlanNetmask, String pod, String vlanType, String ipRange) {
+	public List<String> modifyVlan(String zone, boolean add, String vlanId, String vlanGateway, String vlanNetmask, String pod, String vlanType, String ipRange, long networkId) {
     	// Check if the zone is valid
     	long zoneId = getZoneId(zone);
     	if (zoneId == -1)
@@ -219,7 +219,7 @@ public class PodZoneConfig {
     		*/
     		
     		// Everything was fine, so persist the VLAN
-    		saveVlan(zoneId, podId, vlanId, vlanGateway, vlanNetmask, vlanType, ipRange);
+    		saveVlan(zoneId, podId, vlanId, vlanGateway, vlanNetmask, vlanType, ipRange, networkId);
             if (podId != null) {
             	long vlanDbId = getVlanDbId(zone, vlanId);
             	String sql = "INSERT INTO `cloud`.`pod_vlan_map` (pod_id, vlan_db_id) " + "VALUES ('" + podId + "','" + vlanDbId  + "')";
@@ -342,8 +342,8 @@ public class PodZoneConfig {
 		DatabaseConfig.saveSQL(sql, "Failed to delete zone due to exception. Please contact Cloud Support.");
 	}
 	
-	public void saveVlan(long zoneId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String vlanType, String ipRange) {
-		String sql = "INSERT INTO `cloud`.`vlan` (vlan_id, vlan_gateway, vlan_netmask, data_center_id, vlan_type, description) " + "VALUES ('" + vlanId + "','" + vlanGateway + "','" + vlanNetmask + "','" + zoneId + "','" + vlanType + "','" + ipRange + "')";
+	public void saveVlan(long zoneId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String vlanType, String ipRange, long networkId) {
+		String sql = "INSERT INTO `cloud`.`vlan` (vlan_id, vlan_gateway, vlan_netmask, data_center_id, vlan_type, description, network_id) " + "VALUES ('" + vlanId + "','" + vlanGateway + "','" + vlanNetmask + "','" + zoneId + "','" + vlanType + "','" + ipRange +  "','" + networkId + "')";
         DatabaseConfig.saveSQL(sql, "Failed to save vlan due to exception. Please contact Cloud Support.");
 	}
 	

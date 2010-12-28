@@ -1590,65 +1590,86 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid account.");
             }
         }
+
+        //Verify that network exists
+        NetworkVO network = null; 
+        if (networkId != null) {
+            network = _networkDao.findById(networkId);
+            if (network == null) {
+                throw new InvalidParameterValueException("Unable to find network by id " + networkId);
+            } else {
+                zoneId = network.getDataCenterId();
+            }
+        }    
         
-        //if Vlan is direct, don't allow to specify networkId
-        if (forVirtualNetwork && networkId != null) {
-            throw new InvalidParameterValueException("Can't specify networkId for Virtual network");   
+        //Verify that zone exists
+        DataCenterVO zone = _zoneDao.findById(zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
         }
         
-        if (forVirtualNetwork && (vlanGateway == null || vlanNetmask == null || zoneId == null)) {
-            throw new InvalidParameterValueException("Gateway, netmask and zoneId have to be passed in for virtual network");
-        }
+        //If networkId is not specified, and vlan is Virtual or Direct Untagged, try to locate default networks
+        if (forVirtualNetwork){
+            if (network == null) {
+                //find default public network in the zone
+                networkId = _networkMgr.getSystemNetworkIdByZoneAndTrafficTypeAndGuestType(zoneId, TrafficType.Public, null);
+            } else if (network.getGuestType() != null || network.getTrafficType() != TrafficType.Public){
+                throw new InvalidParameterValueException("Can't find Public network by id=" + networkId);
+            }
+        } else {
+            if (network == null) {
+                if (zone.getNetworkType() == DataCenter.NetworkType.Basic) {
+                    networkId = _networkMgr.getSystemNetworkIdByZoneAndTrafficTypeAndGuestType(zoneId, TrafficType.Public, GuestIpType.DirectPodBased);
+                } else {
+                    throw new InvalidParameterValueException("Nework id is required for Direct vlan creation ");
+                }
+            } else if (network.getGuestType() == null || network.getGuestType() == GuestIpType.Virtual) {
+                throw new InvalidParameterValueException("Can't create direct vlan for network id=" + networkId + " with GuestType: " + network.getGuestType());
+            }
+        }  
         
         //if end ip is not specified, default it to startIp 
         if (endIP == null && startIP != null) {
             endIP = startIP;
         }
-        
-        //Verify that network is valid, and ip range matches network's cidr
-        if (networkId != null) {
-            NetworkVO network = _networkDao.findById(networkId);
-            if (network == null) {
-                throw new InvalidParameterValueException("Unable to find network by id " + networkId);
-            } else {
-                //Check that network is of type Direct
-                if (network.getGuestType() == GuestIpType.Virtual) {
-                    throw new InvalidParameterValueException("Can't create direct vlan for network with GuestType " + network.getGuestType().toString());
-                }
-                
-                //check if startIp and endIp belong to network Cidr
-                String networkCidr = network.getCidr();
-                String networkGateway = network.getGateway();
-                
-                Long networkZoneId = network.getDataCenterId();
-                String[] splitResult = networkCidr.split("\\/");
-                long size = Long.valueOf(splitResult[1]);
-                String networkNetmask = NetUtils.getCidrNetmask(size);
-                
-                //Check if ip addresses are in network range
-                if (!NetUtils.sameSubnet(startIP, networkGateway, networkNetmask)) {
-                    throw new InvalidParameterValueException("Start ip is not in network cidr: " + networkCidr);
+          
+        if (forVirtualNetwork || zone.getNetworkType() == DataCenter.NetworkType.Basic) {
+            if (vlanGateway == null || vlanNetmask == null || zoneId == null) {
+                throw new InvalidParameterValueException("Gateway, netmask and zoneId have to be passed in for virtual and direct untagged networks");
+            }
+        } else {
+            //check if startIp and endIp belong to network Cidr
+            String networkCidr = network.getCidr();
+            String networkGateway = network.getGateway();
+            
+            Long networkZoneId = network.getDataCenterId();
+            String[] splitResult = networkCidr.split("\\/");
+            long size = Long.valueOf(splitResult[1]);
+            String networkNetmask = NetUtils.getCidrNetmask(size);
+            
+            //Check if ip addresses are in network range
+            if (!NetUtils.sameSubnet(startIP, networkGateway, networkNetmask)) {
+                throw new InvalidParameterValueException("Start ip is not in network cidr: " + networkCidr);
+            } 
+            
+            if (endIP != null) {
+                if (!NetUtils.sameSubnet(endIP, networkGateway, networkNetmask)) {
+                    throw new InvalidParameterValueException("End ip is not in network cidr: " + networkCidr);
                 } 
-                
-                if (endIP != null) {
-                    if (!NetUtils.sameSubnet(endIP, networkGateway, networkNetmask)) {
-                        throw new InvalidParameterValueException("End ip is not in network cidr: " + networkCidr);
-                    } 
-                }
-                
-                //set gateway, netmask, zone from network object
-                vlanGateway = networkGateway;
-                vlanNetmask = networkNetmask;
-                zoneId = networkZoneId;
-                
-                //set vlanId if it's not null for the network
-                URI uri = network.getBroadcastUri();
-                if (uri != null) {
-                    String[] vlan = uri.toString().split("vlan:\\/\\/");
-                    vlanId = vlan[1];
-                }
-             } 
-         }
+            }
+            
+            //set gateway, netmask, zone from network object
+            vlanGateway = networkGateway;
+            vlanNetmask = networkNetmask;
+            zoneId = networkZoneId;
+            
+            //set vlanId if it's not null for the network
+            URI uri = network.getBroadcastUri();
+            if (uri != null) {
+                String[] vlan = uri.toString().split("vlan:\\/\\/");
+                vlanId = vlan[1];
+            }
+        }
         
         return createVlanAndPublicIpRange(userId, zoneId, podId, startIP, endIP, vlanGateway, vlanNetmask, forVirtualNetwork, vlanId, account, networkId);
     }

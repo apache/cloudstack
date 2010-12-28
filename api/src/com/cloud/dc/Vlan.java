@@ -36,11 +36,7 @@ public interface Vlan {
 
 	public long getDataCenterId();
 
-	public void setIpRange(String description);
-
 	public String getIpRange();
-
-	public void setVlanType(VlanType ipRange);
 
 	public VlanType getVlanType();
 	

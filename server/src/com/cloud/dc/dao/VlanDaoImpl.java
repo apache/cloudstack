@@ -112,6 +112,14 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     	sc.setParameters("vlanType", vlanType);
         return listBy(sc);
 	}
+	
+	
+	@Override
+    public List<VlanVO> listByType(VlanType vlanType) {
+        SearchCriteria<VlanVO> sc = ZoneTypeSearch.create();
+        sc.setParameters("vlanType", vlanType);
+        return listBy(sc);
+    }
 
 	@Override
 	public List<VlanVO> listVlansForPod(long podId) {

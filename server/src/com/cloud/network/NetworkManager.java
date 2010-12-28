@@ -29,8 +29,10 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
@@ -128,4 +130,7 @@ public interface NetworkManager extends NetworkService {
 	boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
 	
 	Map<Service, Map<Capability, String>> getZoneCapabilities(long zoneId);
+	
+	long getSystemNetworkIdByZoneAndTrafficTypeAndGuestType(long zoneId, TrafficType trafficType, GuestIpType guestType);
+	
 }

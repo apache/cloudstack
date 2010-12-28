@@ -663,7 +663,8 @@ public class DatabaseConfig {
     	long zoneDbId = Long.parseLong(zoneId);
     	String zoneName = PodZoneConfig.getZoneName(zoneDbId);
     	
-    	pzc.modifyVlan(zoneName, true, vlanId, gateway, netmask, vlanPodName, vlanType, publicIpRange);
+    	//Set networkId to be 0, the value will be updated after management server starts up
+    	pzc.modifyVlan(zoneName, true, vlanId, gateway, netmask, vlanPodName, vlanType, publicIpRange, 0);
     	
     	long vlanDbId = pzc.getVlanDbId(zoneName, vlanId);
     	iprc.saveIPRange("public", -1, zoneDbId, vlanDbId, startIP, endIP);

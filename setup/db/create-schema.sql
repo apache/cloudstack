@@ -372,7 +372,7 @@ CREATE TABLE `cloud`.`vlan` (
   `description` varchar(255),
   `vlan_type` varchar(255),
   `data_center_id` bigint unsigned NOT NULL,
-  `network_id` bigint unsigned COMMENT 'id of corresponding network offering',
+  `network_id` bigint unsigned NOT NULL COMMENT 'id of corresponding network offering',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

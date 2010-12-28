@@ -2205,4 +2205,27 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return networkCapabilities;
     }
     
+    @Override
+    public long getSystemNetworkIdByZoneAndTrafficTypeAndGuestType(long zoneId, TrafficType trafficType, GuestIpType guestType) {
+        //find system public network offering
+        Long networkOfferingId = null;
+        List<NetworkOfferingVO> offerings = _networkOfferingDao.listSystemNetworkOfferings();
+        for (NetworkOfferingVO offering: offerings) {
+            if (offering.getTrafficType() == trafficType && offering.getGuestIpType() == guestType) {
+                networkOfferingId = offering.getId();
+                break;
+            }
+        }
+        
+        if (networkOfferingId == null) {
+            throw new InvalidParameterValueException("Unable to find system network offering with traffic type " + trafficType + " and guestIpType " + guestType);
+        }
+        
+        List<NetworkVO> networks = _networksDao.listBy(Account.ACCOUNT_ID_SYSTEM, networkOfferingId, zoneId);
+        if (networks == null) {
+            throw new InvalidParameterValueException("Unable to find network with traffic type " + trafficType + " in zone " + zoneId);
+        }
+        return networks.get(0).getId();
+    }
+    
 }

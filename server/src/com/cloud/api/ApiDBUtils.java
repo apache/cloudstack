@@ -32,10 +32,10 @@ import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
@@ -517,25 +517,7 @@ public class ApiDBUtils {
     }
     
     public static long getPublicNetworkIdByZone(long zoneId) {
-        //find system public network offering
-        Long networkOfferingId = null;
-        List<NetworkOfferingVO> offerings = _networkOfferingDao.listSystemNetworkOfferings();
-        for (NetworkOfferingVO offering: offerings) {
-            if (offering.getGuestIpType() == null && offering.getTrafficType() == TrafficType.Public) {
-                networkOfferingId = offering.getId();
-                break;
-            }
-        }
-        
-        if (networkOfferingId == null) {
-            throw new InvalidParameterValueException("Unable to find system Public network offering");
-        }
-        
-        List<NetworkVO> networks =   _networkDao.listBy(Account.ACCOUNT_ID_SYSTEM, networkOfferingId, zoneId);
-        if (networks == null) {
-            throw new InvalidParameterValueException("Unable to find public network in zone " + zoneId);
-        }
-        return networks.get(0).getId();
+        return _networkMgr.getSystemNetworkIdByZoneAndTrafficTypeAndGuestType(zoneId, TrafficType.Public, null);
     }
 
     public static Long getVlanNetworkId(long vlanId) {

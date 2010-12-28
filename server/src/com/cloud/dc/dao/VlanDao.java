@@ -31,6 +31,8 @@ public interface VlanDao extends GenericDao<VlanVO, Long> {
 	
 	List<VlanVO> listByZone(long zoneId);
 	
+	List<VlanVO> listByType(Vlan.VlanType vlanType);
+	
 	List<VlanVO> listByZoneAndType(long zoneId, Vlan.VlanType vlanType);
 	
 	List<VlanVO> listVlansForPod(long podId);

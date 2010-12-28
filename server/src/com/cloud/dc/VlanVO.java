@@ -83,10 +83,6 @@ public class VlanVO implements Vlan {
 	public String getVlanGateway() {
 		return vlanGateway;
 	}
-	
-	public void setVlanGateway(String vlanGateway) {
-		this.vlanGateway = vlanGateway;
-	}
     
 	public String getVlanNetmask() {
         return vlanNetmask;
@@ -96,16 +92,8 @@ public class VlanVO implements Vlan {
 		return dataCenterId;
 	}
 
-	public void setIpRange(String ipRange) {
-		this.ipRange = ipRange;
-	}
-
 	public String getIpRange() {
 		return ipRange;
-	}
-
-	public void setVlanType(VlanType vlanType) {
-		this.vlanType = vlanType;
 	}
 
 	public VlanType getVlanType() {
@@ -114,5 +102,9 @@ public class VlanVO implements Vlan {
 
     public Long getNetworkId() {
         return networkId;
+    }
+
+    public void setNetworkId(Long networkId) {
+        this.networkId = networkId;
     }
 }

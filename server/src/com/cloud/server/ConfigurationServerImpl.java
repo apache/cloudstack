@@ -47,8 +47,11 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InternalErrorException;
@@ -71,6 +74,7 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
+import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.PropertiesUtil;
@@ -93,6 +97,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     private final NetworkOfferingDao _networkOfferingDao;
     private final DataCenterDao _dataCenterDao;
     private final NetworkDao _networkDao;
+    private final VlanDao _vlanDao;
 
 	
 	public ConfigurationServerImpl() {
@@ -107,6 +112,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         _domainDao = locator.getDao(DomainDao.class);
         _dataCenterDao = locator.getDao(DataCenterDao.class);
         _networkDao = locator.getDao(NetworkDao.class);
+        _vlanDao = locator.getDao(VlanDao.class);
 	}
 
 	@Override
@@ -206,45 +212,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 				s_logger.debug("ConfigurationServer saved \"" + hostIpAdr + "\" as host.");
 			}
 
-//			// Get the gateway and netmask of this machine
-//			String[] gatewayAndNetmask = getGatewayAndNetmask();
-//
-//			if (gatewayAndNetmask != null) {
-//				String gateway = gatewayAndNetmask[0];
-//				String netmask = gatewayAndNetmask[1];
-//				long cidrSize = NetUtils.getCidrSize(netmask);
-//
-//				// Create a default zone
-//				String dns = getDNS();
-//				if (dns == null) {
-//					dns = "4.2.2.2";
-//				}
-//				DataCenterVO zone = createZone(User.UID_SYSTEM, "Default", dns, null, dns, null, null,"10.1.1.0/24", null, null, NetworkType.Basic);
-//				
-//				//Create untagged network
-//                DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null);
-//                NetworkVO userNetwork = new NetworkVO();
-//                userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
-//                
-//                Account systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
-//                List<NetworkOfferingVO> networkOffering = _networkOfferingDao.findByType(GuestIpType.DirectPodBased);
-//                if (networkOffering == null || networkOffering.isEmpty()) {
-//                    throw new CloudRuntimeException("No default DirectPodBased network offering is found");
-//                }
-//                _networkMgr.setupNetworkConfiguration(systemAccount, networkOffering.get(0), userNetwork, plan, null, null, true);
-//
-//				// Create a default pod
-//				String networkType = _configDao.getValue("network.type");
-//				if (networkType != null && networkType.equals("vnet")) {
-//					createPod(User.UID_SYSTEM, "Default", zone.getId(), "169.254.1.1", "169.254.1.0/24", "169.254.1.2", "169.254.1.254");
-//				} else {
-//					createPod(User.UID_SYSTEM, "Default", zone.getId(), gateway, gateway + "/" + cidrSize, null, null);
-//				}
-//				s_logger.debug("ConfigurationServer saved a default pod and zone, with gateway: " + gateway + " and netmask: " + netmask);
-//			} else {
-//				s_logger.debug("ConfigurationServer could not detect the gateway and netmask of the management server.");
-//			}
-
 	        // generate a single sign-on key
 	        updateSSOKey();
 	        
@@ -254,6 +221,15 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 	        //Create default networks
 	        createDefaultNetworks();
 	        
+	        //Update existing vlans with networkId
+	        List<VlanVO> vlans = _vlanDao.listAll();
+	        if (vlans != null && !vlans.isEmpty()) {
+	            for (VlanVO vlan : vlans) {
+	                if (vlan.getNetworkId().longValue() == 0) {
+	                    updateVlanWithNetworkId(vlan);
+	                }
+	            }
+	        }
 		}
 
 		// store the public and private keys in the database
@@ -591,7 +567,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             }
         } 
         
-
         //checking the following params outside checkzoneparams method as we do not use these params for updatezone
         //hence the method below is generic to check for common params
         if ((guestCidr != null) && !NetUtils.isValidCIDR(guestCidr)) {
@@ -797,6 +772,42 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 } 
             }
         }
+    }
+    
+    
+    private void updateVlanWithNetworkId(VlanVO vlan) {
+        long zoneId = vlan.getDataCenterId();
+        long networkId = 0L;
+        if (vlan.getVlanType() == VlanType.VirtualNetwork) {
+            networkId = getSystemNetworkIdByZoneAndTrafficTypeAndGuestType(zoneId, TrafficType.Public, null);
+        } else if (vlan.getVlanType() == VlanType.DirectAttached) {
+            networkId = getSystemNetworkIdByZoneAndTrafficTypeAndGuestType(zoneId, TrafficType.Public, GuestIpType.DirectPodBased);
+        }
+         
+        vlan.setNetworkId(networkId);
+        _vlanDao.update(vlan.getId(), vlan);
+    }
+    
+    private long getSystemNetworkIdByZoneAndTrafficTypeAndGuestType(long zoneId, TrafficType trafficType, GuestIpType guestType) {
+        //find system public network offering
+        Long networkOfferingId = null;
+        List<NetworkOfferingVO> offerings = _networkOfferingDao.listSystemNetworkOfferings();
+        for (NetworkOfferingVO offering: offerings) {
+            if (offering.getTrafficType() == trafficType && offering.getGuestIpType() == guestType) {
+                networkOfferingId = offering.getId();
+                break;
+            }
+        }
+        
+        if (networkOfferingId == null) {
+            throw new InvalidParameterValueException("Unable to find system network offering with traffic type " + trafficType + " and guestIpType " + guestType);
+        }
+        
+        List<NetworkVO> networks = _networkDao.listBy(Account.ACCOUNT_ID_SYSTEM, networkOfferingId, zoneId);
+        if (networks == null) {
+            throw new InvalidParameterValueException("Unable to find network with traffic type " + trafficType + " in zone " + zoneId);
+        }
+        return networks.get(0).getId();
     }
     
 }
