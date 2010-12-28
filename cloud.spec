@@ -579,6 +579,7 @@ fi
 %{_datadir}/%{name}/setup/schema-214to215.sql
 %{_datadir}/%{name}/setup/schema-level.sql
 %{_datadir}/%{name}/setup/data-214to215.sql
+%{_datadir}/%{name}/setup/schema-216to217.sql
 %doc README
 %doc HACKING
 %doc debian/copyright
