@@ -286,8 +286,7 @@
             </div>
         </div>
     </div>
-    <div class="actionpanel_button_wrapper" id="add_secondarystorage_button"
-       >
+    <div class="actionpanel_button_wrapper" id="add_secondarystorage_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" /></div>
