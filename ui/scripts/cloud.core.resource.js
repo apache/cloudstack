@@ -107,6 +107,9 @@ function buildZoneTree() {
 	$("#network_header").unbind("click").bind("click", function(event) {	   
 	    selectRowInZoneTree($(this));	
 	    
+	    clearMiddleMenu();
+	    showMiddleMenu();	
+	    
         if(currentRightPanelJSP != "jsp/network.jsp") {            
             removeDialogs();
             

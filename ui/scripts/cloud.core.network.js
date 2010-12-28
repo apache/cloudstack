@@ -44,9 +44,7 @@ function networkGetSearchParams() {
 }
 
 var zoneObj;  
-function afterLoadNetworkJSP($leftmenuItem1) {        
-    showMiddleMenu();    
-    
+function afterLoadNetworkJSP($leftmenuItem1) {      
     var $topButtonContainer = clearButtonsOnTop();			    	       
 	$("#top_buttons").appendTo($("#top_button_container").empty()); 
         
