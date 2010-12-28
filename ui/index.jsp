@@ -164,7 +164,7 @@
                                 </div>                           
                         </div>
                                                 
-                        <div id="top_button_container" style="float:left; width:65%;">		
+                        <div id="top_button_container">		
                            			
 						</div>
 						
