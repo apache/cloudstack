@@ -2802,4 +2802,21 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             return null;
         }
     }
+    
+    //Note: This method will be used for entity name validations in the coming releases (place holder for now)
+    private void validateEntityName(String str) throws InvalidParameterValueException{
+    	String forbidden = "~!@#$%^&*()+=";
+    	char[] searchChars = forbidden.toCharArray();
+        if (str == null || str.length() == 0 || searchChars == null || searchChars.length == 0) {
+            return;
+        }
+        for (int i = 0; i < str.length(); i++) {
+            char ch = str.charAt(i);
+            for (int j = 0; j < searchChars.length; j++) {
+                if (searchChars[j] == ch) {
+                    throw new InvalidParameterValueException("Name cannot contain any of the following special characters:"+forbidden);
+                }
+            }
+        }
+    }
 }

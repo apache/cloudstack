@@ -343,6 +343,9 @@ public class ApiServer implements HttpRequestHandler {
                         } catch (UnsupportedEncodingException usex) {
                             s_logger.warn(key + " could not be decoded, value = " + value[0]);
                             throw new ServerApiException(BaseCmd.PARAM_ERROR, key + " could not be decoded, received value " + value[0]);
+                        } catch (IllegalArgumentException iae) {
+                            s_logger.warn(key + " could not be decoded, value = " + value[0]);
+                            throw new ServerApiException(BaseCmd.PARAM_ERROR, key + " could not be decoded, received value " + value[0]+" which contains illegal characters eg.%");
                         }
                     } else {
                         decodedValue = value[0];
