@@ -1085,7 +1085,7 @@
             <ol>               
                 <li>
                     <select class="select" id="adv_search_state">
-                        <option value=""></option>
+                        <option value="">by state</option>
                         <option value="Up">Up</option>
                         <option value="Down">Down</option>
                         <option value="Disconnected">Disconnected</option>
