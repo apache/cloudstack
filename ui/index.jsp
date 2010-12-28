@@ -591,6 +591,7 @@
                         <div class="leftmenu_expandedlist">
                             <div class="leftmenu_content" id="leftmenu_physical_resource">
                                 <div class="leftmenu_secondindent">
+                                	<div class="leftmenu_arrowloader" id="loading_container" style="display:none;"></div>
                                     <div class="leftmenu_arrows expanded_close" id="physical_resource_arrow">
                                     </div>
                                    
@@ -803,6 +804,7 @@
         <div id="row_container">
 	        <div id="zone_header" class="leftmenu_content">  
 	            <div class="leftmenu_thirdindent">
+                	<div class="leftmenu_arrowloader" id="loading_container" style="display:none;"></div>
 	                <div class="leftmenu_arrows white_nonexpanded_close" id="zone_arrow">
 	                </div>	                
 	                <span id="zone_name_label"><fmt:message key="label.zone"/>: </span>
@@ -834,6 +836,7 @@
         <div id="row_container">
 	        <div id="pod_header" class="leftmenu_content">
 	            <div class="leftmenu_fourthindent">
+                	<div class="leftmenu_arrowloader" id="loading_container" style="display:none;"></div>
 	                <div class="leftmenu_arrows white_nonexpanded_close" id="pod_arrow">
 	                </div>	               
 	                <span id="pod_name_label"><fmt:message key="label.pod"/>: </span>

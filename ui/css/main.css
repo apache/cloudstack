@@ -1565,6 +1565,16 @@ a:hover {
 	display:inline;
 }
 
+.leftmenu_arrowloader {
+	width:16px;
+	height:16px;
+	float:left;
+	background:url(../images/leftmenu_newloader.gif) no-repeat top left;
+	margin:-2px 4px 0 0;
+	display:inline;
+}
+
+
 .white_openedarrow {
 	width:5px;
 	height:10px;
