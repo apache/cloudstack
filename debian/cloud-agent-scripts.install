@@ -17,13 +17,10 @@
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/setupxenserver.sh
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/vmops
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/xenserver56/cleanup.py
-/usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/xenserver56/iptables
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/xenserver56/ISCSISR.py
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/xenserver56/LUNperVDI.py
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/xenserver56/nfs.py
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/xenserver56/NFSSR.py
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/xenserver56/patch
-/usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/xenserver56/qemu-dm-wrapper
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/xenserver56/scsiutil.py
-/usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/xenserver56/vncterm-wrapper
 /usr/lib/cloud/agent/vms/systemvm.zip
