@@ -213,7 +213,7 @@
             <ol>               
                 <li>
                     <select class="select" id="adv_search_state">
-                        <option value=""></option>
+                        <option value="">by state</option>
                         <option value="Creating">Creating</option>
                         <option value="Starting">Starting</option>
                         <option value="Running">Running</option>

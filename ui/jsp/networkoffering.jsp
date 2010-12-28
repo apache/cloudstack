@@ -169,7 +169,7 @@
             <ol>                
                 <li>
                     <select class="select" id="adv_search_availability">
-                        <option value=""></option>
+                        <option value="">by availability</option>
                         <option value="Required">Required</option>
                         <option value="Optional">Optional</option>
                         <option value="Unavailable">Unavailable</option>
@@ -177,7 +177,7 @@
                 </li>               
                 <li>
                     <select class="select" id="adv_search_traffictype">
-                        <option value=""></option>
+                        <option value="">by traffic type</option>
                         <option value="Public">Public</option>
                         <option value="Guest">Guest</option>
                         <option value="Storage">Storage</option>

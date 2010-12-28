@@ -130,7 +130,7 @@
             <ol>
                 <li>
                     <select class="select" id="adv_search_type">
-                        <option value=""></option>
+                        <option value="">by type</option>
                         <option value="VM.CREATE">VM.CREATE</option>
                         <option value="VM.DESTROY">VM.DESTROY</option>
                         <option value="VM.START">VM.START</option>
@@ -207,7 +207,7 @@
                 </li>
                 <li>
                     <select class="select" id="adv_search_level">
-                        <option value=""></option>
+                        <option value="">by level</option>
                         <option value="INFO">INFO</option>
                         <option value="WARN">WARN</option>
                         <option value="ERROR">ERROR</option>
