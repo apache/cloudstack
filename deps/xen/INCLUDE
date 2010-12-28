@@ -1,0 +1,4 @@
+Jar: xenserver-5.5.0-1.jar
+Reason: Included to directly patch to XenServer 5.5
+Notes: We are using the 3.1.1 version of the xml rpc, provided by another package.
+
