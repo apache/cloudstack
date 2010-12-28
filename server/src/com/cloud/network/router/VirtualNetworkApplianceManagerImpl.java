@@ -846,7 +846,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             _instance = "DEFAULT";
         }
 
-        _networkDomain = configs.get("domain.suffix");
+        _networkDomain = configs.get("guest.domain.suffix");
 
         s_logger.info("Router configurations: " + "ramsize=" + _routerRamSize + "; templateId=" + _routerTemplateId);
 

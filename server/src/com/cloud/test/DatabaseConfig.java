@@ -165,7 +165,7 @@ public class DatabaseConfig {
         s_configurationDescriptions.put("port", "port to listen on for agent connection");
         //s_configurationDescriptions.put("guest.ip.network", "ip address for the router");
         //s_configurationDescriptions.put("guest.netmask", "default netmask for the guest network");
-        s_configurationDescriptions.put("domain.suffix", "domain suffix for users");
+        s_configurationDescriptions.put("guest.domain.suffix", "domain suffix for users");
         s_configurationDescriptions.put("instance.name", "Name of the deployment instance");
         s_configurationDescriptions.put("storage.overprovisioning.factor", "Storage Allocator overprovisioning factor");
         s_configurationDescriptions.put("retries.per.host", "The number of times each command sent to a host should be retried in case of failure.");
@@ -260,7 +260,7 @@ public class DatabaseConfig {
 		s_configurationComponents.put("ping.interval", "AgentManager");
 		s_configurationComponents.put("alert.wait", "AgentManager");
 		s_configurationComponents.put("update.wait", "AgentManager");
-		s_configurationComponents.put("domain.suffix", "AgentManager");
+		s_configurationComponents.put("guest.domain.suffix", "AgentManager");
 		s_configurationComponents.put("consoleproxy.ram.size", "AgentManager");
 		s_configurationComponents.put("consoleproxy.cmd.port", "AgentManager");
 		s_configurationComponents.put("consoleproxy.loadscan.interval", "AgentManager");

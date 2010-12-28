@@ -193,9 +193,9 @@
       <value>ZONE1</value>
     </configuration>
     <!--
-    The domain.suffix parameter...
+    The guest.domain.suffix parameter...
     -->    <configuration>
-      <name>domain.suffix</name>
+      <name>guest.domain.suffix</name>
       <value>qatest-vmops.com</value>
     </configuration>
     <!--

@@ -58,7 +58,7 @@ public enum Config {
 	GuestVlanBits("Network", ManagementServer.class, Integer.class, "guest.vlan.bits", "12", "The number of bits to reserve for the VLAN identifier in the guest subnet.", null),
 	MulticastThrottlingRate("Network", ManagementServer.class, Integer.class, "multicast.throttling.rate", "10", "Default multicast rate in megabits per second allowed.", null),
 	NetworkThrottlingRate("Network", ManagementServer.class, Integer.class, "network.throttling.rate", "200", "Default data transfer rate in megabits per second allowed.", null),
-	GuestDomainSuffix("Network", AgentManager.class, String.class, "domain.suffix", "cloud-test.cloud.internal", "Default domain name for vms inside virtualized networks fronted by router", null),
+	GuestDomainSuffix("Network", AgentManager.class, String.class, "guest.domain.suffix", "cloud-test.cloud.internal", "Default domain name for vms inside virtualized networks fronted by router", null),
 	
 	//VPN
 	RemoteAccessVpnPskLength("Network", AgentManager.class, Integer.class, "remote.access.vpn.psk.length", "24", "The length of the ipsec preshared key (minimum 8, maximum 256)", null),
