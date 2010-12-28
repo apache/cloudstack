@@ -784,7 +784,7 @@
             <ol>               
                 <li>
                     <select class="select" id="adv_search_role">
-                        <option value=""></option>
+                        <option value="">by role</option>
                         <option value="0">User</option>
                         <option value="2">Domain-Admin</option>
                         <option value="1">Admin</option>
