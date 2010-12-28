@@ -169,7 +169,7 @@
 						</div>
 						
                         <div class="actionpanel_rightbutton_container">
-                            <div class="actionpanel_button_wrapper" id="help_link" style="display: block; border:none; float: right; position: relative;">
+                            <!--<div class="actionpanel_button_wrapper" id="help_link" style="display: block; border:none; float: right; position: relative;">
                                 <div class="actionpanel_button" id="help_button">
                                     <div class="actionpanel_button_icons">
                                         <img src="images/help_actionicon.png" alt="Help" /></div>
@@ -177,7 +177,7 @@
                                         <fmt:message key="label.help"/>
                                     </div>
                                 </div>
-                            </div>
+                            </div>-->
                             <div class="actionpanel_button_wrapper" id="refresh_link" style="display: block; border:none; float: right; position: relative;">
                                 <div class="actionpanel_button" id="refresh_button">
                                     <div class="actionpanel_button_icons">
