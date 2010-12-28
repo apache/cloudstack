@@ -46,13 +46,13 @@ import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.ResourceCount.ResourceType;
+import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.Domain;
@@ -988,6 +988,8 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         String accountName = cmd.getAccountName();
         short userType = cmd.getAccountType().shortValue();
         String networkDomain = cmd.getNetworkdomain();
+        Long userId = UserContext.current().getUserId();
+        
         try {
             if (accountName == null) {
                 accountName = username;
@@ -1055,7 +1057,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
                 throw new CloudRuntimeException("The user " + username + " being creating is using a password that is different than what's in the db");
             }
 
-            EventUtils.saveEvent(new Long(1), new Long(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_CREATE, "User, " + username + " for accountId = " + accountId
+            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_USER_CREATE, "User, " + username + " for accountId = " + accountId
                     + " and domainId = " + domainId + " was created.");
             return _userAccountDao.findById(dbUser.getId());
         } catch (Exception e) {
@@ -1081,6 +1083,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     	String email = cmd.getEmail();
     	String timeZone = cmd.getTimezone();
     	Long accountId = null;
+    	Long userId = UserContext.current().getUserId();
     	
     	Account account = _accountDao.findActiveAccount(accountName, domainId);
     	
@@ -1113,7 +1116,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             throw new CloudRuntimeException("The user " + userName + " being creating is using a password that is different than what's in the db");
         }
         
-        EventUtils.saveEvent(new Long(1), new Long(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_CREATE, "User, " + userName + " for accountId = " + accountId
+        EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_USER_CREATE, "User, " + userName + " for accountId = " + accountId
                 + " and domainId = " + domainId + " was created.");
         return dbUser;
     }
