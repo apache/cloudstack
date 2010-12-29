@@ -42,7 +42,7 @@
 }
 
 function podJsonToRightPanel($leftmenuItem1) {	    
-    bindAddClusterButton($("#add_cluster_button"), "pod_page", $leftmenuItem1); 
+    bindAddClusterButton($leftmenuItem1); 
     bindAddHostButton($leftmenuItem1); 
     bindAddPrimaryStorageButton($leftmenuItem1);  
            
@@ -274,14 +274,14 @@ function refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId, hyp
     });     
 }      
 
-function bindAddClusterButton($button, currentPageInRightPanel, $leftmenuItem1) {
-    $button.show();
+function bindAddClusterButton($leftmenuItem1) {
+    var $button = $("#add_cluster_button");
     $button.unbind("click").bind("click", function(event) {
         dialogAddCluster = $("#dialog_add_external_cluster");      
         dialogAddCluster.find("#info_container").hide();    
     	
         var zoneId, podId;               
-        if(currentPageInRightPanel == "pod_page") {
+        if(currentRightPanelJSP == "jsp/pod.jsp") {
             var podObj = $leftmenuItem1.data("jsonObj");   
             zoneId = podObj.zoneid;
             podId = podObj.id;
