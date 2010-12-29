@@ -89,6 +89,14 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
     }
     
     @Override
+    public List<PortForwardingRuleVO> listByIp(Ip ip) {
+        SearchCriteria<PortForwardingRuleVO> sc = ActiveRulesSearch.create();
+        sc.setParameters("ip", ip);
+        
+        return listBy(sc, null);
+    }
+    
+    @Override
     public List<PortForwardingRuleVO> searchNatRules(Ip ip, Long startIndex, Long pageSize) {
         Filter searchFilter = new Filter(PortForwardingRuleVO.class, "id", true, startIndex, pageSize);
         SearchCriteria<PortForwardingRuleVO> sc = AllFieldsSearch.create();

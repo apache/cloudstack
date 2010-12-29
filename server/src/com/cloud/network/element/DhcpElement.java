@@ -70,10 +70,8 @@ public class DhcpElement extends AdapterBase implements NetworkElement{
     private boolean canHandle(GuestIpType ipType, DeployDestination dest) {
         DataCenter dc = dest.getDataCenter();
         String provider = dc.getGatewayProvider();
-        if (!dc.getDhcpProvider().equals(Provider.VirtualRouter.getName())) {
-            return false; 
-        }
-        return ((ipType == GuestIpType.Virtual && !provider.equals(Provider.VirtualRouter.getName())) || (ipType == GuestIpType.Direct || ipType == GuestIpType.DirectPodBased));
+        
+        return ((ipType == GuestIpType.Virtual && !provider.equals(Provider.VirtualRouter.getName())) || (provider.equals(Provider.VirtualRouter.getName()) && (ipType == GuestIpType.Direct || ipType == GuestIpType.DirectPodBased)));
     }
 
     @Override

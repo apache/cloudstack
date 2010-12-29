@@ -2550,6 +2550,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 	
     @Override
     public <T extends VMInstanceVO> DiskProfile allocateRawVolume(VolumeType type, String name, DiskOfferingVO offering, Long size, T vm, Account owner) {
+        long userId = UserContext.current().getUserId();
         if (size == null) {
             size = offering.getDiskSizeInBytes();
         }
@@ -2566,19 +2567,23 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         
         vol = _volsDao.persist(vol);
         
+        
+        //Save usage event and update resource count for user vm volumes
         if(vm instanceof UserVm){
             long sizeMB = size / (1024 * 1024);
             
-            EventUtils.saveEvent(User.UID_SYSTEM, vol.getAccountId(), EventTypes.EVENT_VOLUME_CREATE, "Created volume: "+ vol.getName() +" with size: " + sizeMB + " MB");
-            
+            EventUtils.saveEvent(userId, vol.getAccountId(), EventTypes.EVENT_VOLUME_CREATE, "Created volume: "+ vol.getName() +" with size: " + sizeMB + " MB");
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), null , sizeMB);
             _usageEventDao.persist(usageEvent);
+            
+            _accountMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
         }
         return toDiskProfile(vol, offering);
     }
     
     @Override 
     public <T extends VMInstanceVO> DiskProfile allocateTemplatedVolume(VolumeType type, String name, DiskOfferingVO offering, VMTemplateVO template, T vm, Account owner) {
+        long userId = UserContext.current().getUserId();
         assert (template.getFormat() != ImageFormat.ISO) : "ISO is not a template really....";
         
         SearchCriteria<VMTemplateHostVO> sc = HostTemplateStatesSearch.create();
@@ -2606,13 +2611,16 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         
         vol = _volsDao.persist(vol);
         
+        //Create event and update resource count for volumes if vm is a user vm
         if(vm instanceof UserVm){
             long sizeMB = vol.getSize() / (1024 * 1024);
             
-            EventUtils.saveEvent(User.UID_SYSTEM, vol.getAccountId(), EventTypes.EVENT_VOLUME_CREATE, "Created volume: "+ vol.getName() +" with size: " + sizeMB + " MB");
+            EventUtils.saveEvent(userId, vol.getAccountId(), EventTypes.EVENT_VOLUME_CREATE, "Created volume: "+ vol.getName() +" with size: " + sizeMB + " MB");
             
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), template.getId() , sizeMB);
             _usageEventDao.persist(usageEvent);
+            
+            _accountMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
         }
         return toDiskProfile(vol, offering);
     }

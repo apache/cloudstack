@@ -353,7 +353,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("Ip address not ready for port forwarding rules yet: " + ipAddress);
         }
 
-        List<PortForwardingRuleVO> rules = _forwardingDao.listByIpAndNotRevoked(ipAddress);
+        List<PortForwardingRuleVO> rules = _forwardingDao.listByIp(ipAddress);
         _accountMgr.checkAccess(caller, rules.toArray(new PortForwardingRuleVO[rules.size()]));
         
         return rules;

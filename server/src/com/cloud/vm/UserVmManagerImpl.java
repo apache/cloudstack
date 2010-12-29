@@ -1032,8 +1032,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
-
         if (!destroy(vm)) {
         	return false;
         }
@@ -2427,6 +2425,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, accountId, dc.getId(), vm.getId(), vm.getName(), offering.getId(), template.getId(), null);
         _usageEventDao.persist(usageEvent);
+        
+        _accountMgr.incrementResourceCount(accountId, ResourceType.user_vm);
         return vm;
 	}
 	
@@ -2616,6 +2616,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (status) {
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
             _usageEventDao.persist(usageEvent);
+            _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
             return _vmDao.findById(vmId);
         } else {
             throw new CloudRuntimeException("Failed to destroy vm with id " + vmId);
