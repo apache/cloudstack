@@ -849,7 +849,7 @@
         <div id="cluster_content" style="display: none">
             <div id="hosts_container">
             </div>	            	            
-            <div id="storages_container">
+            <div id="primarystorages_container">
             </div>          	                       
         </div>	    
     </div>
@@ -869,6 +869,20 @@
     </div>
     <!-- host Template (end) -->
 
+    <!-- primarystorage Template (begin) --> 
+    <div class="leftmenu_expandedlist" id="leftmenu_primarystorage_node_template" style="display:none">       
+        <div id="primarystorage_header" class="leftmenu_content">  
+            <div class="leftmenu_sixthindent">
+            	<div class="leftmenu_arrowloader" id="primarystorage_loading_container" style="display:none;"></div>
+                <div class="leftmenu_arrows white_nonexpanded_close" id="primarystorage_arrow">
+                </div>	                
+                <span id="primarystorage_name_label">Storage: </span>
+                <span id="primarystorage_name"></span>
+            </div>  
+        </div>	           
+    </div>
+    <!-- primarystorage Template (end) -->
+    
     <!-- domain tree node template (begin) -->
     <div id="domain_tree_node_template" style="display:none">    	
                 

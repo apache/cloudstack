@@ -238,7 +238,25 @@ function buildZoneTree() {
 			                    }			                                 
                             }	   
 	                    }
-                    });                     
+                    });    
+                                        
+                    $.ajax({        
+                        data: createURL("command=listStoragePools&clusterid="+clusterObj.id),
+                        dataType: "json",        
+                        success: function(json) {    
+                            var items = json.liststoragepoolsresponse.storagepool;   
+                            var $container = $clusterContent.find("#primarystorages_container").empty();
+                            if(items != null && items.length > 0) {              
+                                var $template = $("#leftmenu_primarystorage_node_template");	
+                                for(var i=0; i<items.length;i++) { 
+                                    var $primarystorageNode = $template.clone(true);	            
+	                                primarystorageJSONToTreeNode(items[i], $primarystorageNode);
+	                                $container.append($primarystorageNode.show());		               
+                                }                 
+                            }              	                
+                        }
+                    });	    
+                                     
                     $target.removeClass("expanded_close").addClass("expanded_open");							
 					$clusterContent.show();					                   
 				} 
@@ -418,12 +436,16 @@ function clusterJSONToTreeNode(json, $clusterNode) {
     });      
 }			
 
-function hostJSONToTreeNode(json, $hostNode) {
-    $hostNode.attr("id", "host_"+json.id);
-    $hostNode.data("jsonObj", json);	  
-    //$hostNode.data("id", json.id).data("name", fromdb(json.name));	    
-    var hostName = $hostNode.find("#host_name").text(fromdb(json.name));
-    //hostName.data("jsonObj", json);	 
+function hostJSONToTreeNode(json, $node) {
+    $node.attr("id", "host_"+json.id);
+    $node.data("jsonObj", json);	
+    var hostName = $node.find("#host_name").text(fromdb(json.name));    
+}	
+
+function primarystorageJSONToTreeNode(json, $node) {
+    $node.attr("id", "primarystorage_"+json.id);
+    $node.data("jsonObj", json);	
+    var primarystorageName = $node.find("#primarystorage_name").text(fromdb(json.name));    
 }	
 
 function afterLoadResourceJSP() {
