@@ -531,9 +531,7 @@ function bindAddHostButton($leftmenuItem1) {
 			        dataType: "json",
 			        success: function(json) {
 			            $thisDialog.find("#spinning_wheel").hide();
-			            $thisDialog.dialog("close");
-					
-					    showMiddleMenu();
+			            $thisDialog.dialog("close");										   
 					    
 					    /*
 					    var $midmenuItem1 = $("#midmenu_item").clone();
@@ -552,7 +550,8 @@ function bindAddHostButton($leftmenuItem1) {
                         }   
                         */                             
                         
-                        clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                                  
+                        //clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);   
+                        clickClusterArrowAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                             
 			        },			
                     error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {							
@@ -582,6 +581,19 @@ function clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, exist
     else if(clusterRadio == "existing_cluster_radio") { //*** existing cluster ***     
         if (existingClusterId != null && existingClusterId != '-1') {
             $("#cluster_"+existingClusterId).find("#cluster_name").click();
+        }    
+    }         
+}
+
+function clickClusterArrowAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog) {
+    if(clusterRadio == "new_cluster_radio") {    //*** new cluster ***    
+        $thisDialog.find("#new_cluster_name").val("");                        
+        var $clusterNode = refreshClusterUnderPod($("#pod_" + podId), newClusterName, null, true);         
+        $clusterNode.find("#cluster_arrow").click();
+    }        
+    else if(clusterRadio == "existing_cluster_radio") { //*** existing cluster ***     
+        if (existingClusterId != null && existingClusterId != '-1') {
+            $("#cluster_"+existingClusterId).find("#cluster_arrow").click();
         }    
     }         
 }

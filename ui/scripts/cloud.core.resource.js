@@ -362,6 +362,7 @@ function refreshClusterUnderPod($podNode, newClusterName, existingClusterId, noC
     if(podId == null)  //e.g. $podNode is not on the screen (when zone tree is hidden) ($podNode.length==0) 
         return;
     
+    var $clusterNode;
     $.ajax({
         data: createURL("command=listClusters&podid="+podId),
         dataType: "json",
@@ -371,7 +372,7 @@ function refreshClusterUnderPod($podNode, newClusterName, existingClusterId, noC
             var container = $podNode.find("#clusters_container").empty();
             if (items != null && items.length > 0) {					    
                 for (var i = 0; i < items.length; i++) {
-                    var $clusterNode = $("#leftmenu_cluster_node_template").clone(true); 
+                    $clusterNode = $("#leftmenu_cluster_node_template").clone(true); 
                     var item = items[i];
                     clusterJSONToTreeNode(item, $clusterNode);
                     container.append($clusterNode.show());                                     
@@ -383,11 +384,14 @@ function refreshClusterUnderPod($podNode, newClusterName, existingClusterId, noC
                 $podNode.find("#pod_content").show();                  
                 
                 if(existingClusterId != null && noClicking!=true) {
-                    $("#cluster_"+existingClusterId).find("#cluster_name").click();	
+                    $clusterNode = $("#cluster_"+existingClusterId);
+                    $clusterNode.find("#cluster_name").click();	
                 }                      
             }            
         }
     });	
+    
+    return $clusterNode;
 }
 
 function selectRowInZoneTree($rowToSelect) { 
