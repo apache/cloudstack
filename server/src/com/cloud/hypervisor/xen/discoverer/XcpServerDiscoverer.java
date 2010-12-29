@@ -164,9 +164,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 }
             }
             poolUuid = clu.getGuid();
-            if ( HypervisorType.None == clu.getHypervisorType() ) {
-                clu.setHypervisorType(HypervisorType.XenServer.toString());
-            }
             _clusterDao.update(clusterId, clu);
             
             LinkedHashMap<Host, Host.Record> hosts = new LinkedHashMap<Host, Host.Record>(20);

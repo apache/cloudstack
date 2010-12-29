@@ -728,6 +728,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         
         if (clusterName != null) {      
             ClusterVO cluster = new ClusterVO(dcId, podId, clusterName);
+            cluster.setHypervisorType(hypervisorType);
             try {
                 cluster = _clusterDao.persist(cluster);
             } catch (Exception e) {
@@ -2209,7 +2210,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
            
             HypervisorType hypervisorType = scc.getHypervisorType();
             boolean doCidrCheck = true;
-
+            
+            ClusterVO clusterVO = _clusterDao.findById(clusterId);
+            if (clusterVO.getHypervisorType() != scc.getHypervisorType()) {
+            	throw new IllegalArgumentException("Can't add host whose hypervisor type is: " + scc.getHypervisorType() + " into cluster: " + clusterId + " whose hypervisor type is: " + clusterVO.getHypervisorType());
+            }
+            
 
             /*KVM:Enforcement that all the hosts in the cluster have the same os type, for migration*/
             if (scc.getHypervisorType() == HypervisorType.KVM) {

@@ -251,10 +251,6 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 				return null;
 			
 			details.put("guid", guidWithTail);
-			 /*set cluster hypervisor type to xenserver*/
-            ClusterVO clu = _clusterDao.findById(clusterId);
-            clu.setHypervisorType(HypervisorType.KVM.toString());
-            _clusterDao.update(clusterId, clu);
 			return resources;
 		} catch (Exception e) {
 			String msg = " can't setup agent, due to " + e.toString() + " - " + e.getMessage();
