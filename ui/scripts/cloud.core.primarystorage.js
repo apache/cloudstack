@@ -59,8 +59,8 @@ function primarystorageJsonToDetailsTab() {
     if(jsonObj == null)
         return; 
         
-    bindAddHostButton($("#add_host_button"), "primarystorage_page", $midmenuItem1); 
-    bindAddPrimaryStorageButton($("#add_primarystorage_button"), "primarystorage_page", $midmenuItem1);      
+    bindAddHostButton($midmenuItem1); 
+    bindAddPrimaryStorageButton($midmenuItem1);      
     
     $.ajax({
         data: createURL("command=listStoragePools&id="+jsonObj.id),

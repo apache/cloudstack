@@ -98,8 +98,8 @@ function hostJsonToDetailsTab() {
     if(jsonObj == null)
         return;    
     
-    bindAddHostButton($("#add_host_button"), "host_page", $midmenuItem1); 
-    bindAddPrimaryStorageButton($("#add_primarystorage_button"), "host_page", $midmenuItem1);          
+    bindAddHostButton($midmenuItem1); 
+    bindAddPrimaryStorageButton($midmenuItem1);          
     
     $.ajax({
         data: createURL("command=listHosts&id="+jsonObj.id),

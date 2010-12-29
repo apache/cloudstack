@@ -43,8 +43,8 @@
 
 function podJsonToRightPanel($leftmenuItem1) {	    
     bindAddClusterButton($("#add_cluster_button"), "pod_page", $leftmenuItem1); 
-    bindAddHostButton($("#add_host_button"), "pod_page", $leftmenuItem1); 
-    bindAddPrimaryStorageButton($("#add_primarystorage_button"), "pod_page", $leftmenuItem1);  
+    bindAddHostButton($leftmenuItem1); 
+    bindAddPrimaryStorageButton($leftmenuItem1);  
            
     $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);  
     $("#tab_details").click();   
@@ -390,7 +390,8 @@ function bindAddClusterButton($button, currentPageInRightPanel, $leftmenuItem1) 
     });
 }
 
-function bindAddHostButton($button, currentPageInRightPanel, $leftmenuItem1) {        
+function bindAddHostButton($leftmenuItem1) {     
+    var $button = $("#add_host_button");   
     $button.unbind("click").bind("click", function(event) {     
         dialogAddHost = $("#dialog_add_host");      
         dialogAddHost.find("#info_container").hide();    
@@ -585,8 +586,8 @@ function clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, exist
     }         
 }
 
-function bindAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenuItem1) {    
-    $button.show();   
+function bindAddPrimaryStorageButton($leftmenuItem1) {    
+    var $button = $("#add_primarystorage_button");  
     $button.unbind("click").bind("click", function(event) {   
         if($("#tab_content_primarystorage").length > 0 && $("#tab_content_primarystorage").css("display") == "none")
             $("#tab_primarystorage").click();
