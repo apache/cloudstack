@@ -664,12 +664,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         Transaction txn = Transaction.currentTxn();
         txn.start();
         // Create an event
-        long templateId = -1;
-        long diskOfferingId = -1;
-        if(originalVolume.getTemplateId() != null){
-            templateId = originalVolume.getTemplateId();
-        }
-        diskOfferingId = originalVolume.getDiskOfferingId();
+        Long templateId = originalVolume.getTemplateId();;
+        Long diskOfferingId = originalVolume.getDiskOfferingId();
         long sizeMB = createdVolume.getSize()/(1024*1024);
 
         if (createdVolume.getPath() != null) {

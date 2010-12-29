@@ -1123,12 +1123,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         for (VolumeVO volume : volumes) {
         	_volsDao.recoverVolume(volume.getId());
             // Create an event
-            long templateId = -1;
-            long diskOfferingId = -1;
-            if(volume.getTemplateId() !=null){
-                templateId = volume.getTemplateId();
-            }
-            diskOfferingId = volume.getDiskOfferingId();
+            Long templateId = volume.getTemplateId();
+            Long diskOfferingId = volume.getDiskOfferingId();
             long sizeMB = volume.getSize()/(1024*1024);
             StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
             EventUtils.saveEvent(User.UID_SYSTEM, volume.getAccountId(), EventTypes.EVENT_VOLUME_CREATE, "Created volume: "+ volume.getName() +" with size: " + sizeMB + " MB in pool: " + pool.getName());
