@@ -262,7 +262,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private int _ssh_sleep;
     private boolean _use_lvm;
     private boolean _use_storage_vm;
-
+    private boolean _disable_rp_filter = false;
     private String _domain;
     private String _instance;
     
@@ -1844,6 +1844,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         if (value != null) {
             _consoleProxyUrlPort = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_URL_PORT);
         }
+        
+        value = configs.get(Config.ConsoleProxyDisableRpFilter.key());
+        if(value != null && value.equalsIgnoreCase("true"))
+        	_disable_rp_filter = true;
 
         value = configs.get("system.vm.use.local.storage");
         if (value != null && value.equalsIgnoreCase("true")) {
@@ -1948,6 +1952,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         buf.append(" pod=").append(dest.getPod().getId());
         buf.append(" guid=Proxy.").append(profile.getId());
         buf.append(" proxy_vm=").append(profile.getId());
+        if(_disable_rp_filter)
+            buf.append(" disable_rp_filter=true");
 
         boolean externalDhcp = false;
         String externalDhcpStr = _configDao.getValue("direct.attach.network.externalIpAllocator.enabled");

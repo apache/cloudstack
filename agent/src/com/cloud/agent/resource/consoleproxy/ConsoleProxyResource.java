@@ -161,6 +161,17 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
     	
         return new Answer(cmd, success, errorStr!=null?errorStr:successStr);
     }
+    
+    private void disableRpFilter() {
+    	try {
+			FileWriter fstream = new FileWriter("/proc/sys/net/ipv4/conf/eth2/rp_filter");
+			BufferedWriter out = new BufferedWriter(fstream);
+			out.write("0");
+			out.close();
+    	} catch(IOException e) {
+    		s_logger.warn("Unable to disable rp_filter");
+    	}
+    }
 
 	private boolean copyCertToDirectory(String certificate, String filePath) throws IOException {
 		boolean success;
@@ -301,6 +312,11 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         }
         
         _pubIp = (String)params.get("public.ip");
+        
+        value = (String)params.get("disable_rp_filter");
+        if(value != null && value.equalsIgnoreCase("true")) {
+        	disableRpFilter();
+        }
         
         if(s_logger.isInfoEnabled())
         	s_logger.info("Receive proxyVmId in ConsoleProxyResource configuration as " + _proxyVmId);
