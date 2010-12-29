@@ -331,7 +331,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final UploadDao _uploadDao;
     private final CertificateDao _certDao;
 
-    private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
 
     private final StatsCollector _statsCollector;
@@ -344,8 +343,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final int _proxyRamSize;
     private final int _ssRamSize;
     
-    private boolean _useNewNetworking = false;
-
     private final Map<String, Boolean> _availableIdsMap;
 
     private boolean _isHypervisorSnapshotCapable = false;
@@ -431,7 +428,6 @@ public class ManagementServerImpl implements ManagementServer {
         _ssRamSize = NumbersUtil.parseInt(_configs.get("secstorage.ram.size"), SecondaryStorageVmManager.DEFAULT_SS_VM_RAMSIZE);
 
         _statsCollector = StatsCollector.getInstance(_configs);
-        _executor.scheduleAtFixedRate(new AccountCleanupTask(), cleanup, cleanup, TimeUnit.SECONDS);
 
         _purgeDelay = NumbersUtil.parseInt(_configs.get("event.purge.delay"), 0);
         if(_purgeDelay != 0){
@@ -443,7 +439,6 @@ public class ManagementServerImpl implements ManagementServer {
         for (String id: availableIds) {
             _availableIdsMap.put(id, true);
         }
-        _useNewNetworking = Boolean.parseBoolean(_configs.get("use.new.networking"));
     }
     
     protected Map<String, String> getConfigs() {
@@ -3222,7 +3217,7 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
             List<AccountVO> accounts = _accountDao.search(sc, null);
             for (AccountVO account : accounts) {
-                success = (success && _accountMgr.deleteAccountInternal(account.getAccountId()));
+                success = (success && _accountMgr.cleanupAccount(account, UserContext.current().getCallerUserId(), UserContext.current().getCaller()));
                 String description = "Account:" + account.getAccountId();
                 if(success){
                     EventUtils.saveEvent(User.UID_SYSTEM, account.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ACCOUNT_DELETE, "Successfully deleted " +description);
@@ -3880,7 +3875,7 @@ public class ManagementServerImpl implements ManagementServer {
                     for (AccountVO account : accounts) {
                         s_logger.debug("Cleaning up " + account.getId());
                         try {
-                            _accountMgr.deleteAccount(account);
+                            _accountMgr.cleanupAccount(account, _accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount());
                         } catch (Exception e) {
                             s_logger.error("Skipping due to error on account " + account.getId(), e);
                         }
@@ -4176,23 +4171,7 @@ public class ManagementServerImpl implements ManagementServer {
 
 	@Override
 	public VirtualMachine startSystemVM(StartSystemVMCmd cmd) {
-	    if (_useNewNetworking) {
-	        return startSystemVm(cmd.getId());
-	    }
-		
-		//verify input
-		Long id = cmd.getId();
-
-		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(id, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
-        if (systemVm == null) {
-        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + id);
-        }
-		
-		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
-			return startConsoleProxy(id);
-		} else {
-			return startSecondaryStorageVm(id);
-		}
+	    return startSystemVm(cmd.getId());
 	}
 
     @Override

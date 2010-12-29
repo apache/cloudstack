@@ -1276,7 +1276,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public void deallocate(VirtualMachineProfile<? extends VMInstanceVO> vm) {
+    public void cleanupNics(VirtualMachineProfile<? extends VMInstanceVO> vm) {
         List<NicVO> nics = _nicDao.listBy(vm.getId());
         for (NicVO nic : nics) {
             nic.setState(Nic.State.Deallocating);

@@ -1006,50 +1006,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
     
     @Override @DB
-    public boolean destroyVirtualMachine(long userId, long vmId) {
-        UserVmVO vm = _vmDao.findById(vmId);
-        if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to find vm or vm is destroyed: " + vmId);
-            }
-            return true;
-        }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Destroying vm " + vmId);
-        }
-        
-        long startEventId = EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+vmId);
-        
-        if (!stop(userId, vm)) {
-            s_logger.error("Unable to stop vm so we can't destroy it: " + vmId);
-            EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_STOP, "Error stopping VM instance : " + vmId, startEventId);
-            return false;
-        } else {
-            EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_STOP, "Successfully stopped VM instance : " + vmId, startEventId);
-        }
-       
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-
-        if (!destroy(vm)) {
-        	return false;
-        }
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
-        _usageEventDao.persist(usageEvent);
-        cleanNetworkRules(userId, vmId);
-        
-        // Mark the VM's disks as destroyed
-        List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
-        for (VolumeVO volume : volumes) {
-        	_storageMgr.destroyVolume(volume);
-        }
-
-        txn.commit();
-        return true;
-    }
-
-    @Override @DB
     public UserVm recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException, CloudRuntimeException {
     	
         Long vmId = cmd.getId();
@@ -1206,7 +1162,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     public boolean start() {
-    	_executor.scheduleWithFixedDelay(new ExpungeTask(this), _expungeInterval, _expungeInterval, TimeUnit.SECONDS);
+    	_executor.scheduleWithFixedDelay(new ExpungeTask(), _expungeInterval, _expungeInterval, TimeUnit.SECONDS);
         return true;
     }
 
@@ -1364,19 +1320,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return stopped;
     }
 
-    @Override @DB
-    public boolean destroy(UserVmVO vm) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Destroying vm " + vm.toString());
-        }
-        if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
-            s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm.toString());
-            return false;
-        }
-
-        return true;
-    }
-
     @Override
     public HostVO prepareForMigration(UserVmVO vm) throws StorageUnavailableException {
         long vmId = vm.getId();
@@ -1454,52 +1397,80 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return true;
     }
 
-    @DB
-    public void expunge() {
-    	List<UserVmVO> vms = _vmDao.findDestroyedVms(new Date(System.currentTimeMillis() - ((long)_expungeDelay << 10)));
-    	s_logger.info("Found " + vms.size() + " vms to expunge.");
-    	for (UserVmVO vm : vms) {
-    		long vmId = vm.getId();
-    		releaseGuestIpAddress(vm);
-            vm.setGuestNetmask(null);
-            vm.setGuestMacAddress(null);
-    		if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, null)) {
-    			s_logger.info("vm " + vmId + " is skipped because it is no longer in Destroyed or Error state");
-    			continue;
-    		}
+    @Override
+    public boolean expunge(UserVmVO vm, long callerUserId, Account caller) {
+	    try {
+	        if (!_itMgr.advanceExpunge(vm, _accountMgr.getSystemUser(), caller)) {
+	            s_logger.info("Did not expunge " + vm);
+	            return false;
+	        }
+	        
+	        long vmId = vm.getId();
+	        
+            //cleanup port forwarding rules
+            if (_rulesMgr.revokePortForwardingRule(vmId)) {
+                s_logger.debug("Port forwarding rules are removed successfully as a part of vm id=" + vmId + " expunge");
+            } else {
+                s_logger.warn("Fail to remove port forwarding rules as a part of vm id=" + vmId + " expunge");
+            }
+	        
+            //cleanup load balancer rules
+            if (_lbMgr.removeVmFromLoadBalancers(vmId)) {
+                s_logger.debug("LB rules are removed successfully as a part of vm id=" + vmId + " expunge");
+            } else {
+                s_logger.warn("Fail to remove lb rules as a part of vm id=" + vmId + " expunge");
+            }
+            
+            _networkGroupMgr.removeInstanceFromGroups(vm.getId());
+            removeInstanceFromGroup(vm.getId());
+            
+            _itMgr.remove(vm, _accountMgr.getSystemUser(), caller);
+            return true;
+        } catch (ResourceUnavailableException e) {
+            s_logger.warn("Unable to expunging " + vm, e);
+            return false;
+        } catch (OperationTimedoutException e) {
+            s_logger.warn("Operation time out on expunging " + vm, e);
+            return false;
+        } catch (ConcurrentOperationException e) {
+            s_logger.warn("Concurrent operations on expunging " + vm, e);
+            return false;
+        }
+        
+            
+//    		long vmId = vm.getId();
+//    		releaseGuestIpAddress(vm);
+//            vm.setGuestNetmask(null);
+//            vm.setGuestMacAddress(null);
+//    		if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, null)) {
+//    			s_logger.info("vm " + vmId + " is skipped because it is no longer in Destroyed or Error state");
+//    			continue;
+//    		}
+//
+//           List<VolumeVO> vols = null;
+//            try {
+//                vols = _volsDao.findByInstanceIdDestroyed(vmId);
+//                _storageMgr.destroy(vm, vols);
+//                 
+//                
+//                //cleanup load balancer rules
+//                if (_lbMgr.removeVmFromLoadBalancers(vmId)) {
+//                    s_logger.debug("LB rules are removed successfully as a part of vm id=" + vmId + " expunge");
+//                } else {
+//                    s_logger.warn("Fail to remove lb rules as a part of vm id=" + vmId + " expunge");
+//                }
+//                
+//                _vmDao.remove(vm.getId());
+//               s_logger.debug("vm is destroyed");
+//            } catch (Exception e) {
+//            	s_logger.info("VM " + vm +" expunge failed due to ", e);
+//			}
 
-           List<VolumeVO> vols = null;
-            try {
-                vols = _volsDao.findByInstanceIdDestroyed(vmId);
-                _storageMgr.destroy(vm, vols);
-                 
-                //cleanup port forwarding rules
-                if (_rulesMgr.revokePortForwardingRule(vmId)) {
-                    s_logger.debug("Port forwarding rules are removed successfully as a part of vm id=" + vmId + " expunge");
-                } else {
-                    s_logger.warn("Fail to remove port forwarding rules as a part of vm id=" + vmId + " expunge");
-                }
-                
-                //cleanup load balancer rules
-                if (_lbMgr.removeVmFromLoadBalancers(vmId)) {
-                    s_logger.debug("LB rules are removed successfully as a part of vm id=" + vmId + " expunge");
-                } else {
-                    s_logger.warn("Fail to remove lb rules as a part of vm id=" + vmId + " expunge");
-                }
-                
-                _vmDao.remove(vm.getId());
-                _networkGroupMgr.removeInstanceFromGroups(vm.getId());
-                removeInstanceFromGroup(vm.getId());
-               s_logger.debug("vm is destroyed");
-            } catch (Exception e) {
-            	s_logger.info("VM " + vmId +" expunge failed due to " + e.getMessage());
-			}
-
-    	}
-    	
-    	List<VolumeVO> destroyedVolumes = _volsDao.findByDetachedDestroyed();
-    	s_logger.info("Found " + destroyedVolumes.size() + " detached volumes to expunge.");
-		_storageMgr.destroy(null, destroyedVolumes);
+//    	}
+//    	
+//    	List<VolumeVO> destroyedVolumes = _volsDao.findByDetachedDestroyed();
+//    	s_logger.info("Found " + destroyedVolumes.size() + " detached volumes to expunge.");
+//		_storageMgr.destroy(null, destroyedVolumes);
     }
 
     @Override @DB
@@ -1536,46 +1507,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
     }
   
-    @Override
-    public void cleanNetworkRules(long userId, long instanceId) {
-//FIXME        UserVmVO vm = _vmDao.findById(instanceId);
-//        String guestIpAddr = vm.getGuestIpAddress();
-//        long accountId = vm.getAccountId();
-//
-//        List<LoadBalancerVMMapVO> loadBalancerMappings = _loadBalancerVMMapDao.listByInstanceId(vm.getId());
-//        for (LoadBalancerVMMapVO loadBalancerMapping : loadBalancerMappings) {
-//            List<PortForwardingRuleVO> lbRules = _rulesDao.listByLoadBalancerId(loadBalancerMapping.getLoadBalancerId());
-//            PortForwardingRuleVO targetLbRule = null;
-//            for (PortForwardingRuleVO lbRule : lbRules) {
-//                if (lbRule.getDestinationIpAddress().equals(guestIpAddr)) {
-//                    targetLbRule = lbRule;
-//                    targetLbRule.setEnabled(false);
-//                    break;
-//                }
-//            }
-//
-//            if (targetLbRule != null) {
-//                String ipAddress = targetLbRule.getSourceIpAddress();
-//                DomainRouterVO router = _routerDao.findById(vm.getDomainRouterId());
-//                _networkMgr.updateFirewallRules(ipAddress, lbRules, router);
-//
-//                // now that the rule has been disabled, delete it, also remove the mapping from the load balancer mapping table
-//                _rulesDao.remove(targetLbRule.getId());
-//                _loadBalancerVMMapDao.remove(loadBalancerMapping.getId());
-//
-//                // save off the event for deleting the LB rule
-//                EventVO lbRuleEvent = new EventVO();
-//                lbRuleEvent.setUserId(userId);
-//                lbRuleEvent.setAccountId(accountId);
-//                lbRuleEvent.setType(EventTypes.EVENT_NET_RULE_DELETE);
-//                lbRuleEvent.setDescription("deleted load balancer rule [" + targetLbRule.getSourceIpAddress() + ":" + targetLbRule.getSourcePort() +
-//                        "]->[" + targetLbRule.getDestinationIpAddress() + ":" + targetLbRule.getDestinationPort() + "]" + " " + targetLbRule.getAlgorithm());
-//                lbRuleEvent.setLevel(EventVO.LEVEL_INFO);
-//                _eventDao.persist(lbRuleEvent);
-//            }
-//        }
-    }
-    
     @Override
     public void deletePrivateTemplateRecord(Long templateId){
         if ( templateId != null) {
@@ -1885,18 +1816,32 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	}
     
 	protected class ExpungeTask implements Runnable {
-    	UserVmManagerImpl _vmMgr;
-    	public ExpungeTask(UserVmManagerImpl vmMgr) {
-    		_vmMgr = vmMgr;
+    	public ExpungeTask() {
     	}
 
 		@Override
         public void run() {
 			GlobalLock scanLock = GlobalLock.getInternLock("UserVMExpunge");
 			try {
-				if(scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
+				if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
 					try {
-						reallyRun();
+		                List<UserVmVO> vms = _vmDao.findDestroyedVms(new Date(System.currentTimeMillis() - ((long)_expungeDelay << 10)));
+		                if (s_logger.isInfoEnabled()) {
+		                    if (vms.size() == 0) {
+		                        s_logger.trace("Found " + vms.size() + " vms to expunge.");
+		                    } else {
+		                        s_logger.info("Found " + vms.size() + " vms to expunge.");
+		                    }
+		                }
+		                for (UserVmVO vm : vms) {
+		                    try {
+		                        expunge(vm, _accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount());
+		                    } catch(Exception e) {
+		                        s_logger.warn("Unable to expunge " + vm, e);
+		                    }
+		                }
+		            } catch (Exception e) {
+		                s_logger.error("Caught the following Exception", e);
 					} finally {
 						scanLock.unlock();
 					}
@@ -1905,15 +1850,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 				scanLock.releaseRef();
 			}
 		}
-    	
-    	public void reallyRun() {
-    		try {
-    			s_logger.info("UserVm Expunge Thread is running.");
-				_vmMgr.expunge();
-    		} catch (Exception e) {
-    			s_logger.error("Caught the following Exception", e);
-    		}
-    	}
     }
 
 	private static boolean isAdmin(short accountType) {
@@ -2610,7 +2546,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         User caller = _userDao.findById(userId);
         
         boolean status;
-        status = _itMgr.destroy(vm, caller, account);
+        try {
+            status = _itMgr.destroy(vm, caller, account);
+        } catch (OperationTimedoutException e) {
+            throw new CloudRuntimeException("Unable to destroy " + vm, e);
+        }
         
         if (status) {
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
@@ -2621,147 +2561,4 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new CloudRuntimeException("Failed to destroy vm with id " + vmId);
         }
     }
-    
-//  @Override
-//  public OperationResponse executeRebootVM(RebootVMExecutor executor, VMOperationParam param) {
-//    
-//      final UserVmVO vm = _vmDao.findById(param.getVmId());
-//      String resultDescription;
-//      
-//      if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
-//        resultDescription = "VM does not exist or in destroying state";
-//        executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-//            AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-//        if(s_logger.isDebugEnabled())
-//            s_logger.debug("Execute asynchronize Reboot VM command: " +resultDescription);
-//        return new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-//      }
-//      
-//      if (vm.getState() == State.Running && vm.getHostId() != null) {
-//          RebootCommand cmd = new RebootCommand(vm.getInstanceName());
-//          try {
-//            long seq = _agentMgr.send(vm.getHostId(), new Commands(cmd), new VMOperationListener(executor, param, vm, 0));
-//            resultDescription = "Execute asynchronize Reboot VM command: sending command to agent, seq - " + seq;
-//            if(s_logger.isDebugEnabled())
-//                s_logger.debug(resultDescription);
-//            return new OperationResponse(OperationResponse.STATUS_IN_PROGRESS, resultDescription);
-//        } catch (AgentUnavailableException e) {
-//            resultDescription = "Agent is not available";
-//            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-//                AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-//            return new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-//        }
-//      }
-//      resultDescription = "VM is not running or agent host is disconnected";
-//    executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-//        AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-//    return new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-//  }
-    
-//  @Override @DB
-//  public OperationResponse executeDestroyVM(DestroyVMExecutor executor, VMOperationParam param) {
-//      UserVmVO vm = _vmDao.findById(param.getVmId());
-//      State state = vm.getState();
-//      OperationResponse response; 
-//      String resultDescription = "Success";               
-//      
-//      if (vm == null || state == State.Destroyed || state == State.Expunging || vm.getRemoved() != null) {
-//          if (s_logger.isDebugEnabled()) {
-//              s_logger.debug("Unable to find vm or vm is destroyed: " + param.getVmId());
-//          }
-//          resultDescription = "VM does not exist or already in destroyed state";
-//          response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-//        executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-//            AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-//        return response;
-//      }
-//      
-//      if(state == State.Stopping) {
-//          if (s_logger.isDebugEnabled()) {
-//              s_logger.debug("VM is being stopped: " + param.getVmId());
-//          }
-//          resultDescription = "VM is being stopped, please re-try later";
-//          response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-//        executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-//            AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-//        return response;
-//      }
-//
-//      if (state == State.Running) {
-//          if (vm.getHostId() == null) {
-//            resultDescription = "VM host is null (invalid VM)";
-//            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-//            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-//                    AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-//            if(s_logger.isDebugEnabled())
-//                s_logger.debug("Execute asynchronize destroy VM command: " + resultDescription);
-//              return response;
-//          }
-//        
-//          if (!_vmDao.updateIf(vm, Event.StopRequested, vm.getHostId())) {
-//            resultDescription = "Failed to issue stop command, please re-try later";
-//            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-//            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-//                    AsyncJobResult.STATUS_FAILED, 0, resultDescription);                        
-//            if(s_logger.isDebugEnabled())
-//                s_logger.debug("Execute asynchronize destroy VM command:" + resultDescription);             
-//              return response;
-//          }
-//          long childEventId = EventUtils.saveStartedEvent(param.getUserId(), param.getAccountId(),
-//                EventTypes.EVENT_VM_STOP, "stopping vm " + vm.getName(), 0);
-//          param.setChildEventId(childEventId);
-//          StopCommand cmd = new StopCommand(vm, vm.getInstanceName(), vm.getVnet());
-//          try {
-//            long seq = _agentMgr.send(vm.getHostId(), new Command[] {cmd}, true,
-//                new VMOperationListener(executor, param, vm, 0));
-//            resultDescription = "Execute asynchronize destroy VM command: sending stop command to agent, seq - " + seq;
-//            if(s_logger.isDebugEnabled())
-//                s_logger.debug(resultDescription);
-//            response = new OperationResponse(OperationResponse.STATUS_IN_PROGRESS, resultDescription);
-//            return response;
-//        } catch (AgentUnavailableException e) {
-//            resultDescription = "Agent is not available";
-//            response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-//            executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-//                AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-//            return response;
-//        }
-//      }
-//      
-//      Transaction txn = Transaction.currentTxn();
-//      txn.start();        
-//      
-//      _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
-//      if (!_vmDao.updateIf(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId()) ) {
-//        resultDescription = "Unable to destroy the vm because it is not in the correct state";
-//          s_logger.debug(resultDescription + vm.toString());
-//          
-//          txn.rollback();
-//          response = new OperationResponse(OperationResponse.STATUS_FAILED, resultDescription);
-//        executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-//                AsyncJobResult.STATUS_FAILED, 0, resultDescription);
-//          return response;
-//      }
-//
-//      // Now that the VM is destroyed, clean the network rules associated with it.
-//      cleanNetworkRules(param.getUserId(), vm.getId());
-//
-//      // Mark the VM's root disk as destroyed
-//      List<VolumeVO> volumes = _volsDao.findByInstanceAndType(vm.getId(), VolumeType.ROOT);
-//      for (VolumeVO volume : volumes) {
-//        _storageMgr.destroyVolume(volume);
-//      }
-//      
-//      // Mark the VM's data disks as detached
-//      volumes = _volsDao.findByInstanceAndType(vm.getId(), VolumeType.DATADISK);
-//      for (VolumeVO volume : volumes) {
-//        _volsDao.detachVolume(volume.getId());
-//      }
-//      
-//      txn.commit();
-//      response = new OperationResponse(OperationResponse.STATUS_SUCCEEDED, resultDescription);
-//    executor.getAsyncJobMgr().completeAsyncJob(executor.getJob().getId(),
-//        AsyncJobResult.STATUS_SUCCEEDED, 0, "success");
-//    return response;
-//  }
 }

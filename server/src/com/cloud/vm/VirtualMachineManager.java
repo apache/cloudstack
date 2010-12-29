@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.OperationTimedoutException;
@@ -74,7 +75,7 @@ public interface VirtualMachineManager extends Manager {
     
     <T extends VMInstanceVO> boolean stop(T vm, User caller, Account account) throws ResourceUnavailableException;
     
-    <T extends VMInstanceVO> boolean destroy(T vm, User caller, Account account) throws ResourceUnavailableException;
+    <T extends VMInstanceVO> boolean expunge(T vm, User caller, Account account) throws ResourceUnavailableException;
     
     <T extends VMInstanceVO> void registerGuru(VirtualMachine.Type type, VirtualMachineGuru<T> guru);
 
@@ -84,5 +85,9 @@ public interface VirtualMachineManager extends Manager {
     
 	<T extends VMInstanceVO> boolean advanceStop(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 	
-	<T extends VMInstanceVO> boolean advanceDestroy(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+	<T extends VMInstanceVO> boolean advanceExpunge(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+	
+	<T extends VMInstanceVO> boolean remove(T vm, User caller, Account account);
+	
+	<T extends VMInstanceVO> boolean destroy(T vm, User caller, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 }

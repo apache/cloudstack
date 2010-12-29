@@ -316,11 +316,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public boolean destroy(DomainRouterVO router) {
-        return destroyRouter(router.getId());
-    }
-
-    @Override
     public boolean sendSshKeysToHost(Long hostId, String pubKey, String prvKey) {
         ModifySshKeysCommand cmd = new ModifySshKeysCommand(pubKey, prvKey);
         final Answer answer = _agentMgr.easySend(hostId, cmd);

@@ -24,6 +24,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.VirtualMachine.Event;
@@ -47,9 +48,6 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>{
      * @return VirtualMachine
      */
     UserVmVO getVirtualMachine(long vmId);
-    
-    boolean destroyVirtualMachine(long userId, long vmId);
-    
     
     /**
      * Attaches an ISO to the virtual CDROM device of the specified VM. Will eject any existing virtual CDROM if isoPath is null.
@@ -80,13 +78,6 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>{
     HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds);
     
     /**
-     * Clean the network rules for the given VM
-     * @param userId
-     * @param instanceId the id of the instance for which the network rules should be cleaned
-     */
-    void cleanNetworkRules(long userId, long instanceId);
-    
-    /**
      * Releases a guest IP address for a VM. If the VM is on a direct attached network, will also unassign the IP address.
      * @param userVm
      */
@@ -102,4 +93,7 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>{
 
 	UserVm startUserVm(long vmId) throws StorageUnavailableException,
 			ConcurrentOperationException, ExecutionException, ResourceUnavailableException, InsufficientCapacityException;
+	
+	boolean expunge(UserVmVO vm, long callerUserId, Account caller);
+
 }

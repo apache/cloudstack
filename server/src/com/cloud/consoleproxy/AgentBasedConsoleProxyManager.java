@@ -304,11 +304,6 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     }
 
     @Override
-    public boolean destroy(ConsoleProxyVO vm) throws AgentUnavailableException {
-        return false;
-    }
-
-    @Override
     public ConsoleProxyVO get(long id) {
         return null;
     }

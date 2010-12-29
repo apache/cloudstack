@@ -62,7 +62,6 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
@@ -125,7 +124,6 @@ import com.cloud.utils.net.NfsUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachine;
@@ -1101,12 +1099,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		} else {
 			return startSecStorageVm(secStorageVmId) != null;
 		}
-	}
-
-	@Override
-	public boolean destroy(SecondaryStorageVmVO secStorageVm)
-			throws AgentUnavailableException {
-		return destroySecStorageVm(secStorageVm.getId());
 	}
 
 	@Override

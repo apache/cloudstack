@@ -36,7 +36,6 @@ import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
-import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHostVO;
@@ -60,17 +59,16 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.stateListener.VMStateListener;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
@@ -113,7 +111,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     @Inject private DomainDao _domainDao;
     @Inject private ClusterManager _clusterMgr;
     @Inject private ItWorkDao _workDao;
-    @Inject private CapacityDao _capacityDao;
     @Inject private UserVmDao _userVmDao;
     @Inject private DomainRouterDao _routerDao;
     @Inject private ConsoleProxyDao _consoleDao;
@@ -238,9 +235,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     }
     
     @Override
-    public <T extends VMInstanceVO> boolean destroy(T vm, User caller, Account account) throws ResourceUnavailableException {
+    public <T extends VMInstanceVO> boolean expunge(T vm, User caller, Account account) throws ResourceUnavailableException {
         try {
-            return advanceDestroy(vm, caller, account);
+            return advanceExpunge(vm, caller, account);
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Operation timed out", e);
         } catch (ConcurrentOperationException e) {
@@ -249,14 +246,19 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     }
     
     @Override
-    public <T extends VMInstanceVO> boolean advanceDestroy(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
-        if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
+    public <T extends VMInstanceVO> boolean advanceExpunge(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        if (vm == null || vm.getRemoved() != null) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to find vm or vm is destroyed: " + vm);
             }
             return true;
         }
 
+        if (!stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, vm.getHostId())) {
+            s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm.toString());
+            return false;
+        }
+        
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Destroying vm " + vm);
         }
@@ -271,9 +273,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
             EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_STOP, "Successfully stopped VM instance : " + vm.getId(), startEventId);
         }
         
+        VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
+
+        _networkMgr.cleanupNics(profile);
     	//Clean up volumes based on the vm's instance id
     	_storageMgr.cleanupVolumes(vm.getId());
-
+    	
         VirtualMachineGuru<T> guru = getVmGuru(vm);
         vm = guru.findById(vm.getId());
 
@@ -591,6 +596,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.StopRequested, State.Stopped);
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.AgentReportStopped, State.Stopped);
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.OperationFailed, State.Error);
+    	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.ExpungeOperation, State.Expunging);
     	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.OperationRetry, State.Starting);
     	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.OperationSucceeded, State.Running);
     	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.OperationFailed, State.Stopped);
@@ -634,5 +640,35 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
 		} else {
 			return _stateMachine.transitTO(vm, e, id, _vmDao);
 		}
+    }
+    
+    @Override
+    public <T extends VMInstanceVO> boolean remove(T vm, User user, Account caller) {
+        return _vmDao.remove(vm.getId());
+    }
+    
+    @Override
+    public <T extends VMInstanceVO> boolean destroy(T vm, User user, Account caller) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Destroying vm " + vm.toString());
+        }
+        if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Unable to find vm or vm is destroyed: " + vm);
+            }
+            return true;
+        }
+        
+        if (!advanceStop(vm, user, caller)) {
+            s_logger.debug("Unable to stop " + vm);
+            return false;
+        }
+        
+        if (!stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
+            s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm.toString());
+            return false;
+        }
+
+        return true;
     }
 }

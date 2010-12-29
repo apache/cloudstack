@@ -145,6 +145,4 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
     boolean migrate(T vm, HostVO host) throws AgentUnavailableException, OperationTimedoutException;
     
     boolean completeMigration(T vm, HostVO host) throws AgentUnavailableException, OperationTimedoutException;
-    
-    boolean destroy(T vm) throws AgentUnavailableException;
 }

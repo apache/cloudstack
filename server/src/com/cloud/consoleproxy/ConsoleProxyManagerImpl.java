@@ -90,8 +90,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.host.Host.Type;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.info.ConsoleProxyConnectionInfo;
 import com.cloud.info.ConsoleProxyInfo;
@@ -115,9 +115,9 @@ import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
@@ -1546,11 +1546,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     }
 
     @Override
-    public boolean destroy(ConsoleProxyVO proxy) throws AgentUnavailableException {
-        return destroyProxy(proxy.getId());
-    }
-
-    @Override
     @DB
     public boolean destroyProxy(long vmId) {
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
@@ -1846,8 +1841,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         }
         
         value = configs.get(Config.ConsoleProxyDisableRpFilter.key());
-        if(value != null && value.equalsIgnoreCase("true"))
-        	_disable_rp_filter = true;
+        if(value != null && value.equalsIgnoreCase("true")) {
+            _disable_rp_filter = true;
+        }
 
         value = configs.get("system.vm.use.local.storage");
         if (value != null && value.equalsIgnoreCase("true")) {
@@ -1952,8 +1948,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         buf.append(" pod=").append(dest.getPod().getId());
         buf.append(" guid=Proxy.").append(profile.getId());
         buf.append(" proxy_vm=").append(profile.getId());
-        if(_disable_rp_filter)
+        if(_disable_rp_filter) {
             buf.append(" disable_rp_filter=true");
+        }
 
         boolean externalDhcp = false;
         String externalDhcpStr = _configDao.getValue("direct.attach.network.externalIpAllocator.enabled");

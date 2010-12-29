@@ -60,6 +60,7 @@ import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.user.AccountManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
@@ -124,7 +125,9 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     @Inject DataCenterDao _dcDao;
     @Inject HostPodDao _podDao;
     long _serverId;
+    @Inject(adapter=Investigator.class)
     Adapters<Investigator> _investigators;
+    @Inject(adapter=FenceBuilder.class)
     Adapters<FenceBuilder> _fenceBuilders;
     @Inject AgentManager _agentMgr;
     @Inject AlertManager _alertMgr;
@@ -132,6 +135,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     @Inject GuestOSDao _guestOSDao;
     @Inject GuestOSCategoryDao _guestOSCategoryDao;
     @Inject VirtualMachineManager _itMgr;
+    @Inject AccountManager _accountMgr;
     
     String _instance;
     ScheduledExecutorService _executor;
@@ -833,19 +837,14 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         	}
         	
             if (vm.getHostId() != null) {
-    			Command cmd = mgr.cleanup(vm, null);
-    			Answer ans = _agentMgr.send(work.getHostId(), cmd);
-    			if (ans.getResult()) {
-    				mgr.completeStopCommand(vm);
-    				if (mgr.destroy(vm)) {
-    					s_logger.info("Successfully stopped " + vm.toString());
-    					return null;
-    				}
-    			}
-    			s_logger.debug("Stop for " + vm.toString() + " was unsuccessful. Detail: " + ans.getDetails());
+            	if (_itMgr.destroy(vm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount())) {
+                    s_logger.info("Successfully destroy " + vm);
+            	    return null;
+            	}
+    			s_logger.debug("Stop for " + vm + " was unsuccessful.");
             } else {
             	if (s_logger.isDebugEnabled()) {
-            		s_logger.debug(vm.toString() + " has already been stopped");
+            		s_logger.debug(vm + " has already been stopped");
             	}
                 return null;
             }
@@ -853,7 +852,9 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             s_logger.debug("Agnet is not available" + e.getMessage());
         } catch (OperationTimedoutException e) {
         	s_logger.debug("operation timed out: " + e.getMessage());
-		}
+		} catch (ConcurrentOperationException e) {
+            s_logger.debug("concurrent operation: " + e.getMessage());
+        }
         
         work.setTimesTried(work.getTimesTried() + 1);
         return (System.currentTimeMillis() >> 10) + _stopRetryInterval;

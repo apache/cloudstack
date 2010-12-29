@@ -75,17 +75,17 @@ public class DhcpElement extends AdapterBase implements NetworkElement{
     }
 
     @Override
-    public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
         if (!canHandle(offering.getGuestIpType(), dest)) {
             return false;
         }
-        _routerMgr.deployDhcp(guestConfig, dest, context.getAccount());
+        _routerMgr.deployDhcp(network, dest, context.getAccount());
         return true;
     }
 
     @Override
-    public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(config.getGuestType(), dest)) {
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        if (canHandle(network.getGuestType(), dest)) {
             
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
@@ -94,20 +94,20 @@ public class DhcpElement extends AdapterBase implements NetworkElement{
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
             
-            return _routerMgr.addVirtualMachineIntoNetwork(config, nic, uservm, dest, context, true) != null;
+            return _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, true) != null;
         } else {
             return false;
         }
     }
 
     @Override
-    public boolean release(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) {
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) {
         return true;
     }
     
     @Override
-    public boolean shutdown(Network config, ReservationContext context) throws ConcurrentOperationException {
-        DomainRouterVO router = _routerDao.findByNetworkConfiguration(config.getId());
+    public boolean shutdown(Network network, ReservationContext context) throws ConcurrentOperationException {
+        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
         if (router == null) {
             return true;
         }
@@ -115,7 +115,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement{
     }
 
     @Override
-    public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+    public boolean applyRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
         return false;
     }
 

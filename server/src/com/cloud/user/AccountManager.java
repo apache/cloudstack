@@ -29,13 +29,12 @@ import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.server.Criteria;
-import com.cloud.utils.component.Manager;
 
 /**
  * AccountManager includes logic that deals with accounts, domains, and users.
  *
  */
-public interface AccountManager extends Manager {
+public interface AccountManager extends AccountService {
 
 	/**
 	 * Finds all ISOs that are usable for a user. This includes ISOs usable for the user's account and for all of the account's parent domains.
@@ -106,14 +105,15 @@ public interface AccountManager extends Manager {
      */
     boolean disableAccount(long accountId);
     
-    boolean deleteAccount(AccountVO account);
+    boolean deleteAccount(AccountVO account, long callerUserId, Account caller);
     
     void checkAccess(Account account, Domain domain) throws PermissionDeniedException;
     
     void checkAccess(Account account, ControlledEntity... entities) throws PermissionDeniedException;
 
-	boolean deleteAccountInternal(long accountId);
+	boolean cleanupAccount(AccountVO account, long callerUserId, Account caller);
 
-	UserVO createUser(CreateUserCmd cmd);
+	@Override
+    UserVO createUser(CreateUserCmd cmd);
 
 }

@@ -22,6 +22,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -45,9 +48,11 @@ import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.api.commands.UpdateUserCmd;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.PodVlanMapVO;
@@ -83,13 +88,18 @@ import com.cloud.user.Account.State;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.component.Manager;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
@@ -100,7 +110,7 @@ import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value={AccountManager.class, AccountService.class})
-public class AccountManagerImpl implements AccountManager, AccountService {
+public class AccountManagerImpl implements AccountManager, AccountService, Manager {
 	public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class);
 	
 	private String _name;
@@ -130,12 +140,15 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 	@Inject private ConfigurationManager _configMgr;
 	@Inject private VirtualNetworkApplianceManager _routerMgr;
 	
+    private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
+	
 	private final GlobalLock m_resourceCountLock = GlobalLock.getInternLock("resource.count");
 	
 	UserVO _systemUser;
 	AccountVO _systemAccount;
 	@Inject(adapter=SecurityChecker.class)
 	Adapters<SecurityChecker> _securityCheckers;
+	int _cleanupInterval;
 	
 	@Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -150,6 +163,14 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     	if (_systemUser == null) {
     	    throw new ConfigurationException("Unable to find the system user using " + User.UID_SYSTEM);
     	}
+    	
+    	ComponentLocator locator = ComponentLocator.getCurrentLocator();
+    	ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
+    	Map<String, String> configs = configDao.getConfiguration(params);
+    	
+        String value = configs.get(Config.AccountCleanupInterval.key());
+        _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 hour.
+    	
     	return true;
     }
 	
@@ -165,6 +186,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 	
     @Override
     public boolean start() {
+        _executor.scheduleAtFixedRate(new AccountCleanupTask(), _cleanupInterval, _cleanupInterval, TimeUnit.SECONDS);
         return true;
     }
 
@@ -752,31 +774,27 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     }
     
     @Override
-    public boolean deleteAccountInternal(long accountId) {
-        boolean result = false;
+    public boolean deleteAccount(AccountVO account, long callerUserId, Account caller) {
+        long accountId = account.getId();
         
         try {        	
-            List<UserVO> users = _userDao.listByAccount(accountId);
-
-            for(UserVO user : users){
-            	//remove each user
-            	_userDao.remove(user.getId());
-            }
-            
-            result = _accountDao.remove(accountId);
-            if (!result) {
+            if (!_accountDao.remove(accountId)) {
                 s_logger.error("Unable to delete account " + accountId);
                 return false;
             }
 
+            List<UserVO> users = _userDao.listByAccount(accountId);
+
+            for(UserVO user : users){
+            	_userDao.remove(user.getId());
+            }
+            
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Remove account " + accountId);
             }
 
-            AccountVO account = _accountDao.findByIdIncludingRemoved(accountId);
-            deleteAccount(account);
-            result = true;
-            return result;
+            cleanupAccount(account, callerUserId, caller);
+            return true;
         } catch (Exception e) {
             s_logger.error("exception deleting account: " + accountId, e);            
             return false;
@@ -784,9 +802,8 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     }
     
     @Override
-    public boolean deleteAccount(AccountVO account) {
+    public boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) {
         long accountId = account.getId();
-        long userId = 1L; // only admins can delete users, pass in userId 1 XXX: Shouldn't it be userId 2.
         boolean accountCleanupNeeded = false;
         
         try {
@@ -813,13 +830,13 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             }
 
             for (UserVmVO vm : vms) {
-                long startEventId = EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Destroyed VM instance : " + vm.getName());
-                if (!_vmMgr.destroyVirtualMachine(userId, vm.getId())) {
+                long startEventId = EventUtils.saveStartedEvent(callerUserId, vm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Destroyed VM instance : " + vm.getName());
+                if (!_vmMgr.expunge(vm, callerUserId, caller)) {
                     s_logger.error("Unable to destroy vm: " + vm.getId());
                     accountCleanupNeeded = true;
-                    EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_DESTROY, "Unable to destroy vm: " + vm.getId(), startEventId);
+                    EventUtils.saveEvent(callerUserId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_DESTROY, "Unable to destroy vm: " + vm.getId(), startEventId);
                 } else {
-                    EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_DESTROY, "Successfully destroyed VM instance : " + vm.getName(), startEventId);
+                    EventUtils.saveEvent(callerUserId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_DESTROY, "Successfully destroyed VM instance : " + vm.getName(), startEventId);
                 }
             }
             
@@ -840,13 +857,13 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 
             boolean routersCleanedUp = true;
             for (DomainRouterVO router : routers) {
-                long startEventId = EventUtils.saveStartedEvent(userId, router.getAccountId(), EventTypes.EVENT_ROUTER_DESTROY, "Starting to destroy router : " + router.getName());
+                long startEventId = EventUtils.saveStartedEvent(callerUserId, router.getAccountId(), EventTypes.EVENT_ROUTER_DESTROY, "Starting to destroy router : " + router.getName());
                 if (!_routerMgr.destroyRouter(router.getId())) {
                     s_logger.error("Unable to destroy router: " + router.getId());
                     routersCleanedUp = false;
-                    EventUtils.saveEvent(userId, router.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_DESTROY, "Unable to destroy router: " + router.getName(), startEventId);
+                    EventUtils.saveEvent(callerUserId, router.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_DESTROY, "Unable to destroy router: " + router.getName(), startEventId);
                 } else {
-                    EventUtils.saveEvent(userId, router.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_DESTROY, "successfully destroyed router : " + router.getName(), startEventId);
+                    EventUtils.saveEvent(callerUserId, router.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_DESTROY, "successfully destroyed router : " + router.getName(), startEventId);
                 }
             }
 
@@ -907,7 +924,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             boolean allTemplatesDeleted = true;
             for (VMTemplateVO template : userTemplates) {
                 try {
-                    allTemplatesDeleted = _tmpltMgr.delete(userId, template.getId(), null);
+                    allTemplatesDeleted = _tmpltMgr.delete(callerUserId, template.getId(), null);
                 } catch (Exception e) {
                     s_logger.warn("Failed to delete template while removing account: " + template.getName() + " due to: " + e.getMessage());
                     allTemplatesDeleted = false;
@@ -1336,12 +1353,16 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     @Override
     //This method deletes the account
     public boolean deleteUserAccount(DeleteAccountCmd cmd) {
+        UserContext ctx = UserContext.current();
+        long callerUserId = ctx.getCallerUserId();
+        Account caller = ctx.getCaller();
+        
         Long accountId = cmd.getId();
                 
         // If the user is a System user, return an error.  We do not allow this
-        Account account = _accountDao.findById(accountId);
+        AccountVO account = _accountDao.findById(accountId);
         if ((account != null) && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
-            throw new InvalidParameterValueException("Account id : " + accountId + " is a system account, delete is not allowed");
+            throw new PermissionDeniedException("Account id : " + accountId + " is a system account, delete is not allowed");
         }
         
         if(account == null){
@@ -1353,7 +1374,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         	return true;
         }
         
-        return deleteAccountInternal(accountId);
+        return deleteAccount(account, callerUserId, caller);
     }
     
     
@@ -1506,5 +1527,48 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         }
         return success;
 	}
+	
+    protected class AccountCleanupTask implements Runnable {
+        @Override
+        public void run() {
+            try {
+                GlobalLock lock = GlobalLock.getInternLock("AccountCleanup");
+                if (lock == null) {
+                    s_logger.debug("Couldn't get the global lock");
+                    return;
+                }
 
+                if (!lock.lock(30)) {
+                    s_logger.debug("Couldn't lock the db");
+                    return;
+                }
+
+                Transaction txn = null;
+                try {
+                    txn = Transaction.open(Transaction.CLOUD_DB);
+                    
+                    List<AccountVO> accounts = _accountDao.findCleanups();
+                    s_logger.info("Found " + accounts.size() + " accounts to cleanup");
+                    for (AccountVO account : accounts) {
+                        s_logger.debug("Cleaning up " + account.getId());
+                        try {
+                            cleanupAccount(account, getSystemUser().getId(), getSystemAccount());
+                        } catch (Exception e) {
+                            s_logger.error("Skipping due to error on account " + account.getId(), e);
+                        }
+                    }
+                } catch (Exception e) {
+                    s_logger.error("Exception ", e);
+                } finally {
+                    if(txn != null) {
+                        txn.close();
+                    }
+                    
+                    lock.unlock();
+                }
+            } catch (Exception e) {
+                s_logger.error("Exception ", e);
+            }
+        }
+    }
 }
