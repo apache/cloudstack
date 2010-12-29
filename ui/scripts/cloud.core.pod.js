@@ -760,12 +760,29 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
 				        $thisDialog.dialog("close");					
 						 
 						var item = json.createstoragepoolresponse.storagepool;	
+												
+						var $podArrow = $("#pod_"+podId).find("#pod_arrow");
+						if($podArrow.hasClass("expanded_close")) {	
+						    $podArrow.click();
+						}
 						
+						var $clusterArrow = $("#cluster_"+clusterId).find("#cluster_arrow");
+						if($clusterArrow.hasClass("expanded_close")) {	
+						    $clusterArrow.click();
+						}
+						else {						    
+                            var $primarystorageNode = $("#leftmenu_primarystorage_node_template").clone(true);
+                            primarystorageJSONToTreeNode(item, $primarystorageNode);
+                            $("#cluster_"+clusterId).find("#primarystorages_container").append($primarystorageNode.show());	                              
+						}						
+					
+						/*
 						if($("#tab_content_primarystorage").length > 0 && $("#tab_content_primarystorage").css("display") != "none" && $("#primarystorage_tab_template").length > 0) {
 						    var $newTemplate = $("#primarystorage_tab_template").clone(true);	               
 	                        hostPrimaryStorageJSONToTemplate(item, $newTemplate); 
 	                        $("#tab_content_primarystorage").find("#tab_container").append($newTemplate.show()); 		
-	                    }				                   
+	                    }	
+	                    */			                   
 				    },			
                     error: function(XMLHttpResponse) {	  
 						handleError(XMLHttpResponse, function() {
