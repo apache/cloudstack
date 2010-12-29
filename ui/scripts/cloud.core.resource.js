@@ -198,6 +198,7 @@ function buildZoneTree() {
 	    return false;
 	});  
 	
+	/*
 	$("#leftmenu_cluster_node_template").unbind("click").bind("click", function(event) {
 	    selectRowInZoneTree($(this).find("#cluster_header"));	    
 	   	  
@@ -207,6 +208,107 @@ function buildZoneTree() {
 	    	    
 	    return false;
 	});  
+	*/
+	
+	$("#leftmenu_cluster_node_template").unbind("click").bind("click", function(event) {
+		var $clusterNode = $(this);
+		var $target = $(event.target);
+		var targetId = $target.attr("id");	
+		
+		switch (targetId) {
+			case "cluster_arrow" :				    
+			    var $loadingContainer = $clusterNode.find("#cluster_loading_container").show();
+                var $clusterArrow = $clusterNode.find("#cluster_arrow").hide();			
+			    
+			    var clusterObj = $clusterNode.data("jsonObj");
+			    var $clusterContent = $clusterNode.find("#cluster_content");				  	   
+				if($target.hasClass("expanded_close")) {										
+					$.ajax({
+                        data: createURL("command=listHosts&type=Routing&clusterid="+clusterObj.id),
+	                    dataType: "json",
+	                    async: false,
+	                    success: function(json) {	                        
+	                        var items = json.listhostsresponse.host;	
+	                        var $container = $clusterContent.find("#hosts_container").empty();
+                            if (items != null && items.length > 0) {					    
+                                for (var i = 0; i < items.length; i++) {
+				                    var $hostNode = $("#leftmenu_host_node_template").clone(true);				                    
+				                    hostJSONToTreeNode(items[i], $hostNode);
+				                    $container.append($hostNode.show());				                    
+			                    }			                                 
+                            }	   
+	                    }
+                    });                     
+                    $target.removeClass("expanded_close").addClass("expanded_open");							
+					$clusterContent.show();					                   
+				} 
+				else if($target.hasClass("expanded_open")) {	
+				    $clusterContent.find("#pods_container").empty();					
+					$target.removeClass("expanded_open").addClass("expanded_close");					
+					$clusterContent.hide();					
+				}	
+				
+				$loadingContainer.hide();
+                $clusterArrow.show();				
+							
+				break;					
+			
+			default:	
+			    /*			    		    
+			    selectRowInZoneTree($(this).find("#cluster_header"));	
+			    
+			    if(currentRightPanelJSP != "jsp/cluster.jsp") {                       
+	                removeDialogs();
+	                
+	                var $thisNode = $(this);
+                    $("#right_panel").load("jsp/cluster.jsp", function(){     
+                        currentRightPanelJSP = "jsp/cluster.jsp";
+                                        
+                        $(this).data("onRefreshFn", function() {
+	                        clusterJsonToDetailsTab();
+	                    });  
+            	        
+                        afterLoadclusterJSP($thisNode);   
+                    });      
+                } 
+                else {
+                    clusterJsonToRightPanel($(this));			 
+                }
+                */
+			   	    		   				    		   			    
+			    break;	
+		}
+		return false;
+	});  
+	
+	$("#leftmenu_host_node_template").unbind("click").bind("click", function(event) {		    
+		var $thisNode = $(this);
+		selectRowInZoneTree($thisNode.find("#host_header"));	
+			    
+	    if(currentRightPanelJSP != "jsp/host.jsp") {                       
+            removeDialogs();            
+            
+            $("#right_panel").load("jsp/host.jsp", function(){                    
+                currentRightPanelJSP = "jsp/host.jsp";
+                       
+                var $topButtonContainer = clearButtonsOnTop();			    	       
+		        $("#top_buttons").appendTo($topButtonContainer);        
+                                
+                $thisNode.data("onRefreshFn", function() {
+                    hostJsonToDetailsTab();
+                });  
+    	        
+                afterLoadHostJSP();
+                hostToRightPanel($thisNode);	   
+            });      
+        } 
+        else {
+            hostToRightPanel($thisNode);	             
+        }	
+		
+		return false;
+	});  
+	
 }    
 
 function refreshClusterUnderPod($podNode, newClusterName, existingClusterId, noClicking) {  
@@ -314,6 +416,14 @@ function clusterJSONToTreeNode(json, $clusterNode) {
         }
     });      
 }			
+
+function hostJSONToTreeNode(json, $hostNode) {
+    $hostNode.attr("id", "host_"+json.id);
+    $hostNode.data("jsonObj", json);	  
+    //$hostNode.data("id", json.id).data("name", fromdb(json.name));	    
+    var hostName = $hostNode.find("#host_name").text(fromdb(json.name));
+    //hostName.data("jsonObj", json);	 
+}	
 
 function afterLoadResourceJSP() {
     hideMiddleMenu();        

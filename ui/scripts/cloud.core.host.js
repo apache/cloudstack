@@ -67,7 +67,10 @@ function hostToMidmenu(jsonObj, $midmenuItem1) {
     updateHostStateInMidMenu(jsonObj, $midmenuItem1);   
 }
 
-function hostToRightPanel($midmenuItem1) {         
+function hostToRightPanel($midmenuItem1) {       
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);        
+    hostJsonToDetailsTab();
+    /*      
     if(currentRightPanelJSP != "jsp/host.jsp") {            
         removeDialogs();
         $("#right_panel").load("jsp/host.jsp", function(){     
@@ -86,8 +89,9 @@ function hostToRightPanel($midmenuItem1) {
     } 
     else {
         $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);    
-        hostJsonToDetailsTab() 
+        hostJsonToDetailsTab();
     }
+    */
 }
 
 function afterLoadHostJSP() {    

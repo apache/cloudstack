@@ -854,6 +854,20 @@
     </div>
     <!-- cluster Template (end) -->
 
+    <!-- host Template (begin) --> 
+    <div class="leftmenu_expandedlist" id="leftmenu_host_node_template" style="display:none">       
+        <div id="host_header" class="leftmenu_content">  
+            <div class="leftmenu_sixthindent">
+            	<div class="leftmenu_arrowloader" id="host_loading_container" style="display:none;"></div>
+                <div class="leftmenu_arrows white_nonexpanded_close" id="host_arrow">
+                </div>	                
+                <span id="host_name_label">host: </span>
+                <span id="host_name"></span>
+            </div>  
+        </div>	           
+    </div>
+    <!-- host Template (end) -->
+
     <!-- domain tree node template (begin) -->
     <div id="domain_tree_node_template" style="display:none">    	
                 
