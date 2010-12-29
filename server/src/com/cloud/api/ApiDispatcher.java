@@ -108,7 +108,7 @@ public class ApiDispatcher {
                 s_logger.warn(t.getClass() + " : " + ((ServerApiException) t).getDescription());
                 errorMsg = ((ServerApiException) t).getDescription();
                 if (UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
-                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());
+                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, errorMsg);
                 } else {
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
                 }      
@@ -173,7 +173,7 @@ public class ApiDispatcher {
                 errorMsg = ((ServerApiException) t).getDescription();
                 s_logger.warn(t.getClass()  + " : " + ((ServerApiException) t).getDescription());
                 if (UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
-                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());
+                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, errorMsg);
                 } else {
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
                 }
