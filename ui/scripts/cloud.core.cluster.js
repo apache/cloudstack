@@ -17,39 +17,14 @@
  */
   
 function afterLoadClusterJSP($midmenuItem1) {
-    /*
-    var objCluster = $midmenuItem1.data("jsonObj");
-    listMidMenuItems(("listHosts&type=Routing&clusterid="+objCluster.id), hostGetSearchParams, "listhostsresponse", "host", "jsp/host.jsp", afterLoadHostJSP, hostToMidmenu, hostToRightPanel, getMidmenuId, false, ("cluster_"+objCluster.id));    
-
-    
-    clearButtonsOnTop();
-   
     initDialog("dialog_add_host");
-    initDialog("dialog_add_pool");    
-    bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	       
-    
-	clusterToRightPanel($midmenuItem1);	
-	*/
+    initDialog("dialog_add_pool");
 }
 
 
 function clusterToRightPanel($midmenuItem1) {  
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);        
-    clusterJsonToDetailsTab();   
-    
-    /*
-    var objCluster = $midmenuItem1.data("jsonObj");
-    
-    clearButtonsOnTop();
-	initAddHostButton($("#midmenu_add_host_button"), "cluster_page", $midmenuItem1);
-    
-    initAddPrimaryStorageButton($("#midmenu_add_primarystorage_button"), "cluster_page", $midmenuItem1);  
-    
-    listMidMenuItems(("listHosts&type=Routing&clusterid="+objCluster.id), hostGetSearchParams, "listhostsresponse", "host", "jsp/host.jsp", afterLoadHostJSP, hostToMidmenu, hostToRightPanel, getMidmenuId, false, ("cluster_"+objCluster.id));    
-
-    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
     clusterJsonToDetailsTab(); 
-    */   
 }
 
 function clusterClearRightPanel() {
@@ -64,6 +39,9 @@ function clusterJsonToDetailsTab() {
     var jsonObj = $midmenuItem1.data("jsonObj");    
     if(jsonObj == null) 
 	    return;	
+    
+    bindAddHostButton($midmenuItem1); 
+    bindAddPrimaryStorageButton($midmenuItem1);  
         
     $.ajax({
         data: createURL("command=listClusters&id="+jsonObj.id),
