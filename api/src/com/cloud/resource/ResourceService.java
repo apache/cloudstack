@@ -23,6 +23,7 @@ import com.cloud.api.commands.AddClusterCmd;
 import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
+import com.cloud.api.commands.DeleteClusterCmd;
 import com.cloud.api.commands.DeleteHostCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
@@ -56,6 +57,7 @@ public interface ResourceService {
      * @throws InvalidParameterValueException
      */
     List<? extends Host> discoverCluster(AddClusterCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+    boolean deleteCluster(DeleteClusterCmd cmd) throws InvalidParameterValueException; 
     
     List<? extends Host> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
     List<? extends Host> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
@@ -68,6 +70,4 @@ public interface ResourceService {
      * @throws InvalidParameterValueException
      */
     boolean deleteHost(DeleteHostCmd cmd) throws InvalidParameterValueException; 
-
-
 }

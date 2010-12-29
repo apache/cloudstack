@@ -77,6 +77,7 @@ import com.cloud.api.commands.AddClusterCmd;
 import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
 import com.cloud.api.commands.CancelMaintenanceCmd;
+import com.cloud.api.commands.DeleteClusterCmd;
 import com.cloud.api.commands.DeleteHostCmd;
 import com.cloud.api.commands.PrepareForMaintenanceCmd;
 import com.cloud.api.commands.ReconnectHostCmd;
@@ -801,6 +802,40 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 
         s_logger.warn("Unable to find the server resources at " + url);
         throw new DiscoveryException("Unable to add the host");
+    }
+    
+    @Override @DB
+    public boolean deleteCluster(DeleteClusterCmd cmd) throws InvalidParameterValueException {
+        Transaction txn = Transaction.currentTxn();
+        try {
+            txn.start();
+            ClusterVO cluster = _clusterDao.lockRow(cmd.getId(), true);
+            if(cluster == null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Cluster: " + cmd.getId() + " does not even exist.  Delete call is ignored.");
+                }
+                txn.rollback();
+                return true;
+            }
+            
+            List<HostVO> hosts = _hostDao.listByCluster(cmd.getId());
+            if(hosts.size() > 0) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Cluster: " + cmd.getId() + " still has hosts");
+                }
+            	txn.rollback();
+            	return false;
+            }
+            
+            _clusterDao.remove(cmd.getId());
+            
+        	txn.commit();
+        	return true;
+        } catch (Throwable t) {
+            s_logger.error("Unable to delete cluster: " + cmd.getId(), t);
+            txn.rollback();
+            return false;
+        }
     }
     
     @Override
