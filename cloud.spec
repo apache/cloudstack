@@ -465,6 +465,7 @@ fi
 %exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/vmopspremium
 %exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenheartbeat.sh
 %exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenserver56/patch-premium
+%exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenserver56fp1/patch-premium
 %exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenserver56/InterfaceReconfigure.py
 %exclude %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xs_cleanup.sh
 %endif
@@ -697,6 +698,7 @@ fi
 %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/vmopspremium
 %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenheartbeat.sh
 %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenserver56/patch-premium
+%{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenserver56fp1/patch-premium
 %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xenserver56/InterfaceReconfigure.py
 %{_libdir}/%{name}/agent/scripts/vm/hypervisor/xenserver/xs_cleanup.sh
 %doc README

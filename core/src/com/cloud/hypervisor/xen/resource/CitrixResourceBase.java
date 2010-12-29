@@ -626,6 +626,12 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
 
+    
+    /*Override by subclass*/
+    protected String getGuestOsType(String stdType, boolean bootFromCD) {
+        return stdType;
+    }
+    
     protected Answer execute(ModifySshKeysCommand cmd) {
         String publickey = cmd.getPubKey();
         String privatekey = cmd.getPrvKey();
@@ -2171,7 +2177,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected VM createVmFromTemplate(Connection conn, StartCommand cmd) throws XenAPIException, XmlRpcException {
         Set<VM> templates;
         VM vm = null;
-        String guestOsTypeName = cmd.getGuestOSDescription();
+        String guestOsTypeName = getGuestOsType(cmd.getGuestOSDescription(), false);
         templates = VM.getByNameLabel(conn, guestOsTypeName);
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
         VM template = templates.iterator().next();
