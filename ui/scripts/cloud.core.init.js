@@ -180,28 +180,38 @@ $(document).ready(function() {
 		    
 		    return false;
 		});
-		
+				
 		$("#leftmenu_physical_resource").bind("click", function(event) {
-			
-							
-		    if(currentRightPanelJSP != "jsp/resource.jsp") { 
-				expandOrCollapseZoneTree();
-			
-				$("#right_panel").data("onRefreshFn", function() {
-					$("#leftmenu_physical_resource").click();
-				});
-                //clearButtonsOnTop();  
-                removeDialogs();
-                $("#right_panel").load("jsp/resource.jsp", function(){     
-                    currentRightPanelJSP = "jsp/resource.jsp";
-                                     	        
-                    afterLoadResourceJSP(); 
-                });      
-            } 
-            else {
-                resourceCountTotal();	  
+		    var $target = $(event.target);
+		    var targetId = $target.attr("id");
+		    		    
+			if(targetId == "physical_resource_arrow") {			    
+			    if($target.hasClass("expanded_close") == true) {
+		            $target.removeClass("expanded_close").addClass("expanded_open");
+		            buildZoneTree();
+	            } else {
+		            $target.removeClass("expanded_open").addClass("expanded_close");
+		            $("#leftmenu_zone_tree").find("#tree_container").empty();
+	            }			    
+			}
+			else {			
+		        if(currentRightPanelJSP != "jsp/resource.jsp") { 
+				    removeDialogs();
+    			
+				    $("#right_panel").data("onRefreshFn", function() {
+					    $("#leftmenu_physical_resource").click();
+				    });                    
+                    
+                    $("#right_panel").load("jsp/resource.jsp", function(){     
+                        currentRightPanelJSP = "jsp/resource.jsp";                                         	        
+                        afterLoadResourceJSP(); 
+                    });      
+                } 
+                else {
+                    resourceCountTotal();	  
+                }
             }
-					
+            					
 			return false;
 		});
 		

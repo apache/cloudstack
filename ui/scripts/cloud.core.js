@@ -1111,33 +1111,7 @@ function drawBarChart($capacity, percentused) { //percentused == "0.01%" (having
     else if (percentusedFloat > 0.8 )
         $capacity.find("#bar_chart").removeClass().addClass("db_barbox high").css("width", percentused);
 }   
-   
-function expandOrCollapseZoneTree() {
-	$arrowIcon = $("#leftmenu_physical_resource").find("#physical_resource_arrow");
-	if($arrowIcon.hasClass("expanded_close") == true) {
-		$arrowIcon.removeClass("expanded_close").addClass("expanded_open");
-		buildZoneTree();
-	} else {
-		$arrowIcon.removeClass("expanded_open").addClass("expanded_close");
-		$("#leftmenu_zone_tree").find("#tree_container").empty();
-	}
-}   
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  
 
 
 
