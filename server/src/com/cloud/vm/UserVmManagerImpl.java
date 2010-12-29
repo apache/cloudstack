@@ -83,8 +83,8 @@ import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -121,27 +121,26 @@ import com.cloud.network.dao.SecurityGroupVMMapDao;
 import com.cloud.network.security.NetworkGroupManager;
 import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.pricing.dao.PricingDao;
-import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOffering;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.ServiceOffering.GuestIpType;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Snapshot.SnapshotType;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VirtualMachineTemplate.BootloaderType;
+import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.VolumeType;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.DiskTemplateDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -157,7 +156,6 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
-import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -181,7 +179,6 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.xensource.xenapi.Types.UserIsNotLocalSuperuser;
 
 @Local(value={UserVmManager.class})
 public class UserVmManagerImpl implements UserVmManager {
@@ -1283,7 +1280,7 @@ public class UserVmManagerImpl implements UserVmManager {
 
                 poolid = 0;
                 try {
-                	poolid = _storageMgr.createUserVM(account, vm, template, dc, pod.first(), offering, diskOffering, avoids);
+                	poolid = _storageMgr.createUserVM(account, userId, vm, template, dc, pod.first(), offering, diskOffering, avoids);
                 } catch (Exception e) {
                     s_logger.warn("Caught exception on creation but will retry.", e);
                     List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
@@ -2657,7 +2654,7 @@ public class UserVmManagerImpl implements UserVmManager {
 	            
 	            vm = _vmDao.findById(vmId);
 	            try {
-	            	poolId = _storageMgr.createUserVM(account,  vm, template, dc, pod.first(), offering, diskOffering, a);
+	            	poolId = _storageMgr.createUserVM(account, userId, vm, template, dc, pod.first(), offering, diskOffering, a);
 	            } catch (CloudRuntimeException e) {
 /*	            	
 	            	_vmDao.delete(vmId);
@@ -2841,7 +2838,7 @@ public class UserVmManagerImpl implements UserVmManager {
 	
 	            vm = _vmDao.findById(vmId);
 	            try {
-	            	poolId = _storageMgr.createUserVM(account,  vm, template, dc, pod.first(), offering, diskOffering, a);
+	            	poolId = _storageMgr.createUserVM(account, userId, vm, template, dc, pod.first(), offering, diskOffering, a);
 	            } catch (CloudRuntimeException e) {
 /*	            	
 	            	_vmDao.delete(vmId);

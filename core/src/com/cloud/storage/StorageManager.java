@@ -154,7 +154,7 @@ public interface StorageManager extends Manager {
 	 * 
 	 * @return true if successful
 	 */
-	public long createUserVM(Account account, VMInstanceVO vm,
+	public long createUserVM(Account account, long userId, VMInstanceVO vm,
 			VMTemplateVO template, DataCenterVO dc, HostPodVO pod,
 			ServiceOfferingVO offering, DiskOfferingVO diskOffering,
 			List<StoragePoolVO> avoids);

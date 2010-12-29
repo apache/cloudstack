@@ -813,7 +813,7 @@ public class StorageManagerImpl implements StorageManager {
     
 
     @Override
-    public long createUserVM(Account account, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, ServiceOfferingVO offering, DiskOfferingVO diskOffering,
+    public long createUserVM(Account account, long userId, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, ServiceOfferingVO offering, DiskOfferingVO diskOffering,
             List<StoragePoolVO> avoids) {
         List<VolumeVO> volumes = create(account, vm, template, dc, pod, offering, diskOffering, avoids);
         if( volumes == null || volumes.size() == 0) {
@@ -835,7 +835,7 @@ public class StorageManagerImpl implements StorageManager {
         	String eventParams = "id=" + volumeId + "\ndoId=" + doId + "\ntId=" + templateId + "\ndcId=" + dc.getId() + "\nsize=" + sizeMB;
         	EventVO event = new EventVO();
         	event.setAccountId(account.getId());
-        	event.setUserId(1L);
+        	event.setUserId(userId);
         	event.setType(EventTypes.EVENT_VOLUME_CREATE);
         	event.setParameters(eventParams);
         	event.setDescription("Created volume: " + v.getName() + " with size: " + sizeMB + " MB");
