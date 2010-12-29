@@ -13,4 +13,5 @@
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/xenheartbeat.sh
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/xenserver56/patch-premium
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/xenserver56/InterfaceReconfigure.py
+/usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/xenserver56fp1/patch-premium
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/xs_cleanup.sh
