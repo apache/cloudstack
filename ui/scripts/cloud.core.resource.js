@@ -301,6 +301,18 @@ function clusterJSONToTreeNode(json, $clusterNode) {
     $clusterNode.data("id", json.id).data("name", fromdb(json.name));	    
     var clusterName = $clusterNode.find("#cluster_name").text(fromdb(json.name));
     clusterName.data("jsonObj", json);	   
+        
+    $.ajax({
+        data: createURL("command=listHosts&type=Routing&clusterid="+json.id),
+        dataType: "json",
+        async: false,
+        success: function(json) {            
+            var items = json.listhostsresponse.host;	
+            if (items != null && items.length > 0) {					    
+                $clusterNode.find("#cluster_arrow").removeClass("white_nonexpanded_close").addClass("expanded_close");                  
+            }		    
+        }
+    });      
 }			
 
 function afterLoadResourceJSP() {
