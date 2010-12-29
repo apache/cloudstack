@@ -833,24 +833,27 @@
         </div>	    
     </div>
     <!-- Pod Template (end) -->
-	<!-- Cluster Template (begin) -->    
-    <div class="leftmenu_expandedlist" id="leftmenu_cluster_node_template" style="display:none">
-    	<div class="leftmenu_loadingbox" style="display:none;" id="loading_container">
-        	<div class="leftmenu_loader"></div>
-            <p> <fmt:message key="label.adding.cluster"/> &hellip; </p>
-        </div>
-        <div id="row_container">
-	        <div id="cluster_header" class="leftmenu_content">
-	            <div class="leftmenu_fifthindent">
-	                <div class="leftmenu_arrows white_nonexpanded_close" id="cluster_arrow">
-	                </div>	                
-	                <span id="cluster_name_label"><fmt:message key="label.cluster"/>: </span>	                
-                    <span id="cluster_name"></span>
-	            </div>
-	        </div>	
-	    </div>
-    </div> 
-    <!-- Cluster Template (end) -->   
+	
+    <!-- cluster Template (begin) --> 
+    <div class="leftmenu_expandedlist" id="leftmenu_cluster_node_template" style="display:none">       
+        <div id="cluster_header" class="leftmenu_content">  
+            <div class="leftmenu_fifthindent">
+            	<div class="leftmenu_arrowloader" id="cluster_loading_container" style="display:none;"></div>
+                <div class="leftmenu_arrows white_nonexpanded_close" id="cluster_arrow">
+                </div>	                
+                <span id="cluster_name_label"><fmt:message key="label.cluster"/>: </span>
+                <span id="cluster_name"></span>
+            </div>  
+        </div>			
+        <div id="cluster_content" style="display: none">
+            <div id="hosts_container">
+            </div>	            	            
+            <div id="storages_container">
+            </div>          	                       
+        </div>	    
+    </div>
+    <!-- cluster Template (end) -->
+
     <!-- domain tree node template (begin) -->
     <div id="domain_tree_node_template" style="display:none">    	
                 
