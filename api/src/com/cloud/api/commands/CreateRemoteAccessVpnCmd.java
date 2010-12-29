@@ -28,7 +28,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpn;
@@ -162,9 +161,6 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
-        }  catch (ConcurrentOperationException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }
     }
 }

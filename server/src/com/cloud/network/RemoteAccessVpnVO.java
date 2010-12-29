@@ -52,6 +52,9 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
 
     @Column(name="ipsec_psk")
     private String ipsecPresharedKey;
+    
+    @Column(name="state")
+    private State state;
 
     public RemoteAccessVpnVO() { }
 
@@ -63,6 +66,16 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
         this.localIp = localIp;
         this.domainId = domainId;
         this.networkId = networkId;
+        this.state = State.Added;
+    }
+    
+    @Override
+    public State getState() {
+        return state;
+    }
+    
+    public void setState(State state) {
+        this.state = state;
     }
 
     @Override

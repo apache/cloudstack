@@ -25,6 +25,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.utils.net.Ip;
 
@@ -70,8 +71,8 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
 	}
 
     @Override
-    public void execute(){
-        _ravService.destroyRemoteAccessVpn(new Ip(publicIp));
+    public void execute() throws ResourceUnavailableException {
+        _ravService.destroyRemoteAccessVpn(new Ip(publicIp), getStartEventId());
     }
 	
 }

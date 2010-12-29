@@ -20,6 +20,7 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.Ip;
@@ -33,6 +34,8 @@ public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
     boolean setStateToAdd(FirewallRuleVO rule);
     
     boolean revoke(FirewallRuleVO rule);
+    
+    boolean releasePorts(Ip ip, String protocol, FirewallRule.Purpose purpose, int[] ports);
     
 //	public List<PortForwardingRuleVO> listIPForwarding(String publicIPAddress, boolean forwarding);
 //	public List<PortForwardingRuleVO> listIPForwarding(String publicIPAddress, String port, boolean forwarding);

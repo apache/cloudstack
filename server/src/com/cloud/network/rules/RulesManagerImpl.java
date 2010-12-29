@@ -456,6 +456,11 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         return null;
     }
     
+    @Override
+    public boolean releasePorts(Ip ip, String protocol, FirewallRule.Purpose purpose, int... ports) {
+        return _firewallDao.releasePorts(ip, protocol, purpose, ports); 
+    }
+    
     @Override @DB
     public FirewallRuleVO[] reservePorts(IpAddress ip, String protocol, FirewallRule.Purpose purpose, int... ports) throws NetworkRuleConflictException {
         FirewallRuleVO[] rules = new FirewallRuleVO[ports.length];

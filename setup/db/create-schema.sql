@@ -1055,6 +1055,7 @@ CREATE TABLE `cloud`.`remote_access_vpn` (
   `local_ip` varchar(15) NOT NULL,
   `ip_range` varchar(32) NOT NULL,
   `ipsec_psk` varchar(256) NOT NULL,
+  `state` char(32) NOT NULL,
   PRIMARY KEY  (`vpn_server_addr`),
   CONSTRAINT `fk_remote_access_vpn__account_id` FOREIGN KEY `fk_remote_access_vpn__account_id`(`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_remote_access_vpn__domain_id` FOREIGN KEY `fk_remote_access_vpn__domain_id`(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,

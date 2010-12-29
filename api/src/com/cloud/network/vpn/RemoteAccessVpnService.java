@@ -22,7 +22,6 @@ import java.util.List;
 
 import com.cloud.api.commands.ListRemoteAccessVpnsCmd;
 import com.cloud.api.commands.ListVpnUsersCmd;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpn;
@@ -32,9 +31,8 @@ import com.cloud.utils.net.Ip;
 public interface RemoteAccessVpnService {
 
     RemoteAccessVpn createRemoteAccessVpn(Ip vpnServerAddress, String ipRange) throws NetworkRuleConflictException;
-    void destroyRemoteAccessVpn(Ip vpnServerAddress);
-    List<? extends RemoteAccessVpn> listRemoteAccessVpns(long vpnOwnerId, Ip publicIp);
-    RemoteAccessVpn startRemoteAccessVpn(Ip vpnServerAddress) throws ConcurrentOperationException, ResourceUnavailableException;
+    void destroyRemoteAccessVpn(Ip vpnServerAddress, long startEventId) throws ResourceUnavailableException;
+    RemoteAccessVpn startRemoteAccessVpn(Ip vpnServerAddress) throws ResourceUnavailableException;
 
     VpnUser addVpnUser(long vpnOwnerId, String userName, String password);
     boolean removeVpnUser(long vpnOwnerId, String userName);

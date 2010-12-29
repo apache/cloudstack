@@ -24,6 +24,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.utils.db.DB;
@@ -39,6 +40,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     
     protected final SearchBuilder<FirewallRuleVO> AllFieldsSearch;
     protected final SearchBuilder<FirewallRuleVO> IpNotRevokedSearch;
+    protected final SearchBuilder<FirewallRuleVO> ReleaseSearch;
     
     protected FirewallRulesDaoImpl() {
         super();
@@ -54,12 +56,29 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
         AllFieldsSearch.done();
         
-        
         IpNotRevokedSearch = createSearchBuilder();
         IpNotRevokedSearch.and("ip", IpNotRevokedSearch.entity().getSourceIpAddress(), Op.EQ);
         IpNotRevokedSearch.and("state", IpNotRevokedSearch.entity().getState(), Op.NEQ);
         IpNotRevokedSearch.done();
         
+        ReleaseSearch = createSearchBuilder();
+        ReleaseSearch.and("protocol", ReleaseSearch.entity().getProtocol(), Op.EQ);
+        ReleaseSearch.and("ip", ReleaseSearch.entity().getSourceIpAddress(), Op.EQ);
+        ReleaseSearch.and("purpose", ReleaseSearch.entity().getPurpose(), Op.EQ);
+        ReleaseSearch.and("ports", ReleaseSearch.entity().getSourcePortStart(), Op.IN);
+        ReleaseSearch.done();
+        
+    }
+    @Override
+    public boolean releasePorts(Ip ip, String protocol, FirewallRule.Purpose purpose, int[] ports) {
+        SearchCriteria<FirewallRuleVO> sc = ReleaseSearch.create();
+        sc.setParameters("protocol", protocol);
+        sc.setParameters("ip", ip);
+        sc.setParameters("purpose", purpose);
+        sc.setParameters("ports", ports);
+        
+        int results = remove(sc);
+        return results == ports.length;
     }
 
     @Override

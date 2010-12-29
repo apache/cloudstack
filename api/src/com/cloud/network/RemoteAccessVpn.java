@@ -21,9 +21,16 @@ import com.cloud.acl.ControlledEntity;
 import com.cloud.utils.net.Ip;
 
 public interface RemoteAccessVpn extends ControlledEntity {
+    enum State {
+        Added,
+        Running,
+        Removed
+    }
+    
     Ip getServerAddress();
     String getIpRange();
     String getIpsecPresharedKey();
     String getLocalIp();
     long getNetworkId();
+    State getState();
 }
