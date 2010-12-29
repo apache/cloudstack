@@ -328,6 +328,33 @@ function buildZoneTree() {
 		return false;
 	});  
 	
+	$("#leftmenu_primarystorage_node_template").unbind("click").bind("click", function(event) {		    
+		var $thisNode = $(this);
+		selectRowInZoneTree($thisNode.find("#primarystorage_header"));	
+		 
+	    if(currentRightPanelJSP != "jsp/primarystorage.jsp") {                       
+            removeDialogs();            
+            
+            $("#right_panel").load("jsp/primarystorage.jsp", function(){                    
+                currentRightPanelJSP = "jsp/primarystorage.jsp";
+                  
+                var $topButtonContainer = clearButtonsOnTop();			    	       
+		        $("#top_buttons").appendTo($topButtonContainer);        
+                                
+                $thisNode.data("onRefreshFn", function() {
+                    primarystorageJsonToDetailsTab();
+                });  
+    	        
+                afterLoadPrimaryStorageJSP();
+                primarystorageToRightPanel($thisNode);	   
+            });      
+        } 
+        else {
+            primarystorageToRightPanel($thisNode);	             
+        }	
+		
+		return false;
+	});  
 }    
 
 function refreshClusterUnderPod($podNode, newClusterName, existingClusterId, noClicking) {  
