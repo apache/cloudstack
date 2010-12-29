@@ -18,7 +18,9 @@
 
 function buildZoneTree() {     
     var forceLogout = true;  // We force a logout only if the user has first added a POD for the very first time     
-    var $loading = $("#leftmenu_zone_tree").find("#loading_container").show();
+    var $loadingContainer = $("#leftmenu_physical_resource").find("#loading_container").show();
+    var $arrowIcon = $("#leftmenu_physical_resource").find("#physical_resource_arrow").hide();
+    
     var $zoneTree = $("#leftmenu_zone_tree").find("#tree_container").hide();
   
     $.ajax({
@@ -34,8 +36,10 @@ function buildZoneTree() {
 					container.append($zoneNode.show());
 				}
 			}	
-			$loading.hide();
-            $zoneTree.show();
+			$zoneTree.show();
+			
+			$loadingContainer.hide();
+			$arrowIcon.show();            
 		}
 	});  
     

@@ -600,11 +600,7 @@
                             </div>
                         </div>
                         
-                        <div id="leftmenu_zone_tree">
-                        	<div id="loading_container" class="leftmenu_loadingbox" style="display:none;">
-                                <div class="leftmenu_loader"></div>
-                                <p> <fmt:message key="label.loading"/> &hellip; </p>
-                            </div>
+                        <div id="leftmenu_zone_tree">                            
 						    <div id="tree_container"></div>
                         </div>              
 
@@ -796,70 +792,45 @@
     <!-- middle menu: no items available (end) --> 
     
     <!-- Zone Template (begin) --> 
-    <div class="leftmenu_expandedlist" id="leftmenu_zone_node_template" style="display:none">
-     	<!--  
-     	<div class="leftmenu_loadingbox" style="display:none;" id="loading_container">
-        	<div class="leftmenu_loader"></div>
-            <p> <fmt:message key="label.adding.zone"/> &hellip; </p>
-        </div>
-        -->
-        <!--  
-        <div id="row_container">
-        -->
-	        <div id="zone_header" class="leftmenu_content">  
-	            <div class="leftmenu_thirdindent">
-                	<div class="leftmenu_arrowloader" id="zone_loading_container" style="display:none;"></div>
-	                <div class="leftmenu_arrows white_nonexpanded_close" id="zone_arrow">
+    <div class="leftmenu_expandedlist" id="leftmenu_zone_node_template" style="display:none">       
+        <div id="zone_header" class="leftmenu_content">  
+            <div class="leftmenu_thirdindent">
+            	<div class="leftmenu_arrowloader" id="zone_loading_container" style="display:none;"></div>
+                <div class="leftmenu_arrows white_nonexpanded_close" id="zone_arrow">
+                </div>	                
+                <span id="zone_name_label"><fmt:message key="label.zone"/>: </span>
+                <span id="zone_name"></span>
+            </div>  
+        </div>			
+        <div id="zone_content" style="display: none">
+            <div id="pods_container">
+            </div>	 
+            	            
+            <div id="network_header" class="leftmenu_content" style="display: none">
+	            <div class="leftmenu_fourthindent">
+	                <div class="leftmenu_arrows white_nonexpanded_close" id="cluster_arrow">
 	                </div>	                
-	                <span id="zone_name_label"><fmt:message key="label.zone"/>: </span>
-	                <span id="zone_name"></span>
-	            </div>  
-	        </div>			
-            <div id="zone_content" style="display: none">
-	            <div id="pods_container">
-	            </div>	 
-	            	            
-	            <div id="network_header" class="leftmenu_content" style="display: none">
-		            <div class="leftmenu_fourthindent">
-		                <div class="leftmenu_arrows white_nonexpanded_close" id="cluster_arrow">
-		                </div>	                
-		                <span id="network_name_label">Network</span>	 
-		            </div>
-		        </div>	
-	            	                       
-	        </div>
-	    <!--  
-		</div>
-		-->
+	                <span id="network_name_label">Network</span>	 
+	            </div>
+	        </div>	            	                       
+        </div>	    
     </div>
     <!-- Zone Template (end) -->
 	<!-- Pod Template (begin) -->    
-    <div class="leftmenu_expandedlist" id="leftmenu_pod_node_template" style="display:none">
-        <!--  
-    	<div class="leftmenu_loadingbox" style="display:none;"  id="loading_container">
-        	<div class="leftmenu_loader"></div>
-            <p> <fmt:message key="label.adding.pod"/> &hellip; </p>
-        </div>
-        -->
-        <!--
-        <div id="row_container">
-        -->
-	        <div id="pod_header" class="leftmenu_content">
-	            <div class="leftmenu_fourthindent">
-                	<div class="leftmenu_arrowloader" id="pod_loading_container" style="display:none;"></div>
-	                <div class="leftmenu_arrows white_nonexpanded_close" id="pod_arrow">
-	                </div>	               
-	                <span id="pod_name_label"><fmt:message key="label.pod"/>: </span>
-	                <span id="pod_name"></span>
-	            </div>
-	        </div>	
-            <div id="pod_content" style="display: none">
-	            <div id="clusters_container">
-	            </div>
-	        </div>
-	    <!--
-	    </div>
-	    -->
+    <div class="leftmenu_expandedlist" id="leftmenu_pod_node_template" style="display:none">              
+	    <div id="pod_header" class="leftmenu_content">
+            <div class="leftmenu_fourthindent">
+            	<div class="leftmenu_arrowloader" id="pod_loading_container" style="display:none;"></div>
+                <div class="leftmenu_arrows white_nonexpanded_close" id="pod_arrow">
+                </div>	               
+                <span id="pod_name_label"><fmt:message key="label.pod"/>: </span>
+                <span id="pod_name"></span>
+            </div>
+        </div>	
+        <div id="pod_content" style="display: none">
+            <div id="clusters_container">
+            </div>
+        </div>	    
     </div>
     <!-- Pod Template (end) -->
 	<!-- Cluster Template (begin) -->    
