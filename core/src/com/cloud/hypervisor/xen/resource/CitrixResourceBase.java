@@ -3866,12 +3866,12 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
 
                 SCPClient scp = new SCPClient(sshConnection);
 
-                String path = _patchPath.substring(0, _patchPath.lastIndexOf(File.separator) + 1);
                 List<File> files = getPatchFiles();
                 if( files == null || files.isEmpty() ) {
                     throw new CloudRuntimeException("Can not find patch file");
                 }
                 for( File file :files) {
+                    String path = file.getParentFile().getAbsolutePath() + "/";
 	                Properties props = new Properties();
 	                props.load(new FileInputStream(file));
 	
