@@ -219,24 +219,67 @@
         <form action="#" method="post" id="form_acquire">
         <ol>
             <li>
+            	<label for="host_hypervisor">Hypervisor:</label>
+                <select class="select" id="host_hypervisor">
+                    <option value="XenServer" SELECTED>Xen Server</option>		
+                    <option value="KVM">KVM</option>										
+                    <option value="VmWare">VMware</option>										
+                </select>
+            </li>
+            <li input_group="general">
                 <label for="host_hostname">
                     Host name:</label>
                 <input class="text" type="text" name="host_hostname" id="host_hostname" />
                 <div id="host_hostname_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li>
+            <li input_group="general">
                 <label for="user_name">
                     User name:</label>
                 <input class="text" type="text" name="host_username" id="host_username" />
                 <div id="host_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li>
+            <li input_group="general">
                 <label for="user_name">
                     Password:</label>
                 <input class="text" type="password" name="host_password" id="host_password" autocomplete="off" />
                 <div id="host_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware">
+                <label for="host_vcenter_address">
+                    vCenter Address:</label>
+                <input class="text" type="text" name="host_vcenter_address" id="host_vcenter_address" />
+                <div id="host_vcenter_address_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware">
+                <label for="host_vcenter_username">
+                    vCenter User:</label>
+                <input class="text" type="text" name="host_vcenter_username" id="host_vcenter_username" />
+                <div id="host_vcenter_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware">
+                <label for="host_vcenter_password">
+                    vCenter Password:</label>
+                <input class="text" type="password" name="host_vcenter_password" id="host_vcenter_password" autocomplete="off" />
+                <div id="host_vcenter_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware">
+                <label for="host_vcenter_dc">
+                    vCenter Datacenter:</label>
+                <input class="text" type="text" name="host_vcenter_dc" id="host_vcenter_dc" />
+                <div id="host_vcenter_dc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware">
+                <label for="host_vcenter_host">
+                    vCenter Host:</label>
+                <input class="text" type="text" name="host_vcenter_host" id="host_vcenter_host" />
+                <div id="host_vcenter_host_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li id="cluster_options_container">
@@ -279,6 +322,7 @@
             (info)</div>
     </div>
 </div>
+
 <!-- Add Primary Storage Dialog -->
 <div id="dialog_add_pool" title="Add Primary Storage" style="display: none">
     <p>
@@ -309,34 +353,49 @@
                 <select class="select" id="add_pool_protocol">
                     <option value="nfs">NFS</option>
                     <option value="iscsi">ISCSI</option>
+                    <option value="vmfs">VMFS</option>
                 </select>
             </li>
-            <li>
+            <li id="add_pool_server_container">
                 <label for="add_pool_nfs_server">
                     Server:</label>
                 <input class="text" type="text" name="add_pool_nfs_server" id="add_pool_nfs_server" />
                 <div id="add_pool_nfs_server_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li id="add_pool_path_container">
+            <li id="add_pool_path_container" input_group="nfs">
                 <label for="add_pool_path">
                     Path:</label>
                 <input class="text" type="text" name="add_pool_path" id="add_pool_path" />
                 <div id="add_pool_path_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li id="add_pool_iqn_container" style="display: none">
+            <li id="add_pool_iqn_container" style="display: none" input_group="iscsi">
                 <label for="add_pool_iqn">
                     Target IQN:</label>
                 <input class="text" type="text" name="add_pool_iqn" id="add_pool_iqn" />
                 <div id="add_pool_iqn_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li id="add_pool_lun_container" style="display: none">
+            <li id="add_pool_lun_container" style="display: none" input_group="iscsi">
                 <label for="add_pool_lun">
                     LUN #:</label>
                 <input class="text" type="text" name="add_pool_lun" id="add_pool_lun" />
                 <div id="add_pool_lun_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmfs">
+                <label for="add_pool_vmfs_dc">
+                    vCenter Datacenter:</label>
+                <input class="text" type="text" name="add_pool_vmfs_dc" id="add_pool_vmfs_dc" />
+                <div id="add_pool_vmfs_dc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmfs">
+                <label for="add_pool_vmfs_ds">
+                    vCenter Datastore:</label>
+                <input class="text" type="text" name="add_pool_vmfs_ds" id="add_pool_vmfs_ds" />
+                <div id="add_pool_vmfs_ds_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li id="add_pool_tags_container">
@@ -365,6 +424,7 @@
             (info)</div>
     </div>
 </div>
+
 <!-- dialogs -->
 <div id="dialog_confirmation_delete_primarystorage" title="Confirmation" style="display: none">
     <p>

@@ -244,7 +244,7 @@ function getIpRange(startip, endip) {
 	return ipRange;
 }	
 
-function refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId, hypervisorType) {
+function refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId, hypervisorType) {   
 	var arrayParams = [];
 	arrayParams.push("&podid=" + podId);
 	arrayParams.push("&hypervisor=" + hypervisorType);
@@ -390,22 +390,21 @@ function bindAddClusterButton($button, currentPageInRightPanel, $leftmenuItem1) 
     });
 }
 
-function bindAddHostButton($button, currentPageInRightPanel, $leftmenuItem1) {    
-    $button.show();
+function bindAddHostButton($button, currentPageInRightPanel, $leftmenuItem1) {        
     $button.unbind("click").bind("click", function(event) {     
         dialogAddHost = $("#dialog_add_host");      
         dialogAddHost.find("#info_container").hide();    
         dialogAddHost.find("#new_cluster_name").val("");
        
-        var zoneId, podId, clusterId;               
-        if(currentPageInRightPanel == "pod_page") {
+        var zoneId, podId, clusterId;                   
+        if(currentRightPanelJSP == "jsp/pod.jsp") {        
             var podObj = $leftmenuItem1.data("jsonObj");   
             zoneId = podObj.zoneid;
             podId = podObj.id;
             dialogAddHost.find("#zone_name").text(fromdb(podObj.zonename));  
             dialogAddHost.find("#pod_name").text(fromdb(podObj.name)); 
         }
-        else if(currentPageInRightPanel == "cluster_page") {
+        else if(currentRightPanelJSP == "jsp/cluster.jsp") {
             var clusterObj = $leftmenuItem1.data("jsonObj");   
             zoneId = clusterObj.zoneid;
             podId = clusterObj.podid;    
@@ -413,7 +412,7 @@ function bindAddHostButton($button, currentPageInRightPanel, $leftmenuItem1) {
             dialogAddHost.find("#zone_name").text(fromdb(clusterObj.zonename));  
             dialogAddHost.find("#pod_name").text(fromdb(clusterObj.podname)); 
         }
-        else if(currentPageInRightPanel == "host_page") {
+        else if(currentRightPanelJSP == "jsp/host.jsp") {
             var hostObj = $leftmenuItem1.data("jsonObj");  
             zoneId = hostObj.zoneid;
             podId = hostObj.podid; 
@@ -421,7 +420,7 @@ function bindAddHostButton($button, currentPageInRightPanel, $leftmenuItem1) {
             dialogAddHost.find("#zone_name").text(fromdb(hostObj.zonename));  
             dialogAddHost.find("#pod_name").text(fromdb(hostObj.podname)); 
         }
-        else if(currentPageInRightPanel == "primarystorage_page") {
+        else if(currentRightPanelJSP == "jsp/primarystorage.jsp") {
             var primarystorageObj = $leftmenuItem1.data("jsonObj");   
             zoneId = primarystorageObj.zoneid;
             podId = primarystorageObj.podid;    
@@ -596,14 +595,14 @@ function bindAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenu
         dialogAddPool.find("#info_container").hide();	
              
         var zoneId, podId, sourceClusterId;        
-        if(currentPageInRightPanel == "pod_page") {
+        if(currentRightPanelJSP == "jsp/pod.jsp") { 
             var podObj = $leftmenuItem1.data("jsonObj");  
             zoneId = podObj.zoneid;
             podId = podObj.id;
             dialogAddPool.find("#zone_name").text(fromdb(podObj.zonename));  
             dialogAddPool.find("#pod_name").text(fromdb(podObj.name)); 
         }        
-        else if(currentPageInRightPanel == "cluster_page") {
+        else if(currentRightPanelJSP == "jsp/cluster.jsp") {
             var clusterObj = $leftmenuItem1.data("jsonObj");   
             zoneId = clusterObj.zoneid;
             podId = clusterObj.podid;    
@@ -611,7 +610,7 @@ function bindAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenu
             dialogAddPool.find("#zone_name").text(fromdb(clusterObj.zonename));  
             dialogAddPool.find("#pod_name").text(fromdb(clusterObj.podname)); 
         }        
-        else if(currentPageInRightPanel == "host_page") {
+        else if(currentRightPanelJSP == "jsp/host.jsp") {
             var hostObj = $leftmenuItem1.data("jsonObj");  
             zoneId = hostObj.zoneid;
             podId = hostObj.podid; 
@@ -619,7 +618,7 @@ function bindAddPrimaryStorageButton($button, currentPageInRightPanel, $leftmenu
             dialogAddPool.find("#zone_name").text(fromdb(hostObj.zonename));  
             dialogAddPool.find("#pod_name").text(fromdb(hostObj.podname)); 
         }
-        else if(currentPageInRightPanel == "primarystorage_page") {
+        else if(currentRightPanelJSP == "jsp/primarystorage.jsp") {
             var primarystorageObj = $leftmenuItem1.data("jsonObj");   
             zoneId = primarystorageObj.zoneid;
             podId = primarystorageObj.podid;  
