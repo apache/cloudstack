@@ -52,6 +52,10 @@ function clusterToRightPanel($midmenuItem1) {
     */   
 }
 
+function clusterClearRightPanel() {
+    clusterClearDetailsTab();
+}
+
 function clusterJsonToDetailsTab() {	   
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     if($midmenuItem1 == null)
@@ -74,10 +78,53 @@ function clusterJsonToDetailsTab() {
         }
     });     
      
-    var $detailsTab = $("#right_panel_content").find("#tab_content_details");   
-    $detailsTab.find("#id").text(fromdb(jsonObj.id));
-    $detailsTab.find("#name").text(fromdb(jsonObj.name));
-    $detailsTab.find("#zonename").text(fromdb(jsonObj.zonename));        
-    $detailsTab.find("#podname").text(fromdb(jsonObj.podname));            
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");   
+    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
+    $thisTab.find("#id").text(fromdb(jsonObj.id));
+    $thisTab.find("#name").text(fromdb(jsonObj.name));
+    $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));        
+    $thisTab.find("#podname").text(fromdb(jsonObj.podname));     
+    
+    //actions ***   
+    var $actionLink = $thisTab.find("#action_link"); 
+    $actionLink.bind("mouseover", function(event) {	    
+        $(this).find("#action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {       
+        $(this).find("#action_menu").hide();    
+        return false;
+    });	  
+    var $actionMenu = $thisTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();       
+    buildActionLinkForTab("Delete Cluster", clusterActionMap, $actionMenu, $midmenuItem1, $thisTab);        
 }
 
+function clusterClearDetailsTab() {	   
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");   
+    $thisTab.find("#grid_header_title").text("");
+    $thisTab.find("#id").text("");
+    $thisTab.find("#name").text("");
+    $thisTab.find("#zonename").text("");        
+    $thisTab.find("#podname").text("");     
+    
+    //actions ***   
+    var $actionMenu = $thisTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();   
+	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());	       
+}
+
+var clusterActionMap = {   
+    "Delete Cluster": {  
+        api: "deleteCluster",            
+        isAsyncJob: false,        
+        inProcessText: "Deleting Cluster....",
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {     
+            $midmenuItem1.slideUp("slow", function() {
+                $(this).remove();
+            });
+            clearRightPanel();
+            clusterClearRightPanel();
+        }
+    }
+}
