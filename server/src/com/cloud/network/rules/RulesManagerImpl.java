@@ -301,7 +301,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
     
     @Override
-    public PortForwardingRule revokePortForwardingRule(long ruleId, boolean apply) {
+    public boolean revokePortForwardingRule(long ruleId, boolean apply) {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getAccount();
         
@@ -314,15 +314,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         revokeRule(rule, caller, ctx.getUserId());
         
         if (apply) {
-            applyPortForwardingRules(rule.getSourceIpAddress(), true);
+            return applyPortForwardingRules(rule.getSourceIpAddress(), true);
+        } else {
+            return true;
         }
-        return rule;
-    }
-
-    @Override
-    public PortForwardingRule revokePortForwardingRule(String ruleId, Account caller) {
-        // FIXME: Not working yet.
-        return null;
     }
     
     @Override

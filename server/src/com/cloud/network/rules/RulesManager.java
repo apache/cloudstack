@@ -33,7 +33,6 @@ import com.cloud.utils.net.Ip;
  * Rules Manager manages the network rules created for different networks.
  */
 public interface RulesManager extends RulesService {
-    PortForwardingRule revokePortForwardingRule(String ruleId, Account caller);
     
     boolean applyPortForwardingRules(Ip ip, boolean continueOnError);
     

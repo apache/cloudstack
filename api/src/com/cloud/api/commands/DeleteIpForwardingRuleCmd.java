@@ -66,8 +66,9 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-    	PortForwardingRule rule = _rulesService.revokePortForwardingRule(id, true);
-        if (rule != null) {
+    	boolean result = _rulesService.revokePortForwardingRule(id, true);
+
+        if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {

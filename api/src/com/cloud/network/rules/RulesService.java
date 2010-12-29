@@ -44,7 +44,7 @@ public interface RulesService {
      * @param caller 
      * @return
      */
-    PortForwardingRule revokePortForwardingRule(long ruleId, boolean apply);
+    boolean revokePortForwardingRule(long ruleId, boolean apply);
     /**
      * List port forwarding rules assigned to an ip address
      * @param cmd the command object holding the criteria for listing port forwarding rules (the ipAddress)
