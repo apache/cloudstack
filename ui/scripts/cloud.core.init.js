@@ -70,7 +70,9 @@ $(document).ready(function() {
 	
 	
 	$("#leftmenu_dashboard").bind("click", function(event) {
-	    selectLeftMenu($(this), false, function() {
+		var $dashboard = $(this);
+	    selectLeftMenu($dashboard, false, function() {
+			selectLeftSubMenu($dashboard);
 			clearMiddleMenu();
 			clearButtonsOnTop();
 			hideMiddleMenu();
