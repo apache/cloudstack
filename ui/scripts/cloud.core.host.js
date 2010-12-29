@@ -69,29 +69,7 @@ function hostToMidmenu(jsonObj, $midmenuItem1) {
 
 function hostToRightPanel($midmenuItem1) {       
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);        
-    hostJsonToDetailsTab();
-    /*      
-    if(currentRightPanelJSP != "jsp/host.jsp") {            
-        removeDialogs();
-        $("#right_panel").load("jsp/host.jsp", function(){     
-            currentRightPanelJSP = "jsp/host.jsp";
-                                                    
-            $(this).data("onRefreshFn", function() {                
-                hostJsonToDetailsTab();
-            }); 
-            afterLoadHostJSP($midmenuItem1);        
-            
-            copyActionInfoFromMidMenuToRightPanel($midmenuItem1);                   
-            $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);
-            $("#tab_details").click();   
-            
-        });      
-    } 
-    else {
-        $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);    
-        hostJsonToDetailsTab();
-    }
-    */
+    hostJsonToDetailsTab();   
 }
 
 function afterLoadHostJSP() {    

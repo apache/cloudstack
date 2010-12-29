@@ -211,17 +211,17 @@ function buildZoneTree() {
 	*/
 	
 	$("#leftmenu_cluster_node_template").unbind("click").bind("click", function(event) {
-		var $clusterNode = $(this);
+		var $thisNode = $(this);
 		var $target = $(event.target);
 		var targetId = $target.attr("id");	
 		
 		switch (targetId) {
 			case "cluster_arrow" :				    
-			    var $loadingContainer = $clusterNode.find("#cluster_loading_container").show();
-                var $clusterArrow = $clusterNode.find("#cluster_arrow").hide();			
+			    var $loadingContainer = $thisNode.find("#cluster_loading_container").show();
+                var $clusterArrow = $thisNode.find("#cluster_arrow").hide();			
 			    
-			    var clusterObj = $clusterNode.data("jsonObj");
-			    var $clusterContent = $clusterNode.find("#cluster_content");				  	   
+			    var clusterObj = $thisNode.data("jsonObj");
+			    var $clusterContent = $thisNode.find("#cluster_content");				  	   
 				if($target.hasClass("expanded_close")) {										
 					$.ajax({
                         data: createURL("command=listHosts&type=Routing&clusterid="+clusterObj.id),
@@ -253,28 +253,29 @@ function buildZoneTree() {
 							
 				break;					
 			
-			default:	
-			    /*			    		    
-			    selectRowInZoneTree($(this).find("#cluster_header"));	
+			default:			   			    		    
+			    selectRowInZoneTree($thisNode.find("#cluster_header"));	
 			    
 			    if(currentRightPanelJSP != "jsp/cluster.jsp") {                       
 	                removeDialogs();
-	                
-	                var $thisNode = $(this);
-                    $("#right_panel").load("jsp/cluster.jsp", function(){     
+	                	                               
+                    $("#right_panel").load("jsp/cluster.jsp", function(){                            
                         currentRightPanelJSP = "jsp/cluster.jsp";
+                            
+                        var $topButtonContainer = clearButtonsOnTop();			    	       
+		                $("#top_buttons").appendTo($topButtonContainer);       
                                         
-                        $(this).data("onRefreshFn", function() {
+                        $thisNode.data("onRefreshFn", function() {
 	                        clusterJsonToDetailsTab();
 	                    });  
             	        
-                        afterLoadclusterJSP($thisNode);   
+                        afterLoadClusterJSP($thisNode);   
+                        clusterToRightPanel($thisNode);	
                     });      
                 } 
                 else {
-                    clusterJsonToRightPanel($(this));			 
-                }
-                */
+                    clusterToRightPanel($thisNode);			 
+                }                
 			   	    		   				    		   			    
 			    break;	
 		}
