@@ -601,8 +601,10 @@ function clickClusterArrowAfterAddHost(clusterRadio, podId, newClusterName, exis
 function bindAddPrimaryStorageButton($leftmenuItem1) {    
     var $button = $("#add_primarystorage_button");  
     $button.unbind("click").bind("click", function(event) {   
+        /*
         if($("#tab_content_primarystorage").length > 0 && $("#tab_content_primarystorage").css("display") == "none")
             $("#tab_primarystorage").click();
+        */
     
         dialogAddPool = $("#dialog_add_pool");  
         dialogAddPool.find("#info_container").hide();	
