@@ -125,7 +125,7 @@ public class Db20to21MigrationUtil {
         sb.done();
         
         SearchCriteria<DcPod> sc = sb.create();
-        List<DcPod> results = _dcDao.searchIncludingRemoved(sc, (Filter)null);
+        List<DcPod> results = _dcDao.customSearchIncludingRemoved(sc, (Filter)null);
         if(results.size() > 0) {
         	System.out.println("We've found following zones are deployed in your database");
         	for(DcPod cols : results) {

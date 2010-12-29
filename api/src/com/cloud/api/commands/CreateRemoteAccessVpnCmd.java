@@ -29,10 +29,12 @@ import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
+import com.cloud.utils.net.Ip;
 
 @Implementation(description="Creates a l2tp/ipsec remote access vpn", responseObject=RemoteAccessVpnResponse.class)
 public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
@@ -43,10 +45,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="zone id where the vpn server needs to be created")
-    private Long zoneId;
-    
-    @Parameter(name="publicip", type=CommandType.STRING, required=false, description="public ip address of the vpn server")
+    @Parameter(name="publicip", type=CommandType.STRING, required=true, description="public ip address of the vpn server")
     private String publicIp;
 
     @Parameter(name="iprange", type=CommandType.STRING, required=false, description="the range of ip addresses to allocate to vpn clients. The first ip in the range will be taken by the vpn server")
@@ -86,13 +85,6 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 		this.ipRange = ipRange;
 	}
 	
-	public void setZoneId(Long zoneId) {
-		this.zoneId = zoneId;
-	}
-
-	public Long getZoneId() {
-		return zoneId;
-	}
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -106,7 +98,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 
 	@Override
 	public long getEntityOwnerId() {
-		Account account = UserContext.current().getAccount();
+		Account account = UserContext.current().getCaller();
         if ((account == null) || isAdmin(account.getType())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
@@ -125,7 +117,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 
 	@Override
 	public String getEventDescription() {
-		return "Create Remote Access VPN for account " + getEntityOwnerId() + " in zone " + getZoneId();
+		return "Create Remote Access VPN for account " + getEntityOwnerId() + " using public " + publicIp;
 	}
 
 	@Override
@@ -134,29 +126,30 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 	}
 	
     @Override
-    public void create(){
+    public void create() {
         try {
-            RemoteAccessVpn vpn = _networkService.createRemoteAccessVpn(this);
+            RemoteAccessVpn vpn = _ravService.createRemoteAccessVpn(new Ip(publicIp), ipRange);
             if (vpn != null) {
-                this.setEntityId(vpn.getId());
+                this.setEntityId(vpn.getServerAddress().longValue());
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create remote access vpn");
             }
-        } catch (ConcurrentOperationException ex) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        } 
+        } catch (NetworkRuleConflictException e) {
+            s_logger.info("Network rule conflict: " + e.getMessage());
+            s_logger.trace("Network Rule Conflict: ", e);
+            throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
+        }
     }
 
     @Override
     public void execute(){
         try {
-            RemoteAccessVpn result = _networkService.startRemoteAccessVpn(this);
+            RemoteAccessVpn result = _ravService.startRemoteAccessVpn(new Ip(getEntityId()));
             if (result != null) {
                 RemoteAccessVpnResponse response = new RemoteAccessVpnResponse();
-                response.setId(result.getId());
-                response.setPublicIp(result.getVpnServerAddress());
+                response.setPublicIp(result.getServerAddress().toString());
                 response.setIpRange(result.getIpRange());
-                response.setAccountName(result.getAccountName());
+                response.setAccountName(_entityMgr.findById(Account.class, result.getAccountId()).getAccountName());
                 response.setDomainId(result.getDomainId());
                 response.setDomainName(_entityMgr.findById(Domain.class, result.getDomainId()).getName());
                 response.setObjectName("remoteaccessvpn");

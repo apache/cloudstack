@@ -83,7 +83,7 @@ public class CreateSecurityGroupCmd extends BaseCmd {
     
     @Override
     public void execute(){
-        SecurityGroup group = _securityGroupMgr.createSecurityGroup(this);
+        SecurityGroup group = _securityGroupService.createSecurityGroup(this);
         if (group != null) {
             SecurityGroupResponse response = _responseGenerator.createSecurityGroupResponse(group);
             response.setResponseName(getCommandName());

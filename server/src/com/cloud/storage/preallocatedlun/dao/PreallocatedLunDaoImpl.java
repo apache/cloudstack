@@ -185,7 +185,7 @@ public class PreallocatedLunDaoImpl extends GenericDaoBase<PreallocatedLunVO, Lo
         SearchCriteria<Long> sc = TotalSizeSearch.create();
         sc.setParameters("target", targetIqn);
         
-        List<Long> results = searchIncludingRemoved(sc, null);
+        List<Long> results = customSearchIncludingRemoved(sc, null);
         if (results.size() == 0) {
             return 0;
         }
@@ -198,7 +198,7 @@ public class PreallocatedLunDaoImpl extends GenericDaoBase<PreallocatedLunVO, Lo
         SearchCriteria<Long> sc = UsedSizeSearch.create();
         sc.setParameters("target", targetIqn);
         
-        List<Long> results = searchIncludingRemoved(sc, null);
+        List<Long> results = customSearchIncludingRemoved(sc, null);
         if (results.size() == 0) {
             return 0;
         }
@@ -210,7 +210,7 @@ public class PreallocatedLunDaoImpl extends GenericDaoBase<PreallocatedLunVO, Lo
     public List<String> findDistinctTagsForTarget(String targetIqn) {
         SearchCriteria<String> sc = DetailsSearch.create();
         sc.setJoinParameters("target", "targetiqn", targetIqn);
-        return _detailsDao.searchIncludingRemoved(sc, null);
+        return _detailsDao.customSearchIncludingRemoved(sc, null);
     }
 
     @Override @DB

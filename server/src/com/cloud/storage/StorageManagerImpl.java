@@ -581,7 +581,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
                 // Get the newly created VDI from the snapshot.
                 // This will return a null volumePath if it could not be created
-                Pair<String, String> volumeDetails = createVDIFromSnapshot(UserContext.current().getUserId(), snapshot, pool);
+                Pair<String, String> volumeDetails = createVDIFromSnapshot(UserContext.current().getCallerUserId(), snapshot, pool);
 
                 volumeUUID = volumeDetails.first();
                 details = volumeDetails.second();
@@ -1620,7 +1620,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Override
     public VolumeVO allocVolume(CreateVolumeCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceAllocationException {
         // FIXME:  some of the scheduled event stuff might be missing here...
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         Account targetAccount = null;
@@ -2146,7 +2146,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Override @DB
     public synchronized StoragePoolVO preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws ServerApiException{
     	Long primaryStorageId = cmd.getId();
-    	Long userId = UserContext.current().getUserId();
+    	Long userId = UserContext.current().getCallerUserId();
         boolean restart = true;
         StoragePoolVO primaryStorage = null;
         try 
@@ -2327,7 +2327,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 	@DB
 	public synchronized StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ServerApiException{
 		Long primaryStorageId = cmd.getId();
-		Long userId = UserContext.current().getUserId();
+		Long userId = UserContext.current().getCallerUserId();
 		StoragePoolVO primaryStorage = null;
     	try {
     		Transaction.currentTxn();
@@ -2473,7 +2473,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 	
 	@Override
 	public boolean deleteVolume(DeleteVolumeCmd cmd) throws InvalidParameterValueException {
-    	Account account = UserContext.current().getAccount();
+    	Account account = UserContext.current().getCaller();
     	Long volumeId = cmd.getId();
     	
     	boolean isAdmin;
@@ -2547,7 +2547,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 	
     @Override
     public <T extends VMInstanceVO> DiskProfile allocateRawVolume(VolumeType type, String name, DiskOfferingVO offering, Long size, T vm, Account owner) {
-        long userId = UserContext.current().getUserId();
+        long userId = UserContext.current().getCallerUserId();
         if (size == null) {
             size = offering.getDiskSizeInBytes();
         }
@@ -2580,7 +2580,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     
     @Override 
     public <T extends VMInstanceVO> DiskProfile allocateTemplatedVolume(VolumeType type, String name, DiskOfferingVO offering, VMTemplateVO template, T vm, Account owner) {
-        long userId = UserContext.current().getUserId();
+        long userId = UserContext.current().getCallerUserId();
         assert (template.getFormat() != ImageFormat.ISO) : "ISO is not a template really....";
         
         SearchCriteria<VMTemplateHostVO> sc = HostTemplateStatesSearch.create();

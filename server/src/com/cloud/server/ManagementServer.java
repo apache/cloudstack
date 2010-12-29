@@ -320,13 +320,6 @@ public interface ManagementServer extends ManagementService {
      */
     List<UserVmVO> searchForUserVMs(Criteria c);
 
-    /**
-     * Find an IP Address VO object by ip address string
-     * @param ipAddress
-     * @return IP Address VO object corresponding to the given address string, null if not found
-     */
-    IPAddressVO findIPAddressById(String ipAddress);
-
     List<EventVO> listPendingEvents(int entryTime, int duration);
     
     /**
@@ -454,13 +447,6 @@ public interface ManagementServer extends ManagementService {
      */
     Account findAccountById(Long accountId);
     
-    /**
-     * Find the owning account of an IP Address
-     * @param ipAddress
-     * @return owning account if ip address is allocated, null otherwise
-     */
-    Account findAccountByIpAddress(String ipAddress);
-
     /**
      * Deletes a Limit
      * @param limitId - the database ID of the Limit

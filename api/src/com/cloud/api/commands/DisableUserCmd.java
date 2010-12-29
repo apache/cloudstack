@@ -67,7 +67,7 @@ public class DisableUserCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         if (account != null) {
             return account.getId();
         }

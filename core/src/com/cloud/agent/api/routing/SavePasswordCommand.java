@@ -19,7 +19,7 @@
 package com.cloud.agent.api.routing;
 
 
-public class SavePasswordCommand extends RoutingCommand {
+public class SavePasswordCommand extends NetworkElementCommand {
 
     String password;
     String vmIpAddress;

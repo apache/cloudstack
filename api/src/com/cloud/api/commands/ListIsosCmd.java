@@ -154,7 +154,7 @@ public class ListIsosCmd extends BaseListCmd {
         }
 
         boolean isAdmin = false;
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
             isAdmin = true;            
         }

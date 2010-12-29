@@ -7,7 +7,6 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import com.cloud.domain.DomainVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -48,6 +47,13 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     }
     
     @Override
+    public void removeNicsForInstance(long instanceId) {
+        SearchCriteria<NicVO> sc = InstanceSearch.create();
+        sc.setParameters("instance", instanceId);
+        remove(sc);
+    }
+    
+    @Override
     public List<NicVO> listBy(long instanceId) {
         SearchCriteria<NicVO> sc = InstanceSearch.create();
         sc.setParameters("instance", instanceId);
@@ -75,6 +81,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         return customSearch(sc, null);
     }
     
+    @Override
     public NicVO findByInstanceIdAndNetworkId(long networkId, long instanceId) {
         SearchCriteria<NicVO> sc = createSearchCriteria();
         sc.addAnd("networkId", SearchCriteria.Op.EQ, networkId);

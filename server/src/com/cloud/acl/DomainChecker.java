@@ -49,7 +49,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     
     @Override
     public boolean checkAccess(Account account, Domain domain) throws PermissionDeniedException {
-        if (!account.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
+        if (account.getState() != Account.State.Enabled) {
             throw new PermissionDeniedException(account + " is disabled.");
         }
         
@@ -136,10 +136,11 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 		    					//found as a child
 		    					return true;
 		    				}
-		    				if(domainRecord.getParent() != null)
-		    					domainRecord = _domainDao.findById(domainRecord.getParent());
-		    				else
-		    					break;
+		    				if(domainRecord.getParent() != null) {
+                                domainRecord = _domainDao.findById(domainRecord.getParent());
+                            } else {
+                                break;
+                            }
 		    			}
 		    		}
 				}
@@ -183,10 +184,11 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 		    					//found as a child
 		    					return true;
 		    				}
-		    				if(domainRecord.getParent() != null)
-		    					domainRecord = _domainDao.findById(domainRecord.getParent());
-		    				else
-		    					break;
+		    				if(domainRecord.getParent() != null) {
+                                domainRecord = _domainDao.findById(domainRecord.getParent());
+                            } else {
+                                break;
+                            }
 		    			}
 		    		}
 				}
@@ -219,10 +221,11 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 		    					//found as a child
 		    					return true;
 		    				}
-		    				if(domainRecord.getParent() != null)
-		    					domainRecord = _domainDao.findById(domainRecord.getParent());
-		    				else
-		    					break;
+		    				if(domainRecord.getParent() != null) {
+                                domainRecord = _domainDao.findById(domainRecord.getParent());
+                            } else {
+                                break;
+                            }
 		    			}
 		    		}
 				}
@@ -245,10 +248,11 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 		    					//found as a child
 		    					return true;
 		    				}
-		    				if(localRecord.getParent() != null)
-		    					localRecord = _domainDao.findById(localRecord.getParent());
-		    				else
-		    					break;
+		    				if(localRecord.getParent() != null) {
+                                localRecord = _domainDao.findById(localRecord.getParent());
+                            } else {
+                                break;
+                            }
 		    			}
 		    		}
 		    		//didn't find in upper tree

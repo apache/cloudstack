@@ -27,7 +27,7 @@ import com.cloud.agent.api.to.FirewallRuleTO;
  * AccessDetails allow different components to put in information about
  * how to access the components inside the command.
  */
-public class SetFirewallRulesCommand extends RoutingCommand {
+public class SetFirewallRulesCommand extends NetworkElementCommand {
     FirewallRuleTO[] rules;
 
     protected SetFirewallRulesCommand() {

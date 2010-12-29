@@ -134,7 +134,7 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
-import com.cloud.agent.api.routing.RoutingCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
@@ -1109,7 +1109,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             	return execute((FenceCommand) cmd);
             } else if (cmd instanceof StartCommand ) {
             	return execute((StartCommand) cmd);
-            } else if (cmd instanceof RoutingCommand) {
+            } else if (cmd instanceof NetworkElementCommand) {
             	return _virtRouterResource.executeRequest(cmd);
             } else if (cmd instanceof CheckSshCommand) {
             	return execute((CheckSshCommand) cmd);

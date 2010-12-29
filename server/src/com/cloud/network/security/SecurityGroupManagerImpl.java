@@ -429,7 +429,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 		Integer icmpCode = cmd.getIcmpCode();
 		List<String> cidrList = cmd.getCidrList();
 		Map groupList = cmd.getUserSecurityGroupList();
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
 		Integer startPortOrType = null;
@@ -639,8 +639,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	public boolean revokeSecurityGroupIngress(RevokeSecurityGroupIngressCmd cmd) {
 		
 		//input validation
-		Account account = UserContext.current().getAccount();
-		Long userId  = UserContext.current().getUserId();
+		Account account = UserContext.current().getCaller();
+		Long userId  = UserContext.current().getCallerUserId();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Integer startPort = cmd.getStartPort();
@@ -857,7 +857,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	    Long domainId = cmd.getDomainId();
 	    Long accountId = null;
 
-	    Account account = UserContext.current().getAccount();
+	    Account account = UserContext.current().getCaller();
         if (account != null) {
             if ((account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
                 if ((domainId != null) && (accountName != null)) {
@@ -1117,7 +1117,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 		String name = cmd.getSecurityGroupName();
 		String accountName = cmd.getAccountName();
 		Long domainId = cmd.getDomainId();
-		Account account = UserContext.current().getAccount();
+		Account account = UserContext.current().getCaller();
 		
 		if (!_enabled) {
 			return true;
@@ -1196,7 +1196,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
     @Override
     public List<SecurityGroupRulesVO> searchForSecurityGroupRules(ListSecurityGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;

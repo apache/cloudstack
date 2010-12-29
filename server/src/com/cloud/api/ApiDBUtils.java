@@ -32,10 +32,10 @@ import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
@@ -85,6 +85,7 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.Nic;
@@ -338,7 +339,7 @@ public class ApiDBUtils {
     }
 
     public static IPAddressVO findIpAddressById(String address) {
-        return _ipAddressDao.findById(address);
+        return _ipAddressDao.findById(new Ip(address));
     }
 
     public static GuestOSCategoryVO getHostGuestOSCategory(long hostId) {
@@ -417,19 +418,6 @@ public class ApiDBUtils {
 
     public static UserVm findUserVmById(Long vmId) {
         return _userVmDao.findById(vmId);
-    }
-
-    public static UserVm findUserVmByPublicIpAndGuestIp(String publicIp, String guestIp) {
-        IPAddressVO addr = _ipAddressDao.findById(publicIp);
-        List<UserVmVO> vms = _userVmDao.listVmsUsingGuestIpAddress(addr.getDataCenterId(), guestIp);
-        if (vms != null) {
-            for (UserVmVO vm : vms) {
-                if (vm.getAccountId() == addr.getAllocatedToAccountId()) {
-                    return vm;
-                }
-            }
-        }
-        return null;
     }
 
     public static VlanVO findVlanById(long vlanDbId) {

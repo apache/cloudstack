@@ -49,14 +49,8 @@ public interface Account extends ControlledEntity {
 
     public long getId();
     public String getAccountName();
-    public void setAccountName(String accountId);
     public short getType();
-    public String getState();
-    public void setState(String state);
-    @Override
-    public long getDomainId();
+    public State getState();
     public Date getRemoved();
     public String getNetworkDomain();
-    public void setNetworkDomain(String networkDomain);
-    
 }

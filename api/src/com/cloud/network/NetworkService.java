@@ -19,16 +19,11 @@ package com.cloud.network;
 
 import java.util.List;
 
-import com.cloud.api.commands.AddVpnUserCmd;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateNetworkCmd;
-import com.cloud.api.commands.CreateRemoteAccessVpnCmd;
-import com.cloud.api.commands.DeleteRemoteAccessVpnCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListNetworksCmd;
-import com.cloud.api.commands.RemoveVpnUserCmd;
 import com.cloud.api.commands.RestartNetworkCmd;
-import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -52,37 +47,6 @@ public interface NetworkService {
     IpAddress associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException, ResourceUnavailableException;    
     boolean disassociateIpAddress(DisassociateIPAddrCmd cmd);
 
-    /**
-     * Create a remote access vpn from the given ip address and client ip range
-     * @param cmd the command specifying the ip address, ip range
-     * @return the newly created RemoteAccessVpnVO if successful, null otherwise
-     * @throws InvalidParameterValueException
-     * @throws PermissionDeniedException
-     * @throws ConcurrentOperationException 
-     */
-    RemoteAccessVpn createRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws ConcurrentOperationException, InvalidParameterValueException, PermissionDeniedException;
-    
-    /**
-     * Start a remote access vpn for the given ip address and client ip range
-     * @param cmd the command specifying the ip address, ip range
-     * @return the RemoteAccessVpnVO if successful, null otherwise
-     * @throws ConcurrentOperationException 
-     * @throws ResourceUnavailableException 
-     */
-    RemoteAccessVpn startRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException;
-    
-    /**
-     * Destroy a previously created remote access VPN
-     * @param cmd the command specifying the account and zone
-     * @return success if successful, false otherwise
-     * @throws ConcurrentOperationException 
-     */
-    boolean destroyRemoteAccessVpn(DeleteRemoteAccessVpnCmd cmd) throws ConcurrentOperationException;
-
-    VpnUser addVpnUser(AddVpnUserCmd cmd) throws ConcurrentOperationException, AccountLimitException;
-
-    boolean removeVpnUser(RemoveVpnUserCmd cmd) throws ConcurrentOperationException;
-    
     Network createNetwork(CreateNetworkCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     List<? extends Network> searchForNetworks(ListNetworksCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     boolean deleteNetwork(long networkId) throws InvalidParameterValueException, PermissionDeniedException;

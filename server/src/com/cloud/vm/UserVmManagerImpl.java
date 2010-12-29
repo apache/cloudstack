@@ -194,6 +194,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
+import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -288,8 +289,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     public UserVm resetVMPassword(ResetVMPasswordCmd cmd, String password){
-        Account account = UserContext.current().getAccount();
-    	Long userId = UserContext.current().getUserId();
+        Account account = UserContext.current().getCaller();
+    	Long userId = UserContext.current().getCallerUserId();
     	Long vmId = cmd.getId();
     	UserVmVO userVm = _vmDao.findById(cmd.getId());
     	
@@ -316,7 +317,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     private boolean resetVMPasswordInternal(ResetVMPasswordCmd cmd, String password) {    	
         Long vmId = cmd.getId();
-        Long userId = UserContext.current().getUserId();
+        Long userId = UserContext.current().getCallerUserId();
         UserVmVO vmInstance = _vmDao.findById(vmId);
 
         if (password == null || password.equals("")) {
@@ -387,7 +388,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     	Long vmId = command.getVirtualMachineId();
     	Long volumeId = command.getId();
     	Long deviceId = command.getDeviceId();
-    	Account account = UserContext.current().getAccount();
+    	Account account = UserContext.current().getCaller();
     	
     	// Check that the volume ID is valid
     	VolumeVO volume = _volsDao.findById(volumeId);
@@ -612,7 +613,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     
     @Override
     public Volume detachVolumeFromVM(DetachVolumeCmd cmmd) {    	
-    	Account account = UserContext.current().getAccount();
+    	Account account = UserContext.current().getCaller();
     	if ((cmmd.getId() == null && cmmd.getDeviceId() == null && cmmd.getVirtualMachineId() == null) ||
     	    (cmmd.getId() != null && (cmmd.getDeviceId() != null || cmmd.getVirtualMachineId() != null)) ||
     	    (cmmd.getId() == null && (cmmd.getDeviceId()==null || cmmd.getVirtualMachineId() == null))) {
@@ -807,8 +808,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     public UserVm upgradeVirtualMachine(UpgradeVMCmd cmd) throws ServerApiException, InvalidParameterValueException {
         Long virtualMachineId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
-        Account account = UserContext.current().getAccount();
-        Long userId = UserContext.current().getUserId();
+        Account account = UserContext.current().getCaller();
+        Long userId = UserContext.current().getCallerUserId();
 
         // Verify input parameters
         UserVmVO vmInstance = _vmDao.findById(virtualMachineId);
@@ -984,9 +985,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     	ServiceOffering offering = _offeringDao.findById(userVm.getServiceOfferingId());
     	
     	if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtual) {  		
-    		IPAddressVO guestIP = (userVm.getGuestIpAddress() == null) ? null : _ipAddressDao.findById(userVm.getGuestIpAddress());
+    		IPAddressVO guestIP = (userVm.getGuestIpAddress() == null) ? null : _ipAddressDao.findById(new Ip(userVm.getGuestIpAddress()));
     		if (guestIP != null && guestIP.getAllocatedTime() != null) {
-    			_ipAddressDao.unassignIpAddress(userVm.getGuestIpAddress());
+    			_ipAddressDao.unassignIpAddress(new Ip(userVm.getGuestIpAddress()));
             	s_logger.debug("Released guest IP address=" + userVm.getGuestIpAddress() + " vmName=" + userVm.getName() +  " dcId=" + userVm.getDataCenterId());
 
             	EventUtils.saveEvent(User.UID_SYSTEM, userVm.getAccountId(), EventTypes.EVENT_NET_IP_RELEASE, "released a public ip: " + userVm.getGuestIpAddress());
@@ -1053,7 +1054,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     public UserVm recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException, CloudRuntimeException {
     	
         Long vmId = cmd.getId();
-        Account accountHandle = UserContext.current().getAccount();
+        Account accountHandle = UserContext.current().getCaller();
    
         //if account is removed, return error
         if(accountHandle!=null && accountHandle.getRemoved() != null) {
@@ -1586,12 +1587,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     public VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Long userId = UserContext.current().getUserId();
+        Long userId = UserContext.current().getCallerUserId();
         if (userId == null) {
             userId = User.UID_SYSTEM;
         }
 
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         boolean isAdmin = ((account == null) || isAdmin(account.getType()));
         
     	VMTemplateVO privateTemplate = null;
@@ -1719,7 +1720,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override @DB
     public VMTemplateVO createPrivateTemplate(CreateTemplateCmd command) throws CloudRuntimeException {
-        Long userId = UserContext.current().getUserId();
+        Long userId = UserContext.current().getCallerUserId();
         if (userId == null) {
             userId = User.UID_SYSTEM;
         }
@@ -1925,8 +1926,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         String group = cmd.getGroup();
         Boolean ha = cmd.getHaEnable();
         Long id = cmd.getId();
-        Account account = UserContext.current().getAccount();
-        Long userId = UserContext.current().getUserId();
+        Account account = UserContext.current().getCaller();
+        Long userId = UserContext.current().getCallerUserId();
     
         //Input validation
         UserVmVO vmInstance = null;
@@ -1998,8 +1999,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
 	@Override
 	public UserVm rebootVirtualMachine(RebootVMCmd cmd) {
-        Account account = UserContext.current().getAccount();
-        Long userId = UserContext.current().getUserId();
+        Account account = UserContext.current().getCaller();
+        Long userId = UserContext.current().getCallerUserId();
         Long vmId = cmd.getId();
         
         //Verify input parameters
@@ -2026,7 +2027,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override @DB
     public InstanceGroupVO createVmGroup(CreateVMGroupCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
@@ -2099,7 +2100,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     public boolean deleteVmGroup(DeleteVMGroupCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long groupId = cmd.getId();
 
         // Verify input parameters
@@ -2231,7 +2232,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     
 	@Override @DB
     public UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
-        Account caller = UserContext.current().getAccount();
+        Account caller = UserContext.current().getCaller();
         
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
@@ -2444,7 +2445,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         vm.setPassword(password);
         
-	    long userId = UserContext.current().getUserId();
+	    long userId = UserContext.current().getCallerUserId();
 	    UserVO caller = _userDao.findById(userId);
 	    
 	    AccountVO owner = _accountDao.findById(vm.getAccountId());
@@ -2535,8 +2536,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     public UserVm stopVirtualMachine(long vmId) throws ConcurrentOperationException {
         
         //Input validation
-        Account caller = UserContext.current().getAccount();
-        Long userId = UserContext.current().getUserId();
+        Account caller = UserContext.current().getCaller();
+        Long userId = UserContext.current().getCallerUserId();
         
         //if account is removed, return error
         if (caller != null && caller.getRemoved() != null) {
@@ -2572,8 +2573,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     public UserVm startVirtualMachine(long vmId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         //Input validation
-        Account account = UserContext.current().getAccount();
-        Long userId = UserContext.current().getUserId();
+        Account account = UserContext.current().getCaller();
+        Long userId = UserContext.current().getCallerUserId();
         
         //if account is removed, return error
         if(account!=null && account.getRemoved() != null) {
@@ -2594,8 +2595,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     
     @Override
     public UserVm destroyVm(long vmId) throws ResourceUnavailableException, ConcurrentOperationException {
-        Account account = UserContext.current().getAccount();
-        Long userId = UserContext.current().getUserId();
+        Account account = UserContext.current().getCaller();
+        Long userId = UserContext.current().getCallerUserId();
         
         //Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId);

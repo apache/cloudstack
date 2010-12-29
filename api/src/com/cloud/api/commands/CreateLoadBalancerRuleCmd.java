@@ -166,12 +166,12 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
 
     @Override
     public long getAccountId() {
-        return UserContext.current().getAccount().getId();
+        return UserContext.current().getCaller().getId();
     }
 
     @Override
     public long getDomainId() {
-        return UserContext.current().getAccount().getDomainId();
+        return UserContext.current().getCaller().getDomainId();
     }
 
     @Override

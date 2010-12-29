@@ -18,6 +18,7 @@
 package com.cloud.network.rules;
 
 import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
@@ -150,6 +151,9 @@ public class FirewallRuleVO implements FirewallRule {
     
     public FirewallRuleVO(String xId, Ip srcIp, int portStart, int portEnd, String protocol, long networkId, long accountId, long domainId, Purpose purpose) {
         this.xId = xId;
+        if (xId == null) {
+            this.xId = UUID.randomUUID().toString();
+        }
         this.accountId = accountId;
         this.domainId = domainId;
         this.sourceIpAddress = srcIp;

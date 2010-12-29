@@ -119,6 +119,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
+import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.net.NfsUtils;
 import com.cloud.vm.NicProfile;
@@ -503,7 +504,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		if (_IpAllocator != null && _IpAllocator.exteralIpAddressAllocatorEnabled()) {
 			 _IpAllocator.releasePublicIpAddress(ipAddress, dcId, podId);
 		} else {
-			_ipAddressDao.unassignIpAddress(ipAddress);
+			_ipAddressDao.unassignIpAddress(new Ip(ipAddress));
 		}
 	}
 

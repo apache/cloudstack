@@ -28,6 +28,7 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
+import com.cloud.user.Account.State;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
@@ -77,6 +78,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     	return searchIncludingRemoved(sc, null, null, false);
     }
     
+    @Override
     public Pair<User, Account> findUserAccountByApiKey(String apiKey) {
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
@@ -92,13 +94,13 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
                 u.setUsername(rs.getString(2));
                 u.setAccountId(rs.getLong(3));
                 u.setSecretKey(rs.getString(4));
-                u.setState(rs.getString(5));
+                u.setState(State.valueOf(rs.getString(5)));
 
                 AccountVO a = new AccountVO(rs.getLong(6));
                 a.setAccountName(rs.getString(7));
                 a.setType(rs.getShort(8));
                 a.setDomainId(rs.getLong(9));
-                a.setState(rs.getString(10));
+                a.setState(State.valueOf(rs.getString(10)));
 
                 userAcctPair = new Pair<User, Account>(u, a);
             }
@@ -129,13 +131,17 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         return findOneIncludingRemovedBy(sc);
     }
     
+    @Override
     public Account findActiveAccountByName(String accountName) {
     	SearchCriteria<AccountVO> sc = AccountNameSearch.create("accountName", accountName);
         return findOneBy(sc);
     }
 
+    @Override
     public List<AccountVO> findActiveAccounts(Long maxAccountId, Filter filter) {
-        if (maxAccountId == null) return null;
+        if (maxAccountId == null) {
+            return null;
+        }
 
         SearchCriteria<AccountVO> sc = createSearchCriteria();
         sc.addAnd("id", SearchCriteria.Op.LTEQ, maxAccountId);
@@ -143,8 +149,11 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         return listBy(sc, filter);
     }
 
+    @Override
     public List<AccountVO> findRecentlyDeletedAccounts(Long maxAccountId, Date earliestRemovedDate, Filter filter) {
-        if (earliestRemovedDate == null) return null;
+        if (earliestRemovedDate == null) {
+            return null;
+        }
         SearchCriteria<AccountVO> sc = createSearchCriteria();
         if (maxAccountId != null) {
             sc.addAnd("id", SearchCriteria.Op.LTEQ, maxAccountId);
@@ -155,8 +164,11 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         return listIncludingRemovedBy(sc, filter);
     }
 
+    @Override
     public List<AccountVO> findNewAccounts(Long minAccountId, Filter filter) {
-        if (minAccountId == null) return null;
+        if (minAccountId == null) {
+            return null;
+        }
 
         SearchCriteria<AccountVO> sc = createSearchCriteria();
         sc.addAnd("id", SearchCriteria.Op.GT, minAccountId);

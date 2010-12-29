@@ -42,7 +42,7 @@ public class DeletePoolCmd extends BaseCmd {
     
     @Override
     public void execute(){
-        boolean result = _storageMgr.deletePool(this);
+        boolean result = _storageService.deletePool(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

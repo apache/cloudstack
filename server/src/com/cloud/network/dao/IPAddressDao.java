@@ -22,12 +22,13 @@ import java.util.List;
 
 import com.cloud.network.IPAddressVO;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.net.Ip;
 
-public interface IPAddressDao extends GenericDao<IPAddressVO, String> {
+public interface IPAddressDao extends GenericDao<IPAddressVO, Ip> {
 	
-    IPAddressVO markAsUnavailable(String ipAddress, long ownerId);
+    IPAddressVO markAsUnavailable(Ip ipAddress, long ownerId);
     
-	void unassignIpAddress(String ipAddress);	
+	void unassignIpAddress(Ip ipAddress);	
 
 	List<IPAddressVO> listByAccount(long accountId);
 	

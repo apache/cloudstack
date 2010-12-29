@@ -79,6 +79,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
+import com.cloud.user.Account.State;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
@@ -428,7 +429,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         Long accountId = null;
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
 
         if ((account == null) ||
             (account.getType() == Account.ACCOUNT_TYPE_ADMIN) ||
@@ -494,7 +495,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 
     @Override
     public ResourceLimitVO updateResourceLimit(UpdateResourceLimitCmd cmd)  {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
     	String accountName = cmd.getAccountName();
     	Long domainId = cmd.getDomainId();
     	Long max = cmd.getMax();
@@ -715,7 +716,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         }
     }
     
-    private boolean doSetUserStatus(long userId, String state) {
+    private boolean doSetUserStatus(long userId, State state) {
         UserVO userForUpdate = _userDao.createForUpdate();
         userForUpdate.setState(state);
         return _userDao.update(Long.valueOf(userId), userForUpdate);
@@ -724,7 +725,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     public boolean enableAccount(long accountId) {
         boolean success = false;
         AccountVO acctForUpdate = _accountDao.createForUpdate();
-        acctForUpdate.setState(Account.ACCOUNT_STATE_ENABLED);
+        acctForUpdate.setState(State.Enabled);
         success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
         return success;
     }
@@ -733,11 +734,11 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         boolean success = false;
         Account account = _accountDao.findById(accountId);
         if (account != null) {
-            if (account.getState().equals(Account.ACCOUNT_STATE_LOCKED)) {
+            if (account.getState().equals(State.Locked)) {
                 return true; // already locked, no-op
-            } else if (account.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
+            } else if (account.getState().equals(State.Enabled)) {
                 AccountVO acctForUpdate = _accountDao.createForUpdate();
-                acctForUpdate.setState(Account.ACCOUNT_STATE_LOCKED);
+                acctForUpdate.setState(State.Locked);
                 success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
             } else {
                 if (s_logger.isInfoEnabled()) {
@@ -938,11 +939,11 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         }
 
         AccountVO account = _accountDao.findById(accountId);
-        if ((account == null) || account.getState().equals(Account.ACCOUNT_STATE_DISABLED)) {
+        if ((account == null) || account.getState().equals(State.Disabled)) {
             success = true;
         } else {
             AccountVO acctForUpdate = _accountDao.createForUpdate();
-            acctForUpdate.setState(Account.ACCOUNT_STATE_DISABLED);
+            acctForUpdate.setState(State.Disabled);
             success = _accountDao.update(Long.valueOf(accountId), acctForUpdate);
 
             success = (success && doDisableAccount(accountId));
@@ -988,7 +989,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         String accountName = cmd.getAccountName();
         short userType = cmd.getAccountType().shortValue();
         String networkDomain = cmd.getNetworkdomain();
-        Long userId = UserContext.current().getUserId();
+        Long userId = UserContext.current().getCallerUserId();
         
         try {
             if (accountName == null) {
@@ -1026,7 +1027,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
                 newAccount.setAccountName(accountName);
                 newAccount.setDomainId(domainId);
                 newAccount.setType(userType);
-                newAccount.setState("enabled");
+                newAccount.setState(State.Enabled);
                 newAccount.setNetworkDomain(networkDomain);
                 newAccount = _accountDao.persist(newAccount);
                 accountId = newAccount.getId();
@@ -1039,7 +1040,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             UserVO user = new UserVO();
             user.setUsername(username);
             user.setPassword(password);
-            user.setState("enabled");
+            user.setState(State.Enabled);
             user.setFirstname(firstName);
             user.setLastname(lastName);
             user.setAccountId(accountId.longValue());
@@ -1083,7 +1084,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     	String email = cmd.getEmail();
     	String timeZone = cmd.getTimezone();
     	Long accountId = null;
-    	Long userId = UserContext.current().getUserId();
+    	Long userId = UserContext.current().getCallerUserId();
     	
     	Account account = _accountDao.findActiveAccount(accountName, domainId);
     	
@@ -1100,7 +1101,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         UserVO user = new UserVO();
         user.setUsername(userName);
         user.setPassword(password);
-        user.setState("enabled");
+        user.setState(State.Enabled);
         user.setFirstname(firstName);
         user.setLastname(lastName);
         user.setAccountId(accountId.longValue());
@@ -1213,7 +1214,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     @Override
     public UserAccount disableUser(DisableUserCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
         Long userId = cmd.getId();
-        Account adminAccount = UserContext.current().getAccount();
+        Account adminAccount = UserContext.current().getCaller();
         
         //Check if user exists in the system
         User user = _userDao.findById(userId);
@@ -1231,7 +1232,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             throw new PermissionDeniedException("Failed to disable user " + userId + ", permission denied.");
         }
 
-        boolean success = doSetUserStatus(userId, Account.ACCOUNT_STATE_DISABLED);
+        boolean success = doSetUserStatus(userId, State.Disabled);
         if (success) {
         	//user successfully disabled
         	return _userAccountDao.findById(userId);
@@ -1243,7 +1244,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     @Override
     public UserAccount enableUser(EnableUserCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
         Long userId = cmd.getId();
-        Account adminAccount = UserContext.current().getAccount();
+        Account adminAccount = UserContext.current().getCaller();
         boolean success = false;
         
         //Check if user exists in the system
@@ -1262,7 +1263,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
             throw new PermissionDeniedException("Failed to enable user " + userId + ", permission denied.");
         }
         
-        success = doSetUserStatus(userId, Account.ACCOUNT_STATE_ENABLED);
+        success = doSetUserStatus(userId, State.Enabled);
 
         // make sure the account is enabled too
         success = (success && enableAccount(user.getAccountId()));
@@ -1278,7 +1279,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     public UserAccount lockUser(LockUserCmd cmd) {
         boolean success = false;
         
-        Account adminAccount = UserContext.current().getAccount();
+        Account adminAccount = UserContext.current().getCaller();
         Long id = cmd.getId();
 
         // Check if user with id exists in the system
@@ -1301,16 +1302,16 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 
         // make sure the account is enabled too
         // if the user is either locked already or disabled already, don't change state...only lock currently enabled users
-        if (user.getState().equals(Account.ACCOUNT_STATE_LOCKED)) {
+        if (user.getState().equals(State.Locked)) {
             // already locked...no-op
             return _userAccountDao.findById(id);
-        } else if (user.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
-            success = doSetUserStatus(user.getId(), Account.ACCOUNT_STATE_LOCKED);
+        } else if (user.getState().equals(State.Enabled)) {
+            success = doSetUserStatus(user.getId(), State.Locked);
 
             boolean lockAccount = true;
             List<UserVO> allUsersByAccount = _userDao.listByAccount(user.getAccountId());
             for (UserVO oneUser : allUsersByAccount) {
-                if (oneUser.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
+                if (oneUser.getState().equals(State.Enabled)) {
                     lockAccount = false;
                     break;
                 }
@@ -1376,7 +1377,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         }
         
         //Check if user performing the action is allowed to modify this account
-        Account adminAccount = UserContext.current().getAccount();
+        Account adminAccount = UserContext.current().getCaller();
         if ((adminAccount != null) && !_domainDao.isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
           throw new PermissionDeniedException("Invalid account " + accountName + " in domain " + domainId + " given, permission denied");
         }
@@ -1391,7 +1392,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
     
     @Override
     public AccountVO lockAccount(DisableAccountCmd cmd) {
-        Account adminAccount = UserContext.current().getAccount();
+        Account adminAccount = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
 
@@ -1421,7 +1422,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
 
-        Account adminAccount = UserContext.current().getAccount();
+        Account adminAccount = UserContext.current().getCaller();
         if ((adminAccount != null) && !_domainDao.isChildDomain(adminAccount.getDomainId(), domainId)) {
             throw new PermissionDeniedException("Failed to disable account " + accountName + " in domain " + domainId + ", permission denied.");
         }
@@ -1458,7 +1459,7 @@ public class AccountManagerImpl implements AccountManager, AccountService {
         }
         
         //Check if user performing the action is allowed to modify this account
-        Account adminAccount = UserContext.current().getAccount();
+        Account adminAccount = UserContext.current().getCaller();
         if ((adminAccount != null) && (adminAccount.getType() != Account.ACCOUNT_TYPE_ADMIN) && _domainDao.isChildDomain(adminAccount.getDomainId(), account.getDomainId())) {
           throw new PermissionDeniedException("Invalid account " + accountName + " in domain " + domainId + " given, permission denied");
         }
@@ -1489,8 +1490,9 @@ public class AccountManagerImpl implements AccountManager, AccountService {
 		
 		UserVO user = _userDao.findById(id);
 		
-		if(user == null)
-			throw new InvalidParameterValueException("The specified user doesn't exist in the system");
+		if(user == null) {
+            throw new InvalidParameterValueException("The specified user doesn't exist in the system");
+        }
 		
         if ((user != null) && (user.getAccountId() == Account.ACCOUNT_ID_SYSTEM)) {
             throw new InvalidParameterValueException("Account id : " + user.getAccountId() + " is a system account, delete for user associated with this account is not allowed");

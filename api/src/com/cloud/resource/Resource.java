@@ -30,7 +30,9 @@ public interface Resource {
         Reserving("Resource is being reserved right now"), 
         Reserved("Resource has been reserved."),  
         Releasing("Resource is being released"), 
-        Ready("Resource is ready which means it doesn't need to go through resservation");
+        Ready("Resource is ready which means it doesn't need to go through resservation"),
+        Deallocating("Resource is being deallocated"),
+        Free("Resource is now completely free");
 
         String _description;
         

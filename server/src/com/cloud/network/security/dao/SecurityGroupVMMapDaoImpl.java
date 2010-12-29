@@ -122,7 +122,7 @@ public class SecurityGroupVMMapDaoImpl extends GenericDaoBase<SecurityGroupVMMap
     public List<Long> listVmIdsBySecurityGroup(long securityGroupId) {
         SearchCriteria<Long> sc = ListVmIdBySecurityGroup.create();
         sc.setParameters("securityGroupId", securityGroupId);
-        return searchIncludingRemoved(sc, null);
+        return customSearchIncludingRemoved(sc, null);
     }
 
 	@Override

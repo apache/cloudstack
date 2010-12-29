@@ -79,7 +79,7 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         if (account != null) {
             return account.getId();
         }
@@ -99,7 +99,7 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute(){
-        StoragePool result = _storageMgr.cancelPrimaryStorageForMaintenance(this);
+        StoragePool result = _storageService.cancelPrimaryStorageForMaintenance(this);
         if (result != null) {
             StoragePoolResponse response = _responseGenerator.createStoragePoolResponse(result);
             response.setResponseName(getCommandName());

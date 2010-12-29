@@ -67,7 +67,7 @@ public class UpdateStoragePoolCmd extends BaseCmd {
     
     @Override
     public void execute(){
-        StoragePool result = _storageMgr.updateStoragePool(this);
+        StoragePool result = _storageService.updateStoragePool(this);
         if (result != null){
             StoragePoolResponse response = _responseGenerator.createStoragePoolResponse(result);
             response.setResponseName(getCommandName());

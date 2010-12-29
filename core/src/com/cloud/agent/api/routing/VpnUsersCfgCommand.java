@@ -22,7 +22,7 @@ import java.util.List;
 import com.cloud.network.VpnUserVO;
 
 
-public class VpnUsersCfgCommand extends RoutingCommand {
+public class VpnUsersCfgCommand extends NetworkElementCommand {
 	public static class UsernamePassword{ 
 		private String username;
 		private String password;
@@ -64,15 +64,13 @@ public class VpnUsersCfgCommand extends RoutingCommand {
 			return getUsername() + "," + getPassword();
 		}
 	}
-	String vpnAppliancePrivateIpAddress; //router private ip address typically
 	UsernamePassword [] userpwds;
 	
     protected VpnUsersCfgCommand() {
     	
     }
     
-    public VpnUsersCfgCommand(String routerIp, List<VpnUserVO> addUsers, List<VpnUserVO> removeUsers) {
-    	this.vpnAppliancePrivateIpAddress = routerIp;
+    public VpnUsersCfgCommand(List<VpnUserVO> addUsers, List<VpnUserVO> removeUsers) {
     	userpwds = new UsernamePassword[addUsers.size() + removeUsers.size()];
     	int i = 0;
     	for (VpnUserVO vpnUser: removeUsers) {
@@ -92,11 +90,4 @@ public class VpnUsersCfgCommand extends RoutingCommand {
 		return userpwds;
 	}
 
-	public String getVpnAppliancePrivateIpAddress() {
-		return vpnAppliancePrivateIpAddress;
-	}
-
-	public String getRouterPrivateIpAddress() {
-		return vpnAppliancePrivateIpAddress;
-	}
 }

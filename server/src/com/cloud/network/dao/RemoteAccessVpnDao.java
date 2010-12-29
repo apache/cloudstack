@@ -22,9 +22,10 @@ import java.util.List;
 
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.net.Ip;
 
-public interface RemoteAccessVpnDao extends GenericDao<RemoteAccessVpnVO, Long> {
+public interface RemoteAccessVpnDao extends GenericDao<RemoteAccessVpnVO, Ip> {
     RemoteAccessVpnVO findByPublicIpAddress(String ipAddress);
-    RemoteAccessVpnVO findByAccountAndZone(Long accountId, Long zoneId);
+    RemoteAccessVpnVO findByAccountAndNetwork(Long accountId, Long zoneId);
     List<RemoteAccessVpnVO> findByAccount(Long accountId);
 }

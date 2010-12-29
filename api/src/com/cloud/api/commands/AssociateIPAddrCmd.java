@@ -67,14 +67,14 @@ public class AssociateIPAddrCmd extends BaseCmd {
         if (accountName != null) { 
             return accountName;
         }
-        return UserContext.current().getAccount().getAccountName();
+        return UserContext.current().getCaller().getAccountName();
     }
 
     public long getDomainId() {
         if (domainId != null) {
             return domainId;
         }
-        return UserContext.current().getAccount().getDomainId();
+        return UserContext.current().getCaller().getDomainId();
     }
 
     public long getZoneId() {

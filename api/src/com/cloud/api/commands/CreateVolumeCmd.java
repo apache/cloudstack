@@ -116,7 +116,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         if ((account == null) || isAdmin(account.getType())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
@@ -146,7 +146,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Override
     public void create(){
         try {
-            Volume volume = _storageMgr.allocVolume(this);
+            Volume volume = _storageService.allocVolume(this);
             if (volume != null) {
                 this.setEntityId(volume.getId());
             } else {
@@ -160,7 +160,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     
     @Override
     public void execute(){
-        Volume volume = _storageMgr.createVolume(this);
+        Volume volume = _storageService.createVolume(this);
         if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(volume);
             //FIXME - have to be moved to ApiResponseHelper

@@ -22,6 +22,7 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import com.cloud.network.VpnUser.State;
 import com.cloud.network.VpnUserVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -49,6 +50,7 @@ public class VpnUserDaoImpl extends GenericDaoBase<VpnUserVO, Long> implements V
         
         VpnUserCount = createSearchBuilder(Long.class);
         VpnUserCount.and("accountId", VpnUserCount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        VpnUserCount.and("state", VpnUserCount.entity().getState(), SearchCriteria.Op.NEQ);
         VpnUserCount.select(null, Func.COUNT, null);
         VpnUserCount.done();
     }
@@ -73,7 +75,8 @@ public class VpnUserDaoImpl extends GenericDaoBase<VpnUserVO, Long> implements V
 	public long getVpnUserCount(Long accountId) {
 		SearchCriteria<Long> sc = VpnUserCount.create();
 		sc.setParameters("accountId", accountId);
-		List<Long> rs = searchIncludingRemoved(sc, null);
+		sc.setParameters("state", State.Revoke);
+		List<Long> rs = customSearch(sc, null);
 		if (rs.size() == 0) {
             return 0;
         }

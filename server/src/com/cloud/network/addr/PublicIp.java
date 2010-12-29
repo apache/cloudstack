@@ -22,12 +22,13 @@ import java.util.Date;
 import com.cloud.dc.VlanVO;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 
 /**
  * PublicIp is a combo object of IPAddressVO and VLAN information.
  */
-public class PublicIp implements PublicIpAddress{
+public class PublicIp implements PublicIpAddress {
     IPAddressVO _addr;
     VlanVO _vlan;
     String macAddress;
@@ -39,7 +40,7 @@ public class PublicIp implements PublicIpAddress{
     }
     
     @Override
-    public String getAddress() {
+    public Ip getAddress() {
         return _addr.getAddress();
     }
     
@@ -127,8 +128,42 @@ public class PublicIp implements PublicIpAddress{
     }
     
     @Override
-    public Long getAssociatedNetworkId() {
-        return _addr.getAssociatedNetworkId();
+    public Long getAssociatedWithNetworkId() {
+        return _addr.getAssociatedWithNetworkId();
     }
     
+    @Override
+    public Long getNetworkId() {
+        return _vlan.getNetworkId();
+    }
+
+    @Override
+    public String getVlanGateway() {
+        return _vlan.getVlanGateway();
+    }
+
+    @Override
+    public String getVlanNetmask() {
+        return _vlan.getVlanNetmask();
+    }
+
+    @Override
+    public String getIpRange() {
+        return _vlan.getIpRange();
+    }
+
+    @Override
+    public VlanType getVlanType() {
+        return _vlan.getVlanType();
+    }
+    
+    @Override
+    public long getId() {
+        return _vlan.getId();
+    }
+    
+    @Override
+    public String toString() {
+        return _addr.getAddress().toString();
+    }
 }

@@ -44,14 +44,10 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.commands.AddVpnUserCmd;
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateNetworkCmd;
-import com.cloud.api.commands.CreateRemoteAccessVpnCmd;
-import com.cloud.api.commands.DeleteRemoteAccessVpnCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListNetworksCmd;
-import com.cloud.api.commands.RemoveVpnUserCmd;
 import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
@@ -73,7 +69,6 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
@@ -111,6 +106,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -251,14 +247,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (vlanUse == VlanType.DirectAttached) {
             addr.setState(IpAddress.State.Allocated);
         } else {
-            addr.setAssociatedNetworkId(networkId);
+            addr.setAssociatedWithNetworkId(networkId);
         }
         
         if (!_ipAddressDao.update(addr.getAddress(), addr)) {
             throw new CloudRuntimeException("Found address to allocate but unable to update: " + addr);
         }
         if(!sourceNat){
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getAccountId(), dcId, 0, addr.getAddress());
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getAccountId(), dcId, 0, addr.getAddress().toString());
             _usageEventDao.persist(usageEvent);
         }
         
@@ -365,7 +361,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         boolean sourceNat = false;
         Map<VlanVO, ArrayList<IPAddressVO>> vlanIpMap = new HashMap<VlanVO, ArrayList<IPAddressVO>>();
         for (final String ipAddress: ipAddrList) {
-            IPAddressVO ip = _ipAddressDao.findById(ipAddress);
+            IPAddressVO ip = _ipAddressDao.findById(new Ip(ipAddress));
 
             VlanVO vlan = _vlanDao.findById(ip.getVlanId());
             ArrayList<IPAddressVO> ipList = vlanIpMap.get(vlan.getId());
@@ -442,7 +438,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
      * @return
      */
     protected Account getAccountForApiCommand(String accountName, Long domainId) throws InvalidParameterValueException, PermissionDeniedException{
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
 
         if ((account == null) || isAdmin(account.getType())) {
             //The admin is making the call, determine if it is for someone else or for himself
@@ -496,7 +492,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             for (IPAddressVO addr : userIps) {
                 if (addr.getState() == IpAddress.State.Allocating) {
                     addr.setState(IpAddress.State.Allocated);
-                    addr.setAssociatedNetworkId(network.getId());
+                    addr.setAssociatedWithNetworkId(network.getId());
                     _ipAddressDao.update(addr.getAddress(), addr);
                 } else if (addr.getState() == IpAddress.State.Releasing) {
                     _ipAddressDao.unassignIpAddress(addr.getAddress());
@@ -522,8 +518,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         String accountName = cmd.getAccountName();
         long domainId = cmd.getDomainId();
         Long zoneId = cmd.getZoneId();
-        Account caller = UserContext.current().getAccount();
-        long userId = UserContext.current().getUserId();
+        Account caller = UserContext.current().getCaller();
+        long userId = UserContext.current().getCallerUserId();
 
         Account owner = _accountDao.findActiveAccount(accountName, domainId);
         if (owner == null) {
@@ -583,7 +579,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             
             _accountMgr.incrementResourceCount(ownerId, ResourceType.public_ip);
 
-            String ipAddress = ip.getAddress();
+            Ip ipAddress = ip.getAddress();
             event.setParameters("address=" + ipAddress + "\nsourceNat=" + false + "\ndcId=" + zoneId);
             event.setDescription("Assigned a public IP address: " + ipAddress);
             _eventDao.persist(event);
@@ -629,19 +625,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public boolean releasePublicIpAddress(String ipAddress, long ownerId, long userId) {
-        IPAddressVO ip = _ipAddressDao.markAsUnavailable(ipAddress, ownerId);
-        assert (ip != null) : "Unable to mark the ip address " + ipAddress + " owned by " + ownerId + " as unavailable.";
+    public boolean releasePublicIpAddress(Ip addr, long ownerId, long userId) {
+        IPAddressVO ip = _ipAddressDao.markAsUnavailable(addr, ownerId);
+        assert (ip != null) : "Unable to mark the ip address " + addr + " owned by " + ownerId + " as unavailable.";
         if (ip == null) {
             return true;
         }
         
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Releasing ip " + ipAddress + "; sourceNat = " + ip.isSourceNat());
+            s_logger.debug("Releasing ip " + addr + "; sourceNat = " + ip.isSourceNat());
         }
         
-        Ip addr = new Ip(ip.getAddress());
-
         boolean success = true;
         try {
             if (!_rulesMgr.revokeAllRules(addr, userId)) {
@@ -658,8 +652,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             success = false;
         }
         
-        if (ip.getAssociatedNetworkId() != null) {
-            Network network = _networksDao.findById(ip.getAssociatedNetworkId());
+        if (ip.getAssociatedWithNetworkId() != null) {
+            Network network = _networksDao.findById(ip.getAssociatedWithNetworkId());
             try {
                 if (!applyIpAssociations(network, true)) {
                     s_logger.warn("Unable to apply ip address associations for " + network);
@@ -671,16 +665,26 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         if (success) {
-            _ipAddressDao.unassignIpAddress(ipAddress);
-            s_logger.debug("released a public ip: " + ipAddress);    
+            _ipAddressDao.unassignIpAddress(addr);
+            s_logger.debug("released a public ip: " + addr);    
             if(!ip.isSourceNat()){       
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ownerId, ip.getDataCenterId(), 0, ipAddress);
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ownerId, ip.getDataCenterId(), 0, addr.toString());
                 _usageEventDao.persist(usageEvent);
             }
         }
         
+<<<<<<< HEAD
 
         EventUtils.saveEvent(userId, ip.getAllocatedToAccountId(), EventTypes.EVENT_NET_IP_RELEASE, "released a public ip: " + ipAddress);
+=======
+        final EventVO event = new EventVO();
+        event.setUserId(userId);
+        event.setAccountId(ip.getAllocatedToAccountId());
+        event.setType(EventTypes.EVENT_NET_IP_RELEASE);
+        event.setParameters("address=" + addr + "\nsourceNat="+ip.isSourceNat());
+        event.setDescription("released a public ip: " + addr);
+        _eventDao.persist(event);
+>>>>>>> remote access vpn, user ip address changes
         
         return success;
     }
@@ -693,42 +697,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return dflt;
     }
 
-    private void validateRemoteAccessVpnConfiguration() throws ConfigurationException {
-        String ipRange = _configs.get(Config.RemoteAccessVpnClientIpRange.key());
-        if (ipRange == null) {
-            s_logger.warn("Remote Access VPN configuration missing client ip range -- ignoring");
-            return;
-        }
-        Integer pskLength = getIntegerConfigValue(Config.RemoteAccessVpnPskLength.key(), 24);
-        if (pskLength != null && (pskLength < 8 || pskLength > 256)) {
-            throw new ConfigurationException("Remote Access VPN: IPSec preshared key length should be between 8 and 256");
-        } else if (pskLength == null) {
-            s_logger.warn("Remote Access VPN configuration missing Preshared Key Length -- ignoring");
-            return;
-        }
-
-        String [] range = ipRange.split("-");
-        if (range.length != 2) {
-            throw new ConfigurationException("Remote Access VPN: Invalid ip range " + ipRange);
-        }
-        if (!NetUtils.isValidIp(range[0]) || !NetUtils.isValidIp(range[1])){
-            throw new ConfigurationException("Remote Access VPN: Invalid ip in range specification " + ipRange);
-        }
-        if (!NetUtils.validIpRange(range[0], range[1])){
-            throw new ConfigurationException("Remote Access VPN: Invalid ip range " + ipRange);
-        }
-        String [] guestIpRange = getGuestIpRange();
-        if (NetUtils.ipRangesOverlap(range[0], range[1], guestIpRange[0], guestIpRange[1])) {
-            throw new ConfigurationException("Remote Access VPN: Invalid ip range: " + ipRange + " overlaps with guest ip range " + guestIpRange[0] + "-" + guestIpRange[1]);
-        }
-    }
-
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
         _configs = _configDao.getConfiguration("AgentManager", params);
-        validateRemoteAccessVpnConfiguration();
         Integer rateMbps = getIntegerConfigValue(Config.NetworkThrottlingRate.key(), null);  
         Integer multicastRateMbps = getIntegerConfigValue(Config.MulticastThrottlingRate.key(), null);
         _networkGcWait = NumbersUtil.parseInt(_configs.get(Config.NetworkGcWait.key()), 600);
@@ -1153,7 +1126,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
     }
 
-    private Account findAccountByIpAddress(String ipAddress) {
+    private Account findAccountByIpAddress(Ip ipAddress) {
         IPAddressVO address = _ipAddressDao.findById(ipAddress);
         if ((address != null) && (address.getAllocatedToAccountId() != null)) {
             return _accountDao.findById(address.getAllocatedToAccountId());
@@ -1165,9 +1138,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @DB
     public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException, IllegalArgumentException {
 
-        Long userId = UserContext.current().getUserId();
-        Account account = UserContext.current().getAccount();
-        String ipAddress = cmd.getIpAddress();
+        Long userId = UserContext.current().getCallerUserId();
+        Account account = UserContext.current().getCaller();
+        Ip ipAddress = cmd.getIpAddress();
 
         // Verify input parameters
         Account accountByIp = findAccountByIpAddress(ipAddress);
@@ -1279,330 +1252,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return setupNetwork(owner, networkOffering, plan, null, null, false);
     }
 
-    private String [] getGuestIpRange() {
-        String guestRouterIp = _configs.get(Config.GuestIpNetwork.key());
-        String guestNetmask = _configs.get(Config.GuestNetmask.key());
-        return NetUtils.ipAndNetMaskToRange(guestRouterIp, guestNetmask);
-    }
-
-
-    @Override
-    @DB
-    public RemoteAccessVpnVO createRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd)
-    throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException {
-        return null;
-//        String publicIp = cmd.getPublicIp();
-//        IPAddressVO ipAddr = null;
-//        Account account = getAccountForApiCommand(cmd.getAccountName(), cmd.getDomainId());
-//        if (publicIp == null) {
-//            List<IPAddressVO> accountAddrs = _ipAddressDao.listByAccount(account.getId());
-//            for (IPAddressVO addr: accountAddrs){
-//                if (addr.getSourceNat() && addr.getDataCenterId() == cmd.getZoneId()){
-//                    ipAddr = addr;
-//                    publicIp = ipAddr.getAddress();
-//                    break;
-//                }
-//            }
-//            if (ipAddr == null) {
-//                throw new InvalidParameterValueException("Account " + account.getAccountName() +  " does not have any public ip addresses in zone " + cmd.getZoneId());
-//            }
-//        }
-//
-//        // make sure ip address exists
-//        ipAddr = _ipAddressDao.findById(publicIp);
-//        if (ipAddr == null) {
-//            throw new InvalidParameterValueException("Unable to create remote access vpn, invalid public IP address " + publicIp);
-//        }
-//
-//        VlanVO vlan = _vlanDao.findById(ipAddr.getVlanDbId());
-//        if (vlan != null) {
-//            if (!VlanType.VirtualNetwork.equals(vlan.getVlanType())) {
-//                throw new InvalidParameterValueException("Unable to create VPN for IP address " + publicIp + ", only VirtualNetwork type IP addresses can be used for VPN.");
-//            }
-//        } 
-//        assert vlan != null:"Inconsistent DB state -- ip address does not belong to any vlan?";
-//
-//        if ((ipAddr.getAccountId() == null) || (ipAddr.getAllocated() == null)) {
-//            throw new PermissionDeniedException("Unable to create VPN, permission denied for ip " + publicIp);
-//        }
-//
-//        if (account != null) {
-//            if ((account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
-//                if (!_domainDao.isChildDomain(account.getDomainId(), ipAddr.getDomainId())) {
-//                    throw new PermissionDeniedException("Unable to create VPN with public IP address " + publicIp + ", permission denied.");
-//                }
-//            } else if (account.getId() != ipAddr.getAccountId().longValue()) {
-//                throw new PermissionDeniedException("Unable to create VPN for account " + account.getAccountName() + " doesn't own ip address " + publicIp);
-//            }
-//        }
-//
-//        RemoteAccessVpnVO vpnVO = _remoteAccessVpnDao.findByPublicIpAddress(publicIp);
-//        if (vpnVO != null) {
-//            throw new InvalidParameterValueException("A Remote Access VPN already exists for this public Ip address");
-//        }
-//        //TODO: assumes one virtual network / domr per account per zone
-//        vpnVO = _remoteAccessVpnDao.findByAccountAndZone(account.getId(), cmd.getZoneId());
-//        if (vpnVO != null) {
-//            throw new InvalidParameterValueException("A Remote Access VPN already exists for this account");
-//        }
-//        String ipRange = cmd.getIpRange();
-//        if (ipRange == null) {
-//            ipRange = _configs.get(Config.RemoteAccessVpnClientIpRange.key());
-//        }
-//        String [] range = ipRange.split("-");
-//        if (range.length != 2) {
-//            throw new InvalidParameterValueException("Invalid ip range");
-//        }
-//        if (!NetUtils.isValidIp(range[0]) || !NetUtils.isValidIp(range[1])){
-//            throw new InvalidParameterValueException("Invalid ip in range specification " + ipRange);
-//        }
-//        if (!NetUtils.validIpRange(range[0], range[1])){
-//            throw new InvalidParameterValueException("Invalid ip range " + ipRange);
-//        }
-//        String [] guestIpRange = getGuestIpRange();
-//        if (NetUtils.ipRangesOverlap(range[0], range[1], guestIpRange[0], guestIpRange[1])) {
-//            throw new InvalidParameterValueException("Invalid ip range: " + ipRange + " overlaps with guest ip range " + guestIpRange[0] + "-" + guestIpRange[1]);
-//        }
-//        //TODO: check sufficient range
-//        //TODO: check overlap with private and public ip ranges in datacenter
-//
-//        long startIp = NetUtils.ip2Long(range[0]);
-//        String newIpRange = NetUtils.long2Ip(++startIp) + "-" + range[1];
-//        String sharedSecret = PasswordGenerator.generatePresharedKey(getIntegerConfigValue(Config.RemoteAccessVpnPskLength.key(), 24)); 
-//        Transaction txn = Transaction.currentTxn();
-//        txn.start();
-//        boolean locked = false;
-//        try {
-//            ipAddr = _ipAddressDao.acquireInLockTable(publicIp);
-//            if (ipAddr == null) {
-//                throw new ConcurrentOperationException("Another operation active, unable to create vpn");
-//            }
-//            locked = true;
-//            //check overlap with port forwarding rules on this ip (udp ports 500, 4500)
-//            List<PortForwardingRuleVO> existing = _rulesDao.listIPForwardingByPortAndProto(publicIp, NetUtils.VPN_PORT, NetUtils.UDP_PROTO);
-//            if (!existing.isEmpty()) {
-//                throw new InvalidParameterValueException("UDP Port " + NetUtils.VPN_PORT + " is configured for destination NAT");
-//            }
-//            existing = _rulesDao.listIPForwardingByPortAndProto(publicIp, NetUtils.VPN_NATT_PORT, NetUtils.UDP_PROTO);
-//            if (!existing.isEmpty()) {
-//                throw new InvalidParameterValueException("UDP Port " + NetUtils.VPN_NATT_PORT + " is configured for destination NAT");
-//            }
-//            existing = _rulesDao.listIPForwardingByPortAndProto(publicIp, NetUtils.VPN_L2TP_PORT, NetUtils.UDP_PROTO);
-//            if (!existing.isEmpty()) {
-//                throw new InvalidParameterValueException("UDP Port " + NetUtils.VPN_L2TP_PORT + " is configured for destination NAT");
-//            }
-//            if (_rulesDao.isPublicIpOneToOneNATted(publicIp)) {
-//                throw new InvalidParameterValueException("Public Ip " + publicIp + " is configured for destination NAT");
-//            }
-//            vpnVO = new RemoteAccessVpnVO(account.getId(), cmd.getZoneId(), publicIp, range[0], newIpRange, sharedSecret);
-//            vpnVO = _remoteAccessVpnDao.persist(vpnVO);
-//            PortForwardingRuleVO rule = new PortForwardingRuleVO(null, publicIp, NetUtils.VPN_PORT, guestIpRange[0], NetUtils.VPN_PORT, true, NetUtils.UDP_PROTO, false, null);
-//            _rulesDao.persist(rule);
-//            rule = new PortForwardingRuleVO(null, publicIp, NetUtils.VPN_NATT_PORT, guestIpRange[0], NetUtils.VPN_NATT_PORT, true, NetUtils.UDP_PROTO, false, null);
-//            _rulesDao.persist(rule);
-//            rule = new PortForwardingRuleVO(null, publicIp, NetUtils.VPN_L2TP_PORT, guestIpRange[0], NetUtils.VPN_L2TP_PORT, true, NetUtils.UDP_PROTO, false, null);
-//            _rulesDao.persist(rule);
-//            txn.commit();
-//            return vpnVO;
-//        } finally {
-//            if (locked) {
-//                _ipAddressDao.releaseFromLockTable(publicIp);
-//            }
-//        }
-    }
-
-    @Override
-    @DB
-    public RemoteAccessVpnVO startRemoteAccessVpn(CreateRemoteAccessVpnCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException {
-        Long userId = UserContext.current().getUserId();
-        Account account = getAccountForApiCommand(cmd.getAccountName(), cmd.getDomainId());
-        EventUtils.saveStartedEvent(userId, account.getId(), EventTypes.EVENT_REMOTE_ACCESS_VPN_CREATE, "Creating a Remote Access VPN for account: " + account.getAccountName() + " in zone " + cmd.getZoneId(), cmd.getStartEventId());
-        RemoteAccessVpnVO vpnVO = _remoteAccessVpnDao.findById(cmd.getEntityId());
-        String publicIp = vpnVO.getVpnServerAddress();
-        Long  vpnId = vpnVO.getId();
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        boolean locked = false;
-        boolean created = false;
-        try {
-            IPAddressVO ipAddr = _ipAddressDao.acquireInLockTable(publicIp);
-            if (ipAddr == null) {
-                throw new ConcurrentOperationException("Another operation active, unable to create vpn");
-            }
-            locked = true;
-
-            vpnVO = _routerMgr.startRemoteAccessVpn(vpnVO);
-            created = (vpnVO != null);
-
-            return vpnVO;
-        } finally {
-            if (created) {
-                EventUtils.saveEvent(userId, account.getId(), EventTypes.EVENT_REMOTE_ACCESS_VPN_CREATE, "Created a Remote Access VPN for account: " + account.getAccountName() + " in zone " + cmd.getZoneId());
-            } else {
-                EventUtils.saveEvent(userId, account.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_REMOTE_ACCESS_VPN_CREATE, "Unable to create Remote Access VPN ", account.getAccountName() + " in zone " + cmd.getZoneId());
-                _remoteAccessVpnDao.remove(vpnId);
-            }
-            txn.commit();
-            if (locked) {
-                _ipAddressDao.releaseFromLockTable(publicIp);
-            }
-        }
-    }
-
-    @Override
-    @DB
-    public boolean destroyRemoteAccessVpn(DeleteRemoteAccessVpnCmd cmd) throws ConcurrentOperationException {
-//        Long userId = UserContext.current().getUserId();
-//        Account account = getAccountForApiCommand(cmd.getAccountName(), cmd.getDomainId());
-//        //TODO: assumes one virtual network / domr per account per zone
-//        RemoteAccessVpnVO vpnVO = _remoteAccessVpnDao.findByAccountAndZone(account.getId(), cmd.getZoneId());
-//        if (vpnVO == null) {
-//            throw new InvalidParameterValueException("No VPN found for account " + account.getAccountName() + " in zone " + cmd.getZoneId());
-//        }
-//        EventUtils.saveStartedEvent(userId, account.getId(), EventTypes.EVENT_REMOTE_ACCESS_VPN_DESTROY, "Deleting Remote Access VPN for account: " + account.getAccountName() + " in zone " + cmd.getZoneId(), cmd.getStartEventId());
-//        String publicIp = vpnVO.getVpnServerAddress();
-//        Long  vpnId = vpnVO.getId();
-//        Transaction txn = Transaction.currentTxn();
-//        txn.start();
-//        boolean locked = false;
-//        boolean deleted = false;
-//        try {
-//            IPAddressVO ipAddr = _ipAddressDao.acquireInLockTable(publicIp);
-//            if (ipAddr == null) {
-//                throw new ConcurrentOperationException("Another operation active, unable to create vpn");
-//            }
-//            locked = true;
-//
-//            deleted = _routerMgr.deleteRemoteAccessVpn(vpnVO);
-//            return deleted;
-//        } finally {
-//            if (deleted) {
-//                _remoteAccessVpnDao.remove(vpnId);
-//                _rulesDao.deleteIPForwardingByPublicIpAndPort(publicIp, NetUtils.VPN_PORT);
-//                _rulesDao.deleteIPForwardingByPublicIpAndPort(publicIp, NetUtils.VPN_NATT_PORT);
-//                _rulesDao.deleteIPForwardingByPublicIpAndPort(publicIp, NetUtils.VPN_L2TP_PORT);
-//                EventUtils.saveEvent(userId, account.getId(), EventTypes.EVENT_REMOTE_ACCESS_VPN_DESTROY, "Deleted Remote Access VPN for account: " + account.getAccountName() + " in zone " + cmd.getZoneId());
-//            } else {
-//                EventUtils.saveEvent(userId, account.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_REMOTE_ACCESS_VPN_DESTROY, "Unable to delete Remote Access VPN ", account.getAccountName() + " in zone " + cmd.getZoneId());
-//            }
-//            txn.commit();
-//            if (locked) {
-//                _ipAddressDao.releaseFromLockTable(publicIp);
-//            }
-//        }
-        return false; // FIXME
-    }
-
-    @Override
-    @DB
-    public VpnUserVO addVpnUser(AddVpnUserCmd cmd) throws ConcurrentOperationException, InvalidParameterValueException, AccountLimitException {
-        Long userId = UserContext.current().getUserId();
-        Account account = getAccountForApiCommand(cmd.getAccountName(), cmd.getDomainId());
-        EventUtils.saveStartedEvent(userId, account.getId(), EventTypes.EVENT_VPN_USER_ADD, "Add VPN user for account: " + account.getAccountName(), cmd.getStartEventId());
-
-        if (!cmd.getUserName().matches("^[a-zA-Z0-9][a-zA-Z0-9@._-]{2,63}$")) {
-            throw new InvalidParameterValueException("Username has to be begin with an alphabet have 3-64 characters including alphabets, numbers and the set '@.-_'");
-        }
-        if (!cmd.getPassword().matches("^[a-zA-Z0-9][a-zA-Z0-9@#+=._-]{2,31}$")) {
-            throw new InvalidParameterValueException("Password has to be 3-32 characters including alphabets, numbers and the set '@#+=.-_'");
-        }
-        account = _accountDao.acquireInLockTable(account.getId());
-        if (account == null) {
-            throw new ConcurrentOperationException("Unable to add vpn user: Another operation active");
-        }
-        try {
-            long userCount = _vpnUsersDao.getVpnUserCount(account.getId());
-            Integer userLimit = getIntegerConfigValue(Config.RemoteAccessVpnUserLimit.key(), 8);
-            if (userCount >= userLimit) {
-                throw new AccountLimitException("Cannot add more than " + userLimit + " remote access vpn users");
-            }
-            VpnUserVO user = addRemoveVpnUser(account, cmd.getUserName(), cmd.getPassword(), true);
-            if (user != null) {
-                EventUtils.saveEvent(userId, account.getId(), EventTypes.EVENT_VPN_USER_ADD, "Added a VPN user for account: " + account.getAccountName() + " username= " + cmd.getUserName());
-                return user;
-            } else {
-                EventUtils.saveEvent(userId, account.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VPN_USER_ADD, "Unable to add VPN user for account: ", account.getAccountName() + " username= " + cmd.getUserName());
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Unable to add VPN user for account: "+ account.getAccountName() + " username= " + cmd.getUserName());
-            }
-        } finally {
-            if (account != null) {
-                _accountDao.releaseFromLockTable(account.getId());
-            }
-        }
-
-
-    }
-
-    @Override
-    public boolean removeVpnUser(RemoveVpnUserCmd cmd) throws ConcurrentOperationException {
-        Long userId = UserContext.current().getUserId();
-        Account account = getAccountForApiCommand(cmd.getAccountName(), cmd.getDomainId());
-        EventUtils.saveStartedEvent(userId, account.getId(), EventTypes.EVENT_VPN_USER_REMOVE, "Remove VPN user for account: " + account.getAccountName(), cmd.getStartEventId());
-
-        VpnUserVO user = addRemoveVpnUser(account, cmd.getUserName(), null, false);
-        if (user != null) {
-            EventUtils.saveEvent(userId, account.getId(), EventTypes.EVENT_VPN_USER_REMOVE, "Removed a VPN user for account: " + account.getAccountName() + " username= " + cmd.getUserName());
-        } else {
-            EventUtils.saveEvent(userId, account.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VPN_USER_ADD, "Unable to remove VPN user for account: ", account.getAccountName() + " username= " + cmd.getUserName());
-        }
-        return (user != null);
-
-    }
-
-    @DB
-    protected VpnUserVO addRemoveVpnUser(Account account, String username, String password, boolean add) throws ConcurrentOperationException {
-        List<RemoteAccessVpnVO> vpnVOList = _remoteAccessVpnDao.findByAccount(account.getId());
-
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        boolean locked = false;
-        boolean success = true;
-        VpnUserVO user = null;
-        final String op = add ? "add" : "remove";
-        try {
-            account = _accountDao.acquireInLockTable(account.getId());
-            if (account == null) {
-                throw new ConcurrentOperationException("Unable to " +  op + " vpn user: Another operation active");
-            }
-            locked = true;
-            List<VpnUserVO> addVpnUsers = new ArrayList<VpnUserVO>();
-            List<VpnUserVO> removeVpnUsers = new ArrayList<VpnUserVO>();
-            if (add) {
-
-                user = _vpnUsersDao.persist(new VpnUserVO(account.getId(), username, password));
-                addVpnUsers.add(user);
-
-            } else {
-                user = _vpnUsersDao.findByAccountAndUsername(account.getId(), username);
-                if (user == null) {
-                    s_logger.debug("Could not find vpn user " + username);
-                    throw new InvalidParameterValueException("Could not find vpn user " + username);
-                }
-                _vpnUsersDao.remove(user.getId());
-                removeVpnUsers.add(user);
-            }
-            for (RemoteAccessVpnVO vpn : vpnVOList) {
-                success = success && _routerMgr.addRemoveVpnUsers(vpn, addVpnUsers, removeVpnUsers);
-            }
-
-            // Note: If the router was successfully updated, we then return the user.
-            if (success) {
-                return user;
-            } else {
-                return null;
-            }
-        } finally {
-            if (success) {
-                txn.commit();
-            } else {
-                txn.rollback();
-            }
-            if (locked) {
-                _accountDao.releaseFromLockTable(account.getId());
-            }
-        }
-    }
-
     @Override
     public List<NetworkOfferingVO> listNetworkOfferings() {
         return _networkOfferingDao.listNonSystemNetworkOfferings();
@@ -1622,11 +1271,37 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public Network getNetwork(long id) {
         return _networksDao.findById(id);
     }
+    
+    @Override
+    public List<? extends RemoteAccessVpnElement> getRemoteAccessVpnElements() {
+        List<RemoteAccessVpnElement> elements = new ArrayList<RemoteAccessVpnElement>();
+        for (NetworkElement element : _networkElements) {
+            if (element instanceof RemoteAccessVpnElement) {
+                elements.add((RemoteAccessVpnElement)element);
+            }
+        }
+        
+        return elements;
+    }
+    
+    @Override
+    public void deallocate(VirtualMachineProfile<? extends VMInstanceVO> vm) {
+        List<NicVO> nics = _nicDao.listBy(vm.getId());
+        for (NicVO nic : nics) {
+            nic.setState(Nic.State.Deallocating);
+            _nicDao.update(nic.getId(), nic);
+            NetworkVO network = _networksDao.findById(nic.getNetworkId());
+            NicProfile profile = new NicProfile(nic, network, null, null);
+            NetworkGuru guru = _networkGurus.get(network.getGuruName());
+            guru.deallocate(network, profile, vm);
+            _nicDao.remove(nic.getId());
+        }
+    }
 
     @Override @DB
     public Network createNetwork(CreateNetworkCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
-        Account ctxAccount = UserContext.current().getAccount();
-        Long userId = UserContext.current().getUserId();
+        Account ctxAccount = UserContext.current().getCaller();
+        Long userId = UserContext.current().getCallerUserId();
         Long networkOfferingId = cmd.getNetworkOfferingId();
         Long zoneId = cmd.getZoneId();
         String gateway = cmd.getGateway();
@@ -1813,7 +1488,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Object id = cmd.getId(); 
         Object keyword = cmd.getKeyword();
         Long zoneId= cmd.getZoneId();
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         String type = cmd.getType();
@@ -1901,8 +1576,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     @Override @DB
     public boolean deleteNetwork(long networkId) throws InvalidParameterValueException, PermissionDeniedException{        
-        Long userId = UserContext.current().getUserId();
-        Account account = UserContext.current().getAccount();
+        Long userId = UserContext.current().getCallerUserId();
+        Account account = UserContext.current().getCaller();
 
         //Verify network id
         NetworkVO network = _networksDao.findById(networkId);
@@ -2094,7 +1769,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //This method reapplies Ip addresses, LoadBalancer and PortForwarding rules
         String accountName = cmd.getAccountName();
         long domainId = cmd.getDomainId();
-        Account caller = UserContext.current().getAccount();
+        Account caller = UserContext.current().getCaller();
 
         Account owner = _accountDao.findActiveAccount(accountName, domainId);
         if (owner == null) {
@@ -2206,6 +1881,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
+<<<<<<< HEAD
     public long getSystemNetworkIdByZoneAndTrafficTypeAndGuestType(long zoneId, TrafficType trafficType, GuestIpType guestType) {
         //find system public network offering
         Long networkOfferingId = null;
@@ -2228,4 +1904,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return networks.get(0).getId();
     }
     
+=======
+    public PublicIpAddress getPublicIpAddress(Ip ip) {
+        IPAddressVO addr = _ipAddressDao.findById(ip);
+        if (addr == null) {
+            return null;
+        }
+        
+        return new PublicIp(addr, _vlanDao.findById(addr.getVlanId()), NetUtils.createSequenceBasedMacAddress(addr.getMacAddress()));
+    }
+>>>>>>> remote access vpn, user ip address changes
 }

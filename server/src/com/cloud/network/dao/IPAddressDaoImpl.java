@@ -40,10 +40,11 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
 
 @Local(value = { IPAddressDao.class })
 @DB
-public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implements IPAddressDao {
+public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Ip> implements IPAddressDao {
     private static final Logger s_logger = Logger.getLogger(IPAddressDaoImpl.class);
 
     protected final SearchBuilder<IPAddressVO> AllFieldsSearch;
@@ -62,7 +63,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
         AllFieldsSearch.and("vlan", AllFieldsSearch.entity().getVlanId(), Op.EQ);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAllocatedToAccountId(), Op.EQ);
         AllFieldsSearch.and("sourceNat", AllFieldsSearch.entity().isSourceNat(), Op.EQ);
-        AllFieldsSearch.and("network", AllFieldsSearch.entity().getAssociatedNetworkId(), Op.EQ);
+        AllFieldsSearch.and("network", AllFieldsSearch.entity().getAssociatedWithNetworkId(), Op.EQ);
         AllFieldsSearch.done();
 
         VlanDbIdSearchUnallocated = createSearchBuilder();
@@ -131,7 +132,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
             if (!update(ip.getAddress(), ip)) {
                 throw new CloudRuntimeException("Unable to update a locked ip address " + ip.getAddress());
             }
-            ipStringList.add(ip.getAddress());
+            ipStringList.add(ip.getAddress().toString());
         }
         txn.commit();
         return ipStringList;
@@ -174,7 +175,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
     }
 
     @Override
-    public void unassignIpAddress(String ipAddress) {
+    public void unassignIpAddress(Ip ipAddress) {
         IPAddressVO address = createForUpdate();
         address.setAllocatedToAccountId(null);
         address.setAllocatedInDomainId(null);
@@ -182,7 +183,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
         address.setSourceNat(false);
         address.setOneToOneNat(false);
         address.setState(State.Free);
-        address.setAssociatedNetworkId(null);
+        address.setAssociatedWithNetworkId(null);
         update(ipAddress, address);
     }
 
@@ -253,7 +254,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, String> implem
     }
 
     @Override @DB
-    public IPAddressVO markAsUnavailable(String ipAddress, long ownerId) {
+    public IPAddressVO markAsUnavailable(Ip ipAddress, long ownerId) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", ownerId);
         sc.setParameters("ipAddress", ipAddress);

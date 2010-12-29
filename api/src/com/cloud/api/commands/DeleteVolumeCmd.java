@@ -64,7 +64,7 @@ public class DeleteVolumeCmd extends BaseCmd {
 	
     @Override
     public void execute(){
-        boolean result = _storageMgr.deleteVolume(this);
+        boolean result = _storageService.deleteVolume(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

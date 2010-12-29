@@ -27,7 +27,6 @@ import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
-import com.cloud.async.SyncQueueItemVO;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
@@ -40,7 +39,8 @@ import com.google.gson.Gson;
 public class DisableUserExecutor extends BaseAsyncJobExecutor {
     public static final Logger s_logger = Logger.getLogger(DisableUserExecutor.class.getName());
 	
-	public boolean execute() {
+	@Override
+    public boolean execute() {
 		Gson gson = GsonHelper.getBuilder().create();
 		AsyncJobManager asyncMgr = getAsyncJobMgr();
 		AsyncJobVO job = getJob();
@@ -84,8 +84,9 @@ public class DisableUserExecutor extends BaseAsyncJobExecutor {
 		AsyncJobManager asyncMgr = getAsyncJobMgr();
 		UserVO user = asyncMgr.getExecutorContext().getUserDao().findById(userId);
 		if(user == null) {
-			if(s_logger.isInfoEnabled())
-				s_logger.info("User " + userId + " does not exist");
+			if(s_logger.isInfoEnabled()) {
+                s_logger.info("User " + userId + " does not exist");
+            }
 			
 			asyncMgr.completeAsyncJob(getJob().getId(), AsyncJobResult.STATUS_FAILED, BaseCmd.INTERNAL_ERROR, 
 				"User " + userId + " does not exist");
@@ -129,7 +130,7 @@ public class DisableUserExecutor extends BaseAsyncJobExecutor {
 		
         List<UserVO> allUsersByAccount = asyncMgr.getExecutorContext().getUserDao().listByAccount(user.getAccountId());
         for (UserVO oneUser : allUsersByAccount) {
-            if (oneUser.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
+            if (oneUser.getState().equals(Account.State.Enabled)) {
                 return false;
             }
         }
@@ -149,8 +150,9 @@ public class DisableUserExecutor extends BaseAsyncJobExecutor {
 			
 			asyncMgr.updateAsyncJobStatus(job.getId(), routers.size(), "");
 			for(DomainRouterVO router : routers) {
-				if(s_logger.isInfoEnabled())
-					s_logger.info("Serialize DisableUser operation with previous activities on router " + router.getId());
+				if(s_logger.isInfoEnabled()) {
+                    s_logger.info("Serialize DisableUser operation with previous activities on router " + router.getId());
+                }
 				asyncMgr.syncAsyncJobExecution(job, "Router", router.getId());
 			}
 			

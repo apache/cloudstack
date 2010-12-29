@@ -77,7 +77,7 @@ public class ListSnapshotPoliciesCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends SnapshotPolicy> result = _snapshotMgr.listPoliciesforVolume(this);
+        List<? extends SnapshotPolicy> result = _snapshotService.listPoliciesforVolume(this);
         ListResponse<SnapshotPolicyResponse> response = new ListResponse<SnapshotPolicyResponse>();
         List<SnapshotPolicyResponse> policyResponses = new ArrayList<SnapshotPolicyResponse>();
         for (SnapshotPolicy policy : result) {

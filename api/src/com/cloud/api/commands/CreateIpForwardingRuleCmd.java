@@ -77,7 +77,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
     public void execute(){ 
         boolean result;
         try {
-            result = _rulesService.applyPortForwardingRules(new Ip(ipAddress), UserContext.current().getAccount());
+            result = _rulesService.applyPortForwardingRules(new Ip(ipAddress), UserContext.current().getCaller());
         } catch (Exception e) {
             s_logger.error("Unable to apply port forwarding rules", e);
             _rulesService.revokePortForwardingRule(getEntityId(), true);

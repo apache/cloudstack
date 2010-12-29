@@ -78,7 +78,8 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
 	    return findOneBy(sc);
 	}
 	
-	public List<UserVO> listByAccount(long accountId) {
+	@Override
+    public List<UserVO> listByAccount(long accountId) {
 	    SearchCriteria<UserVO> sc = AccountIdSearch.create();
 	    sc.setParameters("account", accountId);
 	    return listBy(sc, null);
@@ -116,7 +117,7 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
     public void update(long id, String username, String password, String firstname, String lastname, String email, Long accountId, String timezone, String apiKey, String secretKey)
     {
         UserVO dbUser = getUser(username);
-        if ((dbUser == null) || (dbUser.getId().longValue() == id)) {
+        if ((dbUser == null) || (dbUser.getId() == id)) {
             UserVO ub = createForUpdate();
             ub.setUsername(username);
             ub.setPassword(password);

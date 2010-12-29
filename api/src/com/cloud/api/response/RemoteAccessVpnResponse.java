@@ -21,9 +21,6 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class RemoteAccessVpnResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the vpn ID")
-    private Long id;
-
     @SerializedName("publicip") @Param(description="the public ip address of the vpn server")
     private String publicIp;
 
@@ -44,14 +41,6 @@ public class RemoteAccessVpnResponse extends BaseResponse {
     
 	public String getAccountName() {
 		return accountName;
-	}
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
 	}
 
 	public String getPublicIp() {

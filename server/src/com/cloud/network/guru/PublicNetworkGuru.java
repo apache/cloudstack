@@ -10,8 +10,8 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
@@ -36,6 +36,7 @@ import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.net.Ip;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -75,7 +76,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null) {
             PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), vm.getOwner(), dc.getNetworkType().equals(NetworkType.Basic) ?  VlanType.DirectAttached : VlanType.VirtualNetwork, null);
-            nic.setIp4Address(ip.getAddress());
+            nic.setIp4Address(ip.getAddress().toString());
             nic.setGateway(ip.getGateway());
             nic.setNetmask(ip.getNetmask());
             if(ip.getVlanTag() != null && ip.getVlanTag().equalsIgnoreCase("untagged")) {
@@ -138,7 +139,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     
     @Override
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
-        _ipAddressDao.unassignIpAddress(nic.getIp4Address());
+        _ipAddressDao.unassignIpAddress(new Ip(nic.getIp4Address()));
         nic.deallocate();
     }
     

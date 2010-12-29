@@ -98,7 +98,6 @@ import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
-import com.cloud.api.commands.ListRemoteAccessVpnsCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListStoragePoolsCmd;
@@ -110,7 +109,6 @@ import com.cloud.api.commands.ListVMGroupsCmd;
 import com.cloud.api.commands.ListVMsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListVolumesCmd;
-import com.cloud.api.commands.ListVpnUsersCmd;
 import com.cloud.api.commands.ListZonesByCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
@@ -181,12 +179,8 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.RemoteAccessVpnVO;
-import com.cloud.network.VpnUserVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.RemoteAccessVpnDao;
-import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
@@ -336,9 +330,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final UploadMonitor _uploadMonitor;
     private final UploadDao _uploadDao;
     private final CertificateDao _certDao;
-    private final RemoteAccessVpnDao _remoteAccessVpnDao;
-    private final VpnUserDao _vpnUsersDao;
-    
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -409,8 +400,6 @@ public class ManagementServerImpl implements ManagementServer {
         _groupVMMapDao = locator.getDao(InstanceGroupVMMapDao.class);
         _uploadDao = locator.getDao(UploadDao.class);
         _certDao = locator.getDao(CertificateDao.class);
-        _remoteAccessVpnDao = locator.getDao(RemoteAccessVpnDao.class);
-        _vpnUsersDao = locator.getDao(VpnUserDao.class);
         _configs = _configDao.getConfiguration();
         _vmInstanceDao = locator.getDao(VMInstanceDao.class);
         _volumeDao = locator.getDao(VolumeDao.class);
@@ -783,7 +772,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<DataCenterVO> listDataCenters(ListZonesByCmd cmd) {   	
-        Account account = UserContext.current().getAccount();    	
+        Account account = UserContext.current().getCaller();    	
         List<DataCenterVO> dcs = null;
     	Long domainId = cmd.getDomainId();
     	Long id = cmd.getId();
@@ -956,7 +945,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<UserAccountVO> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         if (domainId != null) {
             if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
@@ -1086,7 +1075,7 @@ public class ManagementServerImpl implements ManagementServer {
     	Filter searchFilter = new Filter(ServiceOfferingVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<ServiceOfferingVO> sc = _offeringsDao.createSearchCriteria();
 
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Object name = cmd.getServiceOfferingName();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
@@ -1582,7 +1571,7 @@ public class ManagementServerImpl implements ManagementServer {
     public Set<Pair<Long, Long>> listIsos(ListIsosCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
         TemplateFilter isoFilter = TemplateFilter.valueOf(cmd.getIsoFilter());
         Long accountId = null;
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
@@ -1618,7 +1607,7 @@ public class ManagementServerImpl implements ManagementServer {
     public Set<Pair<Long, Long>> listTemplates(ListTemplatesCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
         TemplateFilter templateFilter = TemplateFilter.valueOf(cmd.getTemplateFilter());
         Long accountId = null;
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) {
@@ -1748,7 +1737,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<AccountVO> searchForAccounts(ListAccountsCmd cmd) {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         Long accountId = cmd.getId();
         String accountName = null;
@@ -1834,15 +1823,6 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         return _accountDao.search(sc, searchFilter);
-    }
-
-    @Override
-    public Account findAccountByIpAddress(String ipAddress) {
-        IPAddressVO address = _publicIpAddressDao.findById(ipAddress);
-        if ((address != null) && (address.getAllocatedToAccountId() != null)) {
-            return _accountDao.findById(address.getAllocatedToAccountId());
-        }
-        return null;
     }
 
     @Override
@@ -1946,7 +1926,7 @@ public class ManagementServerImpl implements ManagementServer {
     	Long guestOSId = cmd.getOsTypeId();
     	Boolean passwordEnabled = cmd.isPasswordEnabled();
     	Boolean bootable = cmd.isBootable();
-    	Account account= UserContext.current().getAccount();
+    	Account account= UserContext.current().getCaller();
     	
     	//verify that template exists
     	VMTemplateVO template = findTemplateById(id);
@@ -2044,7 +2024,7 @@ public class ManagementServerImpl implements ManagementServer {
     
     @Override
     public List<UserVmVO> searchForUserVMs(ListVMsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
@@ -2286,13 +2266,8 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public IPAddressVO findIPAddressById(String ipAddress) {
-        return _publicIpAddressDao.findById(ipAddress);
-    }
-
-    @Override
     public List<EventVO> searchForEvents(ListEventsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long accountId = null;
         boolean isAdmin = false;
         String accountName = cmd.getAccountName();
@@ -2417,7 +2392,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
 
         // validate domainId before proceeding
         if (domainId != null) {
@@ -2543,7 +2518,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<VolumeVO> searchForVolumes(ListVolumesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
@@ -2706,7 +2681,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<IPAddressVO> searchForIPAddresses(ListPublicIpAddressesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
@@ -3031,7 +3006,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public List<DomainVO> searchForDomains(ListDomainsCmd cmd) throws PermissionDeniedException {
         Long domainId = cmd.getId();
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         String path = null;
         
         if (account != null && account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
@@ -3092,7 +3067,7 @@ public class ManagementServerImpl implements ManagementServer {
             isRecursive = false;
         }
 
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         if (account != null) {
             if (domainId != null) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
@@ -3146,8 +3121,8 @@ public class ManagementServerImpl implements ManagementServer {
     public DomainVO createDomain(CreateDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         String name = cmd.getDomainName();
         Long parentId = cmd.getParentDomainId();
-        Long ownerId = UserContext.current().getAccount().getId();
-        Account account = UserContext.current().getAccount();
+        Long ownerId = UserContext.current().getCaller().getId();
+        Account account = UserContext.current().getCaller();
 
         if (ownerId == null) {
             ownerId = Long.valueOf(1);
@@ -3192,7 +3167,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public boolean deleteDomain(DeleteDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long domainId = cmd.getId();
         Boolean cleanup = cmd.getCleanup();
 
@@ -3284,7 +3259,7 @@ public class ManagementServerImpl implements ManagementServer {
     	}
 
     	// check permissions
-    	Account account = UserContext.current().getAccount();
+    	Account account = UserContext.current().getCaller();
     	if ((account != null) && !isChildDomain(account.getDomainId(), domain.getId())) {
             throw new PermissionDeniedException("Unable to update domain " + domainId + ", permission denied");
     	}
@@ -3466,9 +3441,9 @@ public class ManagementServerImpl implements ManagementServer {
         
         //Input validation
         Long id = cmd.getId();
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         List<String> accountNames = cmd.getAccountNames();
-        Long userId = UserContext.current().getUserId();
+        Long userId = UserContext.current().getCallerUserId();
         Boolean isFeatured = cmd.isFeatured();
         Boolean isPublic = cmd.isPublic();
         String operation = cmd.getOperation();
@@ -3608,7 +3583,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<String> listTemplatePermissions(ListTemplateOrIsoPermissionsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String acctName = cmd.getAccountName();
         Long id = cmd.getId();
@@ -3742,7 +3717,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         // SearchBuilder and SearchCriteria are now flexible so that the search builder can be built with all possible
         // search terms and only those with criteria can be set.  The proper SQL should be generated as a result.
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Object name = cmd.getDiskOfferingName();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
@@ -3832,13 +3807,13 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         // treat any requests from API server as trusted requests
-        if (!UserContext.current().isApiServer() && job.getAccountId() != UserContext.current().getAccount().getId()) {
+        if (!UserContext.current().isApiServer() && job.getAccountId() != UserContext.current().getCaller().getId()) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Mismatched account id in job and user context, perform further securty check. job id: "
-                	+ jobId + ", job owner account: " + job.getAccountId() + ", accound id in current context: " + UserContext.current().getAccount().getId());
+                	+ jobId + ", job owner account: " + job.getAccountId() + ", accound id in current context: " + UserContext.current().getCaller().getId());
             }
         	
-        	Account account = UserContext.current().getAccount();
+        	Account account = UserContext.current().getCaller();
         	if (account != null) {
         	    if (isAdmin(account.getType())) {
         	        Account jobAccount = _accountDao.findById(job.getAccountId());
@@ -4040,7 +4015,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         Object accountId = null;
         Long domainId = cmd.getDomainId();
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         if ((account == null) || isAdmin(account.getType())) {
             String accountName = cmd.getAccountName();
 
@@ -4504,7 +4479,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long zoneId = cmd.getZoneId();
         AsyncJobVO job = null; // FIXME: cmd.getJob();
         String mode = cmd.getMode();
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         
         VolumeVO volume = _volumeDao.findById(volumeId);        
         if (volume == null) {
@@ -4574,7 +4549,7 @@ public class ManagementServerImpl implements ManagementServer {
             }
         }
         
-        long userId = UserContext.current().getUserId();
+        long userId = UserContext.current().getCallerUserId();
         long accountId = volume.getAccountId();        
 
         String secondaryStorageURL = _storageMgr.getSecondaryStorageURL(zoneId); 
@@ -4648,7 +4623,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public InstanceGroupVO updateVmGroup(UpdateVMGroupCmd cmd) {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long groupId = cmd.getId();
         String groupName = cmd.getGroupName();
 
@@ -4683,7 +4658,7 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public List<InstanceGroupVO> searchForVmGroups(ListVMGroupsCmd cmd) {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
@@ -4786,11 +4761,13 @@ public class ManagementServerImpl implements ManagementServer {
         return event.getId();
     }
     
+    @Override
     public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId) 
     {
         return EventUtils.saveStartedEvent(userId, accountId, type, description, startEventId);
     }
     
+    @Override
     public Long saveCompletedEvent(Long userId, Long accountId, String level, String type, String description, long startEventId) 
     {
         return EventUtils.saveEvent(userId, accountId, level, type, description, startEventId);
@@ -4949,166 +4926,6 @@ public class ManagementServerImpl implements ManagementServer {
     	return hypers.split(",");
     }
 
-    @Override
-	public List<RemoteAccessVpnVO> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd) throws InvalidParameterValueException,
-			PermissionDeniedException {
-		// do some parameter validation
-        Account account = UserContext.current().getAccount();
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
-        Long accountId = null;
-        Account ipAddressOwner = null;
-        String ipAddress = cmd.getPublicIp();
-
-        if (ipAddress != null) {
-            IPAddressVO ipAddressVO = _publicIpAddressDao.findById(ipAddress);
-            if (ipAddressVO == null) {
-                throw new InvalidParameterValueException("Unable to list remote access vpns, IP address " + ipAddress + " not found.");
-            } else {
-                Long ipAddrAcctId = ipAddressVO.getAllocatedToAccountId();
-                if (ipAddrAcctId == null) {
-                    throw new InvalidParameterValueException("Unable to list remote access vpns, IP address " + ipAddress + " is not associated with an account.");
-                }
-                ipAddressOwner = _accountDao.findById(ipAddrAcctId);
-            }
-        }
-
-        if ((account == null) || isAdmin(account.getType())) {
-            // validate domainId before proceeding
-            if (domainId != null) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Unable to list remote access vpns for domain id " + domainId + ", permission denied.");
-                }
-                if (accountName != null) {
-                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
-                    if (userAccount != null) {
-                        accountId = userAccount.getId();
-                    } else {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                }
-            } else if (ipAddressOwner != null) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), ipAddressOwner.getDomainId())) {
-                    throw new PermissionDeniedException("Unable to list remote access vpn  for IP address " + ipAddress + ", permission denied.");
-                }
-            } else {
-                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
-            }
-        } else {
-            accountId = account.getId();
-        }
-
-        Filter searchFilter = new Filter(RemoteAccessVpnVO.class, "vpnServerAddress", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-
-        Object id = cmd.getId();
-        Object zoneId = cmd.getZoneId();
-        
-
-        SearchBuilder<RemoteAccessVpnVO> sb = _remoteAccessVpnDao.createSearchBuilder();
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-        sb.and("ipAddress", sb.entity().getVpnServerAddress(), SearchCriteria.Op.EQ);
-
-        if ((accountId == null) && (domainId != null)) {
-            // if accountId isn't specified, we can do a domain match for the admin case
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-
-        SearchCriteria<RemoteAccessVpnVO> sc = sb.create();
-       
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-
-        if (ipAddress != null) {
-            sc.setParameters("ipAddress", ipAddress);
-        }
-        
-        if (zoneId != null) {
-        	sc.setParameters("zoneId", zoneId);
-        }
-
-        if (accountId != null) {
-            sc.setParameters("accountId", accountId);
-        } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById(domainId);
-            sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-        }
-
-        return _remoteAccessVpnDao.search(sc, searchFilter);
-	}
-
-	@Override
-	public List<VpnUserVO> searchForVpnUsers(ListVpnUsersCmd cmd) {
-		Account account = UserContext.current().getAccount();
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
-        Long accountId = null;
-        String username = cmd.getUsername();
-
-
-        if ((account == null) || isAdmin(account.getType())) {
-            // validate domainId before proceeding
-            if (domainId != null) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Unable to list remote access vpn users for domain id " + domainId + ", permission denied.");
-                }
-                if (accountName != null) {
-                    Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
-                    if (userAccount != null) {
-                        accountId = userAccount.getId();
-                    } else {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                }
-            } else {
-                domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
-            }
-        } else {
-            accountId = account.getId();
-        }
-
-        Filter searchFilter = new Filter(VpnUserVO.class, "username", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-
-        Object id = cmd.getId();
-        
-
-        SearchBuilder<VpnUserVO> sb = _vpnUsersDao.createSearchBuilder();
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.EQ);
-        sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-
-        if ((accountId == null) && (domainId != null)) {
-            // if accountId isn't specified, we can do a domain match for the admin case
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-
-        SearchCriteria<VpnUserVO> sc = sb.create();
-       
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-
-        if (username != null) {
-            sc.setParameters("username", username);
-        }
-        
-
-        if (accountId != null) {
-            sc.setParameters("accountId", accountId);
-        } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById(domainId);
-            sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-        }
-
-        return _vpnUsersDao.search(sc, searchFilter);
-	}
-	
 	@Override
 	public String getHashKey() {
 		// although we may have race conditioning here, database transaction serialization should

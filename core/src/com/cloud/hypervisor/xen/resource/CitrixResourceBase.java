@@ -127,7 +127,7 @@ import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
-import com.cloud.agent.api.routing.RoutingCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
@@ -944,8 +944,8 @@ public abstract class CitrixResourceBase implements ServerResource {
     protected SetPortForwardingRulesAnswer execute(SetPortForwardingRulesCommand cmd) {
         Connection conn = getConnection();
         String args;
-        String routerName = cmd.getAccessDetail(RoutingCommand.ROUTER_NAME);
-        String routerIp = cmd.getAccessDetail(RoutingCommand.ROUTER_IP);
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String[] results = new String[cmd.getRules().length];
         int i = 0;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
@@ -1046,7 +1046,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     
     protected Answer execute(final LoadBalancerConfigCommand cmd) {
         Connection conn = getConnection();
-        String routerIp = cmd.getAccessDetail(RoutingCommand.ROUTER_IP);
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
 
         if (routerIp == null) {
             return new Answer(cmd);
@@ -1119,7 +1119,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     
     protected synchronized Answer execute(final RemoteAccessVpnCfgCommand cmd) {
         Connection conn = getConnection();
-        String args = cmd.getRouterPrivateIpAddress();
+        String args = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         if (cmd.isCreate()) {
         	args += " -r " + cmd.getIpRange();
         	args += " -p " + cmd.getPresharedKey();
@@ -1141,7 +1141,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     protected synchronized Answer execute(final VpnUsersCfgCommand cmd) {
         Connection conn = getConnection();
         for (VpnUsersCfgCommand.UsernamePassword userpwd: cmd.getUserpwds()) {
-            String args = cmd.getRouterPrivateIpAddress();
+            String args = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         	if (!userpwd.isAdd()) {
         		args += " -U " + userpwd.getUsername();
         	} else {
@@ -1333,8 +1333,8 @@ public abstract class CitrixResourceBase implements ServerResource {
         Connection conn = getConnection();
         String[] results = new String[cmd.getIpAddresses().length];
         int i = 0;
-        String routerName = cmd.getAccessDetail(RoutingCommand.ROUTER_NAME);
-        String routerIp = cmd.getAccessDetail(RoutingCommand.ROUTER_IP);
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         try {
             IpAddressTO[] ips = cmd.getIpAddresses(); 
             for (IpAddressTO ip : ips) {

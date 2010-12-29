@@ -23,7 +23,7 @@ import com.cloud.network.LoadBalancerConfigurator;
  * @author chiradeep
  *
  */
-public class LoadBalancerCfgCommand extends RoutingCommand {
+public class LoadBalancerCfgCommand extends NetworkElementCommand {
 	private String [] config;
 	private String [] addFwRules;
 	private String [] removeFwRules;;

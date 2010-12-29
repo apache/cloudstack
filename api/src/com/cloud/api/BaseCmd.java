@@ -32,13 +32,16 @@ import com.cloud.consoleproxy.ConsoleProxyService;
 import com.cloud.dao.EntityManager;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.NetworkService;
+import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;
+import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.StorageService;
@@ -46,6 +49,7 @@ import com.cloud.storage.snapshot.SnapshotService;
 import com.cloud.template.TemplateService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
+import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.UserVmService;
@@ -92,18 +96,19 @@ public abstract class BaseCmd {
     public static AccountService _accountService;
     public static UserVmService _userVmService;
     public static ManagementService _mgr;
-    public static StorageService _storageMgr;
+    public static StorageService _storageService;
     public static ResourceService _resourceService;
     public static NetworkService _networkService;
     public static TemplateService _templateService;
-    public static SecurityGroupService _securityGroupMgr;
-    public static SnapshotService _snapshotMgr;
-    public static ConsoleProxyService _consoleProxyMgr;
+    public static SecurityGroupService _securityGroupService;
+    public static SnapshotService _snapshotService;
+    public static ConsoleProxyService _consoleProxyService;
     public static VirtualNetworkApplianceService _routerService;
     public static ResponseGenerator _responseGenerator;
     public static EntityManager _entityMgr;
     public static RulesService _rulesService;
     public static LoadBalancingRulesService _lbService;
+    public static RemoteAccessVpnService _ravService;
    
     
     static void setComponents(ResponseGenerator generator) {
@@ -112,17 +117,18 @@ public abstract class BaseCmd {
         _accountService = locator.getManager(AccountService.class);
         _configService = locator.getManager(ConfigurationService.class);
         _userVmService = locator.getManager(UserVmService.class);
-        _storageMgr = locator.getManager(StorageService.class);
+        _storageService = locator.getManager(StorageService.class);
         _resourceService = locator.getManager(ResourceService.class);
         _networkService = locator.getManager(NetworkService.class);
         _templateService = locator.getManager(TemplateService.class);
-        _securityGroupMgr = locator.getManager(SecurityGroupService.class);
-        _snapshotMgr = locator.getManager(SnapshotService.class);
-        _consoleProxyMgr = locator.getManager(ConsoleProxyService.class);
+        _securityGroupService = locator.getManager(SecurityGroupService.class);
+        _snapshotService = locator.getManager(SnapshotService.class);
+        _consoleProxyService = locator.getManager(ConsoleProxyService.class);
         _routerService = locator.getManager(VirtualNetworkApplianceService.class);
         _entityMgr = locator.getManager(EntityManager.class);
         _rulesService = locator.getManager(RulesService.class);
         _lbService = locator.getManager(LoadBalancingRulesService.class);
+        _ravService = locator.getManager(RemoteAccessVpnService.class);
         _responseGenerator = generator;
     }
     
@@ -160,6 +166,22 @@ public abstract class BaseCmd {
         return formattedString;
     }
 
+    protected Account getValidOwner(String accountName, Long domainId) {
+        Account owner = null;
+        if (accountName != null) {
+            owner = _responseGenerator.findAccountByNameDomain(accountName, domainId);
+        } else {
+            owner = UserContext.current().getCaller();
+        }
+        if (owner == null) {
+            throw new InvalidParameterValueException("Invalid value for owner specified: " + accountName);
+        }
+        if (owner.getState() == Account.State.Disabled || owner.getState() == Account.State.Locked) {
+            throw new PermissionDeniedException("Account disabled.");
+        }
+        return owner;
+    }
+    
     public Map<String, Object> validateParams(Map<String, String> params, boolean decode) {
 //        List<Pair<Enum, Boolean>> properties = getProperties();
 
@@ -253,7 +275,7 @@ public abstract class BaseCmd {
         return validatedParams;
         */
     }
-
+    
     private Map<String, Object> lowercaseParams(Map<String, String> params, boolean decode) {
         Map<String, Object> lowercaseParams = new HashMap<String, Object>();
         for (String key : params.keySet()) {

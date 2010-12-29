@@ -15,47 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.agent.api.routing;
 
+import java.util.HashMap;
 
-public class DhcpEntryCommand extends NetworkElementCommand {
+import com.cloud.agent.api.Command;
 
-    String vmMac;
-    String vmIpAddress;
-    String routerPrivateIpAddress;
-    String vmName;
+public abstract class NetworkElementCommand extends Command {
+    HashMap<String, String> accessDetails = new HashMap<String, String>(0);
     
-    protected DhcpEntryCommand() {
-    	
+    public static final String ROUTER_NAME = "router.name";
+    public static final String ROUTER_IP = "router.ip";
+    
+    protected NetworkElementCommand() {
+        super();
+    }
+    
+    public void setAccessDetail(String name, String value) {
+        accessDetails.put(name, value);
+    }
+    
+    public String getAccessDetail(String name) {
+        return accessDetails.get(name);
     }
     
     @Override
     public boolean executeInSequence() {
-        return true;
+        return false;
     }
-    
-    public DhcpEntryCommand(String vmMac, String vmIpAddress, String routerPrivateIpAddress, String vmName) {
-        this.vmMac = vmMac;
-        this.vmIpAddress = vmIpAddress;
-        this.routerPrivateIpAddress = routerPrivateIpAddress;
-        this.vmName = vmName;
-    }
-    
-	public String getVmMac() {
-		return vmMac;
-	}
-	
-	public String getRouterPrivateIpAddress() {
-		return routerPrivateIpAddress;
-	}
-	
-	public String getVmIpAddress() {
-		return vmIpAddress;
-	}
-	
-	public String getVmName() {
-		return vmName;
-	}
-	
+
 }

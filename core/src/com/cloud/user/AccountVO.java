@@ -22,6 +22,8 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -47,7 +49,8 @@ public class AccountVO implements Account {
     private long domainId;
 
     @Column(name="state")
-    private String state;
+    @Enumerated(value=EnumType.STRING)
+    private State state;
 
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
@@ -81,14 +84,16 @@ public class AccountVO implements Account {
     public String getAccountName() {
         return accountName;
     }
-    @Override
+    
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
+    
     @Override
     public short getType() {
         return type;
     }
+    
     public void setType(short type) {
         this.type = type;
     }
@@ -103,11 +108,11 @@ public class AccountVO implements Account {
     }
 
     @Override
-    public String getState() {
+    public State getState() {
         return state;
     }
-    @Override
-    public void setState(String state) {
+    
+    public void setState(State state) {
         this.state = state;
     }
 
@@ -119,7 +124,7 @@ public class AccountVO implements Account {
     public String getNetworkDomain() {
         return networkDomain;
     }
-    @Override
+    
     public void setNetworkDomain(String networkDomain) {
         this.networkDomain = networkDomain;
     }
@@ -131,6 +136,6 @@ public class AccountVO implements Account {
     
     @Override
     public String toString() {
-        return new StringBuilder("Acct:").append(id).append(":").append(accountName).toString();
+        return new StringBuilder("Acct[").append(id).append("-").append(accountName).append("]").toString();
     }
 }

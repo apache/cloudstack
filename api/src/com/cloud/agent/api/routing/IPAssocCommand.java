@@ -24,7 +24,7 @@ import com.cloud.agent.api.to.IpAddressTO;
  * @author alena
  *
  */
-public class IPAssocCommand extends RoutingCommand {
+public class IPAssocCommand extends NetworkElementCommand {
     
 	IpAddressTO[] ipAddresses;
 

@@ -81,6 +81,7 @@ import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupVMMapDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupWorkDaoImpl;
 import com.cloud.network.security.dao.VmRulesetLogDaoImpl;
+import com.cloud.network.vpn.RemoteAccessVpnManagerImpl;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.StorageManagerImpl;
@@ -114,8 +115,8 @@ import com.cloud.user.dao.UserStatisticsDaoImpl;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapter;
 import com.cloud.utils.component.ComponentLibrary;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ComponentLocator.ComponentInfo;
+import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.ItWorkDaoImpl;
 import com.cloud.vm.UserVmManagerImpl;
@@ -286,6 +287,7 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addManager("EntityManager", EntityManagerImpl.class);
         addManager("LoadBalancingRulesManager", LoadBalancingRulesManagerImpl.class);
         addManager("RulesManager", RulesManagerImpl.class);
+        addManager("RemoteAccessVpnManager", RemoteAccessVpnManagerImpl.class);
     }
 
     protected <T> List<ComponentInfo<Adapter>> addAdapterChain(Class<T> interphace, List<Pair<String, Class<? extends T>>> adapters) {

@@ -25,6 +25,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.utils.net.Ip;
 
 @Implementation(description="Disassociates an ip address from the account.", responseObject=SuccessResponse.class)
 public class DisassociateIPAddrCmd extends BaseCmd {
@@ -43,8 +44,8 @@ public class DisassociateIPAddrCmd extends BaseCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getIpAddress() {
-        return ipAddress;
+    public Ip getIpAddress() {
+        return new Ip(ipAddress);
     }
 
     /////////////////////////////////////////////////////

@@ -242,7 +242,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     
     @Override
     public Configuration updateConfiguration(UpdateCfgCmd cmd) throws InvalidParameterValueException{
-    	Long userId = UserContext.current().getUserId();
+    	Long userId = UserContext.current().getCallerUserId();
     	String name = cmd.getCfgName();
     	String value = cmd.getValue();
     	
@@ -494,7 +494,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	Long userId = 1L;
     	
     	if (UserContext.current() != null) {
-            userId = UserContext.current().getUserId();
+            userId = UserContext.current().getCallerUserId();
         }
     	
     	// Make sure the pod exists
@@ -541,7 +541,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	String cidr = null;
     	Long id = cmd.getId();
     	String name = cmd.getPodName();
-    	Long userId = UserContext.current().getUserId();
+    	Long userId = UserContext.current().getCallerUserId();
 
     	//verify parameters
     	HostPodVO pod = _podDao.findById(id);;
@@ -670,7 +670,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Failed to create pod " + name + " -- if an end IP is specified, a start IP must be specified.");
         }
 
-        Long userId = UserContext.current().getUserId();
+        Long userId = UserContext.current().getCallerUserId();
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
         }
@@ -895,7 +895,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @DB
     public boolean deleteZone(DeleteZoneCmd cmd) {
     	
-    	Long userId = UserContext.current().getUserId();
+    	Long userId = UserContext.current().getCallerUserId();
     	Long zoneId = cmd.getId();
     		
     	if (userId == null) {
@@ -950,7 +950,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	String vnetRange = cmd.getVlan();
     	String guestCidr = cmd.getGuestCidrAddress();
 //    	String domain = cmd.getDomain();
-    	Long userId = UserContext.current().getUserId();
+    	Long userId = UserContext.current().getCallerUserId();
 //    	Long domainId = cmd.getDomainId();
     	
     	if (userId == null) {
@@ -1196,7 +1196,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Override
     public DataCenter createZone(CreateZoneCmd cmd)  {
         // grab parameters from the command
-        Long userId = UserContext.current().getUserId();
+        Long userId = UserContext.current().getCallerUserId();
         String zoneName = cmd.getZoneName();
         String dns1 = cmd.getDns1();
         String dns2 = cmd.getDns2();
@@ -1236,7 +1236,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     public ServiceOffering createServiceOffering(CreateServiceOfferingCmd cmd) throws InvalidParameterValueException {
-        Long userId = UserContext.current().getUserId();
+        Long userId = UserContext.current().getCallerUserId();
         if (userId == null) {
             userId = User.UID_SYSTEM;
         }
@@ -1327,7 +1327,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	Boolean ha = cmd.getOfferHa();
 //    	String tags = cmd.getTags();
     	Boolean useVirtualNetwork = cmd.getUseVirtualNetwork();
-    	Long userId = UserContext.current().getUserId();
+    	Long userId = UserContext.current().getCallerUserId();
     	Long domainId = cmd.getDomainId();
     	    	
         if (userId == null) {
@@ -1497,7 +1497,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 //        }
 
     	if (_diskOfferingDao.update(diskOfferingId, diskOffering)) {
-            saveConfigurationEvent(UserContext.current().getUserId(), null, EventTypes.EVENT_DISK_OFFERING_EDIT, "Successfully updated disk offering with name: " + diskOffering.getName() + ".", "doId=" + diskOffering.getId(), "name=" + diskOffering.getName(),
+            saveConfigurationEvent(UserContext.current().getCallerUserId(), null, EventTypes.EVENT_DISK_OFFERING_EDIT, "Successfully updated disk offering with name: " + diskOffering.getName() + ".", "doId=" + diskOffering.getId(), "name=" + diskOffering.getName(),
                     "displayText=" + diskOffering.getDisplayText(), "diskSize=" + diskOffering.getDiskSize(),"tags=" + diskOffering.getTags(),"domainId="+cmd.getDomainId());
     		return _diskOfferingDao.findById(diskOfferingId);
     	} else { 
@@ -1526,7 +1526,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     public boolean deleteServiceOffering(DeleteServiceOfferingCmd cmd) throws InvalidParameterValueException{
     	
         Long offeringId = cmd.getId();
-        Long userId = UserContext.current().getUserId();
+        Long userId = UserContext.current().getCallerUserId();
         
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -1576,7 +1576,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String endIP = cmd.getEndIp();
         String vlanGateway = cmd.getGateway();
         String vlanNetmask = cmd.getNetmask();
-        Long userId = UserContext.current().getUserId();
+        Long userId = UserContext.current().getCallerUserId();
         String vlanId = cmd.getVlan();
         Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
         Long networkId = cmd.getNetworkID();
@@ -2544,7 +2544,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	@Override
 	public boolean deleteVlanIpRange(DeleteVlanIpRangeCmd cmd) throws InvalidParameterValueException {
     	Long vlanDbId = cmd.getId();
-    	Long userId = UserContext.current().getUserId();
+    	Long userId = UserContext.current().getCallerUserId();
     	
     	if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -2618,7 +2618,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	
     @Override
     public NetworkOffering createNetworkOffering(CreateNetworkOfferingCmd cmd) throws InvalidParameterValueException {
-        Long userId = UserContext.current().getUserId();
+        Long userId = UserContext.current().getCallerUserId();
         String name = cmd.getNetworkOfferingName();
         String displayText = cmd.getDisplayText();
         String tags = cmd.getTags();
@@ -2752,7 +2752,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Override
     public boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd) throws InvalidParameterValueException{        
         Long offeringId = cmd.getId();
-        Long userId = UserContext.current().getUserId();
+        Long userId = UserContext.current().getCallerUserId();
 
         //Verify network offering id
         NetworkOfferingVO offering = _networkOfferingDao.findById(offeringId);

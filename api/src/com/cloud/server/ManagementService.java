@@ -49,7 +49,6 @@ import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
-import com.cloud.api.commands.ListRemoteAccessVpnsCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListStoragePoolsCmd;
@@ -61,7 +60,6 @@ import com.cloud.api.commands.ListVMGroupsCmd;
 import com.cloud.api.commands.ListVMsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListVolumesCmd;
-import com.cloud.api.commands.ListVpnUsersCmd;
 import com.cloud.api.commands.ListZonesByCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
@@ -88,8 +86,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.Host;
 import com.cloud.network.IpAddress;
-import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
@@ -385,10 +381,6 @@ public interface ManagementService {
      */
     String uploadCertificate(UploadCustomCertificateCmd cmd);
     
-    public List<? extends RemoteAccessVpn> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd);
-    
-    public List<? extends VpnUser> searchForVpnUsers(ListVpnUsersCmd cmd);
-
     String getVersion();
     
     /**

@@ -19,13 +19,18 @@ package com.cloud.network;
 
 import com.cloud.acl.ControlledEntity;
 
-public interface VpnUser extends ControlledEntity{
+public interface VpnUser extends ControlledEntity {
+    enum State {
+        Add,
+        Revoke,
+        Active
+    }
+    
     long getId();
     
-    String getAccountName();
-
     String getUsername();
 
     String getPassword();
-
+    
+    State getState();
 }

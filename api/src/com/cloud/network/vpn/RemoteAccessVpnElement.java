@@ -15,33 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.agent.api.routing;
+package com.cloud.network.vpn;
 
-import java.util.HashMap;
+import java.util.List;
 
-import com.cloud.agent.api.Command;
+import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.VpnUser;
+import com.cloud.utils.component.Adapter;
 
-public abstract class RoutingCommand extends Command {
-    HashMap<String, String> accessDetails = new HashMap<String, String>(0);
-    
-    public static final String ROUTER_NAME = "router.name";
-    public static final String ROUTER_IP = "router.ip";
-    
-    protected RoutingCommand() {
-        super();
-    }
-    
-    public void setAccessDetail(String name, String value) {
-        accessDetails.put(name, value);
-    }
-    
-    public String getAccessDetail(String name) {
-        return accessDetails.get(name);
-    }
-    
-    @Override
-    public boolean executeInSequence() {
-        return false;
-    }
+public interface RemoteAccessVpnElement extends Adapter {
+    String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users);
 
 }

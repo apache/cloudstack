@@ -22,10 +22,14 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+
+import com.cloud.utils.net.Ip;
 
 /**
  * A bean representing a public IP Address
@@ -42,7 +46,8 @@ public class IPAddressVO implements IpAddress {
 
 	@Id
 	@Column(name="public_ip_address")
-	private String address = null;
+	@Enumerated(value=EnumType.ORDINAL)
+	private Ip address = null;
 
 	@Column(name="data_center_id", updatable=false)
 	private long dataCenterId;
@@ -67,7 +72,7 @@ public class IPAddressVO implements IpAddress {
 	private long macAddress;
 	
 	@Column(name="network_id")
-	private Long associatedNetworkId;
+	private Long associatedWithNetworkId;
 
 	protected IPAddressVO() {
 	}
@@ -77,7 +82,7 @@ public class IPAddressVO implements IpAddress {
 	    return state == State.Allocated;
 	}
 
-	public IPAddressVO(String address, long dataCenterId, long macAddress, long vlanDbId, boolean sourceNat) {
+	public IPAddressVO(Ip address, long dataCenterId, long macAddress, long vlanDbId, boolean sourceNat) {
 		this.address = address;
 		this.dataCenterId = dataCenterId;
 		this.vlanId = vlanDbId;
@@ -99,7 +104,7 @@ public class IPAddressVO implements IpAddress {
 	}
 
 	@Override
-    public String getAddress() {
+    public Ip getAddress() {
 		return address;
 	}
 	
@@ -109,12 +114,12 @@ public class IPAddressVO implements IpAddress {
 	}
 	
 	@Override
-	public Long getAssociatedNetworkId() {
-	    return associatedNetworkId;
+	public Long getAssociatedWithNetworkId() {
+	    return associatedWithNetworkId;
 	}
 	
-	public void setAssociatedNetworkId(Long networkId) {
-	    this.associatedNetworkId = networkId;
+	public void setAssociatedWithNetworkId(Long networkId) {
+	    this.associatedWithNetworkId = networkId;
 	}
 	
     @Override

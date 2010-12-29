@@ -48,7 +48,7 @@ import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
-import com.cloud.agent.api.routing.RoutingCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
@@ -123,8 +123,8 @@ public class VirtualRoutingResource implements Manager {
     }
 
     private Answer execute(SetPortForwardingRulesCommand cmd) {
-        String routerIp = cmd.getAccessDetail(RoutingCommand.ROUTER_IP);
-        String routerName = cmd.getAccessDetail(RoutingCommand.ROUTER_NAME);
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
 
         String[] results = new String[cmd.getRules().length];
         int i = 0;
@@ -147,7 +147,7 @@ public class VirtualRoutingResource implements Manager {
     }
 
     private Answer execute(LoadBalancerConfigCommand cmd) {
-        String routerIp = cmd.getAccessDetail(RoutingCommand.ROUTER_IP);
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         File tmpCfgFile = null;
         try {
             String cfgFilePath = "";
@@ -277,8 +277,8 @@ public class VirtualRoutingResource implements Manager {
         String[] results = new String[cmd.getIpAddresses().length];
         int i = 0;
         String result = null;
-        String routerName = cmd.getAccessDetail(RoutingCommand.ROUTER_NAME);
-        String routerIp = cmd.getAccessDetail(RoutingCommand.ROUTER_IP);
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         for (IpAddressTO ip : ips) {
             result = assignPublicIpAddress(routerName, routerIp, ip.getPublicIp(), ip.isAdd(), ip.isSourceNat(), ip.getVlanId(), ip.getVlanGateway(), ip.getVlanNetmask());
             if (result != null) {

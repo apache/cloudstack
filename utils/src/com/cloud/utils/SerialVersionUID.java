@@ -35,6 +35,7 @@ public interface SerialVersionUID {
     public static final long AccountLimitException = Base | 0x5;
     public static final long InsufficientVirtualNetworkCapacityException = Base | 0x7;
     public static final long NetworkUnavailableException = Base | 0x8;
+    public static final long Ip = Base | 0x9;
     public static final long UnsupportedVersionException = Base | 0xb;
     public static final long DataCenterIpAddressPK = Base | 0xc;
     public static final long UnableToExecuteException = Base | 0xd;

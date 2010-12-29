@@ -379,7 +379,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
     
     @Override @SuppressWarnings("unchecked") @DB
-    public <M> List<M> searchIncludingRemoved(SearchCriteria<M> sc, final Filter filter) {
+    public <M> List<M> customSearchIncludingRemoved(SearchCriteria<M> sc, final Filter filter) {
         String clause = sc != null ? sc.getWhereClause() : null;
         if (clause != null && clause.length() == 0) {
             clause = null;
@@ -456,7 +456,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
         }
         
-        return searchIncludingRemoved(sc, filter);
+        return customSearchIncludingRemoved(sc, filter);
     }
     
     @DB(txn=false)

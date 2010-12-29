@@ -109,7 +109,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
     @Override
     public void execute(){
         try {
-            StoragePool result = _storageMgr.createPool(this);
+            StoragePool result = _storageService.createPool(this);
             if (result != null) {
                 StoragePoolResponse response = _responseGenerator.createStoragePoolResponse(result);
                 response.setResponseName(getCommandName());

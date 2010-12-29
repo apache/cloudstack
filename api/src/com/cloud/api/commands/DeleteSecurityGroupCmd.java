@@ -58,7 +58,7 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
     @Override
     public void execute(){
         try{
-            boolean result = _securityGroupMgr.deleteSecurityGroup(this);
+            boolean result = _securityGroupService.deleteSecurityGroup(this);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);

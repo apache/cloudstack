@@ -20,30 +20,25 @@ package com.cloud.network;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.PrimaryKeyJoinColumn;
-import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 
 @Entity
 @Table(name=("vpn_users"))
-@SecondaryTable(name="account",
-        pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
 public class VpnUserVO implements VpnUser {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
 
-    @Column(name="account_id")
+    @Column(name="owner_id")
     private long accountId;
     
-    @Column(name="account_name", table="account", insertable=false, updatable=false)
-    private String accountName = null;
-    
-    @Column(name="domain_id", table="account", insertable=false, updatable=false)
+    @Column(name="domain_id")
     private long domainId;
 
     @Column(name="username")
@@ -51,6 +46,10 @@ public class VpnUserVO implements VpnUser {
     
     @Column(name="password")
     private String password;
+    
+    @Column(name="state")
+    @Enumerated(value=EnumType.STRING)
+    private State state;
 
     public VpnUserVO() { }
 
@@ -58,6 +57,7 @@ public class VpnUserVO implements VpnUser {
         this.accountId = accountId;
         this.username = userName;
         this.password = password;
+        this.state = State.Add;
     }
 
     @Override
@@ -70,11 +70,6 @@ public class VpnUserVO implements VpnUser {
         return accountId;
     }
     
-    @Override
-    public String getAccountName() {
-        return accountName;
-    }
-
 	@Override
     public String getUsername() {
 		return username;
@@ -88,20 +83,28 @@ public class VpnUserVO implements VpnUser {
     public String getPassword() {
 		return password;
 	}
+	
+	@Override
+    public State getState() {
+	    return state;
+	}
+	
+	public void setState(State state) {
+	    this.state = state;
+	}
 
 	public void setPassword(String password) {
 		this.password = password;
 	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
-
 
 	@Override
     public long getDomainId() {
 		return domainId;
 	}
     
-    
+
+	@Override
+    public String toString() {
+	    return new StringBuilder("VpnUser[").append(id).append("-").append(username).append("-").append(accountId).append("]").toString();
+	}
 }

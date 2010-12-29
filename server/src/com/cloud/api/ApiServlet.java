@@ -254,7 +254,7 @@ public class ApiServlet extends HttpServlet {
             	updateUserContext(params, session != null ? session.getId() : null);
                 */
 
-            	auditTrailSb.insert(0, "(userId="+UserContext.current().getUserId()+ " accountId="+UserContext.current().getAccount().getId()+ " sessionId="+(session != null ? session.getId() : null)+ ")" );
+            	auditTrailSb.insert(0, "(userId="+UserContext.current().getCallerUserId()+ " accountId="+UserContext.current().getCaller().getId()+ " sessionId="+(session != null ? session.getId() : null)+ ")" );
 
             	try {
             		String response = _apiServer.handleRequest(params, true, responseType, auditTrailSb);            		

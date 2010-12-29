@@ -51,12 +51,10 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
-import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
-import com.cloud.agent.api.routing.RoutingCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
-import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.manager.Commands;
@@ -393,7 +391,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     public VirtualRouter upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Long routerId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
 
         DomainRouterVO router = _routerDao.findById(routerId);
         if (router == null) {
@@ -590,7 +588,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
      */
 
     private boolean resendVpnServerData(final DomainRouterVO router) {
-        RemoteAccessVpnVO vpnVO = _remoteAccessVpnDao.findByAccountAndZone(router.getAccountId(), router.getDataCenterId());
+        RemoteAccessVpnVO vpnVO = _remoteAccessVpnDao.findByAccountAndNetwork(router.getAccountId(), router.getDataCenterId());
 
         if (vpnVO != null) {
             try {
@@ -638,7 +636,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return stopDomainRouter(cmd.getId());
         }
         Long routerId = cmd.getId();
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
 
         // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
@@ -777,7 +775,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public VirtualRouter rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Long routerId = cmd.getId();
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
 
         // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
@@ -1325,7 +1323,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             List<NetworkVO> publicConfigs = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
             NicProfile defaultNic = new NicProfile();
             defaultNic.setDefaultNic(true);
-            defaultNic.setIp4Address(sourceNatIp.getAddress());
+            defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
             defaultNic.setGateway(sourceNatIp.getGateway());
             defaultNic.setNetmask(sourceNatIp.getNetmask());
             defaultNic.setTrafficType(TrafficType.Public);
@@ -1562,78 +1560,80 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     public RemoteAccessVpnVO startRemoteAccessVpn(RemoteAccessVpnVO vpnVO) throws ResourceUnavailableException {
-        DomainRouterVO router = getRouter(vpnVO.getAccountId(), vpnVO.getZoneId());
-        if (router == null) {
-            s_logger.warn("Failed to start remote access VPN: no router found for account and zone");
-            return null;
-        }
-        if (router.getState() != State.Running && router.getState() != State.Starting) {
-            s_logger.warn("Failed to start remote access VPN: router not in running state");
-            return null;
-        }
-        List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpnVO.getAccountId());
-        VpnUsersCfgCommand addUsersCmd = new VpnUsersCfgCommand(router.getPrivateIpAddress(), vpnUsers, new ArrayList<VpnUserVO>());
-        RemoteAccessVpnCfgCommand startVpnCmd = new RemoteAccessVpnCfgCommand(true, router.getPrivateIpAddress(), vpnVO.getVpnServerAddress(),
-                vpnVO.getLocalIp(), vpnVO.getIpRange(), vpnVO.getIpsecPresharedKey());
-        Commands cmds = new Commands(OnError.Stop);
-        cmds.addCommand("users", addUsersCmd);
-        cmds.addCommand("startVpn", startVpnCmd);
-        try {
-            _agentMgr.send(router.getHostId(), cmds);
-        } catch (AgentUnavailableException e) {
-            s_logger.debug("Failed to start remote access VPN: ", e);
-            return null;
-        } catch (OperationTimedoutException e) {
-            s_logger.debug("Failed to start remote access VPN: ", e);
-            return null;
-        }
-        Answer answer = cmds.getAnswer("users");
-        if (!answer.getResult()) {
-            s_logger.error("Unable to start vpn: unable add users to vpn in zone " + vpnVO.getZoneId() + " for account " + vpnVO.getAccountId()
-                    + " on domR: " + router.getInstanceName() + " due to " + answer.getDetails());
-            throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " + vpnVO.getZoneId() + " for account "
-                    + vpnVO.getAccountId() + " on domR: " + router.getInstanceName() + " due to " + answer.getDetails(), DataCenter.class,
-                    vpnVO.getZoneId());
-        }
-        answer = cmds.getAnswer("startVpn");
-        if (!answer.getResult()) {
-            s_logger.error("Unable to start vpn in zone " + vpnVO.getZoneId() + " for account " + vpnVO.getAccountId() + " on domR: "
-                    + router.getInstanceName() + " due to " + answer.getDetails());
-            throw new ResourceUnavailableException("Unable to start vpn in zone " + vpnVO.getZoneId() + " for account " + vpnVO.getAccountId()
-                    + " on domR: " + router.getInstanceName() + " due to " + answer.getDetails(), DataCenter.class, vpnVO.getZoneId());
-        }
-        return vpnVO;
+        return null;
+//        DomainRouterVO router = getRouter(vpnVO.getAccountId(), vpnVO.getZoneId());
+//        if (router == null) {
+//            s_logger.warn("Failed to start remote access VPN: no router found for account and zone");
+//            return null;
+//        }
+//        if (router.getState() != State.Running && router.getState() != State.Starting) {
+//            s_logger.warn("Failed to start remote access VPN: router not in running state");
+//            return null;
+//        }
+//        List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpnVO.getAccountId());
+//        VpnUsersCfgCommand addUsersCmd = new VpnUsersCfgCommand(router.getPrivateIpAddress(), vpnUsers, new ArrayList<VpnUserVO>());
+//        RemoteAccessVpnCfgCommand startVpnCmd = new RemoteAccessVpnCfgCommand(true, router.getPrivateIpAddress(), vpnVO.getServerAddress(),
+//                vpnVO.getLocalIp(), vpnVO.getIpRange(), vpnVO.getIpsecPresharedKey());
+//        Commands cmds = new Commands(OnError.Stop);
+//        cmds.addCommand("users", addUsersCmd);
+//        cmds.addCommand("startVpn", startVpnCmd);
+//        try {
+//            _agentMgr.send(router.getHostId(), cmds);
+//        } catch (AgentUnavailableException e) {
+//            s_logger.debug("Failed to start remote access VPN: ", e);
+//            return null;
+//        } catch (OperationTimedoutException e) {
+//            s_logger.debug("Failed to start remote access VPN: ", e);
+//            return null;
+//        }
+//        Answer answer = cmds.getAnswer("users");
+//        if (!answer.getResult()) {
+//            s_logger.error("Unable to start vpn: unable add users to vpn in zone " + vpnVO.getZoneId() + " for account " + vpnVO.getAccountId()
+//                    + " on domR: " + router.getInstanceName() + " due to " + answer.getDetails());
+//            throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " + vpnVO.getZoneId() + " for account "
+//                    + vpnVO.getAccountId() + " on domR: " + router.getInstanceName() + " due to " + answer.getDetails(), DataCenter.class,
+//                    vpnVO.getZoneId());
+//        }
+//        answer = cmds.getAnswer("startVpn");
+//        if (!answer.getResult()) {
+//            s_logger.error("Unable to start vpn in zone " + vpnVO.getZoneId() + " for account " + vpnVO.getAccountId() + " on domR: "
+//                    + router.getInstanceName() + " due to " + answer.getDetails());
+//            throw new ResourceUnavailableException("Unable to start vpn in zone " + vpnVO.getZoneId() + " for account " + vpnVO.getAccountId()
+//                    + " on domR: " + router.getInstanceName() + " due to " + answer.getDetails(), DataCenter.class, vpnVO.getZoneId());
+//        }
+//        return vpnVO;
     }
 
     @Override
     public boolean deleteRemoteAccessVpn(RemoteAccessVpnVO vpnVO) {
-        DomainRouterVO router = getRouter(vpnVO.getAccountId(), vpnVO.getZoneId());
-        if (router == null) {
-            s_logger.warn("Failed to delete remote access VPN: no router found for account and zone");
-            return false;
-        }
-        if (router.getState() != State.Running) {
-            s_logger.warn("Failed to delete remote access VPN: router not in running state");
-            return false;
-        }
-        try {
-            Answer answer = _agentMgr.send(
-                    router.getHostId(),
-                    new RemoteAccessVpnCfgCommand(false, router.getPrivateIpAddress(), vpnVO.getVpnServerAddress(), vpnVO.getLocalIp(), vpnVO
-                            .getIpRange(), vpnVO.getIpsecPresharedKey()));
-            if (answer != null && answer.getResult()) {
-                return true;
-            } else {
-                s_logger.debug("Failed to delete remote access VPN: " + answer.getDetails());
-                return false;
-            }
-        } catch (AgentUnavailableException e) {
-            s_logger.debug("Failed to delete remote access VPN: ", e);
-            return false;
-        } catch (OperationTimedoutException e) {
-            s_logger.debug("Failed to delete remote access VPN: ", e);
-            return false;
-        }
+        return false;
+//        DomainRouterVO router = getRouter(vpnVO.getAccountId(), vpnVO.getZoneId());
+//        if (router == null) {
+//            s_logger.warn("Failed to delete remote access VPN: no router found for account and zone");
+//            return false;
+//        }
+//        if (router.getState() != State.Running) {
+//            s_logger.warn("Failed to delete remote access VPN: router not in running state");
+//            return false;
+//        }
+//        try {
+//            Answer answer = _agentMgr.send(
+//                    router.getHostId(),
+//                    new RemoteAccessVpnCfgCommand(false, router.getPrivateIpAddress(), vpnVO.getServerAddress(), vpnVO.getLocalIp(), vpnVO
+//                            .getIpRange(), vpnVO.getIpsecPresharedKey()));
+//            if (answer != null && answer.getResult()) {
+//                return true;
+//            } else {
+//                s_logger.debug("Failed to delete remote access VPN: " + answer.getDetails());
+//                return false;
+//            }
+//        } catch (AgentUnavailableException e) {
+//            s_logger.debug("Failed to delete remote access VPN: ", e);
+//            return false;
+//        } catch (OperationTimedoutException e) {
+//            s_logger.debug("Failed to delete remote access VPN: ", e);
+//            return false;
+//        }
     }
 
     public DomainRouterVO start(long routerId, User user, Account caller) throws StorageUnavailableException, InsufficientCapacityException,
@@ -1717,30 +1717,31 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     public boolean addRemoveVpnUsers(RemoteAccessVpnVO vpnVO, List<VpnUserVO> addUsers, List<VpnUserVO> removeUsers) {
-        DomainRouterVO router = getRouter(vpnVO.getAccountId(), vpnVO.getZoneId());
-        if (router == null) {
-            s_logger.warn("Failed to add/remove VPN users: no router found for account and zone");
-            return false;
-        }
-        if (router.getState() != State.Running) {
-            s_logger.warn("Failed to add/remove VPN users: router not in running state");
-            return false;
-        }
-        try {
-            Answer answer = _agentMgr.send(router.getHostId(), new VpnUsersCfgCommand(router.getPrivateIpAddress(), addUsers, removeUsers));
-            if (answer != null && answer.getResult()) {
-                return true;
-            } else {
-                s_logger.debug("Failed to add/remove VPN users: " + answer.getDetails());
-                return false;
-            }
-        } catch (AgentUnavailableException e) {
-            s_logger.debug("Failed to add/remove VPN users:: ", e);
-            return false;
-        } catch (OperationTimedoutException e) {
-            s_logger.debug("Failed to add/remove VPN users:: ", e);
-            return false;
-        }
+        return false;
+//        DomainRouterVO router = getRouter(vpnVO.getAccountId(), vpnVO.getZoneId());
+//        if (router == null) {
+//            s_logger.warn("Failed to add/remove VPN users: no router found for account and zone");
+//            return false;
+//        }
+//        if (router.getState() != State.Running) {
+//            s_logger.warn("Failed to add/remove VPN users: router not in running state");
+//            return false;
+//        }
+//        try {
+//            Answer answer = _agentMgr.send(router.getHostId(), new VpnUsersCfgCommand(router.getPrivateIpAddress(), addUsers, removeUsers));
+//            if (answer != null && answer.getResult()) {
+//                return true;
+//            } else {
+//                s_logger.debug("Failed to add/remove VPN users: " + answer.getDetails());
+//                return false;
+//            }
+//        } catch (AgentUnavailableException e) {
+//            s_logger.debug("Failed to add/remove VPN users:: ", e);
+//            return false;
+//        } catch (OperationTimedoutException e) {
+//            s_logger.debug("Failed to add/remove VPN users:: ", e);
+//            return false;
+//        }
     }
 
     @Override
@@ -1759,7 +1760,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     public VirtualRouter startRouter(long routerId) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
 
         // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
@@ -1768,7 +1769,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         _accountMgr.checkAccess(account, router);
 
-        UserVO user = _userDao.findById(UserContext.current().getUserId());
+        UserVO user = _userDao.findById(UserContext.current().getCallerUserId());
         return this.start(router, user, account);
     }
 
@@ -1787,9 +1788,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public VirtualRouter stopDomainRouter(long routerId) throws ResourceUnavailableException, ConcurrentOperationException {
         UserContext context = UserContext.current();
-        Account account = context.getAccount();
+        Account account = context.getCaller();
         long accountId = account.getId();
-        long userId = context.getUserId();
+        long userId = context.getCallerUserId();
 
         // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
@@ -1799,7 +1800,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         _accountMgr.checkAccess(account, router);
 
-        UserVO user = _userDao.findById(context.getUserId());
+        UserVO user = _userDao.findById(context.getCallerUserId());
 
         if (!_itMgr.stop(router, user, account)) {
             return null;
@@ -1849,13 +1850,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                  if(vmId!=0){
                      vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
                  }
-                 IpAddressTO ip = new IpAddressTO(ipAddr.getAddress(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress);
+                 IpAddressTO ip = new IpAddressTO(ipAddr.getAddress().addr(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress);
                  ipsToSend[i++] = ip;
                  firstIP = false;
              }
              IPAssocCommand cmd = new IPAssocCommand(ipsToSend);
-             cmd.setAccessDetail(RoutingCommand.ROUTER_IP, router.getPrivateIpAddress());
-             cmd.setAccessDetail(RoutingCommand.ROUTER_NAME, router.getInstanceName());
+             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
              cmds.addCommand("IPAssocCommand", cmd);
         }
          return cmds;
@@ -1943,8 +1944,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
 
             LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs);
-            cmd.setAccessDetail(RoutingCommand.ROUTER_IP, router.getPrivateIpAddress());
-            cmd.setAccessDetail(RoutingCommand.ROUTER_NAME, router.getInstanceName());
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
             cmds.addCommand(cmd);
             
             //Send commands to router
@@ -1970,8 +1971,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             pfs.add(pf);
         }
         SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(pfs);
-        cmd.setAccessDetail(RoutingCommand.ROUTER_IP, router.getPrivateIpAddress());
-        cmd.setAccessDetail(RoutingCommand.ROUTER_NAME, router.getInstanceName());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         cmds.addCommand(cmd);
         
         //Send commands to router

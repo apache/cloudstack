@@ -25,16 +25,12 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.PrimaryKeyJoinColumn;
-import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="usage_event")
-@SecondaryTable(name="account",
-        pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
 public class UsageEventVO implements UsageEvent {
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -91,7 +87,8 @@ public class UsageEventVO implements UsageEvent {
         this.resourceName = resourceName;
     }
 	
-	public long getId() {
+	@Override
+    public long getId() {
 		return id;
 	}
 	@Override

@@ -92,7 +92,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        boolean result = _snapshotMgr.deleteSnapshot(this);
+        boolean result = _snapshotService.deleteSnapshot(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

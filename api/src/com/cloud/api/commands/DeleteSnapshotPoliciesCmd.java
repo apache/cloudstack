@@ -70,7 +70,7 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        boolean result = _snapshotMgr.deleteSnapshotPolicies(this);
+        boolean result = _snapshotService.deleteSnapshotPolicies(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

@@ -18,12 +18,12 @@
 package com.cloud.network;
 
 import com.cloud.acl.ControlledEntity;
+import com.cloud.dc.Vlan;
 
 /**
  * PublicIp is a combo object of IPAddressVO and VLAN information.
  */
-
-public interface PublicIpAddress extends ControlledEntity, IpAddress{
+public interface PublicIpAddress extends ControlledEntity, IpAddress, Vlan {
     
     String getMacAddress();
     
@@ -31,5 +31,6 @@ public interface PublicIpAddress extends ControlledEntity, IpAddress{
     
     public String getGateway();
     
+    @Override
     public String getVlanTag();
 }

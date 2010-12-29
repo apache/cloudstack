@@ -20,6 +20,7 @@ package com.cloud.network;
 import java.util.Date;
 
 import com.cloud.acl.ControlledEntity;
+import com.cloud.utils.net.Ip;
 
 /**
  * IpAddress represents the public ip address to be allocated in the CloudStack.
@@ -46,7 +47,7 @@ public interface IpAddress extends ControlledEntity {
     
     long getDataCenterId();
 
-    String getAddress();
+    Ip getAddress();
     
     Long getAllocatedToAccountId();
     
@@ -64,5 +65,5 @@ public interface IpAddress extends ControlledEntity {
     
     boolean readyToUse();
     
-    Long getAssociatedNetworkId();
+    Long getAssociatedWithNetworkId();
 }

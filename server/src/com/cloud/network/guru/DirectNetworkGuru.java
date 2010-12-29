@@ -93,7 +93,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null) {
             PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId());
-            nic.setIp4Address(ip.getAddress());
+            nic.setIp4Address(ip.getAddress().toString());
             nic.setGateway(ip.getGateway());
             nic.setNetmask(ip.getNetmask());
             nic.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));

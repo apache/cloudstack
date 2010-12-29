@@ -89,7 +89,7 @@ public class ListSecurityGroupsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends SecurityGroupRules> securityGroups = _securityGroupMgr.searchForSecurityGroupRules(this);
+        List<? extends SecurityGroupRules> securityGroups = _securityGroupService.searchForSecurityGroupRules(this);
 
         ListResponse<SecurityGroupResponse> response = _responseGenerator.createSecurityGroupResponses(securityGroups);
         response.setResponseName(getCommandName());

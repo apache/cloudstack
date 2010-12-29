@@ -39,13 +39,14 @@ import org.apache.log4j.xml.DOMConfigurator;
 
 import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 
 public class NetUtils {
     protected final static Logger s_logger = Logger.getLogger(NetUtils.class);
     public final static String HTTP_PORT = "80";
-    public final static String VPN_PORT = "500";
-    public final static String VPN_NATT_PORT = "4500";
-    public final static String VPN_L2TP_PORT = "1701";
+    public final static int VPN_PORT = 500;
+    public final static int VPN_NATT_PORT = 4500;
+    public final static int VPN_L2TP_PORT = 1701;
 
     
     public final static String UDP_PROTO = "udp";
@@ -616,6 +617,11 @@ public class NetUtils {
         
         return new String[] {long2Ip(start), long2Ip(end)};
     	
+    }
+    
+    public static Pair<String, Integer> getCidr(String cidr) {
+        String[] tokens = cidr.split("/");
+        return new Pair<String, Integer>(tokens[0], Integer.parseInt(tokens[1]));
     }
     
     public static boolean isNetworkAWithinNetworkB(String cidrA, String cidrB) {

@@ -65,7 +65,7 @@ public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = (Account)UserContext.current().getAccount();
+        Account account = (Account)UserContext.current().getCaller();
         if (account != null) {
             return account.getId();
         }
@@ -85,7 +85,7 @@ public class DestroyConsoleProxyCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute(){
-        boolean result = _consoleProxyMgr.destroyConsoleProxy(this);
+        boolean result = _consoleProxyService.destroyConsoleProxy(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

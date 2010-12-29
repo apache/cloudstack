@@ -107,17 +107,19 @@ public class ApiDispatcher {
             } else if (t instanceof ServerApiException) {
                 s_logger.warn(t.getClass() + " : " + ((ServerApiException) t).getDescription());
                 errorMsg = ((ServerApiException) t).getDescription();
-                if (UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
+                if (UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());
-                else
-                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);      
+                } else {
+                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
+                }      
             } else {
                 errorMsg = "Internal error";
                 s_logger.error("Exception while executing " + cmd.getClass().getSimpleName() + ":", t);
-                if (UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
+                if (UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());
-                else
-                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);                
+                } else {
+                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
+                }                
             }
         } finally {
             if(cmd.getCreateEventType() != null){
@@ -170,17 +172,19 @@ public class ApiDispatcher {
             } else if (t instanceof ServerApiException) {
                 errorMsg = ((ServerApiException) t).getDescription();
                 s_logger.warn(t.getClass()  + " : " + ((ServerApiException) t).getDescription());
-                if (UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
+                if (UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());
-                else
+                } else {
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
+                }
             } else {
                 errorMsg = "Internal error";
                 s_logger.error("Exception while executing " + cmd.getClass().getSimpleName() + ":", t);
-                if (UserContext.current().getAccount().getType() == Account.ACCOUNT_TYPE_ADMIN)
+                if (UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, t.getMessage());
-                else
+                } else {
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
+                }
             }
         } finally {
             if(cmd instanceof BaseAsyncCmd){

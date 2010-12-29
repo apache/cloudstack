@@ -197,7 +197,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         userResponse.setFirstname(user.getFirstname());
         userResponse.setId(user.getId());
         userResponse.setLastname(user.getLastname());
-        userResponse.setState(user.getState());
+        userResponse.setState(user.getState().toString());
         userResponse.setTimezone(user.getTimezone());
         userResponse.setUsername(user.getUsername());
         userResponse.setApiKey(user.getApiKey());
@@ -222,7 +222,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         accountResponse.setAccountType(account.getType());
         accountResponse.setDomainId(account.getDomainId());
         accountResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
-        accountResponse.setState(account.getState());
+        accountResponse.setState(account.getState().toString());
 
         // get network stat
         List<UserStatisticsVO> stats = ApiDBUtils.listUserStatsBy(account.getId());
@@ -597,7 +597,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         long zoneId = ipAddress.getDataCenterId();
 
         IPAddressResponse ipResponse = new IPAddressResponse();
-        ipResponse.setIpAddress(ipAddress.getAddress());
+        ipResponse.setIpAddress(ipAddress.getAddress().toString());
         if (ipAddress.getAllocatedTime() != null) {
             ipResponse.setAllocated(ipAddress.getAllocatedTime());
         }
@@ -616,10 +616,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setForVirtualNetwork(forVirtualNetworks);
         ipResponse.setStaticNat(ipAddress.isOneToOneNat());
         
-        ipResponse.setAssociatedNetworkId(ipAddress.getAssociatedNetworkId());
+        ipResponse.setAssociatedNetworkId(ipAddress.getAssociatedWithNetworkId());
         
         //Network id the ip is associated withif associated networkId is null, try to get this information from vlan
-        Long associatedNetworkId = ipAddress.getAssociatedNetworkId(); 
+        Long associatedNetworkId = ipAddress.getAssociatedWithNetworkId(); 
         Long vlanNetworkId = ApiDBUtils.getVlanNetworkId(ipAddress.getVlanId());
         if (associatedNetworkId == null) {
             associatedNetworkId = vlanNetworkId;
@@ -638,7 +638,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setNetworkId(networkId);
         
         // show this info to admin only
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         if ((account == null) || account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
             ipResponse.setVlanId(ipAddress.getVlanId());
             ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanId()).getVlanTag());
@@ -698,7 +698,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public ZoneResponse createZoneResponse(DataCenter dataCenter) {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         ZoneResponse zoneResponse = new ZoneResponse();
         zoneResponse.setId(dataCenter.getId());
         zoneResponse.setName(dataCenter.getName());
@@ -996,7 +996,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         userVmResponse.setZoneId(userVm.getDataCenterId());
         userVmResponse.setZoneName(ApiDBUtils.findZoneById(userVm.getDataCenterId()).getName());
 
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         // if user is an admin, display host id
         if (((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN)) && (userVm.getHostId() != null)) {
             userVmResponse.setHostId(userVm.getHostId());
@@ -1264,10 +1264,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         VpnUsersResponse vpnResponse = new VpnUsersResponse();
         vpnResponse.setId(vpnUser.getId());
         vpnResponse.setUserName(vpnUser.getUsername());
-        vpnResponse.setAccountName(vpnUser.getAccountName());
         
         Account accountTemp = ApiDBUtils.findAccountById(vpnUser.getAccountId());
         if (accountTemp != null) {
+            vpnResponse.setAccountName(accountTemp.getAccountName());
             vpnResponse.setDomainId(accountTemp.getDomainId());
             vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
         }
@@ -1279,15 +1279,14 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public RemoteAccessVpnResponse createRemoteAccessVpnResponse(RemoteAccessVpn vpn) {
         RemoteAccessVpnResponse vpnResponse = new RemoteAccessVpnResponse();
-        vpnResponse.setId(vpn.getId());
-        vpnResponse.setPublicIp(vpn.getVpnServerAddress());
+        vpnResponse.setPublicIp(vpn.getServerAddress().toString());
         vpnResponse.setIpRange(vpn.getIpRange());
         vpnResponse.setPresharedKey(vpn.getIpsecPresharedKey());
-        vpnResponse.setAccountName(vpn.getAccountName());
+        vpnResponse.setDomainId(vpn.getDomainId());
         
         Account accountTemp = ApiDBUtils.findAccountById(vpn.getAccountId());
         if (accountTemp != null) {
-            vpnResponse.setDomainId(accountTemp.getDomainId());
+            vpnResponse.setAccountName(accountTemp.getAccountName());
             vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
         }
 
@@ -1636,7 +1635,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             
             //set status 
-            Account account = UserContext.current().getAccount();
+            Account account = UserContext.current().getCaller();
             boolean isAdmin = false;
             if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
                 isAdmin = true;
@@ -1708,7 +1707,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             
             //set status 
-            Account account = UserContext.current().getAccount();
+            Account account = UserContext.current().getCaller();
             boolean isAdmin = false;
             if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
                 isAdmin = true;
@@ -1868,7 +1867,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setResponses(isoResponses);
                 
                 if(isBootable != null && !isBootable)
-                	continue; //fetch only non-bootable isos and return (for now only xen tools iso)
+                 {
+                    continue; //fetch only non-bootable isos and return (for now only xen tools iso)
+                }
             }
            
             List<VMTemplateHostVO> isoHosts = ApiDBUtils.listTemplateHostBy(iso.getId(), isoZonePair.second());

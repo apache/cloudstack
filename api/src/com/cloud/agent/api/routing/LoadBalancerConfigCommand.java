@@ -23,7 +23,7 @@ import com.cloud.agent.api.to.LoadBalancerTO;
  * LoadBalancerConfigCommand sends the load balancer configuration
  * to the load balancer.  Isn't that kinda obvious?
  */
-public class LoadBalancerConfigCommand extends RoutingCommand {
+public class LoadBalancerConfigCommand extends NetworkElementCommand {
     LoadBalancerTO[] loadBalancers;
     
     public LoadBalancerConfigCommand( LoadBalancerTO[] loadBalancers) {

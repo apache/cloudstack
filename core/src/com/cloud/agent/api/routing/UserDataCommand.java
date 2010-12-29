@@ -19,7 +19,7 @@
 package com.cloud.agent.api.routing;
 
 
-public class UserDataCommand extends RoutingCommand {
+public class UserDataCommand extends NetworkElementCommand {
 
     String userData;
     String vmIpAddress;

@@ -242,7 +242,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	    sc.setParameters("template", templateId);
 	    sc.setParameters("pool", poolId);
 	    
-	    List<Long> results = searchIncludingRemoved(sc, null);
+	    List<Long> results = customSearchIncludingRemoved(sc, null);
 	    assert results.size() > 0 : "How can this return a size of " + results.size();
 	    
 	    return results.get(0) > 0;
@@ -432,7 +432,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	public Pair<Long, Long> getCountAndTotalByPool(long poolId) {
         SearchCriteria<SumCount> sc = TotalSizeByPoolSearch.create();
         sc.setParameters("poolId", poolId);
-        List<SumCount> results = searchIncludingRemoved(sc, null);
+        List<SumCount> results = customSearchIncludingRemoved(sc, null);
         SumCount sumCount = results.get(0);
         return new Pair<Long, Long>(sumCount.count, sumCount.sum);
 	}

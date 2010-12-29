@@ -21,15 +21,12 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.user.Account;
-import com.cloud.user.UserContext;
+import com.cloud.network.RemoteAccessVpn;
+import com.cloud.utils.net.Ip;
 
 @Implementation(description="Destroys a l2tp/ipsec remote access vpn", responseObject=SuccessResponse.class)
 public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
@@ -40,35 +37,13 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name="zoneid", type=CommandType.LONG, required=true, description="zone id where the vpn server needs to be created")
-    private Long zoneId;
-    
-    @Parameter(name="account", type=CommandType.STRING, description="an optional account for the virtual machine. Must be used with domainId.")
-    private String accountName;
-
-    @Parameter(name="domainid", type=CommandType.LONG, description="an optional domainId for the virtual machine. If the account parameter is used, domainId must also be used.")
-    private Long domainId;
+    @Parameter(name="publicip", type=CommandType.STRING, required=true, description="public ip address of the vpn server")
+    private String publicIp;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 	
-	public void setZoneId(Long zoneId) {
-		this.zoneId = zoneId;
-	}
-
-	public Long getZoneId() {
-		return zoneId;
-	}
-
-	   
-	public String getAccountName() {
-		return accountName;
-	}
-
-	public Long getDomainId() {
-		return domainId;
-	}
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -80,26 +55,13 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
 
 	@Override
 	public long getEntityOwnerId() {
-		Account account = UserContext.current().getAccount();
-        if ((account == null) || isAdmin(account.getType())) {
-            if ((domainId != null) && (accountName != null)) {
-                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
-                if (userAccount != null) {
-                    return userAccount.getId();
-                }
-            }
-        }
-
-        if (account != null) {
-            return account.getId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+	    RemoteAccessVpn vpn = _entityMgr.findById(RemoteAccessVpn.class, new Ip(publicIp));
+	    return vpn.getAccountId();
     }
 
 	@Override
 	public String getEventDescription() {
-		return "Delete Remote Access VPN for account " + getEntityOwnerId() + " in zone " + getZoneId();
+		return "Delete Remote Access VPN for account " + getEntityOwnerId() + " for  " + publicIp;
 	}
 
 	@Override
@@ -109,18 +71,7 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        try {
-            boolean result = _networkService.destroyRemoteAccessVpn(this);
-            if (result) {
-                SuccessResponse response = new SuccessResponse(getCommandName());
-                this.setResponseObject(response);
-            } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete remote access vpn");
-            }
-        } catch (ConcurrentOperationException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        } 
+        _ravService.destroyRemoteAccessVpn(new Ip(publicIp));
     }
 	
 }

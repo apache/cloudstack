@@ -102,7 +102,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
         boolean success = false;
         PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
         try {
-            success = _rulesService.applyPortForwardingRules(rule.getSourceIpAddress(), callerContext.getAccount());
+            success = _rulesService.applyPortForwardingRules(rule.getSourceIpAddress(), callerContext.getCaller());
         }  finally {
             if (!success) {
                 _rulesService.revokePortForwardingRule(getEntityId(), true);
@@ -186,6 +186,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
             setEntityId(result.getId());
         } catch (NetworkRuleConflictException ex) {
             s_logger.info("Network rule conflict: " + ex.getMessage());
+            s_logger.trace("Network Rule Conflict: ", ex);
             throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
         }
     }

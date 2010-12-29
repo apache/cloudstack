@@ -101,7 +101,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     public String getAccountName() {
         if (accountName == null) {
-            return UserContext.current().getAccount().getAccountName();
+            return UserContext.current().getCaller().getAccountName();
         }
         return accountName;
     }
@@ -116,7 +116,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     public Long getDomainId() {
         if (domainId == null) {
-            return UserContext.current().getAccount().getDomainId();
+            return UserContext.current().getCaller().getDomainId();
         }
         return domainId;
     }
@@ -186,7 +186,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         if ((account == null) || isAdmin(account.getType())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);

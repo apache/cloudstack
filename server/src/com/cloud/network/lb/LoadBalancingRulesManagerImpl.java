@@ -119,7 +119,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             throw new InvalidParameterValueException("Failed to assign to load balancer " + loadBalancerId + ", the load balancer was not found.");
         }
         
-        _accountMgr.checkAccess(caller.getAccount(), loadBalancer);
+        _accountMgr.checkAccess(caller.getCaller(), loadBalancer);
 
         List<LoadBalancerVMMapVO> mappedInstances = _lb2VmMapDao.listByLoadBalancerId(loadBalancerId, false);
         Set<Long> mappedInstanceIds = new HashSet<Long>();
@@ -140,7 +140,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
                 throw new InvalidParameterValueException("Invalid instance id: " + instanceId);
             }
             
-            _accountMgr.checkAccess(caller.getAccount(), vm);
+            _accountMgr.checkAccess(caller.getCaller(), vm);
             
             if (vm.getAccountId() != loadBalancer.getAccountId()) {
                 throw new PermissionDeniedException("Cannot add virtual machines that do not belong to the same owner.");
@@ -197,7 +197,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             throw new InvalidParameterException("Invalid load balancer value: " + loadBalancerId);
         } 
         
-        _accountMgr.checkAccess(caller.getAccount(), loadBalancer);
+        _accountMgr.checkAccess(caller.getCaller(), loadBalancer);
        
         try {
             loadBalancer.setState(FirewallRule.State.Add);
@@ -268,7 +268,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             throw new InvalidParameterException("Invalid load balancer value: " + loadBalancerId);
         }
         
-        _accountMgr.checkAccess(caller.getAccount(), lb);
+        _accountMgr.checkAccess(caller.getCaller(), lb);
         
         lb.setState(FirewallRule.State.Revoke);
         _lbDao.persist(lb);
@@ -305,7 +305,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         Ip srcIp = lb.getSourceIpAddress();
 
         // make sure ip address exists
-        IPAddressVO ipAddr = _ipAddressDao.findById(srcIp.addr());
+        IPAddressVO ipAddr = _ipAddressDao.findById(srcIp);
         if (ipAddr == null || !ipAddr.readyToUse()) {
             throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address " + srcIp);
         }
@@ -339,9 +339,9 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         
         Long networkId = lb.getNetworkId();
         if (networkId == -1 ) {
-            networkId = ipAddr.getAssociatedNetworkId();
+            networkId = ipAddr.getAssociatedWithNetworkId();
         }
-        _accountMgr.checkAccess(caller.getAccount(), ipAddr);
+        _accountMgr.checkAccess(caller.getCaller(), ipAddr);
         LoadBalancerVO newRule = new LoadBalancerVO(lb.getXid(), lb.getName(), lb.getDescription(), lb.getSourceIpAddress(), lb.getSourcePortEnd(),
                 lb.getDefaultPortStart(), lb.getAlgorithm(), networkId, ipAddr.getAccountId(), ipAddr.getDomainId());
 
@@ -363,7 +363,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             }
             throw new CloudRuntimeException("Unable to add rule for " + newRule.getSourceIpAddress(), e);
         } finally {
-            long userId = caller.getUserId();
+            long userId = caller.getCallerUserId();
 
             EventVO event = new EventVO();
             event.setUserId(userId);
@@ -1184,7 +1184,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
     @Override
     public List<UserVmVO> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd) throws PermissionDeniedException {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long loadBalancerId = cmd.getId();
         Boolean applied = cmd.isApplied();
 
@@ -1224,7 +1224,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             }
         }
 
-        IPAddressVO addr = _ipAddressDao.findById(loadBalancer.getSourceIpAddress().toString());
+        IPAddressVO addr = _ipAddressDao.findById(loadBalancer.getSourceIpAddress());
         List<UserVmVO> userVms = _vmDao.listVirtualNetworkInstancesByAcctAndZone(loadBalancer.getAccountId(), addr.getDataCenterId(), loadBalancer.getNetworkId());
 
         for (UserVmVO userVm : userVms) {
@@ -1250,7 +1250,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
     @Override
     public List<LoadBalancerVO> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Account caller = UserContext.current().getAccount();
+        Account caller = UserContext.current().getCaller();
         Account owner = null;
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();

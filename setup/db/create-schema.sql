@@ -466,7 +466,7 @@ CREATE TABLE `cloud`.`op_dc_vnet_alloc` (
 
 CREATE TABLE `cloud`.`firewall_rules` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
-  `ip_address` bigint unsigned NOT NULL COMMENT 'ip_address',
+  `ip_address` bigint unsigned NOT NULL COMMENT 'ip address',
   `start_port` int(10) NOT NULL default -1 COMMENT 'starting port of a port range',
   `end_port` int(10) NOT NULL default -1 COMMENT 'end port of a port range',
   `state` char(32) NOT NULL COMMENT 'current state of this rule',
@@ -637,7 +637,7 @@ CREATE TABLE  `cloud`.`event` (
 CREATE TABLE  `cloud`.`user_ip_address` (
   `account_id` bigint unsigned NULL,
   `domain_id` bigint unsigned NULL,
-  `public_ip_address` varchar(15) unique NOT NULL,
+  `public_ip_address` bigint unsigned unique NOT NULL,
   `data_center_id` bigint unsigned NOT NULL COMMENT 'zone that it belongs to',
   `source_nat` int(1) unsigned NOT NULL default '0',
   `allocated` datetime NULL COMMENT 'Date this ip was allocated to someone',
@@ -1045,22 +1045,32 @@ CREATE TABLE `cloud`.`load_balancer` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`remote_access_vpn` (
-  `id` bigint unsigned NOT NULL auto_increment,
+  `vpn_server_addr` bigint unsigned UNIQUE NOT NULL,
   `account_id` bigint unsigned NOT NULL,
-  `zone_id` bigint unsigned NOT NULL,
-  `vpn_server_addr` varchar(15) UNIQUE NOT NULL,
+  `network_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,
   `local_ip` varchar(15) NOT NULL,
   `ip_range` varchar(32) NOT NULL,
   `ipsec_psk` varchar(256) NOT NULL,
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`vpn_server_addr`),
+  CONSTRAINT `fk_remote_access_vpn__account_id` FOREIGN KEY `fk_remote_access_vpn__account_id`(`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_remote_access_vpn__domain_id` FOREIGN KEY `fk_remote_access_vpn__domain_id`(
+  CONSTRAINT `fk_remote_access_vpn__network_id` FOREIGN KEY `fk_remote_access_vpn__network_id` (`network_id`) REFERENCES `networks` (`id`) ON DELETE CASCADE;
+#  CONSTRAINT `fk_remote_access_vpn__server_addr` FOREIGN KEY `fk_remote_access_vpn__server_addr` (`vpn_server_addr`) REFERENCES `user_ip_address` (`public_ip_address`) ON DELETE CASCADE,
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`vpn_users` (
   `id` bigint unsigned NOT NULL auto_increment,
-  `account_id` bigint unsigned NOT NULL,
+  `owner_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,
   `username` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
-  PRIMARY KEY  (`id`)
+  `state` char(32) NOT NULL COMMENT 'What state is this vpn user in',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_vpn_users__owner_id` FOREIGN KEY (`owner_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_vpn_users__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  INDEX `i_vpn_users_username`(`username`),
+  UNIQUE `i_vpn_users__account_id__username`(`account_id`, `username`) 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`storage_pool` (

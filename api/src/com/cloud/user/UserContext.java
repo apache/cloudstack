@@ -46,11 +46,11 @@ public class UserContext {
         this.apiServer = apiServer;
     }
 
-    public long getUserId() {
+    public long getCallerUserId() {
         return userId;
     }
     
-    public void setUserId(long userId) {
+    public void setCallerUserId(long userId) {
         this.userId = userId;
     }
 
@@ -58,11 +58,11 @@ public class UserContext {
         return sessionId;
     }
 
-    public Account getAccount() {
+    public Account getCaller() {
         return account;
     }
 
-    public void setAccount(Account accountObject) {
+    public void setCaller(Account accountObject) {
         this.account = accountObject;
     }
 
@@ -90,8 +90,8 @@ public class UserContext {
 	    UserContext context = current();
 	    assert(context != null) : "Context should be already setup before you can call this one";
 
-	    context.setUserId(userId);
-	    context.setAccount(accountObject);
+	    context.setCallerUserId(userId);
+	    context.setCaller(accountObject);
 	    context.setSessionKey(sessionId);
 	}
 

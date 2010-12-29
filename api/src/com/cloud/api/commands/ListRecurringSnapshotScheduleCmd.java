@@ -65,7 +65,7 @@ public class ListRecurringSnapshotScheduleCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends SnapshotSchedule> snapshotSchedules = _snapshotMgr.findRecurringSnapshotSchedule(this);
+        List<? extends SnapshotSchedule> snapshotSchedules = _snapshotService.findRecurringSnapshotSchedule(this);
         ListResponse<SnapshotScheduleResponse> response = new ListResponse<SnapshotScheduleResponse>();
         List<SnapshotScheduleResponse> snapshotScheduleResponses = new ArrayList<SnapshotScheduleResponse>();
         for (SnapshotSchedule snapshotSchedule : snapshotSchedules) {

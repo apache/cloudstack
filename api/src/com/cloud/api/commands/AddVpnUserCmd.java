@@ -20,7 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.api.BaseAsyncCmd;
+import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -28,13 +28,12 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.network.VpnUser;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Adds vpn users", responseObject=VpnUsersResponse.class)
-public class AddVpnUserCmd extends BaseAsyncCmd {
+public class AddVpnUserCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AddVpnUserCmd.class.getName());
 
     private static final String s_name = "addvpnuserresponse";
@@ -94,7 +93,7 @@ public class AddVpnUserCmd extends BaseAsyncCmd {
 
 	@Override
 	public long getEntityOwnerId() {
-		Account account = UserContext.current().getAccount();
+		Account account = UserContext.current().getCaller();
         if ((account == null) || isAdmin(account.getType())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
@@ -125,29 +124,38 @@ public class AddVpnUserCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        try {
-            VpnUser vpnUser = _networkService.addVpnUser(this);
-            if (vpnUser != null) {
-                VpnUsersResponse vpnResponse = new VpnUsersResponse();
-                vpnResponse.setId(vpnUser.getId());
-                vpnResponse.setUserName(vpnUser.getUsername());
-                vpnResponse.setAccountName(vpnUser.getAccountName());
-                
-                Account accountTemp = _entityMgr.findById(Account.class, vpnUser.getAccountId());
-                if (accountTemp != null) {
-                    vpnResponse.setDomainId(accountTemp.getDomainId());
-                    vpnResponse.setDomainName(_entityMgr.findById(Domain.class, accountTemp.getDomainId()).getName());
-                }
-                
-                vpnResponse.setResponseName(getCommandName());
-                vpnResponse.setObjectName("vpnuser");
-                this.setResponseObject(vpnResponse);
-            } else {
+            VpnUser vpnUser = _entityMgr.findById(VpnUser.class, getEntityId());
+            Account account = _entityMgr.findById(Account.class, vpnUser.getAccountId());
+            if (!_ravService.applyVpnUsers(vpnUser.getAccountId())) {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add vpn user");
             }
-        } catch (ConcurrentOperationException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        } 
+            
+            VpnUsersResponse vpnResponse = new VpnUsersResponse();
+            vpnResponse.setId(vpnUser.getId());
+            vpnResponse.setUserName(vpnUser.getUsername());
+            vpnResponse.setAccountName(account.getAccountName());
+            
+            vpnResponse.setDomainId(account.getDomainId());
+            vpnResponse.setDomainName(_entityMgr.findById(Domain.class, account.getDomainId()).getName());
+            
+            vpnResponse.setResponseName(getCommandName());
+            vpnResponse.setObjectName("vpnuser");
+            this.setResponseObject(vpnResponse);
+    }
+
+    @Override
+    public void create() {
+        Account owner = null;
+        if (accountName != null) {
+            owner = _responseGenerator.findAccountByNameDomain(accountName, domainId);
+        } else {
+            owner = UserContext.current().getCaller();
+        }
+        
+        VpnUser vpnUser = _ravService.addVpnUser(owner.getId(), userName, password);
+        if (vpnUser == null) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add vpn user");
+        }
+        setEntityId(vpnUser.getId());
     }	
 }

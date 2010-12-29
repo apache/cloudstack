@@ -381,8 +381,8 @@ public class ApiServer implements HttpRequestHandler {
 
     private String queueCommand(BaseCmd cmdObj, Map<String, String> params) {
     	UserContext ctx = UserContext.current();
-        Long userId = ctx.getUserId();
-        Account account = ctx.getAccount();
+        Long userId = ctx.getCallerUserId();
+        Account account = ctx.getCaller();
         if (cmdObj instanceof BaseAsyncCmd) {
             Long objectId = null;
             if (cmdObj instanceof BaseAsyncCreateCmd) {
@@ -416,7 +416,7 @@ public class ApiServer implements HttpRequestHandler {
             job.setInstanceType(asyncCmd.getInstanceType());
             job.setUserId(userId);
             if (account != null) {
-                job.setAccountId(ctx.getAccount().getId());
+                job.setAccountId(ctx.getCaller().getId());
             } else {
                 // Just have SYSTEM own the job for now.  Users won't be able to see this job,
                 // but in an admin case (like domain admin) they won't be able to see it anyway
@@ -461,7 +461,9 @@ public class ApiServer implements HttpRequestHandler {
         	// Using maps might possibly be more efficient if the set is large enough but for now, we'll just do a
         	// comparison of two lists.  Either way, there shouldn't be too many async jobs active for the account.
         	for (AsyncJob job : jobs) {
-        		if (job.getInstanceId() == null) continue;
+        		if (job.getInstanceId() == null) {
+                    continue;
+                }
         		for (ResponseObject response : responses) {
         		    if (response.getObjectId() != null && job.getInstanceId().longValue() == response.getObjectId().longValue()) {
         		        response.setJobId(job.getId());
@@ -473,7 +475,9 @@ public class ApiServer implements HttpRequestHandler {
     }
      
    private void buildAuditTrail(StringBuffer auditTrailSb, String command, String result) {
-        if (result == null) return;
+        if (result == null) {
+            return;
+        }
         auditTrailSb.append(" " + HttpServletResponse.SC_OK + " ");
         auditTrailSb.append(result);
         /*
@@ -594,7 +598,7 @@ public class ApiServer implements HttpRequestHandler {
             user = userAcctPair.first();
             Account account = userAcctPair.second();
 
-            if (!user.getState().equals(Account.ACCOUNT_STATE_ENABLED) || !account.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
+            if (user.getState() != Account.State.Enabled || !account.getState().equals(Account.State.Enabled)) {
                 s_logger.info("disabled or locked user accessing the api, userid = " + user.getId() + "; name = " + user.getUsername() + "; state: " + user.getState() + "; accountState: " + account.getState());
                 return false;
             }
@@ -668,16 +672,19 @@ public class ApiServer implements HttpRequestHandler {
         	Account account = _ms.findAccountById(userAcct.getAccountId());
             
             String hypervisorType = _ms.getConfigurationValue("hypervisor.type");
-            if (hypervisorType == null) 
-            	hypervisorType = "kvm";
+            if (hypervisorType == null) {
+                hypervisorType = "kvm";
+            }
             
             String directAttachSecurityGroupsEnabled = _ms.getConfigurationValue("direct.attach.security.groups.enabled");
-            if(directAttachSecurityGroupsEnabled == null) 
-            	directAttachSecurityGroupsEnabled = "false";     
+            if(directAttachSecurityGroupsEnabled == null) {
+                directAttachSecurityGroupsEnabled = "false";
+            }     
             
             String systemVmUseLocalStorage = _ms.getConfigurationValue("system.vm.use.local.storage");
-            if (systemVmUseLocalStorage == null) 
-            	systemVmUseLocalStorage = "false";            
+            if (systemVmUseLocalStorage == null) {
+                systemVmUseLocalStorage = "false";
+            }            
 
             // set the userId and account object for everyone
             session.setAttribute("userid", userAcct.getId());
@@ -722,7 +729,7 @@ public class ApiServer implements HttpRequestHandler {
     	    account = _ms.findAccountById(user.getAccountId());
     	}
 
-    	if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.ACCOUNT_STATE_ENABLED) || (account == null) || !account.getState().equals(Account.ACCOUNT_STATE_ENABLED)) {
+    	if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.Enabled) || (account == null) || !account.getState().equals(Account.State.Enabled)) {
     		s_logger.warn("Deleted/Disabled/Locked user with id=" + userId + " attempting to access public API");
     		return false;
     	}
@@ -864,9 +871,13 @@ public class ApiServer implements HttpRequestHandler {
                 	}
                 }
             } catch (ConnectionClosedException ex) {
-                if (s_logger.isTraceEnabled()) s_logger.trace("ApiServer:  Client closed connection");
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("ApiServer:  Client closed connection");
+                }
             } catch (IOException ex) {
-                if (s_logger.isTraceEnabled()) s_logger.trace("ApiServer:  IOException - " + ex);
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace("ApiServer:  IOException - " + ex);
+                }
             } catch (HttpException ex) {
                 s_logger.warn("ApiServer:  Unrecoverable HTTP protocol violation" + ex);
             } finally {

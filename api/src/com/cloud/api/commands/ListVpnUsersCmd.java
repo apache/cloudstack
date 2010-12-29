@@ -83,7 +83,7 @@ public class ListVpnUsersCmd extends BaseListCmd {
     
     @Override
     public void execute(){
-        List<? extends VpnUser> vpnUsers = _mgr.searchForVpnUsers(this);
+        List<? extends VpnUser> vpnUsers = _ravService.searchForVpnUsers(this);
 
         ListResponse<VpnUsersResponse> response = new ListResponse<VpnUsersResponse>();
         List<VpnUsersResponse> vpnResponses = new ArrayList<VpnUsersResponse>();

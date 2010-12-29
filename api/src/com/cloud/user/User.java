@@ -23,7 +23,7 @@ import java.util.Date;
 public interface User extends OwnedBy {
 	public static final long UID_SYSTEM = 1; 
 	
-	public Long getId();
+	public long getId();
 	
     public Date getCreated();
     
@@ -51,9 +51,9 @@ public interface User extends OwnedBy {
     
     public void setEmail(String email);
 
-    public String getState();
+    public Account.State getState();
 
-    public void setState(String state);
+    public void setState(Account.State state);
 
 	public String getApiKey();
 	

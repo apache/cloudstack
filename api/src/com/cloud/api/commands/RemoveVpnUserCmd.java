@@ -27,7 +27,6 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -82,7 +81,7 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
 
 	@Override
 	public long getEntityOwnerId() {
-		Account account = UserContext.current().getAccount();
+		Account account = UserContext.current().getCaller();
         if ((account == null) || isAdmin(account.getType())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
@@ -112,17 +111,13 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        try {
-            boolean result = _networkService.removeVpnUser(this);
-            if (result) {
-                SuccessResponse response = new SuccessResponse(getCommandName());
-                this.setResponseObject(response);
-            } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to remove vpn user");
-            }
-        } catch (ConcurrentOperationException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        } 
+        Account owner = getValidOwner(accountName, domainId);
+        boolean result = _ravService.removeVpnUser(owner.getId(), userName);
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to remove vpn user");
+        }
     }
 }

@@ -158,7 +158,7 @@ public interface GenericDao<T, ID extends Serializable> {
      * @param filter
      * @return list of entity beans.
      */
-    public <M> List<M> searchIncludingRemoved(SearchCriteria<M> sc, Filter filter);
+    public <M> List<M> customSearchIncludingRemoved(SearchCriteria<M> sc, Filter filter);
     
     /**
      * Retrieves the entire table.

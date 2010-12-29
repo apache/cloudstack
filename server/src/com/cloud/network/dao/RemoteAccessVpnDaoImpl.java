@@ -28,49 +28,41 @@ import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.net.Ip;
 
 @Local(value={RemoteAccessVpnDao.class})
-public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Long> implements RemoteAccessVpnDao {
+public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Ip> implements RemoteAccessVpnDao {
     private static final Logger s_logger = Logger.getLogger(RemoteAccessVpnDaoImpl.class);
     
-    private final SearchBuilder<RemoteAccessVpnVO> ListByIp;
-    private final SearchBuilder<RemoteAccessVpnVO> AccountAndZoneSearch;
-    private final SearchBuilder<RemoteAccessVpnVO> AccountSearch;
+    private final SearchBuilder<RemoteAccessVpnVO> AllFieldsSearch;
 
 
     protected RemoteAccessVpnDaoImpl() {
-        ListByIp  = createSearchBuilder();
-        ListByIp.and("ipAddress", ListByIp.entity().getVpnServerAddress(), SearchCriteria.Op.EQ);
-        ListByIp.done();
-
-        AccountAndZoneSearch = createSearchBuilder();
-        AccountAndZoneSearch.and("accountId", AccountAndZoneSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountAndZoneSearch.and("zoneId", AccountAndZoneSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
-        AccountAndZoneSearch.done();
-        
-        AccountSearch = createSearchBuilder();
-        AccountSearch.and("accountId", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountSearch.done();
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("ipAddress", AllFieldsSearch.entity().getServerAddress(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.done();
     }
 
     @Override
     public RemoteAccessVpnVO findByPublicIpAddress(String ipAddress) {
-        SearchCriteria<RemoteAccessVpnVO> sc = ListByIp.create();
+        SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
         sc.setParameters("ipAddress", ipAddress);
         return findOneBy(sc);
     }
 
     @Override
-    public RemoteAccessVpnVO findByAccountAndZone(Long accountId, Long zoneId) {
-        SearchCriteria<RemoteAccessVpnVO> sc = AccountAndZoneSearch.create();
+    public RemoteAccessVpnVO findByAccountAndNetwork(Long accountId, Long networkId) {
+        SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
-        sc.setParameters("zoneId", zoneId);
+        sc.setParameters("networkId", networkId);
         return findOneBy(sc);
     }
 
 	@Override
 	public List<RemoteAccessVpnVO> findByAccount(Long accountId) {
-		SearchCriteria<RemoteAccessVpnVO> sc = AccountSearch.create();
+		SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         return listBy(sc);
 	}

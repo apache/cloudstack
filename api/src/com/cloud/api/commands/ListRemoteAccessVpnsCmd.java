@@ -29,6 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.utils.net.Ip;
 
 @Implementation(description="Lists remote access vpns", responseObject=RemoteAccessVpnResponse.class)
 public class ListRemoteAccessVpnsCmd extends BaseListCmd {
@@ -46,15 +47,8 @@ public class ListRemoteAccessVpnsCmd extends BaseListCmd {
     @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID of the remote access vpn rule. If used with the account parameter, lists remote access vpns for the account in the specified domain.")
     private Long domainId;
 
-    @Parameter(name="id", type=CommandType.LONG, description="the ID of the remote access vpn")
-    private Long id;
-
-    @Parameter(name="zoneid", type=CommandType.LONG, description="the zone ID of the remote access vpn rule")
-    private Long zoneId;
- 
-    @Parameter(name="publicip", type=CommandType.STRING, description="the public IP address of the remote access vpn ")
+    @Parameter(name="publicip", type=CommandType.STRING, required=true, description="public ip address of the vpn server")
     private String publicIp;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -67,23 +61,10 @@ public class ListRemoteAccessVpnsCmd extends BaseListCmd {
     public Long getDomainId() {
         return domainId;
     }
-
-    public Long getId() {
-        return id;
+    
+    public Ip getPublicIp() {
+        return new Ip(publicIp);
     }
-
-    public void setZoneId(Long zoneId) {
-		this.zoneId = zoneId;
-	}
-
-	public Long getZoneId() {
-		return zoneId;
-	}
-
-    public String getPublicIp() {
-        return publicIp;
-    }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -96,7 +77,7 @@ public class ListRemoteAccessVpnsCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends RemoteAccessVpn> vpns = _mgr.searchForRemoteAccessVpns(this);
+        List<? extends RemoteAccessVpn> vpns = _ravService.searchForRemoteAccessVpns(this);
         ListResponse<RemoteAccessVpnResponse> response = new ListResponse<RemoteAccessVpnResponse>();
         List<RemoteAccessVpnResponse> vpnResponses = new ArrayList<RemoteAccessVpnResponse>();
         for (RemoteAccessVpn vpn : vpns) {

@@ -75,7 +75,7 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         if (account != null) {
             return account.getId();
         }
@@ -95,7 +95,7 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        StoragePool result = _storageMgr.preparePrimaryStorageForMaintenance(this);
+        StoragePool result = _storageService.preparePrimaryStorageForMaintenance(this);
         if (result != null){
             StoragePoolResponse response = _responseGenerator.createStoragePoolResponse(result);
             response.setResponseName("storagepool");

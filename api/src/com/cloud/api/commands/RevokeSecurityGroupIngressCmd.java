@@ -128,7 +128,7 @@ public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         if ((account == null) || isAdmin(account.getType())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
@@ -180,7 +180,7 @@ public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
     
     @Override
     public void execute(){
-        boolean result = _securityGroupMgr.revokeSecurityGroupIngress(this);
+        boolean result = _securityGroupService.revokeSecurityGroupIngress(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

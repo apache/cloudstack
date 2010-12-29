@@ -32,12 +32,14 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
+import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
@@ -84,7 +86,7 @@ public interface NetworkManager extends NetworkService {
      * @param ipAddress
      * @return true if it did; false if it didn't
      */
-    public boolean releasePublicIpAddress(String ipAddress, long ownerId, long userId);
+    public boolean releasePublicIpAddress(Ip ipAddress, long ownerId, long userId);
     
     /**
      * Associates or disassociates a list of public IP address for a router.
@@ -115,6 +117,8 @@ public interface NetworkManager extends NetworkService {
     void prepare(VirtualMachineProfile<? extends VMInstanceVO> profile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
     void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile);
     
+    void deallocate(VirtualMachineProfile<? extends VMInstanceVO> vm);
+    
     List<? extends Nic> getNics (VirtualMachine vm);
 	
     List<AccountVO> getAccountsUsingNetwork(long configurationId);    
@@ -133,4 +137,7 @@ public interface NetworkManager extends NetworkService {
 	
 	long getSystemNetworkIdByZoneAndTrafficTypeAndGuestType(long zoneId, TrafficType trafficType, GuestIpType guestType);
 	
+	List<? extends RemoteAccessVpnElement> getRemoteAccessVpnElements();
+	
+	PublicIpAddress getPublicIpAddress(Ip ipAddress);
 }

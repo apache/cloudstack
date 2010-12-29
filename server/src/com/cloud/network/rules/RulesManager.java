@@ -72,4 +72,6 @@ public interface RulesManager extends RulesService {
     List<? extends PortForwardingRule> gatherPortForwardingRulesForApplication(List<? extends IpAddress> addrs);
 
 	boolean revokePortForwardingRule(long vmId);
+	
+	FirewallRule[] reservePorts(IpAddress ip, String protocol, FirewallRule.Purpose purpose, int... ports) throws NetworkRuleConflictException;
 }

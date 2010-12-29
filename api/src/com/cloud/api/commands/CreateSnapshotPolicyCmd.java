@@ -109,7 +109,7 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     
     @Override
     public void execute(){
-        SnapshotPolicy result = _snapshotMgr.createPolicy(this);
+        SnapshotPolicy result = _snapshotService.createPolicy(this);
         if (result != null) {
             SnapshotPolicyResponse response = _responseGenerator.createSnapshotPolicyResponse(result);
             response.setResponseName(getCommandName());

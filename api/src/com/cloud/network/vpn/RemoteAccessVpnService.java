@@ -20,18 +20,28 @@ package com.cloud.network.vpn;
 
 import java.util.List;
 
+import com.cloud.api.commands.ListRemoteAccessVpnsCmd;
+import com.cloud.api.commands.ListVpnUsersCmd;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
-
+import com.cloud.utils.net.Ip;
 
 public interface RemoteAccessVpnService {
 
-    RemoteAccessVpn createRemoteAccessVpn(long zoneId, long ownerId, String publicIp, String ipRange);
-    RemoteAccessVpn destroyRemoteAccessVpn(long zoneId, long ownerId);
-    List<? extends RemoteAccessVpn> listRemoteAccessVpns(long vpnOwnerId, long zoneId, String publicIp);
+    RemoteAccessVpn createRemoteAccessVpn(Ip vpnServerAddress, String ipRange) throws NetworkRuleConflictException;
+    void destroyRemoteAccessVpn(Ip vpnServerAddress);
+    List<? extends RemoteAccessVpn> listRemoteAccessVpns(long vpnOwnerId, Ip publicIp);
+    RemoteAccessVpn startRemoteAccessVpn(Ip vpnServerAddress) throws ConcurrentOperationException, ResourceUnavailableException;
 
     VpnUser addVpnUser(long vpnOwnerId, String userName, String password);
-    VpnUser removeVpnUser(long vpnOwnerId, String userName);
+    boolean removeVpnUser(long vpnOwnerId, String userName);
     List<? extends VpnUser> listVpnUsers(long vpnOwnerId, String userName);
+    boolean applyVpnUsers(long vpnOwnerId);
     
+    List<? extends RemoteAccessVpn> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd);
+    List<? extends VpnUser> searchForVpnUsers(ListVpnUsersCmd cmd);
+
 }

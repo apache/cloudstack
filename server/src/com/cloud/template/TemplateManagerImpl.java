@@ -165,8 +165,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     
     @Override
     public VirtualMachineTemplate registerIso(RegisterIsoCmd cmd) throws ResourceAllocationException{
-        Account ctxAccount = UserContext.current().getAccount();
-        Long userId = UserContext.current().getUserId();
+        Account ctxAccount = UserContext.current().getCaller();
+        Long userId = UserContext.current().getCallerUserId();
         String name = cmd.getIsoName();
         String displayText = cmd.getDisplayText();
         String url = cmd.getUrl();
@@ -258,8 +258,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Override
     public VirtualMachineTemplate registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException{
     	
-        Account ctxAccount = UserContext.current().getAccount();
-        Long userId = UserContext.current().getUserId();
+        Account ctxAccount = UserContext.current().getCaller();
+        Long userId = UserContext.current().getCallerUserId();
         String name = cmd.getTemplateName();
         String displayText = cmd.getDisplayText(); 
         Integer bits = cmd.getBits();
@@ -464,7 +464,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
     @Override
     public Long extract(ExtractIsoCmd cmd) {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long templateId = cmd.getId();
         Long zoneId = cmd.getZoneId();
         String url = cmd.getUrl();
@@ -477,7 +477,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
     @Override
     public Long extract(ExtractTemplateCmd cmd) {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long templateId = cmd.getId();
         Long zoneId = cmd.getZoneId();
         String url = cmd.getUrl();
@@ -546,7 +546,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
         }
         
-        long userId = UserContext.current().getUserId();
+        long userId = UserContext.current().getCallerUserId();
         long accountId = template.getAccountId();
         String event = isISO ? EventTypes.EVENT_ISO_EXTRACT : EventTypes.EVENT_TEMPLATE_EXTRACT;
         if (extractMode == Upload.Mode.FTP_UPLOAD){
@@ -819,10 +819,10 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Override
     public VirtualMachineTemplate copyIso(CopyIsoCmd cmd) throws StorageUnavailableException {
     	Long isoId = cmd.getId();
-    	Long userId = UserContext.current().getUserId();
+    	Long userId = UserContext.current().getCallerUserId();
     	Long sourceZoneId = cmd.getSourceZoneId();
     	Long destZoneId = cmd.getDestinationZoneId();
-    	Account account = UserContext.current().getAccount();
+    	Account account = UserContext.current().getCaller();
     	
         //Verify parameters
         VMTemplateVO iso = _tmpltDao.findById(isoId);
@@ -853,10 +853,10 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Override
     public VirtualMachineTemplate copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException {
     	Long templateId = cmd.getId();
-    	Long userId = UserContext.current().getUserId();
+    	Long userId = UserContext.current().getCallerUserId();
     	Long sourceZoneId = cmd.getSourceZoneId();
     	Long destZoneId = cmd.getDestinationZoneId();
-    	Account account = UserContext.current().getAccount();
+    	Account account = UserContext.current().getCaller();
         
         //Verify parameters
         VMTemplateVO template = _tmpltDao.findById(templateId);
@@ -1177,8 +1177,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
 	@Override
 	public boolean detachIso(DetachIsoCmd cmd)  {
-        Account account = UserContext.current().getAccount();
-        Long userId = UserContext.current().getUserId();
+        Account account = UserContext.current().getCaller();
+        Long userId = UserContext.current().getCallerUserId();
         Long vmId = cmd.getVirtualMachineId();
         
         // Verify input parameters
@@ -1211,8 +1211,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	
 	@Override
 	public boolean attachIso(AttachIsoCmd cmd) {
-        Account account = UserContext.current().getAccount();
-        Long userId = UserContext.current().getUserId();
+        Account account = UserContext.current().getCaller();
+        Long userId = UserContext.current().getCallerUserId();
         Long vmId = cmd.getVirtualMachineId();
         Long isoId = cmd.getId();
         
@@ -1324,8 +1324,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	@Override
     public boolean deleteTemplate(DeleteTemplateCmd cmd) {
         Long templateId = cmd.getId();
-        Long userId = UserContext.current().getUserId();
-        Account account = UserContext.current().getAccount();
+        Long userId = UserContext.current().getCallerUserId();
+        Account account = UserContext.current().getCaller();
         Long zoneId = cmd.getZoneId();
         
         VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
@@ -1357,8 +1357,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	@Override
     public boolean deleteIso(DeleteIsoCmd cmd) {
         Long templateId = cmd.getId();
-        Long userId = UserContext.current().getUserId();
-        Account account = UserContext.current().getAccount();
+        Long userId = UserContext.current().getCallerUserId();
+        Account account = UserContext.current().getCaller();
         Long zoneId = cmd.getZoneId();
         
         VMTemplateVO template = _tmpltDao.findById(templateId.longValue());

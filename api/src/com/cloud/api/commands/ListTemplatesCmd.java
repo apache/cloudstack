@@ -123,7 +123,7 @@ public class ListTemplatesCmd extends BaseListCmd {
         Set<Pair<Long, Long>> templateZonePairSet = _mgr.listTemplates(this);
                 
         boolean isAdmin = false;
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         if ((account == null) || (account.getType() == Account.ACCOUNT_TYPE_ADMIN) || (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
             isAdmin = true;
         }

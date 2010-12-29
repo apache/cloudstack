@@ -21,7 +21,7 @@ package com.cloud.agent.api.routing;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VmDataCommand extends RoutingCommand {
+public class VmDataCommand extends NetworkElementCommand {
 
 	String routerPrivateIpAddress;
 	String vmIpAddress;

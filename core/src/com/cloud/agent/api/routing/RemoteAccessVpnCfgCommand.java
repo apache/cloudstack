@@ -19,9 +19,8 @@
 package com.cloud.agent.api.routing;
 
 
-public class RemoteAccessVpnCfgCommand extends RoutingCommand {
+public class RemoteAccessVpnCfgCommand extends NetworkElementCommand {
 	
-	String vpnAppliancePrivateIpAddress; //router private ip address typically
 	boolean create;
     String vpnServerIp;
     String ipRange;
@@ -42,8 +41,7 @@ public class RemoteAccessVpnCfgCommand extends RoutingCommand {
     }
     
     
-	public RemoteAccessVpnCfgCommand(boolean create, String routerPrivateIp, String vpnServerAddress, String localIp, String ipRange, String ipsecPresharedKey) {
-		this.vpnAppliancePrivateIpAddress = routerPrivateIp;
+	public RemoteAccessVpnCfgCommand(boolean create, String vpnServerAddress, String localIp, String ipRange, String ipsecPresharedKey) {
 		this.vpnServerIp = vpnServerAddress;
 		this.ipRange  = ipRange;
 		this.presharedKey = ipsecPresharedKey; 
@@ -77,14 +75,6 @@ public class RemoteAccessVpnCfgCommand extends RoutingCommand {
 
 	public String getLocalIp() {
 		return localIp;
-	}
-
-	public String getVpnAppliancePrivateIpAddress() {
-		return vpnAppliancePrivateIpAddress;
-	}
-
-	public String getRouterPrivateIpAddress() {
-		return vpnAppliancePrivateIpAddress;
 	}
 
 }

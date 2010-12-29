@@ -18,28 +18,12 @@
 package com.cloud.network;
 
 import com.cloud.acl.ControlledEntity;
+import com.cloud.utils.net.Ip;
 
-/**
- * @author ahuang
- *
- */
 public interface RemoteAccessVpn extends ControlledEntity {
-    long getId();
-    String getAccountName();
-    String getVpnServerAddress();
-    void setVpnServerAddress(String vpnServerAddress);
+    Ip getServerAddress();
     String getIpRange();
-    void setIpRange(String ipRange);
     String getIpsecPresharedKey();
-
-    void setIpsecPresharedKey(String ipsecPresharedKey);
-
-    void setId(Long id);
-
-    void setZoneId(long zoneId);
-
-    long getZoneId();
-
     String getLocalIp();
-
+    long getNetworkId();
 }

@@ -154,7 +154,7 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         if ((account == null) || isAdmin(account.getType())) {
             if ((domainId != null) && (accountName != null)) {
                 Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
@@ -207,7 +207,7 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute(){
-        List<? extends IngressRule> ingressRules = _securityGroupMgr.authorizeSecurityGroupIngress(this);
+        List<? extends IngressRule> ingressRules = _securityGroupService.authorizeSecurityGroupIngress(this);
         if (ingressRules != null && ! ingressRules.isEmpty()) {
         SecurityGroupResponse response = _responseGenerator.createSecurityGroupResponseFromIngressRule(ingressRules);
             this.setResponseObject(response);

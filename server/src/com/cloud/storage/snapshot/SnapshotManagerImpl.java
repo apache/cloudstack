@@ -538,7 +538,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         
     }
     private Long getSnapshotUserId(){
-        Long userId = UserContext.current().getUserId();
+        Long userId = UserContext.current().getCallerUserId();
         if(userId == null ) {
             return User.UID_SYSTEM;
         }
@@ -598,7 +598,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     private Long checkAccountPermissions(long targetAccountId, long targetDomainId, String targetDesc, long targetId) throws ServerApiException {
     	Long accountId = null;
 
-    	Account account = UserContext.current().getAccount();
+    	Account account = UserContext.current().getCaller();
     	if (account != null) {
     		if (!isAdmin(account.getType())) {
     			if (account.getId() != targetAccountId) {
@@ -788,7 +788,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             checkAccountPermissions(volume.getAccountId(), volume.getDomainId(), "volume", volumeId);
         }
 
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
@@ -1112,7 +1112,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     public List<SnapshotScheduleVO> findRecurringSnapshotSchedule(ListRecurringSnapshotScheduleCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Long volumeId = cmd.getVolumeId();
         Long policyId = cmd.getSnapshotPolicyId();
-        Account account = UserContext.current().getAccount();
+        Account account = UserContext.current().getCaller();
 
         //Verify parameters
         VolumeVO volume = _volsDao.findById(volumeId);
