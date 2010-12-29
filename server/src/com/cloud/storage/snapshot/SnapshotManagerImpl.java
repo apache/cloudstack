@@ -20,10 +20,8 @@ package com.cloud.storage.snapshot;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -34,8 +32,6 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.BackupSnapshotCommand;
-import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
-import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.ManageSnapshotAnswer;
@@ -45,7 +41,6 @@ import com.cloud.agent.api.ValidateSnapshotCommand;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.commands.CreateSnapshotCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
-import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -53,8 +48,6 @@ import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.async.executor.SnapshotOperationParam;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventState;
 import com.cloud.event.EventTypes;
@@ -63,30 +56,21 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.serializer.GsonHelper;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyRefVO;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Snapshot.SnapshotType;
 import com.cloud.storage.Snapshot.Status;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Volume.MirrorState;
-import com.cloud.storage.Volume.StorageResourceType;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
@@ -98,15 +82,13 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserVO;
+import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
@@ -451,6 +433,21 @@ public class SnapshotManagerImpl implements SnapshotManager {
         createdSnapshot.setStatus(Snapshot.Status.BackedUp);
         createdSnapshot.setPrevSnapshotId(_snapshotDao.getLastSnapshot(volumeId, id));
         _snapshotDao.update(id, createdSnapshot);
+
+        VolumeVO volume = _volsDao.findById(volumeId);
+        
+        // Create an event
+        EventVO event = new EventVO();
+        event.setUserId(User.UID_SYSTEM);
+        event.setAccountId(createdSnapshot.getAccountId());
+        event.setType(EventTypes.EVENT_SNAPSHOT_CREATE);
+        String snapshotName = createdSnapshot.getName();
+        String eventParams = "id=" + id + "\nssName=" + snapshotName +"\nsize=" + volume.getSize()+"\ndcId=" + volume.getDataCenterId();
+        event.setDescription("Backed up snapshot id: " + id + " to secondary for volume " + volumeId);
+        event.setLevel(EventVO.LEVEL_INFO);
+        event.setParameters(eventParams);
+        // Save the event
+        _eventDao.persist(event);
         return createdSnapshot;
     }
     
@@ -685,6 +682,11 @@ public class SnapshotManagerImpl implements SnapshotManager {
             _volsDao.update(volumeId, volume);
         }
         
+        boolean alreadyRemoved = false;
+        if(snapshotVO.getRemoved() != null){
+            alreadyRemoved = true;
+        }
+        
         // Create an event
         EventVO event = new EventVO();
         event.setUserId(userId);
@@ -713,7 +715,9 @@ public class SnapshotManagerImpl implements SnapshotManager {
             event.setDescription("Failed to backup snapshot id: " + id + " to secondary for volume " + volumeId);
         }
         // Save the event
-        _eventDao.persist(event);
+        if(!alreadyRemoved){
+            _eventDao.persist(event);
+        }
         txn.commit();
         
         return backedUp;
