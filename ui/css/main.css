@@ -3218,6 +3218,7 @@ a:hover.search_button {
 	background:url(../images/grid_headerbg.gif) repeat-x top left;
 	margin:0;
 	padding:0;
+	z-index:1002;
 }
 
 .grid_header_cell {
@@ -3314,7 +3315,6 @@ a:hover.search_button {
 	width:87px;
 	height:20px;
 	float:right;
-	position:relative;
 	background:url(../images/grid_actions.gif) no-repeat top left;
 	margin:1px 0x 0 0;
 	padding:0;
@@ -3522,7 +3522,7 @@ a:hover.search_button {
 	right:0;
 	margin:0;
 	padding:0;
-	z-index:1002;
+	z-index:1010;
 }
 
 .actionsdropdown_boxlist {
