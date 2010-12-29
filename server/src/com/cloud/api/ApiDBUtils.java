@@ -304,6 +304,10 @@ public class ApiDBUtils {
     public static Account findAccountById(Long accountId) {
         return _accountDao.findById(accountId);
     }
+    
+    public static Account findAccountByIdIncludingRemoved(Long accountId) {
+        return _accountDao.findByIdIncludingRemoved(accountId);
+    }
 
     public static Account findAccountByNameDomain(String accountName, Long domainId) {
         return _accountDao.findActiveAccount(accountName, domainId);
