@@ -1312,7 +1312,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             if (type == EnumType.STRING) {
                 pstmt.setString(j, value == null ? null : value.toString());
             } else if (type == EnumType.ORDINAL) {
-                pstmt.setLong(j, value == null ? null : ((Ip)value).longValue());
+                pstmt.setLong(j, value == null ? null : (value instanceof Ip) ? ((Ip)value).longValue() : NetUtils.ip2Long((String)value));
             }
         } else {
             pstmt.setObject(j, value);
