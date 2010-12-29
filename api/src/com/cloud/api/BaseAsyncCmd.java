@@ -101,7 +101,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     
     protected long saveStartedEvent(String eventType, String description, Long startEventId){
         UserContext ctx = UserContext.current();
-        Long userId = ctx.getUserId();
+        Long userId = ctx.getCallerUserId();
         userId = (userId == null) ? User.UID_SYSTEM : userId;
         Long startEvent = startEventId;
         if(startEvent == null){
@@ -116,7 +116,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     
     protected long saveCompletedEvent(String level, String eventType,  String description, Long startEventId){
         UserContext ctx = UserContext.current();
-        Long userId = ctx.getUserId();
+        Long userId = ctx.getCallerUserId();
         userId = (userId == null) ? User.UID_SYSTEM : userId;
         Long startEvent = startEventId;
         if(startEvent == null){

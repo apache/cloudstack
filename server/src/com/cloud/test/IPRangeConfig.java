@@ -332,10 +332,10 @@ public class IPRangeConfig {
 		}
 		
 		while (startIP <= endIP) {
-			if (!isPublicIPAllocated(NetUtils.long2Ip(startIP), vlanDbId, isAllocatedStmt)) {
+			if (!isPublicIPAllocated(startIP, vlanDbId, isAllocatedStmt)) {
 				try {
 					stmt.clearParameters();
-					stmt.setString(1, NetUtils.long2Ip(startIP));
+					stmt.setLong(1, startIP);
 					stmt.setLong(2, vlanDbId);
 					stmt.executeUpdate();
 				} catch (Exception ex) {
@@ -386,10 +386,10 @@ public class IPRangeConfig {
         return problemIPs;
 	}
 	
-	private boolean isPublicIPAllocated(String ip, long vlanDbId, PreparedStatement stmt) {
+	private boolean isPublicIPAllocated(long ip, long vlanDbId, PreparedStatement stmt) {
 		try {
         	stmt.clearParameters();
-        	stmt.setString(1, ip);
+        	stmt.setLong(1, ip);
         	stmt.setLong(2, vlanDbId);
         	ResultSet rs = stmt.executeQuery();
         	if (rs.next()) {
@@ -463,7 +463,7 @@ public class IPRangeConfig {
         while (startIP <= endIP) {
             try {
     		stmt = conn.prepareStatement(insertSql);
-    		stmt.setString(1, NetUtils.long2Ip(startIP));
+    		stmt.setLong(1, startIP);
     		stmt.setLong(2, zoneId);
     		stmt.setLong(3, vlanDbId);
     		stmt.setLong(4, zoneId);

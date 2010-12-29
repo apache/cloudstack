@@ -478,6 +478,7 @@ CREATE TABLE `cloud`.`firewall_rules` (
   `xid` char(40) NOT NULL COMMENT 'external id',
   `created` datetime COMMENT 'Date created',
   PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_firewall_rules__ip_address` FOREIGN KEY(`ip_address`) REFERENCES `user_ip_address`(`public_ip_address`),
   CONSTRAINT `fk_firewall_rules__network_id` FOREIGN KEY(`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_firewall_rules__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_firewall_rules__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
@@ -517,19 +518,19 @@ CREATE TABLE `cloud`.`port_forwarding_rules` (
 
 CREATE VIEW `cloud`.`port_forwarding_rules_view` AS SELECT fw.id, INET_NTOA(fw.ip_address) as src_ip_address, INET_NTOA(pf.dest_ip_address), fw.start_port as src_port_start, pf.dest_port_start, fw.end_port as src_end_port, pf.dest_port_end as dest_end_port, fw.state, fw.protocol, fw.purpose, fw.account_id from cloud.firewall_rules as fw inner join cloud.port_forwarding_rules as pf on fw.id=pf.id; 
  
-CREATE TABLE  `cloud`.`ip_forwarding` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `group_id` bigint unsigned default NULL,
-  `public_ip_address` varchar(15) NOT NULL,
-  `public_port` varchar(10) default NULL,
-  `private_ip_address` varchar(15) NOT NULL,
-  `private_port` varchar(10) default NULL,
-  `enabled` tinyint(1) NOT NULL default '1',
-  `protocol` varchar(16) NOT NULL default 'TCP',
-  `forwarding` tinyint(1) NOT NULL default '1',
-  `algorithm` varchar(255) default NULL,
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+#CREATE TABLE  `cloud`.`ip_forwarding` (
+#  `id` bigint unsigned NOT NULL auto_increment,
+#  `group_id` bigint unsigned default NULL,
+#  `public_ip_address` varchar(15) NOT NULL,
+#  `public_port` varchar(10) default NULL,
+#  `private_ip_address` varchar(15) NOT NULL,
+#  `private_port` varchar(10) default NULL,
+#  `enabled` tinyint(1) NOT NULL default '1',
+#  `protocol` varchar(16) NOT NULL default 'TCP',
+#  `forwarding` tinyint(1) NOT NULL default '1',
+#  `algorithm` varchar(255) default NULL,
+#  PRIMARY KEY  (`id`)
+#) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE  `cloud`.`host` (
@@ -654,6 +655,8 @@ CREATE TABLE  `cloud`.`user_ip_address` (
   INDEX `i_user_ip_address__allocated`(`allocated`),
   INDEX `i_user_ip_address__source_nat`(`source_nat`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE VIEW `cloud`.`user_ip_address_view` AS SELECT INET_NTOA(user_ip_address.public_ip_address) as public_ip_address, user_ip_address.data_center_id, user_ip_address.account_id, user_ip_address.domain_id, user_ip_address.source_nat, user_ip_address.allocated, user_ip_address.vlan_db_id, user_ip_address.one_to_one_nat, user_ip_address.state, user_ip_address.mac_address, user_ip_address.network_id as associated_network_id from user_ip_address; 
 
 CREATE TABLE  `cloud`.`user_statistics` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT,
@@ -1054,13 +1057,13 @@ CREATE TABLE `cloud`.`remote_access_vpn` (
   `ipsec_psk` varchar(256) NOT NULL,
   PRIMARY KEY  (`vpn_server_addr`),
   CONSTRAINT `fk_remote_access_vpn__account_id` FOREIGN KEY `fk_remote_access_vpn__account_id`(`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_remote_access_vpn__domain_id` FOREIGN KEY `fk_remote_access_vpn__domain_id`(
-  CONSTRAINT `fk_remote_access_vpn__network_id` FOREIGN KEY `fk_remote_access_vpn__network_id` (`network_id`) REFERENCES `networks` (`id`) ON DELETE CASCADE;
-#  CONSTRAINT `fk_remote_access_vpn__server_addr` FOREIGN KEY `fk_remote_access_vpn__server_addr` (`vpn_server_addr`) REFERENCES `user_ip_address` (`public_ip_address`) ON DELETE CASCADE,
+  CONSTRAINT `fk_remote_access_vpn__domain_id` FOREIGN KEY `fk_remote_access_vpn__domain_id`(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_remote_access_vpn__network_id` FOREIGN KEY `fk_remote_access_vpn__network_id` (`network_id`) REFERENCES `networks` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_remote_access_vpn__server_addr` FOREIGN KEY `fk_remote_access_vpn__server_addr` (`vpn_server_addr`) REFERENCES `user_ip_address` (`public_ip_address`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`vpn_users` (
-  `id` bigint unsigned NOT NULL auto_increment,
+  `id` bigint unsigned NOT NULL UNIQUE auto_increment,
   `owner_id` bigint unsigned NOT NULL,
   `domain_id` bigint unsigned NOT NULL,
   `username` varchar(255) NOT NULL,
@@ -1070,7 +1073,7 @@ CREATE TABLE `cloud`.`vpn_users` (
   CONSTRAINT `fk_vpn_users__owner_id` FOREIGN KEY (`owner_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_vpn_users__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
   INDEX `i_vpn_users_username`(`username`),
-  UNIQUE `i_vpn_users__account_id__username`(`account_id`, `username`) 
+  UNIQUE `i_vpn_users__account_id__username`(`owner_id`, `username`) 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`storage_pool` (

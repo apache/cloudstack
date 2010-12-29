@@ -69,6 +69,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
@@ -673,18 +674,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
-<<<<<<< HEAD
 
-        EventUtils.saveEvent(userId, ip.getAllocatedToAccountId(), EventTypes.EVENT_NET_IP_RELEASE, "released a public ip: " + ipAddress);
-=======
-        final EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(ip.getAllocatedToAccountId());
-        event.setType(EventTypes.EVENT_NET_IP_RELEASE);
-        event.setParameters("address=" + addr + "\nsourceNat="+ip.isSourceNat());
-        event.setDescription("released a public ip: " + addr);
-        _eventDao.persist(event);
->>>>>>> remote access vpn, user ip address changes
+        EventUtils.saveEvent(userId, ip.getAllocatedToAccountId(), EventTypes.EVENT_NET_IP_RELEASE, "released a public ip: " + addr);
         
         return success;
     }
@@ -1881,7 +1872,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-<<<<<<< HEAD
     public long getSystemNetworkIdByZoneAndTrafficTypeAndGuestType(long zoneId, TrafficType trafficType, GuestIpType guestType) {
         //find system public network offering
         Long networkOfferingId = null;
@@ -1904,7 +1894,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return networks.get(0).getId();
     }
     
-=======
+    @Override
     public PublicIpAddress getPublicIpAddress(Ip ip) {
         IPAddressVO addr = _ipAddressDao.findById(ip);
         if (addr == null) {
@@ -1913,5 +1903,4 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         return new PublicIp(addr, _vlanDao.findById(addr.getVlanId()), NetUtils.createSequenceBasedMacAddress(addr.getMacAddress()));
     }
->>>>>>> remote access vpn, user ip address changes
 }

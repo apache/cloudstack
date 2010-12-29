@@ -16,7 +16,6 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -25,6 +24,7 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -152,10 +152,12 @@ public class VMStateListener extends AdapterBase implements StateListener<State,
 
 		if (!moveFromReserved) {
 			/*move resource from used*/
-			if (usedCpu >= vmCPU)
-				capacityCpu.setUsedCapacity(usedCpu - vmCPU);
-			if (usedMem >= vmMem)
-				capacityMemory.setUsedCapacity(usedMem - vmMem);
+			if (usedCpu >= vmCPU) {
+                capacityCpu.setUsedCapacity(usedCpu - vmCPU);
+            }
+			if (usedMem >= vmMem) {
+                capacityMemory.setUsedCapacity(usedMem - vmMem);
+            }
 
 			if (moveToReservered) {
 				if (reservedCpu + vmCPU <= totalCpu) {
@@ -225,9 +227,9 @@ public class VMStateListener extends AdapterBase implements StateListener<State,
 	@Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 		super.configure(name, params);
-		_hostCapacityCheckerDelay = Integer.parseInt(_configDao.getValue(Config.HostCapacityCheckerWait.key()));
-		_hostCapacityCheckerInterval = Integer.parseInt(_configDao.getValue(Config.HostCapacityCheckerInterval.key()));
-		_vmCapacityReleaseInterval = Integer.parseInt(_configDao.getValue(Config.VmHostCapacityReleaseInterval.key()));
+		_hostCapacityCheckerDelay = NumbersUtil.parseInt(_configDao.getValue(Config.HostCapacityCheckerWait.key()), 3600);
+		_hostCapacityCheckerInterval = NumbersUtil.parseInt(_configDao.getValue(Config.HostCapacityCheckerInterval.key()), 3600);
+		_vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.VmHostCapacityReleaseInterval.key()), 86400);
 		_executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("HostCapacity-Checker"));
         return true;
     }
