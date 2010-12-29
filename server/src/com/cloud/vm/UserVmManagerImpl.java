@@ -552,7 +552,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
        
     	if (moveVolumeNeeded) {
     		// Move the volume to a storage pool in the VM's zone, pod, or cluster
-    		volume = _storageMgr.moveVolume(volume, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(), vmRootVolumePool.getClusterId());
+    		volume = _storageMgr.moveVolume(volume, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(), vmRootVolumePool.getClusterId(), dataDiskHyperType);
     	}
     	
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();

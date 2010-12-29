@@ -181,7 +181,7 @@ public interface StorageManager extends Manager {
 	 * @param destPoolClusterId
 	 * @return VolumeVO
 	 */
-	VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId);
+	VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType);
 
 	/**
 	 * Create a volume based on the given criteria

@@ -1553,10 +1553,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
 
     @Override
-    public VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId) {
+    public VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType) {
     	// Find a destination storage pool with the specified criteria
     	DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
     	DiskProfile dskCh = new DiskProfile(volume.getId(), volume.getVolumeType(), volume.getName(), diskOffering.getId(), diskOffering.getDiskSizeInBytes(), diskOffering.getTagsArray(), diskOffering.getUseLocalStorage(), diskOffering.isRecreatable(), null);
+    	dskCh.setHyperType(dataDiskHyperType);
     	DataCenterVO destPoolDataCenter = _dcDao.findById(destPoolDcId);
     	HostPodVO destPoolPod = _podDao.findById(destPoolPodId);
         StoragePoolVO destPool = findStoragePool(dskCh, destPoolDataCenter, destPoolPod, destPoolClusterId, null, null, null, new HashSet<StoragePool>());
