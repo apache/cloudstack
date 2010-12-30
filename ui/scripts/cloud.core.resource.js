@@ -238,8 +238,7 @@ function buildZoneTree() {
 		switch (targetId) {
 			case "cluster_arrow" :				    
 			    var $loadingContainer = $thisNode.find("#cluster_loading_container").show();
-                var $clusterArrow = $thisNode.find("#cluster_arrow").hide();			
-			    
+                var $clusterArrow = $thisNode.find("#cluster_arrow").hide();	
 			    var clusterObj = $thisNode.data("jsonObj");
 			    var $clusterContent = $thisNode.find("#cluster_content");				  	   
 				if($target.hasClass("expanded_close")) {										
@@ -248,31 +247,21 @@ function buildZoneTree() {
 	                    dataType: "json",
 	                    async: false,
 	                    success: function(json) {	                        
-	                        var items = json.listhostsresponse.host;	
-	                        var $container = $clusterContent.find("#hosts_container").empty();
+	                        var items = json.listhostsresponse.host;		                        
                             if (items != null && items.length > 0) {					    
-                                for (var i = 0; i < items.length; i++) {
-				                    var $hostNode = $("#leftmenu_host_node_template").clone(true);				                    
-				                    hostJSONToTreeNode(items[i], $hostNode);
-				                    $container.append($hostNode.show());				                    
-			                    }			                                 
+                                $clusterContent.find("#cluster_"+clusterObj.id+"_host").show();    	                                 
                             }	   
 	                    }
                     });    
                                         
                     $.ajax({        
                         data: createURL("command=listStoragePools&clusterid="+clusterObj.id),
-                        dataType: "json",        
+                        dataType: "json", 
+                        async: false,       
                         success: function(json) {    
-                            var items = json.liststoragepoolsresponse.storagepool;   
-                            var $container = $clusterContent.find("#primarystorages_container").empty();
+                            var items = json.liststoragepoolsresponse.storagepool;                              
                             if(items != null && items.length > 0) {              
-                                var $template = $("#leftmenu_primarystorage_node_template");	
-                                for(var i=0; i<items.length;i++) { 
-                                    var $primarystorageNode = $template.clone(true);	            
-	                                primarystorageJSONToTreeNode(items[i], $primarystorageNode);
-	                                $container.append($primarystorageNode.show());		               
-                                }                 
+                                $clusterContent.find("#cluster_"+clusterObj.id+"_primarystorage").show();    	           
                             }              	                
                         }
                     });	    

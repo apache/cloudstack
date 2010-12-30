@@ -771,7 +771,7 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
 						    $clusterArrow.click();
 						}
 						
-						$("#cluster_"+clusterId+"_primarystorage").click();	                   
+						$("#cluster_"+clusterId+"_primarystorage").show().click();	                   
 				    },			
                     error: function(XMLHttpResponse) {	  
 						handleError(XMLHttpResponse, function() {

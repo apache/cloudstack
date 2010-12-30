@@ -848,7 +848,7 @@
             </div>  
         </div>			
         <div id="cluster_content" style="display: none">
-             <div class="leftmenu_expandedlist" id="leftmenu_host_node_template" style="display:block">       
+             <div class="leftmenu_expandedlist" id="leftmenu_host_node_template" style="display:none">       
                 <div id="host_header" class="leftmenu_content">  
                     <div class="leftmenu_sixthindent">
             	        <div class="leftmenu_arrowloader" id="host_loading_container" style="display:none;"></div>
@@ -857,14 +857,8 @@
                         <span>Host</span>               
                     </div>  
                 </div>	           
-            </div>
-            
-            <!--  
-            <div id="hosts_container">
-            </div>	  
-            -->
-             
-            <div class="leftmenu_expandedlist" id="leftmenu_primarystorage_node_template" style="display:block">       
+            </div>           
+            <div class="leftmenu_expandedlist" id="leftmenu_primarystorage_node_template" style="display:none">       
                 <div id="primarystorage_header" class="leftmenu_content">  
                     <div class="leftmenu_sixthindent">
             	        <div class="leftmenu_arrowloader" id="primarystorage_loading_container" style="display:none;"></div>
@@ -873,43 +867,10 @@
                         <span>Storage</span>               
                     </div>  
                 </div>	           
-            </div>
-            
-            <!--          	            
-            <div id="primarystorages_container">
-            </div> 
-            -->           	                       
+            </div>                   	                       
         </div>	    
     </div>
-    <!-- cluster Template (end) -->
-
-    <!-- host Template (begin) --> 
-    <div class="leftmenu_expandedlist" id="leftmenu_host_node_template" style="display:none">       
-        <div id="host_header" class="leftmenu_content">  
-            <div class="leftmenu_sixthindent">
-            	<div class="leftmenu_arrowloader" id="host_loading_container" style="display:none;"></div>
-                <div class="leftmenu_arrows white_nonexpanded_close" id="host_arrow">
-                </div>	                
-                <span id="host_name_label">host: </span>
-                <span id="host_name"></span>
-            </div>  
-        </div>	           
-    </div>
-    <!-- host Template (end) -->
-
-    <!-- primarystorage Template (begin) --> 
-    <div class="leftmenu_expandedlist" id="leftmenu_primarystorage_node_template" style="display:none">       
-        <div id="primarystorage_header" class="leftmenu_content">  
-            <div class="leftmenu_sixthindent">
-            	<div class="leftmenu_arrowloader" id="primarystorage_loading_container" style="display:none;"></div>
-                <div class="leftmenu_arrows white_nonexpanded_close" id="primarystorage_arrow">
-                </div>	                
-                <span id="primarystorage_name_label">Storage: </span>
-                <span id="primarystorage_name"></span>
-            </div>  
-        </div>	           
-    </div>
-    <!-- primarystorage Template (end) -->
+    <!-- cluster Template (end) -->   
     
     <!-- domain tree node template (begin) -->
     <div id="domain_tree_node_template" style="display:none">    	
