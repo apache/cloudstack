@@ -863,9 +863,22 @@
             <div id="hosts_container">
             </div>	  
             -->
-                      	            
+             
+            <div class="leftmenu_expandedlist" id="leftmenu_primarystorage_node_template" style="display:block">       
+                <div id="primarystorage_header" class="leftmenu_content">  
+                    <div class="leftmenu_sixthindent">
+            	        <div class="leftmenu_arrowloader" id="primarystorage_loading_container" style="display:none;"></div>
+                        <div class="leftmenu_arrows white_nonexpanded_close" id="primarystorage_arrow">
+                        </div>	                
+                        <span>Storage</span>               
+                    </div>  
+                </div>	           
+            </div>
+            
+            <!--          	            
             <div id="primarystorages_container">
-            </div>          	                       
+            </div> 
+            -->           	                       
         </div>	    
     </div>
     <!-- cluster Template (end) -->

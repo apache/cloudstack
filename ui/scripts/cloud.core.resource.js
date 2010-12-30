@@ -220,6 +220,16 @@ function buildZoneTree() {
 	    return false;
 	});  
 	
+	$("#leftmenu_primarystorage_node_template").unbind("click").bind("click", function(event) {
+	    selectRowInZoneTree($(this).find("#primarystorage_header"));	    
+	   	  
+	   	primarystorageClearRightPanel();    	    
+	    var clusterObj = $(this).data("clusterObj");
+        listMidMenuItems(("listStoragePools&clusterid="+clusterObj.id), primarystorageGetSearchParams, "liststoragepoolsresponse", "storagepool", "jsp/primarystorage.jsp", afterLoadPrimaryStorageJSP, primarystorageToMidmenu, primarystorageToRightPanel, getMidmenuId, false, ("cluster_"+clusterObj.id+"_primarystorage"));    
+	    	    
+	    return false;
+	});
+	
 	$("#leftmenu_cluster_node_template").unbind("click").bind("click", function(event) {
 		var $thisNode = $(this);
 		var $target = $(event.target);
@@ -340,6 +350,7 @@ function buildZoneTree() {
 	});  
 	*/
 	
+	/*
 	$("#leftmenu_primarystorage_node_template").unbind("click").bind("click", function(event) {		    
 		var $thisNode = $(this);
 		selectRowInZoneTree($thisNode.find("#primarystorage_header"));	
@@ -367,6 +378,7 @@ function buildZoneTree() {
 		
 		return false;
 	});  
+	*/
 }    
 
 function refreshClusterUnderPod($podNode, newClusterName, existingClusterId, noClicking) {  
@@ -463,6 +475,7 @@ function clusterJSONToTreeNode(json, $clusterNode) {
     $clusterNode.attr("id", "cluster_"+json.id);
     $clusterNode.data("jsonObj", json);	 
     $clusterNode.find("#leftmenu_host_node_template").data("clusterObj", json).attr("id",("cluster_"+json.id+"_host"));	  
+    $clusterNode.find("#leftmenu_primarystorage_node_template").data("clusterObj", json).attr("id",("cluster_"+json.id+"_primarystorage"));	  
     $clusterNode.data("id", json.id).data("name", fromdb(json.name));	    
     var clusterName = $clusterNode.find("#cluster_name").text(fromdb(json.name));
     clusterName.data("jsonObj", json);	   
