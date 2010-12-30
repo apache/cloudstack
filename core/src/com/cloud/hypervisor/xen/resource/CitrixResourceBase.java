@@ -4650,6 +4650,10 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
     }
 
+    boolean IsISCSI(String type) {
+        return SRType.LVMOISCSI.equals(type) || SRType.LVM.equals(type) ;
+    }
+    
     protected ManageSnapshotAnswer execute(final ManageSnapshotCommand cmd) {
         Connection conn = getConnection();
         long snapshotId = cmd.getSnapshotId();
@@ -4688,7 +4692,7 @@ public abstract class CitrixResourceBase implements ServerResource {
                     SR sr = volume.getSR(conn);
                     String srUUID = sr.getUuid(conn);
                     String type = sr.getType(conn);
-                    Boolean isISCSI = SRType.LVMOISCSI.equals(type);
+                    Boolean isISCSI = IsISCSI(type);
                     String snapshotParentUUID = getVhdParent(conn, srUUID, snapshotUUID, isISCSI);
                     
                     String preSnapshotParentUUID = getVhdParent(conn, srUUID, preSnapshotUUID, isISCSI);
@@ -4893,8 +4897,6 @@ public abstract class CitrixResourceBase implements ServerResource {
             if (primaryStorageSR == null) {
                 throw new InternalErrorException("Could not backup snapshot because the primary Storage SR could not be created from the name label: " + primaryStorageNameLabel);
             }
-            String primaryStorageSRUuid = primaryStorageSR.getUuid(conn);
-            Boolean isISCSI = SRType.LVMOISCSI.equals(primaryStorageSR.getType(conn));
 
             URI uri = new URI(secondaryStoragePoolURL);
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
@@ -4923,6 +4925,8 @@ public abstract class CitrixResourceBase implements ServerResource {
                     }
                 }
             } else {
+                    String primaryStorageSRUuid = primaryStorageSR.getUuid(conn);
+                    Boolean isISCSI = IsISCSI(primaryStorageSR.getType(conn));
                     snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, dcId, accountId, volumeId, secondaryStorageMountPath, 
                             snapshotUuid, prevBackupUuid, isISCSI);
                     success = (snapshotBackupUuid != null);

@@ -211,10 +211,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         if (storagePoolVO == null) {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " does not have a valid storage pool. Is it destroyed?");
         }
-        if (storagePoolVO.isLocal()) {
-            throw new InvalidParameterValueException("Cannot create a snapshot from a volume residing on a local storage pool, poolId: " + volume.getPoolId());
-        }
-
         if (!isVolumeDirty(volumeId, policyId)) {
             throw new CloudRuntimeException("There is no change for volume " + volumeId + " since last snapshot, please use the last snapshot instead.");           
         }
