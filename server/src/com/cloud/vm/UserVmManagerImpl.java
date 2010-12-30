@@ -1844,7 +1844,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 // Specify RAW format makes it unusable for snapshots.
                 privateTemplate.setFormat(ImageFormat.RAW);
             }
-
+            
+            if(snapshot != null)
+            	privateTemplate.setHypervisorType(snapshot.getHypervisorType());
+            
             _templateDao.update(templateId, privateTemplate);
 
             // add template zone ref for this template

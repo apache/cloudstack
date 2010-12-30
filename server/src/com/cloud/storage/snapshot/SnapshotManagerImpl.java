@@ -231,8 +231,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         // Create the Snapshot object and save it so we can return it to the
         // user
         Type snapshotType = SnapshotVO.getSnapshotType(policyId);
+        HypervisorType hypervisorType = this._volsDao.getHypervisorType(volumeId);
         SnapshotVO snapshotVO = new SnapshotVO(snapshotId, volume.getAccountId(), volume.getId(), null, snapshotName,
-                (short) snapshotType.ordinal(), snapshotType.name());
+                (short) snapshotType.ordinal(), snapshotType.name(), hypervisorType);
         snapshotVO = _snapshotDao.persist(snapshotVO);
         id = snapshotVO.getId();
         assert id != null;

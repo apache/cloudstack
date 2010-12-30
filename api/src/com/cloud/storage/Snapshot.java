@@ -20,6 +20,8 @@ package com.cloud.storage;
 
 import java.util.Date;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+
 public interface Snapshot {
     public enum Type {
         MANUAL,
@@ -60,4 +62,5 @@ public interface Snapshot {
     Date getCreated();
     short getSnapshotType();
     Status getStatus();
+    HypervisorType getHypervisorType();
 }

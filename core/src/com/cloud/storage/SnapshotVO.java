@@ -31,6 +31,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.annotations.Expose;
 
@@ -79,10 +80,14 @@ public class SnapshotVO implements Snapshot {
     
     @Column(name="prev_snap_id")
     long prevSnapshotId;
+
+    @Column(name="hypervisor_type")
+    @Enumerated(value=EnumType.STRING)
+    HypervisorType  hypervisorType;
     
     public SnapshotVO() { }
 
-    public SnapshotVO(long id, long accountId, long volumeId, String path, String name, short snapshotType, String typeDescription) {
+    public SnapshotVO(long id, long accountId, long volumeId, String path, String name, short snapshotType, String typeDescription, HypervisorType hypervisorType) {
         this.id = id;
         this.accountId = accountId;
         this.volumeId = volumeId;
@@ -92,6 +97,7 @@ public class SnapshotVO implements Snapshot {
         this.typeDescription = typeDescription;
         this.status = Status.Creating;
         this.prevSnapshotId = 0;
+        this.hypervisorType = hypervisorType;
     }
 
     @Override
@@ -127,6 +133,12 @@ public class SnapshotVO implements Snapshot {
     public short getSnapshotType() {
         return snapshotType;
     }
+    
+    @Override
+    public HypervisorType getHypervisorType() {
+    	return hypervisorType;
+    }
+    
     public void setSnapshotType(short snapshotType) {
         this.snapshotType = snapshotType;
     }

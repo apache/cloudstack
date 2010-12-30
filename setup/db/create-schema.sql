@@ -228,7 +228,7 @@ CREATE TABLE `cloud`.`cluster` (
   `guid` varchar(255) UNIQUE DEFAULT NULL COMMENT 'guid for the cluster',
   `pod_id` bigint unsigned NOT NULL COMMENT 'pod id',
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id',
-  `hypervisor_type` varchar(255),
+  `hypervisor_type` varchar(32),
   `cluster_type` varchar(64) DEFAULT 'CloudManaged',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -361,6 +361,7 @@ CREATE TABLE `cloud`.`snapshots` (
   `removed` datetime COMMENT 'Date removed.  not null if removed',
   `backup_snap_id` varchar(255) COMMENT 'Back up uuid of the snapshot',
   `prev_snap_id` bigint unsigned COMMENT 'Id of the most recent snapshot',
+  `hypervisor_type` varchar(32) NOT NULL COMMENT 'hypervisor that the snapshot was taken under',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -693,7 +694,7 @@ CREATE TABLE  `cloud`.`vm_template` (
   `prepopulate` int(1) unsigned NOT NULL default 0 COMMENT 'prepopulate this template to primary storage',
   `cross_zones` int(1) unsigned NOT NULL default 0 COMMENT 'Make this template available in all zones',
   `extractable` int(1) unsigned NOT NULL default 1 COMMENT 'Is this template extractable',
-  `hypervisor_type` varchar(255) COMMENT 'hypervisor that the template is belonged to',
+  `hypervisor_type` varchar(32) COMMENT 'hypervisor that the template is belonged to',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1144,7 +1145,7 @@ CREATE TABLE `cloud`.`guest_os` (
 
 CREATE TABLE `cloud`.`guest_os_hypervisor` (
   `id` bigint unsigned NOT NULL auto_increment,
-  `hypervisor_type` varchar(255) NOT NULL,
+  `hypervisor_type` varchar(32) NOT NULL,
   `guest_os_name` varchar(255) NOT NULL,
   `guest_os_id` bigint unsigned NOT NULL,
   PRIMARY KEY  (`id`)

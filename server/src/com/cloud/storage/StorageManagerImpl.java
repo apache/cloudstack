@@ -546,7 +546,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
     
     @DB
-    protected Pair<VolumeVO, String> createVolumeFromSnapshot(VolumeVO volume, SnapshotVO snapshot, VMTemplateVO template, long virtualsize) {
+    protected Pair<VolumeVO, String> createVolumeFromSnapshot(VolumeVO volume, SnapshotVO snapshot, long virtualsize) {
         VolumeVO createdVolume = null;
         Long volumeId = volume.getId();
         
@@ -565,7 +565,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
         DataCenterVO dc = _dcDao.findById(volume.getDataCenterId());
-        DiskProfile dskCh = new DiskProfile(volume, diskOffering, template.getHypervisorType());
+        DiskProfile dskCh = new DiskProfile(volume, diskOffering, snapshot.getHypervisorType());
 
         int retry = 0;
         // Determine what pod to store the volume in
@@ -658,7 +658,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             template = _templateDao.findById(originalVolume.getTemplateId());
         }
 
-        Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(volume, snapshot, template, originalVolume.getSize());
+        Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(volume, snapshot, originalVolume.getSize());
         createdVolume = volumeDetails.first();
 
         Transaction txn = Transaction.currentTxn();
