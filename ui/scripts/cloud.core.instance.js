@@ -988,6 +988,7 @@ function initVMWizard() {
 			    moreCriteria.push("&group="+todb(group));	
 			    		
 			var $midmenuItem1 = beforeAddingMidMenuItem() ;
+			$("#midmenu_container #midmenu_container_no_items_available").hide();
 			    			
 		    $.ajax({
 			    data: createURL("command=deployVirtualMachine"+moreCriteria.join("")),
