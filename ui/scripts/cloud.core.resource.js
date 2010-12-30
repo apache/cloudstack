@@ -510,6 +510,8 @@ function afterLoadResourceJSP() {
 	initDialog("dialog_add_external_cluster_in_resource_page", 320);
     initDialog("dialog_add_host_in_resource_page");  
     initDialog("dialog_add_pool_in_resource_page");
+	
+	listZonesUpdate();
 		
 	initAddPodShortcut();
 	initAddClusterShortcut();
@@ -519,10 +521,30 @@ function afterLoadResourceJSP() {
 	resourceCountTotal();	  
 }
 
+function listZonesUpdate() {
+    var $dialogs = $("#dialog_add_pod_in_resource_page,#dialog_add_external_cluster_in_resource_page,#dialog_add_host_in_resource_page,#dialog_add_pool_in_resource_page");
+       
+    $.ajax({
+	    data: createURL("command=listZones&available=true"),
+	    dataType: "json",
+	    async: false,
+	    success: function(json) {
+	        var items = json.listzonesresponse.zone;			
+			if (items != null && items.length > 0) {
+			    $("#zone_total").text(items.length.toString());			   
+			    for(var i=0; i<items.length; i++) {		   			    
+			        $dialogs.find("#zone_dropdown").append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
+			    }			         
+			}	
+	    }
+	}); 
+}
+
 function initAddPodShortcut() {
     var $dialogAddPod = $("#dialog_add_pod_in_resource_page");
 
     var $zoneDropdown = $dialogAddPod.find("#zone_dropdown");
+    /*
     $.ajax({
 	    data: createURL("command=listZones&available=true"),
 	    dataType: "json",
@@ -535,7 +557,7 @@ function initAddPodShortcut() {
 			}	
 	    }
 	});    
-    
+    */
     $zoneDropdown.bind("change", function(event) {
 	    var zoneId = $(this).val();	    
 	    if(zoneId == null)
@@ -681,13 +703,13 @@ function initAddPodShortcut() {
     });        
 }    
 
-//???
 function initAddClusterShortcut() {
     var $dialogAddCluster = $("#dialog_add_external_cluster_in_resource_page");
 
     var $zoneDropdown = $dialogAddCluster.find("#zone_dropdown");
     var $podDropdown = $dialogAddCluster.find("#pod_dropdown");    	
     
+    /*
     $.ajax({
 	    data: createURL("command=listZones&available=true"),
 	    dataType: "json",
@@ -700,6 +722,7 @@ function initAddClusterShortcut() {
 			}	
 	    }
 	});    
+    */
         
     $zoneDropdown.bind("change", function(event) {
 	    var zoneId = $(this).val();	    
@@ -852,6 +875,7 @@ function initAddClusterShortcut() {
 function initAddHostShortcut() {
     var $dialogAddHost = $("#dialog_add_host_in_resource_page");    
     
+    /*
     $.ajax({
         data: createURL("command=listZones&available=true"),
 	    dataType: "json",
@@ -865,6 +889,7 @@ function initAddHostShortcut() {
 		    //$dialogAddHost.find("#zone_dropdown").change();	//comment out to avoid race condition, do it before dialog box pops up	    
 	    }
     });
+	*/
 	
     $dialogAddHost.find("#zone_dropdown").bind("change", function(event) {
 	    var zoneId = $(this).val();
@@ -1031,6 +1056,7 @@ function initAddZoneLinks() {
 }
 
 function resourceCountTotal() {		
+	/*
 	$.ajax({
 	    data: createURL("command=listZones&available=true"),
 	    dataType: "json",
@@ -1041,6 +1067,7 @@ function resourceCountTotal() {
 			}	
 	    }
 	});
+	*/
 	
 	$.ajax({
 	    data: createURL("command=listPods&available=true"),
@@ -1296,9 +1323,12 @@ function addZoneWizardSubmit($thisWizard) {
 		    
 		    zoneId = item.id;	
 		    
+		    listZonesUpdate();
+		    /*
 		    var zoneTotal = parseInt($("#zone_total").text());
 		    zoneTotal++;
-		    $("#zone_total").text(zoneTotal.toString());		           
+		    $("#zone_total").text(zoneTotal.toString());	
+		    */	           
 	    },
         error: function(XMLHttpResponse) {            
 			handleError(XMLHttpResponse, function() {
@@ -1494,6 +1524,7 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 	    $dialogAddPool.find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
     bindEventHandlerToDialogAddPool($dialogAddPool);	
     
+    /*
     $.ajax({
         data: createURL("command=listZones&available=true"),
 	    dataType: "json",
@@ -1507,6 +1538,7 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 		    //$dialogAddPool.find("#zone_dropdown").change();	//comment out to avoid race condition, do it before dialog box pops up	    
 	    }
     });
+	*/
 	
     $dialogAddPool.find("#zone_dropdown").bind("change", function(event) {
 	    var zoneId = $(this).val();
