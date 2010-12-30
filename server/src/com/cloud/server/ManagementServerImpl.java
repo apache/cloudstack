@@ -596,7 +596,7 @@ public class ManagementServerImpl implements ManagementServer {
             domainName = domain.getName();
         }
         
-        if (!userAccount.getState().equals("enabled") || !userAccount.getAccountState().equals("enabled")) {
+        if (!userAccount.getState().equalsIgnoreCase(Account.State.Enabled.toString()) || !userAccount.getAccountState().equalsIgnoreCase(Account.State.Enabled.toString())) {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("User " + username + " in domain " + domainName + " is disabled/locked (or account is disabled/locked)");
             }
