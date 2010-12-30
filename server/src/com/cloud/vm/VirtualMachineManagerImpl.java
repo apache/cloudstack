@@ -49,8 +49,6 @@ import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
-import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
@@ -253,6 +251,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
             }
             return true;
         }
+        
+        if (!this.advanceStop(vm, caller, account)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Unable to stop the VM so we can't expunge it.");
+            }
+        }
 
         if (!stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, vm.getHostId())) {
             s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm.toString());
@@ -262,16 +266,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Destroying vm " + vm);
         }
-        long userId = caller.getId();
-        long startEventId = EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+vm.getId());
-        
-        if (!stop(vm, caller, account)) {
-            s_logger.error("Unable to stop vm so we can't destroy it: " + vm);
-            EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_STOP, "Error stopping VM instance : " + vm.getId(), startEventId);
-            return false;
-        } else {
-            EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_STOP, "Successfully stopped VM instance : " + vm.getId(), startEventId);
-        }
         
         VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
 
@@ -279,15 +273,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     	//Clean up volumes based on the vm's instance id
     	_storageMgr.cleanupVolumes(vm.getId());
     	
-        VirtualMachineGuru<T> guru = getVmGuru(vm);
-        vm = guru.findById(vm.getId());
-
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Destroying vm " + vm);
-        }
-        if (!stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
-            s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm.toString());
-            return false;
+            s_logger.debug("Expunged " + vm);
         }
 
         return true;
@@ -499,7 +486,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
         }
         
         if (state == State.Creating || state == State.Destroyed || state == State.Expunging || state == State.Error) {
-            s_logger.warn("Stopped called on " + vm.toString() + " but the state is " + state.toString());
+            s_logger.debug("Stopped called on " + vm + " but the state is " + state);
             return true;
         }
         

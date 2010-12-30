@@ -23,12 +23,8 @@ import java.util.Enumeration;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -262,19 +258,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     ScheduledExecutorService _executor = null;
     int _expungeInterval;
     int _expungeDelay;
-    int _retry = 2;
 
     String _name;
     String _instance;
     String _zone;
     String _defaultNetworkDomain;
 
-    Random _rand = new Random(System.currentTimeMillis());
-
     private ConfigurationDao _configDao;
-
-	int _userVMCap = 0;
-    final int _maxWeight = 256;
 
     @Override
     public UserVmVO getVirtualMachine(long vmId) {
@@ -928,57 +918,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     	return vmStatsById;
     }
     
-    @DB
-    protected String acquireGuestIpAddress(long dcId, long accountId, UserVmVO userVm) throws CloudRuntimeException {
-    	boolean routerLock = false;
-        DomainRouterVO router = _routerDao.findBy(accountId, dcId);
-        long routerId = router.getId();
-        Transaction txn = Transaction.currentTxn();
-    	try {
-    		txn.start();
-        	router = _routerDao.acquireInLockTable(routerId);
-        	if (router == null) {
-        		throw new CloudRuntimeException("Unable to lock up the router:" + routerId);
-        	}
-        	routerLock = true;
-        	List<UserVmVO> userVms = _vmDao.listByAccountAndDataCenter(accountId, dcId);
-        	Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(router.getGuestIpAddress(), NetUtils.getCidrSize(router.getGuestNetmask()));
-        	Set<Long> usedIps = new TreeSet<Long> ();
-        	for (UserVmVO vm: userVms) {
-        		if (vm.getGuestIpAddress() != null) {
-        			usedIps.add(NetUtils.ip2Long(vm.getGuestIpAddress()));
-        		}
-        	}
-        	if (usedIps.size() != 0) {
-        		allPossibleIps.removeAll(usedIps);
-        	}
-        	if (allPossibleIps.isEmpty()) {
-        		return null;
-        	}
-        	Iterator<Long> iterator = allPossibleIps.iterator();
-        	long ipAddress = iterator.next().longValue();
-        	String ipAddressStr = NetUtils.long2Ip(ipAddress);
-        	userVm.setGuestIpAddress(ipAddressStr);
-        	userVm.setGuestNetmask(router.getGuestNetmask());
-            String vmMacAddress = NetUtils.long2Mac(
-                	(NetUtils.mac2Long(router.getGuestMacAddress()) & 0xffffffff0000L) | (ipAddress & 0xffff)
-                );
-            userVm.setGuestMacAddress(vmMacAddress);
-        	_vmDao.update(userVm.getId(), userVm);
-        	txn.commit();
-        	if (routerLock) {
-        		_routerDao.releaseFromLockTable(routerId);
-        		routerLock = false;
-        	}
-        	return ipAddressStr;
-        }finally {
-        	if (routerLock) {
-        		_routerDao.releaseFromLockTable(routerId);
-        	}
-        }
-     }
-    
-    
     @Override
     public void releaseGuestIpAddress(UserVmVO userVm)  {
     	ServiceOffering offering = _offeringDao.findById(userVm.getServiceOfferingId());
@@ -1118,9 +1057,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             _defaultNetworkDomain = "." + _defaultNetworkDomain;
         }
 
-        String value = configs.get("start.retry");
-        _retry = NumbersUtil.parseInt(value, 2);
-
         _instance = configs.get("instance.name");
         if (_instance == null) {
             _instance = "DEFAULT";
@@ -1134,10 +1070,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         
         time = configs.get("expunge.delay");
         _expungeDelay = NumbersUtil.parseInt(time, _expungeInterval);
-        
-        String maxCap = configs.get("cpu.uservm.cap");
-        _userVMCap = NumbersUtil.parseInt(maxCap, 0);
-        
         
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("UserVm-Scavenger"));
         
@@ -1776,8 +1708,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 privateTemplate.setFormat(ImageFormat.RAW);
             }
             
-            if(snapshot != null)
-            	privateTemplate.setHypervisorType(snapshot.getHypervisorType());
+            if(snapshot != null) {
+                privateTemplate.setHypervisorType(snapshot.getHypervisorType());
+            }
             
             _templateDao.update(templateId, privateTemplate);
 
