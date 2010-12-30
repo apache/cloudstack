@@ -38,6 +38,7 @@ import com.cloud.event.EventVO;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
@@ -47,11 +48,13 @@ import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.VpnUser;
 import com.cloud.network.VpnUser.State;
 import com.cloud.network.VpnUserVO;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -76,26 +79,18 @@ import com.cloud.utils.net.NetUtils;
 public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manager {
     private final static Logger s_logger = Logger.getLogger(RemoteAccessVpnManagerImpl.class);
     String _name;
-
-    @Inject
-    AccountDao _accountDao;
-    @Inject
-    VpnUserDao _vpnUsersDao;
-    @Inject
-    RemoteAccessVpnDao _remoteAccessVpnDao;
-    @Inject
-    IPAddressDao _ipAddressDao;
-    @Inject
-    VirtualNetworkApplianceManager _routerMgr;
-    @Inject
-    AccountManager _accountMgr;
-    @Inject
-    NetworkManager _networkMgr;
-    @Inject
-    RulesManager _rulesMgr;
-    @Inject
-    DomainDao _domainDao;
-
+    
+    @Inject AccountDao _accountDao;
+    @Inject VpnUserDao _vpnUsersDao;
+    @Inject RemoteAccessVpnDao _remoteAccessVpnDao;
+    @Inject IPAddressDao _ipAddressDao;
+    @Inject VirtualNetworkApplianceManager _routerMgr;
+    @Inject AccountManager _accountMgr;
+    @Inject NetworkManager _networkMgr;
+    @Inject RulesManager _rulesMgr;
+    @Inject DomainDao _domainDao;
+    @Inject FirewallRulesDao _rulesDao;
+    
     int _userLimit;
     int _pskLength;
     String _clientIpRange;
@@ -119,13 +114,22 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         }
 
         RemoteAccessVpnVO vpnVO = _remoteAccessVpnDao.findByPublicIpAddress(publicIp.toString());
+       
         if (vpnVO != null) {
+            //if vpn is in Added state, return it to the api
+            if (vpnVO.getState() == RemoteAccessVpn.State.Added) {
+                return vpnVO;
+            }
             throw new InvalidParameterValueException("A Remote Access VPN already exists for this public Ip address");
         }
 
         // TODO: assumes one virtual network / domr per account per zone
         vpnVO = _remoteAccessVpnDao.findByAccountAndNetwork(ipAddr.getAllocatedToAccountId(), ipAddr.getAssociatedWithNetworkId());
         if (vpnVO != null) {
+            //if vpn is in Added state, return it to the api
+            if (vpnVO.getState() == RemoteAccessVpn.State.Added) {
+                return vpnVO;
+            }
             throw new InvalidParameterValueException("A Remote Access VPN already exists for this account");
         }
 
@@ -211,6 +215,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
                 + owner.getAccountName() + " in " + ip, startEventId);
         
         vpn.setState(RemoteAccessVpn.State.Removed);
+        _remoteAccessVpnDao.update(vpn.getServerAddress(), vpn);
         
         
         List<? extends RemoteAccessVpnElement> elements = _networkMgr.getRemoteAccessVpnElements();
@@ -229,17 +234,31 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
             } else {            
             
                 Transaction txn = Transaction.currentTxn();
-                txn.start();
-                _remoteAccessVpnDao.remove(ip);
-                if (!_rulesMgr.releasePorts(ip, NetUtils.UDP_PROTO, Purpose.Vpn, NetUtils.VPN_L2TP_PORT, NetUtils.VPN_NATT_PORT, NetUtils.VPN_PORT)) {
-                    s_logger.warn("Unable to release the three vpn ports from the firewall rules");
-                    txn.rollback();
+                try {
+                    txn.start();
+                    _remoteAccessVpnDao.remove(ip);
                     
-                } else {
+                    //Cleanup corresponding ports
+                    List<FirewallRuleVO> ports = _rulesDao.listByIpAndPurpose(ip, Purpose.Vpn);
+                    if (ports != null) {
+                        for (FirewallRuleVO port : ports) {
+                            _rulesDao.remove(port.getId());
+                            s_logger.debug("Successfully removed firewall rule with ip " + port.getSourceIpAddress() + " and port " + port.getSourcePortStart() + " as a part of vpn cleanup");
+                        }
+                    }
                     EventUtils.saveEvent(userId, owner.getId(), EventTypes.EVENT_REMOTE_ACCESS_VPN_DESTROY, "Deleted Remote Access VPN for account: "
                             + owner.getAccountName());
+                    txn.commit();   
+                } catch (Exception ex) {
+                    txn.rollback();
+                    s_logger.warn("Unable to release the three vpn ports from the firewall rules", ex);
                 }
-                txn.commit();
+                
+//                
+//                if (!_rulesMgr.releasePorts(ip, NetUtils.UDP_PROTO, Purpose.Vpn, NetUtils.VPN_L2TP_PORT, NetUtils.VPN_NATT_PORT, NetUtils.VPN_PORT)) {
+//                    s_logger.warn("Unable to release the three vpn ports from the firewall rules");
+//                    txn.rollback();
+              
             }
         }
     }
@@ -270,7 +289,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
             throw new AccountLimitException("Cannot add more than " + _userLimit + " remote access vpn users");
         }
 
-        VpnUser user = _vpnUsersDao.persist(new VpnUserVO(vpnOwnerId, username, password));
+        VpnUser user = _vpnUsersDao.persist(new VpnUserVO(vpnOwnerId, owner.getDomainId(), username, password));
         EventUtils.saveEvent(callerId, owner.getId(), EventTypes.EVENT_VPN_USER_ADD, "Added a VPN user for account: " + owner.getAccountName()
                 + " username= " + username);
         txn.commit();
@@ -354,7 +373,15 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         List<RemoteAccessVpnVO> vpns = _remoteAccessVpnDao.findByAccount(vpnOwnerId);
 
         List<VpnUserVO> users = _vpnUsersDao.listByAccount(vpnOwnerId);
-
+        
+        //If user is in Active state, we still have to resend them therefore their status has to be Add
+        for (VpnUserVO user : users) {
+            if (user.getState() == State.Active) {
+                user.setState(State.Add);
+                _vpnUsersDao.update(user.getId(), user);
+            }
+        }
+        
         List<? extends RemoteAccessVpnElement> elements = _networkMgr.getRemoteAccessVpnElements();
 
         boolean success = true;
@@ -365,17 +392,18 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
             for (RemoteAccessVpnVO vpn : vpns) {
                 try {
                     String[] results = element.applyVpnUsers(vpn, users);
-    
-                    for (int i = 0; i < results.length; i++) {
-                        s_logger.debug("VPN User " + users.get(i)
-                                + (results[i] == null ? " is set on " : (" couldn't be set due to " + results[i]) + " on ") + vpn);
-                        if (results[i] == null) {
-                            if (!finals[i]) {
-                                finals[i] = true;
+                    if (results != null) {
+                        for (int i = 0; i < results.length; i++) {
+                            s_logger.debug("VPN User " + users.get(i)
+                                    + (results[i] == null ? " is set on " : (" couldn't be set due to " + results[i]) + " on ") + vpn);
+                            if (results[i] == null) {
+                                if (!finals[i]) {
+                                    finals[i] = true;
+                                }
+                            } else {
+                                finals[i] = false;
+                                success = false;
                             }
-                        } else {
-                            finals[i] = false;
-                            success = false;
                         }
                     }
                 } catch (ResourceUnavailableException e) {
@@ -390,14 +418,16 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         }
 
         for (int i = 0; i < finals.length; i++) {
-            if (finals[i]) {
-                VpnUserVO user = users.get(i);
+            VpnUserVO user = users.get(i);
+            if (finals[i]) {     
                 if (user.getState() == State.Add) {
                     user.setState(State.Active);
                     _vpnUsersDao.update(user.getId(), user);
                 } else if (user.getState() == State.Revoke) {
                     _vpnUsersDao.remove(user.getId());
                 }
+            } else {
+                s_logger.warn("Failed to apply vpn for user " + user.getUsername() + ", accountId=" + user.getAccountId());
             }
         }
 
@@ -411,6 +441,31 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         Long domainId = cmd.getDomainId();
         Long accountId = null;
         String username = cmd.getUsername();
+        
+        //Verify account information
+        if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            if (domainId != null) {
+                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list virtual machines.");
+                }
+
+                if (accountName != null) {
+                    account = _accountDao.findActiveAccount(accountName, domainId);
+                    if (account == null) {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                    accountId = account.getId();
+                }
+            } 
+            if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+                DomainVO domain = _domainDao.findById(account.getDomainId());
+                if (domain != null) {
+                   domainId = domain.getId();
+                }
+            }
+        } else {
+            accountId = account.getId();
+        }
 
         Filter searchFilter = new Filter(VpnUserVO.class, "username", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
@@ -420,6 +475,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.EQ);
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
 
         if ((accountId == null) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the
@@ -430,6 +486,9 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         }
 
         SearchCriteria<VpnUserVO> sc = sb.create();
+        
+        //list only active users
+        sc.setParameters("state", State.Active);
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -489,6 +548,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         SearchCriteria<RemoteAccessVpnVO> sc = VpnSearch.create();
 
         sc.setParameters("accountId", owner.getId());
+        sc.setParameters("state", RemoteAccessVpn.State.Running);
         DomainVO domain = _domainDao.findById(domainId);
         sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
 

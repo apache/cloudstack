@@ -20,6 +20,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -41,6 +42,9 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
     @Parameter(name="publicip", type=CommandType.STRING, required=true, description="public ip address of the vpn server")
     private String publicIp;
     
+    // unexposed parameter needed for events logging
+    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, expose=false)
+    private Long ownerId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -56,8 +60,10 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
 
 	@Override
 	public long getEntityOwnerId() {
-	    RemoteAccessVpn vpn = _entityMgr.findById(RemoteAccessVpn.class, new Ip(publicIp));
-	    return vpn.getAccountId();
+	    if (ownerId == null) {
+	        ownerId = _entityMgr.findById(RemoteAccessVpn.class, new Ip(publicIp)).getAccountId();
+	    }
+	    return ownerId;
     }
 
 	@Override

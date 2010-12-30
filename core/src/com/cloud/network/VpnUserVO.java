@@ -53,8 +53,9 @@ public class VpnUserVO implements VpnUser {
 
     public VpnUserVO() { }
 
-    public VpnUserVO(long accountId, String userName, String password) {
+    public VpnUserVO(long accountId, long domainId, String userName, String password) {
         this.accountId = accountId;
+        this.domainId = domainId;
         this.username = userName;
         this.password = password;
         this.state = State.Add;

@@ -80,6 +80,15 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         int results = remove(sc);
         return results == ports.length;
     }
+    
+    @Override
+    public List<FirewallRuleVO> listByIpAndPurpose(Ip ip, FirewallRule.Purpose purpose) {
+        SearchCriteria<FirewallRuleVO> sc = ReleaseSearch.create();
+        sc.setParameters("ip", ip);
+        sc.setParameters("purpose", purpose);
+        
+        return listBy(sc);
+    }
 
     @Override
     public List<FirewallRuleVO> listByIpAndNotRevoked(Ip ip) {

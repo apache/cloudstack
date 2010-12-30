@@ -30,7 +30,7 @@ public class ResourceUnavailableException extends Exception {
     }
     
     public ResourceUnavailableException(String msg, Class<?> scope, long resourceId, Throwable cause) {
-        super(new StringBuilder("Resource [").append(scope).append(":").append(resourceId).append("] is unreachable: ").append(msg).toString(), cause);
+        super(new StringBuilder("Resource [").append(scope.getSimpleName()).append(":").append(resourceId).append("] is unreachable: ").append(msg).toString(), cause);
         _scope = scope;
         _id = resourceId;
     }

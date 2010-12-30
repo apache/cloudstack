@@ -39,6 +39,9 @@ public class RemoteAccessVpnResponse extends BaseResponse {
     @SerializedName("domainname") @Param(description="the domain name of the account of the remote access vpn")
 	private String domainName;
     
+    @SerializedName("state") @Param(description="the state of the rule")
+    private String state;
+    
 	public String getAccountName() {
 		return accountName;
 	}
@@ -89,5 +92,11 @@ public class RemoteAccessVpnResponse extends BaseResponse {
 		return domainName;
 	}
 
-    
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
 }

@@ -39,6 +39,8 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.VpnUser;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRule;
@@ -47,6 +49,7 @@ import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -66,7 +69,7 @@ import com.cloud.vm.dao.UserVmDao;
 
 
 @Local(value=NetworkElement.class)
-public class VirtualRouterElement extends AdapterBase implements NetworkElement {
+public class VirtualRouterElement extends AdapterBase implements NetworkElement, RemoteAccessVpnElement {
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -169,6 +172,42 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement 
         } 
         return false;
     }
+    
+    
+    @Override
+    public String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException{
+        Network network = _networkConfigDao.findById(vpn.getNetworkId());
+        DataCenter dc = _dataCenterDao.findById(network.getDataCenterId());
+        if (canHandle(network.getGuestType(),dc)) {
+            return _routerMgr.applyVpnUsers(network, users);
+        } else {
+            s_logger.debug("Element " + this.getName() + " doesn't handle applyVpnUsers command");
+            return null;
+        }
+    }
+    
+    @Override
+    public boolean start(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
+        DataCenter dc = _dataCenterDao.findById(network.getDataCenterId());
+        if (canHandle(network.getGuestType(),dc)) {
+            return _routerMgr.startRemoteAccessVpn(network, vpn);
+        } else {
+            s_logger.debug("Element " + this.getName() + " doesn't handle createVpn command");
+            return false;
+        }
+    }
+    
+    @Override
+    public boolean stop(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
+        DataCenter dc = _dataCenterDao.findById(network.getDataCenterId());
+        if (canHandle(network.getGuestType(),dc)) {
+            return _routerMgr.deleteRemoteAccessVpn(network, vpn);
+        } else {
+            s_logger.debug("Element " + this.getName() + " doesn't handle removeVpn command");
+            return false;
+        }
+    }
+
 
     @Override
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
@@ -224,5 +263,5 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement 
         
         return capabilities;
     }
-
+    
 }

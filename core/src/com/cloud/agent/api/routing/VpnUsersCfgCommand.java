@@ -19,7 +19,7 @@
 package com.cloud.agent.api.routing;
 import java.util.List;
 
-import com.cloud.network.VpnUserVO;
+import com.cloud.network.VpnUser;
 
 
 public class VpnUsersCfgCommand extends NetworkElementCommand {
@@ -70,13 +70,13 @@ public class VpnUsersCfgCommand extends NetworkElementCommand {
     	
     }
     
-    public VpnUsersCfgCommand(List<VpnUserVO> addUsers, List<VpnUserVO> removeUsers) {
+    public VpnUsersCfgCommand(List<VpnUser> addUsers, List<VpnUser> removeUsers) {
     	userpwds = new UsernamePassword[addUsers.size() + removeUsers.size()];
     	int i = 0;
-    	for (VpnUserVO vpnUser: removeUsers) {
+    	for (VpnUser vpnUser: removeUsers) {
     		userpwds[i++] = new UsernamePassword(vpnUser.getUsername(), vpnUser.getPassword(), false);
     	}
-    	for (VpnUserVO vpnUser: addUsers) {
+    	for (VpnUser vpnUser: addUsers) {
     		userpwds[i++] = new UsernamePassword(vpnUser.getUsername(), vpnUser.getPassword(), true);
     	}
     }

@@ -24,6 +24,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -42,6 +43,7 @@ public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Ip
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("ipAddress", AllFieldsSearch.entity().getServerAddress(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
 
@@ -65,5 +67,13 @@ public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Ip
 		SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         return listBy(sc);
+	}
+	
+	@Override
+	public RemoteAccessVpnVO findByPublicIpAddressAndState(String ipAddress, RemoteAccessVpn.State state) {
+	    SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
+        sc.setParameters("ipAddress", ipAddress);
+        sc.setParameters("state", state);
+        return findOneBy(sc);
 	}
 }

@@ -80,10 +80,11 @@ public class ListRemoteAccessVpnsCmd extends BaseListCmd {
         List<? extends RemoteAccessVpn> vpns = _ravService.searchForRemoteAccessVpns(this);
         ListResponse<RemoteAccessVpnResponse> response = new ListResponse<RemoteAccessVpnResponse>();
         List<RemoteAccessVpnResponse> vpnResponses = new ArrayList<RemoteAccessVpnResponse>();
-        for (RemoteAccessVpn vpn : vpns) {
-            vpnResponses.add(_responseGenerator.createRemoteAccessVpnResponse(vpn));
+        if (vpns != null && !vpns.isEmpty()) {
+            for (RemoteAccessVpn vpn : vpns) {
+                vpnResponses.add(_responseGenerator.createRemoteAccessVpnResponse(vpn));
+            }
         }
-
         response.setResponses(vpnResponses);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

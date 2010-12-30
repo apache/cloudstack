@@ -37,6 +37,8 @@ public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
     
     boolean releasePorts(Ip ip, String protocol, FirewallRule.Purpose purpose, int[] ports);
     
+    List<FirewallRuleVO> listByIpAndPurpose(Ip ip, FirewallRule.Purpose purpose);
+    
 //	public List<PortForwardingRuleVO> listIPForwarding(String publicIPAddress, boolean forwarding);
 //	public List<PortForwardingRuleVO> listIPForwarding(String publicIPAddress, String port, boolean forwarding);
 //

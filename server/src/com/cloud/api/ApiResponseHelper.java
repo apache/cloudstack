@@ -1288,9 +1288,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (accountTemp != null) {
             vpnResponse.setAccountName(accountTemp.getAccountName());
             vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
-        }
+        }      
+        vpnResponse.setState(vpn.getState().toString());
 
         vpnResponse.setObjectName("remoteaccessvpn");
+       
+
         return vpnResponse;
     }
 

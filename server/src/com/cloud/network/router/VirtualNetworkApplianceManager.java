@@ -30,7 +30,9 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.RemoteAccessVpnVO;
+import com.cloud.network.VpnUser;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
@@ -97,11 +99,11 @@ public interface VirtualNetworkApplianceManager extends Manager {
 	
 	VirtualRouter deployDhcp(Network guestNetwork, DeployDestination dest, Account owner) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
 	
-	RemoteAccessVpnVO startRemoteAccessVpn(RemoteAccessVpnVO vpnVO) throws ResourceUnavailableException;
+	boolean startRemoteAccessVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
 	
 	boolean addRemoveVpnUsers(RemoteAccessVpnVO vpnVO, List<VpnUserVO> addUsers, List<VpnUserVO> removeUsers);
 
-	boolean deleteRemoteAccessVpn(RemoteAccessVpnVO vpnVO);
+	boolean deleteRemoteAccessVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
 	
 	VirtualRouter addVirtualMachineIntoNetwork(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, ReservationContext context, Boolean startDhcp) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
     
@@ -109,5 +111,7 @@ public interface VirtualNetworkApplianceManager extends Manager {
     
     boolean applyLBRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
     boolean applyPortForwardingRules(Network network, List<? extends FirewallRule> rules) throws AgentUnavailableException;
+    
+    String[] applyVpnUsers(Network network, List<? extends VpnUser> users) throws ResourceUnavailableException;
     
 }
