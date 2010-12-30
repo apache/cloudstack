@@ -1479,18 +1479,6 @@ public class UserVmManagerImpl implements UserVmManager {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        EventVO event = new EventVO();
-        event.setUserId(param.getUserId());
-        event.setAccountId(vm.getAccountId());
-        event.setType(EventTypes.EVENT_VM_DESTROY);
-        event.setStartId(param.getEventId());
-        event.setParameters("id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
-        if(!vm.getName().equals(vm.getDisplayName()))
-        	event.setDescription("successfully destroyed VM instance : " + vm.getName()+"("+vm.getDisplayName()+")");
-        else
-        	event.setDescription("successfully destroyed VM instance : " + vm.getName());
-        _eventDao.persist(event);
-        
         _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
         if (!_vmDao.updateIf(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
             s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm.toString());

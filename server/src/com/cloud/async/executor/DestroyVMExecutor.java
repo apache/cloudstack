@@ -34,6 +34,7 @@ import com.cloud.event.EventVO;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Volume.VolumeType;
+import com.cloud.user.Account;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.UserVmVO;
@@ -59,6 +60,14 @@ public class DestroyVMExecutor extends VMOperationExecutor {
 		} else {
 	    	VMOperationParam param = gson.fromJson(job.getCmdInfo(), VMOperationParam.class);
 			asyncMgr.updateAsyncJobAttachment(job.getId(), "vm_instance", param.getVmId());
+			EventVO event = new EventVO();
+            event.setUserId(param.getUserId());
+            event.setAccountId(Account.ACCOUNT_ID_SYSTEM);
+            event.setStartId(param.getEventId());
+            event.setState(EventState.Started);
+            event.setType(EventTypes.EVENT_VM_DESTROY);
+            event.setDescription("Starting to destroy VM with Id: " + param.getVmId());
+            asyncMgr.getExecutorContext().getEventDao().persist(event);			
 	    	return asyncMgr.getExecutorContext().getVmMgr().executeDestroyVM(this, param);
 		}
 	}
@@ -77,7 +86,6 @@ public class DestroyVMExecutor extends VMOperationExecutor {
         event.setUserId(param.getUserId());
         event.setAccountId(vm.getAccountId());
         event.setState(EventState.Completed);
-        event.setStartId(param.getEventId());
         event.setType(EventTypes.EVENT_VM_STOP);
         event.setParameters("id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
     	
@@ -87,7 +95,7 @@ public class DestroyVMExecutor extends VMOperationExecutor {
 
     	try {
 	    	if(stopped) {
-	        	asyncMgr.getExecutorContext().getVmMgr().completeStopCommand(param.getUserId(), vm, Event.OperationSucceeded, param.getEventId());
+	        	asyncMgr.getExecutorContext().getVmMgr().completeStopCommand(param.getUserId(), vm, Event.OperationSucceeded, 0);
 	        	// completeStopCommand will log the stop event, if we log it here we will end up with duplicated stop event
 	            Transaction txn = Transaction.currentTxn();
 	            txn.start();
@@ -95,6 +103,7 @@ public class DestroyVMExecutor extends VMOperationExecutor {
 		        event = new EventVO();
 		        event.setUserId(param.getUserId());
 		        event.setAccountId(vm.getAccountId());
+		        event.setStartId(param.getEventId());
 		        event.setType(EventTypes.EVENT_VM_DESTROY);
 		        event.setParameters("id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
 	            event.setDescription("successfully destroyed VM instance : " + vm.getName());
@@ -168,6 +177,7 @@ public class DestroyVMExecutor extends VMOperationExecutor {
         event.setUserId(param.getUserId());
         event.setAccountId(vm.getAccountId());
         event.setType(EventTypes.EVENT_VM_DESTROY);
+        event.setStartId(param.getEventId());
         event.setParameters("id="+vm.getId() + "\nvmName=" + vm.getName() + "\nsoId=" + vm.getServiceOfferingId() + "\ntId=" + vm.getTemplateId() + "\ndcId=" + vm.getDataCenterId());
         event.setDescription("failed to stop VM instance : " + vm.getName() + " due to " + resultMessage);
         event.setLevel(EventVO.LEVEL_ERROR);
