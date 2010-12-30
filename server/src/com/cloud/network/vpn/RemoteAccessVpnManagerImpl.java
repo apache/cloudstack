@@ -471,7 +471,10 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
             _accountMgr.checkAccess(caller, publicIp);
 
             List<RemoteAccessVpnVO> vpns = new ArrayList<RemoteAccessVpnVO>(1);
-            vpns.add(_remoteAccessVpnDao.findById(ipAddress));
+            RemoteAccessVpnVO remoteVpn = _remoteAccessVpnDao.findById(ipAddress);
+            if (remoteVpn != null) {
+            	vpns.add(remoteVpn);
+            }
             return vpns;
         }
 

@@ -481,7 +481,7 @@ function showEnableVPNDialog($thisTab) {
 			var $thisDialog = $(this);
 			$spinningWheel = $thisDialog.find("#spinning_wheel").show();
 			$.ajax({
-				data: createURL("command=createRemoteAccessVpn&account="+ipObj.account+"&domainid="+ipObj.domainid+"&zoneid="+ipObj.zoneid),
+				data: createURL("command=createRemoteAccessVpn&publicip="+ipObj.ipaddress+"&account="+ipObj.account+"&domainid="+ipObj.domainid+"&zoneid="+ipObj.zoneid),
 				dataType: "json",
 				success: function(json) {
 					var jobId = json.createremoteaccessvpnresponse.jobid;
@@ -595,7 +595,7 @@ function showVpnUsers(presharedkey, publicip) {
 				var $thisDialog = $(this);
 				$spinningWheel = $thisDialog.find("#spinning_wheel").show();
 				$.ajax({
-					data: createURL("command=deleteRemoteAccessVpn&account="+ipObj.account+"&domainid="+ipObj.domainid+"&zoneid="+ipObj.zoneid),
+					data: createURL("command=deleteRemoteAccessVpn&publicip="+ipObj.ipaddress+"&account="+ipObj.account+"&domainid="+ipObj.domainid+"&zoneid="+ipObj.zoneid),
 					dataType: "json",
 					success: function(json) {
 						var jobId = json.deleteremoteaccessvpnresponse.jobid;
