@@ -53,6 +53,22 @@
                 </div>
             </div>
             
+            <div class="dbrow odd" style="margin-top:10px; border:1px solid #CCC;">
+                <div class="dbrow_cell" style="width: 64%; border: none; ">
+                    <div class="resource_titlebox">
+                        <h2><span> # of </span> Clusters</h2>
+					</div>
+                </div>
+                <div class="dbrow_cell" style="width: 25%; border: none; background:#cacaca repeat top left; ">
+                     <div class="resources_totalbg">
+                    	<p id="cluster_total">0</p>
+                    </div>
+                </div>
+                <div class="dbrow_cell" style="width: 10%; border: none;">
+                	<div id="add_pod_shortcut" class="resadd_button" title="Add Cluster"></div>
+                </div>
+            </div>
+            
             <div class="dbrow even" style="margin-top:10px; border:1px solid #CCC;">
                 <div class="dbrow_cell" style="width: 64%; border: none;">
                      <div class="resource_titlebox">

@@ -884,6 +884,17 @@ function resourceCountTotal() {
 	});
 	
 	$.ajax({
+	    data: createURL("command=listClusters"),
+	    dataType: "json",
+	    success: function(json) {
+	        var items = json.listclustersresponse.cluster;		    			
+			if (items != null) {			   			    
+			    $("#cluster_total").text(items.length.toString());
+			}	
+	    }
+	});
+	
+	$.ajax({
         data: createURL("command=listHosts&type=Routing"),
         dataType: "json",
         async: false,
