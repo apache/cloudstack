@@ -223,6 +223,9 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
                 Map<String, String> params = new HashMap<String, String>();
                 params.put("volumeid", ""+volumeId);
                 params.put("policyid", ""+policyId);
+                params.put("ctxUserId", "1");
+                params.put("ctxAccountId", "1");
+                
                 AsyncJobVO job = new AsyncJobVO();
                 job.setUserId(userId);
                 // Just have SYSTEM own the job for now.  Users won't be able to see this job, but

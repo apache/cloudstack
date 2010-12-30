@@ -382,7 +382,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             throw new CloudRuntimeException("Creating snapshot failed due to " + e.toString());
         } finally {
             // Cleanup jobs to do after the snapshot has been created.
-            postCreateSnapshot(volumeId, snapshotId, policyId, backedUp);
+        	if( snapshotId != null) {
+        		postCreateSnapshot(volumeId, snapshotId, policyId, backedUp);
+        	}
         	_volsDao.releaseFromLockTable(volumeId);
         }
 

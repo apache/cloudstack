@@ -120,13 +120,18 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     
     @Override
     public void create(){
-        long id = _snapshotService.getNextInSequence(this);
+        Long id = _snapshotService.getNextInSequence(this);
         this.setEntityId(id);
     }
     
     @Override
     public void execute(){
         try {
+        	if (this.getEntityId() == null) {
+        		Long id = _snapshotService.getNextInSequence(this);
+        		this.setEntityId(id);
+        	}
+        	
             Snapshot snapshot = _snapshotService.createSnapshot(this);
             if (snapshot != null) {
                 SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
