@@ -848,8 +848,22 @@
             </div>  
         </div>			
         <div id="cluster_content" style="display: none">
+             <div class="leftmenu_expandedlist" id="leftmenu_host_node_template" style="display:block">       
+                <div id="host_header" class="leftmenu_content">  
+                    <div class="leftmenu_sixthindent">
+            	        <div class="leftmenu_arrowloader" id="host_loading_container" style="display:none;"></div>
+                        <div class="leftmenu_arrows white_nonexpanded_close" id="host_arrow">
+                        </div>	                
+                        <span>Host</span>               
+                    </div>  
+                </div>	           
+            </div>
+            
+            <!--  
             <div id="hosts_container">
-            </div>	            	            
+            </div>	  
+            -->
+                      	            
             <div id="primarystorages_container">
             </div>          	                       
         </div>	    

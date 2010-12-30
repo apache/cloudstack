@@ -207,8 +207,18 @@ function buildZoneTree() {
         listMidMenuItems(("listHosts&type=Routing&clusterid="+objCluster.id), hostGetSearchParams, "listhostsresponse", "host", "jsp/host.jsp", afterLoadHostJSP, hostToMidmenu, hostToRightPanel, getMidmenuId, false, ("cluster_"+objCluster.id));    
 	    	    
 	    return false;
-	});  
+	}); 
 	*/
+	
+	$("#leftmenu_host_node_template").unbind("click").bind("click", function(event) {
+	    selectRowInZoneTree($(this).find("#host_header"));	    
+	   	  
+	   	hostClearRightPanel();    	    
+	    var clusterObj = $(this).data("clusterObj");
+        listMidMenuItems(("listHosts&type=Routing&clusterid="+clusterObj.id), hostGetSearchParams, "listhostsresponse", "host", "jsp/host.jsp", afterLoadHostJSP, hostToMidmenu, hostToRightPanel, getMidmenuId, false, ("cluster_"+clusterObj.id+"_host"));    
+	    	    
+	    return false;
+	});  
 	
 	$("#leftmenu_cluster_node_template").unbind("click").bind("click", function(event) {
 		var $thisNode = $(this);
@@ -300,6 +310,7 @@ function buildZoneTree() {
 		return false;
 	});  
 	
+	/*
 	$("#leftmenu_host_node_template").unbind("click").bind("click", function(event) {		    
 		var $thisNode = $(this);
 		selectRowInZoneTree($thisNode.find("#host_header"));	
@@ -327,6 +338,7 @@ function buildZoneTree() {
 		
 		return false;
 	});  
+	*/
 	
 	$("#leftmenu_primarystorage_node_template").unbind("click").bind("click", function(event) {		    
 		var $thisNode = $(this);
@@ -449,7 +461,8 @@ function podJSONToTreeNode(json, $podNode) {
 		
 function clusterJSONToTreeNode(json, $clusterNode) {
     $clusterNode.attr("id", "cluster_"+json.id);
-    $clusterNode.data("jsonObj", json);	  
+    $clusterNode.data("jsonObj", json);	 
+    $clusterNode.find("#leftmenu_host_node_template").data("clusterObj", json).attr("id",("cluster_"+json.id+"_host"));	  
     $clusterNode.data("id", json.id).data("name", fromdb(json.name));	    
     var clusterName = $clusterNode.find("#cluster_name").text(fromdb(json.name));
     clusterName.data("jsonObj", json);	   
