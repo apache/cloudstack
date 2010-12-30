@@ -1852,19 +1852,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 Iterator<Service> it = providers.keySet().iterator();
                 while (it.hasNext()) {
                     Service service = it.next();
-                    if (providers.get(service).equalsIgnoreCase(element.getProvider().getName())) {
-                        if (elementCapabilities.containsKey(service)) {
-                            Map<Capability, String> capabilities = elementCapabilities.get(service);
-                            //Verify if Service support capability
-                            if (capabilities != null) {
-                                for (Capability capability : capabilities.keySet()) {          
-                                    assert(service.containsCapability(capability)) : "Capability " + capability.getName() + " is not supported by the service " + service.getName();
+                    String zoneProvider = providers.get(service);
+                    if (zoneProvider != null) {
+                        if (zoneProvider.equalsIgnoreCase(element.getProvider().getName())) {
+                            if (elementCapabilities.containsKey(service)) {
+                                Map<Capability, String> capabilities = elementCapabilities.get(service);
+                                //Verify if Service support capability
+                                if (capabilities != null) {
+                                    for (Capability capability : capabilities.keySet()) {          
+                                        assert(service.containsCapability(capability)) : "Capability " + capability.getName() + " is not supported by the service " + service.getName();
+                                    }
                                 }
+                                networkCapabilities.put(service, capabilities);
+                                it.remove();
                             }
-                            networkCapabilities.put(service, capabilities);
-                            it.remove();
                         }
-                    }
+                    } 
                 }
             }
         }
