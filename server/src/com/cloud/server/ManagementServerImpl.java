@@ -1120,7 +1120,7 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
             
             // Only return offerings with the same Guest IP type and storage pool preference
-            sc.addAnd("guestIpType", SearchCriteria.Op.EQ, offering.getGuestIpType());
+            //sc.addAnd("guestIpType", SearchCriteria.Op.EQ, offering.getGuestIpType());
             sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, offering.getUseLocalStorage());
         }
 

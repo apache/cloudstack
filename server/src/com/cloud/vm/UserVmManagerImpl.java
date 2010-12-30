@@ -829,13 +829,17 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("Not upgrading vm " + vmInstance.toString() + " since it already has the requested service offering (" + newServiceOffering.getName() + ")");
         }
         
-        // Check that the service offering being upgraded to has the same Guest IP type as the VM's current service offering
         ServiceOfferingVO currentServiceOffering = _offeringDao.findById(vmInstance.getServiceOfferingId());
+        
+        // Check that the service offering being upgraded to has the same Guest IP type as the VM's current service offering
+        // NOTE: With the new network refactoring in 2.2, we shouldn't need the check for same guest IP type anymore.
+        /*
         if (!currentServiceOffering.getGuestIpType().equals(newServiceOffering.getGuestIpType())) {
         	String errorMsg = "The service offering being upgraded to has a guest IP type: " + newServiceOffering.getGuestIpType();
         	errorMsg += ". Please select a service offering with the same guest IP type as the VM's current service offering (" + currentServiceOffering.getGuestIpType() + ").";
         	throw new InvalidParameterValueException(errorMsg);
         }
+        */
         
         // Check that the service offering being upgraded to has the same storage pool preference as the VM's current service offering
         if (currentServiceOffering.getUseLocalStorage() != newServiceOffering.getUseLocalStorage()) {
