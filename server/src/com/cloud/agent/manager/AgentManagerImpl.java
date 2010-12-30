@@ -89,7 +89,6 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InternalErrorException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.ha.HighAvailabilityManager;
@@ -542,10 +541,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
             if (host.getType() == Type.Routing && host.getHypervisorType() == Hypervisor.Type.XenServer ) {
                 if (host.getClusterId() != null) {
                     List<HostVO> hosts = _hostDao.listBy(Type.Routing, host.getClusterId(), host.getPodId(), host.getDataCenterId());
+                    hosts.add(host);
                     boolean success = true;
                     for( HostVO thost: hosts ) {
                         long thostId = thost.getId();
-                        if( thostId == hostId ) continue;
                        
                         PoolEjectCommand eject = new PoolEjectCommand(host.getGuid());
                         Answer answer = easySend(thostId, eject);
@@ -560,7 +559,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory {
                         }
                     }
                     if( !success ){
-                        throw new CloudRuntimeException("Unable to delete host " + hostId + " due to unable to eject it from pool");	
+                        String msg = "Unable to eject host " + host.getGuid() + " due to there is no host up in this cluster, please execute xe pool-eject host-uuid=" 
+                            + host.getGuid() + "in this host " + host.getPrivateIpAddress();
+                        s_logger.info(msg);
+                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(),"Unable to eject host " + host.getGuid(), msg);
                     }                  
                 }
             }
