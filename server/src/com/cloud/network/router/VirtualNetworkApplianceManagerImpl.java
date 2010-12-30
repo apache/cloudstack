@@ -1342,7 +1342,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             gatewayNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
             gatewayNic.setIsolationUri(guestNetwork.getBroadcastUri());
             gatewayNic.setMode(guestNetwork.getMode());
-            gatewayNic.setNetmask(NetUtils.getCidrSubNet(guestNetwork.getCidr()));
+            
+            String gatewayCidr = guestNetwork.getCidr();
+            String[] cidrPair = gatewayCidr.split("\\/");
+            long guestCidrSize = Long.parseLong(cidrPair[1]);
+            gatewayNic.setNetmask(NetUtils.getCidrNetmask(guestCidrSize));
             networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
             networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
 
