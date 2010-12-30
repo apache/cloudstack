@@ -1097,7 +1097,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 nic.setState(Resource.State.Releasing);
                 _nicDao.update(nic.getId(), nic);
                 NicProfile profile = new NicProfile(nic, network, null, null);
-                if (!concierge.release(profile, vmProfile, nic.getReservationId())) {
+                if (concierge.release(profile, vmProfile, nic.getReservationId())) {
                     nic.setState(Resource.State.Allocated);
                     _nicDao.update(nic.getId(), nic);
                 }
