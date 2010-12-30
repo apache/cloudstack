@@ -25,9 +25,9 @@ import com.cloud.user.UserStatisticsVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface UserStatisticsDao extends GenericDao<UserStatisticsVO, Long> {
-    UserStatisticsVO findBy(long accountId, long dcId);
+    UserStatisticsVO findBy(long accountId, long dcId, String publicIp, Long hostId);
 
-    UserStatisticsVO lock(long accountId, long dcId);
+    UserStatisticsVO lock(long accountId, long dcId, String publicIp, Long hostId);
 
     List<UserStatisticsVO> listBy(long accountId);
 

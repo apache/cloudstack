@@ -661,7 +661,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         final Transaction txn = Transaction.currentTxn();
         try {
             txn.start();
-            final UserStatisticsVO userStats = _userStatsDao.lock(router.getAccountId(), router.getDataCenterId());
+            final UserStatisticsVO userStats = _userStatsDao.lock(router.getAccountId(), router.getDataCenterId(), null, null);
             if (userStats != null) {
                 final RebootAnswer sa = (RebootAnswer) answer;
                 final Long received = sa.getBytesReceived();
@@ -1249,7 +1249,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                                 continue;
                             }
                             txn.start();
-                            UserStatisticsVO stats = _statsDao.lock(router.getAccountId(), router.getDataCenterId());
+                            UserStatisticsVO stats = _statsDao.lock(router.getAccountId(), router.getDataCenterId(), null, null);
                             if (stats == null) {
                                 s_logger.warn("unable to find stats for account: " + router.getAccountId());
                                 continue;

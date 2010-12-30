@@ -39,6 +39,12 @@ public class UserStatisticsVO {
 	@Column(name="account_id", updatable=false)
 	private long accountId;
 	
+	@Column(name="public_ip_address")
+	private String publicIpAddress;
+	
+	@Column(name="host_id")
+	private Long hostId;
+	
 	@Column(name="net_bytes_received")
 	private long netBytesReceived;
 	
@@ -54,13 +60,15 @@ public class UserStatisticsVO {
 	protected UserStatisticsVO() {
 	}
 	
-	public UserStatisticsVO(long accountId, long dcId) {
+	public UserStatisticsVO(long accountId, long dcId, String publicIpAddress, Long hostId) {
 		this.accountId = accountId;
+		this.dataCenterId = dcId;
+		this.publicIpAddress = publicIpAddress;
+		this.hostId = hostId;
 		this.netBytesReceived = 0;
 		this.netBytesSent = 0;
-		currentBytesReceived = 0;
-		currentBytesSent = 0;
-		dataCenterId = dcId;
+		this.currentBytesReceived = 0;
+		this.currentBytesSent = 0;		
 	}
 
 	public long getAccountId() {
@@ -73,6 +81,14 @@ public class UserStatisticsVO {
 
     public long getDataCenterId() {
         return dataCenterId;
+    }
+    
+    public String getPublicIpAddress() {
+    	return publicIpAddress;
+    }
+    
+    public Long getHostId() {
+    	return hostId;
     }
 
     public long getCurrentBytesReceived() {

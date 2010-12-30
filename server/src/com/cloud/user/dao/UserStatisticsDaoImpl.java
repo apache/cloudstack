@@ -43,39 +43,45 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
                                                                      "FROM user_statistics us, account a " +
                                                                      "WHERE us.account_id = a.id AND (a.removed IS NULL OR a.removed >= ?) " +
                                                                      "ORDER BY us.id";
-    private final SearchBuilder<UserStatisticsVO> UserDcSearch;
-    private final SearchBuilder<UserStatisticsVO> UserSearch;
+    private final SearchBuilder<UserStatisticsVO> AccountDcIpHostSearch;
+    private final SearchBuilder<UserStatisticsVO> AccountSearch;
     
     public UserStatisticsDaoImpl() {
-    	UserSearch = createSearchBuilder();
-    	UserSearch.and("account", UserSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-    	UserSearch.done();
+    	AccountSearch = createSearchBuilder();
+    	AccountSearch.and("account", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+    	AccountSearch.done();
 
-    	UserDcSearch = createSearchBuilder();
-        UserDcSearch.and("account", UserDcSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        UserDcSearch.and("dc", UserDcSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        UserDcSearch.done();
+    	AccountDcIpHostSearch = createSearchBuilder();
+        AccountDcIpHostSearch.and("account", AccountDcIpHostSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AccountDcIpHostSearch.and("dc", AccountDcIpHostSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        AccountDcIpHostSearch.and("ip", AccountDcIpHostSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
+        AccountDcIpHostSearch.and("host", AccountDcIpHostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+        AccountDcIpHostSearch.done();
     }
     
     @Override
-    public UserStatisticsVO findBy(long accountId, long dcId) {
-        SearchCriteria<UserStatisticsVO> sc = UserDcSearch.create();
+    public UserStatisticsVO findBy(long accountId, long dcId, String publicIp, Long hostId) {
+        SearchCriteria<UserStatisticsVO> sc = AccountDcIpHostSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
+        sc.setParameters("ip", publicIp);
+        sc.setParameters("host", hostId);
         return findOneBy(sc);
     }
 
     @Override
-    public UserStatisticsVO lock(long accountId, long dcId) {
-        SearchCriteria<UserStatisticsVO> sc = UserDcSearch.create();
+    public UserStatisticsVO lock(long accountId, long dcId, String publicIp, Long hostId) {
+        SearchCriteria<UserStatisticsVO> sc = AccountDcIpHostSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
+        sc.setParameters("ip", publicIp);
+        sc.setParameters("host", hostId);
         return lockOneRandomRow(sc, true);
     }
 
     @Override
     public List<UserStatisticsVO> listBy(long accountId) {
-        SearchCriteria<UserStatisticsVO> sc = UserSearch.create();
+        SearchCriteria<UserStatisticsVO> sc = AccountSearch.create();
         sc.setParameters("account", accountId);
         return search(sc, null);
     }

@@ -662,6 +662,8 @@ CREATE TABLE  `cloud`.`user_statistics` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT,
   `data_center_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
+  `public_ip_address` varchar(15),
+  `host_id` bigint unsigned,
   `net_bytes_received` bigint unsigned NOT NULL default '0',
   `net_bytes_sent` bigint unsigned NOT NULL default '0',
   `current_bytes_received` bigint unsigned NOT NULL default '0',
