@@ -429,9 +429,7 @@ function bindAddHostButton($leftmenuItem1) {
             dialogAddHost.find("#zone_name").text(fromdb(primarystorageObj.zonename));  
             dialogAddHost.find("#pod_name").text(fromdb(primarystorageObj.podname)); 
         }
-          
-        refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId, dialogAddHost.find("#host_hypervisor").val());
-        
+                  
         dialogAddHost.find("#host_hypervisor").change(function() {
         	if($(this).val() == "VmWare") {
         		$('li[input_group="vmware"]', dialogAddHost).show();
@@ -441,7 +439,7 @@ function bindAddHostButton($leftmenuItem1) {
         		$('li[input_group="general"]', dialogAddHost).show();
         	}
         	
-            refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, null, $(this).val());        
+            refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId, $(this).val());        
         }).change();
         
         dialogAddHost
@@ -555,7 +553,7 @@ function bindAddHostButton($leftmenuItem1) {
 			        },			
                     error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {							
-							refreshClsuterFieldInAddHostDialog($thisDialog, podId, null, dialogAddHost.find("#host_hypervisor").val());                                
+							refreshClsuterFieldInAddHostDialog($thisDialog, podId, clusterId, dialogAddHost.find("#host_hypervisor").val());                                
 							handleErrorInDialog(XMLHttpResponse, $thisDialog);							
 							if(clusterRadio == "new_cluster_radio") {    //*** new cluster ***                         
                                 refreshClusterUnderPod($("#pod_" + podId), newClusterName, null, true);  //refresh clusters under pod, but no clicking at any cluster                        
