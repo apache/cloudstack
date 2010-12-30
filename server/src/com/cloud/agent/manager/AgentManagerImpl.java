@@ -684,7 +684,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     public List<? extends Host> discoverHosts(AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         Long dcId = cmd.getZoneId();
         String url = cmd.getUrl();
-        return discoverHosts(dcId, null, null, null, url, null, null, "");
+        return discoverHosts(dcId, null, null, null, url, null, null, "SecondaryStorage");
     }
 
     @Override
@@ -717,6 +717,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         //Verify cluster information and create a new cluster if needed
         if (clusterName != null && clusterId != null) {
             throw new InvalidParameterValueException("Can't specify cluster by both id and name");
+        }
+        
+        if (hypervisorType == null || hypervisorType.isEmpty() ) {
+            throw new InvalidParameterValueException("Need to specify Hypervisor Type");
         }
         
         if ((clusterName != null || clusterId != null) && podId == null) {
@@ -762,10 +766,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         boolean isHypervisorTypeSupported = false;
         while (en.hasMoreElements()) {
             Discoverer discoverer = en.nextElement();
-            if(hypervisorType != null) {
-            	if(!discoverer.matchHypervisor(hypervisorType)) {
-                    continue;
-                }
+          	if(!discoverer.matchHypervisor(hypervisorType)) {
+                continue;
             }
             isHypervisorTypeSupported = true;
             Map<? extends ServerResource, Map<String, String>> resources = null;

@@ -241,7 +241,7 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
     
     @Override
 	public boolean matchHypervisor(String hypervisor) {
-        if( hypervisor == null || hypervisor.isEmpty()) {
+        if( hypervisor.equals("SecondaryStorage")) {
             return true;
         } else {
             return false;
