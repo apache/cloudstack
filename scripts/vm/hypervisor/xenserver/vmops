@@ -1476,7 +1476,7 @@ def can_bridge_firewall(session, args):
         os.makedirs('/var/run/cloud')
  
     cleanup_rules_for_dead_vms()
-    cleanup_rules()
+    cleanup_rules(session, args)
     
     return result
 
@@ -1937,7 +1937,7 @@ def cleanup_rules_for_dead_vms():
 
 
 @echo
-def cleanup_rules():
+def cleanup_rules(session, args):
   try:
     session = get_xapi_session()
 
@@ -1966,9 +1966,11 @@ def cleanup_rules():
     for vmname in cleanup:
         destroy_network_rules_for_vm(session, {'vmName':vmname})
                     
-    util.SMlog("Cleaned up rules for " + str(len(cleanup)) + " chains")                
+    util.SMlog("Cleaned up rules for " + str(len(cleanup)) + " chains")
+    return str(len(cleanup))                
   except:
     util.SMlog("Failed to cleanup rules !")
+    return '-1';
 
 @echo
 def check_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
@@ -2152,5 +2154,5 @@ def getVhdParent(session, args):
 
 
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"getVhdParent":getVhdParent, "pingtest": pingtest, "create_secondary_storage_folder":create_secondary_storage_folder, "setup_iscsi":setup_iscsi, "delete_secondary_storage_folder":delete_secondary_storage_folder, "post_create_private_template": post_create_private_template, "gethostvmstats": gethostvmstats, "getvncport": getvncport, "getgateway": getgateway, "getnetwork": getnetwork, "preparemigration": preparemigration, "setIptables": setIptables, "patchdomr": patchdomr, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  "ipassoc": ipassoc, "vm_data": vm_data, "savePassword": savePassword, "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, "checkMount": checkMount, "checkIscsi": checkIscsi, "backupSnapshot": backupSnapshot, "deleteSnapshotBackup": deleteSnapshotBackup, "createVolumeFromSnapshot": createVolumeFromSnapshot, "networkUsage": networkUsage, "unmountSnapshotsDir": unmountSnapshotsDir, "deleteSnapshotsDir": deleteSnapshotsDir, "validatePreviousSnapshotBackup": validatePreviousSnapshotBackup, "validateSnapshot" : validateSnapshot, "network_rules":network_rules, "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules, "destroy_network_rules_for_vm":destroy_network_rules_for_vm, "default_network_rules_systemvm":default_network_rules_systemvm, "get_rule_logs_for_vms":get_rule_logs_for_vms, "setLinkLocalIP":setLinkLocalIP})
+    XenAPIPlugin.dispatch({"getVhdParent":getVhdParent, "pingtest": pingtest, "create_secondary_storage_folder":create_secondary_storage_folder, "setup_iscsi":setup_iscsi, "delete_secondary_storage_folder":delete_secondary_storage_folder, "post_create_private_template": post_create_private_template, "gethostvmstats": gethostvmstats, "getvncport": getvncport, "getgateway": getgateway, "getnetwork": getnetwork, "preparemigration": preparemigration, "setIptables": setIptables, "patchdomr": patchdomr, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  "ipassoc": ipassoc, "vm_data": vm_data, "savePassword": savePassword, "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, "checkMount": checkMount, "checkIscsi": checkIscsi, "backupSnapshot": backupSnapshot, "deleteSnapshotBackup": deleteSnapshotBackup, "createVolumeFromSnapshot": createVolumeFromSnapshot, "networkUsage": networkUsage, "unmountSnapshotsDir": unmountSnapshotsDir, "deleteSnapshotsDir": deleteSnapshotsDir, "validatePreviousSnapshotBackup": validatePreviousSnapshotBackup, "validateSnapshot" : validateSnapshot, "network_rules":network_rules, "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules, "destroy_network_rules_for_vm":destroy_network_rules_for_vm, "default_network_rules_systemvm":default_network_rules_systemvm, "get_rule_logs_for_vms":get_rule_logs_for_vms, "setLinkLocalIP":setLinkLocalIP, "cleanup_rules":cleanup_rules})
 

@@ -66,6 +66,7 @@ import com.cloud.agent.api.CheckOnHostAnswer;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
@@ -621,6 +622,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             return execute((NetworkRulesSystemVmCommand) cmd);
         } else if (cmd instanceof PoolEjectCommand) {
             return execute((PoolEjectCommand) cmd);
+        } else if (cmd instanceof CleanupNetworkRulesCmd){
+            return execute((CleanupNetworkRulesCmd)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -632,6 +635,22 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return stdType;
     }
     
+    private Answer execute(CleanupNetworkRulesCmd cmd) {
+        if (!_canBridgeFirewall) {
+            return new Answer(cmd, true, null);
+        }
+        String result = callHostPlugin("cleanup_rules");
+        int numCleaned = Integer.parseInt(result);
+        if (result == null || result.isEmpty() || (numCleaned < 0)) {
+            s_logger.warn("Failed to cleanup rules for host " + _host.ip);
+            return new Answer(cmd, false, result);
+        }
+        if (numCleaned > 0) {
+            s_logger.info("Cleaned up rules for " + result + " vms on host " + _host.ip);
+        }
+        return new Answer(cmd, true, result);
+    }
+
     protected Answer execute(ModifySshKeysCommand cmd) {
         String publickey = cmd.getPubKey();
         String privatekey = cmd.getPrvKey();
@@ -6140,6 +6159,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
 
     }
+    
+    
 
     protected class Nic {
         public Network n;

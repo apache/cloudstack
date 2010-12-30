@@ -28,14 +28,20 @@ import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkIngressRuleAnswer;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.StartupStorageCommand;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.Host.Type;
 import com.cloud.network.security.NetworkGroupWorkVO.Step;
 import com.cloud.network.security.dao.NetworkGroupWorkDao;
+import com.cloud.storage.Volume.StorageResourceType;
 
 /**
  * Listens for answers to ingress rules modification commands
@@ -66,7 +72,7 @@ public class NetworkGroupListener implements Listener {
 
 	@Override
 	public boolean isRecurring() {
-		return false;
+		return true;
 	}
 
 
@@ -112,8 +118,24 @@ public class NetworkGroupListener implements Listener {
 
 	@Override
 	public boolean processConnect(HostVO host, StartupCommand cmd) {
-		
-		return true;
+        if(s_logger.isInfoEnabled())
+            s_logger.info("Received a host startup notification");
+        
+        if (cmd instanceof StartupRoutingCommand) {
+            //if (Boolean.toString(true).equals(host.getDetail("can_bridge_firewall"))) {
+                try {
+                    CleanupNetworkRulesCmd cleanupCmd = new CleanupNetworkRulesCmd();
+                    _agentMgr.send(host.getId(), new Command[]{cleanupCmd}, false, this);
+                    if(s_logger.isInfoEnabled())
+                        s_logger.info("Scheduled network rules cleanup, interval=" + cleanupCmd.getInterval());
+                } catch (AgentUnavailableException e) {
+                    s_logger.warn("Unable to schedule network rules cleanup");
+                }
+                
+            //}
+        }
+
+        return true;
 	}
 
 
