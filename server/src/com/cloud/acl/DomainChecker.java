@@ -49,7 +49,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     
     @Override
     public boolean checkAccess(Account account, Domain domain) throws PermissionDeniedException {
-        if (account.getState() != Account.State.Enabled) {
+        if (account.getState() != Account.State.enabled) {
             throw new PermissionDeniedException(account + " is disabled.");
         }
         

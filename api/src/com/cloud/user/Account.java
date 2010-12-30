@@ -31,9 +31,9 @@ public interface Account extends ControlledEntity {
     }
     
     public enum State {
-        Disabled,
-        Enabled,
-        Locked
+        disabled,
+        enabled,
+        locked
     }
     
     public static final short ACCOUNT_TYPE_NORMAL = 0;

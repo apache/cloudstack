@@ -130,7 +130,7 @@ public class DisableUserExecutor extends BaseAsyncJobExecutor {
 		
         List<UserVO> allUsersByAccount = asyncMgr.getExecutorContext().getUserDao().listByAccount(user.getAccountId());
         for (UserVO oneUser : allUsersByAccount) {
-            if (oneUser.getState().equals(Account.State.Enabled)) {
+            if (oneUser.getState().equals(Account.State.enabled)) {
                 return false;
             }
         }

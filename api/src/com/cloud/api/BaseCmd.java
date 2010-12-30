@@ -176,7 +176,7 @@ public abstract class BaseCmd {
         if (owner == null) {
             throw new InvalidParameterValueException("Invalid value for owner specified: " + accountName);
         }
-        if (owner.getState() == Account.State.Disabled || owner.getState() == Account.State.Locked) {
+        if (owner.getState() == Account.State.disabled || owner.getState() == Account.State.locked) {
             throw new PermissionDeniedException("Account disabled.");
         }
         return owner;

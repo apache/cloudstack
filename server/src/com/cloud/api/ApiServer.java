@@ -598,7 +598,7 @@ public class ApiServer implements HttpRequestHandler {
             user = userAcctPair.first();
             Account account = userAcctPair.second();
 
-            if (user.getState() != Account.State.Enabled || !account.getState().equals(Account.State.Enabled)) {
+            if (user.getState() != Account.State.enabled || !account.getState().equals(Account.State.enabled)) {
                 s_logger.info("disabled or locked user accessing the api, userid = " + user.getId() + "; name = " + user.getUsername() + "; state: " + user.getState() + "; accountState: " + account.getState());
                 return false;
             }
@@ -729,7 +729,7 @@ public class ApiServer implements HttpRequestHandler {
     	    account = _ms.findAccountById(user.getAccountId());
     	}
 
-    	if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.Enabled) || (account == null) || !account.getState().equals(Account.State.Enabled)) {
+    	if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.enabled) || (account == null) || !account.getState().equals(Account.State.enabled)) {
     		s_logger.warn("Deleted/Disabled/Locked user with id=" + userId + " attempting to access public API");
     		return false;
     	}
