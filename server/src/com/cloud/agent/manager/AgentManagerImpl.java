@@ -163,6 +163,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.nio.HandlerFactory;
@@ -1916,7 +1917,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             }
         }
 
-        if (serverPublicIP != null && !_publicIPAddressDao.mark(dc.getId(), serverPublicIP)) {
+        if (serverPublicIP != null && !_publicIPAddressDao.mark(dc.getId(), new Ip(serverPublicIP))) {
             // If the server's public IP address is already in the database,
             // return false
             List<IPAddressVO> existingPublicIPs = _publicIPAddressDao.listByDcIdIpAddress(dc.getId(), serverPublicIP);

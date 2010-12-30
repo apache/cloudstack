@@ -97,7 +97,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Ip> implements
     }
 
     @Override
-    public boolean mark(long dcId, String ip) {
+    public boolean mark(long dcId, Ip ip) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("dataCenterId", dcId);
         sc.setParameters("ipAddress", ip);

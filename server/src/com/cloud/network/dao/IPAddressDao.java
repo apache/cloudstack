@@ -40,7 +40,7 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Ip> {
 	
 	int countIPs(long dcId, Long accountId, String vlanId, String vlanGateway, String vlanNetmask);
 	
-	boolean mark(long dcId, String ip);
+	boolean mark(long dcId, Ip ip);
 	
 	List<String> assignAcccountSpecificIps(long accountId, long longValue, Long vlanDbId, boolean sourceNat);
 
