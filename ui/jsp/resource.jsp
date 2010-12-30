@@ -65,7 +65,7 @@
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 10%; border: none;">
-                	<div id="add_pod_shortcut" class="resadd_button" title="Add Cluster"></div>
+                	<div id="add_cluster_shortcut" class="resadd_button" title="Add Cluster"></div>
                 </div>
             </div>
             
@@ -594,6 +594,106 @@
     </div>
 </div>
 <!-- Add Pod Dialog in resource page (end) -->
+
+<!-- Add Cluster Dialog in resource page (begin) -->
+<div id="dialog_add_external_cluster_in_resource_page" title="Add Cluster" style="display: none">
+    <p>
+        Add a hypervisor managed cluster for zone <b><span id="zone_name"></span></b>
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form_acquire">
+        <ol>
+            <li>
+            	<label for="cluster_hypervisor">Hypervisor:</label>
+                <select class="select" id="cluster_hypervisor">
+                    <option value="XenServer" SELECTED>Xen Server</option>		
+                    <option value="KVM">KVM</option>										
+                    <option value="VmWare">VMware</option>										
+                </select>
+            </li>
+            <li input_group="vmware">
+                <label>
+                    Cluster Type:</label>
+                <select class="select" id="type_dropdown">
+                    <option value="CloudManaged">Cloud.com Managed</option>		
+                    <option value="ExternalManaged" SELECTED>vSphere Managed</option>										
+                </select>
+                <div id="pod_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>   
+            
+            <li>
+                <label>
+                    Zone:</label>
+                <select class="select" id="zone_dropdown">
+                </select>
+                <div id="zone_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>   
+            
+            <li>
+                <label>
+                    Pod:</label>
+                <select class="select" id="pod_dropdown">
+                </select>
+                <div id="pod_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>   
+            <li input_group="vmware" input_sub_group="external">
+                <label for="cluster_hostname">
+                    vCenter Server:</label>
+                <input class="text" type="text" name="cluster_hostname" id="cluster_hostname" />
+                <div id="cluster_hostname_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware" input_sub_group="external">
+                <label for="cluster_username">
+                    vCenter User:</label>
+                <input class="text" type="text" name="cluster_username" id="cluster_username" />
+                <div id="cluster_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware" input_sub_group="external">
+                <label for="cluster_password">
+                    Password:</label>
+                <input class="text" type="password" name="cluster_password" id="cluster_password" autocomplete="off" />
+                <div id="cluster_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware" input_sub_group="external">
+                <label for="cluster_datacenter">
+                    vCenter Datacenter:</label>
+                <input class="text" type="text" name="cluster_datacenter" id="cluster_datacenter" />
+                <div id="cluster_datacenter_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label for="cluster_name" id="cluster_name_label">
+                    vCenter Cluster:</label>
+                <input class="text" type="text" name="cluster_name" id="cluster_name" />
+                <div id="cluster_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+        </ol>
+        </form>
+    </div>
+    <!--Loading box-->
+    <div id="spinning_wheel" class="ui_dialog_loaderbox" style="display: none;">
+        <div class="ui_dialog_loader">
+        </div>
+        <p>
+            Adding....</p>
+    </div>
+    <!--Confirmation msg box-->
+    <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+    <div id="info_container" class="ui_dialog_messagebox error" style="display: none;">
+        <div id="icon" class="ui_dialog_msgicon error">
+        </div>
+        <div id="info" class="ui_dialog_messagebox_text error">
+            (info)</div>
+    </div>
+</div>
+<!-- Add Cluster Dialog in resource page (end) -->
 
 <!-- Add Host Dialog in resource page (begin) -->
 <div id="dialog_add_host_in_resource_page" title="Add Host" style="display: none">   
