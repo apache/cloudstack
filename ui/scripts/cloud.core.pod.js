@@ -551,7 +551,7 @@ function bindAddHostButton($leftmenuItem1) {
                         */                             
                         
                         //clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);   
-                        clickClusterArrowAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                             
+                        expandClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog); //expand cluster node to see host node                            
 			        },			
                     error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {							
@@ -585,27 +585,27 @@ function clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, exist
     }         
 }
 
-function clickClusterArrowAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog) {
+//expand cluster node to see host node 
+function expandClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog) {
     if(clusterRadio == "new_cluster_radio") {    //*** new cluster ***    
         $thisDialog.find("#new_cluster_name").val("");                        
         var $clusterNode = refreshClusterUnderPod($("#pod_" + podId), newClusterName, null, true);         
-        $clusterNode.find("#cluster_arrow").click();
+        var $arrow = $clusterNode.find("#cluster_arrow");
+        if($arrow.hasClass("expanded_close"))
+            $arrow.click();
     }        
     else if(clusterRadio == "existing_cluster_radio") { //*** existing cluster ***     
         if (existingClusterId != null && existingClusterId != '-1') {
-            $("#cluster_"+existingClusterId).find("#cluster_arrow").click();
+            var $arrow = $("#cluster_"+existingClusterId).find("#cluster_arrow");
+            if($arrow.hasClass("expanded_close"))
+                $arrow.click();
         }    
     }         
 }
 
 function bindAddPrimaryStorageButton($leftmenuItem1) {    
     var $button = $("#add_primarystorage_button");  
-    $button.unbind("click").bind("click", function(event) {   
-        /*
-        if($("#tab_content_primarystorage").length > 0 && $("#tab_content_primarystorage").css("display") == "none")
-            $("#tab_primarystorage").click();
-        */
-    
+    $button.unbind("click").bind("click", function(event) {          
         dialogAddPool = $("#dialog_add_pool");  
         dialogAddPool.find("#info_container").hide();	
              

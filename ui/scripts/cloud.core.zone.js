@@ -1307,9 +1307,7 @@ function bindAddHostButtonOnZonePage($button, zoneId, zoneName) {
 			        success: function(json) {			        
 			            $thisDialog.find("#spinning_wheel").hide();
 			            $thisDialog.dialog("close");
-					
-					    //showMiddleMenu();
-					    		                
+						                
 					    /*
 					    var items = json.addhostresponse.host;	
 					    var $midmenuItem1 = $("#midmenu_item").clone();
@@ -1327,7 +1325,8 @@ function bindAddHostButtonOnZonePage($button, zoneId, zoneName) {
                         }   
                         */                             
                         
-                        clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                                  
+                        //clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);      
+                        expandClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog); //expand cluster node to see host node                                
 			        },			
                     error: function(XMLHttpResponse) {	            
 						handleError(XMLHttpResponse, function() {						  
