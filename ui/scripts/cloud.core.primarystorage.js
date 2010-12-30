@@ -67,16 +67,10 @@ function primarystorageToMidmenu(jsonObj, $midmenuItem1) {
 
 function primarystorageToRightPanel($midmenuItem1) {  
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);        
-    primarystorageJsonToDetailsTab();   
-
-    /*
-    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);         
-    resourceLoadPage("jsp/primarystorage.jsp", $midmenuItem1);  //after reloading "jsp/primarystorage.jsp", afterLoadPrimaryStorageJSP() will be called.
-    */
+    primarystorageJsonToDetailsTab();  
 }
 
- function afterLoadPrimaryStorageJSP($midmenuItem1) { 
-    initDialog("dialog_add_host");
+ function afterLoadPrimaryStorageJSP($midmenuItem1) {     
     initDialog("dialog_add_pool");
     bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	     
     initDialog("dialog_confirmation_delete_primarystorage");  
@@ -90,8 +84,7 @@ function primarystorageJsonToDetailsTab() {
     var jsonObj = $midmenuItem1.data("jsonObj");
     if(jsonObj == null)
         return; 
-        
-    bindAddHostButton($midmenuItem1); 
+            
     bindAddPrimaryStorageButton($midmenuItem1);      
     
     $.ajax({

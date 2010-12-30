@@ -841,14 +841,14 @@
         <div id="cluster_header" class="leftmenu_content">  
             <div class="leftmenu_fifthindent">
             	<div class="leftmenu_arrowloader" id="cluster_loading_container" style="display:none;"></div>
-                <div class="leftmenu_arrows white_nonexpanded_close" id="cluster_arrow">
+                <div class="leftmenu_arrows expanded_close" id="cluster_arrow">
                 </div>	                
                 <span id="cluster_name_label"><fmt:message key="label.cluster"/>: </span>
                 <span id="cluster_name"></span>
             </div>  
         </div>			
         <div id="cluster_content" style="display: none">
-             <div class="leftmenu_expandedlist" id="leftmenu_host_node_template" style="display:none">       
+             <div class="leftmenu_expandedlist" id="leftmenu_host_node_template">       
                 <div id="host_header" class="leftmenu_content">  
                     <div class="leftmenu_sixthindent">
             	        <div class="leftmenu_arrowloader" id="host_loading_container" style="display:none;"></div>
@@ -858,7 +858,7 @@
                     </div>  
                 </div>	           
             </div>           
-            <div class="leftmenu_expandedlist" id="leftmenu_primarystorage_node_template" style="display:none">       
+            <div class="leftmenu_expandedlist" id="leftmenu_primarystorage_node_template">       
                 <div id="primarystorage_header" class="leftmenu_content">  
                     <div class="leftmenu_sixthindent">
             	        <div class="leftmenu_arrowloader" id="primarystorage_loading_container" style="display:none;"></div>

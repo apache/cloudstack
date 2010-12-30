@@ -17,6 +17,7 @@
  */
   
 function afterLoadClusterJSP($midmenuItem1) {
+    hideMiddleMenu();  
     initDialog("dialog_add_host");
     initDialog("dialog_add_pool");
 }

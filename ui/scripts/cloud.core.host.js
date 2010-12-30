@@ -73,9 +73,7 @@ function hostToRightPanel($midmenuItem1) {
 }
 
 function afterLoadHostJSP() {    
-    initDialog("dialog_add_host");
-    initDialog("dialog_add_pool");
-    bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	     
+    initDialog("dialog_add_host");      
     initDialog("dialog_confirmation_enable_maintenance");
     initDialog("dialog_confirmation_cancel_maintenance");
     initDialog("dialog_confirmation_force_reconnect");
@@ -98,8 +96,7 @@ function hostJsonToDetailsTab() {
     if(jsonObj == null)
         return;    
     
-    bindAddHostButton($midmenuItem1); 
-    bindAddPrimaryStorageButton($midmenuItem1);          
+    bindAddHostButton($midmenuItem1);      
     
     $.ajax({
         data: createURL("command=listHosts&id="+jsonObj.id),

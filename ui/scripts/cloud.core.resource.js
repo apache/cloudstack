@@ -241,31 +241,7 @@ function buildZoneTree() {
                 var $clusterArrow = $thisNode.find("#cluster_arrow").hide();	
 			    var clusterObj = $thisNode.data("jsonObj");
 			    var $clusterContent = $thisNode.find("#cluster_content");				  	   
-				if($target.hasClass("expanded_close")) {										
-					$.ajax({
-                        data: createURL("command=listHosts&type=Routing&clusterid="+clusterObj.id),
-	                    dataType: "json",
-	                    async: false,
-	                    success: function(json) {	                        
-	                        var items = json.listhostsresponse.host;		                        
-                            if (items != null && items.length > 0) {					    
-                                $clusterContent.find("#cluster_"+clusterObj.id+"_host").show();    	                                 
-                            }	   
-	                    }
-                    });    
-                                        
-                    $.ajax({        
-                        data: createURL("command=listStoragePools&clusterid="+clusterObj.id),
-                        dataType: "json", 
-                        async: false,       
-                        success: function(json) {    
-                            var items = json.liststoragepoolsresponse.storagepool;                              
-                            if(items != null && items.length > 0) {              
-                                $clusterContent.find("#cluster_"+clusterObj.id+"_primarystorage").show();    	           
-                            }              	                
-                        }
-                    });	    
-                                     
+				if($target.hasClass("expanded_close")) {						  
                     $target.removeClass("expanded_close").addClass("expanded_open");							
 					$clusterContent.show();					                   
 				} 
@@ -307,67 +283,7 @@ function buildZoneTree() {
 			    break;	
 		}
 		return false;
-	});  
-	
-	/*
-	$("#leftmenu_host_node_template").unbind("click").bind("click", function(event) {		    
-		var $thisNode = $(this);
-		selectRowInZoneTree($thisNode.find("#host_header"));	
-			    
-	    if(currentRightPanelJSP != "jsp/host.jsp") {                       
-            removeDialogs();            
-            
-            $("#right_panel").load("jsp/host.jsp", function(){                    
-                currentRightPanelJSP = "jsp/host.jsp";
-                       
-                var $topButtonContainer = clearButtonsOnTop();			    	       
-		        $("#top_buttons").appendTo($topButtonContainer);        
-                                
-                $thisNode.data("onRefreshFn", function() {
-                    hostJsonToDetailsTab();
-                });  
-    	        
-                afterLoadHostJSP();
-                hostToRightPanel($thisNode);	   
-            });      
-        } 
-        else {
-            hostToRightPanel($thisNode);	             
-        }	
-		
-		return false;
-	});  
-	*/
-	
-	/*
-	$("#leftmenu_primarystorage_node_template").unbind("click").bind("click", function(event) {		    
-		var $thisNode = $(this);
-		selectRowInZoneTree($thisNode.find("#primarystorage_header"));	
-		 
-	    if(currentRightPanelJSP != "jsp/primarystorage.jsp") {                       
-            removeDialogs();            
-            
-            $("#right_panel").load("jsp/primarystorage.jsp", function(){                    
-                currentRightPanelJSP = "jsp/primarystorage.jsp";
-                  
-                var $topButtonContainer = clearButtonsOnTop();			    	       
-		        $("#top_buttons").appendTo($topButtonContainer);        
-                                
-                $thisNode.data("onRefreshFn", function() {
-                    primarystorageJsonToDetailsTab();
-                });  
-    	        
-                afterLoadPrimaryStorageJSP();
-                primarystorageToRightPanel($thisNode);	   
-            });      
-        } 
-        else {
-            primarystorageToRightPanel($thisNode);	             
-        }	
-		
-		return false;
-	});  
-	*/
+	});  	
 }    
 
 function refreshClusterUnderPod($podNode, newClusterName, existingClusterId, noClicking) {  
@@ -467,19 +383,7 @@ function clusterJSONToTreeNode(json, $clusterNode) {
     $clusterNode.find("#leftmenu_primarystorage_node_template").data("clusterObj", json).attr("id",("cluster_"+json.id+"_primarystorage"));	  
     $clusterNode.data("id", json.id).data("name", fromdb(json.name));	    
     var clusterName = $clusterNode.find("#cluster_name").text(fromdb(json.name));
-    clusterName.data("jsonObj", json);	   
-        
-    $.ajax({
-        data: createURL("command=listHosts&type=Routing&clusterid="+json.id),
-        dataType: "json",
-        async: false,
-        success: function(json) {            
-            var items = json.listhostsresponse.host;	
-            if (items != null && items.length > 0) {					    
-                $clusterNode.find("#cluster_arrow").removeClass("white_nonexpanded_close").addClass("expanded_close");                  
-            }		    
-        }
-    });      
+    clusterName.data("jsonObj", json);	 
 }			
 
 function hostJSONToTreeNode(json, $node) {
