@@ -758,6 +758,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         List<HostVO> hosts = new ArrayList<HostVO>();
         s_logger.info("Trying to add a new host at " + url + " in data center " + dcId);
         Enumeration<Discoverer> en = _discoverers.enumeration();
+        boolean isHypervisorTypeSupported = false;
         while (en.hasMoreElements()) {
             Discoverer discoverer = en.nextElement();
             if(hypervisorType != null) {
@@ -765,7 +766,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
                     continue;
                 }
             }
-            
+            isHypervisorTypeSupported = true;
             Map<? extends ServerResource, Map<String, String>> resources = null;
             
             try {
@@ -800,7 +801,11 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
                 return hosts;
             }
         }
-
+        if ( !isHypervisorTypeSupported ) {
+            String msg = "Do not support HypervisorType " + hypervisorType + " for " + url; 
+            s_logger.warn(msg);
+            throw new DiscoveryException(msg);
+        }
         s_logger.warn("Unable to find the server resources at " + url);
         throw new DiscoveryException("Unable to add the host");
     }
