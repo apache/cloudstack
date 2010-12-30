@@ -191,7 +191,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         UnmanagedDirectConnectSearch.and("server", UnmanagedDirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.NULL);
         UnmanagedDirectConnectSearch.and("avoidstatus", UnmanagedDirectConnectSearch.entity().getStatus(), SearchCriteria.Op.NEQ);
         UnmanagedDirectConnectSearch.and("clusterId", UnmanagedDirectConnectSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
-
+        UnmanagedDirectConnectSearch.and("lastPinged", UnmanagedDirectConnectSearch.entity().getLastPinged(), SearchCriteria.Op.LTEQ);
+        
         /*
         UnmanagedDirectConnectSearch.op(SearchCriteria.Op.OR, "managementServerId", UnmanagedDirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
         UnmanagedDirectConnectSearch.and("lastPinged", UnmanagedDirectConnectSearch.entity().getLastPinged(), SearchCriteria.Op.LTEQ);
@@ -252,8 +253,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     	SearchCriteria<HostVO> sc = UnmanagedDirectConnectSearch.create();
     	sc.setParameters("avoidstatus", Status.Removed.toString());
     	sc.setParameters("clusterId", clusterId);
-    //	sc.setParameters("lastPinged", lastPingSecondsAfter);
-    	//sc.setParameters("managementServerId", msid);
+    	sc.setParameters("lastPinged", lastPingSecondsAfter);
     	
         return search(sc, new Filter(HostVO.class, "id", true, 0L, limit));
     }
@@ -266,6 +266,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         
         HostVO host = createForUpdate();
         host.setManagementServerId(null);
+        host.setLastPinged((System.currentTimeMillis() >> 10) - ( 10 * 60 ));
         host.setDisconnectedOn(new Date());
         
         UpdateBuilder ub = getUpdateBuilder(host);
