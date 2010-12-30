@@ -883,7 +883,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
             pstmt = txn.prepareAutoCloseStatement(sql.toString());
 
             if (_idField.getAnnotation(EmbeddedId.class) == null) {
-                pstmt.setObject(1, id);
+            	prepareAttribute(1, pstmt, _idAttributes.get(_table)[0], id);
             }
             
             ResultSet rs = pstmt.executeQuery();
