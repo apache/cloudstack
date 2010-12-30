@@ -924,6 +924,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     _networkDao.remove(network.getId());
                 }
             }
+            
+            //delete vlans for this zone
+            List<VlanVO> vlans = _vlanDao.listByZone(zoneId);
+            for(VlanVO vlan : vlans) {
+            	_vlanDao.remove(vlan.getId());
+            }
     	} catch (Exception ex) {
     	    s_logger.error("Failed to delete zone " + zoneId);
     	    throw new CloudRuntimeException("Failed to delete zone " + zoneId);
