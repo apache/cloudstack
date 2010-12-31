@@ -371,6 +371,10 @@ function bindAddClusterButton($leftmenuItem1) {
                                                                    
                         var $podNode = $("#pod_" + podId);
                         if($podNode.length > 0 && $podNode.css("display") != "none") {
+                            if($podNode.find("#pod_arrow").hasClass("white_nonexpanded_close")) {
+                                $podNode.find("#pod_arrow").removeClass("white_nonexpanded_close").addClass("expanded_close");    
+                            }
+                            
                             if($podNode.find("#pod_arrow").hasClass("expanded_close")) { //if pod node is closed
                                 $podNode.find("#pod_arrow").click(); //expand pod node
                             }
