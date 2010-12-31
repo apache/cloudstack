@@ -32,6 +32,7 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
+import com.cloud.org.Cluster;
 
 public interface ResourceService {
     /**
@@ -56,7 +57,7 @@ public interface ResourceService {
      * @throws DiscoveryException
      * @throws InvalidParameterValueException
      */
-    List<? extends Host> discoverCluster(AddClusterCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+    List<? extends Cluster> discoverCluster(AddClusterCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
     boolean deleteCluster(DeleteClusterCmd cmd) throws InvalidParameterValueException; 
     
     List<? extends Host> discoverHosts(AddHostCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;

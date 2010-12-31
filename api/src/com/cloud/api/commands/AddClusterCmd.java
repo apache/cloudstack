@@ -10,12 +10,14 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.response.ClusterResponse;
 import com.cloud.api.response.HostResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.host.Host;
+import com.cloud.org.Cluster;
 
-@Implementation(description="Adds a new cluster", responseObject=HostResponse.class)
+@Implementation(description="Adds a new cluster", responseObject=ClusterResponse.class)
 public class AddClusterCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddClusterCmd.class.getName());
 
@@ -90,19 +92,19 @@ public class AddClusterCmd extends BaseCmd {
     @Override
     public void execute(){
         try {
-            List<? extends Host> result = _resourceService.discoverCluster(this);
-            ListResponse<HostResponse> response = new ListResponse<HostResponse>();
-            List<HostResponse> hostResponses = new ArrayList<HostResponse>();
+            List<? extends Cluster> result = _resourceService.discoverCluster(this);
+            ListResponse<ClusterResponse> response = new ListResponse<ClusterResponse>();
+            List<ClusterResponse> clusterResponses = new ArrayList<ClusterResponse>();
             if (result != null) {
-                for (Host host : result) {
-                    HostResponse hostResponse = _responseGenerator.createHostResponse(host);
-                    hostResponses.add(hostResponse);
+                for (Cluster cluster : result) {
+                    ClusterResponse clusterResponse = _responseGenerator.createClusterResponse(cluster);
+                    clusterResponses.add(clusterResponse);
                 }
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add host cluster");
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add cluster");
             }
 
-            response.setResponses(hostResponses);
+            response.setResponses(clusterResponses);
             response.setResponseName(getCommandName());
             
             this.setResponseObject(response);

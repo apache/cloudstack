@@ -531,7 +531,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     }
     
     @Override
-    public List<? extends Host> discoverCluster(AddClusterCmd cmd) 
+    public List<? extends Cluster> discoverCluster(AddClusterCmd cmd) 
     	throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         Long dcId = cmd.getZoneId();
         Long podId = cmd.getPodId();
@@ -586,25 +586,26 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
             throw new InvalidParameterValueException("Please specify a valid hypervisor");
         }
         
+        List<ClusterVO> result = new ArrayList<ClusterVO>(); 
+        
         long clusterId = 0;
-        if (clusterName != null) {      
-            ClusterVO cluster = new ClusterVO(dcId, podId, clusterName);
-            cluster.setHypervisorType(cmd.getHypervisor());
-            
-            cluster.setClusterType(clusterType);
-            try {
-                cluster = _clusterDao.persist(cluster);
-            } catch (Exception e) {
-                cluster = _clusterDao.findBy(clusterName, podId);
-                if (cluster == null) {
-                    throw new CloudRuntimeException("Unable to create cluster " + clusterName + " in pod " + podId + " and data center " + dcId, e);
-                }
+        ClusterVO cluster = new ClusterVO(dcId, podId, clusterName);
+        cluster.setHypervisorType(cmd.getHypervisor());
+        
+        cluster.setClusterType(clusterType);
+        try {
+            cluster = _clusterDao.persist(cluster);
+        } catch (Exception e) {
+            cluster = _clusterDao.findBy(clusterName, podId);
+            if (cluster == null) {
+                throw new CloudRuntimeException("Unable to create cluster " + clusterName + " in pod " + podId + " and data center " + dcId, e);
             }
-            clusterId = cluster.getId();
         }
+        clusterId = cluster.getId();
+        result.add(cluster);
         
         if(clusterType == Cluster.ClusterType.CloudManaged) {
-            return _hostDao.listByCluster(clusterId);
+            return result;
         }
         
         boolean success = false;
@@ -641,7 +642,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
 	            }
 	            s_logger.info("External cluster has been successfully discovered by " + discoverer.getName());
 	            success = true;
-	            return hosts;
+	            return result;
 	        }
 	    	
 	        s_logger.warn("Unable to find the server resources at " + url);
