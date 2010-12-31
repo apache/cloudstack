@@ -21,11 +21,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Vector;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -88,6 +90,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.Availability;
@@ -123,6 +126,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
@@ -2194,32 +2198,28 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	
 	@DB
     protected boolean savePublicIPRangeForAccount(String startIP, String endIP, long zoneId, long vlanDbId, long accountId, long domainId) {
-    	long startIPLong = NetUtils.ip2Long(startIP);
-    	long endIPLong = NetUtils.ip2Long(endIP);
-    	Transaction txn = Transaction.currentTxn();
-		String insertSql = "INSERT INTO `cloud`.`user_ip_address` (public_ip_address, data_center_id, vlan_db_id, account_id, domain_id, allocated) VALUES (?, ?, ?, ?, ?, ?)";
-		
-		txn.start();
-		PreparedStatement stmt = null;
-        while (startIPLong <= endIPLong) {
-        	try {
-        		stmt = txn.prepareAutoCloseStatement(insertSql);
-        		stmt.setString(1, NetUtils.long2Ip(startIPLong));
-        		stmt.setLong(2, zoneId);
-        		stmt.setLong(3, vlanDbId);
-        		stmt.setLong(4, accountId);
-        		stmt.setLong(5, domainId);
-        		stmt.setDate(6,  new java.sql.Date(new java.util.Date().getTime()));
-        		stmt.executeUpdate();
-        		stmt.close();
-        	} catch (Exception ex) {
-        		s_logger.warn("Exception saving public IP range: ", ex);
-        		return false;
-        	}
-        	startIPLong += 1;
-        }
-        txn.commit();
-        
+	    IPRangeConfig config = new IPRangeConfig();
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        long startIPLong = NetUtils.ip2Long(startIP);
+        long endIPLong = NetUtils.ip2Long(endIP);
+	    Vector<String> ips = config.savePublicIPRange(txn, startIPLong, endIPLong, zoneId, vlanDbId);
+	    List<Long> skip = new ArrayList<Long>(ips.size());
+	    for (String ip : ips) {
+	        skip.add(NetUtils.ip2Long(ip));
+	    }
+	    for (long ip = startIPLong; ip <= endIPLong; ip++) {
+	        if (skip.contains(ip)) {
+	            continue;
+	        }
+	        
+	        IPAddressVO addr = _publicIpAddressDao.findById(new Ip(ip));
+	        addr.setAllocatedInDomainId(domainId);
+	        addr.setAllocatedTime(new Date());
+	        addr.setAllocatedToAccountId(accountId);
+	        _publicIpAddressDao.update(addr.getAddress(), addr);
+	    }
+	    txn.commit();
         return true;
 	}
 	
