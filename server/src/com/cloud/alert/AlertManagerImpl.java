@@ -111,7 +111,6 @@ public class AlertManagerImpl implements AlertManager {
     private double _storageAllocCapacityThreshold = 0.75;
     private double _publicIPCapacityThreshold = 0.75;
     private double _privateIPCapacityThreshold = 0.75;
-    private boolean _useNewNetworking;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -186,8 +185,6 @@ public class AlertManagerImpl implements AlertManager {
             	_cpuOverProvisioningFactor = 1;
             }
         }
-        
-        _useNewNetworking = Boolean.parseBoolean(configs.get("use.new.networking"));
 
         _timer = new Timer("CapacityChecker");
 
@@ -303,12 +300,8 @@ public class AlertManagerImpl implements AlertManager {
         Transaction txn = Transaction.currentTxn();
         try {
         	txn.start();
-        	// delete the old records
-        	if (_useNewNetworking) {
-        		 _capacityDao.clearNonStorageCapacities2();
-        	} else {
-        		_capacityDao.clearNonStorageCapacities();
-        	}
+
+        	_capacityDao.clearNonStorageCapacities2();
         	
             for (CapacityVO newCapacity : newCapacities) {
             	s_logger.trace("Executing capacity update");
