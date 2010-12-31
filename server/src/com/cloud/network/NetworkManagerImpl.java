@@ -1552,13 +1552,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (type != null) {
             sc.addAnd("guestType", SearchCriteria.Op.EQ, type);
         }
-        
-        SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
-        ssc.addOr("accountId", SearchCriteria.Op.EQ, accountId);
-        if (accountName == null && domainId == null) {
-            ssc.addOr("accountId", SearchCriteria.Op.EQ, 1L);
+        if (account.getType() != Account.ACCOUNT_TYPE_ADMIN || (accountName != null && domainId != null)) {
+        	sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
         }
-        sc.addAnd("accountId", SearchCriteria.Op.SC, ssc);
+
+        SearchCriteria<NetworkVO> ssc = _networksDao.createSearchCriteria();
+	    /*    ssc.addOr("accountId", SearchCriteria.Op.EQ, accountId);
+	        if (accountName == null && domainId == null) {
+	            ssc.addOr("accountId", SearchCriteria.Op.EQ, 1L);
+	        }
+	        sc.addAnd("accountId", SearchCriteria.Op.SC, ssc);
+        }*/
         
         List<NetworkVO> networks =  _networksDao.search(sc, searchFilter);
         
