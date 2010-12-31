@@ -71,8 +71,10 @@ function primarystorageToRightPanel($midmenuItem1) {
 }
 
  function afterLoadPrimaryStorageJSP($midmenuItem1) {     
+    //add pool dialog
     initDialog("dialog_add_pool");
-    bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	     
+    bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	  
+       
     initDialog("dialog_confirmation_delete_primarystorage");  
     
     var $primarystorageNode = $selectedSubMenu.parent(); 

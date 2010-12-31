@@ -19,7 +19,10 @@
 function afterLoadClusterJSP($midmenuItem1) {
     hideMiddleMenu();  
     initDialog("dialog_add_host");
-    initDialog("dialog_add_pool");
+    
+    //add pool dialog
+    initDialog("dialog_add_pool");   
+    bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	 
 }
 
 

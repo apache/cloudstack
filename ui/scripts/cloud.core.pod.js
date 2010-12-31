@@ -23,13 +23,11 @@
 	$("#top_buttons").appendTo($topButtonContainer); 
  
     initDialog("dialog_add_external_cluster");
-    initDialog("dialog_add_host");
-    initDialog("dialog_add_pool");
+    initDialog("dialog_add_host");    
     initDialog("dialog_add_iprange_to_pod");
     
-    // if hypervisor is KVM, limit the server option to NFS for now
-    if (getHypervisorType() == 'kvm') 
-	    $("#dialog_add_pool").find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
+    //add pool dialog
+    initDialog("dialog_add_pool");	
     bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	 
     
     //switch between different tabs 
