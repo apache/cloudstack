@@ -26,5 +26,5 @@ import com.cloud.utils.db.GenericDao;
 public interface SyncQueueItemDao extends GenericDao<SyncQueueItemVO, Long> {
 	public SyncQueueItemVO getNextQueueItem(long queueId);
 	public List<SyncQueueItemVO> getNextQueueItems(int maxItems);
-	public List<SyncQueueItemVO> getActiveQueueItems(Long msid);
+	public List<SyncQueueItemVO> getActiveQueueItems(Long msid, boolean exclusive);
 }

@@ -95,7 +95,7 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
 	}
 	
 	@Override
-	public List<SyncQueueItemVO> getActiveQueueItems(Long msid) {
+	public List<SyncQueueItemVO> getActiveQueueItems(Long msid, boolean exclusive) {
 		SearchBuilder<SyncQueueItemVO> sb = createSearchBuilder();
         sb.and("lastProcessMsid", sb.entity().getLastProcessMsid(),
     		SearchCriteria.Op.EQ);
@@ -104,7 +104,10 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
     	SearchCriteria<SyncQueueItemVO> sc = sb.create();
     	sc.setParameters("lastProcessMsid", msid);
     	
-    	Filter filter = new Filter(SyncQueueItemVO.class, "created", true, 0L, 1L);
+    	Filter filter = new Filter(SyncQueueItemVO.class, "created", true, null, null);
+    	
+    	if(exclusive)
+    		return lockRows(sc, filter, true);
         return listBy(sc, filter);
 	}
 }

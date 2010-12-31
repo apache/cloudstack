@@ -44,6 +44,8 @@ import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.response.ExceptionResponse;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.cluster.ClusterManager;
+import com.cloud.cluster.ClusterManagerListener;
+import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -64,7 +66,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 @Local(value={AsyncJobManager.class})
-public class AsyncJobManagerImpl implements AsyncJobManager {
+public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListener {
     public static final Logger s_logger = Logger.getLogger(AsyncJobManagerImpl.class.getName());
 	private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3; 	// 3 seconds
     
@@ -561,11 +563,9 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
 		return MacAddress.getMacAddress().toLong();
 	}
 	
-	private void startupSanityCheck() {
-		List<SyncQueueItemVO> l = _queueMgr.getActiveQueueItems(getMsid());
+	private void cleanupPendingJobs(List<SyncQueueItemVO> l) {
 		if(l != null && l.size() > 0) {
 			for(SyncQueueItemVO item: l) {
-
 				if(s_logger.isInfoEnabled())
 					s_logger.info("Discard left-over queue item: " + item.toString());
 				
@@ -576,7 +576,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
 						completeAsyncJob(jobId, AsyncJobResult.STATUS_FAILED, 0, "Execution was cancelled because of server shutdown");
 					}
 				}
-    			_queueMgr.purgeItem(item.getId());
+				_queueMgr.purgeItem(item.getId());
 			}
 		}
 	}
@@ -625,11 +625,34 @@ public class AsyncJobManagerImpl implements AsyncJobManager {
 
     	return true;
     }
+    
+    @Override
+	public void onManagementNodeJoined(List<ManagementServerHostVO> nodeList, long selfNodeId) {
+    }
+    
+    @Override
+	public void onManagementNodeLeft(List<ManagementServerHostVO> nodeList, long selfNodeId) {
+    	for(ManagementServerHostVO msHost : nodeList) {
+    		Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+    		try {
+    			txn.start();
+    			List<SyncQueueItemVO> items = _queueMgr.getActiveQueueItems(msHost.getId(), true);
+    			cleanupPendingJobs(items);
+    			txn.commit();
+    		} catch(Throwable e) {
+    			s_logger.warn("Unexpected exception ", e);
+    			txn.rollback();
+    		} finally {
+    			txn.close();
+    		}
+    	}
+    }
 
     @Override
     public boolean start() {
     	try {
-    		startupSanityCheck();
+    		List<SyncQueueItemVO> l = _queueMgr.getActiveQueueItems(getMsid(), false);
+    		cleanupPendingJobs(l);
     	} catch(Throwable e) {
     		s_logger.error("Unexpected exception " + e.getMessage(), e);
     	}
