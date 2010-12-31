@@ -368,6 +368,7 @@ function bindAddClusterButton($leftmenuItem1) {
 			        success: function(json) {
 			            $thisDialog.find("#spinning_wheel").hide();
 			            $thisDialog.dialog("close");	
+                        var item = json.addclusterresponse.cluster[0];
                                                                    
                         var $podNode = $("#pod_" + podId);
                         if($podNode.length > 0 && $podNode.css("display") != "none") {
@@ -377,13 +378,17 @@ function bindAddClusterButton($leftmenuItem1) {
                             
                             if($podNode.find("#pod_arrow").hasClass("expanded_close")) { //if pod node is closed
                                 $podNode.find("#pod_arrow").click(); //expand pod node
+                                var $clusterNode = $podNode.find("#cluster_"+item.id);
+                                $clusterNode.find("#cluster_arrow").click(); //expand cluster node to see host node and storage node   
+                                $clusterNode.find("#cluster_name").click();  //click cluster node to show cluster info
                             }
                             else { //if pod node is expanded                                
-                                var $clusterNode = $("#leftmenu_cluster_node_template").clone(true);                                 
-                                var item = json.addclusterresponse.cluster[0];
+                                var $clusterNode = $("#leftmenu_cluster_node_template").clone(true);  
                                 clusterJSONToTreeNode(item, $clusterNode);
-                                $podNode.find("#clusters_container").append($clusterNode.show());                                                              
-                            }                         
+                                $podNode.find("#clusters_container").append($clusterNode.show());   
+                                $clusterNode.find("#cluster_arrow").click(); //expand cluster node to see host node and storage node   
+                                $clusterNode.find("#cluster_name").click();  //click cluster node to show cluster info                                                            
+                            }                                      
                         }
 			        },			
                     error: function(XMLHttpResponse) {	
