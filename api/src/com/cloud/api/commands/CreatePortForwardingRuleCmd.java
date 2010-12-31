@@ -103,14 +103,21 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
         PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
         try {
             success = _rulesService.applyPortForwardingRules(rule.getSourceIpAddress(), callerContext.getCaller());
+            
+            //State is different after the rule is applied, so get new object here
+            rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
+            FirewallRuleResponse fwResponse = new FirewallRuleResponse();
+            if (rule != null) {
+                fwResponse = _responseGenerator.createFirewallRuleResponse(rule);
+                setResponseObject(fwResponse);
+            }
+            fwResponse.setResponseName(getCommandName());
         }  finally {
-            if (!success) {
+            if (!success || rule == null) {
                 _rulesService.revokePortForwardingRule(getEntityId(), true);
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to apply port forwarding rule");
             }
         }
-        FirewallRuleResponse fwResponse = _responseGenerator.createFirewallRuleResponse(rule);
-        fwResponse.setResponseName(getCommandName());
-        setResponseObject(fwResponse);
     }
 
     @Override
