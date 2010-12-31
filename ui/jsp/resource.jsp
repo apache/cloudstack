@@ -699,7 +699,7 @@
 <div id="dialog_add_host_in_resource_page" title="Add Host" style="display: none">   
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
-        <ol>
+        <ol>            
             <li>
             	<label for="host_hypervisor">Hypervisor:</label>
                 <select class="select" id="host_hypervisor">
@@ -724,7 +724,15 @@
                 </select>
                 <div id="pod_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
-            </li>   
+            </li>               
+            <li>
+                <label>
+                    Cluster:</label>
+                <select class="select" id="cluster_select">
+                </select>
+                <div id="cluster_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>                    
             <li>
                 <label for="host_hostname">
                     Host name:</label>
@@ -745,28 +753,7 @@
                 <input class="text" type="password" name="host_password" id="host_password" autocomplete="off" />
                 <div id="host_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
-            </li>
-            <li id="cluster_options_container">
-                <label>
-                    &nbsp;</label><span><u>Cluster Options</u></span> </li>
-            <li id="new_cluster_radio_container">
-                <label>
-                    <input type="radio" name="cluster" value="new_cluster_radio" checked />&nbsp;New
-                    cluster:</label>
-                <input class="text" type="text" id="new_cluster_name" />
-                <div id="new_cluster_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                </div>
-            </li>
-            <li id="existing_cluster_radio_container">
-                <label>
-                    <input type="radio" name="cluster" value="existing_cluster_radio" />&nbsp;Join cluster:</label>
-                <select class="select" id="cluster_select">
-                </select>
-            </li>
-            <li id="no_cluster_radio_container">
-                <label>
-                    <input type="radio" name="cluster" value="no_cluster_radio" />&nbsp;Standalone</label>
-                <span style="padding-left: 20px"></span></li>
+            </li>            
         </ol>
         </form>
     </div>

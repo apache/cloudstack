@@ -159,8 +159,24 @@ function buildZoneTree() {
 			    var $podContent = $podNode.find("#pod_content");					 	   
 				if(target.hasClass("expanded_close")) {						
 					target.removeClass("expanded_close").addClass("expanded_open");									
-					$podContent.show();
-					refreshClusterUnderPod($podNode); 
+					$podContent.show();					
+					$.ajax({
+                        data: createURL("command=listClusters&podid="+podObj.id),
+                        dataType: "json",
+                        async: false,
+                        success: function(json) {
+                            var items = json.listclustersresponse.cluster;  
+                            var container = $podContent.find("#clusters_container").empty();
+                            if (items != null && items.length > 0) {	                                				    
+                                for (var i = 0; i < items.length; i++) {
+                                    $clusterNode = $("#leftmenu_cluster_node_template").clone(true); 
+                                    var item = items[i];
+                                    clusterJSONToTreeNode(item, $clusterNode);
+                                    container.append($clusterNode.show());  
+                                }  
+                            }            
+                        }
+                    });	
 				} 
 				else if(target.hasClass("expanded_open")) {					
 					target.removeClass("expanded_open").addClass("expanded_close");	
@@ -286,6 +302,7 @@ function buildZoneTree() {
 	});  	
 }    
 
+/*
 function refreshClusterUnderPod($podNode, newClusterName, existingClusterId, noClicking) {  
     var podId = $podNode.data("podId");     
     if(podId == null)  //e.g. $podNode is not on the screen (when zone tree is hidden) ($podNode.length==0) 
@@ -322,6 +339,7 @@ function refreshClusterUnderPod($podNode, newClusterName, existingClusterId, noC
     
     return $clusterNode;
 }
+*/
 
 function selectRowInZoneTree($rowToSelect) { 
     if($selectedSubMenu != null)
@@ -357,8 +375,7 @@ function zoneJSONToTreeNode(jsonObj, $zoneNode) {
 	    success: function(json) {
 		    var items = json.listpodsresponse.pod;	
 		    if (items != null && items.length > 0) {					    
-			    $zoneNode.find("#zone_arrow").removeClass("white_nonexpanded_close").addClass("expanded_close"); 
-			    forceLogout = false;  // We don't force a logout if pod(s) exit.	
+			    $zoneNode.find("#zone_arrow").removeClass("white_nonexpanded_close").addClass("expanded_close");			    
 			}	    		    
 	    }
     });	
@@ -371,9 +388,19 @@ function podJSONToTreeNode(json, $podNode) {
 	$podNode.data("podId", podid).data("name", fromdb(json.name));
 	
 	var podName = $podNode.find("#pod_name").text(fromdb(json.name));
-	podName.data("jsonObj", json);	    
+	podName.data("jsonObj", json);	   
 		
-    refreshClusterUnderPod($podNode);            
+	$.ajax({
+        data: createURL("command=listClusters&podid="+podid),
+	    dataType: "json",
+	    async: false,
+	    success: function(json) {
+		    var items = json.listclustersresponse.cluster;	
+		    if (items != null && items.length > 0) {					    
+			    $podNode.find("#pod_arrow").removeClass("white_nonexpanded_close").addClass("expanded_close"); 			    
+			}	    		    
+	    }
+    });		
 }
 		
 function clusterJSONToTreeNode(json, $clusterNode) {
@@ -757,9 +784,7 @@ function initAddClusterShortcut() {
 					
 					    var clusterTotal = parseInt($("#cluster_total").text());
 		                clusterTotal++;
-		                $("#cluster_total").text(clusterTotal.toString());  
-					
-                        //clickClusterNodeAfterAddHost("new_cluster_radio", podId, clusterName, null, $thisDialog);                        
+		                $("#cluster_total").text(clusterTotal.toString());                                            
 			        },			
                     error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {							
@@ -778,23 +803,20 @@ function initAddClusterShortcut() {
 
 function initAddHostShortcut() {
     var $dialogAddHost = $("#dialog_add_host_in_resource_page");    
+    var $podSelect = $dialogAddHost.find("#pod_dropdown");
     
-    /*
-    $.ajax({
-        data: createURL("command=listZones&available=true"),
-	    dataType: "json",
-	    success: function(json) {
-		    var zones = json.listzonesresponse.zone;
-		    var zoneSelect = $dialogAddHost.find("#zone_dropdown").empty();								
-		    if (zones != null && zones.length > 0) {
-			    for (var i = 0; i < zones.length; i++) 
-				    zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 				    
-		    }	
-		    //$dialogAddHost.find("#zone_dropdown").change();	//comment out to avoid race condition, do it before dialog box pops up	    
-	    }
-    });
-	*/
-	
+    $dialogAddHost.find("#host_hypervisor").change(function() {
+        if($(this).val() == "VmWare") {
+    		$('li[input_group="general"]', $dialogAddHost).hide();
+    		$('li[input_group="vmware"]', $dialogAddHost).show();
+    	} else {
+    		$('li[input_group="vmware"]', $dialogAddHost).hide();
+    		$('li[input_group="general"]', $dialogAddHost).show();
+    	}
+    	
+        refreshClsuterFieldInAddHostDialog($dialogAddHost, $podSelect.val(), null, $(this).val());        
+    }); 
+        
     $dialogAddHost.find("#zone_dropdown").bind("change", function(event) {
 	    var zoneId = $(this).val();
 	    if(zoneId == null)
@@ -815,19 +837,15 @@ function initAddHostShortcut() {
 		    }
 	    });
     });
-	
-    $dialogAddHost.find("#pod_dropdown").bind("change", function(event) {			   
-        var podId = $(this).val();
-        if(podId == null || podId.length == 0)
-            return;        
-        refreshClsuterFieldInAddHostDialog($dialogAddHost, podId, null);        
-    });                 	        	    
+	    
+    $dialogAddHost.find("#pod_dropdown").bind("change", function(event) {    	   
+        $dialogAddHost.find("#host_hypervisor").change();       
+    });  
         
-    $("#add_host_shortcut").unbind("click").bind("click", function(event) {   
-        $dialogAddHost.find("#zone_dropdown").change(); //refresh cluster dropdown (do it here to avoid race condition)        
+    $("#add_host_shortcut").unbind("click").bind("click", function(event) {               
         $dialogAddHost.find("#info_container").hide();    
-        $dialogAddHost.find("#new_cluster_name").val("");
-        
+        $dialogAddHost.find("#zone_dropdown").change(); 
+       
         $dialogAddHost
         .dialog('option', 'buttons', { 				
 	        "Add": function() { 
@@ -841,10 +859,7 @@ function initAddHostShortcut() {
 		        isValid &= validateDropDownBox("Pod", $thisDialog.find("#pod_dropdown"), $thisDialog.find("#pod_dropdown_errormsg"));									
 		        isValid &= validateString("Host name", $thisDialog.find("#host_hostname"), $thisDialog.find("#host_hostname_errormsg"));
 		        isValid &= validateString("User name", $thisDialog.find("#host_username"), $thisDialog.find("#host_username_errormsg"));
-		        isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));	
-				if(clusterRadio == "new_cluster_radio") {
-					isValid &= validateString("Cluster Name", $thisDialog.find("#new_cluster_name"), $thisDialog.find("#new_cluster_name_errormsg"));
-				}
+		        isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));					
 		        if (!isValid) 
 		            return;		            			
 					
@@ -872,19 +887,11 @@ function initAddHostShortcut() {
 				
 		        var password = trim($thisDialog.find("#host_password").val());
 		        array1.push("&password="+todb(password));
-					
-				var newClusterName, existingClusterId;							
-			    if(clusterRadio == "new_cluster_radio") {
-		            newClusterName = trim($thisDialog.find("#new_cluster_name").val());
-		            array1.push("&clustername="+todb(newClusterName));				    
-		        }
-		        else if(clusterRadio == "existing_cluster_radio") {			            
-		            existingClusterId = $thisDialog.find("#cluster_select").val();
-				    // We will default to no cluster if someone selects Join Cluster with no cluster available.
-				    if (existingClusterId != '-1') {
-					    array1.push("&clusterid="+existingClusterId);
-				    }
-		        }				
+									            
+		        var clusterId = $thisDialog.find("#cluster_select").val();			    
+			    if (clusterId != '-1') {
+				    array1.push("&clusterid="+clusterId);
+			    }		        				
 				
 		        var hostname = trim($thisDialog.find("#host_hostname").val());
 		        var url;					
@@ -893,49 +900,24 @@ function initAddHostShortcut() {
 		        else
 		            url = hostname;
 		        array1.push("&url="+todb(url));
-									
-		        //var $midmenuItem1 = beforeAddingMidMenuItem() ;    				
-		        
+					      
 		        $.ajax({
 			       data: createURL("command=addHost" + array1.join("")),
 			        dataType: "json",
 			        success: function(json) {
 			            $thisDialog.find("#spinning_wheel").hide();
 			            $thisDialog.dialog("close");
-					
-					    showMiddleMenu();
-					    
+								    
 					    var items = json.addhostresponse.host;			  
 		                var hostTotal = parseInt($("#host_total").text());
 		                hostTotal = hostTotal + items.length;
-		                $("#host_total").text(hostTotal.toString());
-		                
-					    /*
-					    var $midmenuItem1 = $("#midmenu_item").clone();
-                        $("#midmenu_container").append($midmenuItem1.fadeIn("slow"));                        			            			      										   
-					    hostToMidmenu(items[0], $midmenuItem1);
-	                    bindClickToMidMenu($midmenuItem1, hostToRightPanel, hostGetMidmenuId); 
-			           
-                        if(items.length > 1) { 
-                            for(var i=1; i<items.length; i++) {                                    
-                                var $midmenuItem2 = $("#midmenu_item").clone();
-                                hostToMidmenu(items[i], $midmenuItem2);
-                                bindClickToMidMenu($midmenuItem2, hostToRightPanel, hostGetMidmenuId); 
-                                $("#midmenu_container").append($midmenuItem2.fadeIn("slow"));                                   
-                            }	
-                        }   
-                        */                             
-                        
-                        clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);                                  
+		                $("#host_total").text(hostTotal.toString());		                
+                                                
 			        },			
                     error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {							 
 							refreshClsuterFieldInAddHostDialog($thisDialog, podId, null);                     
-							handleErrorInDialog(XMLHttpResponse, $thisDialog);
-							if(clusterRadio == "new_cluster_radio") {    //*** new cluster ***                         
-                               refreshClusterUnderPod($("#pod_" + podId), newClusterName, null, true);  //refresh clusters under pod, but no clicking at any cluster                        
-                               $thisDialog.find("#new_cluster_name").val("");   
-                           }   
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);							
 						});
                     }				
 		        });
@@ -1484,13 +1466,10 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
                     
 	                if(!$clusterSelect.val())
 	                	$("option", $clusterSelect)[0].attr("selected", "selected");
-	                $clusterSelect.change();
-	                
-                    $dialogAddPool.find("input[value=existing_cluster_radio]").attr("checked", true);
+	                $clusterSelect.change();	                
                 }
                 else {
-				    $clusterSelect.append("<option value='-1'>None Available</option>");
-                    $dialogAddPool.find("input[value=new_cluster_radio]").attr("checked", true);
+				    $clusterSelect.append("<option value='-1'>None Available</option>");                    
                 }
             }
         });
@@ -1604,13 +1583,7 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 			    $.ajax({
 				    data: createURL("command=createStoragePool" + array1.join("")),
 				    dataType: "json",
-				    success: function(json) {	
-				        var $clusterNode = $("#cluster_"+clusterId);
-				        if($clusterNode.length > 0)
-				  	        $("#cluster_"+clusterId).find("#cluster_name").click();		
-				  	    else  //pod node is close. Expand pod node.	
-				  	        refreshClusterUnderPod($("#pod_" + podId), null, clusterId);					    
-					   	                    
+				    success: function(json) {					                
 	                    var primarystorageTotal = parseInt($("#primarystorage_total").text());
 		                primarystorageTotal++;
 		                $("#primarystorage_total").text(primarystorageTotal.toString());				    	

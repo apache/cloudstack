@@ -1137,11 +1137,7 @@ function bindAddClusterButtonOnZonePage($button, zoneId, zoneName) {
 			        dataType: "json",
 			        success: function(json) {
 			            $thisDialog.find("#spinning_wheel").hide();
-			            $thisDialog.dialog("close");
-					
-					    showMiddleMenu();
-					    
-                        clickClusterNodeAfterAddHost("new_cluster_radio", podId, clusterName, null, $thisDialog);
+			            $thisDialog.dialog("close");					
 			        },			
                     error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {							
@@ -1160,51 +1156,43 @@ function bindAddClusterButtonOnZonePage($button, zoneId, zoneName) {
 
 
 function bindAddHostButtonOnZonePage($button, zoneId, zoneName) {
-    $button.show();
-   
     var $dialogAddHost = $("#dialog_add_host_in_zone_page");   
     var $podSelect = $dialogAddHost.find("#pod_dropdown");
-        
-    $podSelect.bind("change", function(event) {	        	   
-        var podId = $(this).val();
-        if(podId == null || podId.length == 0)
-            return;        
-        
-        var hypervisorType = $dialogAddHost.find("#host_hypervisor");
-        refreshClsuterFieldInAddHostDialog($dialogAddHost, podId, null, hypervisorType);        
-    });   
-    
-    $button.unbind("click").bind("click", function(event) { 
-        $dialogAddHost.find("#zone_name").text(zoneName);             
+     
+    $.ajax({
+        data: createURL("command=listPods&zoneid="+zoneId),
+        dataType: "json",
+        async: false,
+        success: function(json) {            
+            var pods = json.listpodsresponse.pod;   
+            $podSelect.empty(); 
+            if(pods != null && pods.length > 0) {
+                for(var i=0; i<pods.length; i++)
+                    $podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 	
+            }                
+        }        
+    });                   
+     
+    $dialogAddHost.find("#host_hypervisor").change(function() {
+    if($(this).val() == "VmWare") {
+    		$('li[input_group="general"]', $dialogAddHost).hide();
+    		$('li[input_group="vmware"]', $dialogAddHost).show();
+    	} else {
+    		$('li[input_group="vmware"]', $dialogAddHost).hide();
+    		$('li[input_group="general"]', $dialogAddHost).show();
+    	}
+    	
+        refreshClsuterFieldInAddHostDialog($dialogAddHost, $podSelect.val(), null, $(this).val());        
+    });             
+         
+    $dialogAddHost.find("#pod_dropdown").bind("change", function(event) {    	   
+        $dialogAddHost.find("#host_hypervisor").change();       
+    });  
+     
+    $button.unbind("click").bind("click", function(event) {              
         $dialogAddHost.find("#info_container").hide();    
-        $dialogAddHost.find("#new_cluster_name").val("");
-        
-        $.ajax({
-            data: createURL("command=listPods&zoneid="+zoneId),
-            dataType: "json",
-            async: false,
-            success: function(json) {            
-                var pods = json.listpodsresponse.pod;   
-                $podSelect.empty(); 
-                if(pods != null && pods.length > 0) {
-                    for(var i=0; i<pods.length; i++)
-                        $podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 	
-                }  
-                $podSelect.change();        
-            }        
-        });    
-        
-        $dialogAddHost.find("#host_hypervisor").change(function() {
-        	if($(this).val() == "VmWare") {
-        		$('li[input_group="general"]', $dialogAddHost).hide();
-        		$('li[input_group="vmware"]', $dialogAddHost).show();
-        	} else {
-        		$('li[input_group="vmware"]', $dialogAddHost).hide();
-        		$('li[input_group="general"]', $dialogAddHost).show();
-        	}
-        	
-            refreshClsuterFieldInAddHostDialog($dialogAddHost, $podSelect.val(), null, $(this).val());        
-        }).change();
+        $dialogAddHost.find("#zone_name").text(zoneName);        
+        $dialogAddHost.find("#host_hypervisor").change();
 	    
         $dialogAddHost
         .dialog('option', 'buttons', { 				
@@ -1228,11 +1216,7 @@ function bindAddHostButtonOnZonePage($button, zoneId, zoneName) {
 			        isValid &= validateString("Host name", $thisDialog.find("#host_hostname"), $thisDialog.find("#host_hostname_errormsg"));
 			        isValid &= validateString("User name", $thisDialog.find("#host_username"), $thisDialog.find("#host_username_errormsg"));
 			        isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));	
-		        }
-		        
-		        if(clusterRadio == "new_cluster_radio") {
-					isValid &= validateString("Cluster Name", $thisDialog.find("#new_cluster_name"), $thisDialog.find("#new_cluster_name_errormsg"));
-				}
+		        }		        
 		        if (!isValid) 
 		            return;		            			
 					
@@ -1252,18 +1236,10 @@ function bindAddHostButtonOnZonePage($button, zoneId, zoneName) {
 		        var podId = $thisDialog.find("#pod_dropdown").val();
 		        array1.push("&podid="+podId);
 						      
-				var newClusterName, existingClusterId;							
-			    if(clusterRadio == "new_cluster_radio") {
-		            newClusterName = trim($thisDialog.find("#new_cluster_name").val());
-		            array1.push("&clustername="+todb(newClusterName));				    
-		        }
-		        else if(clusterRadio == "existing_cluster_radio") {			            
-		            existingClusterId = $thisDialog.find("#cluster_select").val();
-				    // We will default to no cluster if someone selects Join Cluster with no cluster available.
-				    if (existingClusterId != '-1') {
-					    array1.push("&clusterid="+existingClusterId);
-				    }
-		        }				
+	            var clusterId = $thisDialog.find("#cluster_select").val();			    
+			    if (clusterId != null && clusterId.length > 0 && clusterId != '-1') {
+				    array1.push("&clusterid="+clusterId);
+			    }		        			
 
 			    if(hypervisor == "VmWare") {
 			        var username = trim($thisDialog.find("#host_vcenter_username").val());
@@ -1298,44 +1274,19 @@ function bindAddHostButtonOnZonePage($button, zoneId, zoneName) {
 			            url = hostname;
 			        array1.push("&url="+todb(url));
 			    }
-									
-		        //var $midmenuItem1 = beforeAddingMidMenuItem() ;    				
-		        
+							        
 		        $.ajax({
 			       data: createURL("command=addHost" + array1.join("")),
 			        dataType: "json",
 			        success: function(json) {			        
 			            $thisDialog.find("#spinning_wheel").hide();
-			            $thisDialog.dialog("close");
-						                
-					    /*
-					    var items = json.addhostresponse.host;	
-					    var $midmenuItem1 = $("#midmenu_item").clone();
-                        $("#midmenu_container").append($midmenuItem1.fadeIn("slow"));                        			            			      										   
-					    hostToMidmenu(items[0], $midmenuItem1);
-	                    bindClickToMidMenu($midmenuItem1, hostToRightPanel, hostGetMidmenuId); 
-			           
-                        if(items.length > 1) { 
-                            for(var i=1; i<items.length; i++) {                                    
-                                var $midmenuItem2 = $("#midmenu_item").clone();
-                                hostToMidmenu(items[i], $midmenuItem2);
-                                bindClickToMidMenu($midmenuItem2, hostToRightPanel, hostGetMidmenuId); 
-                                $("#midmenu_container").append($midmenuItem2.fadeIn("slow"));                                   
-                            }	
-                        }   
-                        */                             
-                        
-                        //clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog);      
-                        expandClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, existingClusterId, $thisDialog); //expand cluster node to see host node                                
+			            $thisDialog.dialog("close");						            
+                        //expandClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, clusterId, $thisDialog); //expand cluster node to see host node                                
 			        },			
                     error: function(XMLHttpResponse) {	            
 						handleError(XMLHttpResponse, function() {						  
 							refreshClsuterFieldInAddHostDialog($thisDialog, podId, null, $dialogAddHost.find("#host_hypervisor").val());                     
-							handleErrorInDialog(XMLHttpResponse, $thisDialog);
-							if(clusterRadio == "new_cluster_radio") {    //*** new cluster ***                         
-                               refreshClusterUnderPod($("#pod_" + podId), newClusterName, null, true);  //refresh clusters under pod, but no clicking at any cluster                        
-                               $thisDialog.find("#new_cluster_name").val("");   
-                           }   
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);							
 						});
                     }				
 		        });
@@ -1383,19 +1334,15 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
 	                	$("option", $clusterSelect)[0].attr("selected", "selected");
 	                }
 	                $clusterSelect.change();
-                    
-                    $dialogAddPool.find("input[value=existing_cluster_radio]").attr("checked", true);
                 }
                 else {
-				    $clusterSelect.append("<option value='-1'>None Available</option>");
-                    $dialogAddPool.find("input[value=new_cluster_radio]").attr("checked", true);
+				    $clusterSelect.append("<option value='-1'>None Available</option>");                   
                 }
             }
         });
     });
     
-    $("#cluster_select", $dialogAddPool).change(function() {
-    	
+    $("#cluster_select", $dialogAddPool).change(function() {    	
     	var curOption = $(this).val();
     	if(!curOption)
     		return false;
@@ -1517,13 +1464,7 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
 			    $.ajax({
 				    data: createURL("command=createStoragePool" + array1.join("")),
 				    dataType: "json",
-				    success: function(json) {		
-				        var $clusterNode = $("#cluster_"+clusterId);
-				        if($clusterNode.length > 0)
-				  	        $("#cluster_"+clusterId).find("#cluster_name").click();		
-				  	    else  //pod node is close. Expand pod node.	
-				  	        refreshClusterUnderPod($("#pod_" + podId), null, clusterId);					                              	    	
-	                    
+				    success: function(json) {					        
 	                    $thisDialog.find("#spinning_wheel").hide();					       
 				        $thisDialog.dialog("close");	                                                                 
 				    },			
