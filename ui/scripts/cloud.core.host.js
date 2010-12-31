@@ -84,7 +84,10 @@ function afterLoadHostJSP() {
     var tabArray = [$("#tab_details"), $("#tab_primarystorage"), $("#tab_instance"), $("#tab_router"), $("#tab_systemvm"), $("#tab_statistics")];
     var tabContentArray = [$("#tab_content_details"), $("#tab_content_primarystorage"), $("#tab_content_instance"), $("#tab_content_router"), $("#tab_content_systemvm"), $("#tab_content_statistics")];
     var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToPrimaryStorageTab, hostJsonToInstanceTab, hostJsonToRouterTab, hostJsonToSystemvmTab, hostJsonToStatisticsTab];
-    switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);    
+    switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);  
+            
+    var $hostNode = $selectedSubMenu.parent(); 
+    bindAddHostButton($hostNode);      
 }
 
 function hostJsonToDetailsTab() {  
@@ -95,9 +98,7 @@ function hostJsonToDetailsTab() {
     var jsonObj = $midmenuItem1.data("jsonObj");
     if(jsonObj == null)
         return;    
-    
-    bindAddHostButton($midmenuItem1);      
-    
+       
     $.ajax({
         data: createURL("command=listHosts&id="+jsonObj.id),
         dataType: "json",

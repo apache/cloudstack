@@ -424,24 +424,14 @@ function bindAddHostButton($leftmenuItem1) {
             dialogAddHost.find("#zone_name").text(fromdb(clusterObj.zonename));  
             dialogAddHost.find("#pod_name").text(fromdb(clusterObj.podname)); 
         }
-        else if(currentRightPanelJSP == "jsp/host.jsp") {
-            var hostObj = $leftmenuItem1.data("jsonObj");  
-            zoneId = hostObj.zoneid;
-            podId = hostObj.podid; 
-            clusterId = hostObj.clusterid;   
-            dialogAddHost.find("#zone_name").text(fromdb(hostObj.zonename));  
-            dialogAddHost.find("#pod_name").text(fromdb(hostObj.podname)); 
-        }
-        /*
-        else if(currentRightPanelJSP == "jsp/primarystorage.jsp") {
-            var primarystorageObj = $leftmenuItem1.data("jsonObj");   
-            zoneId = primarystorageObj.zoneid;
-            podId = primarystorageObj.podid;    
-            clusterId = primarystorageObj.clusterid;          
-            dialogAddHost.find("#zone_name").text(fromdb(primarystorageObj.zonename));  
-            dialogAddHost.find("#pod_name").text(fromdb(primarystorageObj.podname)); 
-        }
-        */
+        else if(currentRightPanelJSP == "jsp/host.jsp") {            
+            var clusterObj = $leftmenuItem1.data("clusterObj");  
+            zoneId = clusterObj.zoneid;
+            podId = clusterObj.podid;    
+            clusterId = clusterObj.id;    
+            dialogAddHost.find("#zone_name").text(fromdb(clusterObj.zonename));  
+            dialogAddHost.find("#pod_name").text(fromdb(clusterObj.podname)); 
+        }       
                   
         dialogAddHost.find("#host_hypervisor").change(function() {
         	if($(this).val() == "VmWare") {
@@ -596,24 +586,14 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
             sourceClusterId = clusterObj.id;   
             dialogAddPool.find("#zone_name").text(fromdb(clusterObj.zonename));  
             dialogAddPool.find("#pod_name").text(fromdb(clusterObj.podname)); 
-        }    
-        /*    
-        else if(currentRightPanelJSP == "jsp/host.jsp") {
-            var hostObj = $leftmenuItem1.data("jsonObj");  
-            zoneId = hostObj.zoneid;
-            podId = hostObj.podid; 
-            sourceClusterId = hostObj.clusterid;            
-            dialogAddPool.find("#zone_name").text(fromdb(hostObj.zonename));  
-            dialogAddPool.find("#pod_name").text(fromdb(hostObj.podname)); 
-        }
-        */
+        }          
         else if(currentRightPanelJSP == "jsp/primarystorage.jsp") {
-            var primarystorageObj = $leftmenuItem1.data("jsonObj");   
-            zoneId = primarystorageObj.zoneid;
-            podId = primarystorageObj.podid;  
-            sourceClusterId = primarystorageObj.clusterid;   
-            dialogAddPool.find("#zone_name").text(fromdb(primarystorageObj.zonename));  
-            dialogAddPool.find("#pod_name").text(fromdb(primarystorageObj.podname)); 
+            var clusterObj = $leftmenuItem1.data("clusterObj");   
+            zoneId = clusterObj.zoneid;
+            podId = clusterObj.podid;    
+            sourceClusterId = clusterObj.id;    
+            dialogAddPool.find("#zone_name").text(fromdb(clusterObj.zonename));  
+            dialogAddPool.find("#pod_name").text(fromdb(clusterObj.podname)); 
         }
                                              
         var clusterSelect = $("#dialog_add_pool").find("#pool_cluster").empty();			            

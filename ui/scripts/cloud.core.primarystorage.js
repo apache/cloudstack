@@ -74,6 +74,9 @@ function primarystorageToRightPanel($midmenuItem1) {
     initDialog("dialog_add_pool");
     bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	     
     initDialog("dialog_confirmation_delete_primarystorage");  
+    
+    var $primarystorageNode = $selectedSubMenu.parent(); 
+    bindAddPrimaryStorageButton($primarystorageNode);     
 }
 
 function primarystorageJsonToDetailsTab() {	
