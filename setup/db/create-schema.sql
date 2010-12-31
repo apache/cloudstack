@@ -91,6 +91,7 @@ DROP TABLE IF EXISTS `cloud`.`load_balancing_ip_map`;
 DROP TABLE IF EXISTS `cloud`.`load_balancing_rules`;
 DROP TABLE IF EXISTS `cloud`.`port_forwarding_rules`;
 DROP TABLE IF EXISTS `cloud`.`firewall_rules`;
+DROP TABLE IF EXISTS `cloud`.`ssh_keypairs`;
 DROP TABLE IF EXISTS `cloud`.`usage_event`;
 
 CREATE TABLE `cloud`.`op_it_work` (
@@ -743,6 +744,8 @@ CREATE TABLE `cloud`.`user_vm` (
   `external_mac_address` varchar(17)  COMMENT 'mac address within the external network',
   `external_vlan_db_id` bigint unsigned  COMMENT 'foreign key into vlan table',
   `user_data` varchar(2048),
+  `encrypted_password` varchar(1024) COMMENT 'vm password encrypted with the public key referenced in ssh_keypair',
+  `ssh_keypair_id` bigint unsigned COMMENT 'id of the ssh keypair used to access the vm and/or encrypt the password',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1274,6 +1277,16 @@ CREATE TABLE `cloud`.`instance_group_vm_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `group_id` bigint unsigned NOT NULL,
   `instance_id` bigint unsigned NOT NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`ssh_keypairs` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner, foreign key to account table',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain, foreign key to domain table',
+  `keypair_name` varchar(256) NOT NULL COMMENT 'name of the key pair',
+  `fingerprint` varchar(128) NOT NULL COMMENT 'fingerprint for the ssh public key',
+  `public_key` varchar(5120) NOT NULL COMMENT 'public key of the ssh key pair',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
