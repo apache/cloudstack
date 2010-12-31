@@ -522,7 +522,20 @@ function bindAddHostButton($leftmenuItem1) {
 			        success: function(json) {
 			            $thisDialog.find("#spinning_wheel").hide();
 			            $thisDialog.dialog("close");		         
-                        //expandClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, clusterId, $thisDialog); //expand cluster node to see host node                            
+                                               
+                        var item = json.addhostresponse.host;	
+												
+						var $podArrow = $("#pod_"+podId).find("#pod_arrow");
+						if($podArrow.hasClass("expanded_close")) {	
+						    $podArrow.click();
+						}
+						
+						var $clusterArrow = $("#cluster_"+clusterId).find("#cluster_arrow");
+						if($clusterArrow.hasClass("expanded_close")) {	
+						    $clusterArrow.click();
+						}
+						
+						$("#cluster_"+clusterId+"_host").click();	                                           
 			        },			
                     error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {							
