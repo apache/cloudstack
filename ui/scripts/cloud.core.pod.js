@@ -365,9 +365,9 @@ function bindAddClusterButton($leftmenuItem1) {
 			        dataType: "json",
 			        success: function(json) {
 			            $thisDialog.find("#spinning_wheel").hide();
-			            $thisDialog.dialog("close");	
-                        var item = json.addclusterresponse.cluster[0];
-                                                                   
+			            $thisDialog.dialog("close");
+			            	
+                        var item = json.addclusterresponse.cluster[0];                                                                   
                         var $podNode = $("#pod_" + podId);
                         if($podNode.length > 0 && $podNode.css("display") != "none") {
                             if($podNode.find("#pod_arrow").hasClass("white_nonexpanded_close")) {
