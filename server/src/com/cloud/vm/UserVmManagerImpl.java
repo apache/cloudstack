@@ -2112,6 +2112,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
         List<Long> networkList = cmd.getNetworkIds();
+        String group = cmd.getGroup();
         
         Account owner = _accountDao.findActiveAccount(accountName, domainId);
         if (owner == null) {
@@ -2299,6 +2300,19 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         _usageEventDao.persist(usageEvent);
         
         _accountMgr.incrementResourceCount(accountId, ResourceType.user_vm);
+        
+        //Assign instance to the group
+        try{
+            if (group != null) {
+                boolean addToGroup = addInstanceToGroup(Long.valueOf(id), group);
+                if (!addToGroup) {
+                    throw new CloudRuntimeException("Unable to assing Vm to the group " + group);
+                }
+            }
+        } catch (Exception ex) {
+            throw new CloudRuntimeException("Unable to assing Vm to the group " + group);
+        }
+        
         return vm;
 	}
 	
