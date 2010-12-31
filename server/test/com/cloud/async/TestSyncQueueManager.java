@@ -39,7 +39,7 @@ public class TestSyncQueueManager extends ComponentTestCase {
 		SyncQueueManager mgr = ComponentLocator.getCurrentLocator().getManager(
 			SyncQueueManager.class);
 
-		List<SyncQueueItemVO> l = mgr.getActiveQueueItems(1L);
+		List<SyncQueueItemVO> l = mgr.getActiveQueueItems(1L, false);
 		if(l != null && l.size() > 0) {
 			for(SyncQueueItemVO item : l) {
 				s_logger.info("Left over item: " + item.toString());
