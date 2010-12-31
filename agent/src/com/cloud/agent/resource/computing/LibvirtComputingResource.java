@@ -2350,7 +2350,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		vm.setHvsType(_hypervisorType);
 		vm.setDomainName(vmTO.getName());
 		vm.setDomUUID(UUID.nameUUIDFromBytes(vmTO.getName().getBytes()).toString());
-		vm.setDomDescription(KVMGuestOsMapper.getGuestOsName(vmTO.getOs()));
+		vm.setDomDescription(vmTO.getOs());
 		
 		GuestDef guest = new GuestDef();
 		guest.setGuestType(GuestDef.guestType.KVM);
@@ -2549,25 +2549,26 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			vlanId = broadcastUri.getHost();
 			s_logger.debug("vlanId: " + vlanId);
 		}
+		InterfaceDef.nicModel model = getGuestNicModel(vm.getGuestOSType());
 
 		if (nic.getType() == TrafficType.Guest) {
 			if (nic.getBroadcastType() == BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")){
 				String brName = createVlanBr(vlanId, _pifs.first());
-				intf.defBridgeNet(brName, null, nic.getMac(), InterfaceDef.nicModel.VIRTIO);
+				intf.defBridgeNet(brName, null, nic.getMac(), model);
 			} else {
-				intf.defBridgeNet(_privBridgeName, null,  nic.getMac(), InterfaceDef.nicModel.VIRTIO);
+				intf.defBridgeNet(_privBridgeName, null,  nic.getMac(), model);
 			}
 		} else if (nic.getType() == TrafficType.Control) {
-			intf.defPrivateNet(_privNwName, null, nic.getMac(), InterfaceDef.nicModel.VIRTIO);
+			intf.defPrivateNet(_privNwName, null, nic.getMac(), model);
 		} else if (nic.getType() == TrafficType.Public) {
 			if (nic.getBroadcastType() == BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")) {
 				String brName = createVlanBr(vlanId, _pifs.second());
-				intf.defBridgeNet(brName, null, nic.getMac(), InterfaceDef.nicModel.VIRTIO);
+				intf.defBridgeNet(brName, null, nic.getMac(), model);
 			} else {
-				intf.defBridgeNet(_publicBridgeName, null, nic.getMac(), InterfaceDef.nicModel.VIRTIO);
+				intf.defBridgeNet(_publicBridgeName, null, nic.getMac(), model);
 			}
 		} else if (nic.getType() == TrafficType.Management) {
-			intf.defBridgeNet(_privBridgeName, null, nic.getMac(), InterfaceDef.nicModel.VIRTIO);
+			intf.defBridgeNet(_privBridgeName, null, nic.getMac(), model);
 		}
 
 		vm.getDevices().addDevice(intf);
@@ -3364,7 +3365,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     
     private InterfaceDef.nicModel getGuestNicModel(String guestOSType) {
-    	if (isGuestPVEnabled(guestOSType) && !isCentosHost()) {
+    	if (isGuestPVEnabled(guestOSType)) {
     		return InterfaceDef.nicModel.VIRTIO;
     	} else {
     		return InterfaceDef.nicModel.E1000;
@@ -3372,7 +3373,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     
     private DiskDef.diskBus getGuestDiskModel(String guestOSType) {
-    	if (isGuestPVEnabled(guestOSType) && !isCentosHost()) {
+    	if (isGuestPVEnabled(guestOSType)) {
     		return DiskDef.diskBus.VIRTIO;
     	} else {
     		return DiskDef.diskBus.IDE;
