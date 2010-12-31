@@ -376,7 +376,7 @@ function bindAddClusterButton($leftmenuItem1) {
                             }
                             else { //if pod node is expanded                                
                                 var $clusterNode = $("#leftmenu_cluster_node_template").clone(true);                                 
-                                var item = json.addclusterresponse.cluster;
+                                var item = json.addclusterresponse.cluster[0];
                                 clusterJSONToTreeNode(item, $clusterNode);
                                 $podNode.find("#clusters_container").append($clusterNode.show());                                                              
                             }                         
