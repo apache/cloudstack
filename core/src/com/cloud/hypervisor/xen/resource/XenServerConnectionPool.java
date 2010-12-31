@@ -128,10 +128,6 @@ public class XenServerConnectionPool {
                         }
                         return true;
                     }
-                    try {
-                        Thread.sleep(2000);
-                    } catch (InterruptedException e) {
-                    }  
                 } catch (Exception e) {
                 } finally {
                     if (slaveSession != null) {
@@ -142,6 +138,10 @@ public class XenServerConnectionPool {
                         slaveConn.dispose();
                     }
                 }
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                } 
             }
 
         } catch (Exception e) {
