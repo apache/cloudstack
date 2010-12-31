@@ -53,7 +53,7 @@
                 </div>
             </div>
             
-            <div class="dbrow odd" style="margin-top:10px; border:1px solid #CCC;">
+            <div class="dbrow even" style="margin-top:10px; border:1px solid #CCC;">
                 <div class="dbrow_cell" style="width: 64%; border: none; ">
                     <div class="resource_titlebox">
                         <h2><span> # of </span> Clusters</h2>
@@ -69,7 +69,7 @@
                 </div>
             </div>
             
-            <div class="dbrow even" style="margin-top:10px; border:1px solid #CCC;">
+            <div class="dbrow odd" style="margin-top:10px; border:1px solid #CCC;">
                 <div class="dbrow_cell" style="width: 64%; border: none;">
                      <div class="resource_titlebox">
                         <h2><span> # of </span> Host</h2>
@@ -86,7 +86,7 @@
                 </div>
             </div>
             
-            <div class="dbrow odd" style="margin-top:10px; border:1px solid #CCC;">
+            <div class="dbrow even" style="margin-top:10px; border:1px solid #CCC;">
                 <div class="dbrow_cell" style="width: 64%; border: none;">
                      <div class="resource_titlebox">
                         <h2><span> # of </span> Primary Storage</h2>
