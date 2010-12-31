@@ -133,6 +133,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
@@ -297,13 +298,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     private int _networkRate;
     private int _multicastRate;
     String _networkDomain;
+    boolean _noDefaultRouteForDirectNetwork;
 
     private VMTemplateVO _template;
 
     ScheduledExecutorService _executor;
 
     Account _systemAcct;
-    boolean _useNewNetworking;
 
     @Override
     public DomainRouterVO getRouter(long accountId, long dataCenterId) {
@@ -631,28 +632,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public VirtualRouter stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException,
             ResourceUnavailableException, ConcurrentOperationException {
-        if (_useNewNetworking) {
-            return stopDomainRouter(cmd.getId());
-        }
-        Long routerId = cmd.getId();
-        Account account = UserContext.current().getCaller();
-
-        // verify parameters
-        DomainRouterVO router = _routerDao.findById(routerId);
-        if (router == null) {
-            throw new InvalidParameterValueException("Unable to find router with id " + routerId);
-        }
-
-        if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), router.getDomainId())) {
-            throw new PermissionDeniedException("Unable to stop router with id " + routerId + ". Permission denied");
-        }
-
-        boolean success = stopRouter(routerId);
-
-        if (success) {
-            return _routerDao.findById(routerId);
-        }
-        return null;
+        return stopDomainRouter(cmd.getId());
     }
 
     @DB
@@ -872,9 +852,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             _routerTemplateId = _template.getId();
         }
 
-        _useNewNetworking = Boolean.parseBoolean(configs.get("use.new.networking"));
-
         _systemAcct = _accountService.getSystemAccount();
+        
+        _noDefaultRouteForDirectNetwork = Boolean.parseBoolean(configs.get(Config.DirectNetworkNoDefaultRoute.key()));
 
         s_logger.info("DomainRouterManager is configured.");
 
@@ -1487,6 +1467,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         if (domain != null) {
             buf.append(" domain=" + router.getDomain());
+        }
+        
+        if (_noDefaultRouteForDirectNetwork && network.getGuestType() == GuestIpType.Direct) {
+            buf.append(" defaultroute=false");
+        } else {
+            buf.append(" defaultroute=true");
         }
 
         if (s_logger.isDebugEnabled()) {
