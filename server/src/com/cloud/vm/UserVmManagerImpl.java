@@ -2451,7 +2451,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
     
     @Override
-    public void finalizeStop(VirtualMachineProfile<UserVmVO> profile, long hostId, String reservationId) {
+    public void finalizeStop(VirtualMachineProfile<UserVmVO> profile, long hostId, String reservationId, Answer...answer) {
     }
     
     public String generateRandomPassword() {

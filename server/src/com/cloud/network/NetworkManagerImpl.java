@@ -584,6 +584,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             event.setParameters("address=" + ipAddress + "\nsourceNat=" + false + "\ndcId=" + zoneId);
             event.setDescription("Assigned a public IP address: " + ipAddress);
             _eventDao.persist(event);
+            
+            s_logger.debug("Got " + ipAddress + " to assign for account " + owner.getId() + " in zone " + network.getDataCenterId());
 
             txn.commit();
 
@@ -599,7 +601,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.error("Unable to associate ip address due to resource unavailable exception", e);
             return null;
         } finally {
-            if (caller != null) {
+            if (accountToLock != null) {
                 _accountDao.releaseFromLockTable(ownerId);
                 s_logger.debug("Associate IP address lock released");
             }
@@ -607,6 +609,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (!success) {
                 if (ip != null) {
                     try {
+                        s_logger.warn("Failed to associate ip address " + ip);
                         _ipAddressDao.markAsUnavailable(ip.getAddress(), ip.getAccountId());
                         applyIpAssociations(network, true);
                     } catch (Exception e) {

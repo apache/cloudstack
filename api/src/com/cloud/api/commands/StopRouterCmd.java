@@ -95,7 +95,7 @@ public class StopRouterCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException{
-        VirtualRouter result = _routerService.stopRouter(this);
+        VirtualRouter result = _routerService.stopRouter(this.getId());
         if (result != null){
             DomainRouterResponse response =_responseGenerator.createDomainRouterResponse(result);
             response.setResponseName(getCommandName());

@@ -27,6 +27,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.AgentControlAnswer;
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ConsoleAccessAuthenticationAnswer;
 import com.cloud.agent.api.ConsoleAccessAuthenticationCommand;
@@ -372,7 +373,7 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, long hostId, String reservationId) {
+    public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, long hostId, String reservationId, Answer... answer) {
         // TODO Auto-generated method stub
         
     }

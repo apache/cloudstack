@@ -17,6 +17,7 @@
  */
 package com.cloud.vm;
 
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.manager.Commands;
 import com.cloud.deploy.DeployDestination;
@@ -54,7 +55,7 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      * @param dest destination to send the command.
      * @return true if everything checks out.  false if not and we should try again.
      */
-    boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<T> profile, DeployDestination dest, ReservationContext context);
+    boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<T> profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException;
     
     /**
      * Check the deployment results.
@@ -65,7 +66,7 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      */
     boolean finalizeStart(Commands cmds, VirtualMachineProfile<T> profile, DeployDestination dest, ReservationContext context);
     
-    void finalizeStop(VirtualMachineProfile<T> profile, long hostId, String reservationId);
+    void finalizeStop(VirtualMachineProfile<T> profile, long hostId, String reservationId, Answer... answer);
     /**
      * Returns the id parsed from the name.  If it cannot parse the name,
      * then return null.  This method is used to determine if this is

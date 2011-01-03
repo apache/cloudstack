@@ -18,16 +18,15 @@
 
 package com.cloud.agent.api.routing;
 
-import java.util.ArrayList;
-import java.util.List;
 
-public class VmDataCommand extends NetworkElementCommand {
+public class DhcpEntryCommand extends NetworkElementCommand {
 
-	String routerPrivateIpAddress;
-	String vmIpAddress;
-	List<String[]> vmData;
-	
-    protected VmDataCommand() {    	
+    String vmMac;
+    String vmIpAddress;
+    String vmName;
+    
+    protected DhcpEntryCommand() {
+    	
     }
     
     @Override
@@ -35,26 +34,22 @@ public class VmDataCommand extends NetworkElementCommand {
         return true;
     }
     
-    public VmDataCommand(String routerPrivateIpAddress, String vmIpAddress) {
-    	this.routerPrivateIpAddress = routerPrivateIpAddress;
-    	this.vmIpAddress = vmIpAddress;
-    	this.vmData = new ArrayList<String[]>();
+    public DhcpEntryCommand(String vmMac, String vmIpAddress, String vmName) {
+        this.vmMac = vmMac;
+        this.vmIpAddress = vmIpAddress;
+        this.vmName = vmName;
     }
-	
-	public String getRouterPrivateIpAddress() {
-		return routerPrivateIpAddress;
+    
+	public String getVmMac() {
+		return vmMac;
 	}
 	
 	public String getVmIpAddress() {
 		return vmIpAddress;
 	}
 	
-	public List<String[]> getVmData() {
-		return vmData;
-	}
-	
-	public void addVmData(String folder, String file, String contents) {
-		vmData.add(new String[]{folder, file, contents});
+	public String getVmName() {
+		return vmName;
 	}
 	
 }

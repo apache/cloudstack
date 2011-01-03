@@ -61,9 +61,6 @@ import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.commands.RebootRouterCmd;
-import com.cloud.api.commands.StartRouterCmd;
-import com.cloud.api.commands.StopRouterCmd;
 import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
@@ -104,6 +101,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
+import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
@@ -112,7 +110,6 @@ import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.SshKeysDistriMonitor;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
@@ -128,10 +125,13 @@ import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -172,6 +172,7 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.State;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
@@ -282,10 +283,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     RulesManager _rulesMgr;
     @Inject
     NetworkDao _networkDao;
+    @Inject
+    LoadBalancingRulesManager _lbMgr;
+    @Inject 
+    PortForwardingRulesDao _pfRulesDao;
+    @Inject
+    RemoteAccessVpnDao _vpnDao;
 
     long _routerTemplateId = -1;
     int _routerRamSize;
-    // String _privateNetmask;
     int _retry = 2;
     String _domain;
     String _instance;
@@ -329,7 +335,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public boolean destroyRouter(final long routerId) {
+    public boolean destroyRouterInternal(final long routerId) throws ResourceUnavailableException, ConcurrentOperationException{
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Attempting to destroy router " + routerId);
@@ -349,15 +355,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 }
                 return true;
             }
-
-            long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, router.getAccountId(), EventTypes.EVENT_ROUTER_STOP, "Starting to stop router : " + router.getName());
-            if (!stop(router)) {
-                s_logger.debug("Unable to stop the router: " + routerId);
-                EventUtils.saveEvent(User.UID_SYSTEM, router.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_STOP, "Unable to stop router: " + router.getName(), startEventId);
+            
+            if (stopRouterInternal(router.getId())) {
                 return false;
-            } else {
-                EventUtils.saveEvent(User.UID_SYSTEM, router.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_STOP, "successfully stopped router : " + router.getName(), startEventId);
-            }
+            } 
             
             router = _routerDao.findById(routerId);
             if (!_itMgr.stateTransitTo(router, VirtualMachine.Event.DestroyRequested, router.getHostId())) {
@@ -467,143 +468,35 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return false;
         }
     }
-
-    @Override
-    public VirtualRouter startRouter(StartRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException,
-            ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
-        return startRouter(cmd.getId());
-    }
-
-//    private boolean resendRouterState(final DomainRouterVO router) {
-//        if (router.getRole() == Role.DHCP_FIREWALL_LB_PASSWD_USERDATA) {
-//			//source NAT address is stored in /proc/cmdline of the domR and gets
-//			//reassigned upon powerup. Source NAT rule gets configured in StartRouter command
-//        	final List<IPAddressVO> ipAddrs = _networkMgr.listPublicIpAddressesInVirtualNetwork(router.getAccountId(), router.getDataCenterId(), null);
-//			final List<String> ipAddrList = new ArrayList<String>();
-//			for (final IPAddressVO ipVO : ipAddrs) {
-//				ipAddrList.add(ipVO.getAddress());
-//			}
-//			if (!ipAddrList.isEmpty()) {
-//			    try {
-//    				final boolean success = _networkMgr.associateIP(router, ipAddrList, true, 0);
-//                    if (!success) {
-//                        return false;
-//                    }
-//                } catch (ConcurrentOperationException e) {
-//                    s_logger.warn("unable to associate ip due to ", e);
-//                    return false;
-//                }
-//			}
-//			final List<PortForwardingRuleVO> fwRules = new ArrayList<PortForwardingRuleVO>();
-////FIXME:			for (final IPAddressVO ipVO : ipAddrs) {
-////				//We need only firewall rules that are either forwarding or for load balancers
-////				fwRules.addAll(_rulesDao.listIPForwarding(ipVO.getAddress(), true));
-////				fwRules.addAll(_rulesDao.listIpForwardingRulesForLoadBalancers(ipVO.getAddress()));
-////			}
-////			final List<PortForwardingRuleVO> result = _networkMgr.updateFirewallRules(router
-////					.getPublicIpAddress(), fwRules, router);
-////			if (result.size() != fwRules.size()) {
-////				return false;
-////			}
-//		}
-//		return resendDhcpEntries(router) && resendVpnServerData(router);
-//      
-//    }
     
-    private boolean resendDhcpEntries(final DomainRouterVO router){
-    	final List<? extends UserVm> vms = _vmDao.listBy(router.getId(), State.Creating, State.Starting, State.Running, State.Stopping, State.Stopped, State.Migrating);
-    	Commands cmds = new Commands(OnError.Continue);
-    	for (UserVm vm: vms) {
-    		if (vm.getGuestIpAddress() == null || vm.getGuestMacAddress() == null || vm.getName() == null) {
-                continue;
-            }
-            DhcpEntryCommand decmd = new DhcpEntryCommand(vm.getGuestMacAddress(), vm.getGuestIpAddress(), router.getPrivateIpAddress(), vm.getName());
-            cmds.addCommand(decmd);
-        }
-        if (cmds.size() > 0) {
-            try {
-                _agentMgr.send(router.getHostId(), cmds);
-            } catch (final AgentUnavailableException e) {
-                s_logger.warn("agent unavailable", e);
-            } catch (final OperationTimedoutException e) {
-                s_logger.warn("Timed Out", e);
-            }
-            Answer[] answers = cmds.getAnswers();
-            if (answers == null) {
-                return false;
-            }
-            int i = 0;
-            while (i < cmds.size()) {
-                Answer ans = answers[i];
-                i++;
-                if ((ans != null) && (ans.getResult())) {
-                    continue;
-                } else {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    /*
-     * private boolean resendUserData(final DomainRouterVO router){
-     * final List<UserVmVO> vms = _vmDao.listByRouterId(router.getId());
-     * final List<Command> cmdList = new ArrayList<Command>();
-     * for (UserVmVO vm: vms) {
-     * if (vm.getGuestIpAddress() == null || vm.getGuestMacAddress() == null ||
-     * vm.getName() == null)
-     * continue;
-     * if (vm.getUserData() == null)
-     * continue;
-     * UserDataCommand userDataCmd = new UserDataCommand(vm.getUserData(),
-     * vm.getGuestIpAddress(), router.getPrivateIpAddress(), vm.getName());
-     * cmdList.add(userDataCmd);
-     * }
-     * final Command [] cmds = new Command[cmdList.size()];
-     * Answer [] answers = null;
-     * try {
-     * answers = _agentMgr.send(router.getHostId(), cmdList.toArray(cmds),
-     * false);
-     * } catch (final AgentUnavailableException e) {
-     * s_logger.warn("agent unavailable", e);
-     * } catch (final OperationTimedoutException e) {
-     * s_logger.warn("Timed Out", e);
-     * }
-     * if (answers == null ){
-     * return false;
-     * }
-     * int i=0;
-     * while (i < cmdList.size()) {
-     * Answer ans = answers[i];
-     * i++;
-     * if ((ans != null) && (ans.getResult())) {
-     * continue;
-     * } else {
-     * return false;
-     * }
-     * }
-     * return true;
-     * }
-     */
-
-//    private boolean resendVpnServerData(final DomainRouterVO router) {
-//        RemoteAccessVpnVO vpnVO = _remoteAccessVpnDao.findByAccountAndNetwork(router.getAccountId(), router.getDataCenterId());
-//
-//        if (vpnVO != null) {
-//            try {
-//                vpnVO = startRemoteAccessVpn(vpnVO);
-//            } catch (ResourceUnavailableException e) {
-//                s_logger.warn("Unable to resend vpn server information to restarted router: " + router.getInstanceName());
-//                return false;
-//            }
-//            return (vpnVO != null);
-//        }
-//        return true;
-//    }
-
+    
     @Override
-    public boolean stopRouter(final long routerId) {
+    public VirtualRouter stopRouter(long routerId) throws ResourceUnavailableException, ConcurrentOperationException {
+        UserContext context = UserContext.current();
+        Account account = context.getCaller();
+        
+        // verify parameters
+        DomainRouterVO router = _routerDao.findById(routerId);
+        if (router == null) {
+            throw new InvalidParameterValueException("Unable to find router by id " + routerId + ".");
+        }
+        
+        _accountMgr.checkAccess(account, router);
+        
+        UserVO user = _userDao.findById(UserContext.current().getCallerUserId());
+        
+        return this.stop(router, user, account);
+    }
+    
+    
+    @Override
+    public boolean stopRouterInternal(long routerId) throws ResourceUnavailableException, ConcurrentOperationException {
+        
+        DomainRouterVO router = _routerDao.findById(routerId);
+        if (router == null) {
+            throw new InvalidParameterValueException("Unable to find router by id " + routerId + ".");
+        }
+         
         AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
         if (asyncExecutor != null) {
             AsyncJobVO job = asyncExecutor.getJob();
@@ -613,28 +506,26 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
             _asyncMgr.updateAsyncJobAttachment(job.getId(), "domain_router", routerId);
         }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Stopping router " + routerId);
-        }
-        DomainRouterVO router = _routerDao.findById(routerId);
+        
         long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, router.getAccountId(), EventTypes.EVENT_ROUTER_STOP, "Starting to stop router : " + router.getName());
-        if (!stop(router)) {
-            s_logger.debug("Unable to stop the router: " + routerId);
-            EventUtils.saveEvent(User.UID_SYSTEM, router.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_STOP, "Unable to stop router: " + router.getName(), startEventId);
-            return false;
-        } else {
-            EventUtils.saveEvent(User.UID_SYSTEM, router.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_STOP, "successfully stopped router : " + router.getName(), startEventId);
+        
+        Account account = _accountDao.findById(router.getAccountId());
+        
+        //If domR is stopped, not need to stop it again
+        if (router.getState() == State.Stopped) {
+            s_logger.debug("domR is already stopped: " + router);
             return true;
+        } else {
+            if (this.stop(router, _accountService.getSystemUser(), account) == null) {
+                EventUtils.saveEvent(User.UID_SYSTEM, router.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_STOP, "Unable to stop router: " + router.getName(), startEventId);
+                return false;
+            } else {
+                EventUtils.saveEvent(User.UID_SYSTEM, router.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_STOP, "successfully stopped router : " + router.getName(), startEventId);
+                return true;
+            }
         }
     }
-
-    @Override
-    public VirtualRouter stopRouter(StopRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException,
-            ResourceUnavailableException, ConcurrentOperationException {
-        return stopDomainRouter(cmd.getId());
-    }
-
+    
     @DB
     public void processStopOrRebootAnswer(final DomainRouterVO router, Answer answer) {
         final Transaction txn = Transaction.currentTxn();
@@ -671,11 +562,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 userStats.setNetBytesSent(userStats.getNetBytesSent() + netBytes);
                 userStats.setCurrentBytesSent(0);
                 _userStatsDao.update(userStats.getId(), userStats);
+                s_logger.debug("Successfully updated user statistics as a part of domR id=" + router.getId() + " reboot/stop");
             } else {
                 s_logger.warn("User stats were not created for account " + router.getAccountId() + " and dc " + router.getDataCenterId());
             }
             txn.commit();
         } catch (final Exception e) {
+            txn.rollback();
             throw new CloudRuntimeException("Problem getting stats after reboot/stop ", e);
         }
     }
@@ -706,54 +599,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public boolean rebootRouter(final long routerId) {
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-        if (asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Reboot router " + routerId + ", update async job-" + job.getId());
-            }
-            _asyncMgr.updateAsyncJobAttachment(job.getId(), "domain_router", routerId);
-        }
-
-        final DomainRouterVO router = _routerDao.findById(routerId);
-
-        if (router == null || router.getState() == State.Destroyed) {
-            return false;
-        }
-
-        return false;
-
-        // FIXME Alena if (router.getState() == State.Running &&
-        // router.getHostId() != null) {
-        // final RebootRouterCommand cmd = new
-        // RebootRouterCommand(router.getInstanceName(),
-        // router.getPrivateIpAddress());
-        // final RebootAnswer answer =
-        // (RebootAnswer)_agentMgr.easySend(router.getHostId(), cmd);
-        //
-        // if (answer != null && resendRouterState(router)) {
-        // processStopOrRebootAnswer(router, answer);
-        // event.setDescription("successfully rebooted Domain Router : " +
-        // router.getName());
-        // _eventDao.persist(event);
-        // return true;
-        // } else {
-        // event.setDescription("failed to reboot Domain Router : " +
-        // router.getName());
-        // event.setLevel(EventVO.LEVEL_ERROR);
-        // _eventDao.persist(event);
-        // return false;
-        // }
-        // } else {
-        // return startRouter(routerId, 0) != null;
-        // }
-    }
-
-    @Override
-    public VirtualRouter rebootRouter(RebootRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Long routerId = cmd.getId();
+    public VirtualRouter rebootRouter(long routerId) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         Account account = UserContext.current().getCaller();
 
         // verify parameters
@@ -765,22 +611,20 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), router.getDomainId())) {
             throw new PermissionDeniedException("Unable to reboot domain router with id " + routerId + ". Permission denied");
         }
-
-        if (rebootRouter(routerId)) {
-            return _routerDao.findById(routerId);
-        } else {
-            throw new CloudRuntimeException("Fail to reboot router " + routerId);
+        
+        //Can reboot domain router only in Running state
+        if (router == null || router.getState() != State.Running) {
+            s_logger.warn("Unable to reboot, virtual router is not in the right state " + router.getState());
+            throw new ResourceUnavailableException("Unable to reboot domR, it is not in right state " + router.getState(), DataCenter.class, router.getDataCenterId());
         }
-    }
-
-    @Override
-    public DomainRouterVO getRouter(final long routerId) {
-        return _routerDao.findById(routerId);
-    }
-
-    @Override
-    public List<? extends VirtualRouter> getRouters(final long hostId) {
-        return _routerDao.listByHostId(hostId);
+        
+        s_logger.debug("Stopping and starting router id=" + router.getId() + " as a part of router reboot");
+        
+        if (stopRouter(routerId) != null) {
+            return startRouter(routerId);
+        } else {
+            throw new CloudRuntimeException("Failed to reboot router id=" + router.getId());
+        }
     }
 
     @Override
@@ -795,12 +639,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         _mgmt_host = configs.get("host");
         _routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), 128);
-
-        // String value = configs.get("guest.ip.network");
-        // _guestIpAddress = value != null ? value : "10.1.1.1";
-        //
-        // value = configs.get("guest.netmask");
-        // _guestNetmask = value != null ? value : "255.255.255.0";
 
         String value = configs.get("start.retry");
         _retry = NumbersUtil.parseInt(value, 2);
@@ -943,7 +781,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     public DomainRouterVO get(final long id) {
-        return getRouter(id);
+        return findById(id);
     }
 
     @Override
@@ -953,118 +791,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
 
         return VirtualMachineName.getRouterId(vmName);
-    }
-
-    private boolean sendStopCommand(DomainRouterVO router) {
-        final StopCommand stop = new StopCommand(router, router.getInstanceName(), router.getVnet());
-
-        Answer answer = null;
-        boolean stopped = false;
-        try {
-            answer = _agentMgr.send(router.getHostId(), stop);
-            if (!answer.getResult()) {
-                s_logger.error("Unable to stop router");
-            } else {
-                stopped = true;
-            }
-        } catch (AgentUnavailableException e) {
-            s_logger.warn("Unable to reach agent to stop vm: " + router.getId());
-        } catch (OperationTimedoutException e) {
-            s_logger.warn("Unable to reach agent to stop vm: " + router.getId());
-            s_logger.error("Unable to stop router");
-        }
-
-        return stopped;
-    }
-
-    @Override
-    @DB
-    public boolean stop(DomainRouterVO router) {
-        long routerId = router.getId();
-
-        router = _routerDao.acquireInLockTable(routerId);
-        if (router == null) {
-            s_logger.debug("Unable to acquire lock on router " + routerId);
-            return false;
-        }
-
-        try {
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Lock on router " + routerId + " for stop is acquired");
-            }
-
-            if (router.getRemoved() != null) {
-                s_logger.debug("router " + routerId + " is removed");
-                return false;
-            }
-
-            final Long hostId = router.getHostId();
-            final State state = router.getState();
-            if (state == State.Stopped || state == State.Destroyed || state == State.Expunging || router.getRemoved() != null) {
-                s_logger.debug("Router was either not found or the host id is null");
-                return true;
-            }
-
-            EventVO event = new EventVO();
-            event.setUserId(1L);
-            event.setAccountId(router.getAccountId());
-            event.setType(EventTypes.EVENT_ROUTER_STOP);
-
-            if (!_itMgr.stateTransitTo(router, VirtualMachine.Event.StopRequested, hostId)) {
-                s_logger.debug("VM " + router.toString() + " is not in a state to be stopped.");
-                return false;
-            }
-
-            if (hostId == null) {
-                s_logger.debug("VM " + router.toString() + " doesn't have a host id");
-                return false;
-            }
-
-            final StopCommand stop = new StopCommand(router, router.getInstanceName(), router.getVnet(), router.getPrivateIpAddress());
-
-            Answer answer = null;
-            boolean stopped = false;
-            try {
-                answer = _agentMgr.send(hostId, stop);
-                if (!answer.getResult()) {
-                    s_logger.error("Unable to stop router");
-                    event.setDescription("failed to stop Domain Router : " + router.getName());
-                    event.setLevel(EventVO.LEVEL_ERROR);
-                    _eventDao.persist(event);
-                } else {
-                    stopped = true;
-                }
-            } catch (AgentUnavailableException e) {
-                s_logger.warn("Unable to reach agent to stop vm: " + router.getId());
-            } catch (OperationTimedoutException e) {
-                s_logger.warn("Unable to reach agent to stop vm: " + router.getId());
-                s_logger.error("Unable to stop router");
-            }
-
-            if (!stopped) {
-                event.setDescription("failed to stop Domain Router : " + router.getName());
-                event.setLevel(EventVO.LEVEL_ERROR);
-                _eventDao.persist(event);
-                _itMgr.stateTransitTo(router, VirtualMachine.Event.OperationFailed, router.getHostId());
-                return false;
-            }
-
-            completeStopCommand(router, VirtualMachine.Event.OperationSucceeded);
-            event.setDescription("successfully stopped Domain Router : " + router.getName());
-            _eventDao.persist(event);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Router " + router.toString() + " is stopped");
-            }
-
-            processStopOrRebootAnswer(router, answer);
-        } finally {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Release lock on router " + routerId + " for stop");
-            }
-            _routerDao.releaseFromLockTable(routerId);
-        }
-        return true;
     }
 
     @Override
@@ -1179,7 +905,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 s_logger.info("Found " + ids.size() + " routers to stop. ");
 
                 for (final Long id : ids) {
-                    stopRouter(id);
+                    stopRouterInternal(id);
                 }
                 s_logger.info("Done my job.  Time to rest.");
             } catch (Exception e) {
@@ -1188,17 +914,20 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
     }
 
-    private VmDataCommand generateVmDataCommand(String routerPrivateIpAddress, String routerPublicIpAddress, String vmPrivateIpAddress,
+    private VmDataCommand generateVmDataCommand(VirtualRouter router, String vmPrivateIpAddress,
             String userData, String serviceOffering, String zoneName, String guestIpAddress, String vmName, String vmInstanceName, long vmId) {
-        VmDataCommand cmd = new VmDataCommand(routerPrivateIpAddress, vmPrivateIpAddress);
+        VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress);
+        
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
         cmd.addVmData("userdata", "user-data", userData);
         cmd.addVmData("metadata", "service-offering", serviceOffering);
         cmd.addVmData("metadata", "availability-zone", zoneName);
         cmd.addVmData("metadata", "local-ipv4", guestIpAddress);
         cmd.addVmData("metadata", "local-hostname", vmName);
-        cmd.addVmData("metadata", "public-ipv4", routerPublicIpAddress);
-        cmd.addVmData("metadata", "public-hostname", routerPublicIpAddress);
+        cmd.addVmData("metadata", "public-ipv4", router.getPublicIpAddress());
+        cmd.addVmData("metadata", "public-hostname", router.getPublicIpAddress());
         cmd.addVmData("metadata", "instance-id", vmInstanceName);
         cmd.addVmData("metadata", "vm-id", String.valueOf(vmId));
 
@@ -1345,7 +1074,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         State state = router.getState();
         if (state != State.Starting && state != State.Running) {
             long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, owner.getId(), EventTypes.EVENT_ROUTER_START, "Starting router : " +router.getName());
-            router = _itMgr.start(router, null, _accountService.getSystemUser(), _accountService.getSystemAccount(), null);
+            router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount());
             if(router != null){
                 EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_START, "successfully started router : " + router.getName(), startEventId);  
             } else {
@@ -1399,7 +1128,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         State state = router.getState();
         if (state != State.Starting && state != State.Running) {
             long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, owner.getId(), EventTypes.EVENT_ROUTER_START, "Starting router : " +router.getName());
-            router = _itMgr.start(router, null, _accountService.getSystemUser(), _accountService.getSystemAccount(), null);
+            router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount());
             if(router != null){
                 EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_START, "successfully started router : " + router.getName(), startEventId);  
             } else {
@@ -1489,7 +1218,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
+    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException{
         NicProfile controlNic = (NicProfile) profile.getParameter("control.nic");
         cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20));
 
@@ -1512,23 +1241,78 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         	}
         }
         _routerDao.update(router.getId(), router);
-        //source NAT address is stored in /proc/cmdline of the domR and gets
-		//reassigned upon powerup. Source NAT rule gets configured in StartRouter command
-        //The command should be sent for domR only, skip for DHCP
+       
+        
+        //The commands should be sent for domR only, skip for DHCP
         if (router.getRole() == VirtualRouter.Role.DHCP_FIREWALL_LB_PASSWD_USERDATA) {
-            final List<IPAddressVO> userIps = _networkMgr.listPublicIpAddressesInVirtualNetwork(router.getAccountId(), router.getDataCenterId(), null);
+            long networkId = router.getNetworkId();
+            long ownerId = router.getAccountId();
+            long zoneId = router.getDataCenterId();
+            
+            
+            final List<IPAddressVO> userIps = _networkMgr.listPublicIpAddressesInVirtualNetwork(ownerId, zoneId, null);
             List<PublicIpAddress> publicIps = new ArrayList<PublicIpAddress>();
             if (userIps != null && !userIps.isEmpty()) {
                 for (IPAddressVO userIp : userIps) {
                     PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), userIp.getMacAddress());
                     publicIps.add(publicIp);
                 }
-                
             }
+            
+            s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + router.getId() + " start.");
+            
             if (!publicIps.isEmpty()) {   
-                cmds = getAssociateIPCommands(router, publicIps, cmds, 0);               
-            }
+                
+                //Re-apply public ip addresses - should come before PF/LB/VPN
+                createAssociateIPCommands(router, publicIps, cmds, 0);   
+                
+                //Re-apply port forwarding rules for all public ips
+                List<PortForwardingRuleVO> rulesToReapply = new ArrayList<PortForwardingRuleVO>();
+                List<RemoteAccessVpn> vpns = new ArrayList<RemoteAccessVpn>();
+                
+                for (PublicIpAddress ip : publicIps) {
+                    List<PortForwardingRuleVO> rules = _pfRulesDao.listForApplication(ip.getAddress());
+                    rulesToReapply.addAll(rules);
+                    RemoteAccessVpn vpn = _vpnDao.findById(ip.getAddress());
+                    if (vpn != null) {
+                        vpns.add(vpn);
+                    }
+                }
+                
+                s_logger.debug("Found " + rulesToReapply.size() + " port forwarding rule(s) to apply as a part of domR " + router.getId() + " start.");
+                if (!rulesToReapply.isEmpty()) {
+                    createApplyPortForwardingRulesCommands(rulesToReapply, router, cmds);
+                } 
+                
+                s_logger.debug("Found " + vpns.size() + " vpn(s) to apply as a part of domR " + router.getId() + " start.");
+                if (!vpns.isEmpty()) {
+                    for (RemoteAccessVpn vpn : vpns) {
+                        createApplyVpnCommands(vpn, router, cmds);
+                    }
+                } 
+                
+                //Re-apply load balancing rules
+                List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkId(networkId);
+                List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
+                for (LoadBalancerVO lb : lbs) {
+                    List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
+                    LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
+                    lbRules.add(loadBalancing);
+                }
+                
+                s_logger.debug("Found " + lbRules.size() + " load balancing rule(s) to apply as a part of domR " + router.getId() + " start.");
+                if (!lbRules.isEmpty()) {
+                    createApplyLoadBalancingRulesCommands(lbRules, router, cmds);
+                } 
+                
+                //Resend dhcp
+                createDhcpEntriesCommands(router, cmds);
+                
+                //Resend user data
+                createUserDataCommands(router, cmds);
+            } 
         }
+        
         return true;
     }
 
@@ -1544,7 +1328,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile<DomainRouterVO> profile, long hostId, String reservationId) {
+    public void finalizeStop(VirtualMachineProfile<DomainRouterVO> profile, long hostId, String reservationId, Answer... answer) {
+        if (answer != null && answer.length > 0) {
+            processStopOrRebootAnswer(profile.getVirtualMachine(), answer[0]);
+        }
     }
 
     @Override
@@ -1560,31 +1347,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
         }
         
-        List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpn.getAccountId());
-        List<VpnUser> addUsers = new ArrayList<VpnUser>();
-        List<VpnUser> removeUsers = new ArrayList<VpnUser>();
-        for (VpnUser user: vpnUsers) {
-            if (user.getState() == VpnUser.State.Add) {
-                addUsers.add(user);
-            } else if (user.getState() == VpnUser.State.Revoke) {
-                removeUsers.add(user);
-            }
-        }
-        
-        VpnUsersCfgCommand addUsersCmd = new VpnUsersCfgCommand(addUsers, removeUsers);
-        addUsersCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
-        addUsersCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        
-        RemoteAccessVpnCfgCommand startVpnCmd = new RemoteAccessVpnCfgCommand(true, vpn.getServerAddress().addr(),
-                vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey());
-        startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
-        startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        
         Commands cmds = new Commands(OnError.Stop);
-        cmds.addCommand("users", addUsersCmd);
-        cmds.addCommand("startVpn", startVpnCmd);
         
-        //return sendCommandsToRouter(router, cmds);
+        createApplyVpnCommands(vpn, router, cmds);
+
         try {
             _agentMgr.send(router.getHostId(), cmds);
         } catch (OperationTimedoutException e) {
@@ -1619,7 +1385,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         if (router.getState() != State.Running) {
             s_logger.warn("Failed to delete remote access VPN: router not in running state");
-            throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
+            throw new ResourceUnavailableException("Failed to delete remote access VPN: domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
         }
             Commands cmds = new Commands(OnError.Continue);
             RemoteAccessVpnCfgCommand removeVpnCmd = new RemoteAccessVpnCfgCommand(false, vpn.getServerAddress().addr(), vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey());
@@ -1630,15 +1396,25 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return sendCommandsToRouter(router, cmds);
     }
 
-    public DomainRouterVO start(long routerId, User user, Account caller) throws StorageUnavailableException, InsufficientCapacityException,
+    private DomainRouterVO start(DomainRouterVO router, User user, Account caller) throws StorageUnavailableException, InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
-        return start(_routerDao.findById(routerId), user, caller);
+        s_logger.debug("Starting router id=" + router.getId());
+        if (_itMgr.start(router, null, user, caller, null) != null) {
+            return _routerDao.findById(router.getId());
+        } else {
+            return null;
+        }
     }
-
-    public DomainRouterVO start(DomainRouterVO router, User user, Account caller) throws StorageUnavailableException, InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException {
-        return _itMgr.start(router, null, user, caller, null);
+    
+    private DomainRouterVO stop(DomainRouterVO router, User user, Account caller) throws ConcurrentOperationException, ResourceUnavailableException {
+        s_logger.debug("Stopping router id=" + router.getId());
+        if (_itMgr.stop(router, user, caller)) {
+            return _routerDao.findById(router.getId());
+        }  else {
+            return null;
+        }
     }
+    
 
     @Override
     public VirtualRouter addVirtualMachineIntoNetwork(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest,
@@ -1649,20 +1425,22 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String password = profile.getVirtualMachine().getPassword();
         String userData = profile.getVirtualMachine().getUserData();
         Commands cmds = new Commands(OnError.Stop);
-        String routerPublicIpAddress = nic.getIp4Address();
+
         String routerControlIpAddress = null;
         List<NicVO> nics = _nicDao.listBy(router.getId());
         for (NicVO n : nics) {
             NetworkVO nc = _networksDao.findById(n.getNetworkId());
-            if (n.getIp4Address() != null && nc.getTrafficType() == TrafficType.Public) {
-                routerPublicIpAddress = nic.getIp4Address();
-            } else if (nc.getTrafficType() == TrafficType.Control) {
+            if (nc.getTrafficType() == TrafficType.Control) {
                 routerControlIpAddress = n.getIp4Address();
             }
         }
-
-        cmds.addCommand("dhcp", new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), routerControlIpAddress, profile.getVirtualMachine()
-                .getName()));
+        
+        DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), profile.getVirtualMachine()
+                .getName());
+        dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlIpAddress);
+        dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        cmds.addCommand("dhcp", dhcpCommand);
+        
         if (password != null) {
             final String encodedPassword = rot13(password);
             cmds.addCommand("password", new SavePasswordCommand(encodedPassword, nic.getIp4Address(), routerControlIpAddress, profile
@@ -1671,10 +1449,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         String serviceOffering = _serviceOfferingDao.findById(profile.getServiceOfferingId()).getDisplayText();
         String zoneName = _dcDao.findById(network.getDataCenterId()).getName();
-
+        
         cmds.addCommand(
                 "vmdata",
-                generateVmDataCommand(routerControlIpAddress, routerPublicIpAddress, nic.getIp4Address(), userData, serviceOffering, zoneName,
+                generateVmDataCommand(router, nic.getIp4Address(), userData, serviceOffering, zoneName,
                         nic.getIp4Address(), profile.getVirtualMachine().getName(), profile.getVirtualMachine().getInstanceName(), profile.getId()));
 
         try {
@@ -1707,37 +1485,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public DomainRouterVO persist(DomainRouterVO router) {
         return _routerDao.persist(router);
-    }
-
-    @Override
-    public boolean addRemoveVpnUsers(RemoteAccessVpnVO vpnVO, List<VpnUserVO> addUsers, List<VpnUserVO> removeUsers) {
-        return false;
-//        DomainRouterVO router = getRouter(vpnVO.getAccountId(), vpnVO.getZoneId());
-//        if (router == null) {
-//            s_logger.warn("Failed to add/remove VPN users: no router found for account and zone");
-//            return false;
-//        }
-//        if (router.getState() != State.Running) {
-//            s_logger.warn("Failed to add/remove VPN users: router not in running state");
-//            return false;
-//        }
-//        try {
-//            Answer answer = _agentMgr.send(router.getHostId(), new VpnUsersCfgCommand(router.getPrivateIpAddress(), addUsers, removeUsers));
-//            if (answer != null && answer.getResult()) {
-//                return true;
-//            } else {
-//                s_logger.debug("Failed to add/remove VPN users: " + answer.getDetails());
-//                return false;
-//            }
-//        } catch (AgentUnavailableException e) {
-//            s_logger.debug("Failed to add/remove VPN users:: ", e);
-//            return false;
-//        } catch (OperationTimedoutException e) {
-//            s_logger.debug("Failed to add/remove VPN users:: ", e);
-//            return false;
-//        }
-    }
-    
+    }    
     
     @Override
     public String[] applyVpnUsers(Network network, List<? extends VpnUser> users) throws ResourceUnavailableException{
@@ -1802,51 +1550,16 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
         if (router == null) {
-            throw new PermissionDeniedException("Unable to start router with id " + routerId + ". Permisssion denied");
+            throw new InvalidParameterValueException("Unable to find router by id " + routerId + ".");
         }
         _accountMgr.checkAccess(account, router);
 
         UserVO user = _userDao.findById(UserContext.current().getCallerUserId());
+        
         return this.start(router, user, account);
     }
 
-    /**
-     * Stops domain router
-     * 
-     * @param cmd
-     *            the command specifying router's id
-     * @return router if successful, null otherwise
-     * @throws OperationTimedoutException
-     * @throws ConcurrentOperationException
-     * @throws ResourceUnavailableException
-     * @throws InvalidParameterValueException
-     *             , PermissionDeniedException
-     */
-    @Override
-    public VirtualRouter stopDomainRouter(long routerId) throws ResourceUnavailableException, ConcurrentOperationException {
-        UserContext context = UserContext.current();
-        Account account = context.getCaller();
-        long accountId = account.getId();
-        long userId = context.getCallerUserId();
-
-        // verify parameters
-        DomainRouterVO router = _routerDao.findById(routerId);
-        if (router == null) {
-            throw new PermissionDeniedException("Unable to stop router with id " + routerId + ". Permission denied.");
-        }
-
-        _accountMgr.checkAccess(account, router);
-
-        UserVO user = _userDao.findById(context.getCallerUserId());
-
-        if (!_itMgr.stop(router, user, account)) {
-            return null;
-        }
-
-        return router;
-    }
-
-    private Commands getAssociateIPCommands(final DomainRouterVO router, final List<? extends PublicIpAddress> ips, Commands cmds, long vmId) {  
+    private void createAssociateIPCommands(final DomainRouterVO router, final List<? extends PublicIpAddress> ips, Commands cmds, long vmId) {  
         
         //Ensure that in multiple vlans case we first send all ip addresses of vlan1, then all ip addresses of vlan2, etc..
         Map<String, ArrayList<PublicIpAddress>> vlanIpMap = new HashMap<String, ArrayList<PublicIpAddress>>();
@@ -1896,7 +1609,101 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
              cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
              cmds.addCommand("IPAssocCommand", cmd);
         }
-         return cmds;
+    }
+    
+    private void createApplyPortForwardingRulesCommands(List<? extends PortForwardingRule> rules, DomainRouterVO router, Commands cmds) {
+        
+        SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(rules);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        cmds.addCommand(cmd);
+    }
+    
+    private void createApplyLoadBalancingRulesCommands(List<LoadBalancingRule> rules, DomainRouterVO router, Commands cmds) {
+        
+        LoadBalancerTO[] lbs = new LoadBalancerTO[rules.size()];
+        int i = 0;
+        for (LoadBalancingRule rule : rules) {
+            boolean revoked = (rule.getState().equals(FirewallRule.State.Revoke));
+            String protocol = rule.getProtocol();
+            String algorithm = rule.getAlgorithm();
+            String srcIp = rule.getSourceIpAddress().addr();
+            int srcPort = rule.getSourcePortStart();
+            List<LbDestination> destinations = rule.getDestinations();
+            LoadBalancerTO lb = new LoadBalancerTO(srcIp, srcPort, protocol, algorithm, revoked, false, destinations);
+            lbs[i++] = lb;
+        }
+
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        cmds.addCommand(cmd);
+        
+    }
+    
+    private void createApplyVpnCommands(RemoteAccessVpn vpn, DomainRouterVO router, Commands cmds) {
+        List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpn.getAccountId());
+        List<VpnUser> addUsers = new ArrayList<VpnUser>();
+        List<VpnUser> removeUsers = new ArrayList<VpnUser>();
+        for (VpnUser user: vpnUsers) {
+            if (user.getState() == VpnUser.State.Add) {
+                addUsers.add(user);
+            } else if (user.getState() == VpnUser.State.Revoke) {
+                removeUsers.add(user);
+            }
+        }
+        
+        VpnUsersCfgCommand addUsersCmd = new VpnUsersCfgCommand(addUsers, removeUsers);
+        addUsersCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        addUsersCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        
+        RemoteAccessVpnCfgCommand startVpnCmd = new RemoteAccessVpnCfgCommand(true, vpn.getServerAddress().addr(),
+                vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey());
+        startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        
+        cmds.addCommand("users", addUsersCmd);
+        cmds.addCommand("startVpn", startVpnCmd);
+    }
+    
+    
+    private void createUserDataCommands(DomainRouterVO router, Commands cmds) {
+        long networkId = router.getNetworkId();
+        List<UserVmVO> vms = _userVmDao.listByNetworkId(networkId);
+        if (vms != null && !vms.isEmpty()) {
+            for (UserVmVO vm : vms) {
+                if (vm.getUserData() != null) {
+                    NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
+                    if (nic != null) {
+                        s_logger.debug("Creating user data entry for vm id=" + vm.getId() + " on domR " + router.getId());
+                        String serviceOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId()).getDisplayText();
+                        String zoneName = _dcDao.findById(router.getDataCenterId()).getName();
+                        cmds.addCommand(
+                                "vmdata",
+                                generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName,
+                                        nic.getIp4Address(), vm.getName(), vm.getInstanceName(), vm.getId()));
+                    }
+                }
+            }
+        }
+    }
+    
+    private void createDhcpEntriesCommands(DomainRouterVO router, Commands cmds) {
+        long networkId = router.getNetworkId();
+        List<UserVmVO> vms = _userVmDao.listByNetworkId(networkId);
+        if (vms != null && !vms.isEmpty()) {
+            for (UserVmVO vm : vms) {
+                NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
+                if (nic != null) {
+                    s_logger.debug("Creating dhcp entry for vm id=" + vm.getId() + " on domR " + router.getId());
+                    
+                    DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getName());
+                    dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+                    dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+                    cmds.addCommand("dhcp", dhcpCommand);
+                }
+            }
+        }
     }
     
     
@@ -1943,7 +1750,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (router.getState() == State.Running) {
             Commands cmds = new Commands(OnError.Continue);
             //Have to resend all already associated ip addresses
-            cmds = getAssociateIPCommands(router, ipAddress, cmds, 0);
+            createAssociateIPCommands(router, ipAddress, cmds, 0);
             
             return sendCommandsToRouter(router, cmds);
         } else if (router.getState() == State.Stopped) {
@@ -1955,63 +1762,25 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public boolean applyLBRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
+    public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
         if (router == null) {
             s_logger.warn("Unable to apply lb rules, virtual router doesn't exist in the network " + network.getId());
             throw new ResourceUnavailableException("Unable to apply lb rules", DataCenter.class, network.getDataCenterId());
         }
-
         
-        if (router.getState() == State.Running || router.getState() == State.Starting) {
-
-            Commands cmds = new Commands(OnError.Continue);
-            LoadBalancerTO[] lbs = new LoadBalancerTO[rules.size()];
-            int i = 0;
-            for (FirewallRule fwRule : rules) {
-                LoadBalancingRule rule = (LoadBalancingRule) fwRule;
-                boolean revoked = (rule.getState().equals(FirewallRule.State.Revoke));
-                String protocol = rule.getProtocol();
-                String algorithm = rule.getAlgorithm();
-                String srcIp = rule.getSourceIpAddress().addr();
-                int srcPort = rule.getSourcePortStart();
-                List<LbDestination> destinations = rule.getDestinations();
-                LoadBalancerTO lb = new LoadBalancerTO(srcIp, srcPort, protocol, algorithm, revoked, false, destinations);
-                lbs[i++] = lb;
-            }
-
-            LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs);
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-            cmds.addCommand(cmd);
-            
-            //Send commands to router
-            return sendCommandsToRouter(router, cmds);   
-
-        } else if (router.getState() == State.Stopped || router.getState() == State.Stopping){
-            s_logger.debug("Router is in " + router.getState() + ", so not sending apply LB rules commands to the backend");
-            return true;
-        } else {
-            s_logger.warn("Unable to apply load balancer rules, virtual router is not in the right state " + router.getState());
-            throw new ResourceUnavailableException("Unable to apply load balancer rules, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
-        }
-
+        Commands cmds = new Commands(OnError.Continue);
+        createApplyLoadBalancingRulesCommands(rules, router, cmds);     
+        //Send commands to router
+        return sendCommandsToRouter(router, cmds);   
     }
 
     @Override
-    public boolean applyPortForwardingRules(Network network, List<? extends FirewallRule> rules) throws AgentUnavailableException {
+    public boolean applyPortForwardingRules(Network network, List<PortForwardingRule> rules) throws AgentUnavailableException {
         DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
-        Commands cmds = new Commands(OnError.Continue);
-        List<PortForwardingRule> pfs = new ArrayList<PortForwardingRule>();
-        for (FirewallRule fwRule: rules) {
-            PortForwardingRule pf = (PortForwardingRule)fwRule;
-            pfs.add(pf);
-        }
-        SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(pfs);
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
-        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        cmds.addCommand(cmd);
         
+        Commands cmds = new Commands(OnError.Continue);
+        createApplyPortForwardingRulesCommands(rules, router, cmds);     
         //Send commands to router
         return sendCommandsToRouter(router, cmds); 
     }
@@ -2023,6 +1792,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return null;
     }
     
-    
-
+    @Override
+    public boolean stop(DomainRouterVO router) throws AgentUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
+    }
 }

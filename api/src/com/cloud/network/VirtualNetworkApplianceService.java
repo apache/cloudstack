@@ -17,13 +17,11 @@
  */
 package com.cloud.network;
 
-import com.cloud.api.commands.RebootRouterCmd;
-import com.cloud.api.commands.StartRouterCmd;
-import com.cloud.api.commands.StopRouterCmd;
 import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 
@@ -34,26 +32,7 @@ public interface VirtualNetworkApplianceService {
      * @return DomainRouter object
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    VirtualRouter startRouter(StartRouterCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
-    
-    /**
-     * Stops domain router
-     * @param cmd the command specifying router's id
-     * @return router if successful, null otherwise
-     */
-    VirtualRouter stopRouter(StopRouterCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException;
-    
-    VirtualRouter startRouter(long routerId) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException;
-    
-    /**
-     * Stops domain router
-     * @param cmd the command specifying router's id
-     * @return router if successful, null otherwise
-     * @throws ConcurrentOperationException 
-     * @throws ResourceUnavailableException 
-     * @throws InvalidParameterValueException, PermissionDeniedException
-     */
-    VirtualRouter stopDomainRouter(long routerId) throws ResourceUnavailableException, ConcurrentOperationException;
+    VirtualRouter startRouter(long routerId) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
     
     /**
      * Reboots domain router
@@ -61,10 +40,18 @@ public interface VirtualNetworkApplianceService {
      * @return router if successful
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    VirtualRouter rebootRouter(RebootRouterCmd cmd);
+    VirtualRouter rebootRouter(long routerId) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
     
     VirtualRouter upgradeRouter(UpgradeRouterCmd cmd);
     
-
+    /**
+     * Stops domain router
+     * @param  id of the router
+     * @return router if successful, null otherwise
+     * @throws ConcurrentOperationException 
+     * @throws ResourceUnavailableException 
+     * @throws InvalidParameterValueException, PermissionDeniedException
+     */
+    VirtualRouter stopRouter(long routerId) throws InvalidParameterValueException, PermissionDeniedException, ResourceUnavailableException, ConcurrentOperationException;
     
 }

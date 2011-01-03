@@ -1541,6 +1541,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	@Override
 	public void finalizeStop(
 			VirtualMachineProfile<SecondaryStorageVmVO> profile, long hostId,
-			String reservationId) {
+			String reservationId, Answer... answer) {
 	}
 }

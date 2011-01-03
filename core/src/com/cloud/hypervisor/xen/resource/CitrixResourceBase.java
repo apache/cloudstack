@@ -126,8 +126,8 @@ import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
-import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
@@ -1106,7 +1106,7 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     protected synchronized Answer execute(final DhcpEntryCommand cmd) {
         Connection conn = getConnection();
-        String args = "-r " + cmd.getRouterPrivateIpAddress();
+        String args = "-r " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         args += " -v " + cmd.getVmIpAddress();
         args += " -m " + cmd.getVmMac();
         args += " -n " + cmd.getVmName();
@@ -1158,7 +1158,7 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     protected Answer execute(final VmDataCommand cmd) {
         Connection conn = getConnection();
-        String routerPrivateIpAddress = cmd.getRouterPrivateIpAddress();
+        String routerPrivateIpAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String vmIpAddress = cmd.getVmIpAddress();
         List<String[]> vmData = cmd.getVmData();
         String[] vmDataArgs = new String[vmData.size() * 2 + 4];

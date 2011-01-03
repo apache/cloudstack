@@ -67,11 +67,14 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
@@ -802,7 +805,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
     
     @Override
-    public boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) {
+    public boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) throws ConcurrentOperationException, ResourceUnavailableException{
         long accountId = account.getId();
         boolean accountCleanupNeeded = false;
         
@@ -858,7 +861,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             boolean routersCleanedUp = true;
             for (DomainRouterVO router : routers) {
                 long startEventId = EventUtils.saveStartedEvent(callerUserId, router.getAccountId(), EventTypes.EVENT_ROUTER_DESTROY, "Starting to destroy router : " + router.getName());
-                if (!_routerMgr.destroyRouter(router.getId())) {
+                if (!_routerMgr.destroyRouterInternal(router.getId())) {
                     s_logger.error("Unable to destroy router: " + router.getId());
                     routersCleanedUp = false;
                     EventUtils.saveEvent(callerUserId, router.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_DESTROY, "Unable to destroy router: " + router.getName(), startEventId);
@@ -946,7 +949,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
     
     @Override
-    public boolean disableAccount(long accountId) {
+    public boolean disableAccount(long accountId) throws ConcurrentOperationException, ResourceUnavailableException{
         boolean success = false;
         if (accountId <= 2) {
             if (s_logger.isInfoEnabled()) {
@@ -968,7 +971,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         return success;
     }
     
-    private boolean doDisableAccount(long accountId) {
+    private boolean doDisableAccount(long accountId) throws ConcurrentOperationException, ResourceUnavailableException{
         List<UserVmVO> vms = _userVmDao.listByAccountId(accountId);
         boolean success = true;
         for (UserVmVO vm : vms) {
@@ -982,7 +985,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         List<DomainRouterVO> routers = _routerDao.listBy(accountId);
         for (DomainRouterVO router : routers) {
-            success = (success && _routerMgr.stopRouter(router.getId()));
+            success = (success && _routerMgr.stopRouterInternal(router.getId()));
         }
 
         return success;
@@ -1439,7 +1442,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
     
     @Override
-    public AccountVO disableAccount(DisableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public AccountVO disableAccount(DisableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException, ResourceUnavailableException {
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
 

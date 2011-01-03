@@ -171,6 +171,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -3198,7 +3199,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
-    private boolean cleanupDomain(Long domainId, Long ownerId) {
+    private boolean cleanupDomain(Long domainId, Long ownerId) throws ConcurrentOperationException, ResourceUnavailableException{
         boolean success = true;
         {
             SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();

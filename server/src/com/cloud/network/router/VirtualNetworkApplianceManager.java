@@ -31,10 +31,9 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.VpnUser;
-import com.cloud.network.VpnUserVO;
-import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
@@ -68,27 +67,11 @@ public interface VirtualNetworkApplianceManager extends Manager {
      */
     boolean savePasswordToRouter(long routerId, String vmIpAddress, String password);
     
-    boolean destroyRouter(long routerId);
+    boolean destroyRouterInternal(long routerId) throws ResourceUnavailableException, ConcurrentOperationException;
     
-    boolean stopRouter(long routerId);
+    boolean stopRouterInternal(long routerId) throws ResourceUnavailableException, ConcurrentOperationException;
     
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
-
-    boolean rebootRouter(long routerId);
-
-    VirtualRouter startRouter(long routerId) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException;
-    
-    /**
-     * @param hostId get all of the virtual machine routers on a host.
-     * @return collection of VirtualMachineRouter
-     */
-    List<? extends VirtualRouter> getRouters(long hostId);
-    
-    /**
-     * @param routerId id of the router
-     * @return VirtualMachineRouter
-     */
-    DomainRouterVO getRouter(long routerId);
     
     VirtualRouter upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 	
@@ -101,16 +84,14 @@ public interface VirtualNetworkApplianceManager extends Manager {
 	
 	boolean startRemoteAccessVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
 	
-	boolean addRemoveVpnUsers(RemoteAccessVpnVO vpnVO, List<VpnUserVO> addUsers, List<VpnUserVO> removeUsers);
-
 	boolean deleteRemoteAccessVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
 	
 	VirtualRouter addVirtualMachineIntoNetwork(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, ReservationContext context, Boolean startDhcp) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
     
     boolean associateIP (Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException;
     
-    boolean applyLBRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
-    boolean applyPortForwardingRules(Network network, List<? extends FirewallRule> rules) throws AgentUnavailableException;
+    boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException;
+    boolean applyPortForwardingRules(Network network, List<PortForwardingRule> rules) throws AgentUnavailableException;
     
     String[] applyVpnUsers(Network network, List<? extends VpnUser> users) throws ResourceUnavailableException;
     

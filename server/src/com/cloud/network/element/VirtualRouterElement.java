@@ -49,6 +49,7 @@ import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.GuestIpType;
@@ -122,12 +123,12 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement,
     }
 
     @Override
-    public boolean shutdown(Network config, ReservationContext context) throws ConcurrentOperationException {
+    public boolean shutdown(Network config, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         DomainRouterVO router = _routerDao.findByNetworkConfiguration(config.getId());
         if (router == null) {
             return true;
         }
-        return _routerMgr.stopRouter(router.getId());
+        return _routerMgr.stopRouterInternal(router.getId());
     }
 
     @Override
@@ -157,7 +158,7 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement,
                         
                         return _routerMgr.applyLBRules(config, lbRules);
                     } else if (rules.get(0).getPurpose() == Purpose.PortForwarding) {
-                        return _routerMgr.applyPortForwardingRules(config, rules);
+                        return _routerMgr.applyPortForwardingRules(config, (List<PortForwardingRule>)rules);
                     }
                 } else {
                     return true;

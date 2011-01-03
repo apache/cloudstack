@@ -27,7 +27,9 @@ import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.server.Criteria;
 
 /**
@@ -103,7 +105,7 @@ public interface AccountManager extends AccountService {
      * @param accountId
      * @return true if disable was successful, false otherwise
      */
-    boolean disableAccount(long accountId);
+    boolean disableAccount(long accountId) throws ConcurrentOperationException, ResourceUnavailableException;
     
     boolean deleteAccount(AccountVO account, long callerUserId, Account caller);
     
@@ -111,7 +113,7 @@ public interface AccountManager extends AccountService {
     
     void checkAccess(Account account, ControlledEntity... entities) throws PermissionDeniedException;
 
-	boolean cleanupAccount(AccountVO account, long callerUserId, Account caller);
+	boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) throws ConcurrentOperationException, ResourceUnavailableException;
 
 	@Override
     UserVO createUser(CreateUserCmd cmd);

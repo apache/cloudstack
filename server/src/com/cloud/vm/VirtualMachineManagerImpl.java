@@ -421,6 +421,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
                 avoids.add(e);
                 continue;
             } catch (RuntimeException e) {
+                s_logger.warn("Failed to start instance " + vm, e);
             	stateTransitTo(vm, Event.OperationFailed, null);
             	return null;
             }
@@ -504,8 +505,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
         StopCommand stop = new StopCommand(vm, vm.getInstanceName(), null);
 
         boolean stopped = false;
+        StopAnswer answer = null;
         try {
-            StopAnswer answer = (StopAnswer)_agentMgr.send(vm.getHostId(), stop);
+            answer = (StopAnswer)_agentMgr.send(vm.getHostId(), stop);
             stopped = answer.getResult();
             if (!stopped) {
                 throw new CloudRuntimeException("Unable to stop the virtual machine due to " + answer.getDetails());
@@ -526,8 +528,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
         boolean cleanup = false;
         
         VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
-        try {
+        try { 
             _networkMgr.release(profile);
+            s_logger.debug("Successfully released network resources for the vm " + vm);
         } catch (Exception e) {
             s_logger.warn("Unable to release some network resources.", e);
             cleanup = true;
@@ -535,6 +538,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
         
         try {
             _storageMgr.release(profile);
+            s_logger.debug("Successfully released storage resources for the vm " + vm);
         } catch (Exception e) {
             s_logger.warn("Unable to release storage resources.", e);
             cleanup = true;
@@ -543,7 +547,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
         @SuppressWarnings("unchecked")
         VirtualMachineGuru<T> guru = (VirtualMachineGuru<T>)_vmGurus.get(vm.getType());
         try {
-            guru.finalizeStop(profile, vm.getHostId(), vm.getReservationId());
+            guru.finalizeStop(profile, vm.getHostId(), vm.getReservationId(), answer);
         } catch (Exception e) {
             s_logger.warn("Guru " + guru.getClass() + " has trouble processing stop ");
             cleanup = true;

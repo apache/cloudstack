@@ -114,6 +114,7 @@ import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
@@ -2265,7 +2266,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
            			//if the instance is of type domain router vm, call the network manager
         			if(vmInstance.getType().equals(VirtualMachine.Type.DomainRouter))
         			{   
-        				if(!_routerMgr.stopRouter(vmInstance.getId()))
+        				if(_routerMgr.stopRouterInternal(vmInstance.getId()))
         				{
         				    String errorMsg = "There was an error stopping the domain router id: "+vmInstance.getId()+" ,cannot enable primary storage maintenance";
         					s_logger.warn(errorMsg);
@@ -2275,7 +2276,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         				}
            				else if(restart)
         				{
-    						if(_routerMgr.startRouter(vmInstance.getId()) == null)
+    						if(_routerMgr.stopRouterInternal(vmInstance.getId()))
     						{
     						    String errorMsg = "There was an error starting the domain router id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance";
     							s_logger.warn(errorMsg);

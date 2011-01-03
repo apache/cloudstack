@@ -28,14 +28,15 @@ import com.cloud.api.commands.DisableUserCmd;
 import com.cloud.api.commands.EnableAccountCmd;
 import com.cloud.api.commands.EnableUserCmd;
 import com.cloud.api.commands.ListResourceLimitsCmd;
-import com.cloud.api.commands.LockAccountCmd;
 import com.cloud.api.commands.LockUserCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.configuration.ResourceLimit;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceUnavailableException;
 
 public interface AccountService {
     
@@ -88,7 +89,7 @@ public interface AccountService {
      * @return true if disable was successful, false otherwise
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    Account disableAccount(DisableAccountCmd cmd);
+    Account disableAccount(DisableAccountCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException, ResourceUnavailableException;
 
     /**
      * Enables an account by accountId

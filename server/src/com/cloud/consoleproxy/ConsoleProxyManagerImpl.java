@@ -2105,6 +2105,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     }
     
     @Override
-    public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, long hostId, String reservationId) {
+    public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, long hostId, String reservationId, Answer... answer) {
     }
 }

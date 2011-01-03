@@ -106,12 +106,12 @@ public class DhcpElement extends AdapterBase implements NetworkElement{
     }
     
     @Override
-    public boolean shutdown(Network network, ReservationContext context) throws ConcurrentOperationException {
+    public boolean shutdown(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
         if (router == null) {
             return true;
         }
-        return _routerMgr.stopRouter(router.getId());
+        return _routerMgr.stopRouterInternal(router.getId());
     }
 
     @Override

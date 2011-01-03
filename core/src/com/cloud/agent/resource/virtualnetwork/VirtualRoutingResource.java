@@ -211,7 +211,7 @@ public class VirtualRoutingResource implements Manager {
             }
 
             final Script command  = new Script(_vmDataPath, _timeout, s_logger);
-            command.add("-r", cmd.getRouterPrivateIpAddress());
+            command.add("-r", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
             command.add("-v", cmd.getVmIpAddress());
             command.add("-F", folder);
             command.add("-f", file);
@@ -339,7 +339,7 @@ public class VirtualRoutingResource implements Manager {
 
     protected synchronized Answer execute (final DhcpEntryCommand cmd) {
         final Script command  = new Script(_dhcpEntryPath, _timeout, s_logger);
-        command.add("-r", cmd.getRouterPrivateIpAddress());
+        command.add("-r", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
         command.add("-v", cmd.getVmIpAddress());
         command.add("-m", cmd.getVmMac());
         command.add("-n", cmd.getVmName());

@@ -304,6 +304,25 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
         return listBy(sc);
     }
+    
+    @Override
+    public List<UserVmVO> listByNetworkId(long networkId) {
+        if (AccountDataCenterVirtualSearch == null) {
+            NicDao _nicDao = ComponentLocator.getLocator("management-server").getDao(NicDao.class);
+            SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
+            nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+            nicSearch.and("ip4Address", nicSearch.entity().getIp4Address(), SearchCriteria.Op.NNULL);
+
+            AccountDataCenterVirtualSearch = createSearchBuilder();
+            AccountDataCenterVirtualSearch.join("nicSearch", nicSearch, AccountDataCenterVirtualSearch.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+            AccountDataCenterVirtualSearch.done();
+        }
+
+        SearchCriteria<UserVmVO> sc = AccountDataCenterVirtualSearch.create();
+        sc.setJoinParameters("nicSearch", "networkId", networkId);
+
+        return listBy(sc);
+    }
 
 	@Override
 	public List<UserVmVO> listVmsUsingGuestIpAddress(long dcId, String ipAddress) {
