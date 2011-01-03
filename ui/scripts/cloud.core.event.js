@@ -75,7 +75,7 @@ function eventToMidmenu(jsonObj, $midmenuItem1) {
     else if(jsonObj.level == "WARN")
         $iconContainer.find("#icon").attr("src", "images/midmenuicon_events_warning.png");
     
-    $midmenuItem1.find("#first_row").text(fromdb(jsonObj.description).substring(0,25)); 
+    $midmenuItem1.find("#first_row").text(getMidmenuItemFirstRow(jsonObj.description)); 
     $midmenuItem1.find("#second_row").text(fromdb(jsonObj.type).substring(0,25));  
 }
 
