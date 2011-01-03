@@ -44,6 +44,7 @@ import org.apache.log4j.Logger;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -176,6 +177,8 @@ public class AlertManagerImpl implements AlertManager {
         String capacityCheckPeriodStr = configs.get("capacity.check.period");
         if (capacityCheckPeriodStr != null) {
             _capacityCheckPeriod = Long.parseLong(capacityCheckPeriodStr);
+            if(_capacityCheckPeriod <= 0)
+            	_capacityCheckPeriod = Long.parseLong(Config.CapacityCheckPeriod.getDefaultValue());
         }
         
         String cpuOverProvisioningFactorStr = configs.get("cpu.overprovisioning.factor");
