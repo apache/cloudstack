@@ -345,17 +345,22 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     
     @Override
     public List<? extends PortForwardingRule> listPortForwardingRules(ListPortForwardingRulesCmd cmd) {
-        Ip ipAddress = new Ip(cmd.getIpAddress());
         Account caller = UserContext.current().getCaller();
 
-        IPAddressVO ipAddressVO = _ipAddressDao.findById(ipAddress);
-        if (ipAddressVO == null || !ipAddressVO.readyToUse()) {
-            throw new InvalidParameterValueException("Ip address not ready for port forwarding rules yet: " + ipAddress);
-        }
-
-        List<PortForwardingRuleVO> rules = _forwardingDao.listByIp(ipAddress);
-        _accountMgr.checkAccess(caller, rules.toArray(new PortForwardingRuleVO[rules.size()]));
+        List<PortForwardingRuleVO> rules = null;
         
+        if(cmd.getIpAddress() != null){
+            Ip ipAddress = new Ip(cmd.getIpAddress());
+            IPAddressVO ipAddressVO = _ipAddressDao.findById(ipAddress);
+            if (ipAddressVO == null || !ipAddressVO.readyToUse()) {
+                throw new InvalidParameterValueException("Ip address not ready for port forwarding rules yet: " + ipAddress);
+            }
+
+            rules = _forwardingDao.listByIp(ipAddress);
+            _accountMgr.checkAccess(caller, rules.toArray(new PortForwardingRuleVO[rules.size()]));
+        } else {
+            rules = _forwardingDao.listByAccount(caller.getAccountId());
+        }
         return rules;
     }
 
