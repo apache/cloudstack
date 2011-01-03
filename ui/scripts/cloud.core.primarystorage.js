@@ -19,20 +19,14 @@
 
 function primarystorageGetSearchParams() {
     var moreCriteria = [];	
-   
-    /*
+       
 	var searchInput = $("#basic_search").find("#search_input").val();	 
     if (searchInput != null && searchInput.length > 0) {	           
         moreCriteria.push("&keyword="+todb(searchInput));	       
     }     
 
 	var $advancedSearchPopup = getAdvancedSearchPopupInSearchContainer();
-	if ($advancedSearchPopup.length > 0 && $advancedSearchPopup.css("display") != "none" ) {		
- 
-        var state = $advancedSearchPopup.find("#adv_search_state").val();				
-	    if (state!=null && state.length > 0) 
-		    moreCriteria.push("&state="+todb(state));	
-        
+	if ($advancedSearchPopup.length > 0 && $advancedSearchPopup.css("display") != "none" ) {	       
         var zone = $advancedSearchPopup.find("#adv_search_zone").val();	
 	    if (zone!=null && zone.length > 0) 
 			moreCriteria.push("&zoneId="+zone);	
@@ -43,8 +37,7 @@ function primarystorageGetSearchParams() {
 			    moreCriteria.push("&podId="+pod);
         }
 	} 
-	*/
-			
+				
 	return moreCriteria.join("");          
 }
  
