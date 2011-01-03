@@ -1590,6 +1590,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     public Answer easySend(final Long hostId, final Command cmd, int timeout) { 
         try {
             Host h = _hostDao.findById(hostId);
+            if (h == null || h.getRemoved() != null) {
+                s_logger.debug("Host with id " + hostId.toString() + " doesn't exist");
+                return null;
+            }
             Status status = h.getStatus();
             if( !status.equals(Status.Up) && !status.equals(Status.Connecting) ){
                 return null;
