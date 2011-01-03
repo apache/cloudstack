@@ -809,35 +809,35 @@ long milliseconds = new Date().getTime();
         </div>
     </div>
     <div id="row_container">
-        <div class="hostadmin_showdetailsrow_cell" style="width: 5%">
+        <div class="hostadmin_showdetailsrow_cell" style="height: auto; width: 5%">
             <div class="netgrid_celltitles" id="id">
             </div>
         </div>
-        <div class="hostadmin_showdetailsrow_cell" style="width: 20%">
+        <div class="hostadmin_showdetailsrow_cell" style="height: auto; width: 20%">
             <div class="netgrid_celltitles" id="name">
             </div>
         </div>      
-        <div class="hostadmin_showdetailsrow_cell" style="width: 10%">
+        <div class="hostadmin_showdetailsrow_cell" style="height: auto; width: 10%">
             <div class="netgrid_celltitles" id="volume">
             </div>
         </div>     
-        <div class="hostadmin_showdetailsrow_cell" style="width: 8%">
+        <div class="hostadmin_showdetailsrow_cell" style="height: auto; width: 8%">
             <div class="netgrid_celltitles" id="interval_type">
             </div>
         </div>      
-        <div class="hostadmin_showdetailsrow_cell" style="width: 10%">
+        <div class="hostadmin_showdetailsrow_cell" style="height: auto; width: 10%">
             <div class="netgrid_celltitles" id="created">
             </div>
         </div>   
-        <div class="hostadmin_showdetailsrow_cell" style="width: 10%" id="volume_snapshot_account_container">
+        <div class="hostadmin_showdetailsrow_cell" style="height: auto; width: 10%" id="volume_snapshot_account_container">
             <div class="netgrid_celltitles" id="account">
             </div>
         </div>
-        <div class="hostadmin_showdetailsrow_cell" style="width: 10%" id="volume_snapshot_domain_container">
+        <div class="hostadmin_showdetailsrow_cell" style="height: auto; width: 10%" id="volume_snapshot_domain_container">
             <div class="netgrid_celltitles" id="domain">
             </div>
         </div>   
-        <div class="hostadmin_showdetailsrow_cell" style="width: 22%">
+        <div class="hostadmin_showdetailsrow_cell" style="height: auto; width: 26%">
             <div class="netgrid_celltitles">
                 <span id="volume_snapshot_action_create_volume_container">
                     <a id="volume_snapshot_action_create_volume" href="#">Create Volume</a>
