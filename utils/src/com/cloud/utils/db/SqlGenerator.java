@@ -578,8 +578,11 @@ public class SqlGenerator {
             DiscriminatorValue dv = table.getAnnotation(DiscriminatorValue.class);
             if (dv != null) {
                 Class<?> parent = table.getSuperclass();
+                String tableName = DbUtil.getTableName(parent);
                 DiscriminatorColumn dc = parent.getAnnotation(DiscriminatorColumn.class);
                 assert(dc != null) : "Parent does not have discrminator column: " + parent.getName();
+                sql.append(tableName);
+                sql.append(".");
                 sql.append(dc.name()).append("=");
                 Object value = null;
                 if (dc.discriminatorType() == DiscriminatorType.INTEGER) {
@@ -596,7 +599,6 @@ public class SqlGenerator {
                 }
                 values.put(dc.name(), value);
                 sql.append(" AND ");
-                
             }
         }
         
