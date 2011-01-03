@@ -1140,7 +1140,8 @@ var vmActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;           
             vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
+            //vmToRightPanel($midmenuItem1); //comment this one out, otherwise, it will call listVM API again.
+            setBooleanReadField((jsonObj.isoid != null), $("#right_panel_content").find("#tab_content_details").find("#iso")); 
         }   
     },
     "Detach ISO": {
@@ -1151,7 +1152,8 @@ var vmActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;    
             vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
+            //vmToRightPanel($midmenuItem1); //comment this one out, otherwise, it will call listVM API again.
+            setBooleanReadField((jsonObj.isoid != null), $("#right_panel_content").find("#tab_content_details").find("#iso")); 
         }   
     },
     "Reset Password": {                
@@ -1502,8 +1504,7 @@ function vmJsonToDetailsTab(){
 	var $thisTab = $("#right_panel_content").find("#tab_content_details");     
 	$thisTab.find("#tab_container").hide(); 
 	$thisTab.find("#tab_spinning_wheel").show();    
-	 
-	/*  
+	 	
 	var id = jsonObj.id;		  
 	$.ajax({
 		data: createURL("command=listVirtualMachines&id="+id),
@@ -1518,8 +1519,7 @@ function vmJsonToDetailsTab(){
 	        }   
 		}
 	});  	  
-    */
-    
+       
 	resetViewConsoleAction(jsonObj, $thisTab);      
 	setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));		
 	$thisTab.find("#ipAddress").text(fromdb(jsonObj.ipaddress));
