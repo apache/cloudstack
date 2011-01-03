@@ -45,7 +45,7 @@ public class GlobalLock {
     protected final static Logger s_logger = Logger.getLogger(GlobalLock.class);
 
 	private String name;
-	private volatile int lockCount = 0;
+	private int lockCount = 0;
 	private Thread ownerThread = null;
 	
 	private int referenceCount = 0;
@@ -65,21 +65,21 @@ public class GlobalLock {
 	}
 	
 	public int releaseRef() {
-		boolean releaseInternLock = false;
 		int refCount;
-		synchronized(this) {
-			referenceCount--;
-			refCount = referenceCount;
-			
-			if(referenceCount < 0)
-				s_logger.warn("Unmatched Global lock " + name + " reference usage detected, check your code!");
-			
-			if(referenceCount == 0)
-				releaseInternLock = true;
+		
+		synchronized(s_lockMap) {	// // lock in sequence to prevent deadlock
+			synchronized(this) {
+				referenceCount--;
+				refCount = referenceCount;
+				
+				if(referenceCount < 0)
+					s_logger.warn("Unmatched Global lock " + name + " reference usage detected, check your code!");
+				
+				if(referenceCount == 0)
+					releaseInternLock(name);
+			}
 		}
 		
-		if(releaseInternLock)
-			releaseInternLock(name);
 		return refCount;
 	}
 
@@ -137,9 +137,9 @@ public class GlobalLock {
 						continue;
 					} else {
 						// we will discount the time that has been spent in previous waiting
+						ownerThread = Thread.currentThread();
 						if(DbUtil.getGlobalLock(name, remainingMilliSeconds / 1000)) {
 							lockCount++;
-							ownerThread = Thread.currentThread();
 							holdingStartTick = System.currentTimeMillis();
 							
 							// keep the lock in the intern map when we got the lock from database
@@ -148,6 +148,8 @@ public class GlobalLock {
 							if(s_logger.isTraceEnabled())
 								s_logger.trace("lock " + name + " is acquired, lock count :" + lockCount);
 							return true;
+						} else {
+							ownerThread = null;
 						}
 						return false;
 					}

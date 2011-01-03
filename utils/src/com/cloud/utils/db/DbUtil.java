@@ -49,39 +49,33 @@ public class DbUtil {
     private static Map<String, Connection> s_connectionForGlobalLocks = new HashMap<String, Connection>();
     
     public static Connection getConnectionForGlobalLocks(String name, boolean forLock) {
-    	while(true) {
-	    	synchronized(s_connectionForGlobalLocks) {
-	    		if(forLock) {
-	    			if(s_connectionForGlobalLocks.get(name) != null) {
-	    				s_logger.error("Sanity check failed, global lock name " + name + " is in already in use");
-	    			}
-	    			
-	    			Connection connection = Transaction.getStandaloneConnection();
-	    			if(connection != null) {
-	    				try {
-							connection.setAutoCommit(true);
-						} catch (SQLException e) {
-							try {
-								connection.close();
-							} catch(SQLException sqlException) {
-							}
-							return null;
+    	synchronized(s_connectionForGlobalLocks) {
+    		if(forLock) {
+    			if(s_connectionForGlobalLocks.get(name) != null) {
+    				s_logger.error("Sanity check failed, global lock name " + name + " is already in use");
+    				assert(false);
+    			}
+    			
+    			Connection connection = Transaction.getStandaloneConnection();
+    			if(connection != null) {
+    				try {
+						connection.setAutoCommit(true);
+					} catch (SQLException e) {
+						try {
+							connection.close();
+						} catch(SQLException sqlException) {
 						}
-						s_connectionForGlobalLocks.put(name, connection);
-						return connection;
-	    			}
-	    		} else {
-	    			Connection connection = s_connectionForGlobalLocks.get(name);
-	    			s_connectionForGlobalLocks.remove(name);
-	    			return connection;
-	    		}
-	    	}
-	    	
-			s_logger.warn("Unable to acquire dabase connection for global lock " + name + ", waiting for someone to release and retrying...");
-	    	try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-			}
+						return null;
+					}
+					s_connectionForGlobalLocks.put(name, connection);
+					return connection;
+    			}
+    	    	return null;
+    		} else {
+    			Connection connection = s_connectionForGlobalLocks.get(name);
+    			s_connectionForGlobalLocks.remove(name);
+    			return connection;
+    		}
     	}
     }
     
@@ -237,7 +231,7 @@ public class DbUtil {
         	if (pstmt != null) {
         		try {
         			pstmt.close();
-        		} catch (SQLException e) {
+        		} catch (Throwable e) {
         			s_logger.error("What the heck? ", e);
         		}
         	}
