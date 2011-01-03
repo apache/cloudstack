@@ -74,7 +74,7 @@ function initAddSecurityGroupDialog() {
 				$thisDialog.dialog("close");
 							
 				$.ajax({						
-				    data: createURL("command=createNetworkGroup&name="+todb(name)+"&description="+todb(desc)),
+				    data: createURL("command=createSecurityGroup&name="+todb(name)+"&description="+todb(desc)),
 					dataType: "json",
 					success: function(json) {						    			   
 						var item = json.createsecuritygroupresponse.securitygroup;																		   
@@ -171,7 +171,7 @@ function doDeleteSecurityGroup($actionLink, $thisTab, $midmenuItem1) {
             array1.push("&name="+jsonObj.name);    
 		    
 			var id = jsonObj.id;
-			var apiCommand = "command=deleteNetworkGroup" + array1.join(""); 	                 
+			var apiCommand = "command=deleteSecurityGroup" + array1.join(""); 	                 
             doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab); 
 	    }, 
 	    "Cancel": function() { 
@@ -217,11 +217,11 @@ function securityGroupJsonToDetailsTab() {
     var id = jsonObj.id;    
     var jsonObj;   
     $.ajax({
-        data: createURL("command=listNetworkGroups&id="+id),
+        data: createURL("command=listSecurityGroups&id="+id),
         dataType: "json",
         async: false,
         success: function(json) {  
-            var items = json.listnetworkgroupsresponse.securitygroup;            
+            var items = json.listsecurityGroupsresponse.securitygroup;            
             if(items != null && items.length > 0) {
                 jsonObj = items[0];
                 $midmenuItem1.data("jsonObj", jsonObj);  
@@ -261,10 +261,10 @@ function securityGroupJsonToIngressRuleTab() {
         
     $.ajax({
 		cache: false,		
-		data: createURL("command=listNetworkGroups"+"&domainid="+securityGroupObj.domainid+"&account="+securityGroupObj.account+"&networkgroupname="+securityGroupObj.name),
+		data: createURL("command=listSecurityGroups"+"&domainid="+securityGroupObj.domainid+"&account="+securityGroupObj.account+"&securitygroupname="+securityGroupObj.name),
 		dataType: "json",
 		success: function(json) {	
-		    var securityGroupObj = json.listnetworkgroupsresponse.securitygroup[0];		    				    
+		    var securityGroupObj = json.listsecurityGroupsresponse.securitygroup[0];		    				    
 			var items = securityGroupObj.ingressrule;    
 			var $container = $thisTab.find("#tab_container").empty();     																			
 			if (items != null && items.length > 0) {			    
@@ -299,8 +299,8 @@ function securityGroupIngressRuleJSONToTemplate(jsonObj, $template) {
     var cidrOrGroup;
     if(jsonObj.cidr != null && jsonObj.cidr.length > 0)
         cidrOrGroup = jsonObj.cidr;
-    else if (jsonObj.account != null && jsonObj.account.length > 0 &&  jsonObj.networkgroupname != null && jsonObj.networkgroupname.length > 0)
-        cidrOrGroup = jsonObj.account + "/" + jsonObj.networkgroupname;		    
+    else if (jsonObj.account != null && jsonObj.account.length > 0 &&  jsonObj.securitygroupname != null && jsonObj.securitygroupname.length > 0)
+        cidrOrGroup = jsonObj.account + "/" + jsonObj.securitygroupname;		    
     $template.find("#cidr").text(cidrOrGroup);	
     
     // actions	
@@ -325,7 +325,7 @@ function securityGroupIngressRuleJSONToTemplate(jsonObj, $template) {
 var securityGroupIngressRuleActionMap = {      
     "Delete Ingress Rule": {      
         isAsyncJob: true,
-        asyncJobResponse: "revokenetworkgroupingress",
+        asyncJobResponse: "revokeSecurityGroupIngress",
 		dialogBeforeActionFn : doDeleteIngressRule,
         inProcessText: "Deleting Ingress Rule....",
         afterActionSeccessFn: function(json, id, $subgridItem) {                 
@@ -351,7 +351,7 @@ function doDeleteIngressRule($actionLink, $subgridItem) {
             var moreCriteria = [];		 
 	        moreCriteria.push("&domainid="+securityGroupObj.domainid);    	    	        
 	        moreCriteria.push("&account="+securityGroupObj.account);    	    		    	        
-	        moreCriteria.push("&networkgroupname="+securityGroupObj.name);    
+	        moreCriteria.push("&securitygroupname="+securityGroupObj.name);    
     	    	
     	    var protocol = ingressRuleObj.protocol;      
 	        moreCriteria.push("&protocol="+protocol);		    	
@@ -380,11 +380,11 @@ function doDeleteIngressRule($actionLink, $subgridItem) {
 	            moreCriteria.push("&cidrlist="+encodeURIComponent(cidr));
     						
 	        var account = ingressRuleObj.account;
-	        var networkGroupName = ingressRuleObj.networkgroupname; 
-	        if((account != null && account.length > 0) && (networkGroupName != null && networkGroupName.length > 0))                        
-                moreCriteria.push("&usernetworkgrouplist[0].account="+account + "&usernetworkgrouplist[0].group="+networkGroupName);    			
+	        var securitygroupname = ingressRuleObj.securitygroupname; 
+	        if((account != null && account.length > 0) && (securitygroupname != null && securitygroupname.length > 0))                        
+                moreCriteria.push("&usersecuritygrouplist[0].account="+account + "&usersecuritygrouplist[0].group="+securitygroupname);    			
 						
-			var apiCommand = "command=revokeNetworkGroupIngress"+moreCriteria.join("");                  
+			var apiCommand = "command=revokeSecurityGroupIngress"+moreCriteria.join("");                  
             doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem); 
 	    }, 
 	    "Cancel": function() { 

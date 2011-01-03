@@ -377,8 +377,7 @@
                                     <fmt:message key="label.menu.ipaddresses"/>
                                 </div>
                             </div>
-                        </div>                  
-						<!--
+                        </div>  
                         <div class="leftmenu_expandedlist">
                             <div class="leftmenu_content" id="leftmenu_security_group">
                                 <div class="leftmenu_secondindent">
@@ -387,8 +386,7 @@
                                     <fmt:message key="label.menu.security.groups"/>
                                 </div>
                             </div>
-                        </div>
-						-->
+                        </div>						
                     </div>                    
                 </div>  
                 <div class="leftmenu_list">
