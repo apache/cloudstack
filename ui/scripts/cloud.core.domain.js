@@ -195,27 +195,27 @@ function initAddDomainDialog() {
     }); 
 }
 
-function domainToRightPanel($leftmenuItem1) {  
+function domainToRightPanel($midmenuItem1) {  
     if(currentRightPanelJSP != "jsp/domain.jsp") {     
         $("#right_panel").load("jsp/domain.jsp", function(){     
             currentRightPanelJSP = "jsp/domain.jsp";
             afterLoadDomainJSP();
-			domainToRightPanel2($leftmenuItem1);       
+			domainToRightPanel2($midmenuItem1);       
 		});        
     }
     else {        
-        domainToRightPanel2($leftmenuItem1); 
+        domainToRightPanel2($midmenuItem1); 
     }
 }
 
-function domainToRightPanel2($leftmenuItem1) {
-    $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);   
+function domainToRightPanel2($midmenuItem1) {
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);   
     $("#tab_details").click();   
 }
 
 function domainJsonToDetailsTab() {
-    var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
-    var jsonObj = $leftmenuItem1.data("jsonObj");  
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    var jsonObj = $midmenuItem1.data("jsonObj");  
     var domainId = jsonObj.id;   
            
     $("#right_panel").data("onRefreshFn", function() {	    
@@ -229,7 +229,7 @@ function domainJsonToDetailsTab() {
 	        var items = json.listdomainsresponse.domain;
             if(items != null && items.length > 0) {
                 jsonObj = items[0];
-                $leftmenuItem1.data("jsonObj", jsonObj);                  
+                $midmenuItem1.data("jsonObj", jsonObj);                  
             }
 	    }
 	});		 
@@ -292,8 +292,8 @@ function domainJsonToDetailsTab() {
     $actionMenu.find("#action_list").empty();   
     var noAvailableActions = true;
     if(domainId != 1) { //"ROOT" domain is not allowed to edit or delete
-        buildActionLinkForTab("Edit Domain", domainActionMap, $actionMenu, $leftmenuItem1, $thisTab);   
-        buildActionLinkForTab("Delete Domain", domainActionMap, $actionMenu, $leftmenuItem1, $thisTab);          
+        buildActionLinkForTab("Edit Domain", domainActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+        buildActionLinkForTab("Delete Domain", domainActionMap, $actionMenu, $midmenuItem1, $thisTab);          
         noAvailableActions = false; 
     } 
     // no available actions 
@@ -303,8 +303,8 @@ function domainJsonToDetailsTab() {
 }
 
 function domainJsonToAdminAccountTab() {    
-    var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
-    var jsonObj = $leftmenuItem1.data("jsonObj");  
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    var jsonObj = $midmenuItem1.data("jsonObj");  
     var domainId = jsonObj.id;
    
     listAdminAccounts(domainId);  
@@ -312,8 +312,8 @@ function domainJsonToAdminAccountTab() {
 
 function domainJsonToResourceLimitsTab() {    
 	if (isAdmin() || (isDomainAdmin() && (g_domainid != domainId))) {	
-	    var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
-        var jsonObj = $leftmenuItem1.data("jsonObj");  
+	    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+        var jsonObj = $midmenuItem1.data("jsonObj");  
         var domainId = jsonObj.id;    
 				
 		var $resourceLimitsTab = $("#right_panel_content #tab_content_resource_limits");	
@@ -408,11 +408,11 @@ function domainJsonClearResourceLimitsTab() {
 }
 
 function domainToResourceLimitsTab() {   
-    var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
-    if($leftmenuItem1 == null)
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null)
         return;
     
-    var jsonObj = $leftmenuItem1.data("jsonObj");
+    var jsonObj = $midmenuItem1.data("jsonObj");
     if(jsonObj == null)
         return;    
     
@@ -431,7 +431,7 @@ function domainToResourceLimitsTab() {
     
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();
-    buildActionLinkForTab("Edit Resource Limits", domainResourceLimitsActionMap, $actionMenu, $leftmenuItem1, $thisTab);		
+    buildActionLinkForTab("Edit Resource Limits", domainResourceLimitsActionMap, $actionMenu, $midmenuItem1, $thisTab);		
 }
 
 function bindEventHandlerToDomainTreeNode() {
@@ -608,7 +608,9 @@ function doEditDomain2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields,
 		    success: function(json) {			        
 		        jsonObj = json.updatedomainresponse.domain;
 		        $midmenuItem1.data("jsonObj", jsonObj);		   
-		        domainJsonToDetailsTab();		         
+		        domainJsonToDetailsTab();	
+		        
+		        $("#leftmenu_domain_tree").find("#tree_container").find("#domain_name_"+id).text(newName);	         
 		    }
 	    });
 	}
@@ -627,8 +629,8 @@ var domainActionMap = {
         isAsyncJob: true,    
         asyncJobResponse: "deletedomainresponse",          
         inProcessText: "Deleting Domain....",
-        afterActionSeccessFn: function(json, $leftmenuItem1, id) {        
-            $leftmenuItem1.slideUp(function() {                
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {        
+            $midmenuItem1.slideUp(function() {                
                 $(this).remove();
             });           
             clearRightPanel();
