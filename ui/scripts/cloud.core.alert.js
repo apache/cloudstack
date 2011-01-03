@@ -26,9 +26,9 @@ function alertGetSearchParams() {
 
 	var $advancedSearchPopup = getAdvancedSearchPopupInSearchContainer();
 	if ($advancedSearchPopup.length > 0 && $advancedSearchPopup.css("display") != "none" ) {	
-	    var type = $advancedSearchPopup.find("#adv_search_type").val();							
-		if ($advancedSearchPopup.find("#adv_search_type").hasClass("textwatermark") == false && type!=null && type.length > 0) 
-			moreCriteria.push("&type="+todb(type));			
+	    var typeid = $advancedSearchPopup.find("#adv_search_typeid").val();							
+		if ($advancedSearchPopup.find("#adv_search_typeid").hasClass("textwatermark") == false && typeid!=null && typeid.length > 0) 
+			moreCriteria.push("&type="+todb(typeid));  //"type" paramter in listAlerts refers to typeId, not typeText		
 	} 	
 	
 	return moreCriteria.join("");          
@@ -69,7 +69,8 @@ function alertJsonToDetailsTab() {
     $thisTab.find("#tab_spinning_wheel").show();        
       
     $thisTab.find("#id").text(fromdb(jsonObj.id));      
-    $thisTab.find("#type").text(fromdb(jsonObj.type));
+    $thisTab.find("#type").text(toAlertType(jsonObj.type));
+    $thisTab.find("#typeid").text(fromdb(jsonObj.type));
     $thisTab.find("#description").text(fromdb(jsonObj.description));    
     setDateField(jsonObj.sent, $thisTab.find("#sent"));	
     
