@@ -16,8 +16,8 @@
  * 
  */
 
-var rowZIndexGlobal = 300;
-var rowZIndex = 299;
+var rowZIndexGlobal = 25000;
+var rowZIndex = 24999;
 var currentVMAction = null;
 function showInstancesTab(p_domainId, p_account) {
 	// Manage VM Tab
@@ -37,47 +37,47 @@ function showInstancesTab(p_domainId, p_account) {
 		width: 600,
 		autoOpen: false,
 		modal: true,
-		zIndex: 2000
+		zIndex: 29999
 	}));
 	
 	activateDialog($("#dialog_create_template").dialog({
 		width: 400,
 		autoOpen: false,
 		modal: true,
-		zIndex: 2000
+		zIndex: 29999
 	}));
 	
 	activateDialog($("#dialog_change_group").dialog({ 
 		autoOpen: false,
 		modal: true,
-		zIndex: 2000
+		zIndex: 29999
 	}));
 	
 	activateDialog($("#dialog_list_network_groups").dialog({ 
 	    width: 600,
 		autoOpen: false,
 		modal: true,
-		zIndex: 2000
+		zIndex: 29999
 	}));
 	
 	activateDialog($("#dialog_change_name").dialog({ 
 		autoOpen: false,
 		modal: true,
-		zIndex: 2000
+		zIndex: 29999
 	}));
 	
 	activateDialog($("#dialog_attach_iso").dialog({ 
 		width: 600,
 		autoOpen: false,
 		modal: true,
-		zIndex: 2000
+		zIndex: 29999
 	}));
 	
 	activateDialog($("#dialog_t_and_c").dialog({ 
 		width: 600,
 		autoOpen: false,
 		modal: true,
-		zIndex: 2000,
+		zIndex: 29999,
 		buttons: { "OK": function() { $(this).dialog("close"); } }
 	}));
 	

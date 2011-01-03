@@ -588,7 +588,7 @@ a:hover.vm_create_open {
 	min-height: 805px;
 	height: 100%;
 	background-color: black;
-	z-index:1001;
+	z-index:32000;
 	-moz-opacity: 0.8;
 	opacity:.60;
 	filter: alpha(opacity=60);
@@ -613,7 +613,7 @@ a:hover.vm_create_open {
 	 width:929px;
 	 height:588px;
 	 position:absolute;
-	 z-index:1005;
+	 z-index:32001;
 	 top:215px;
 	 left:130px;
 }
