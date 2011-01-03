@@ -1519,11 +1519,13 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new InvalidParameterValueException("Account id : " + user.getAccountId() + " is a system account, delete for user associated with this account is not allowed");
         }
         
+        long accountId = user.getAccountId();
+        long userId = UserContext.current().getCallerUserId();
         boolean success = _userDao.remove(id);
         if(success){
-            EventUtils.saveEvent(new Long(1), new Long(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_DELETE, "Deleted User, " + user.getUsername() + " for accountId = " + user.getAccountId());
+            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_USER_DELETE, "Deleted User, " + user.getUsername() + " for accountId = " + user.getAccountId());
         } else {
-            EventUtils.saveEvent(new Long(1), new Long(1), EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_DELETE, "Failed to delete User, " + user.getUsername() + " for accountId = " + user.getAccountId());
+            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_DELETE, "Failed to delete User, " + user.getUsername() + " for accountId = " + user.getAccountId());
         }
         return success;
 	}
