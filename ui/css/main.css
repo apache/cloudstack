@@ -1998,7 +1998,7 @@ a:hover {
 	font: normal 11px Arial, Helvetica, sans-serif;
 	float:left;
 	border: 1px solid #CCC;
-	height: 13px;
+	height: 16px;
 	width: 182px;
 	color:#666;
 	margin:0;
@@ -2021,10 +2021,10 @@ a:hover {
 	font: normal 11px Arial, Helvetica, sans-serif; 
 	float:left; 
 	border: 1px solid #CCC; 
-	height: 15px; 
+	height: 18px; 
 	width: 186px;
 	margin:0; 
-	padding:1px 0 0 2px; 
+	padding:0 0 0 2px; 
 	color:#666;
 }
 
