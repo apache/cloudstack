@@ -301,7 +301,15 @@ function domainJsonToDetailsTab() {
     });	  
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();   
-    buildActionLinkForTab("Delete Domain", domainActionMap, $actionMenu, $leftmenuItem1, $thisTab);    
+    var noAvailableActions = true;
+    if(domainId != 1) { //"ROOT" domain is not allowed to delete or edit
+        buildActionLinkForTab("Delete Domain", domainActionMap, $actionMenu, $leftmenuItem1, $thisTab);          
+        noAvailableActions = false; 
+    } 
+    // no available actions 
+	if(noAvailableActions == true) {
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	 
 }
 
 function domainJsonToAdminAccountTab() {    
