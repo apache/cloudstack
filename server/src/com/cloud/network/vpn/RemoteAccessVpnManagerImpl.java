@@ -197,7 +197,6 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
 
     @Override @DB
     public void destroyRemoteAccessVpn(Ip ip, long startEventId) throws ResourceUnavailableException {
-        long userId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller();
         
         RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findById(ip);
@@ -208,11 +207,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         
         _accountMgr.checkAccess(caller, vpn);
         
-        Account owner = _accountDao.findById(vpn.getAccountId());
         Network network = _networkMgr.getNetwork(vpn.getNetworkId());
-        
-        EventUtils.saveStartedEvent(userId, owner.getId(), EventTypes.EVENT_REMOTE_ACCESS_VPN_DESTROY, "Deleting Remote Access VPN for account: "
-                + owner.getAccountName() + " in " + ip, startEventId);
         
         vpn.setState(RemoteAccessVpn.State.Removed);
         _remoteAccessVpnDao.update(vpn.getServerAddress(), vpn);
@@ -228,11 +223,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
                 }
             }
         } finally {        
-            if (!success) {
-                EventUtils.saveEvent(userId, owner.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_REMOTE_ACCESS_VPN_DESTROY,
-                        "Unable to delete Remote Access VPN ", owner.getAccountName());
-            } else {            
-            
+            if (success) {
                 Transaction txn = Transaction.currentTxn();
                 try {
                     txn.start();
@@ -246,19 +237,11 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
                             s_logger.debug("Successfully removed firewall rule with ip " + port.getSourceIpAddress() + " and port " + port.getSourcePortStart() + " as a part of vpn cleanup");
                         }
                     }
-                    EventUtils.saveEvent(userId, owner.getId(), EventTypes.EVENT_REMOTE_ACCESS_VPN_DESTROY, "Deleted Remote Access VPN for account: "
-                            + owner.getAccountName());
                     txn.commit();   
                 } catch (Exception ex) {
                     txn.rollback();
                     s_logger.warn("Unable to release the three vpn ports from the firewall rules", ex);
                 }
-                
-//                
-//                if (!_rulesMgr.releasePorts(ip, NetUtils.UDP_PROTO, Purpose.Vpn, NetUtils.VPN_L2TP_PORT, NetUtils.VPN_NATT_PORT, NetUtils.VPN_PORT)) {
-//                    s_logger.warn("Unable to release the three vpn ports from the firewall rules");
-//                    txn.rollback();
-              
             }
         }
     }
@@ -323,7 +306,6 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
 
     @Override
     public RemoteAccessVpnVO startRemoteAccessVpn(Ip vpnId) throws ResourceUnavailableException {
-        long userId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller();
 
         RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findById(vpnId);
@@ -333,11 +315,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
 
         _accountMgr.checkAccess(caller, vpn);
 
-        Account owner = _accountDao.findById(vpn.getAccountId());
         Network network = _networkMgr.getNetwork(vpn.getNetworkId());
-
-        EventUtils.saveStartedEvent(userId, owner.getId(), EventTypes.EVENT_REMOTE_ACCESS_VPN_CREATE, "Creating a Remote Access VPN for account: "
-                + owner.getAccountName() + " in zone ");
 
         List<? extends RemoteAccessVpnElement> elements = _networkMgr.getRemoteAccessVpnElements();
         boolean started = false;
@@ -351,14 +329,9 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
             return vpn;
         } finally {
             if (started) {
-                EventUtils.saveEvent(userId, owner.getId(), EventTypes.EVENT_REMOTE_ACCESS_VPN_CREATE, "Created a Remote Access VPN for account: "
-                        + owner.getAccountName());
                 vpn.setState(RemoteAccessVpn.State.Running);
                 _remoteAccessVpnDao.update(vpn.getServerAddress(), vpn);
-            } else {
-                EventUtils.saveEvent(userId, owner.getId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_REMOTE_ACCESS_VPN_CREATE,
-                        "Unable to create Remote Access VPN ", owner.getAccountName());
-            }
+            } 
         }
     }
 
