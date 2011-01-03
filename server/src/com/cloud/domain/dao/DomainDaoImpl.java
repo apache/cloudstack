@@ -152,36 +152,33 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
         	return false;
         }
     	
-        DomainVO parentDomain = findById(domain.getParent());
-        if(parentDomain == null) {
-            s_logger.error("Unable to load parent domain: " + domain.getParent());
-            return false;
-        }
-        
-        GlobalLock lock = GlobalLock.getInternLock("lock.domain." + domain.getParent());
-        if(!lock.lock(Integer.MAX_VALUE)) {
-        	s_logger.error("Unable to lock parent domain: " + domain.getParent());
-        	return false;
-        }
-        
         String sql = "SELECT * from account where domain_id = " + id + " and removed is null";
         String sql1 = "SELECT * from domain where parent = " + id + " and removed is null";
 
         boolean success = false;
         Transaction txn = Transaction.currentTxn();
         try {
+        	txn.start();
+            DomainVO parentDomain = super.lockRow(domain.getParent(), true);
+            if(parentDomain == null) {
+                s_logger.error("Unable to load parent domain: " + domain.getParent());
+                txn.commit();
+                return false;
+            }
+        	
             PreparedStatement stmt = txn.prepareAutoCloseStatement(sql);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
+                txn.commit();
                 return false;
             }
             stmt = txn.prepareAutoCloseStatement(sql1);
             rs = stmt.executeQuery();
             if (rs.next()) {
+                txn.commit();
                 return false;
             }
             
-        	txn.start();
         	parentDomain.setChildCount(parentDomain.getChildCount() - 1);
         	update(parentDomain.getId(), parentDomain);
             success = super.remove(id);
@@ -190,9 +187,7 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
             success = false;
             s_logger.error("error removing domain: " + id, ex);
             txn.rollback();
-        } finally {
-        	lock.unlock();
-        }
+        } 
         return success;
     }
 
