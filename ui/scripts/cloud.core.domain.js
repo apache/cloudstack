@@ -21,18 +21,7 @@ var defaultRootLevel = 0;
 var childParentMap = {};  //map childDomainId to parentDomainId
 var domainIdNameMap = {}; //map domainId to domainName    
 
-/*
-function refreshWholeTree(rootDomainId, rootLevel) {
-    drawRootNode(rootDomainId);
-    drawTree(rootDomainId, $("#domain_children_container_"+rootDomainId));  //draw the whole tree (under root node)			
-    $("#domain_"+rootDomainId).show();	//show root node
-    clickExpandIcon(rootDomainId);      //expand root node	    
-}
-*/
-
-//draw root node
-function drawRootNode(rootDomainId) {
-    //var $loading = $("#leftmenu_domain_tree").find("#loading_container");
+function drawRootNode(rootDomainId) {    
     var $domainTree = $("#leftmenu_domain_tree").find("#tree_container").hide();
    
     $.ajax({
@@ -48,8 +37,7 @@ function drawRootNode(rootDomainId) {
 			    var treeLevelsbox = node.find(".tree_levelsbox");	//root node shouldn't have margin-left:20px				   
 			    if(treeLevelsbox!=null && treeLevelsbox.length >0)
 			        treeLevelsbox[0].style.marginLeft="0px";        //set root node's margin-left to 0px.
-			}		
-			//$loading.hide();
+			}				
             $domainTree.show();			
         }
     });
@@ -248,7 +236,8 @@ function domainJsonToDetailsTab() {
     var $thisTab = $("#right_panel_content").find("#tab_content_details");    
     $thisTab.find("#id").text(domainId);
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));	
-    $thisTab.find("#name").text(fromdb(jsonObj.name));	    	   
+    $thisTab.find("#name").text(fromdb(jsonObj.name));	    
+    $thisTab.find("#name_edit").val(fromdb(jsonObj.name));	    		   
 				  	
   	$.ajax({
 	    cache: false,				
@@ -302,7 +291,8 @@ function domainJsonToDetailsTab() {
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();   
     var noAvailableActions = true;
-    if(domainId != 1) { //"ROOT" domain is not allowed to delete or edit
+    if(domainId != 1) { //"ROOT" domain is not allowed to edit or delete
+        buildActionLinkForTab("Edit Domain", domainActionMap, $actionMenu, $leftmenuItem1, $thisTab);   
         buildActionLinkForTab("Delete Domain", domainActionMap, $actionMenu, $leftmenuItem1, $thisTab);          
         noAvailableActions = false; 
     } 
@@ -388,6 +378,7 @@ function domainJsonClearDetailsTab() {
     $thisTab.find("#id").text("");
     $thisTab.find("#grid_header_title").text("");	
     $thisTab.find("#name").text("");	
+    $thisTab.find("#name_edit").val("");
     $thisTab.find("#redirect_to_account_page").text("");	
     $thisTab.find("#redirect_to_instance_page").text("");	
     $thisTab.find("#redirect_to_volume_page").text("");	
@@ -572,7 +563,65 @@ function doEditResourceLimits2($actionLink, $detailsTab, $midmenuItem1, $readonl
     $("#save_button, #cancel_button").hide();      
 }
 
+
+function doEditDomain($actionLink, $detailsTab, $midmenuItem1) {     
+    var $readonlyFields  = $detailsTab.find("#name");
+    var $editFields = $detailsTab.find("#name_edit");     
+           
+    $readonlyFields.hide();
+    $editFields.show();  
+    $detailsTab.find("#cancel_button, #save_button").show();
+    
+    $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
+        $editFields.hide();
+        $readonlyFields.show();   
+        $("#save_button, #cancel_button").hide();       
+        return false;
+    });
+    $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
+        doEditDomain2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields);   
+        return false;
+    });   
+}
+
+function doEditDomain2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) {     
+    // validate values
+    var isValid = true;					
+    isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"));    
+    if (!isValid) 
+        return;
+       
+    var jsonObj = $midmenuItem1.data("jsonObj"); 
+	var id = jsonObj.id;
+	
+	var array1 = [];
+	
+	var newName = $detailsTab.find("#name_edit").val();
+	if(newName != jsonObj.name) 	    
+	    array1.push("&name="+todb(newName));
+	
+	if(array1.length > 0) {		
+	    $.ajax({
+	        data: createURL("command=updateDomain&id="+id+array1.join("")),
+		    dataType: "json",
+		    async: false,
+		    success: function(json) {			        
+		        jsonObj = json.updatedomainresponse.domain;
+		        $midmenuItem1.data("jsonObj", jsonObj);		   
+		        domainJsonToDetailsTab();		         
+		    }
+	    });
+	}
+			        	
+    $editFields.hide();      
+    $readonlyFields.show();       
+    $("#save_button, #cancel_button").hide();  		  
+}
+
 var domainActionMap = {        
+    "Edit Domain": {
+        dialogBeforeActionFn: doEditDomain
+    },
     "Delete Domain": {              
         api: "deleteDomain",     
         isAsyncJob: true,    
