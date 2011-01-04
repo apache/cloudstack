@@ -146,7 +146,7 @@
             </div>
         </div>
         <div id="main_contentpanel">
-            <div class="right_panel">
+            <div class="right_panel" id="east_panel">
                 <div id="contentwrapper">
                     <!-- Action Panel starts here-->
                     <div class="actionpanel">
@@ -251,7 +251,7 @@
             </div>
         </div>
         <!-- Left Menu starts here-->
-        <div class="leftmenu_panel">
+        <div class="leftmenu_panel" id="west_panel">
             <div class="leftmenu_box" id="leftmenu_container">     
                 <div class="leftmenu_list">
                     <div class="leftmenu_content_flevel" id="leftmenu_dashboard">

@@ -38,6 +38,15 @@ var md5Hashed = true;
 			$("#leftmenu_dashboard").click();
 		}
 	}	
+	
+	// Setup drag and slide for the main UI
+	$("#west_panel").resizable({
+		ghost: true,
+		stop: function(event, ui) { 
+			var resized = ui.size.width - 1;
+			$("#east_panel").attr("style", "margin-left:" + resized +"px;");
+		}
+	});
 
 	$(".leftmenu_content_flevel").hover(
 		function() {

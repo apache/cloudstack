@@ -259,6 +259,7 @@ a:hover {
 	min-height:1000px;
 	height:auto;
 	background:#FFF;
+	overflow-y: hidden;
 	margin:0;
 	padding:0;
 	
@@ -1433,7 +1434,7 @@ a:hover {
 }
 
 .leftmenu_box {
-	width:220px;
+	width:100%;
 	height:auto;
 	float:left;
 	margin:0 0 0 0;
@@ -1442,7 +1443,7 @@ a:hover {
 }
 
 .leftmenu_list{
-	width:220px;
+	width:100%;
 	height:auto;
 	float:left; 
 	margin:0;
@@ -1451,7 +1452,7 @@ a:hover {
 }
 
 .leftmenu_expandedbox{
-	width:220px;
+	width:100%;
 	height:auto;
 	float:left;
 	position:relative;
@@ -1485,7 +1486,7 @@ a:hover {
 }
 
 .leftmenu_content_flevel{
-	width:220px;
+	width:100%;
 	height:auto;
 	float:left;
 	color:#333;
@@ -1511,7 +1512,7 @@ a:hover {
 }
 
 .leftmenu_content{
-	width:220px;
+	width:100%;
 	height:auto;
 	float:left;
 	color:#333;
