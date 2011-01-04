@@ -30,4 +30,4 @@ networkUsage.sh=../../../../network/domr/,0755,/opt/xensource/bin
 call_firewall.sh=../../../../network/domr/,0755,/opt/xensource/bin
 call_loadbalancer.sh=../../../../network/domr/,0755,/opt/xensource/bin
 l2tp_vpn.sh=../../../../network/domr/,0755,/opt/xensource/bin
-setupBonding.sh=..,0755,/opt/xensource/bin
+cloud-setup-bonding.sh=..,0755,/opt/xensource/bin
