@@ -537,8 +537,10 @@
         </div>        
         <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles">
-                <a id="edit_link" href="#" style="float:left;">Edit</a>
-                <a id="revoke_link" href="#" style="float:left; margin-left:15px;">Revoke</a>
+                <a id="revoke_link" href="#" style="float:left;">Revoke</a>
+                <!--  
+                <a id="edit_link" href="#" style="float:left; margin-left:15px;">Edit</a>
+                -->                
             </div>
         </div>
         <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
