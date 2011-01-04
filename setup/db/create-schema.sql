@@ -234,6 +234,14 @@ CREATE TABLE `cloud`.`cluster` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`cluster_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `cluster_id` bigint unsigned NOT NULL COMMENT 'cluster id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `cloud`.`ext_lun_alloc` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `size` bigint unsigned NOT NULL COMMENT 'virtual size',
