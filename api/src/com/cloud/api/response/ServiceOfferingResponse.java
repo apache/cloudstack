@@ -51,9 +51,6 @@ public class ServiceOfferingResponse extends BaseResponse {
     @SerializedName("offerha") @Param(description="the ha support in the service offering")
     private Boolean offerHa;
 
-    @SerializedName("usevirtualnetwork") @Param(description="the virtual network for the service offering")
-    private Boolean useVirtualNetwork;
-
     @SerializedName("tags") @Param(description="the tags for the service offering")
     private String tags;
 
@@ -133,14 +130,6 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     public void setOfferHa(Boolean offerHa) {
         this.offerHa = offerHa;
-    }
-
-    public Boolean getUseVirtualNetwork() {
-        return useVirtualNetwork;
-    }
-
-    public void setUseVirtualNetwork(Boolean useVirtualNetwork) {
-        this.useVirtualNetwork = useVirtualNetwork;
     }
 
     public String getTags() {

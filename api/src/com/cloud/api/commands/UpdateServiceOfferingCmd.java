@@ -24,7 +24,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.offering.ServiceOffering;
 
@@ -52,9 +51,6 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 //    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for this service offering.")
 //    private String tags;
 
-    @Parameter(name=ApiConstants.USE_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="if true, the VM created from the offering will use default virtual networking. If false, the VM created will use a direct attached networking model. The default value is true.")
-    private Boolean useVirtualNetwork;
-    
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the containing domain, null for public offerings")
     private Long domainId; 
 
@@ -82,11 +78,6 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 //        return tags;
 //    }
 
-    public Boolean getUseVirtualNetwork() {
-        return useVirtualNetwork;
-    }
-
-    
     public Long getDomainId() {
 		return domainId;
 	}

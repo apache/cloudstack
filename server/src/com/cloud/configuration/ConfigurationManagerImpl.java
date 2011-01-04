@@ -1336,7 +1336,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	String name = cmd.getServiceOfferingName();
     	Boolean ha = cmd.getOfferHa();
 //    	String tags = cmd.getTags();
-    	Boolean useVirtualNetwork = cmd.getUseVirtualNetwork();
     	Long userId = UserContext.current().getCallerUserId();
     	Long domainId = cmd.getDomainId();
     	    	
@@ -1350,7 +1349,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find service offering " + id);
     	}
     	    	
-    	boolean updateNeeded = (name != null || displayText != null || ha != null || useVirtualNetwork != null || domainId != null);
+    	boolean updateNeeded = (name != null || displayText != null || ha != null || domainId != null);
     	if (!updateNeeded) {
     		return _serviceOfferingDao.findById(id);
     	}
@@ -1369,11 +1368,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	    	offering.setOfferHA(ha);
         }
 	    
-        if (useVirtualNetwork != null) {
-        	NetworkOffering.GuestIpType guestIpType = useVirtualNetwork ? NetworkOffering.GuestIpType.Virtual : NetworkOffering.GuestIpType.Direct;
-            offering.setGuestIpType(guestIpType);
-        }
-
         if (domainId != null){
         	offering.setDomainId(domainId);
         }

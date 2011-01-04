@@ -383,7 +383,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         offeringResponse.setCreated(offering.getCreated());
         offeringResponse.setStorageType(offering.getUseLocalStorage() ? "local" : "shared");
         offeringResponse.setOfferHa(offering.getOfferHA());
-        offeringResponse.setUseVirtualNetwork(offering.getGuestIpType().equals(GuestIpType.Virtual));
         offeringResponse.setTags(offering.getTags());
         if(offering.getDomainId() != null){
         	offeringResponse.setDomain(ApiDBUtils.findDomainById(offering.getDomainId()).getName());
