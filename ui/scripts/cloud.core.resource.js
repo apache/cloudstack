@@ -105,7 +105,8 @@ function buildZoneTree() {
                         afterLoadZoneJSP($thisNode);   
                     });      
                 } 
-                else {
+                else {             
+                    zoneRefreshDataBinding(); 
                     zoneJsonToRightPanel($(this));			 
                 }
 			   	    		   				    		   			    
