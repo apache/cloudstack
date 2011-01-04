@@ -221,8 +221,10 @@
                 </div>
                 <div class="grid_header_cell" style="width: 40%; border: none;">
                     <div class="grid_header_formbox">
+                        <!--  
                         <div class="gridheader_morebutt" id="more_icon">
                         </div>
+                        -->
                     </div>
                 </div>
             </div>
