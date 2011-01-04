@@ -41,6 +41,8 @@ var md5Hashed = true;
 	
 	// Setup drag and slide for the main UI
 	$("#west_panel").resizable({
+		minWidth: 221,
+		maxWidth: 421,
 		ghost: true,
 		stop: function(event, ui) { 
 			var resized = ui.size.width - 1;
