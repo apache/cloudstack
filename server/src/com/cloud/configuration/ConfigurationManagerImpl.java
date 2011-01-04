@@ -962,6 +962,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 //    	String domain = cmd.getDomain();
     	Long userId = UserContext.current().getCallerUserId();
 //    	Long domainId = cmd.getDomainId();
+    	int startVnetRange = 0;
+    	int stopVnetRange = 0;
     	
     	if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -990,6 +992,33 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	if (vnetRange != null) {
     		if (zoneHasAllocatedVnets(zoneId)) {
     			throw new CloudRuntimeException("The vlan range is not editable because there are allocated vlans.");
+    		}
+    		
+    		String[] startStopRange = new String[2];
+    		startStopRange = vnetRange.split("-");
+    		
+    		if(startStopRange.length == 1) {
+    			throw new InvalidParameterValueException("Please provide valid vnet range between 0-4096");
+    		}
+    		
+    		if(startStopRange[0] == null || startStopRange[1] == null) {
+    			throw new InvalidParameterValueException("Please provide valid vnet range between 0-4096");
+    		}
+    			
+    		try {
+				startVnetRange = Integer.parseInt(startStopRange[0]);
+				stopVnetRange = Integer.parseInt(startStopRange[1]);
+			} catch (NumberFormatException e) {
+				s_logger.warn("Unable to parse vnet range:",e);
+				throw new InvalidParameterValueException("Please provide valid vnet range between 0-4096");
+			}
+    		
+    		if(startVnetRange < 0 || stopVnetRange > 4096) {
+    			throw new InvalidParameterValueException("Vnet range has to be between 0-4096");
+    		}
+    		
+    		if(startVnetRange > stopVnetRange) {
+    			throw new InvalidParameterValueException("Vnet range has to be between 0-4096 and start range should be lesser than or equal to stop range");
     		}
     	}
 
@@ -1114,6 +1143,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             	}
             } catch (NumberFormatException e) {
                 throw new InvalidParameterValueException("Please specify valid integers for the vlan range.");
+            }
+            
+            if(vnetStart > vnetEnd) {
+            	s_logger.warn("Invalid vnet range: start range:"+vnetStart+" end range:"+vnetEnd);
+            	throw new InvalidParameterValueException("Vnet range should be between 0-4096 and start range should be lesser than or equal to end range");
             }
         } 
         
