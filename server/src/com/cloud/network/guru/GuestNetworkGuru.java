@@ -36,6 +36,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
@@ -162,17 +163,24 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
-        if (network.getTrafficType() != TrafficType.Guest) {
-            return null;
-        }
+        assert (network.getTrafficType() == TrafficType.Guest) : "Look at my name!  Why are you calling me when the traffic type is : " + network.getTrafficType();
         
         if (nic == null) {
             nic = new NicProfile(ReservationStrategy.Start, null, null, null, null);
-        } else if (nic.getIp4Address() != null){
-            nic.setStrategy(ReservationStrategy.Create);
-        } else {
-            nic.setStrategy(ReservationStrategy.Start);
+        } 
+        
+        if (nic.getIp4Address() == null){
+            nic.setBroadcastUri(network.getBroadcastUri());
+            nic.setIsolationUri(network.getBroadcastUri());
+            nic.setGateway(network.getGateway());
+            nic.setIp4Address(acquireGuestIpAddress(network));
+            nic.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
+            nic.setDns1(network.getDns1());
+            nic.setDns2(network.getDns2());
+            nic.setFormat(AddressFormat.Ip4);
         }
+        
+        nic.setStrategy(ReservationStrategy.Start);
         
         if (nic.getMacAddress() == null) {
             nic.setMacAddress(_networkMgr.getNextAvailableMacAddressInNetwork(network.getId()));
@@ -210,11 +218,6 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
 
         nic.setBroadcastUri(network.getBroadcastUri());
         nic.setIsolationUri(network.getBroadcastUri());
-        nic.setGateway(network.getGateway());
-        nic.setIp4Address(acquireGuestIpAddress(network));
-        nic.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
-        nic.setDns1(network.getDns1());
-        nic.setDns2(network.getDns2());
     }
 
     @Override
