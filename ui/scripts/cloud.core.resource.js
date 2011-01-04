@@ -213,25 +213,13 @@ function buildZoneTree() {
 	    }		    	    
 	    return false;
 	});  
-	
-	/*
-	$("#leftmenu_cluster_node_template").unbind("click").bind("click", function(event) {
-	    selectRowInZoneTree($(this).find("#cluster_header"));	    
-	   	  
-	   	hostClearRightPanel();    	    
-	    var objCluster = $(this).data("jsonObj");
-        listMidMenuItems(("listHosts&type=Routing&clusterid="+objCluster.id), hostGetSearchParams, "listhostsresponse", "host", "jsp/host.jsp", afterLoadHostJSP, hostToMidmenu, hostToRightPanel, getMidmenuId, false, ("cluster_"+objCluster.id));    
-	    	    
-	    return false;
-	}); 
-	*/
-	
+		
 	$("#leftmenu_host_node_template").unbind("click").bind("click", function(event) {
 	    selectRowInZoneTree($(this).find("#host_header"));	    
 	   	  
 	   	hostClearRightPanel();    	    
 	    var clusterObj = $(this).data("clusterObj");
-        listMidMenuItems(("listHosts&type=Routing&clusterid="+clusterObj.id), hostGetSearchParams, "listhostsresponse", "host", "jsp/host.jsp", afterLoadHostJSP, hostToMidmenu, hostToRightPanel, getMidmenuId, false, ("cluster_"+clusterObj.id+"_host"));    
+        listMidMenuItems(("listHosts&type=Routing&clusterid="+clusterObj.id), hostGetSearchParams, "listhostsresponse", "host", "jsp/host.jsp", afterLoadHostJSP, hostToMidmenu, hostToRightPanel, getMidmenuId, false, ("cluster_"+clusterObj.id+"_host"), null);    
 	    	    
 	    return false;
 	});  
