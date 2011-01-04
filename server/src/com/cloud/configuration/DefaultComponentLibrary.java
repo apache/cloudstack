@@ -43,6 +43,7 @@ import com.cloud.configuration.dao.ResourceLimitDaoImpl;
 import com.cloud.consoleproxy.AgentBasedStandaloneConsoleProxyManager;
 import com.cloud.dao.EntityManager;
 import com.cloud.dao.EntityManagerImpl;
+import com.cloud.dc.ClusterDetailsDaoImpl;
 import com.cloud.dc.dao.AccountVlanMapDaoImpl;
 import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.dc.dao.DataCenterDaoImpl;
@@ -234,6 +235,7 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addDao("FirewallRulesDao", FirewallRulesDaoImpl.class);
         addDao("PortForwardingRulesDao", PortForwardingRulesDaoImpl.class);
         addDao("UsageEventDao", UsageEventDaoImpl.class);
+        addDao("ClusterDetailsDao", ClusterDetailsDaoImpl.class);
     }
 
     Map<String, ComponentInfo<Manager>> _managers = new HashMap<String, ComponentInfo<Manager>>();

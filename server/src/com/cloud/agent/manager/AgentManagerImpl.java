@@ -85,6 +85,7 @@ import com.cloud.api.commands.UpdateHostCmd;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterIpAddressVO;
@@ -226,7 +227,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
     @Inject protected StoragePoolHostDao _storagePoolHostDao = null;
     @Inject protected GuestOSCategoryDao _guestOSCategoryDao = null;
     @Inject protected DetailsDao _hostDetailsDao = null;
-    @Inject protected ClusterDao _clusterDao;
+    @Inject protected ClusterDao _clusterDao = null;
+    @Inject protected ClusterDetailsDao _clusterDetailsDao = null;
     
     @Inject(adapter=DeploymentPlanner.class)
     private Adapters<DeploymentPlanner> _planners;
@@ -579,10 +581,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         try {
             cluster = _clusterDao.persist(cluster);
         } catch (Exception e) {
-            cluster = _clusterDao.findBy(clusterName, podId);
-            if (cluster == null) {
-                throw new CloudRuntimeException("Unable to create cluster " + clusterName + " in pod " + podId + " and data center " + dcId, e);
-            }
+        	// no longer tolerate exception during the cluster creation phase 
+            throw new CloudRuntimeException("Unable to create cluster " + clusterName + " in pod " + podId + " and data center " + dcId, e);
         }
         clusterId = cluster.getId();
         result.add(cluster);
@@ -590,6 +590,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, ResourceS
         if(clusterType == Cluster.ClusterType.CloudManaged) {
             return result;
         }
+        
+        // save cluster details for later cluster/host cross-checking
+        Map<String, String> details = new HashMap<String, String>();
+        details.put("url", url);
+        details.put("username", username);
+        details.put("password", password);
+        _clusterDetailsDao.persist(cluster.getId(), details);
         
         boolean success = false;
         try {
