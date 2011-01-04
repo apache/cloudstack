@@ -77,6 +77,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> SequenceSearch;
     protected final SearchBuilder<HostVO> DirectlyConnectedSearch;
     protected final SearchBuilder<HostVO> UnmanagedDirectConnectSearch;
+    protected final SearchBuilder<HostVO> UnmanagedExternalNetworkApplianceSearch;
     protected final SearchBuilder<HostVO> MaintenanceCountSearch;
     protected final SearchBuilder<HostVO> ClusterSearch;
     protected final SearchBuilder<HostVO> ConsoleProxyHostSearch;
@@ -201,6 +202,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         */
         UnmanagedDirectConnectSearch.done();
 
+        UnmanagedExternalNetworkApplianceSearch = createSearchBuilder();
+        UnmanagedExternalNetworkApplianceSearch.and("resource", UnmanagedExternalNetworkApplianceSearch.entity().getResource(), SearchCriteria.Op.NNULL);
+        UnmanagedExternalNetworkApplianceSearch.and("server", UnmanagedExternalNetworkApplianceSearch.entity().getManagementServerId(), SearchCriteria.Op.NULL);        
+        UnmanagedExternalNetworkApplianceSearch.and("types", UnmanagedExternalNetworkApplianceSearch.entity().getType(), SearchCriteria.Op.IN);
+        UnmanagedExternalNetworkApplianceSearch.and("lastPinged", UnmanagedExternalNetworkApplianceSearch.entity().getLastPinged(), SearchCriteria.Op.LTEQ);
+        UnmanagedExternalNetworkApplianceSearch.done();
+                
         _statusAttr = _allAttributes.get("status");
         _msIdAttr = _allAttributes.get("managementServerId");
         _pingTimeAttr = _allAttributes.get("lastPinged");
@@ -256,6 +264,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     	sc.setParameters("lastPinged", lastPingSecondsAfter);
     	
         return search(sc, new Filter(HostVO.class, "id", true, 0L, limit));
+    }
+    
+    @Override 
+    public List<HostVO> findExternalNetworkAppliancesToLoad(long lastPingSecondsAfter) {
+    	SearchCriteria<HostVO> sc = UnmanagedExternalNetworkApplianceSearch.create();
+    	sc.setParameters("types", new Object[]{Type.ExternalFirewall, Type.ExternalLoadBalancer});
+    	sc.setParameters("lastPinged", lastPingSecondsAfter);
+    	return search(sc, null);
     }
     
     @Override
