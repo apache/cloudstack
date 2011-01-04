@@ -155,6 +155,10 @@ public class ApiServer implements HttpRequestHandler {
         return s_instance;
     }
     
+    public Properties get_apiCommands() {
+        return _apiCommands;
+    }
+
     public void init(String[] apiConfig) {
         try {
             BaseCmd.setComponents(new ApiResponseHelper());
@@ -273,30 +277,9 @@ public class ApiServer implements HttpRequestHandler {
 
                 writeResponse(response, responseText, HttpStatus.SC_OK, responseType, null);
             } catch (ServerApiException se) {
-                String responseName = null;
-                String cmdClassName = null;
-
-                try {
-                    if (se.getErrorCode() == BaseCmd.UNSUPPORTED_ACTION_ERROR) {
-                        responseName = "errorresponse";
-                    } else {
-                        String cmdName = ((String[])parameterMap.get("command"))[0];
-                        cmdClassName = _apiCommands.getProperty(cmdName);
-                        Class claz = Class.forName(cmdClassName);
-                        responseName = ((BaseCmd)claz.newInstance()).getCommandName();
-                    }
-                    
-                    ExceptionResponse apiResponse = new ExceptionResponse();
-                    apiResponse.setErrorCode(se.getErrorCode());
-                    apiResponse.setErrorText(se.getDescription());
-                    apiResponse.setResponseName(responseName);
-                    String responseText = ApiResponseSerializer.toSerializedString(apiResponse, responseType);
-                    
-                    writeResponse(response, responseText, se.getErrorCode(), responseType, se.getDescription());
-                    sb.append(" " + se.getErrorCode() + " " + responseText.length());
-                } catch (Exception e) {
-                    s_logger.error("IO Exception responding to http request", e);
-                }
+                String responseText = getSerializedApiError(se.getErrorCode(), se.getDescription(), parameterMap, responseType);
+                writeResponse(response, responseText, se.getErrorCode(), responseType, se.getDescription());
+                sb.append(" " +se.getErrorCode() + " " + se.getDescription());
             } catch(RuntimeException e) {
             	// log runtime exception like NullPointerException to help identify the source easier
                 s_logger.error("Unhandled exception, ", e);
@@ -886,5 +869,33 @@ public class ApiServer implements HttpRequestHandler {
                 } catch (IOException ignore) {}
             }
         }
+    }
+    
+    public String getSerializedApiError(int errorCode, String errorText, Map<String, Object[]> apiCommandParams, String responseType) {
+        String responseName = null;
+        String cmdClassName = null;
+        
+        String responseText = null;
+       
+        try {
+            if (errorCode == BaseCmd.UNSUPPORTED_ACTION_ERROR || apiCommandParams == null || apiCommandParams.isEmpty()) {
+                responseName = "errorresponse";
+            } else {
+                String cmdName = ((String[])apiCommandParams.get("command"))[0];
+                cmdClassName = _apiCommands.getProperty(cmdName);
+                Class<?> claz = Class.forName(cmdClassName);
+                responseName = ((BaseCmd)claz.newInstance()).getCommandName();
+            }
+            
+            ExceptionResponse apiResponse = new ExceptionResponse();
+            apiResponse.setErrorCode(errorCode);
+            apiResponse.setErrorText(errorText);
+            apiResponse.setResponseName(responseName);
+            responseText = ApiResponseSerializer.toSerializedString(apiResponse, responseType);
+             
+        }catch (Exception e) {
+            s_logger.error("Exception responding to http request", e);
+        }
+        return responseText;
     }
 }

@@ -19,7 +19,6 @@
 package com.cloud.api;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.security.InvalidParameterException;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -81,14 +80,14 @@ public class ApiServlet extends HttpServlet {
     private void processRequest(HttpServletRequest req, HttpServletResponse resp) {
         StringBuffer auditTrailSb = new StringBuffer();
         auditTrailSb.append(" " +req.getRemoteAddr());
-        auditTrailSb.append(" -- " + req.getMethod() + " " );        
+        auditTrailSb.append(" -- " + req.getMethod() + " " );   
+        // get the response format since we'll need it in a couple of places
+        String responseType = BaseCmd.RESPONSE_TYPE_XML;
+        Map<String, Object[]> params = new HashMap<String, Object[]>();
+        params.putAll(req.getParameterMap());
+        
         try {
-            Map<String, Object[]> params = new HashMap<String, Object[]>();
-            params.putAll(req.getParameterMap());
             HttpSession session = req.getSession(false);                                   
-
-            // get the response format since we'll need it in a couple of places
-            String responseType = BaseCmd.RESPONSE_TYPE_XML;
             Object[] responseTypeParam = params.get("response");
             if (responseTypeParam != null) {
                 responseType = (String)responseTypeParam[0];
@@ -117,8 +116,8 @@ public class ApiServlet extends HttpServlet {
                         }catch (IllegalStateException ise) {}
                     }
                     auditTrailSb.append("command=logout");
-                    auditTrailSb.append(" " +HttpServletResponse.SC_OK);
-                    writeResponse(resp, getLogoutSuccessResponse(responseType), false, responseType);
+                    auditTrailSb.append(" " + HttpServletResponse.SC_OK);
+                    writeResponse(resp, getLogoutSuccessResponse(responseType), HttpServletResponse.SC_OK, responseType);
                     return;
                 } else if ("login".equalsIgnoreCase(command)) {
                     auditTrailSb.append("command=login");
@@ -147,7 +146,8 @@ public class ApiServlet extends HttpServlet {
                     	{
                     		s_logger.warn("Invalid domain id entered by user");
                     		auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "Invalid domain id entered, please enter a valid one");
-                    		resp.sendError(HttpServletResponse.SC_UNAUTHORIZED,"Invalid domain id entered, please enter a valid one");
+                    		String serializedResponse = _apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid domain id entered, please enter a valid one", params, responseType);
+                    		writeResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType);
                     	}
                     }
                     String domain = null;
@@ -173,15 +173,17 @@ public class ApiServlet extends HttpServlet {
                                     " accountId="+ ((Account)session.getAttribute("accountobj")).getId()+ 
                                     " sessionId="+session.getId()+ ")" );
                             String loginResponse = getLoginSuccessResponse(session, responseType);
-                            writeResponse(resp, loginResponse, false, responseType);
+                            writeResponse(resp, loginResponse, HttpServletResponse.SC_OK, responseType);
                             return;
                         } catch (CloudAuthenticationException ex) {
                             // TODO:  fall through to API key, or just fail here w/ auth error? (HTTP 401)
                             try {
                                 session.invalidate();
                             }catch (IllegalStateException ise) {}
+                            
                             auditTrailSb.append(" " + BaseCmd.ACCOUNT_ERROR + " " + ex.getMessage() != null ? ex.getMessage() : "failed to authenticate user, check if username/password are correct");
-                            resp.sendError(BaseCmd.ACCOUNT_ERROR, ex.getMessage() != null ? ex.getMessage() : "failed to authenticate user, check if username/password are correct");
+                            String serializedResponse = _apiServer.getSerializedApiError(BaseCmd.ACCOUNT_ERROR, ex.getMessage() != null ? ex.getMessage() : "failed to authenticate user, check if username/password are correct", params, responseType);
+                            writeResponse(resp, serializedResponse, BaseCmd.ACCOUNT_ERROR, responseType);
                             return;
                         }
                     }
@@ -208,7 +210,8 @@ public class ApiServlet extends HttpServlet {
                         session.invalidate();
                     }catch (IllegalStateException ise) {}
                     auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED +  " " + "unable to verify user credentials");
-                    resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials");
+                    String serializedResponse = _apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType);
+                    writeResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType);
                     return;
                 }
 
@@ -218,7 +221,8 @@ public class ApiServlet extends HttpServlet {
                     if (command == null) {
                         s_logger.info("missing command, ignoring request...");
                         auditTrailSb.append(" " + HttpServletResponse.SC_BAD_REQUEST + " " + "no command specified");
-                        resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "no command specified");
+                        String serializedResponse = _apiServer.getSerializedApiError(HttpServletResponse.SC_BAD_REQUEST, "no command specified", params, responseType);
+                        writeResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType);
                         return;
                     }
                     UserContext.updateContext(userId, (Account)accountObj, session.getId());
@@ -228,8 +232,10 @@ public class ApiServlet extends HttpServlet {
                     try {
                         session.invalidate();
                     }catch (IllegalStateException ise) {}
+                    
                     auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
-                    resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials");
+                    String serializedResponse = _apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType);
+                    writeResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType);
                     return;
                 }
             }
@@ -258,10 +264,11 @@ public class ApiServlet extends HttpServlet {
 
             	try {
             		String response = _apiServer.handleRequest(params, true, responseType, auditTrailSb);            		
-            		writeResponse(resp, response != null ? response : "", false, responseType);
+            		writeResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType);
             	} catch (ServerApiException se) {
+            	    String serializedResponseText = _apiServer.getSerializedApiError(se.getErrorCode(), se.getDescription(), params, responseType);
+            	    writeResponse(resp, serializedResponseText, se.getErrorCode(), responseType);
             	    auditTrailSb.append(" " +se.getErrorCode() + " " + se.getDescription());
-            		resp.sendError(se.getErrorCode(), se.getDescription());
             	}
             } else {
                 if (session != null) {
@@ -269,22 +276,16 @@ public class ApiServlet extends HttpServlet {
                         session.invalidate();
                     }catch (IllegalStateException ise) {}
                 }
+                
                 auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED +  " " + "unable to verify user credentials and/or request signature");
-                resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials and/or request signature");
+                String serializedResponse = _apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials and/or request signature", params, responseType);
+                writeResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType);
+  
             }
-        } catch (IOException ioex) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("exception processing request: " + ioex);
-            }
-            auditTrailSb.append(" exception processing request" );
         }catch (InvalidParameterException ipe){
             auditTrailSb.append(" " + HttpServletResponse.SC_NOT_FOUND +  " " + ipe.getMessage());
-            try {
-				resp.sendError(HttpServletResponse.SC_NOT_FOUND, ipe.getMessage());
-			} catch (IOException e) {
-				s_logger.error("Unable to send back error response for invalid command");
-				auditTrailSb.append(" " + HttpServletResponse.SC_NOT_FOUND +  " " + "Unable to send back error response for "+ipe.getMessage());
-			}        	
+            String serializedResponse = _apiServer.getSerializedApiError(HttpServletResponse.SC_NOT_FOUND, ipe.getMessage(), params, responseType);
+            writeResponse(resp, serializedResponse, HttpServletResponse.SC_NOT_FOUND, responseType);
         }catch (Exception ex) {
             s_logger.error("unknown exception writing api response", ex);
             auditTrailSb.append(" unknown exception writing api response");
@@ -312,7 +313,7 @@ public class ApiServlet extends HttpServlet {
     */
 
     // FIXME: rather than isError, we might was to pass in the status code to give more flexibility
-    private void writeResponse(HttpServletResponse resp, String response, boolean isError, String responseType) {
+    private void writeResponse(HttpServletResponse resp, String response, int responseCode, String responseType) {
         try {
             // is text/plain sufficient for XML and JSON?
             if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
@@ -320,8 +321,8 @@ public class ApiServlet extends HttpServlet {
             } else {
                 resp.setContentType("text/xml");
             }
-            resp.setStatus(isError? HttpServletResponse.SC_INTERNAL_SERVER_ERROR : HttpServletResponse.SC_OK);
             
+            resp.setStatus(responseCode);
             // use getWriter() instead of manually manipulate encoding to have better localization support
 			resp.getWriter().print(response);
         } catch (IOException ioex) {
@@ -380,4 +381,5 @@ public class ApiServlet extends HttpServlet {
         }
         return sb.toString();
     }
+
 }
