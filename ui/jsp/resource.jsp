@@ -259,7 +259,7 @@
                                     <div id="add_zone_startvlan_errormsg" class="dialog_formcontent_errormsg" style="display:none; margin-left:0;" ></div>
                                     <div id="add_zone_endvlan_errormsg" class="dialog_formcontent_errormsg" style="display:none; margin-left:0;" ></div>
                                 </li>
-                                <li>
+                                <li id="add_zone_guestcidraddress_container" style="display:none">
                                     <label for="add_zone_guestcidraddress">Guest CIDR:</label>
                                     <input class="text" type="text" id="add_zone_guestcidraddress" value="10.1.1.0/24"/>
                                     <div id="add_zone_guestcidraddress_errormsg" class="dialog_formcontent_errormsg" style="display:none; margin-left:0;" ></div>

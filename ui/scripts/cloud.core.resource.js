@@ -1068,14 +1068,14 @@ function initAddZoneWizard() {
             
             case "Basic":  //create VLAN in pod-level      
                 //hide Zone VLAN Range in Add Zone(step 2), show Guest IP Range in Add Pod(step3)                 
-                $thisWizard.find("#step2").find("#add_zone_vlan_container").hide();
+                $thisWizard.find("#step2").find("#add_zone_vlan_container, #add_zone_guestcidraddress_container").hide();
                 $thisWizard.find("#step3").find("#guestip_container, #guestnetmask_container, #guestgateway_container").show();
                 return true;
                 break;
                 
             case "Advanced":  //create VLAN in zone-level 
                 //show Zone VLAN Range in Add Zone(step 2), hide Guest IP Range in Add Pod(step3) 
-                $thisWizard.find("#step2").find("#add_zone_vlan_container").show();  
+                $thisWizard.find("#step2").find("#add_zone_vlan_container, #add_zone_guestcidraddress_container").show();  
                 $thisWizard.find("#step3").find("#guestip_container, #guestnetmask_container, #guestgateway_container").hide();   
                 return true;
                 break;
@@ -1131,8 +1131,10 @@ function addZoneWizardValidateZond($thisWizard) {
 	if($thisWizard.find("#step2").find("#add_zone_vlan_container").css("display") != "none") {
 		isValid &= validateString("VLAN Range", $thisWizard.find("#add_zone_startvlan"), $thisWizard.find("#add_zone_startvlan_errormsg"), true);    //optional
 		isValid &= validateString("VLAN Range", $thisWizard.find("#add_zone_endvlan"), $thisWizard.find("#add_zone_endvlan_errormsg"), true);        //optional
-	}	
-	isValid &= validateCIDR("Guest CIDR", $thisWizard.find("#add_zone_guestcidraddress"), $thisWizard.find("#add_zone_guestcidraddress_errormsg"), false); //required
+	}		
+	if($thisWizard.find("#add_zone_guestcidraddress_container").css("display") != "none") {
+	    isValid &= validateCIDR("Guest CIDR", $thisWizard.find("#add_zone_guestcidraddress"), $thisWizard.find("#add_zone_guestcidraddress_errormsg"), false); //required
+	}
 	return isValid;
 }
 
@@ -1191,8 +1193,10 @@ function addZoneWizardSubmit($thisWizard) {
         }
 	}	
 	
-	var guestcidraddress = trim($thisWizard.find("#add_zone_guestcidraddress").val());
-	moreCriteria.push("&guestcidraddress="+todb(guestcidraddress));	
+	if($thisWizard.find("#add_zone_guestcidraddress_container").css("display") != "none") {
+	    var guestcidraddress = trim($thisWizard.find("#add_zone_guestcidraddress").val());
+	    moreCriteria.push("&guestcidraddress="+todb(guestcidraddress));	
+	}
 					
 	if($thisWizard.find("#domain_dropdown_container").css("display") != "none") {
 	    var domainId = trim($thisWizard.find("#domain_dropdown").val());
