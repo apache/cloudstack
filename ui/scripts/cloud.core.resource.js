@@ -219,7 +219,7 @@ function buildZoneTree() {
 	   	  
 	   	hostClearRightPanel();    	    
 	    var clusterObj = $(this).data("clusterObj");
-        listMidMenuItems(("listHosts&type=Routing&clusterid="+clusterObj.id), hostGetSearchParams, "listhostsresponse", "host", "jsp/host.jsp", afterLoadHostJSP, hostToMidmenu, hostToRightPanel, getMidmenuId, false, ("cluster_"+clusterObj.id+"_host"), null);    
+        listMidMenuItems(("listHosts&type=Routing&clusterid="+clusterObj.id), hostGetSearchParams, "listhostsresponse", "host", "jsp/host.jsp", afterLoadHostJSP, hostToMidmenu, hostToRightPanel, getMidmenuId, false, ("cluster_"+clusterObj.id+"_host"), hostRefreshDataBinding);    
 	    	    
 	    return false;
 	});  

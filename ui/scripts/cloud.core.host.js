@@ -85,7 +85,11 @@ function afterLoadHostJSP() {
     var tabContentArray = [$("#tab_content_details"), $("#tab_content_primarystorage"), $("#tab_content_instance"), $("#tab_content_router"), $("#tab_content_systemvm"), $("#tab_content_statistics")];
     var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToPrimaryStorageTab, hostJsonToInstanceTab, hostJsonToRouterTab, hostJsonToSystemvmTab, hostJsonToStatisticsTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);  
-            
+  
+    hostRefreshDataBinding();  
+}
+
+function hostRefreshDataBinding() {
     var $hostNode = $selectedSubMenu.parent(); 
     bindAddHostButton($hostNode);      
 }
