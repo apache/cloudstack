@@ -181,7 +181,8 @@ function afterLoadDashboardJSP() {
 			});
 		});
 		$thisTab.find("#capacity_zone_select").change();
-					
+		
+		// General Alerts			
 		$.ajax({
 		    data: createURL("command=listAlerts"),
 			dataType: "json",
@@ -199,6 +200,12 @@ function afterLoadDashboardJSP() {
 					}
 				}
 			}
+		});
+			
+		$("#general_alerts").find("#more_icon").unbind("click").bind("click", function(event) {		    
+		    $("#leftmenu_events").click();
+            $("#leftmenu_alert").click();
+		    return false;
 		});
 				
 		// Hosts Alerts

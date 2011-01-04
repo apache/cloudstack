@@ -193,7 +193,7 @@
             </div>
         </div>
         <!--General Alerts-->
-        <div class="grid_container" style="width: 49%; margin-top: 15px;">
+        <div class="grid_container" id="general_alerts" style="width: 49%; margin-top: 15px;">
             <div class="grid_header">
                 <div class="grid_header_cell" style="width: 60%; border: none;">
                     <div class="grid_header_title">
@@ -201,7 +201,7 @@
                 </div>
                 <div class="grid_header_cell" style="width: 40%; border: none;">
                     <div class="grid_header_formbox">
-                        <div class="gridheader_morebutt">
+                        <div class="gridheader_morebutt" id="more_icon">
                         </div>
                     </div>
                 </div>
@@ -213,7 +213,7 @@
             </div>
         </div>
         <!--Hosts Alerts-->
-        <div class="grid_container" style="width: 48%; margin-top: 15px; float: right;">
+        <div class="grid_container" id="hosts_alerts" style="width: 48%; margin-top: 15px; float: right;">
             <div class="grid_header">
                 <div class="grid_header_cell" style="width: 60%; border: none;">
                     <div class="grid_header_title">
@@ -221,7 +221,7 @@
                 </div>
                 <div class="grid_header_cell" style="width: 40%; border: none;">
                     <div class="grid_header_formbox">
-                        <div class="gridheader_morebutt">
+                        <div class="gridheader_morebutt" id="more_icon">
                         </div>
                     </div>
                 </div>
