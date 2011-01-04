@@ -166,6 +166,7 @@ function afterLoadTemplateJSP() {
     $.ajax({
 	    data: createURL("command=listOsTypes&response=json"),
 		dataType: "json",
+		async: false,
 		success: function(json) {
 			types = json.listostypesresponse.ostype;
 			if (types != null && types.length > 0) {		

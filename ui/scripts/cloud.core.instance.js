@@ -88,6 +88,7 @@ function instanceBuildSubMenu2(label, commandString) {
 var $doTemplateNo, $doTemplateCustom,$doTemplateExisting, $soTemplate;
 var init = false;
 var $selectedVmWizardTemplate;	
+var osTypeMap = {};
 function afterLoadInstanceJSP() {
 	if (!init) {
 		//initialize VM Wizard  
@@ -132,6 +133,20 @@ function afterLoadInstanceJSP() {
     initDialog("dialog_confirmation_start_router");
     initDialog("dialog_confirmation_stop_router");
     initDialog("dialog_confirmation_reboot_router");    
+       
+    $.ajax({
+	    data: createURL("command=listOsTypes"),
+		dataType: "json",
+		async: false,
+		success: function(json) {		    
+			types = json.listostypesresponse.ostype;
+			if (types != null && types.length > 0) {				
+				for (var i = 0; i < types.length; i++) {
+				    osTypeMap[types[i].id] = fromdb(types[i].description);							
+				}
+			}					
+		}
+	});	
 }
 
 function bindStartVMButton() {    
@@ -1536,6 +1551,10 @@ function vmJsonToDetailsTab(){
 	$thisTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
 	
 	$thisTab.find("#templateName").text(fromdb(jsonObj.templatename));
+	
+	$thisTab.find("#ostypename").text(osTypeMap[fromdb(jsonObj.guestosid)]);
+    $thisTab.find("#ostypename_edit").val(fromdb(jsonObj.guestosid));   
+	
 	$thisTab.find("#serviceOfferingName").text(fromdb(jsonObj.serviceofferingname));	
 	$thisTab.find("#account").text(fromdb(jsonObj.account));
 	$thisTab.find("#domain").text(fromdb(jsonObj.domain));

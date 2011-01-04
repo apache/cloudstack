@@ -94,6 +94,7 @@ function initAddIsoDialog() {
     $.ajax({
 	    data: createURL("command=listOsTypes"),
 		dataType: "json",
+		async: false,
 		success: function(json) {
 			types = json.listostypesresponse.ostype;
 			if (types != null && types.length > 0) {
