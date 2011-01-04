@@ -613,12 +613,12 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
         }
                                              
         var clusterSelect = $("#dialog_add_pool").find("#pool_cluster").empty();			            
-        var mapClusters = {};
+        var mapClusters = {};        
 	    $.ajax({
 		    data: createURL("command=listClusters&podid=" + podId),
 		    async: false,
 		    dataType: "json",
-	        success: function(json) {				                        
+	        success: function(json) {                             
 	            var items = json.listclustersresponse.cluster;
 	            if(items != null && items.length > 0) {		
 	            	mapClusters = {};
@@ -635,12 +635,12 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
 	        }
 	    });	
 	    
-	    $("#pool_cluster", dialogAddPool).change(function() {
+	    $("#pool_cluster", dialogAddPool).unbind("change").bind("change", function() {
 	    	var curOption = $(this).val();
 	    	if(!curOption)
 	    		return false;
 	    	
-	    	var $protocolSelector = $("#add_pool_protocol", dialogAddPool);
+	    	var $protocolSelector = $("#add_pool_protocol", dialogAddPool);	    	
 	    	var objCluster = mapClusters['cluster_'+curOption];
 	    	
 	    	if(objCluster.hypervisortype == "KVM") {

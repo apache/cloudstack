@@ -63,15 +63,19 @@ function primarystorageToRightPanel($midmenuItem1) {
     primarystorageJsonToDetailsTab();  
 }
 
- function afterLoadPrimaryStorageJSP($midmenuItem1) {     
+function afterLoadPrimaryStorageJSP() {     
     //add pool dialog
     initDialog("dialog_add_pool");
     bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	  
        
     initDialog("dialog_confirmation_delete_primarystorage");  
     
+    primaryStorageRefreshDataBinding();     
+}
+
+function primaryStorageRefreshDataBinding() {      
     var $primarystorageNode = $selectedSubMenu.parent(); 
-    bindAddPrimaryStorageButton($primarystorageNode);     
+    bindAddPrimaryStorageButton($primarystorageNode);    
 }
 
 function primarystorageJsonToDetailsTab() {	
@@ -81,9 +85,7 @@ function primarystorageJsonToDetailsTab() {
     
     var jsonObj = $midmenuItem1.data("jsonObj");
     if(jsonObj == null)
-        return; 
-            
-    bindAddPrimaryStorageButton($midmenuItem1);      
+        return;               
     
     $.ajax({
         data: createURL("command=listStoragePools&id="+jsonObj.id),

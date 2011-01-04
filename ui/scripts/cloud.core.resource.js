@@ -241,7 +241,7 @@ function buildZoneTree() {
 	   	  
 	   	primarystorageClearRightPanel();    	    
 	    var clusterObj = $(this).data("clusterObj");
-        listMidMenuItems(("listStoragePools&clusterid="+clusterObj.id), primarystorageGetSearchParams, "liststoragepoolsresponse", "storagepool", "jsp/primarystorage.jsp", afterLoadPrimaryStorageJSP, primarystorageToMidmenu, primarystorageToRightPanel, getMidmenuId, false, ("cluster_"+clusterObj.id+"_primarystorage"));    
+        listMidMenuItems(("listStoragePools&clusterid="+clusterObj.id), primarystorageGetSearchParams, "liststoragepoolsresponse", "storagepool", "jsp/primarystorage.jsp", afterLoadPrimaryStorageJSP, primarystorageToMidmenu, primarystorageToRightPanel, getMidmenuId, false, ("cluster_"+clusterObj.id+"_primarystorage"), primaryStorageRefreshDataBinding);    
 	    	    
 	    return false;
 	});

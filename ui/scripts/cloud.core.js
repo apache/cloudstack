@@ -1009,7 +1009,7 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
 
 var currentLeftMenuId;
 var currentRightPanelJSP = null;
-function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, leftmenuId) { 
+function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, leftmenuId, refreshDataBindingFn) { 
 	clearMiddleMenu();
 	showMiddleMenu();	
 	$("#midmenu_container").hide();
@@ -1042,7 +1042,10 @@ function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonR
 			afterLoadRightPanelJSPFn();                
 			listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, 1);   			
 		});     
-	} else {
+	} else {	    
+	    if(refreshDataBindingFn != null)
+	        refreshDataBindingFn();
+	
 		listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, 1);        
 	}
 	return false;
