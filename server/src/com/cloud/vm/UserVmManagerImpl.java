@@ -1805,6 +1805,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         String group = cmd.getGroup();
         Boolean ha = cmd.getHaEnable();
         Long id = cmd.getId();
+        Long osTypeId = cmd.getOsTypeId();
         Account account = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
     
@@ -1831,7 +1832,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     	if (ha == null) {
     		ha = vmInstance.isHaEnabled();
     	}
-
+    	
     	long accountId = vmInstance.getAccountId();
         UserVmVO vm = _vmDao.findById(id);
         if (vm == null) {
@@ -1851,7 +1852,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 description += "Disabled HA. ";
             }
         }
-
+        if (osTypeId == null) {
+            osTypeId = vmInstance.getGuestOSId();
+        } else {
+            description += "Changed Guest OS Type to " + osTypeId + ". ";
+        }
         
         if (group != null) {
             if(addInstanceToGroup(id, group)){
@@ -1859,7 +1864,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
 
-        _vmDao.updateVM(id, displayName, ha);
+        _vmDao.updateVM(id, displayName, ha, osTypeId);
 
          // create a event for the change in HA Enabled flag
         EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_VM_UPDATE, "Successfully updated virtual machine: "+vm.getName()+". "+description);

@@ -67,7 +67,7 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long>, StateDao<State, V
      * @param id vm id.
      * @param displan name and enable for ha
      */
-    void updateVM(long id, String displayName, boolean enable);
+    void updateVM(long id, String displayName, boolean enable, Long osTypeId);
     
     List<UserVmVO> findDestroyedVms(Date date);
 
