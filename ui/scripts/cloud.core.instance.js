@@ -140,9 +140,12 @@ function afterLoadInstanceJSP() {
 		async: false,
 		success: function(json) {		    
 			types = json.listostypesresponse.ostype;
+			var osTypeDropdownEdit = $("#right_panel_content").find("#tab_content_details").find("#ostypename_edit").empty(); 
 			if (types != null && types.length > 0) {				
 				for (var i = 0; i < types.length; i++) {
-				    osTypeMap[types[i].id] = fromdb(types[i].description);							
+				    osTypeMap[types[i].id] = fromdb(types[i].description);		
+				    var html = "<option value='" + types[i].id + "'>" + fromdb(types[i].description) + "</option>";							
+					osTypeDropdownEdit.append(html);						
 				}
 			}					
 		}
@@ -1298,8 +1301,8 @@ function doRestoreVM($actionLink, $detailsTab, $midmenuItem1) {
 }   
  
 function doEditVM($actionLink, $detailsTab, $midmenuItem1) {       
-    var $readonlyFields  = $detailsTab.find("#vmname, #group, #haenable");
-    var $editFields = $detailsTab.find("#vmname_edit, #group_edit, #haenable_edit"); 
+    var $readonlyFields  = $detailsTab.find("#vmname, #group, #haenable, #ostypename");
+    var $editFields = $detailsTab.find("#vmname_edit, #group_edit, #haenable_edit, #ostypename_edit"); 
            
     $readonlyFields.hide();
     $editFields.show();  
@@ -1337,6 +1340,9 @@ function doEditVM2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $ed
 	
 	var haenable = $detailsTab.find("#haenable_edit").val();     
 	array1.push("&haenable="+haenable);   
+	
+	var ostypeid = $detailsTab.find("#ostypename_edit").val();     
+	array1.push("&ostypeid="+ostypeid);   
 	
 	$.ajax({
 	    data: createURL("command=updateVirtualMachine&id="+id+array1.join("")),
@@ -1551,7 +1557,7 @@ function vmJsonToDetailsTab(){
 	$thisTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
 	
 	$thisTab.find("#templateName").text(fromdb(jsonObj.templatename));
-	
+
 	$thisTab.find("#ostypename").text(osTypeMap[fromdb(jsonObj.guestosid)]);
     $thisTab.find("#ostypename_edit").val(fromdb(jsonObj.guestosid));   
 	
