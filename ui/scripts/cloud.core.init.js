@@ -15,8 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
-$(document).ready(function() { 
+// Default password is MD5 hashed.  Set the following variable to false to disable this.
+var md5Hashed = true;
+ 
+ $(document).ready(function() { 
 	function initUI() {
 		var context = $.urlParam('lp');
 		if (context != null) { 
@@ -569,7 +571,10 @@ $(document).ready(function() {
 		var username = encodeURIComponent($("#account_username").val());
 		array1.push("&username="+username);
 		
-		var password = $.md5(encodeURIComponent($("#account_password").val()));
+		var password = encodeURIComponent($("#account_password").val());
+		if (md5Hashed) {
+			password = $.md5(password);
+		} 
 		array1.push("&password="+password);
 		
 		var domain = $("#account_domain").val();
