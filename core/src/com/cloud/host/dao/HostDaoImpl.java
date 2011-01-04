@@ -187,15 +187,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         UnmanagedDirectConnectSearch = createSearchBuilder();
         UnmanagedDirectConnectSearch.and("resource", UnmanagedDirectConnectSearch.entity().getResource(), SearchCriteria.Op.NNULL);
         UnmanagedDirectConnectSearch.and("server", UnmanagedDirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.NULL);
-        UnmanagedDirectConnectSearch.and("avoidstatus", UnmanagedDirectConnectSearch.entity().getStatus(), SearchCriteria.Op.NEQ);
-        UnmanagedDirectConnectSearch.and("clusterId", UnmanagedDirectConnectSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
         UnmanagedDirectConnectSearch.and("lastPinged", UnmanagedDirectConnectSearch.entity().getLastPinged(), SearchCriteria.Op.LTEQ);
-        /*
-        UnmanagedDirectConnectSearch.op(SearchCriteria.Op.OR, "managementServerId", UnmanagedDirectConnectSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
-        UnmanagedDirectConnectSearch.and("lastPinged", UnmanagedDirectConnectSearch.entity().getLastPinged(), SearchCriteria.Op.LTEQ);
-        UnmanagedDirectConnectSearch.cp();
-        UnmanagedDirectConnectSearch.cp();
-        */
         UnmanagedDirectConnectSearch.done();
 
         _statusAttr = _allAttributes.get("status");
@@ -247,12 +239,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
     
     @Override
-    public List<HostVO> findDirectAgentToLoad(long msid, long clusterId, long lastPingSecondsAfter, Long limit) {
+    public List<HostVO> findDirectAgentToLoad(long msid, long lastPingSecondsAfter, Long limit) {
     	SearchCriteria sc = UnmanagedDirectConnectSearch.create();
-    	sc.setParameters("avoidstatus", Status.Removed.toString());
-        sc.setParameters("clusterId", clusterId);
     	sc.setParameters("lastPinged", lastPingSecondsAfter);   	
-        return search(sc, new Filter(HostVO.class, "id", true, 0L, limit));
+        return search(sc, new Filter(HostVO.class, "clusterId", true, 0L, limit));
     }
     
     @Override
