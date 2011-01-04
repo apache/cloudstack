@@ -106,7 +106,6 @@ import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.ListUsersCmd;
 import com.cloud.api.commands.ListVMGroupsCmd;
-import com.cloud.api.commands.ListVMsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.api.commands.ListZonesByCmd;
@@ -179,13 +178,10 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.IPAddressVO;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
-import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.service.ServiceOfferingVO;
@@ -255,9 +251,7 @@ import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.InstanceGroupVMMapVO;
 import com.cloud.vm.InstanceGroupVO;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.State;
 import com.cloud.vm.UserVmManager;
@@ -267,8 +261,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
-import com.cloud.vm.dao.InstanceGroupVMMapDao;
-import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -313,8 +305,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final StoragePoolDao _poolDao;
     private final StoragePoolHostDao _poolHostDao;
     private final StorageManager _storageMgr;
-    private final NetworkDao _networkDao;
-    private final NicDao _nicDao;
 
     private final Adapters<UserAuthenticator> _userAuthenticators;
     private final HostPodDao _hostPodDao;
@@ -327,7 +317,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final int _purgeDelay;
     private final PreallocatedLunDao _lunDao;
     private final InstanceGroupDao _vmGroupDao;
-    private final InstanceGroupVMMapDao _groupVMMapDao;
     private final UploadMonitor _uploadMonitor;
     private final UploadDao _uploadDao;
     private final CertificateDao _certDao;
@@ -363,8 +352,6 @@ public class ManagementServerImpl implements ManagementServer {
         _hostPodDao = locator.getDao(HostPodDao.class);
         _jobDao = locator.getDao(AsyncJobDao.class);
         _clusterDao = locator.getDao(ClusterDao.class);
-        _networkDao = locator.getDao(NetworkDao.class);
-        _nicDao = locator.getDao(NicDao.class);
 
         _accountMgr = locator.getManager(AccountManager.class);
         _agentMgr = locator.getManager(AgentManager.class);
@@ -395,7 +382,6 @@ public class ManagementServerImpl implements ManagementServer {
         _poolDao = locator.getDao(StoragePoolDao.class);
         _poolHostDao = locator.getDao(StoragePoolHostDao.class);
         _vmGroupDao = locator.getDao(InstanceGroupDao.class);
-        _groupVMMapDao = locator.getDao(InstanceGroupVMMapDao.class);
         _uploadDao = locator.getDao(UploadDao.class);
         _certDao = locator.getDao(CertificateDao.class);
         _configs = _configDao.getConfiguration();
@@ -2015,250 +2001,6 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public VMTemplateVO findTemplateById(long templateId) {
         return _templateDao.findById(templateId);
-    }
-
-    
-    @Override
-    public List<UserVmVO> searchForUserVMs(ListVMsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
-        Account account = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        String accountName = cmd.getAccountName();
-        Long accountId = null;
-        boolean isAdmin = false;
-        String path = null;
-        if ((account == null) || isAdmin(account.getType())) {
-            isAdmin = true;
-            if (domainId != null) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list virtual machines.");
-                }
-
-                if (accountName != null) {
-                    account = _accountDao.findActiveAccount(accountName, domainId);
-                    if (account == null) {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                    accountId = account.getId();
-                }
-            } 
-            if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-                DomainVO domain = _domainDao.findById(account.getDomainId());
-                if (domain != null) {
-                    path = domain.getPath();
-                }
-            }
-        } else {
-            accountId = account.getId();
-        }
-
-        Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
-        c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
-        c.addCriteria(Criteria.ID, cmd.getId());
-        c.addCriteria(Criteria.NAME, cmd.getInstanceName());
-        c.addCriteria(Criteria.STATE, cmd.getState());
-        c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
-        c.addCriteria(Criteria.GROUPID, cmd.getGroupId());
-        c.addCriteria(Criteria.FOR_VIRTUAL_NETWORK, cmd.getForVirtualNetwork());
-        c.addCriteria(Criteria.NETWORKID, cmd.getNetworkId());
-        
-        if (path != null) {
-            c.addCriteria(Criteria.PATH, path);
-        }
-
-        // ignore these search requests if it's not an admin
-        if (isAdmin == true) {
-            c.addCriteria(Criteria.DOMAINID, domainId);
-            c.addCriteria(Criteria.PODID, cmd.getPodId());
-            c.addCriteria(Criteria.HOSTID, cmd.getHostId());
-        }
-        
-        if (accountId != null) {
-            c.addCriteria(Criteria.ACCOUNTID, new Object[] {accountId});
-        }
-        c.addCriteria(Criteria.ISADMIN, isAdmin); 
-
-        return searchForUserVMs(c);
-    }
-
-    @Override
-    public List<UserVmVO> searchForUserVMs(Criteria c) {
-        Filter searchFilter = new Filter(UserVmVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
-        
-        SearchBuilder<UserVmVO> sb = _userVmDao.createSearchBuilder();
-       
-        // some criteria matter for generating the join condition
-        Object[] accountIds = (Object[]) c.getCriteria(Criteria.ACCOUNTID);
-        Object domainId = c.getCriteria(Criteria.DOMAINID);
-        
-        // get the rest of the criteria
-        Object id = c.getCriteria(Criteria.ID);
-        Object name = c.getCriteria(Criteria.NAME);
-        Object state = c.getCriteria(Criteria.STATE);
-        Object notState = c.getCriteria(Criteria.NOTSTATE);
-        Object zone = c.getCriteria(Criteria.DATACENTERID);
-        Object pod = c.getCriteria(Criteria.PODID);
-        Object hostId = c.getCriteria(Criteria.HOSTID);
-        Object hostName = c.getCriteria(Criteria.HOSTNAME);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
-        Object isAdmin = c.getCriteria(Criteria.ISADMIN);
-        Object ipAddress = c.getCriteria(Criteria.IPADDRESS);
-        Object groupId = c.getCriteria(Criteria.GROUPID);
-        Object useVirtualNetwork = c.getCriteria(Criteria.FOR_VIRTUAL_NETWORK);
-        Object path = c.getCriteria(Criteria.PATH);
-        Object networkId = c.getCriteria(Criteria.NETWORKID);
-        
-        sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("accountIdEQ", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
-        sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.and("stateEQ", sb.entity().getState(), SearchCriteria.Op.EQ);
-        sb.and("stateNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ);
-        sb.and("stateNIN", sb.entity().getState(), SearchCriteria.Op.NIN);
-        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
-        sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
-        sb.and("hostIdIN", sb.entity().getHostId(), SearchCriteria.Op.IN);
-        sb.and("guestIP", sb.entity().getGuestIpAddress(), SearchCriteria.Op.EQ);
-        
-        if (domainId != null || path != null) {
-            // if accountId isn't specified, we can do a domain match for the admin case
-            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("id", domainSearch.entity().getId(), SearchCriteria.Op.EQ);
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-        
-        if (groupId != null && (Long)groupId == -1) {
-        	SearchBuilder<InstanceGroupVMMapVO> vmSearch = _groupVMMapDao.createSearchBuilder();
-        	vmSearch.and("instanceId", vmSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
-            sb.join("vmSearch", vmSearch, sb.entity().getId(), vmSearch.entity().getInstanceId(), JoinBuilder.JoinType.LEFTOUTER);
-        } else if (groupId != null) {
-        	SearchBuilder<InstanceGroupVMMapVO> groupSearch = _groupVMMapDao.createSearchBuilder();
-        	groupSearch.and("groupId", groupSearch.entity().getGroupId(), SearchCriteria.Op.EQ);
-            sb.join("groupSearch", groupSearch, sb.entity().getId(), groupSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
-        }
-        
-        if (networkId != null) {
-            SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
-            nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
-            
-            SearchBuilder<NetworkVO> networkSearch = _networkDao.createSearchBuilder();
-            networkSearch.and("networkId", networkSearch.entity().getId(), SearchCriteria.Op.EQ);
-            nicSearch.join("networkSearch", networkSearch, nicSearch.entity().getNetworkId(), networkSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-            
-            sb.join("nicSearch", nicSearch, sb.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
-        }
-        
-        if (useVirtualNetwork != null) {
-            SearchBuilder<ServiceOfferingVO> serviceSearch = _offeringsDao.createSearchBuilder();
-            if ((Boolean)useVirtualNetwork){
-                serviceSearch.and("guestIpType", serviceSearch.entity().getGuestIpType(), SearchCriteria.Op.EQ);
-            } else {
-                serviceSearch.and("guestIpType", serviceSearch.entity().getGuestIpType(), SearchCriteria.Op.NEQ);
-            }
-            sb.join("serviceSearch", serviceSearch, sb.entity().getServiceOfferingId(), serviceSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-
-        // populate the search criteria with the values passed in
-        SearchCriteria<UserVmVO> sc = sb.create();
-        
-        if (groupId != null && (Long)groupId == -1){
-        	sc.setJoinParameters("vmSearch", "instanceId", (Object)null);
-        } else if (groupId != null ) {
-        	sc.setJoinParameters("groupSearch", "groupId", groupId);
-        }
-        
-        if (useVirtualNetwork != null) {
-            sc.setJoinParameters("serviceSearch", "guestIpType", NetworkOffering.GuestIpType.Virtual.toString());
-        }
-
-        if (keyword != null) {
-            SearchCriteria<UserVmVO> ssc = _userVmDao.createSearchCriteria();
-            ssc.addOr("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("instanceName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            
-            sc.addAnd("displayName", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-        if (accountIds != null) {
-            if (accountIds.length == 1) {
-                if (accountIds[0] != null) {
-                    sc.setParameters("accountIdEQ", accountIds[0]);
-                }
-            } else {
-                sc.setParameters("accountIdIN", accountIds);
-            }
-        } else if (domainId != null) {
-            sc.setJoinParameters("domainSearch", "id", domainId);
-        }
-        
-        if (path != null) {
-            sc.setJoinParameters("domainSearch", "path", path + "%");
-        }
-        
-        if (networkId != null) {
-            sc.setJoinParameters("nicSearch", "networkId", networkId);
-        }
-
-        if (name != null) {
-            sc.setParameters("name", "%" + name + "%");
-        }
-        if (state != null) {
-            if (notState != null && (Boolean) notState == true) {
-                sc.setParameters("stateNEQ", state);
-            } else {
-                sc.setParameters("stateEQ", state);
-            }
-        }
-
-        if ((isAdmin != null) && ((Boolean) isAdmin != true)) {
-            sc.setParameters("stateNIN", "Destroyed", "Expunging");
-        }
-
-        if (zone != null) {
-            sc.setParameters("dataCenterId", zone);
-            
-            if(state == null) {
-                sc.setParameters("stateNEQ", "Destroyed");
-            }
-        }
-        if (pod != null) {
-            sc.setParameters("podId", pod);
-            
-            if(state == null) {
-                sc.setParameters("stateNEQ", "Destroyed");
-            }
-        }
-
-        if (hostId != null) {
-            sc.setParameters("hostIdEQ", hostId);
-        } else {
-            if (hostName != null) {
-                List<HostVO> hosts = _hostDao.findHostsLike((String) hostName);
-                if (hosts != null & !hosts.isEmpty()) {
-                    Long[] hostIds = new Long[hosts.size()];
-                    for (int i = 0; i < hosts.size(); i++) {
-                        HostVO host = hosts.get(i);
-                        hostIds[i] = host.getId();
-                    }
-                    sc.setParameters("hostIdIN", (Object[]) hostIds);
-                } else {
-                    return new ArrayList<UserVmVO>();
-                }
-            }
-        }
-
-        if (ipAddress != null) {
-            sc.setParameters("guestIP", ipAddress);
-        }
-        
-        return _userVmDao.search(sc, searchFilter);
     }
 
     @Override

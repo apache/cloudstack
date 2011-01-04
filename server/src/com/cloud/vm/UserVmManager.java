@@ -24,6 +24,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.server.Criteria;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
@@ -95,5 +96,13 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>{
 			ConcurrentOperationException, ExecutionException, ResourceUnavailableException, InsufficientCapacityException;
 	
 	boolean expunge(UserVmVO vm, long callerUserId, Account caller);
+	
+    /**
+     * Obtains a list of virtual machines by the specified search criteria.
+     * Can search by: "userId", "name", "state", "dataCenterId", "podId", "hostId"
+     * @param c
+     * @return List of UserVMs.
+     */
+    List<UserVmVO> searchForUserVMs(Criteria c);
 
 }

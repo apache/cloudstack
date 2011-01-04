@@ -173,14 +173,6 @@ public interface ManagementService {
     VirtualMachineTemplate updateTemplate(UpdateTemplateCmd cmd);
     
     /**
-     * Obtains a list of virtual machines by the specified search criteria.
-     * Can search by: "userId", "name", "state", "dataCenterId", "podId", "hostId"
-     * @param cmd the API command that wraps the search criteria
-     * @return List of UserVMs.
-     */
-    List<? extends UserVm> searchForUserVMs(ListVMsCmd cmd);
-
-    /**
      * Obtains a list of events by the specified search criteria.
      * Can search by: "username", "type", "level", "startDate", "endDate"
      * @param c

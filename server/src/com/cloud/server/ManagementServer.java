@@ -312,14 +312,6 @@ public interface ManagementServer extends ManagementService {
      */
     VMTemplateVO findTemplateById(long templateId);
     
-    /**
-     * Obtains a list of virtual machines by the specified search criteria.
-     * Can search by: "userId", "name", "state", "dataCenterId", "podId", "hostId"
-     * @param c
-     * @return List of UserVMs.
-     */
-    List<UserVmVO> searchForUserVMs(Criteria c);
-
     List<EventVO> listPendingEvents(int entryTime, int duration);
     
     /**

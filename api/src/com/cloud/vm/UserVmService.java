@@ -17,6 +17,8 @@
  */
 package com.cloud.vm;
 
+import java.util.List;
+
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
@@ -25,6 +27,7 @@ import com.cloud.api.commands.DeleteVMGroupCmd;
 import com.cloud.api.commands.DeployVMCmd;
 import com.cloud.api.commands.DestroyVMCmd;
 import com.cloud.api.commands.DetachVolumeCmd;
+import com.cloud.api.commands.ListVMsCmd;
 import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
@@ -156,4 +159,12 @@ public interface UserVmService {
     UserVm startVirtualMachine(long vmId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     void deletePrivateTemplateRecord(Long templateId);
+    
+    /**
+     * Obtains a list of virtual machines by the specified search criteria.
+     * Can search by: "userId", "name", "state", "dataCenterId", "podId", "hostId"
+     * @param cmd the API command that wraps the search criteria
+     * @return List of UserVMs.
+     */
+    List<? extends UserVm> searchForUserVMs(ListVMsCmd cmd);
 }

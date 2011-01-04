@@ -209,7 +209,7 @@ public class ApiDBUtils {
     }
 
     public static List<UserVmVO> searchForUserVMs(Criteria c) {
-        return _ms.searchForUserVMs(c);
+        return _userVmMgr.searchForUserVMs(c);
     }
 
     public static List<? extends StoragePoolVO> searchForStoragePools(Criteria c) {
