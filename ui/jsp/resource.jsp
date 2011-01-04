@@ -730,7 +730,7 @@
                     Cluster:</label>
                 <select class="select" id="cluster_select">
                 </select>
-                <div id="cluster_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                <div id="cluster_select_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>                    
             <li>

@@ -262,10 +262,7 @@ function refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId, hyp
                     else               
                         clusterSelect.append("<option value='" + fromdb(items[i].id) + "'>" + fromdb(items[i].name) + "</option>");		
                 }    
-            }
-            else {
-			    clusterSelect.append("<option value='-1'>None Available</option>");               
-            }
+            }            
         }
     });     
 }      

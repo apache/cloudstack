@@ -290,45 +290,6 @@ function buildZoneTree() {
 	});  	
 }    
 
-/*
-function refreshClusterUnderPod($podNode, newClusterName, existingClusterId, noClicking) {  
-    var podId = $podNode.data("podId");     
-    if(podId == null)  //e.g. $podNode is not on the screen (when zone tree is hidden) ($podNode.length==0) 
-        return;
-    
-    var $clusterNode;
-    $.ajax({
-        data: createURL("command=listClusters&podid="+podId),
-        dataType: "json",
-        async: false,
-        success: function(json) {
-            var items = json.listclustersresponse.cluster;  
-            var container = $podNode.find("#clusters_container").empty();
-            if (items != null && items.length > 0) {					    
-                for (var i = 0; i < items.length; i++) {
-                    $clusterNode = $("#leftmenu_cluster_node_template").clone(true); 
-                    var item = items[i];
-                    clusterJSONToTreeNode(item, $clusterNode);
-                    container.append($clusterNode.show());                                     
-                    if(newClusterName != null && fromdb(item.name) == newClusterName && noClicking!=true) {   
-                        $clusterNode.find("#cluster_name").click();                
-                    }                 
-                }                         
-                $podNode.find("#pod_arrow").removeClass("white_nonexpanded_close").addClass("expanded_open");
-                $podNode.find("#pod_content").show();                  
-                
-                if(existingClusterId != null && noClicking!=true) {
-                    $clusterNode = $("#cluster_"+existingClusterId);
-                    $clusterNode.find("#cluster_name").click();	
-                }                      
-            }            
-        }
-    });	
-    
-    return $clusterNode;
-}
-*/
-
 function selectRowInZoneTree($rowToSelect) { 
     if($selectedSubMenu != null)
         $selectedSubMenu.removeClass("selected");    
@@ -866,7 +827,8 @@ function initAddHostShortcut() {
 		        // validate values
 		        var isValid = true;	
 		        isValid &= validateDropDownBox("Zone", $thisDialog.find("#zone_dropdown"), $thisDialog.find("#zone_dropdown_errormsg"));	
-		        isValid &= validateDropDownBox("Pod", $thisDialog.find("#pod_dropdown"), $thisDialog.find("#pod_dropdown_errormsg"));									
+		        isValid &= validateDropDownBox("Pod", $thisDialog.find("#pod_dropdown"), $thisDialog.find("#pod_dropdown_errormsg"));		        
+		        isValid &= validateDropDownBox("Cluster", $thisDialog.find("#cluster_select"), $thisDialog.find("#cluster_select_errormsg"));			        								
 		        isValid &= validateString("Host name", $thisDialog.find("#host_hostname"), $thisDialog.find("#host_hostname_errormsg"));
 		        isValid &= validateString("User name", $thisDialog.find("#host_username"), $thisDialog.find("#host_username_errormsg"));
 		        isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));					
@@ -899,9 +861,7 @@ function initAddHostShortcut() {
 		        array1.push("&password="+todb(password));
 									            
 		        var clusterId = $thisDialog.find("#cluster_select").val();			    
-			    if (clusterId != '-1') {
-				    array1.push("&clusterid="+clusterId);
-			    }		        				
+			    array1.push("&clusterid="+clusterId);			    		        				
 				
 		        var hostname = trim($thisDialog.find("#host_hostname").val());
 		        var url;					
@@ -1481,10 +1441,7 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 	                if(!$clusterSelect.val())
 	                	$("option", $clusterSelect)[0].attr("selected", "selected");
 	                $clusterSelect.change();	                
-                }
-                else {
-				    $clusterSelect.append("<option value='-1'>None Available</option>");                    
-                }
+                }               
             }
         });
     });        
