@@ -789,7 +789,7 @@ function updateHostStateInMidMenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.find("#icon_container").show();
 } 
 
-function enableConsoleHover($viewConsoleTemplate) {
+function enableConsoleHover($viewConsoleContainer, $viewConsoleTemplate) {
     var imgUrl = $viewConsoleTemplate.data("imgUrl");		
     var time = new Date();	
 	
@@ -797,7 +797,7 @@ function enableConsoleHover($viewConsoleTemplate) {
 	$viewConsoleTemplate.find("#box1").css("background", "url("+imgUrl+"&t="+time.getTime()+")");
 				
 	var index = 0;
-	$viewConsoleTemplate.everyTime(2000, function() {
+	$viewConsoleContainer.everyTime(5000, function() {
 		var time = new Date();	
 		if ((index % 2) == 0) {
 			$viewConsoleTemplate.find("#box0").hide().css("background", "url("+imgUrl+"&t="+time.getTime()+")");
@@ -810,8 +810,8 @@ function enableConsoleHover($viewConsoleTemplate) {
 	}, 0);	
 } 
   
-function disableConsoleHover($viewConsoleTemplate) {
-    $viewConsoleTemplate.stopTime();		  
+function disableConsoleHover($viewConsoleContainer) {
+    $viewConsoleContainer.stopTime();		  
 } 
   
 function resetViewConsoleAction(jsonObj, $detailsTab) {
@@ -822,12 +822,8 @@ function resetViewConsoleAction(jsonObj, $detailsTab) {
 	    //console proxy thumbnail
 	    var imgUrl = "console?cmd=thumbnail&vm=" + jsonObj.id + "&w=144&h=110";		
 		$viewConsoleTemplate.data("imgUrl", imgUrl);
-		$viewConsoleTemplate.bind("mouseover", function(event) {
-		    enableConsoleHover($(this));
-	    });
-	    $viewConsoleTemplate.bind("mouseout", function(event) {
-		    disableConsoleHover($(this));		      
-	    });
+		disableConsoleHover($viewConsoleContainer);
+		enableConsoleHover($viewConsoleContainer, $viewConsoleTemplate);
 				
 		//console proxy popup
 		$viewConsoleTemplate.data("proxyUrl", "console?cmd=access&vm=" + jsonObj.id).data("vmId",jsonObj.id).click(function(event) {				
