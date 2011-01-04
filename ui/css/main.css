@@ -1585,8 +1585,7 @@ a:hover {
 }
 
 .leftmenu_firstindent{
-	min-width:200px;
-	max-width:auto;
+	width:90%;
 	height:auto;
 	float:left;
 	margin:7px 0 0 10px;
