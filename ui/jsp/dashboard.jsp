@@ -27,11 +27,11 @@
         </div>
         <div class="grid_container" id="system_wide_capacity_container">
             <div class="grid_header">
-                <div class="grid_header_cell" style="width: 50%; border: none;">
+                <div class="grid_header_cell" style="width: 40%; border: none;">
                     <div class="grid_header_title">
                         System Wide Capacity</div>
                 </div>
-                <div class="grid_header_cell" style="width: 50%; border: none;">
+                <div class="grid_header_cell" style="width: 60%; border: none;">
                     <div class="grid_header_formbox">
                         <label for="zone" class="label">
                             Zone:</label>
@@ -45,7 +45,7 @@
                 </div>
             </div>
             <div class="dbrow even" id="public_ip_address">
-                <div class="dbrow_cell" style="width: 29%;">
+                <div class="dbrow_cell" style="width: 35%;">
                     <div class="dbgraph_titlebox">
                         <h2>
                             Public IP Addresses</h2>
@@ -56,7 +56,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="dbrow_cell" style="width: 58%; border: none;">
+                <div class="dbrow_cell" style="width: 52%; border: none;">
                     <div class="db_barbox low" id="bar_chart">
                     </div>
                 </div>
@@ -66,7 +66,7 @@
                 </div>
             </div>
             <div class="dbrow odd" id="private_ip_address">
-                <div class="dbrow_cell" style="width: 29%;">
+                <div class="dbrow_cell" style="width: 35%;">
                     <div class="dbgraph_titlebox">
                         <h2>
                             Private IP Addresses</h2>
@@ -77,7 +77,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="dbrow_cell" style="width: 58%; border: none;">
+                <div class="dbrow_cell" style="width: 52%; border: none;">
                     <div class="db_barbox low" id="bar_chart">
                     </div>
                 </div>
@@ -87,7 +87,7 @@
                 </div>
             </div>
             <div class="dbrow even" id="memory_allocated">
-                <div class="dbrow_cell" style="width: 29%;">
+                <div class="dbrow_cell" style="width: 35%;">
                     <div class="dbgraph_titlebox">
                         <h2>
                             Memory Allocated</h2>
@@ -98,7 +98,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="dbrow_cell" style="width: 58%; border: none;">
+                <div class="dbrow_cell" style="width: 52%; border: none;">
                     <div class="db_barbox mid" id="bar_chart">
                     </div>
                 </div>
@@ -108,7 +108,7 @@
                 </div>
             </div>
             <div class="dbrow odd" id="cpu">
-                <div class="dbrow_cell" style="width: 29%;">
+                <div class="dbrow_cell" style="width: 35%;">
                     <div class="dbgraph_titlebox">
                         <h2>
                             CPU</h2>
@@ -119,7 +119,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="dbrow_cell" style="width: 58%; border: none;">
+                <div class="dbrow_cell" style="width: 52%; border: none;">
                     <div class="db_barbox high" id="bar_chart">
                     </div>
                 </div>
@@ -129,7 +129,7 @@
                 </div>
             </div>
             <div class="dbrow even" id="primary_storage_allocated">
-                <div class="dbrow_cell" style="width: 29%;">
+                <div class="dbrow_cell" style="width: 35%;">
                     <div class="dbgraph_titlebox">
                         <h2>
                             Primary Storage Allocated</h2>
@@ -140,7 +140,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="dbrow_cell" style="width: 58%; border: none;">
+                <div class="dbrow_cell" style="width: 52%; border: none;">
                     <div class="db_barbox low" id="bar_chart">
                     </div>
                 </div>
@@ -150,7 +150,7 @@
                 </div>
             </div>
             <div class="dbrow odd" id="primary_storage_used">
-                <div class="dbrow_cell" style="width: 29%;">
+                <div class="dbrow_cell" style="width: 35%;">
                     <div class="dbgraph_titlebox">
                         <h2>
                             Primary Storage Used</h2>
@@ -161,7 +161,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="dbrow_cell" style="width: 58%; border: none;">
+                <div class="dbrow_cell" style="width: 52%; border: none;">
                     <div class="db_barbox low" id="bar_chart">
                     </div>
                 </div>
@@ -171,7 +171,7 @@
                 </div>
             </div>
             <div class="dbrow even" id="secondary_storage_used">
-                <div class="dbrow_cell" style="width: 29%;">
+                <div class="dbrow_cell" style="width: 35%;">
                     <div class="dbgraph_titlebox">
                         <h2>
                             Secondary Storage Used</h2>
@@ -182,7 +182,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="dbrow_cell" style="width: 58%; border: none;">
+                <div class="dbrow_cell" style="width: 52%; border: none;">
                     <div class="db_barbox low" id="bar_chart">
                     </div>
                 </div>
