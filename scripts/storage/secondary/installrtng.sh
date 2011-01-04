@@ -1,9 +1,9 @@
 #!/bin/bash
 # $Id: installrtng.sh 11251 2010-07-23 23:40:44Z abhishek $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/secondary/installrtng.sh $
 usage() {
-  printf "Usage: %s: -m <secondary storage mount point> -f <system vm template file> [-h <hypervisor name: kvm|vmware|xen>]\n" $(basename $0) >&2
+  printf "Usage: %s: -m <secondary storage mount point> -f <system vm template file> [-h <hypervisor name: kvm|vmware|xenserver>]\n" $(basename $0) >&2
   printf "or\n" >&2
-  printf "%s: -m <secondary storage mount point> -u <http url for system vm template> [-h <hypervisor name: kvm|vmware|xen>]\n" $(basename $0) >&2
+  printf "%s: -m <secondary storage mount point> -u <http url for system vm template> [-h <hypervisor name: kvm|vmware|xenserver>]\n" $(basename $0) >&2
 }
 
 mflag=
@@ -58,7 +58,7 @@ if [ "$hyper" == "kvm" ]
 then
    ext="qcow2"
    templateId=3
-elif [ "$hyper" == "xen" ]
+elif [ "$hyper" == "xenserver" ]
 then
    ext="vhd"
    templateId=1
