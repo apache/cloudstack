@@ -249,6 +249,7 @@ public class DbUtil {
         Connection conn = getConnectionForGlobalLocks(name, false);
         if(conn == null) {
             s_logger.error("Unable to acquire DB connection for global lock system");
+            assert(false);
         	return false;
         }
         

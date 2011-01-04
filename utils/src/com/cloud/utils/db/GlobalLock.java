@@ -67,18 +67,20 @@ public class GlobalLock {
 	public int releaseRef() {
 		int refCount;
 		
-		synchronized(s_lockMap) {	// // lock in sequence to prevent deadlock
-			synchronized(this) {
-				referenceCount--;
-				refCount = referenceCount;
-				
-				if(referenceCount < 0)
-					s_logger.warn("Unmatched Global lock " + name + " reference usage detected, check your code!");
-				
-				if(referenceCount == 0)
-					releaseInternLock(name);
-			}
+		boolean needToRemove = false;
+		synchronized(this) {
+			referenceCount--;
+			refCount = referenceCount;
+			
+			if(referenceCount < 0)
+				s_logger.warn("Unmatched Global lock " + name + " reference usage detected, check your code!");
+			
+			if(referenceCount == 0)
+				needToRemove = true;
 		}
+		
+		if(needToRemove)
+			releaseInternLock(name);
 		
 		return refCount;
 	}
@@ -100,7 +102,11 @@ public class GlobalLock {
 	
 	private static void releaseInternLock(String name) {
 		synchronized(s_lockMap) {
-			s_lockMap.remove(name);
+			GlobalLock lock = s_lockMap.get(name);
+			assert(lock != null);
+			
+			if(lock.referenceCount == 0)
+				s_lockMap.remove(name);
 		}
 	}
 	
@@ -136,21 +142,25 @@ public class GlobalLock {
 						
 						continue;
 					} else {
-						// we will discount the time that has been spent in previous waiting
+						// take ownership temporarily to prevent others enter into stage of acquiring DB lock
 						ownerThread = Thread.currentThread();
-						if(DbUtil.getGlobalLock(name, remainingMilliSeconds / 1000)) {
-							lockCount++;
-							holdingStartTick = System.currentTimeMillis();
-							
-							// keep the lock in the intern map when we got the lock from database
-							addRef();
-							
-							if(s_logger.isTraceEnabled())
-								s_logger.trace("lock " + name + " is acquired, lock count :" + lockCount);
-							return true;
-						} else {
-							ownerThread = null;
-						}
+						addRef();
+					}
+				}
+
+				if(DbUtil.getGlobalLock(name, remainingMilliSeconds / 1000)) {
+					synchronized(this) {
+						lockCount++;
+						holdingStartTick = System.currentTimeMillis();
+						
+						if(s_logger.isTraceEnabled())
+							s_logger.trace("lock " + name + " is acquired, lock count :" + lockCount);
+						return true;
+					}
+				} else {
+					synchronized(this) {
+						ownerThread = null;
+						releaseRef();
 						return false;
 					}
 				}
