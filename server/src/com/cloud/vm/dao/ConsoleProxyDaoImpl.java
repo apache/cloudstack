@@ -38,10 +38,10 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
+import com.cloud.vm.VirtualMachine.State;
 
 @Local(value={ConsoleProxyDao.class})
 public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> implements ConsoleProxyDao {
@@ -304,10 +304,11 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
         Transaction txn = Transaction.currentTxn();;
         PreparedStatement pstmt = null;
         try {
-        	if(countAllPoolTypes)
-        		pstmt = txn.prepareAutoCloseStatement(STORAGE_POOL_HOST_INFO);
-        	else
-        		pstmt = txn.prepareAutoCloseStatement(SHARED_STORAGE_POOL_HOST_INFO);
+        	if(countAllPoolTypes) {
+                pstmt = txn.prepareAutoCloseStatement(STORAGE_POOL_HOST_INFO);
+            } else {
+                pstmt = txn.prepareAutoCloseStatement(SHARED_STORAGE_POOL_HOST_INFO);
+            }
             pstmt.setLong(1, dcId);
             
             ResultSet rs = pstmt.executeQuery();
@@ -329,8 +330,9 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
             pstmt.setLong(1, proxyVmId);
             
             ResultSet rs = pstmt.executeQuery();
-            if(rs != null && rs.first())
-            	return rs.getInt(1);
+            if(rs != null && rs.first()) {
+                return rs.getInt(1);
+            }
         } catch (SQLException e) {
         } catch (Throwable e) {
         }
@@ -346,8 +348,9 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
             pstmt.setLong(1, proxyVmId);
             
             ResultSet rs = pstmt.executeQuery();
-            if(rs != null && rs.first())
-            	return rs.getInt(1);
+            if(rs != null && rs.first()) {
+                return rs.getInt(1);
+            }
         } catch (SQLException e) {
         } catch (Throwable e) {
         }

@@ -33,11 +33,11 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.vm.NicVO;
-import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
+import com.cloud.vm.VirtualMachine.State;
 
 @Local(value={UserVmDao.class})
 public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements UserVmDao {
@@ -141,6 +141,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
     }
     
+    @Override
     public List<UserVmVO> listByAccountAndPod(long accountId, long podId) {
     	SearchCriteria<UserVmVO> sc = AccountPodSearch.create();
     	sc.setParameters("account", accountId);
@@ -149,6 +150,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     	return listIncludingRemovedBy(sc);
     }
     
+    @Override
     public List<UserVmVO> listByAccountAndDataCenter(long accountId, long dcId) {
         SearchCriteria<UserVmVO> sc = AccountDataCenterSearch.create();
         sc.setParameters("account", accountId);
@@ -248,12 +250,14 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     	return listBy(sc);
     }
     
+    @Override
     public List<UserVmVO> listByAccountId(long id) {
         SearchCriteria<UserVmVO> sc = AccountSearch.create();
         sc.setParameters("account", id);
         return listBy(sc);
     }
     
+    @Override
     public List<UserVmVO> listByHostId(Long id) {
         SearchCriteria<UserVmVO> sc = HostSearch.create();
         sc.setParameters("host", id);
@@ -269,6 +273,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         return listBy(sc);
     }
     
+    @Override
     public List<UserVmVO> listRunningByHostId(long hostId) {
         SearchCriteria<UserVmVO> sc = HostRunningSearch.create();
         sc.setParameters("host", hostId);
@@ -277,6 +282,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         return listBy(sc);
     }
     
+    @Override
     public UserVmVO findByName(String name) {
         SearchCriteria<UserVmVO> sc = NameSearch.create();
         sc.setParameters("name", name);

@@ -61,10 +61,10 @@ import com.cloud.utils.script.Script;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -164,8 +164,9 @@ public class Db20to21MigrationUtil {
 				String gateway = readInput();
 				pod.setGateway(gateway);
 				_podDao.update(pod.getId(), pod);
-				if(createCluster)
-					migrateHostsInPod(zoneId, pod.getId(), pod.getName());
+				if(createCluster) {
+                    migrateHostsInPod(zoneId, pod.getId(), pod.getName());
+                }
 				
 				System.out.println("Set last_host_id for VMs in pod " + pod.getName());
 				migrateVmInstanceLastHostId(zoneId, pod.getId());
@@ -689,8 +690,9 @@ public class Db20to21MigrationUtil {
 					vol.setDeviceId(deviceId);
 					
 					// don't use device ID 3
-					if(++deviceId == 3)
-						deviceId++;
+					if(++deviceId == 3) {
+                        deviceId++;
+                    }
 				} else {
 					System.out.println("Unsupported volume type found for volume: " + vol.getName());
 				}
@@ -728,8 +730,9 @@ public class Db20to21MigrationUtil {
 		
 		System.out.print("Are you migrating from 2.0 Premium Edition? (yes/no): ");
 		String answer = readInput();
-		if(answer != null && answer.equalsIgnoreCase("yes"))
-			_isPremium = true;
+		if(answer != null && answer.equalsIgnoreCase("yes")) {
+            _isPremium = true;
+        }
 		
 		// Save default Configuration Table values
 		List<String> categories = Config.getCategories();

@@ -83,8 +83,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value={SecurityGroupManager.class, SecurityGroupService.class})
@@ -181,49 +181,61 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 		
 		@Override
 		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
+			if (this == obj) {
+                return true;
+            }
+			if (obj == null) {
+                return false;
+            }
+			if (getClass() != obj.getClass()) {
+                return false;
+            }
 			PortAndProto other = (PortAndProto) obj;
-			if (endPort != other.endPort)
-				return false;
+			if (endPort != other.endPort) {
+                return false;
+            }
 			if (proto == null) {
-				if (other.proto != null)
-					return false;
-			} else if (!proto.equals(other.proto))
-				return false;
-			if (startPort != other.startPort)
-				return false;
+				if (other.proto != null) {
+                    return false;
+                }
+			} else if (!proto.equals(other.proto)) {
+                return false;
+            }
+			if (startPort != other.startPort) {
+                return false;
+            }
 			return true;
 		}
 		
 		@Override
 		public int compareTo(PortAndProto obj) {
-			if (this == obj)
-				return 0;
-			if (obj == null)
-				return 1;
+			if (this == obj) {
+                return 0;
+            }
+			if (obj == null) {
+                return 1;
+            }
 			if (proto == null) {
-				if (obj.proto != null)
-					return -1;
-				else
-					return 0;
+				if (obj.proto != null) {
+                    return -1;
+                } else {
+                    return 0;
+                }
 			}
 			if (!obj.proto.equalsIgnoreCase(proto)) {
 				return proto.compareTo(obj.proto);
 			}
-			if (startPort < obj.startPort)
-				return -1;
-			else if (startPort > obj.startPort)
-				return 1;
+			if (startPort < obj.startPort) {
+                return -1;
+            } else if (startPort > obj.startPort) {
+                return 1;
+            }
 			
-			if (endPort < obj.endPort)
-				return -1;
-			else if (endPort > obj.endPort)
-				return 1;
+			if (endPort < obj.endPort) {
+                return -1;
+            } else if (endPort > obj.endPort) {
+                return 1;
+            }
 			
 			return 0;
 		}
@@ -289,8 +301,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 				}else if (rule.getAllowedSourceIpCidr() != null) {
 					cidrs.add(rule.getAllowedSourceIpCidr());
 				}
-				if (cidrs.size() > 0)
-					allowed.put(portAndProto, cidrs);
+				if (cidrs.size() > 0) {
+                    allowed.put(portAndProto, cidrs);
+                }
 			}
 		}
 
@@ -313,8 +326,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	    if (!_enabled) {
 	        return;
 	    }
-		if (delayMs == null)
-			delayMs = new Long(100l);
+		if (delayMs == null) {
+            delayMs = new Long(100l);
+        }
 		
 		for (Long vmId: affectedVms) {
 			Transaction txn = Transaction.currentTxn();
@@ -1258,8 +1272,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         
         if(id != null){
         	SecurityGroupRulesVO secGrp = _securityGroupRulesDao.findById(id); 
-        	if(secGrp != null)
-        		securityRulesList.add(secGrp);
+        	if(secGrp != null) {
+                securityRulesList.add(secGrp);
+            }
         	return securityRulesList;
         }
         

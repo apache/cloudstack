@@ -151,11 +151,11 @@ import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.State;
 import com.cloud.vm.SystemVm;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmStats;
 
 public class ApiResponseHelper implements ResponseGenerator {

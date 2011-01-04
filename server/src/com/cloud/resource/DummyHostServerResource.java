@@ -30,10 +30,9 @@ import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.host.Host.Type;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.net.MacAddress;
-import com.cloud.vm.State;
+import com.cloud.vm.VirtualMachine;
 
 public class DummyHostServerResource extends ServerResourceBase {
 
@@ -59,7 +58,7 @@ public class DummyHostServerResource extends ServerResourceBase {
 
 	@Override
 	public PingCommand getCurrentStatus(long id) {
-        HashMap<String, State> newStates = new HashMap<String, State>();
+        HashMap<String, VirtualMachine.State> newStates = new HashMap<String, VirtualMachine.State>();
         return new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id, newStates);
 	}
 

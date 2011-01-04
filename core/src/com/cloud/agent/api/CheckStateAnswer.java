@@ -17,7 +17,7 @@
  */
 package com.cloud.agent.api;
 
-import com.cloud.vm.State;
+import com.cloud.vm.VirtualMachine.State;
 
 /**
  *  This returns an answer on the state of the VM.  If the state, is Error

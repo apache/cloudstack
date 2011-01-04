@@ -1,6 +1,5 @@
 package com.cloud.storage.upload;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -30,7 +29,6 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -52,7 +50,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.State;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 /**
@@ -105,9 +103,9 @@ public class UploadMonitorImpl implements UploadMonitor {
 		List<UploadVO> uploadsInProgress =
 			_uploadDao.listByTypeUploadStatus(typeId, type, UploadVO.Status.UPLOAD_IN_PROGRESS);
 		
-		if(uploadsInProgress.size() > 0)
-		    return true;
-		else if (type == Type.VOLUME && _uploadDao.listByTypeUploadStatus(typeId, type, UploadVO.Status.COPY_IN_PROGRESS).size() > 0){
+		if(uploadsInProgress.size() > 0) {
+            return true;
+        } else if (type == Type.VOLUME && _uploadDao.listByTypeUploadStatus(typeId, type, UploadVO.Status.COPY_IN_PROGRESS).size() > 0){
 		    return true;
 		}
 		return false;
@@ -182,15 +180,17 @@ public class UploadMonitorImpl implements UploadMonitor {
 	    String errorString = "";
 	    boolean success = false;
 	    List<HostVO> storageServers = _serverDao.listByTypeDataCenter(Host.Type.SecondaryStorage, dataCenterId);
-	    if(storageServers == null ) 
-	        throw new CloudRuntimeException("No Storage Server found at the datacenter - " +dataCenterId);
+	    if(storageServers == null ) {
+            throw new CloudRuntimeException("No Storage Server found at the datacenter - " +dataCenterId);
+        }
 	    
 	    Type type = (template.getFormat() == ImageFormat.ISO) ? Type.ISO : Type.TEMPLATE ;
 	    
 	    //Check if it already exists.
 	    List<UploadVO> extractURLList = _uploadDao.listByTypeUploadStatus(template.getId(), type, UploadVO.Status.DOWNLOAD_URL_CREATED);	    
-	    if (extractURLList.size() > 0) 
-	        return extractURLList.get(0);
+	    if (extractURLList.size() > 0) {
+            return extractURLList.get(0);
+        }
 	    
 	    // It doesn't exist so create a DB entry.
 	    HostVO sserver = storageServers.get(0);
@@ -359,9 +359,15 @@ public class UploadMonitorImpl implements UploadMonitor {
 	
 	public String getEvent(Type type){
 					
-		if(type == Type.TEMPLATE) return EventTypes.EVENT_TEMPLATE_EXTRACT;
-		if(type == Type.ISO) return EventTypes.EVENT_ISO_EXTRACT;
-		if(type == Type.VOLUME) return EventTypes.EVENT_VOLUME_EXTRACT;			
+		if(type == Type.TEMPLATE) {
+            return EventTypes.EVENT_TEMPLATE_EXTRACT;
+        }
+		if(type == Type.ISO) {
+            return EventTypes.EVENT_ISO_EXTRACT;
+        }
+		if(type == Type.VOLUME) {
+            return EventTypes.EVENT_VOLUME_EXTRACT;
+        }			
 		
 		return null;
 	}	

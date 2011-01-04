@@ -17,7 +17,7 @@
  */
 package com.cloud.agent.api;
 
-import com.cloud.vm.State;
+import com.cloud.vm.VirtualMachine.State;
 
 public class CheckVirtualMachineAnswer extends Answer {
     

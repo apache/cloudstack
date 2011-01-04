@@ -18,17 +18,13 @@ version.
  */
 package com.cloud.agent.api;
 
-import java.lang.reflect.Type;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
-import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.agent.transport.Request;
 import com.cloud.host.Host;
 import com.cloud.utils.Pair;
-import com.cloud.vm.State;
+import com.cloud.vm.VirtualMachine.State;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -37,10 +33,8 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import com.google.gson.reflect.TypeToken;
 
 
 public class PingRoutingWithNwGroupsCommand extends PingRoutingCommand {

@@ -28,7 +28,7 @@ import javax.persistence.SecondaryTable;
 import javax.persistence.SecondaryTables;
 import javax.persistence.Table;
 
-import com.cloud.vm.State;
+import com.cloud.vm.VirtualMachine.State;
 
 @Entity
 @Table(name=("security_group_vm_map"))

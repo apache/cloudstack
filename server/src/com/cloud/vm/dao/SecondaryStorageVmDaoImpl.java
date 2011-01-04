@@ -34,12 +34,11 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
-import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
+import com.cloud.vm.VirtualMachine.State;
 
 @Local(value={SecondaryStorageVmDao.class})
 public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVmVO, Long> implements SecondaryStorageVmDao {

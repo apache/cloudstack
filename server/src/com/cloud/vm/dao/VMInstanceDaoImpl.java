@@ -34,11 +34,10 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
-import com.cloud.vm.State;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachine.Type;
 
 @Local(value = { VMInstanceDao.class })

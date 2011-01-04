@@ -83,7 +83,7 @@ public interface VirtualMachineManager extends Manager {
 	
     <T extends VMInstanceVO> T advanceStart(T vm, Map<String, Object> params, User caller, Account account, HypervisorType hyperType) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
     
-	<T extends VMInstanceVO> boolean advanceStop(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+	<T extends VMInstanceVO> boolean advanceStop(T vm, boolean forced, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 	
 	<T extends VMInstanceVO> boolean advanceExpunge(T vm, User caller, Account account) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 	

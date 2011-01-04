@@ -30,8 +30,8 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
-import com.cloud.vm.State;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine.State;
 
 @Local(value=Investigator.class)
 public class CheckOnAgentInvestigator extends AdapterBase implements Investigator {

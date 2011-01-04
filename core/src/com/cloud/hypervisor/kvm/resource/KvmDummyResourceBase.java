@@ -12,10 +12,9 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.xen.resource.CitrixResourceBase;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
-import com.cloud.vm.State;
+import com.cloud.vm.VirtualMachine.State;
 
 public class KvmDummyResourceBase extends ServerResourceBase implements ServerResource {
 	private String _zoneId;

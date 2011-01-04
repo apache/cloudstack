@@ -27,7 +27,7 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.vm.State;
+import com.cloud.vm.VirtualMachine.State;
 
 @Local(value={SecurityGroupVMMapDao.class})
 public class SecurityGroupVMMapDaoImpl extends GenericDaoBase<SecurityGroupVMMapVO, Long> implements SecurityGroupVMMapDao {
@@ -75,6 +75,7 @@ public class SecurityGroupVMMapDaoImpl extends GenericDaoBase<SecurityGroupVMMap
         ListByVmIdGroupId.done();
     }
 
+    @Override
     public List<SecurityGroupVMMapVO> listByIpAndInstanceId(String ipAddress, long vmId) {
         SearchCriteria<SecurityGroupVMMapVO> sc = ListByIpAndVmId.create();
         sc.setParameters("ipAddress", ipAddress);

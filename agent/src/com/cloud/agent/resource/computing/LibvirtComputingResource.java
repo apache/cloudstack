@@ -109,19 +109,18 @@ import com.cloud.agent.api.MirrorCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
-import com.cloud.agent.api.SecurityIngressRuleAnswer;
-import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.PingTestCommand;
-import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.SecurityIngressRuleAnswer;
+import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -144,8 +143,6 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.api.to.VirtualMachineTO.Monitor;
-import com.cloud.agent.api.to.VirtualMachineTO.SshMonitor;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.resource.computing.KVMHABase.NfsStoragePool;
 import com.cloud.agent.resource.computing.KVMHABase.PoolType;
@@ -193,8 +190,8 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineName;
 
 
@@ -3746,8 +3743,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     
     private boolean destroy_network_rules_for_vm(String vmName) {
-    	if (!_can_bridge_firewall)
-    		return false;
+    	if (!_can_bridge_firewall) {
+            return false;
+        }
     	Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
     	cmd.add("destroy_network_rules_for_vm");
     	cmd.add("--vmname");
@@ -3760,8 +3758,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     
     private boolean default_network_rules(String vmName, String pubIP, long vmId, String mac) {
-    	if (!_can_bridge_firewall)
-    		return false;
+    	if (!_can_bridge_firewall) {
+            return false;
+        }
     	Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
     	cmd.add("default_network_rules");
     	cmd.add("--vmname", vmName);
@@ -3777,8 +3776,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     
     private boolean default_network_rules_for_systemvm(String vmName) {
-    	if (!_can_bridge_firewall)
-    		return false;
+    	if (!_can_bridge_firewall) {
+            return false;
+        }
     	Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
     	cmd.add("default_network_rules_systemvm");
     	cmd.add("--vmname");
@@ -3791,8 +3791,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     
     private boolean add_network_rules(String vmName, String vmId, String guestIP, String sig, String seq, String mac, String rules) {
-    	if (!_can_bridge_firewall)
-    		return false;
+    	if (!_can_bridge_firewall) {
+            return false;
+        }
     	String newRules = rules.replace(" ", ";");
     	Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
     	cmd.add("add_network_rules");

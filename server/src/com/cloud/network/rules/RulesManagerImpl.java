@@ -57,6 +57,7 @@ import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value={RulesManager.class, RulesService.class})
@@ -117,7 +118,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             return;
         }
         
-        if (userVm.getState() == com.cloud.vm.State.Destroyed || userVm.getState() == com.cloud.vm.State.Expunging) {
+        if (userVm.getState() == VirtualMachine.State.Destroyed || userVm.getState() == VirtualMachine.State.Expunging) {
             throw new InvalidParameterValueException("Invalid user vm: " + userVm.getId());
         }
         

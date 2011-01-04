@@ -22,7 +22,7 @@ import java.util.List;
 
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.State;
+import com.cloud.vm.VirtualMachine.State;
 
 public interface SecurityGroupVMMapDao extends GenericDao<SecurityGroupVMMapVO, Long> {
     List<SecurityGroupVMMapVO> listByIpAndInstanceId(String ipAddress, long instanceId);

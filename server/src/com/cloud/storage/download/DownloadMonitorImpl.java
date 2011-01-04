@@ -68,7 +68,7 @@ import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.State;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 

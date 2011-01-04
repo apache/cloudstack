@@ -41,6 +41,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class AgentMonitor extends Thread implements Listener {
@@ -139,7 +140,7 @@ public class AgentMonitor extends Thread implements Listener {
                         boolean stillWorking = false;
                         for (Long id : ids) {
                             VMInstanceVO instance = _vmDao.findById(id);
-                            if (instance != null && (instance.getState() == com.cloud.vm.State.Starting || instance.getState() == com.cloud.vm.State.Stopping || instance.getState() == com.cloud.vm.State.Running || instance.getState() == com.cloud.vm.State.Migrating)) {
+                            if (instance != null && (instance.getState() == VirtualMachine.State.Starting || instance.getState() == VirtualMachine.State.Stopping || instance.getState() == VirtualMachine.State.Running || instance.getState() == VirtualMachine.State.Migrating)) {
                                 stillWorking = true;
                                 break;
                             }

@@ -21,7 +21,7 @@ import java.util.Date;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
-import com.cloud.vm.State;
+import com.cloud.vm.VirtualMachine.State;
 import com.google.gson.annotations.SerializedName;
 
 public class DomainRouterResponse extends BaseResponse {
@@ -104,6 +104,7 @@ public class DomainRouterResponse extends BaseResponse {
     private String domainName;
     
     
+    @Override
     public Long getObjectId() {
     	return getId();
     }

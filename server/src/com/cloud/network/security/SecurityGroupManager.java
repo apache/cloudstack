@@ -22,7 +22,7 @@ import java.util.List;
 
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import com.cloud.vm.State;
+import com.cloud.vm.VirtualMachine.State;
 
 /**
  * Ensures that network firewall rules stay updated as VMs go up and down

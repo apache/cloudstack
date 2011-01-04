@@ -50,10 +50,10 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.UserVmDao;
@@ -124,12 +124,14 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
             
         	if(s_logger.isDebugEnabled()) {
         		s_logger.debug("Found " + vmsOnHost.size() + " VM instances are alloacated at host " + spHost.getHostId() + " with local storage pool " + pool.getName());
-        		for(Long vmId : vmsOnHost)
-        			s_logger.debug("VM " + vmId + " is allocated on host " + spHost.getHostId() + " with local storage pool " + pool.getName());
+        		for(Long vmId : vmsOnHost) {
+                    s_logger.debug("VM " + vmId + " is allocated on host " + spHost.getHostId() + " with local storage pool " + pool.getName());
+                }
         	}
         	
-        	if(hostHasCpuMemoryCapacity(spHost.getHostId(), vmsOnHost, vm))
-        		return pool;
+        	if(hostHasCpuMemoryCapacity(spHost.getHostId(), vmsOnHost, vm)) {
+                return pool;
+            }
         	
             s_logger.debug("Found pool " + pool.getId() + " but host doesn't fit.");
         }
@@ -143,8 +145,9 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
         ServiceOffering so = null;
     	if(vm.getType() == VirtualMachine.Type.User) {
     		UserVmVO userVm = _vmDao.findById(vm.getId());
-    		if (userVm != null) 
-    			so = _offeringDao.findById(userVm.getServiceOfferingId());
+    		if (userVm != null) {
+                so = _offeringDao.findById(userVm.getServiceOfferingId());
+            }
     	} else if(vm.getType() == VirtualMachine.Type.ConsoleProxy) {
     		so = new ServiceOfferingVO("Fake Offering For DomP", 1,
 				_proxyRamSize, 0, 0, 0, false, null, NetworkOffering.GuestIpType.Virtual, false, true, null, true);
@@ -158,9 +161,10 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     	}
     	
     	long usedMemory = calcHostAllocatedCpuMemoryCapacity(vmOnHost, CapacityVO.CAPACITY_TYPE_MEMORY);
-    	if(s_logger.isDebugEnabled())
-    		s_logger.debug("Calculated static-allocated memory for VMs on host " + hostId + ": " + usedMemory + " bytes, requesting memory: "
+    	if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Calculated static-allocated memory for VMs on host " + hostId + ": " + usedMemory + " bytes, requesting memory: "
     			+ (so != null ? so.getRamSize()*1024L*1024L : "") + " bytes");
+        }
     	
     	SearchCriteria<CapacityVO> sc = _capacityDao.createSearchCriteria();
     	sc.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
@@ -168,8 +172,9 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     	List<CapacityVO> capacities = _capacityDao.search(sc, null);
     	if(capacities.size() > 0) {
     		if(capacities.get(0).getTotalCapacity() < usedMemory + (so != null ? so.getRamSize()* 1024L * 1024L : 0)) {
-    			if(s_logger.isDebugEnabled())
-    				s_logger.debug("Host " + hostId + " runs out of memory capacity");
+    			if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Host " + hostId + " runs out of memory capacity");
+                }
     			return false;
     		}
     	} else {
@@ -178,9 +183,10 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     	}
     	
     	long usedCpu = calcHostAllocatedCpuMemoryCapacity(vmOnHost, CapacityVO.CAPACITY_TYPE_CPU);
-    	if(s_logger.isDebugEnabled())
-    		s_logger.debug("Calculated static-allocated CPU for VMs on host " + hostId + ": " + usedCpu + " GHz, requesting cpu: "
+    	if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Calculated static-allocated CPU for VMs on host " + hostId + ": " + usedCpu + " GHz, requesting cpu: "
     			+ (so != null ? so.getCpu()*so.getSpeed() : "") + " GHz");
+        }
     	
     	sc = _capacityDao.createSearchCriteria();
     	sc.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
@@ -188,8 +194,9 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     	capacities = _capacityDao.search(sc, null);
     	if(capacities.size() > 0) {
     		if(capacities.get(0).getTotalCapacity() < usedCpu + (so != null ? so.getCpu() * so.getSpeed() : 0)) {
-    			if(s_logger.isDebugEnabled())
-    				s_logger.debug("Host " + hostId + " runs out of CPU capacity");
+    			if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Host " + hostId + " runs out of CPU capacity");
+                }
     			return false;
     		}
     	} else {
@@ -201,25 +208,29 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     }
     
     private boolean skipCalculation(VMInstanceVO vm) {
-    	if(vm == null)
-    		return true;
+    	if(vm == null) {
+            return true;
+        }
     	
     	if(vm.getState() == State.Expunging) {
-    		if(s_logger.isDebugEnabled())
-    			s_logger.debug("Skip counting capacity for Expunging VM : " + vm.getInstanceName());
+    		if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Skip counting capacity for Expunging VM : " + vm.getInstanceName());
+            }
     		return true;
     	}
     	
-    	if(vm.getState() == State.Destroyed && vm.getType() != VirtualMachine.Type.User)
-    		return true;
+    	if(vm.getState() == State.Destroyed && vm.getType() != VirtualMachine.Type.User) {
+            return true;
+        }
     	
     	if(vm.getState() == State.Stopped || vm.getState() == State.Destroyed) {
     		// for stopped/Destroyed VMs, we will skip counting it if it hasn't been used for a while
     		
     		long millisecondsSinceLastUpdate = DateUtil.currentGMTTime().getTime() - vm.getUpdateTime().getTime();
     		if(millisecondsSinceLastUpdate > _hoursToSkipStoppedVMs*3600000L) {
-    			if(s_logger.isDebugEnabled())
-    				s_logger.debug("Skip counting vm " + vm.getInstanceName() + " in capacity allocation as it has been stopped for " + millisecondsSinceLastUpdate/60000 + " minutes");
+    			if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("Skip counting vm " + vm.getInstanceName() + " in capacity allocation as it has been stopped for " + millisecondsSinceLastUpdate/60000 + " minutes");
+                }
     			return true;
     		}
     	}
@@ -232,8 +243,9 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
         long usedCapacity = 0;
         for (Long vmId : vmOnHost) {
         	VMInstanceVO vm = _vmInstanceDao.findById(vmId);
-        	if(skipCalculation(vm))
-        		continue;
+        	if(skipCalculation(vm)) {
+                continue;
+            }
         	
             ServiceOffering so = null;
         	if(vm.getType() == VirtualMachine.Type.User) {

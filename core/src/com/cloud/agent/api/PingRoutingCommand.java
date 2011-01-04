@@ -20,7 +20,7 @@ package com.cloud.agent.api;
 import java.util.Map;
 
 import com.cloud.host.Host;
-import com.cloud.vm.State;
+import com.cloud.vm.VirtualMachine.State;
 
 public class PingRoutingCommand extends PingCommand {
     Map<String, State> newStates;

@@ -87,6 +87,7 @@ import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.ItWorkVO.Type;
 import com.cloud.vm.VirtualMachine.Event;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -252,7 +253,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
             return true;
         }
         
-        if (!this.advanceStop(vm, caller, account)) {
+        if (!this.advanceStop(vm, false, caller, account)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to stop the VM so we can't expunge it.");
             }
@@ -468,7 +469,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     @Override
     public <T extends VMInstanceVO> boolean stop(T vm, User user, Account account) throws ResourceUnavailableException {
         try {
-            return advanceStop(vm, user, account);
+            return advanceStop(vm, false, user, account);
         } catch (OperationTimedoutException e) {
             throw new AgentUnavailableException("Unable to stop vm because the operation to stop timed out", vm.getHostId(), e);
         } catch (ConcurrentOperationException e) {
@@ -477,7 +478,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     }
 
     @Override
-    public <T extends VMInstanceVO> boolean advanceStop(T vm, User user, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+    public <T extends VMInstanceVO> boolean advanceStop(T vm, boolean forced, User user, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         State state = vm.getState();
         if (state == State.Stopped) {
             if (s_logger.isDebugEnabled()) {
@@ -517,7 +518,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
             }
         } finally {
             if (!stopped) {
-            	stateTransitTo(vm, Event.OperationFailed, vm.getHostId());
+                if (!forced) {
+                    stateTransitTo(vm, Event.OperationFailed, vm.getHostId());
+                } else {
+                    s_logger.warn("Unable to actually stop " + vm + " but continue with release because it's a force stop");
+                }
             }
         }
         
@@ -528,8 +533,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
         boolean cleanup = false;
         
         VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
-        try { 
-            _networkMgr.release(profile);
+        try {
+            _networkMgr.release(profile, forced);
             s_logger.debug("Successfully released network resources for the vm " + vm);
         } catch (Exception e) {
             s_logger.warn("Unable to release some network resources.", e);
@@ -650,7 +655,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
             return true;
         }
         
-        if (!advanceStop(vm, user, caller)) {
+        if (!advanceStop(vm, false, user, caller)) {
             s_logger.debug("Unable to stop " + vm);
             return false;
         }

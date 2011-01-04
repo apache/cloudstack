@@ -39,6 +39,7 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
 import com.cloud.utils.fsm.FiniteStateObject;
 import com.cloud.utils.fsm.StateObject;
+import com.cloud.vm.VirtualMachine.State;
 
 @Entity
 @Table(name="vm_instance")
@@ -185,10 +186,11 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         super();
         this.id = id;
         this.name = name;
-        if (vmTemplateId > -1)
-        	this.templateId = vmTemplateId;
-        else
-        	this.templateId = null;
+        if (vmTemplateId > -1) {
+            this.templateId = vmTemplateId;
+        } else {
+            this.templateId = null;
+        }
         this.guestOSId = guestOSId;
         this.privateIpAddress = privateIpAddress;
         this.privateMacAddress = privateMacAddress;
@@ -332,10 +334,11 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	
 	@Override
 	public long getTemplateId() {
-		if (templateId == null)
-			return -1;
-		else
-			return templateId;
+		if (templateId == null) {
+            return -1;
+        } else {
+            return templateId;
+        }
 	}
 	
 	public void setTemplateId(Long templateId) {

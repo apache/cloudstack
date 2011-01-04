@@ -32,8 +32,8 @@ import javax.persistence.TemporalType;
 
 import com.cloud.ha.HighAvailabilityManager.Step;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.State;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
 
 @Entity
 @Table(name="op_ha_work")
