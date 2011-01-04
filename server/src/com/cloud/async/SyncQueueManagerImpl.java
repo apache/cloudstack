@@ -205,6 +205,11 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
     }
     
     @Override
+	public void resetQueueProcess(long msid) {
+    	_syncQueueDao.resetQueueProcessing(msid);
+    }
+    
+    @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
     	_name = name;
 		ComponentLocator locator = ComponentLocator.getCurrentLocator();

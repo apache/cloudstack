@@ -29,4 +29,5 @@ public interface SyncQueueManager extends Manager {
     public void purgeItem(long queueItemId);
     
 	public List<SyncQueueItemVO> getActiveQueueItems(Long msid, boolean exclusive);
+	public void resetQueueProcess(long msid);
 }

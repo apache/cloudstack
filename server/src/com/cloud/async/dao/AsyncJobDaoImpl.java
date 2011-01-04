@@ -18,6 +18,8 @@
 
 package com.cloud.async.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
@@ -28,10 +30,12 @@ import org.apache.log4j.Logger;
 import com.cloud.async.AsyncJob;
 import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 
 @Local(value = { AsyncJobDao.class })
 public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements AsyncJobDao {
@@ -97,5 +101,23 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 		sc.setParameters("created", cutTime);
 		Filter filter = new Filter(AsyncJobVO.class, "created", true, 0L, (long)limit);
 		return listIncludingRemovedBy(sc, filter);
+	}
+
+	@DB
+	public void resetJobProcess(long msid) {
+		String sql = "UPDATE async_job SET job_status=2, job_result='job cancelled because of management server restart' where job_complete_msid=? OR (job_complete_msid IS NULL AND job_init_msid=?)";
+		
+        Transaction txn = Transaction.currentTxn();
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setLong(1, msid);
+            pstmt.setLong(2, msid);
+            pstmt.execute();
+        } catch (SQLException e) {
+        	s_logger.warn("Unable to reset job status for management server " + msid, e);
+        } catch (Throwable e) {
+        	s_logger.warn("Unable to reset job status for management server " + msid, e);
+        }
 	}
 }

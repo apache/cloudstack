@@ -449,6 +449,9 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 
             job.setFromPreviousSession(fromPreviousSession);
             job.setSyncSource(item);
+            
+            job.setCompleteMsid(getMsid());
+            _jobDao.update(job.getId(), job);
             scheduleExecution(job);
         } else {
             if(s_logger.isDebugEnabled())
@@ -573,6 +576,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 				if(contentType != null && contentType.equals("AsyncJob")) {
 					Long jobId = item.getContentId();
 					if(jobId != null) {
+						s_logger.warn("Mark job as failed as its correspoding queue-item has been discarded. job id: " + jobId);						
 						completeAsyncJob(jobId, AsyncJobResult.STATUS_FAILED, 0, "Execution was cancelled because of server shutdown");
 					}
 				}
@@ -638,6 +642,8 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     			txn.start();
     			List<SyncQueueItemVO> items = _queueMgr.getActiveQueueItems(msHost.getId(), true);
     			cleanupPendingJobs(items);
+        		_queueMgr.resetQueueProcess(msHost.getId());
+        		_jobDao.resetJobProcess(msHost.getId());
     			txn.commit();
     		} catch(Throwable e) {
     			s_logger.warn("Unexpected exception ", e);
@@ -653,6 +659,8 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     	try {
     		List<SyncQueueItemVO> l = _queueMgr.getActiveQueueItems(getMsid(), false);
     		cleanupPendingJobs(l);
+    		_queueMgr.resetQueueProcess(getMsid());
+    		_jobDao.resetJobProcess(getMsid());
     	} catch(Throwable e) {
     		s_logger.error("Unexpected exception " + e.getMessage(), e);
     	}
