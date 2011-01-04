@@ -1145,7 +1145,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 throw new InvalidParameterValueException("Please specify valid integers for the vlan range.");
             }
             
-            if(vnetStart > vnetEnd) {
+            if((vnetStart > vnetEnd) || (vnetStart < 0) || (vnetEnd > 4096)) {
             	s_logger.warn("Invalid vnet range: start range:"+vnetStart+" end range:"+vnetEnd);
             	throw new InvalidParameterValueException("Vnet range should be between 0-4096 and start range should be lesser than or equal to end range");
             }
