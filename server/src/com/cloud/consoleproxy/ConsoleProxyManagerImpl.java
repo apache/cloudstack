@@ -311,6 +311,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             return null;
         }
         
+        if(proxy.getPublicIpAddress() == null) {
+        	s_logger.warn("Assigned console proxy does not have a valid public IP address");
+        	return null;
+        }
+        
         return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), _consoleProxyPort, proxy.getPort(), _configDao.getValue("consoleproxy.url.domain"));
     }
 
