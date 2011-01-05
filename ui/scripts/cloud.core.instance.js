@@ -409,7 +409,7 @@ function initVMWizard() {
 		});
 	
 	    $.ajax({
-		    data: createURL("command=listDiskOfferings&domainid=1"),
+		    data: createURL("command=listDiskOfferings"),
 		    dataType: "json",
 		    async: false,
 		    success: function(json) {
