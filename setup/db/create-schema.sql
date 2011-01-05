@@ -93,6 +93,7 @@ DROP TABLE IF EXISTS `cloud`.`port_forwarding_rules`;
 DROP TABLE IF EXISTS `cloud`.`firewall_rules`;
 DROP TABLE IF EXISTS `cloud`.`ssh_keypairs`;
 DROP TABLE IF EXISTS `cloud`.`usage_event`;
+DROP TABLE IF EXISTS `cloud`.`host_tags`;
 
 CREATE TABLE `cloud`.`op_it_work` (
   `id` char(40) COMMENT 'id',
@@ -614,6 +615,13 @@ CREATE TABLE  `cloud`.`mshost` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`host_tags` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id',
+  `tag` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE  `cloud`.`user` (
   `id` bigint unsigned NOT NULL auto_increment,
   `username` varchar(255) NOT NULL,
@@ -1036,6 +1044,7 @@ CREATE TABLE  `cloud`.`service_offering` (
   `mc_rate` smallint unsigned default 10 COMMENT 'mcast rate throttle mbits/s',
   `ha_enabled` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Enable HA',
   `guest_ip_type` varchar(255) NOT NULL DEFAULT 'Virtualized' COMMENT 'Type of guest network -- direct or virtualized',
+  `host_tag` varchar(255) COMMENT 'host tag specified by the service_offering',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
