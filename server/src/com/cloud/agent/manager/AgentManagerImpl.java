@@ -2074,12 +2074,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 							+ ". Please specify a valid host ID.");
 		}
 
-		if (_hostDao.countBy(host.getClusterId(), Status.PrepareForMaintenance,
-				Status.ErrorInMaintenance, Status.Maintenance) > 0) {
-			throw new InvalidParameterValueException(
-					"There are other servers in maintenance mode.");
-		}
-
 		if (_storageMgr.isLocalStorageActiveOnHost(host)) {
 			throw new InvalidParameterValueException(
 					"There are active VMs using the host's local storage pool. Please stop all VMs on this host that use local storage.");
