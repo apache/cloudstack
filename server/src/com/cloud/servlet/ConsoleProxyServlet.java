@@ -36,6 +36,8 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.host.HostVO;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
@@ -359,32 +361,46 @@ public class ConsoleProxyServlet extends HttpServlet {
 	
 	private boolean checkSessionPermision(HttpServletRequest req, long vmId, Account accountObj) {
 
+		if(accountObj.getType() == Account.ACCOUNT_TYPE_ADMIN)
+    		return true;
+
         VMInstanceVO vm = _ms.findVMInstanceById(vmId);
         UserVmVO userVm;
         switch(vm.getType())
         {
         case User :
         	userVm = _ms.findUserVMInstanceById(vmId);
-        	if(userVm.getAccountId() != accountObj.getId() && accountObj.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-        		if(s_logger.isDebugEnabled()) {
-                    s_logger.debug("VM access is denied. VM owner account " + userVm.getAccountId() 
-	        			+ " does not match the account id in session " + accountObj.getId());
-                }
-        		return false;
+        	if(userVm.getAccountId() != accountObj.getId()) {
+        		
+        		// access from another normal user
+        		if(accountObj.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+	        		if(s_logger.isDebugEnabled()) {
+	                    s_logger.debug("VM access is denied. VM owner account " + userVm.getAccountId() 
+		        			+ " does not match the account id in session " + accountObj.getId() + " and caller is a normal user");
+	                }
+	        		return false;
+        		}
+        		
+        		if(accountObj.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || accountObj.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) {
+        			if(!_ms.isChildDomain(accountObj.getDomainId(), userVm.getDomainId())) {
+    	        		if(s_logger.isDebugEnabled()) {
+    	                    s_logger.debug("VM access is denied. VM owner account " + userVm.getAccountId() 
+    		        			+ " does not match the account id in session " + accountObj.getId() + " and the domain-admin caller does not manage the target domain");
+    	                }
+        				return false;
+        			}
+        		}
         	}
         	break;
         	
         case ConsoleProxy :
         case DomainRouter :
         case SecondaryStorageVm:
-        	// only root admin is allowed to access system vm and domR
-        	if(accountObj.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-        		if(s_logger.isDebugEnabled()) {
-                    s_logger.debug("VM access is denied. Accessing restricted VM requires admin privilege");
-                }
-        		return false;
-        	}
-        	break;
+    		return false;
+    		
+    	default :
+    		s_logger.warn("Unrecoginized virtual machine type, deny access by default. type: " + vm.getType());
+    		return false;
         }
         
 		return true;

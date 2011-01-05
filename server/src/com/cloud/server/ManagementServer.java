@@ -542,6 +542,5 @@ public interface ManagementServer extends ManagementService {
     long getPsMaintenanceCount(long podId);
     boolean isPoolUp(long instanceId);
     boolean checkIfMaintenable(long hostId);
-    public String getHashKey();
-
+    String getHashKey();
 }
