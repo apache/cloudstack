@@ -527,8 +527,13 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             }
             return null;
         }
-        
-        if (agentState == State.Stopped) {
+        if (agentState == State.Shutdowned ) {
+            if ( serverState == State.Running || serverState == State.Starting || serverState == State.Stopping ) {
+                _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportShutdowned, null);
+            }
+            s_logger.debug("Sending cleanup to a shutdowned vm: " + agentName);            
+            command = info.mgr.cleanup(vm, agentName);
+        } else if (agentState == State.Stopped) {
             // This state means the VM on the agent was detected previously
             // and now is gone.  This is slightly different than if the VM
             // was never completed but we still send down a Stop Command
