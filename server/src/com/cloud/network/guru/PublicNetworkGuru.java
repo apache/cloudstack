@@ -50,6 +50,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject VlanDao _vlanDao;
     @Inject NetworkManager _networkMgr;
     @Inject IPAddressDao _ipAddressDao;
+    
+    
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network network, Account owner) {

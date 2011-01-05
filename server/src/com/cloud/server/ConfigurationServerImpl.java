@@ -748,17 +748,20 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     BroadcastDomainType broadcastDomainType = null;
                     TrafficType trafficType= offering.getTrafficType();
                     GuestIpType guestIpType = offering.getGuestIpType();
-                    if (offering.getGuestIpType() != GuestIpType.DirectPodBased) {
-                        if (trafficType == TrafficType.Management || trafficType == TrafficType.Storage) {
+
+                    if (trafficType == TrafficType.Management || trafficType == TrafficType.Storage) {
+                        broadcastDomainType = BroadcastDomainType.Native;
+                    } else if (trafficType == TrafficType.Control) {
+                        broadcastDomainType = BroadcastDomainType.LinkLocal;
+                    }  else if (offering.getTrafficType() == TrafficType.Public) {
+                        if (zone.getNetworkType() == NetworkType.Basic && offering.getGuestIpType() == GuestIpType.DirectPodBased) {
                             broadcastDomainType = BroadcastDomainType.Native;
-                        } else if (trafficType == TrafficType.Public) {
+                        } else if (zone.getNetworkType() == NetworkType.Advanced && offering.getGuestIpType() == null) {
                             broadcastDomainType = BroadcastDomainType.Vlan;
-                        } else if (trafficType == TrafficType.Control) {
-                            broadcastDomainType = BroadcastDomainType.LinkLocal;
-                        }  
-                    } else if (zone.getNetworkType() == NetworkType.Basic && offering.getGuestIpType() == GuestIpType.DirectPodBased){
-                        broadcastDomainType = BroadcastDomainType.Vlan;
-                    }
+                        } else {
+                            continue;
+                        }
+                    } 
                     
                     if (broadcastDomainType != null) {
                         NetworkVO network = new NetworkVO(id, trafficType, guestIpType, mode, broadcastDomainType, networkOfferingId, zoneId, domainId, accountId, related, null, null, true);

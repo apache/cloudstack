@@ -1207,35 +1207,22 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 Account systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
                 
                 BroadcastDomainType broadcastDomainType = null;
-                if (offering.getGuestIpType() != GuestIpType.DirectPodBased) {
-                    if (offering.getTrafficType() == TrafficType.Management) {
+                if (offering.getTrafficType() == TrafficType.Management) {
+                    broadcastDomainType = BroadcastDomainType.Native;
+                } else if (offering.getTrafficType() == TrafficType.Control) {
+                    broadcastDomainType = BroadcastDomainType.LinkLocal;
+                } else if (offering.getTrafficType() == TrafficType.Public) {
+                    if (zone.getNetworkType() == NetworkType.Basic && offering.getGuestIpType() == GuestIpType.DirectPodBased) {
                         broadcastDomainType = BroadcastDomainType.Native;
-                    } else if (offering.getTrafficType() == TrafficType.Public) {
+                    } else if (zone.getNetworkType() == NetworkType.Advanced && offering.getGuestIpType() == null) {
                         broadcastDomainType = BroadcastDomainType.Vlan;
-                    } else if (offering.getTrafficType() == TrafficType.Control) {
-                        broadcastDomainType = BroadcastDomainType.LinkLocal;
-                    }  
-                    userNetwork.setBroadcastDomainType(broadcastDomainType);
-                    _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, true); 
-                }  
+                    } else {
+                        continue;
+                    }
+                } 
+                userNetwork.setBroadcastDomainType(broadcastDomainType);
+                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, true); 
             }
-        }
-        
-        //if zone is basic, create a untagged network
-        if (zone != null && zone.getNetworkType() == NetworkType.Basic) {
-            //Create network
-            DataCenterDeployment plan = new DataCenterDeployment(zone.getId(), null, null, null);
-            NetworkVO userNetwork = new NetworkVO();
-            userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
-            
-            Account systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
-            
-            List<NetworkOfferingVO> networkOffering = _networkOfferingDao.findByType(GuestIpType.DirectPodBased);
-            if (networkOffering == null || networkOffering.isEmpty()) {
-                throw new CloudRuntimeException("No default DirectPodBased network offering is found");
-            }
-           
-            _networkMgr.setupNetwork(systemAccount, networkOffering.get(0), userNetwork, plan, null, null, true);
         }
     }
 
