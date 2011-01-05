@@ -148,8 +148,6 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.api.to.VirtualMachineTO.Monitor;
-import com.cloud.agent.api.to.VirtualMachineTO.SshMonitor;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
@@ -828,25 +826,6 @@ public abstract class CitrixResourceBase implements ServerResource {
                 		}
                 	}
                 }   
-            }
-
-            Monitor monitor = vmSpec.getMonitor();
-            if (monitor != null && monitor instanceof SshMonitor) {
-                SshMonitor sshMon = (SshMonitor)monitor;
-                String privateIp = sshMon.getIp();
-                int cmdPort = sshMon.getPort();
-                
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Ping command port, " + privateIp + ":" + cmdPort);
-                }
-    
-                String result = connect(conn, vmName, privateIp, cmdPort);
-                if (result != null) {
-                    throw new CloudRuntimeException("Can not ping System vm " + vmName + "due to:" + result);
-                } 
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Ping command port succeeded for vm " + vmName);
-                }
             }
             
             state = State.Running;
