@@ -22,6 +22,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -30,9 +31,11 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.async.SyncQueueItemVO;
+import com.cloud.async.SyncQueueVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -40,6 +43,8 @@ import com.cloud.utils.db.Transaction;
 @Local(value = { SyncQueueItemDao.class })
 public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> implements SyncQueueItemDao {
     private static final Logger s_logger = Logger.getLogger(SyncQueueItemDaoImpl.class);
+    
+    private final SyncQueueDao _syncQueueDao = new SyncQueueDaoImpl();
 
 	@Override
 	public SyncQueueItemVO getNextQueueItem(long queueId) {
@@ -110,4 +115,29 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
     		return lockRows(sc, filter, true);
         return listBy(sc, filter);
 	}
+	
+    @Override
+    public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, boolean exclusive) {
+        Date cutTime = DateUtil.currentGMTTime();
+        cutTime = new Date(cutTime.getTime() - thresholdMs);
+        
+        SearchBuilder<SyncQueueVO> sbQueue = _syncQueueDao.createSearchBuilder();
+        sbQueue.and("lastProcessTime", sbQueue.entity().getLastProcessTime(), SearchCriteria.Op.NNULL);
+        sbQueue.and("lastProcessTime2", sbQueue.entity().getLastProcessTime(), SearchCriteria.Op.LT);
+        
+        SearchBuilder<SyncQueueItemVO> sbItem = createSearchBuilder();
+        sbItem.join("queueItemJoinQueue", sbQueue, sbQueue.entity().getId(), sbItem.entity().getQueueId(), JoinBuilder.JoinType.INNER);
+        sbItem.and("lastProcessMsid", sbItem.entity().getLastProcessMsid(), SearchCriteria.Op.NNULL);
+        sbItem.and("lastProcessNumber", sbItem.entity().getLastProcessNumber(), SearchCriteria.Op.NNULL);
+        
+        sbQueue.done();
+        sbItem.done();
+        
+        SearchCriteria<SyncQueueItemVO> sc = sbItem.create();
+        sc.setJoinParameters("queueItemJoinQueue", "lastProcessTime2", cutTime);
+        
+        if(exclusive)
+            return lockRows(sc, null, true);
+        return listBy(sc, null);
+    }
 }

@@ -20,8 +20,6 @@ package com.cloud.async;
 
 import java.util.List;
 
-import junit.framework.Assert;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.ComponentLocator;
@@ -199,4 +197,20 @@ public class TestSyncQueueManager extends ComponentTestCase {
 			for(int i = 0; i < totalRuns; i++)
 				mgr.queue("vm_instance", q, "Async-job", i+1);
 	}
+    
+    public void testSyncQueue() {
+        final SyncQueueManager mgr = ComponentLocator.getCurrentLocator().getManager(
+                SyncQueueManager.class);
+
+        mgr.queue("vm_instance", 1, "Async-job", 1);
+        mgr.queue("vm_instance", 1, "Async-job", 2);
+        mgr.queue("vm_instance", 1, "Async-job", 3);
+        mgr.dequeueFromAny(100L, 1);
+        
+        List<SyncQueueItemVO> l = mgr.getBlockedQueueItems(100000, false);
+        for(SyncQueueItemVO item : l) {
+            System.out.println("Blocked item. " + item.getContentType() + "-" + item.getContentId());
+            mgr.purgeItem(item.getId());
+        }
+    }
 }

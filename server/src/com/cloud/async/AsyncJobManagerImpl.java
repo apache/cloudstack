@@ -46,6 +46,7 @@ import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -82,6 +83,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     private AccountDao _accountDao;
     private AsyncJobDao _jobDao;
     private long _jobExpireSeconds = 86400;						// 1 day
+    private long _jobCancelThresholdSeconds = 3600;             // 1 hour
     private ApiDispatcher _dispatcher;
 
     private final ScheduledExecutorService _heartbeatScheduler =
@@ -549,6 +551,18 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 						}
 					}
 					
+					// forcely cancel blocking queue items if they've been staying there for too long
+				    List<SyncQueueItemVO> blockItems = _queueMgr.getBlockedQueueItems(_jobCancelThresholdSeconds*1000, false);
+				    if(blockItems != null && blockItems.size() > 0) {
+				        for(SyncQueueItemVO item : blockItems) {
+				            if(item.getContentType().equalsIgnoreCase("AsyncJob"))
+				                completeAsyncJob(item.getContentId(), 2, 0, "Job is cancelled as it has been blocking others for too long");
+				        
+				            // purge the item and resume queue processing
+				            _queueMgr.purgeItem(item.getId());
+				        }
+				    }
+					
 					s_logger.trace("End cleanup expired async-jobs");
 				} catch(Throwable e) {
 					s_logger.error("Unexpected exception when trying to execute queue item, ", e);
@@ -596,10 +610,13 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 			throw new ConfigurationException("Unable to get the configuration dao.");
 		}
 
-		Map<String, String> configs = configDao.getConfiguration("management-server", params);
-		
-		int expireMinutes = NumbersUtil.parseInt(configs.get("job.expire.minutes"), 24*60);
+		int expireMinutes = NumbersUtil.parseInt(
+		       configDao.getValue(Config.JobExpireMinutes.key()), 24*60);
 		_jobExpireSeconds = (long)expireMinutes*60;
+		
+		_jobCancelThresholdSeconds = NumbersUtil.parseInt(
+		       configDao.getValue(Config.JobCancelThresholdMinutes.key()), 60);
+		_jobCancelThresholdSeconds *= 60;
 
 		_accountDao = locator.getDao(AccountDao.class);
 		if (_accountDao == null) {

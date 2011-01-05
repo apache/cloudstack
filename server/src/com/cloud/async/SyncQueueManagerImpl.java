@@ -33,8 +33,6 @@ import com.cloud.async.dao.SyncQueueItemDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -202,6 +200,11 @@ public class SyncQueueManagerImpl implements SyncQueueManager {
     @Override
 	public List<SyncQueueItemVO> getActiveQueueItems(Long msid, boolean exclusive) {
     	return _syncQueueItemDao.getActiveQueueItems(msid, exclusive);
+    }
+    
+    @Override
+    public List<SyncQueueItemVO> getBlockedQueueItems(long thresholdMs, boolean exclusive) {
+        return _syncQueueItemDao.getBlockedQueueItems(thresholdMs, exclusive);
     }
     
     @Override
