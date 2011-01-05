@@ -129,6 +129,7 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.SecurityGroupManager;
@@ -258,6 +259,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject RulesManager _rulesMgr;
     @Inject LoadBalancingRulesManager _lbMgr;
     @Inject UsageEventDao _usageEventDao;
+    @Inject OvsNetworkManager _ovsNetworkMgr;
     
     private IpAddrAllocator _IpAllocator;
     ScheduledExecutorService _executor = null;
@@ -2395,6 +2397,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		}
 		_vmDao.update(userVm.getId(), userVm);
 	
+		_ovsNetworkMgr.CheckAndCreateTunnel(cmds, profile, dest);
 		return true;
 	}
 

@@ -1323,4 +1323,19 @@ CREATE TABLE  `cloud`.`usage_event` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`ovs_host_vlan_alloc`(
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `host_id` bigint unsigned COMMENT 'host id',
+  `account_id` bigint unsigned COMMENT 'account id',
+  `vlan` bigint unsigned COMMENT 'vlan id under account #account_id on host #host_id',
+  PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`ovs_vlan_mapping_dirty`(
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `account_id` bigint unsigned COMMENT 'account id',
+  `dirty` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 means vlan mapping of this account was changed',
+  PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 SET foreign_key_checks = 1;

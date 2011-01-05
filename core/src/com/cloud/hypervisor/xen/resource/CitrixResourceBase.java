@@ -155,9 +155,12 @@ import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
+import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.ovs.OvsCreateGreTunnelCommand;
+import com.cloud.network.ovs.OvsSetTagAndFlowCommand;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -442,6 +445,10 @@ public abstract class CitrixResourceBase implements ServerResource {
             return execute((CheckSshCommand)cmd);
         } else if (cmd instanceof SecurityIngressRulesCmd) {
             return execute((SecurityIngressRulesCmd) cmd);
+        } else if (cmd instanceof OvsCreateGreTunnelCommand) {
+        	return execute((OvsCreateGreTunnelCommand)cmd);
+        } else if (cmd instanceof OvsSetTagAndFlowCommand) {
+        	return execute((OvsSetTagAndFlowCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -466,6 +473,92 @@ public abstract class CitrixResourceBase implements ServerResource {
         throw new CloudRuntimeException("Unsupported network type: " + type);
     }
     
+    /**
+     * This is a tricky to create network in xenserver.
+     * if you create a network then create bridge by brctl or openvswitch yourself,
+     * then you will get an expection that is "REQUIRED_NETWROK" when you start a
+     * vm with this network. The soultion is, create a vif of dom0 and plug it in
+     * network, xenserver will create the bridge on behalf of you
+     * @throws XmlRpcException 
+     * @throws XenAPIException 
+     */
+    private void enableXenServerNetwork(Connection conn, Network nw,
+    		String vifNameLabel, String networkDesc) throws XenAPIException, XmlRpcException {
+    	/* Make sure there is a physical bridge on this network */
+        VIF dom0vif = null;
+        Pair<VM, VM.Record> vm = getControlDomain(conn);
+        VM dom0 = vm.first();
+        Set<VIF> vifs = dom0.getVIFs(conn);
+        if (vifs.size() != 0) {
+        	for (VIF vif : vifs) {
+        		Map<String, String> otherConfig = vif.getOtherConfig(conn);
+        		if (otherConfig != null) {
+        		    String nameLabel = otherConfig.get("nameLabel");
+        		    if ((nameLabel != null) && nameLabel.equalsIgnoreCase(vifNameLabel)) {
+        		        dom0vif = vif;
+        		    }
+        		}
+        	}
+        }
+        /* create temp VIF0 */
+        if (dom0vif == null) {
+        	s_logger.debug("Can't find a vif on dom0 for " + networkDesc + ", creating a new one");
+        	VIF.Record vifr = new VIF.Record();
+        	vifr.VM = dom0;
+        	vifr.device = getLowestAvailableVIFDeviceNum(conn, dom0);
+        	if (vifr.device == null) {
+        		s_logger.debug("Failed to create " + networkDesc + ", no vif available");
+        		return;
+        	}
+        	Map<String, String> config = new HashMap<String, String>();
+        	config.put("nameLabel", vifNameLabel);
+        	vifr.otherConfig = config;
+        	vifr.MAC = "FE:FF:FF:FF:FF:FF";
+        	vifr.network = nw;
+        	dom0vif = VIF.create(conn, vifr);
+        	dom0vif.plug(conn);
+        } else {
+        	s_logger.debug("already have a vif on dom0 for " + networkDesc);
+        	if (!dom0vif.getCurrentlyAttached(conn)) {
+        		dom0vif.plug(conn);
+        	}
+        }
+    }
+    
+    private Network setupvSwitchNetwork(Connection conn) {
+		try {
+			Network vswitchNw = null;
+			
+			if (_host.vswitchNetwork == null) {
+				Network.Record rec = new Network.Record();
+				String nwName = Networks.BroadcastScheme.VSwitch.toString();
+				Set<Network> networks = Network.getByNameLabel(conn, nwName);
+				
+				if (networks.size() == 0) {
+					rec.nameDescription = "vswitch network for " + nwName;
+					rec.nameLabel = nwName;
+					vswitchNw = Network.create(conn, rec);
+				} else {
+					vswitchNw = networks.iterator().next();
+				}
+
+				enableXenServerNetwork(conn, vswitchNw, "vswitch",
+						"vswicth network");
+				_host.vswitchNetwork = vswitchNw.getUuid(conn);
+			} else {
+				vswitchNw = Network.getByUuid(conn, _host.vswitchNetwork);
+				enableXenServerNetwork(conn, vswitchNw, "vswitch",
+						"vswicth network");
+			}
+			
+			return vswitchNw;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		return null;
+    }
+    
     protected Network getNetwork(Connection conn, NicTO nic) throws XenAPIException, XmlRpcException {
         Pair<Network, String> network = getNativeNetworkForTraffic(conn, nic.getType());
         if (nic.getBroadcastUri() != null && nic.getBroadcastUri().toString().contains("untagged")) {
@@ -477,7 +570,9 @@ public abstract class CitrixResourceBase implements ServerResource {
             return enableVlanNetwork(conn, vlan, network.first(), network.second());
         } else if (nic.getBroadcastType() == BroadcastDomainType.Native || nic.getBroadcastType() == BroadcastDomainType.LinkLocal) {
             return network.first();
-        } 
+        } else if (nic.getBroadcastType() == BroadcastDomainType.Vswitch) {
+        	return setupvSwitchNetwork(conn);
+        }
         
         throw new CloudRuntimeException("Unable to support this type of network broadcast domain: " + nic.getBroadcastUri());
     }
@@ -3725,6 +3820,78 @@ public abstract class CitrixResourceBase implements ServerResource {
         return Boolean.valueOf(callHostPlugin(conn, "vmops", "can_bridge_firewall", "host_uuid", _host.uuid));
     }
     
+    //TODO: it's better to move more stuff at host plugin side
+    private Answer execute(OvsSetTagAndFlowCommand cmd) {
+    	Connection conn = getConnection();
+    	try {
+    		Set<VM> vms = VM.getByNameLabel(conn, cmd.getVmName());
+    		VM vm = vms.iterator().next();
+    		Set<VIF> vifs = vm.getVIFs(conn);
+    		String domId = vm.getDomid(conn).toString();
+    		String nwName = Networks.BroadcastScheme.VSwitch.toString();
+    		Network nw = getNetworkByName(conn, nwName);
+    		assert nw!= null : "Why there is no vswith network ???";
+    		String bridge = nw.getBridge(conn);
+    		
+    		/*If VM is domainRouter, this will try to set flow and tag on its
+    		 * none guest network nic. don't worry, it will fail sciently at host
+    		 * plugin side
+    		 */
+    		for (VIF vif : vifs) {
+    			String vifName = "vif" + domId + vif.getDevice(conn);
+    			String result = callHostPlugin(conn, "vmops", "vlanRemapUtils", "op", "createFlow", "bridge",
+						bridge, "vifName", vifName, "mac",
+						vif.getMAC(conn), "remap", cmd.getVlans(),
+						"ip", "placeholder now");
+    			s_logger.debug("set flow for " + vifName + " on " + cmd.getVmName() + " " + result);
+    			
+    		}
+		
+    		/*
+			if (result.equalsIgnoreCase("SUCCESS")) {
+				return new Answer(cmd, true, "Set flow for " + cmd.getVmName()
+						+ " success, vlans:" + cmd.getVlans());
+			} else {
+				return new Answer(cmd, false, "Set flow for " + cmd.getVmName()
+						+ " failed, vlans:" + cmd.getVlans());
+			}
+			*/
+    		return new Answer(cmd, true, "Set flow for " + cmd.getVmName()
+					+ " success, vlans:" + cmd.getVlans());
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
+    	
+		return new Answer(cmd, false, "Set flow for " + cmd.getVmName()
+				+ " failed, vlans:" + cmd.getVlans());
+    }
+    
+    private Answer execute(OvsCreateGreTunnelCommand cmd) {
+    	Connection conn = getConnection();
+    	try {
+    		String nwName = Networks.BroadcastScheme.VSwitch.toString();
+    		Network nw = getNetworkByName(conn, nwName);
+    		if (nw == null) {
+    			nw = setupvSwitchNetwork(conn);
+			}
+    		
+			String result = callHostPlugin(conn, "vmops", "vlanRemapUtils",
+					"op", "createGRE", "bridge", nw.getBridge(conn),
+					"remoteIP", cmd.getRemoteIp(), "greKey", cmd.getKey());
+			if (result.equalsIgnoreCase("SUCCESS")) {
+				return new Answer(cmd, true, "create gre tunnel to "
+						+ cmd.getRemoteIp() + " success");
+			} else {
+				return new Answer(cmd, false, "create gre tunnel to "
+						+ cmd.getRemoteIp() + " failed");
+			}
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
+    	
+    	return new Answer(cmd, false, "create gre tunnel to " + cmd.getRemoteIp() + " failed");
+    }
+    
     private Answer execute(SecurityIngressRulesCmd cmd) {
         Connection conn = getConnection();
         if (s_logger.isTraceEnabled()) {
@@ -5501,6 +5668,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         public String publicNetwork;
         public String privateNetwork;
         public String linkLocalNetwork;
+        public String vswitchNetwork;
         public String storageNetwork1;
         public String storageNetwork2;
         public String guestNetwork;

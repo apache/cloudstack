@@ -60,6 +60,7 @@ public enum Config {
 	NetworkThrottlingRate("Network", ManagementServer.class, Integer.class, "network.throttling.rate", "200", "Default data transfer rate in megabits per second allowed.", null),
 	GuestDomainSuffix("Network", AgentManager.class, String.class, "guest.domain.suffix", "cloud-test.cloud.internal", "Default domain name for vms inside virtualized networks fronted by router", null),
 	DirectNetworkNoDefaultRoute("Network", ManagementServer.class, Boolean.class, "direct.network.no.default.route", "false", "Direct Network Dhcp Server should not send a default route", "true/false"),
+	OvsNetwork("Network", ManagementServer.class, Boolean.class, "open.vswitch.network", "true", "enable/disable open vswitch network", null),
 	
 	//VPN
 	RemoteAccessVpnPskLength("Network", AgentManager.class, Integer.class, "remote.access.vpn.psk.length", "24", "The length of the ipsec preshared key (minimum 8, maximum 256)", null),

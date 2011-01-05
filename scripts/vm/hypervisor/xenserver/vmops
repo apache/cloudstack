@@ -129,6 +129,39 @@ def ipassoc(session, args):
     return txt
 
 @echo
+def vlanRemapUtils(session, args):
+    cmd = []
+    cmd.insert(0, "python")
+    cmd.insert(1, "/opt/xensource/bin/vlanRemapUtils.py")
+
+    op = args.pop("op")
+    cmd.insert(2, op)
+    if op == "createGRE":
+        cmd.insert(3, args.pop("bridge"))
+        cmd.insert(4, args.pop("remoteIP"))
+        cmd.insert(5, args.pop("greKey"))
+    elif op == "createFlow":
+        cmd.insert(3, args.pop("bridge"))
+        cmd.insert(4, args.pop("vifName"))
+        cmd.insert(5, args.pop("mac"))
+        cmd.insert(6, args.pop("vlan"))
+        cmd.insert(7, args.pop("remap"))
+        cmd.insert(8, args.pop("ip"))
+    elif op == "deleteFlow":
+        cmd.insert(3, args.pop("bridge"))
+        cmd.insert(4, args.pop("vifName"))
+        cmd.insert(5, args.pop("mac"))
+        cmd.insert(6, args.pop("remap"))
+
+    try:
+        txt = util.pread2(cmd)
+    except:
+        util.SMlog("vlanRemapUtils failed")
+        txt = 'failed'
+
+    return txt
+
+@echo
 def vm_data(session, args):
     router_ip = args.pop('routerIP')
     vm_ip = args.pop('vmIP')
@@ -519,7 +552,6 @@ def default_ebtables_rules(vm_name, vif, vm_ip, vm_mac):
         util.SMlog("Failed to program default ebtables OUT rules")
         return 'false' 
     
-            
 @echo
 def default_network_rules_systemvm(session, args):
     vm_name = args.pop('vmName')
@@ -1032,5 +1064,5 @@ def network_rules(session, args):
 
 
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, "getvncport": getvncport, "getgateway": getgateway, "preparemigration": preparemigration, "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  "ipassoc": ipassoc, "vm_data": vm_data, "savePassword": savePassword, "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, "networkUsage": networkUsage, "network_rules":network_rules, "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules, "destroy_network_rules_for_vm":destroy_network_rules_for_vm, "default_network_rules_systemvm":default_network_rules_systemvm, "get_rule_logs_for_vms":get_rule_logs_for_vms, "setLinkLocalIP":setLinkLocalIP, "lt2p_vpn":lt2p_vpn, "cleanup_rules":cleanup_rules})
+    XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, "getvncport": getvncport, "getgateway": getgateway, "preparemigration": preparemigration, "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  "ipassoc": ipassoc, "vm_data": vm_data, "savePassword": savePassword, "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, "networkUsage": networkUsage, "network_rules":network_rules, "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules, "destroy_network_rules_for_vm":destroy_network_rules_for_vm, "default_network_rules_systemvm":default_network_rules_systemvm, "get_rule_logs_for_vms":get_rule_logs_for_vms, "setLinkLocalIP":setLinkLocalIP, "lt2p_vpn":lt2p_vpn, "vlanRemapUtils":vlanRemapUtils,"cleanup_rules":cleanup_rules})
 

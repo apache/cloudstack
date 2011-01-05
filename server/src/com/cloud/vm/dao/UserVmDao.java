@@ -100,4 +100,5 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long>, StateDao<State, V
 	UserVm findByZoneAndAcctAndGuestIpAddress(long zoneId, long accountId, String ipAddress);
 	
 	UserVm findVmByZoneIdAndName(long zoneId, String name);
+	List<UserVmVO> listByAccountIdAndHostId(long accountId, long hostId);
 }
