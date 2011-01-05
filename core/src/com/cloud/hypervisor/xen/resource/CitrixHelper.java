@@ -157,6 +157,8 @@ public class CitrixHelper {
     	_xenServerGuestOsMap.put("Windows XP SP2 (32-bit)", "Windows XP SP2 (32-bit)");
     	_xenServerGuestOsMap.put("Windows XP SP3 (32-bit)", "Windows XP SP3 (32-bit)");
     	_xenServerGuestOsMap.put("Other install media", "Other install media");
+        _xenServerGuestOsMap.put("Ubuntu 10.04 (32-bit)", "CentOS 5 (32-bit)");
+        _xenServerGuestOsMap.put("Ubuntu 10.04 (64-bit)", "CentOS 5 (64-bit)");
     }
     
     static {
@@ -171,7 +173,7 @@ public class CitrixHelper {
         _xenServer56FP1GuestOsMap.put("CentOS 5.2 (32-bit)", "CentOS 5 (32-bit)");
         _xenServer56FP1GuestOsMap.put("CentOS 5.2 (64-bit)", "CentOS 5 (64-bit)");
         _xenServer56FP1GuestOsMap.put("CentOS 5.3 (32-bit)", "CentOS 5 (32-bit)");
-        _xenServer56FP1GuestOsMap.put("CentOS 5.3 (64-bit)", "CentOS 5Debian GNU/Linux 6(32-bit) (64-bit)");
+        _xenServer56FP1GuestOsMap.put("CentOS 5.3 (64-bit)", "CentOS 5 (64-bit)");
         _xenServer56FP1GuestOsMap.put("CentOS 5.4 (32-bit)", "CentOS 5 (32-bit)");
         _xenServer56FP1GuestOsMap.put("CentOS 5.4 (64-bit)", "CentOS 5 (64-bit)");
         _xenServer56FP1GuestOsMap.put("CentOS 5.5 (32-bit)", "CentOS 5 (32-bit)");
@@ -230,6 +232,8 @@ public class CitrixHelper {
         _xenServer56FP1GuestOsMap.put("Ubuntu Lucid Lynx 10.04 (32-bit)", "Ubuntu Lucid Lynx 10.04 (32-bit) (experimental)");
         _xenServer56FP1GuestOsMap.put("Ubuntu Lucid Lynx 10.04 (64-bit)", "Ubuntu Lucid Lynx 10.04 (64-bit) (experimental)");
         _xenServer56FP1GuestOsMap.put("Other install media", "Other install media");
+        _xenServer56FP1GuestOsMap.put("Ubuntu 10.04 (32-bit)", "CentOS 5.3 (32-bit");
+        _xenServer56FP1GuestOsMap.put("Ubuntu 10.04 (64-bit)", "CentOS 5.3 (64-bit");
     }
     
     public static String getXcpGuestOsType(String stdType) {
