@@ -1385,22 +1385,6 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 	    $dialogAddPool.find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
     bindEventHandlerToDialogAddPool($dialogAddPool);	
     
-    /*
-    $.ajax({
-        data: createURL("command=listZones&available=true"),
-	    dataType: "json",
-	    success: function(json) {
-		    var zones = json.listzonesresponse.zone;
-		    var zoneSelect = $dialogAddPool.find("#zone_dropdown").empty();								
-		    if (zones != null && zones.length > 0) {
-			    for (var i = 0; i < zones.length; i++) 
-				    zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 				    
-		    }	
-		    //$dialogAddPool.find("#zone_dropdown").change();	//comment out to avoid race condition, do it before dialog box pops up	    
-	    }
-    });
-	*/
-	
     $dialogAddPool.find("#zone_dropdown").bind("change", function(event) {
 	    var zoneId = $(this).val();
 	    $.ajax({
@@ -1454,6 +1438,9 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
     	
     	var $protocolSelector = $("#add_pool_protocol", $dialogAddPool);
     	var objCluster = mapClusters['cluster_'+curOption];
+    	
+    	if(objCluster == null)
+    	    return;
     	
     	if(objCluster.hypervisortype == "KVM") {
     		$protocolSelector.empty();

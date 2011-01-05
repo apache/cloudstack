@@ -451,11 +451,11 @@ function bindAddHostButton($leftmenuItem1) {
 	            var $thisDialog = $(this);		            
 	            			   
 			    var hypervisor = $thisDialog.find("#host_hypervisor").val();
-		        var clusterRadio = $thisDialog.find("input[name=cluster]:checked").val();				
-			
+		     	
 		        // validate values
-		        var isValid = true;									
-		        if(hypervisor == "VmWare") {
+		        var isValid = true;		
+			    isValid &= validateDropDownBox("Cluster", $thisDialog.find("#cluster_select"), $thisDialog.find("#cluster_select_errormsg"), false);  //required, reset error text					    			
+				if(hypervisor == "VmWare") {
 			        isValid &= validateString("vCenter Address", $thisDialog.find("#host_vcenter_address"), $thisDialog.find("#host_vcenter_address_errormsg"));
 			        isValid &= validateString("vCenter User", $thisDialog.find("#host_vcenter_username"), $thisDialog.find("#host_vcenter_username_errormsg"));
 			        isValid &= validateString("vCenter Password", $thisDialog.find("#host_vcenter_password"), $thisDialog.find("#host_vcenter_password_errormsg"));	
@@ -479,9 +479,7 @@ function bindAddHostButton($leftmenuItem1) {
 		        array1.push("&podId="+podId);
 						    			    		            
 		        var clusterId = $thisDialog.find("#cluster_select").val();			    
-			    if (clusterId != null && clusterId != '-1') {
-				    array1.push("&clusterid="+clusterId);
-			    }
+			    array1.push("&clusterid="+clusterId);			    
 		        	
 			    if(hypervisor == "VmWare") {
 			        var username = trim($thisDialog.find("#host_vcenter_username").val());
@@ -553,31 +551,6 @@ function bindAddHostButton($leftmenuItem1) {
     });        
 }
 
-/*
-function clickClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, clusterId, $thisDialog) {    
-    if(clusterRadio == "new_cluster_radio") {    //*** new cluster ***                         
-        refreshClusterUnderPod($("#pod_" + podId), newClusterName);  //this function will click the new cluster node                         
-        $thisDialog.find("#new_cluster_name").val("");   
-    }        
-    else if(clusterRadio == "existing_cluster_radio") { //*** existing cluster ***  
-   
-        if (clusterId != null && clusterId != '-1') {
-            $("#cluster_"+clusterId).find("#cluster_name").click();
-        }    
-    }         
-}
-*/
-
-/*
-function expandClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, clusterId, $thisDialog) {        
-    if (clusterId != null && clusterId != '-1') {
-        var $arrow = $("#cluster_"+clusterId).find("#cluster_arrow");
-        if($arrow.hasClass("expanded_close"))
-            $arrow.click();
-    }               
-}
-*/
-
 function bindAddPrimaryStorageButton($leftmenuItem1) {    
     var $button = $("#add_primarystorage_button");  
     $button.unbind("click").bind("click", function(event) {          
@@ -639,6 +612,9 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
 	    	
 	    	var $protocolSelector = $("#add_pool_protocol", dialogAddPool);	    	
 	    	var objCluster = mapClusters['cluster_'+curOption];
+	    	
+	    	if(objCluster == null)
+   	            return;
 	    	
 	    	if(objCluster.hypervisortype == "KVM") {
 	    		$protocolSelector.empty();
