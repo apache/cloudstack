@@ -883,8 +883,12 @@ public class ApiServer implements HttpRequestHandler {
             } else {
                 String cmdName = ((String[])apiCommandParams.get("command"))[0];
                 cmdClassName = _apiCommands.getProperty(cmdName);
-                Class<?> claz = Class.forName(cmdClassName);
-                responseName = ((BaseCmd)claz.newInstance()).getCommandName();
+                if (cmdClassName != null) {
+                    Class<?> claz = Class.forName(cmdClassName);
+                    responseName = ((BaseCmd)claz.newInstance()).getCommandName();
+                } else {
+                    responseName = "errorresponse";
+                }
             }
             
             ExceptionResponse apiResponse = new ExceptionResponse();

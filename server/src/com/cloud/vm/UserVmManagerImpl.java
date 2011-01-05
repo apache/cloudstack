@@ -119,6 +119,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddrAllocator;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -133,6 +134,7 @@ import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.Criteria;
@@ -2237,24 +2239,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         s_logger.debug("Allocating in the DB for vm");
           
         if (dc.getNetworkType() == NetworkType.Basic && networkList == null) {
-            Long singleNetworkId = null;
-            SearchBuilder<NetworkVO> sb = _networkDao.createSearchBuilder();
-            sb.and("broadcastDomainType", sb.entity().getBroadcastDomainType(), SearchCriteria.Op.EQ);
-            sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-            SearchCriteria<NetworkVO> sc = sb.create();
-            sc.setParameters("broadcastDomainType", BroadcastDomainType.Native);
-            sc.setParameters("dataCenterId", dc.getId());
-
-            List<NetworkVO> networks = _networkDao.search(sc, null);
-            if (networks!= null && networks.isEmpty()) {
-                throw new InvalidParameterValueException("Unable to find a network to start a vm");
+            Network defaultNetwork = _networkMgr.getBasicZoneDefaultPublicNetwork(dc.getId());
+            if (defaultNetwork == null) {
+                throw new InvalidParameterValueException("Unable to find a default directPodBased network to start a vm");
             } else {
-            	networkList = new ArrayList<Long>();
-                singleNetworkId = networks.get(0).getId();
-                networkList.add(singleNetworkId);
+                networkList = new ArrayList<Long>();
+                networkList.add(defaultNetwork.getId());
             }
         }
-        
         
         if (networkList == null || networkList.isEmpty()) {
             throw new InvalidParameterValueException("NetworkIds have to be specified");

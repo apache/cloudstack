@@ -140,4 +140,6 @@ public interface NetworkManager extends NetworkService {
 	List<? extends RemoteAccessVpnElement> getRemoteAccessVpnElements();
 	
 	PublicIpAddress getPublicIpAddress(Ip ipAddress);
+	
+	Network getBasicZoneDefaultPublicNetwork(long zoneId);
 }

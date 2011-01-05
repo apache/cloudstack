@@ -1905,4 +1905,23 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         return new PublicIp(addr, _vlanDao.findById(addr.getVlanId()), NetUtils.createSequenceBasedMacAddress(addr.getMacAddress()));
     }
+    
+    @Override
+    public Network getBasicZoneDefaultPublicNetwork(long zoneId) {
+        SearchBuilder<NetworkVO> sb = _networksDao.createSearchBuilder();
+        sb.and("trafficType", sb.entity().getTrafficType(), SearchCriteria.Op.EQ);
+        sb.and("guestType", sb.entity().getGuestType(), SearchCriteria.Op.EQ);
+        sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        SearchCriteria<NetworkVO> sc = sb.create();
+        sc.setParameters("trafficType", TrafficType.Public);
+        sc.setParameters("guestType", GuestIpType.DirectPodBased);
+        sc.setParameters("dataCenterId", zoneId);
+
+        List<NetworkVO> networks = _networksDao.search(sc, null);
+        if (networks == null || networks.isEmpty()) {
+            return null;
+        } else {
+            return networks.get(0);
+        }
+    }
 }
