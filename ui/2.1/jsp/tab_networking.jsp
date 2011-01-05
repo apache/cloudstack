@@ -9,7 +9,7 @@ long milliseconds = new Date().getTime();
     <div class="submenu_links_off" id="submenu_network">
         IP Addresses</div>
     <div class="submenu_links_off" id="submenu_network_groups">
-        Network Groups</div>
+        Security Groups</div>
 </div>
 <!-- ***** Network (begin) ********************************************************************************************************************* -->
 <div class="maincontent" id="submenu_content_network" style="display: none;">
@@ -543,14 +543,14 @@ long milliseconds = new Date().getTime();
     </div>
 </div>
 <!-- ***** Network (end) *********************************************************************************************************************** -->
-<!-- ***** Network Groups (begin) ************************************************************************************************************** -->
+<!-- ***** Security Groups (begin) ************************************************************************************************************** -->
 <div class="maincontent" id="submenu_content_network_groups" style="display: none;">
     <div id="maincontent_title">
         <div class="maintitle_icon">
-            <img src="images/sgtitle_icons.gif" title="Network Groups" />
+            <img src="images/sgtitle_icons.gif" title="Security Groups" />
         </div>
         <h1>
-            Network Groups</h1>
+            Security Groups</h1>
         <a class="add_networkgroupbutton" id="network_groups_action_new" href="#"></a>
         <div class="search_formarea">
             <form action="#" method="post">
@@ -658,8 +658,8 @@ long milliseconds = new Date().getTime();
         </div>
     </div>
 </div>
-<!-- Network Group template -->
-<div style="display: none;" id="network_group_template">
+<!-- Security Group template -->
+<div style="display: none;" id="security_group_template">
     <div class="adding_loading" style="height: 25px; display: none;" id="loading_container">
         <div class="adding_animation">
         </div>
@@ -712,7 +712,7 @@ long milliseconds = new Date().getTime();
                 </div>
                 <div class="hostadmin_showdetailsheader_cell" style="width: 40%">
                     <div class="grid_headertitles">
-                        CIDR or Account/Network Group</div>
+                        CIDR or Account/Security Group</div>
                 </div>
                 <div class="hostadmin_showdetailsheader_cell" style="width: 10%">
                     <div class="grid_headertitles">
@@ -732,7 +732,7 @@ long milliseconds = new Date().getTime();
         </div>
     </div>
 </div>
-<!-- Network Group's Ingress Rule Template (begin) -->
+<!-- Security Group's Ingress Rule Template (begin) -->
 <div id="network_group_ingress_rule_template" style="display: none">
     <div class="adding_loading" style="height: 25px; display: none;">
         <div class="adding_animation">
@@ -765,8 +765,8 @@ long milliseconds = new Date().getTime();
         </div>
     </div>
 </div>
-<!-- Network Group's Ingress Rule Template (end) -->
-<!-- Network Group's Ingress Rule - add row (begin) -->
+<!-- Security Group's Ingress Rule Template (end) -->
+<!-- Security Group's Ingress Rule - add row (begin) -->
 <div id="network_group_ingress_rule_add_row" class="hostadmin_showdetails_row_even"
     style="display: none">
     <div class="hostadmin_showdetailsrow_cell" style="width: 100%">
@@ -776,7 +776,7 @@ long milliseconds = new Date().getTime();
         </div>
     </div>
 </div>
-<!-- Network Group's Ingress Rule - add row (end) -->
+<!-- Security Group's Ingress Rule - add row (end) -->
 <!-- Add Ingress Rule Dialog (begin) -->
 <div id="dialog_add_ingress_rule" title="Add Ingress Rule" style="display: none">
     <div class="dialog_formcontent">
@@ -829,15 +829,15 @@ long milliseconds = new Date().getTime();
             </li>
             <li style="margin-top: 7px;">
                 <label>
-                    <input type="radio" name="ingress_rule_type" value="account_networkgroup">
+                    <input type="radio" name="ingress_rule_type" value="account_securitygroup">
                     Add by Group:</label>
                 <p style="color: #999;">
                     Account Name</p>
                 <p style="margin-left: 25px; display: inline; color: #999;">
-                    Network Group Name</p>
-                <div id="account_networkgroup_container">
+                    Security Group Name</p>
+                <div id="account_securitygroup_container">
                 </div>
-                <a style="margin-left: 110px; display: inline;" id="add_more_account_networkgroup"
+                <a style="margin-left: 110px; display: inline;" id="add_more_account_securitygroup"
                     href="#">Add more</a></li>
         </ol>
         </form>
@@ -852,19 +852,19 @@ long milliseconds = new Date().getTime();
     </div>
 </div>
 <!-- Add Ingress Rule Dialog - CIDR template (end) -->
-<!-- Add Ingress Rule Dialog - Account/Network Group template (begin) -->
-<div id="account_networkgroup_template" class="account_networkgroup_template" style="width: 200px;
+<!-- Add Ingress Rule Dialog - Account/Security Group template (begin) -->
+<div id="account_securitygroup_template" class="account_securitygroup_template" style="width: 200px;
     height: auto; float: left; display: none">
     <input class="text" style="width: 80px" type="text" id="account" />
     <span>/</span>
     <input class="text" style="width: 80px" type="text" id="networkgroup" />
-    <div id="account_networkgroup_template_errormsg" class="dialog_formcontent_errormsg"
+    <div id="account_securitygroup_template_errormsg" class="dialog_formcontent_errormsg"
         style="display: none; margin: 0;">
     </div>
 </div>
-<!-- Add Ingress Rule Dialog - Account/Network Group template (end) -->
-<!-- Add Network Groups Dialog (begin) -->
-<div id="dialog_add_network_groups" title="Add Network Group" style="display: none">
+<!-- Add Ingress Rule Dialog - Account/Security Group template (end) -->
+<!-- Add Security Groups Dialog (begin) -->
+<div id="dialog_add_network_groups" title="Add Security Group" style="display: none">
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
@@ -886,5 +886,5 @@ long milliseconds = new Date().getTime();
         </form>
     </div>
 </div>
-<!-- Add Network Groups Dialog (end) -->
-<!-- ***** Network Groups (end) **************************************************************************************************************** -->
+<!-- Add Security Groups Dialog (end) -->
+<!-- ***** Security Groups (end) **************************************************************************************************************** -->

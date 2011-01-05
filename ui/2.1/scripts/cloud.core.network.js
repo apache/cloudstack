@@ -1146,10 +1146,10 @@ function showNetworkingTab(p_domainId, p_account) {
 	//*** Network (end) ******************************************************************************
 	
 	//*** Network Group (begin) **********************************************************************	   
-    function networkGroupJSONToTemplate(json, template) {	       
+    function securityGroupJSONToTemplate(json, template) {	       
         (index++ % 2 == 0)? template.addClass("smallrow_even"): template.addClass("smallrow_odd");	    
-        template.attr("id", "networkGroup_"+json.id).data("networkGroupId", json.id).data("domainId", json.domainid).data("account",json.account).data("networkGroupName", fromdb(json.name));	      		    				   
-	    template.find("#delete_link, #ingress_rule_link").data("parent_template_id", "networkGroup_"+json.id);
+        template.attr("id", "securityGroup_"+json.id).data("securityGroupId", json.id).data("domainId", json.domainid).data("account",json.account).data("securityGroupName", fromdb(json.name));	      		    				   
+	    template.find("#delete_link, #ingress_rule_link").data("parent_template_id", "securityGroup_"+json.id);
 	    
 	    template.find("#id").text(json.id);
 	    template.find("#name").text(fromdb(json.name));
@@ -1168,7 +1168,7 @@ function showNetworkingTab(p_domainId, p_account) {
 		}
     }
     	    
-    function listNetworkGroups() {       
+    function listSecurityGroups() {       
         var submenuContent = $("#submenu_content_network_groups");                                    
 	     
 	    var commandString;            
@@ -1180,30 +1180,30 @@ function showNetworkingTab(p_domainId, p_account) {
 		    var account = submenuContent.find("#advanced_search #adv_search_account").val();
 		    var moreCriteria = [];								
 			if (name!=null && trim(name).length > 0) 
-				moreCriteria.push("&networkgroupname="+todb(name));						
+				moreCriteria.push("&securityGroupname="+todb(name));						
 			if (virtualMachineId!=null && virtualMachineId.length > 0) 
 				moreCriteria.push("&virtualmachineid="+virtualMachineId);	   
 			if (domainId!=null && domainId.length > 0) 
 				moreCriteria.push("&domainid="+domainId);		
 			if (account!=null && account.length > 0) 
 				moreCriteria.push("&account="+account);			
-			commandString = "command=listNetworkGroups&page=" + currentPage + moreCriteria.join("") + "&response=json";		
+			commandString = "command=listSecurityGroups&page=" + currentPage + moreCriteria.join("") + "&response=json";		
 		} else {    
 		     var moreCriteria = [];		
 		    if(domainId!=null)
 		        moreCriteria.push("&domainid="+domainId);				   			  
             var searchInput = submenuContent.find("#search_input").val();            
             if (searchInput != null && searchInput.length > 0) 
-                commandString = "command=listNetworkGroups&page=" + currentPage + moreCriteria.join("") + "&keyword=" + searchInput + "&response=json"
+                commandString = "command=listSecurityGroups&page=" + currentPage + moreCriteria.join("") + "&keyword=" + searchInput + "&response=json"
             else
-                commandString = "command=listNetworkGroups&page=" + currentPage + moreCriteria.join("") + "&response=json";		
+                commandString = "command=listSecurityGroups&page=" + currentPage + moreCriteria.join("") + "&response=json";		
         }    	              
         
         //listItems(submenuContent, commandString, jsonResponse1, jsonResponse2, template, fnJSONToTemplate);         
-        listItems(submenuContent, commandString, "listnetworkgroupsresponse", "securitygroup", $("#network_group_template"), networkGroupJSONToTemplate);          
+        listItems(submenuContent, commandString, "listsecuritygroupsresponse", "securitygroup", $("#security_group_template"), securityGroupJSONToTemplate);          
     }	    
     
-    submenuContentEventBinder($("#submenu_content_network_groups"), listNetworkGroups);	   
+    submenuContentEventBinder($("#submenu_content_network_groups"), listSecurityGroups);	   
     
     $("#submenu_network_groups").bind("click", function(event) {		        
 		currentSubMenu.removeClass().addClass("submenu_links_off");   
@@ -1217,7 +1217,7 @@ function showNetworkingTab(p_domainId, p_account) {
 	        submenuContent.find("#adv_search_domain_li, #adv_search_account_li").show();
 				
 		currentPage = 1;			
-		listNetworkGroups();			
+		listSecurityGroups();			
 		return false;
 	});	
 	
@@ -1225,11 +1225,11 @@ function showNetworkingTab(p_domainId, p_account) {
 	    var link = $(event.target);			  
 	    var parentTemplateId = link.data("parent_template_id"); 
 	    var template = $(("#"+parentTemplateId));		
-	    var networkGroupId = template.data("networkGroupId");    		
+	    var securityGroupId = template.data("securityGroupId");    		
 	    var domainId = template.data("domainId");
 	    var account = template.data("account");
-	    var networkGroupId = template.data("networkGroupId");	
-	    var networkGroupName = template.data("networkGroupName");
+	    var securityGroupId = template.data("securityGroupId");	
+	    var securityGroupName = template.data("securityGroupName");
 	       
 	    var submenuContent = $("#submenu_content_network_groups");		   
 	    switch(event.target.id) {
@@ -1245,10 +1245,10 @@ function showNetworkingTab(p_domainId, p_account) {
                 var array1 = [];
                 array1.push("&domainid="+domainId);
                 array1.push("&account="+account);
-                array1.push("&name="+networkGroupName);                    
+                array1.push("&name="+securityGroupName);                    
                 
                 $.ajax({
-		            data: createURL("command=deleteNetworkGroup&response=json" + array1.join("")), 
+		            data: createURL("command=deleteSecurityGroup&response=json" + array1.join("")), 
                     dataType: "json",
                     success: function(json) {		                        	                                               				        
                         template.slideUp("slow", function() { $(this).remove() });
@@ -1266,10 +1266,10 @@ function showNetworkingTab(p_domainId, p_account) {
 				var expanded = link.data("expanded");
 				if (expanded == null || expanded == false) {						 					    			    
 				    $.ajax({
-					   data: createURL("command=listNetworkGroups"+"&domainid="+domainId+"&account="+account+"&networkgroupname="+networkGroupName+"&response=json"),
+					   data: createURL("command=listSecurityGroups"+"&domainid="+domainId+"&account="+account+"&securitygroupname="+securityGroupName+"&response=json"),
 	                    dataType: "json",		                    
 	                    success: function(json) {			                        		                       
-	                        var items = json.listnetworkgroupsresponse.securitygroup[0].ingressrule;                  
+	                        var items = json.listsecuritygroupsresponse.securitygroup[0].ingressrule;                  
 	                        var grid = template.find("#ingress_rule_grid");								
 					        if(grid.find("#network_group_ingress_rule_add_row").length==0) {
 					            var row = $("#network_group_ingress_rule_add_row").clone().show();
@@ -1286,7 +1286,7 @@ function showNetworkingTab(p_domainId, p_account) {
 					            						    				    															
 						        for (var i = 0; i < items.length; i++) {			
 						            var newTemplate = $("#network_group_ingress_rule_template").clone(true);
-	                                ingressRuleJSONToTemplate(items[i], newTemplate).data("parentNetworkGroupId", networkGroupId).data("parentNetworkGroupDomainId", domainId).data("parentNetworkGroupAccount", account).data("parentNetworkGroupName",networkGroupName); 
+	                                ingressRuleJSONToTemplate(items[i], newTemplate).data("parentSecurityGroupId", securityGroupId).data("parentSecurityGroupDomainId", domainId).data("parentSecurityGroupAccount", account).data("parentSecurityGroupName",securityGroupName); 
 	                                grid.append(newTemplate.show());																	
 						        }					        
 					        }
@@ -1314,8 +1314,8 @@ function showNetworkingTab(p_domainId, p_account) {
 		        dialogAddIngressRule.find("#cidr_container").empty();
 		        dialogAddIngressRule.find("#add_more_cidr").click();
 		        
-		        dialogAddIngressRule.find("#account_networkgroup_container").empty();
-		        dialogAddIngressRule.find("#add_more_account_networkgroup").click();
+		        dialogAddIngressRule.find("#account_securitygroup_container").empty();
+		        dialogAddIngressRule.find("#add_more_account_securitygroup").click();
 		        
 		        $("#dialog_add_ingress_rule")
 	            .dialog('option', 'buttons', { 			    
@@ -1325,7 +1325,7 @@ function showNetworkingTab(p_domainId, p_account) {
     			    	var moreCriteria = [];	
     			    	moreCriteria.push("&domainid="+domainId);
                         moreCriteria.push("&account="+account);
-                        moreCriteria.push("&networkgroupname="+networkGroupName);   
+                        moreCriteria.push("&securitygroupname="+securityGroupName);   
                         
     			    	var protocol = thisDialog.find("#protocol").val();
 			            if (protocol!=null && protocol.length > 0) 
@@ -1347,12 +1347,12 @@ function showNetworkingTab(p_domainId, p_account) {
 	                        for(var i=1; i<thisDialog.find(".cidr_template").length; i++)
 	                            isValid &= validateCIDR("CIDR", thisDialog.find(".cidr_template").eq(i).find("#cidr"), thisDialog.find(".cidr_template").eq(0).find("#cidr_errormsg"), true); //optional        
 	                    }
-	                    else if(thisDialog.find("input[name='ingress_rule_type']:checked").val() == "account_networkgroup") {			                        
-	                        isValid &= validateString("Account", thisDialog.find(".account_networkgroup_template").eq(0).find("#account"), thisDialog.find(".account_networkgroup_template").eq(0).find("#account_networkgroup_template_errormsg"), false);	 //required                
-	                        isValid &= validateString("Network Group", thisDialog.find(".account_networkgroup_template").eq(0).find("#networkgroup"), thisDialog.find(".account_networkgroup_template").eq(0).find("#account_networkgroup_template_errormsg"), false);	 //required             
-	                        for(var i=1; i<thisDialog.find(".account_networkgroup_template").length; i++) {
-	                            isValid &= validateString("Account", thisDialog.find(".account_networkgroup_template").eq(i).find("#account"), thisDialog.find(".account_networkgroup_template").eq(0).find("#account_networkgroup_template_errormsg"), true);	 //optional          
-	                            isValid &= validateString("Network Group", thisDialog.find(".account_networkgroup_template").eq(i).find("#networkgroup"), thisDialog.find(".account_networkgroup_template").eq(0).find("#account_networkgroup_template_errormsg"), true);	 //optional     
+	                    else if(thisDialog.find("input[name='ingress_rule_type']:checked").val() == "account_securitygroup") {			                        
+	                        isValid &= validateString("Account", thisDialog.find(".account_securitygroup_template").eq(0).find("#account"), thisDialog.find(".account_securitygroup_template").eq(0).find("#account_securitygroup_template_errormsg"), false);	 //required                
+	                        isValid &= validateString("Network Group", thisDialog.find(".account_securitygroup_template").eq(0).find("#securitygroup"), thisDialog.find(".account_securitygroup_template").eq(0).find("#account_securitygroup_template_errormsg"), false);	 //required             
+	                        for(var i=1; i<thisDialog.find(".account_securitygroup_template").length; i++) {
+	                            isValid &= validateString("Account", thisDialog.find(".account_securitygroup_template").eq(i).find("#account"), thisDialog.find(".account_securitygroup_template").eq(0).find("#account_securitygroup_template_errormsg"), true);	 //optional          
+	                            isValid &= validateString("Network Group", thisDialog.find(".account_securitygroup_template").eq(i).find("#securitygroup"), thisDialog.find(".account_securitygroup_template").eq(0).find("#account_securitygroup_template_errormsg"), true);	 //optional     
 	                        }
 	                    }					            
 			            if (!isValid) return;					
@@ -1385,12 +1385,12 @@ function showNetworkingTab(p_domainId, p_account) {
 	                        if(array1.length > 0)
 			                    moreCriteria.push("&cidrlist="+encodeURIComponent(array1.join(",")));	
 	                    }	    
-	                    else if(dialogAddIngressRule.find("input[name='ingress_rule_type']:checked").val() == "account_networkgroup") {			                          
-	                        var accountElementArray = dialogAddIngressRule.find(".account_networkgroup_template").find("#account");	
-	                        var networkgroupElementArray = dialogAddIngressRule.find(".account_networkgroup_template").find("#networkgroup");			                        
+	                    else if(dialogAddIngressRule.find("input[name='ingress_rule_type']:checked").val() == "account_securitygroup") {			                          
+	                        var accountElementArray = dialogAddIngressRule.find(".account_securitygroup_template").find("#account");	
+	                        var securitygroupElementArray = dialogAddIngressRule.find(".account_securitygroup_template").find("#securitygroup");			                        
 	                        for(var i=0; i<accountElementArray.length; i++)	{	  
-	                            if(networkgroupElementArray[i].value.length > 0 && accountElementArray[i].value.length > 0)                        
-	                                moreCriteria.push("&usernetworkgrouplist["+i+"].account="+accountElementArray[i].value+"&usernetworkgrouplist["+i+"].group="+networkgroupElementArray[i].value);
+	                            if(securitygroupElementArray[i].value.length > 0 && accountElementArray[i].value.length > 0)                        
+	                                moreCriteria.push("&usersecuritygrouplist["+i+"].account="+accountElementArray[i].value+"&usersecuritygrouplist["+i+"].group="+securitygroupElementArray[i].value);
 	                        }
 	                    }	  		           
 			            				            					            	   
@@ -1406,10 +1406,10 @@ function showNetworkingTab(p_domainId, p_account) {
                         template.find("#ingress_rule_grid").find("#no_ingress_rule").hide();             
                         
                         $.ajax({
-			                data: createURL("command=authorizeNetworkGroupIngress"+moreCriteria.join("")+"&response=json"),
+			                data: createURL("command=authorizeSecurityGroupIngress"+moreCriteria.join("")+"&response=json"),
 					        dataType: "json",
 					        success: function(json) {					            		            				
-					            var jobId = json.authorizenetworkgroupingress.jobid; 						            	                   
+					            var jobId = json.authorizesecuritygroupingress.jobid; 						            	                   
 			                    var timerKey = "ingressRuleJob_"+jobId;
 			                    ingressRuleTemplate.attr("id","ingressRule_"+jobId); //temporary id until API call returns real id							        
 						        $("body").everyTime(
@@ -1426,12 +1426,12 @@ function showNetworkingTab(p_domainId, p_account) {
 										        } else {
 											        $("body").stopTime(timerKey);											 
 											        if (result.jobstatus == 1) { // Succeeded													            							            
-											            var items = result.jobresult.networkgroup.ingressrule;			            
-											            ingressRuleJSONToTemplate(items[0], ingressRuleTemplate).data("parentNetworkGroupId", networkGroupId).data("parentNetworkGroupDomainId", domainId).data("parentNetworkGroupAccount", account).data("parentNetworkGroupName",networkGroupName);													            
+											            var items = result.jobresult.securitygroup.ingressrule;			            
+											            ingressRuleJSONToTemplate(items[0], ingressRuleTemplate).data("parentSecurityGroupId", securityGroupId).data("parentSecurityGroupDomainId", domainId).data("parentSecurityGroupAccount", account).data("parentSecurityGroupName",securityGroupName);													            
 											            if(items.length > 1) {                               
                                                             for(var i=1; i<items.length; i++) {         
                                                                 var ingressRuleTemplate2 = $("#network_group_ingress_rule_template").clone(true);                                                               
-                                                                ingressRuleJSONToTemplate(items[i], ingressRuleTemplate2).data("parentNetworkGroupId", networkGroupId).data("parentNetworkGroupDomainId", domainId).data("parentNetworkGroupAccount", account).data("parentNetworkGroupName",networkGroupName);	   
+                                                                ingressRuleJSONToTemplate(items[i], ingressRuleTemplate2).data("parentSecurityGroupId", securityGroupId).data("parentSecurityGroupDomainId", domainId).data("parentSecurityGroupAccount", account).data("parentSecurityGroupName",securityGroupName);	   
                                                                 template.find("#ingress_rule_grid").append(ingressRuleTemplate2.fadeIn("slow"));	                                                                 
                                                             }                                    
                                                         }  												        		
@@ -1514,12 +1514,12 @@ function showNetworkingTab(p_domainId, p_account) {
 	    var cidrOrGroup;
 	    if(json.cidr != null && json.cidr.length > 0)
 	        cidrOrGroup = json.cidr;
-	    else if (json.account != null && json.account.length > 0 &&  json.networkgroupname != null && json.networkgroupname.length > 0)
-	        cidrOrGroup = json.account + "/" + json.networkgroupname;		    
+	    else if (json.account != null && json.account.length > 0 &&  json.securitygroupname != null && json.securitygroupname.length > 0)
+	        cidrOrGroup = json.account + "/" + json.securitygroupname;		    
 	    template.find("#cidr").text(cidrOrGroup);		    		    
 	    template.data("cidr", json.cidr);		    
 	    template.data("account", json.account);		    
-	    template.data("networkGroupName", json.networkgroupname);	
+	    template.data("securityGroupName", json.securitygroupname);	
 	    
 	    return template;	   
     }
@@ -1527,19 +1527,19 @@ function showNetworkingTab(p_domainId, p_account) {
 	$("#network_group_ingress_rule_template").bind("click", function(event) {
         var template = $(this);	
                    
-        var parentNetworkGroupId = template.data("parentNetworkGroupId");
-        var parentNeteworkGroupTemplate = $("#networkGroup_" + parentNetworkGroupId);
+        var parentSecurityGroupId = template.data("parentSecurityGroupId");
+        var parentNeteworkGroupTemplate = $("#securityGroup_" + parentSecurityGroupId);
                     
         var moreCriteria = [];		   	
 	    
-	    var parentNetworkGroupDomainId = template.data("parentNetworkGroupDomainId");
-	    moreCriteria.push("&domainid="+encodeURIComponent(parentNetworkGroupDomainId));
+	    var parentSecurityGroupDomainId = template.data("parentSecurityGroupDomainId");
+	    moreCriteria.push("&domainid="+encodeURIComponent(parentSecurityGroupDomainId));
 	    
-	    var parentNetworkGroupAccount = template.data("parentNetworkGroupAccount");
-	    moreCriteria.push("&account="+encodeURIComponent(parentNetworkGroupAccount));
+	    var parentSecurityGroupAccount = template.data("parentSecurityGroupAccount");
+	    moreCriteria.push("&account="+encodeURIComponent(parentSecurityGroupAccount));
 	    		    
-	    var parentNetworkGroupName = template.data("parentNetworkGroupName");
-	    moreCriteria.push("&networkgroupname="+encodeURIComponent(parentNetworkGroupName));    
+	    var parentSecurityGroupName = template.data("parentSecurityGroupName");
+	    moreCriteria.push("&securitygroupname="+encodeURIComponent(parentSecurityGroupName));    
 	    
 	    var protocol = template.data("protocol");
 	    moreCriteria.push("&protocol="+encodeURIComponent(protocol));		    	
@@ -1568,9 +1568,9 @@ function showNetworkingTab(p_domainId, p_account) {
 	        moreCriteria.push("&cidrlist="+encodeURIComponent(cidr));
 						
 	    var account = template.data("account");
-	    var networkGroupName = template.data("networkGroupName"); 
-	    if((account != null && account.length > 0) && (networkGroupName != null && networkGroupName.length > 0))                        
-            moreCriteria.push("&usernetworkgrouplist[0].account="+account + "&usernetworkgrouplist[0].group="+networkGroupName);
+	    var securityGroupName = template.data("securityGroupName"); 
+	    if((account != null && account.length > 0) && (securityGroupName != null && securityGroupName.length > 0))                        
+            moreCriteria.push("&usersecuritygrouplist[0].account="+account + "&usersecuritygrouplist[0].group="+securityGroupName);
 			
 	    var link = $(event.target);	 		    		        
 	    switch(event.target.id) {
@@ -1581,11 +1581,11 @@ function showNetworkingTab(p_domainId, p_account) {
                 loadingImg.show();  
                 rowContainer.hide();              
                 $.ajax({
-		   data: createURL("command=revokeNetworkGroupIngress"+moreCriteria.join("")+"&response=json"), 
+		   data: createURL("command=revokeSecurityGroupIngress"+moreCriteria.join("")+"&response=json"), 
                     dataType: "json",
                     success: function(json) {		                                                                                            				        
-                        var jobId = json.revokenetworkgroupingress.jobid;	                    
-                        var timerKey = "revokeNetworkGroupIngressJob"+jobId;								    
+                        var jobId = json.revokesecuritygroupingress.jobid;	                    
+                        var timerKey = "revokeSecurityGroupIngressJob"+jobId;								    
                         $("body").everyTime(2000, timerKey, function() {
 		                    $.ajax({
 					   data: createURL("command=queryAsyncJobResult&jobId="+jobId+"&response=json"), 
@@ -1601,10 +1601,10 @@ function showNetworkingTab(p_domainId, p_account) {
                                                 $(this).remove();                                                                                                        
                                                 //After deleting ingress rule successfully, check if this network group has any ingress rule(s) left. Show delete link of network group if no ingress rule(s) are left.
                                                 $.ajax({
-						                            data: createURL("command=listNetworkGroups&response=json&domainid="+parentNetworkGroupDomainId+"&account="+parentNetworkGroupAccount+"&networkgroupname="+parentNetworkGroupName),
+						                            data: createURL("command=listSecurityGroups&response=json&domainid="+parentSecurityGroupDomainId+"&account="+parentSecurityGroupAccount+"&securitygroupname="+parentSecurityGroupName),
                                                     dataType: "json",
                                                     success: function(json){                                                                                                                     
-                                                        networkGroupJSONToTemplate(json.listnetworkgroupsresponse.securitygroup[0], parentNeteworkGroupTemplate);
+                                                        securityGroupJSONToTemplate(json.listsecuritygroupsresponse.securitygroup[0], parentNeteworkGroupTemplate);
                                                     }
                                                 });                                                        
                                             });							                                                           
@@ -1645,11 +1645,11 @@ function showNetworkingTab(p_domainId, p_account) {
 	dialogAddIngressRule.find("#add_more_cidr").click();
 	
 		
-	dialogAddIngressRule.find("#add_more_account_networkgroup").bind("click", function(event){		    
-        dialogAddIngressRule.find("#account_networkgroup_container").append($("#account_networkgroup_template").clone().show());
+	dialogAddIngressRule.find("#add_more_account_securitygroup").bind("click", function(event){		    
+        dialogAddIngressRule.find("#account_securitygroup_container").append($("#account_securitygroup_template").clone().show());
         return false;
     });		
-    dialogAddIngressRule.find("#add_more_account_networkgroup").click();
+    dialogAddIngressRule.find("#add_more_account_securitygroup").click();
     
 				
 	dialogAddIngressRule.find("input[name='ingress_rule_type']").change(function(){		    
@@ -1658,13 +1658,13 @@ function showNetworkingTab(p_domainId, p_account) {
 	        dialogAddIngressRule.find(".cidr_template, #add_more_cidr").removeAttr("disabled");	 
 	        	        
 	        //disable Account/Network Group, clear up error fields 	        
-	        dialogAddIngressRule.find(".account_networkgroup_template, #add_more_account_networkgroup").attr("disabled", "disabled"); 
-	        cleanErrMsg(dialogAddIngressRule.find(".account_networkgroup_template").find("#account"), dialogAddIngressRule.find(".account_networkgroup_template").find("#account_networkgroup_template_errormsg")); 
-    		cleanErrMsg(dialogAddIngressRule.find(".account_networkgroup_template").find("#networkgroup"), dialogAddIngressRule.find(".account_networkgroup_template").find("#account_networkgroup_template_errormsg")); 	        	        
+	        dialogAddIngressRule.find(".account_securitygroup_template, #add_more_account_securitygroup").attr("disabled", "disabled"); 
+	        cleanErrMsg(dialogAddIngressRule.find(".account_securitygroup_template").find("#account"), dialogAddIngressRule.find(".account_securitygroup_template").find("#account_securitygroup_template_errormsg")); 
+    		cleanErrMsg(dialogAddIngressRule.find(".account_securitygroup_template").find("#securitygroup"), dialogAddIngressRule.find(".account_securitygroup_template").find("#account_securitygroup_template_errormsg")); 	        	        
 	    }
-	    else if(dialogAddIngressRule.find("input[name='ingress_rule_type']:checked").val() == "account_networkgroup") {
+	    else if(dialogAddIngressRule.find("input[name='ingress_rule_type']:checked").val() == "account_securitygroup") {
 	        //enable Account/Network Group
-	        dialogAddIngressRule.find(".account_networkgroup_template, #add_more_account_networkgroup").removeAttr("disabled");	
+	        dialogAddIngressRule.find(".account_securitygroup_template, #add_more_account_securitygroup").removeAttr("disabled");	
 	        
 	        //disable CIDR, clear up error fields
 	        dialogAddIngressRule.find(".cidr_template, #add_more_cidr").attr("disabled", "disabled");   
@@ -1712,7 +1712,7 @@ function showNetworkingTab(p_domainId, p_account) {
 				
 				var submenuContent = $("#submenu_content_network_groups");
 				
-				var template = $("#network_group_template").clone(true);
+				var template = $("#security_group_template").clone(true);
 				var loadingImg = template.find(".adding_loading");		
                 var rowContainer = template.find("#row_container");    	                               
                 loadingImg.find(".adding_text").text("Adding....");	
@@ -1726,11 +1726,11 @@ function showNetworkingTab(p_domainId, p_account) {
 				thisDialog.dialog("close");
 							
 				$.ajax({						
-				    data: createURL("command=createNetworkGroup&name="+todb(name)+"&description="+todb(desc)+"&response=json"),
+				    data: createURL("command=createSecurityGroup&name="+todb(name)+"&description="+todb(desc)+"&response=json"),
 					dataType: "json",
 					success: function(json) {						   
 						var item = json.createsecuritygroupresponse.securitygroup;													
-						networkGroupJSONToTemplate(item, template);							
+						securityGroupJSONToTemplate(item, template);							
 						changeGridRowsTotal(submenuContent.find("#grid_rows_total"), 1);	
 						loadingImg.hide();  
                         rowContainer.show();    						
@@ -1752,8 +1752,10 @@ function showNetworkingTab(p_domainId, p_account) {
 	
 	
 	//initialize page
+	/*
 	if(getDirectAttachNetworkGroupsEnabled() != "true") 
-	    $(".submenu_links, #submenu_content_network_groups").hide();		
+	    $(".submenu_links, #submenu_content_network_groups").hide();	
+	*/	
 	
 	var currentSubMenu = $("#submenu_network");	
 	currentSubMenu.click();	
