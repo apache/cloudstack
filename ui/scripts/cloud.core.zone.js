@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
- var networkType = "Basic";
+
  function afterLoadZoneJSP($leftmenuItem1) {
     hideMiddleMenu();  
         
@@ -29,10 +29,7 @@
     initDialog("dialog_confirmation_delete_secondarystorage");     
     initDialog("dialog_add_host_in_zone_page"); 
 	initDialog("dialog_add_pool_in_zone_page");
-    
-    // If the network type is vnet, don't show any vlan stuff.
-    bindEventHandlerToDialogAddVlanForZone();	        
-            
+        
     //switch between different tabs in zone page    
     var tabArray = [$("#tab_details"), $("#tab_secondarystorage"), $("#tab_network")];
     var tabContentArray = [$("#tab_content_details"), $("#tab_content_secondarystorage"), $("#tab_content_network")];      
@@ -42,12 +39,17 @@
     zoneRefreshDataBinding();    	
 }
 
-function zoneRefreshDataBinding() {
+function zoneRefreshDataBinding() {         
     var $zoneNode = $selectedSubMenu.parent();     
     zoneJsonToRightPanel($zoneNode);		  
 }
 
-function zoneJsonToRightPanel($leftmenuItem1) {	                  
+function zoneJsonToRightPanel($leftmenuItem1) {	       
+    $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);      
+           
+    // If the network type is vnet, don't show any vlan stuff.
+    bindEventHandlerToDialogAddVlanForZone();                
+               
     bindAddPodButton($("#add_pod_button"), $leftmenuItem1);                  
     //bindAddVLANButton($("#add_vlan_button"), $leftmenuItem1);
     bindAddSecondaryStorageButton($("#add_secondarystorage_button"), $leftmenuItem1);
@@ -56,7 +58,7 @@ function zoneJsonToRightPanel($leftmenuItem1) {
     var zoneObj = $leftmenuItem1.data("jsonObj");
     var zoneId = zoneObj.id;
     var zoneName = zoneObj.name;
-	networkType = zoneObj.networktype;
+           
     $.ajax({
         data: createURL("command=listPods&zoneid="+zoneId),
         dataType: "json",
@@ -70,8 +72,7 @@ function zoneJsonToRightPanel($leftmenuItem1) {
         bindAddHostButtonOnZonePage($("#add_host_button"), zoneId, zoneName); 
         bindAddPrimaryStorageButtonOnZonePage($("#add_primarystorage_button"), zoneId, zoneName);  
     }
-
-    $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);      
+    
     $("#right_panel_content").find("#tab_details").click();     
 }
 
@@ -127,10 +128,10 @@ function zoneJsonToDetailsTab() {
     
     $thisTab.find("#networktype").text(fromdb(jsonObj.networktype));
     if(jsonObj.networktype == "Basic") {
-        $("#midmenu_add_vlan_button, #tab_network, #tab_content_details #vlan_container").hide();
+        $("#midmenu_add_vlan_button, #tab_network, #tab_content_details #vlan_container, #guestcidraddress_container").hide();
     }
     else if(jsonObj.networktype == "Advanced") {
-        $("#midmenu_add_vlan_button, #tab_network, #tab_content_details #vlan_container").show();           
+        $("#midmenu_add_vlan_button, #tab_network, #tab_content_details #vlan_container, #guestcidraddress_container").show();           
         
         var vlan = jsonObj.vlan; 
         $thisTab.find("#vlan").text(fromdb(vlan));      
@@ -829,8 +830,10 @@ function bindEventHandlerToDialogAddVlanForZone() {
 		
 		return false;
 	});
-			
-	if (networkType == "Advanced") {
+	
+	var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");  
+	var jsonObj = $leftmenuItem1.data("jsonObj");			
+	if (jsonObj.networktype == "Advanced") {
 		dialogAddVlanForZone.find("#add_publicip_vlan_tagged").change(function(event) {	
 			if ($(this).val() == "tagged") {
 				dialogAddVlanForZone.find("#add_publicip_vlan_vlan_container").show();
@@ -955,7 +958,9 @@ function doEditZone2($actionLink, $detailsTab, $leftmenuItem1, $readonlyFields, 
 		isValid &= validateString("Start VLAN Range", $detailsTab.find("#startvlan_edit"), $detailsTab.find("#startvlan_edit_errormsg"), true); //optional (Bug 5730 requested to change VLAN to be optional when updating zone)
 		isValid &= validateString("End VLAN Range", $detailsTab.find("#endvlan_edit"), $detailsTab.find("#endvlan_edit_errormsg"), true);  //optional
 	}
-	isValid &= validateCIDR("Guest CIDR", $detailsTab.find("#guestcidraddress_edit"), $detailsTab.find("#guestcidraddress_edit_errormsg"), false);	//required					
+	if ($("#tab_content_details #guestcidraddress_container").css("display") != "none") {
+	    isValid &= validateCIDR("Guest CIDR", $detailsTab.find("#guestcidraddress_edit"), $detailsTab.find("#guestcidraddress_edit_errormsg"), false);	//required
+	}					
 	if (!isValid) 
 	    return;							
 	
@@ -1001,9 +1006,11 @@ function doEditZone2($actionLink, $detailsTab, $leftmenuItem1, $readonlyFields, 
         }
 	}				
 	
-	var guestcidraddress = $detailsTab.find("#guestcidraddress_edit").val();
-	if(guestcidraddress != jsonObj.guestcidraddress)
-	    moreCriteria.push("&guestcidraddress="+todb(guestcidraddress));				    		 
+	if ($("#tab_content_details #guestcidraddress_container").css("display") != "none") {
+	    var guestcidraddress = $detailsTab.find("#guestcidraddress_edit").val();
+	    if(guestcidraddress != jsonObj.guestcidraddress)
+	        moreCriteria.push("&guestcidraddress="+todb(guestcidraddress));				    		 
+	}
 	 
 	if(moreCriteria.length > 0) { 	        	
 	    $.ajax({

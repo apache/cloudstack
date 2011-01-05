@@ -106,8 +106,7 @@ function buildZoneTree() {
                     });      
                 } 
                 else {             
-                    zoneRefreshDataBinding(); 
-                    zoneJsonToRightPanel($(this));			 
+                    zoneRefreshDataBinding();                     	 
                 }
 			   	    		   				    		   			    
 			    break;	
