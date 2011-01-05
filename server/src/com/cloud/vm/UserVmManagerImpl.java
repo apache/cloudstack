@@ -2239,8 +2239,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (dc.getNetworkType() == NetworkType.Basic && networkList == null) {
             Long singleNetworkId = null;
             SearchBuilder<NetworkVO> sb = _networkDao.createSearchBuilder();
-            sb.and("broadcastDomainType", sb.entity().getId(), SearchCriteria.Op.EQ);
-            sb.and("dataCenterId", sb.entity().getName(), SearchCriteria.Op.EQ);
+            sb.and("broadcastDomainType", sb.entity().getBroadcastDomainType(), SearchCriteria.Op.EQ);
+            sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
             SearchCriteria<NetworkVO> sc = sb.create();
             sc.setParameters("broadcastDomainType", BroadcastDomainType.Native);
             sc.setParameters("dataCenterId", dc.getId());

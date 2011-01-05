@@ -377,7 +377,9 @@ function initVMWizard() {
 			    var $zoneSelect = $vmPopup.find("#wizard_zone").empty();					
 			    if (zones != null && zones.length > 0) {
 				    for (var i = 0; i < zones.length; i++) {
-					    $zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
+						$zone = $("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>");
+						$zone.data("zoneObj", zones[i]);
+					    $zoneSelect.append($zone); 
 				    }
 			    }				
 			    listTemplatesInVmPopup();	
@@ -817,135 +819,144 @@ function initVMWizard() {
 	        $thisPopup.find("#wizard_review_disk_offering").text(diskOfferingName);  
 			
 			//Setup Networking before showing it.  This only applies to zones with Advanced Networking support.
-			// Setup networks
-			// hardcoded text for now
-			var networkName = "Virtual Network";
-			var networkDesc = "A dedicated virtualized network for your account.  The broadcast domain is contrained within a VLAN and all public network access is routed out by a virtual router.";
-			$.ajax({
-				data: createURL("command=listNetworks&domainid="+g_domainid+"&account="+g_account+"&zoneId="+$thisPopup.find("#wizard_zone").val()),
-				dataType: "json",
-				async: false,
-				success: function(json) {
-					var networks = json.listnetworksresponse.network;
-					var virtualNetwork = null;
-					if (networks != null && networks.length > 0) {
-						for (var i = 0; i < networks.length; i++) {
-							if (networks[i].type == 'Virtual') {
-								virtualNetwork = networks[i];
+			var zoneObj = $thisPopup.find("#wizard_zone option:selected").data("zoneObj");
+			if (zoneObj.networktype == "Advanced") {
+				var networkName = "Virtual Network";
+				var networkDesc = "A dedicated virtualized network for your account.  The broadcast domain is contrained within a VLAN and all public network access is routed out by a virtual router.";
+				$.ajax({
+					data: createURL("command=listNetworks&domainid="+g_domainid+"&account="+g_account+"&zoneId="+$thisPopup.find("#wizard_zone").val()),
+					dataType: "json",
+					async: false,
+					success: function(json) {
+						var networks = json.listnetworksresponse.network;
+						var virtualNetwork = null;
+						if (networks != null && networks.length > 0) {
+							for (var i = 0; i < networks.length; i++) {
+								if (networks[i].type == 'Virtual') {
+									virtualNetwork = networks[i];
+								}
 							}
 						}
-					}
-					var $virtualNetworkElement = $("#vm_popup #network_virtual_container");
-		
-					// Setup Virtual Networks
-					if (virtualNetwork == null) {
-						$.ajax({
-							data: createURL("command=listNetworkOfferings"),
-							dataType: "json",
-							async: false,
-							success: function(json) {
-								var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
-								if (networkOfferings != null && networkOfferings.length > 0) {
-									for (var i = 0; i < networkOfferings.length; i++) {
-										if (networkOfferings[i].type == "Virtual" && networkOfferings[i].isdefault) {
-											// Create a network from this.
-											$.ajax({
-												data: createURL("command=createNetwork&networkOfferingId="+networkOfferings[i].id+"&name="+todb(networkName)+"&displayText="+todb(networkDesc)+"&zoneId="+$thisPopup.find("#wizard_zone").val()),
-												dataType: "json",
-												async: false,
-												success: function(json) {
-													var network = json.createnetworkresponse.network;
-													if (network.networkofferingavailability != 'Unavailable') {
-														$virtualNetworkElement.show();
-														if (network.networkofferingavailability == 'Required') {
-															$virtualNetworkElement.find("#network_virtual").attr('disabled', true);
+						var $virtualNetworkElement = $("#vm_popup #network_virtual_container");
+			
+						// Setup Virtual Networks
+						if (virtualNetwork == null) {
+							$.ajax({
+								data: createURL("command=listNetworkOfferings"),
+								dataType: "json",
+								async: false,
+								success: function(json) {
+									var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
+									if (networkOfferings != null && networkOfferings.length > 0) {
+										for (var i = 0; i < networkOfferings.length; i++) {
+											if (networkOfferings[i].type == "Virtual" && networkOfferings[i].isdefault) {
+												// Create a network from this.
+												$.ajax({
+													data: createURL("command=createNetwork&networkOfferingId="+networkOfferings[i].id+"&name="+todb(networkName)+"&displayText="+todb(networkDesc)+"&zoneId="+$thisPopup.find("#wizard_zone").val()),
+													dataType: "json",
+													async: false,
+													success: function(json) {
+														var network = json.createnetworkresponse.network;
+														if (network.networkofferingavailability != 'Unavailable') {
+															$virtualNetworkElement.show();
+															if (network.networkofferingavailability == 'Required') {
+																$virtualNetworkElement.find("#network_virtual").attr('disabled', true);
+															}
+															$virtualNetworkElement.data("id", network.id);
+														} else {
+															$virtualNetworkElement.hide();
 														}
-														$virtualNetworkElement.data("id", network.id);
-													} else {
-														$virtualNetworkElement.hide();
 													}
-												}
-											});
+												});
+											}
 										}
 									}
 								}
-							}
-						});
-					} else {
-						if (virtualNetwork.networkofferingavailability != 'Unavailable') {
-							$virtualNetworkElement.show();
-							if (virtualNetwork.networkofferingavailability == 'Required') {
-								$virtualNetworkElement.find("#network_virtual").attr('disabled', true);
-							}
-							$virtualNetworkElement.data("id", virtualNetwork.id);
+							});
 						} else {
-							$virtualNetworkElement.hide();
-						}
-					}
-					
-					// Setup Direct Networks
-					var $networkDirectTemplate = $("#wizard_network_direct_template");
-					var $networkDirectContainer = $("#network_direct_container").empty();
-					if (networks != null && networks.length > 0) {
-						for (var i = 0; i < networks.length; i++) {
-							if (networks[i].type != 'Direct') {
-								continue;
+							if (virtualNetwork.networkofferingavailability != 'Unavailable') {
+								$virtualNetworkElement.show();
+								if (virtualNetwork.networkofferingavailability == 'Required') {
+									$virtualNetworkElement.find("#network_virtual").attr('disabled', true);
+								}
+								$virtualNetworkElement.data("id", virtualNetwork.id);
+							} else {
+								$virtualNetworkElement.hide();
 							}
-							var $directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+networks[i].id);
-							$directNetworkElement.find("#network_direct_checkbox").data("jsonObj", networks[i]);
-							$directNetworkElement.find("#network_direct_name").text(networks[i].name);
-							$directNetworkElement.find("#network_direct_desc").text(networks[i].displaytext);
-							$networkDirectContainer.append($directNetworkElement.show());
+						}
+						
+						// Setup Direct Networks
+						var $networkDirectTemplate = $("#wizard_network_direct_template");
+						var $networkDirectContainer = $("#network_direct_container").empty();
+						if (networks != null && networks.length > 0) {
+							for (var i = 0; i < networks.length; i++) {
+								if (networks[i].type != 'Direct') {
+									continue;
+								}
+								var $directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+networks[i].id);
+								$directNetworkElement.find("#network_direct_checkbox").data("jsonObj", networks[i]);
+								$directNetworkElement.find("#network_direct_name").text(networks[i].name);
+								$directNetworkElement.find("#network_direct_desc").text(networks[i].displaytext);
+								$networkDirectContainer.append($directNetworkElement.show());
+							}
 						}
 					}
-				}
-			});
-			$thisPopup.find("#wizard_review_network").text(networkName);
+				});
+				$thisPopup.find("#wizard_review_network").text(networkName);
+			} else {
+				// Basic Network, show security groups
+				$thisPopup.find("#wizard_review_network").text("Basic Network");
+			}
 	    }	
 	    	
 	    if (currentStepInVmPopup == 4) { //network
-			var $selectedDirectNetworks = $thisPopup.find("input:checkbox[name=network_direct_checkbox]:checked");
-			var $selectedVirtualNetworks = $thisPopup.find("input:checkbox[name=network_virtual_checkbox]:checked");
-			
-			// prevent a person from moving on if no network has been selected
-	        if($selectedDirectNetworks.length == 0 && $selectedVirtualNetworks.length == 0) {
-	            $thisPopup.find("#step4 #wiz_message").show();
-		        return false;
-		    }      
-			
-			var modResult = 0;
-			if ($selectedVirtualNetworks.length == 0) {
-				$thisPopup.find("#wizard_review_virtual_network_container").hide();
-				modResult = 1;
-			} else {
-				$thisPopup.find("#wizard_review_virtual_network_container").show();
-				modResult = 0;
-			}
-		
-			var $reviewNetworkContainer = $("#wizard_review_direct_network_container").empty();
-			if ($selectedDirectNetworks.length != 0) {
-				var networkIds = [];
+			var zoneObj = $thisPopup.find("#wizard_zone option:selected").data("zoneObj");
+			if (zoneObj.networktype == "Advanced") {
+				var $selectedDirectNetworks = $thisPopup.find("input:checkbox[name=network_direct_checkbox]:checked");
+				var $selectedVirtualNetworks = $thisPopup.find("input:checkbox[name=network_virtual_checkbox]:checked");
 				
-				$selectedDirectNetworks.each(function(i) {
-					var json = $(this).data("jsonObj");
-					if (i == 0) {
-						networkIds.push(json.id);
-					} else {
-						networkIds.push(","+json.id);
-					}
-					$reviewNetworkElement = $reviewNetworkTemplate.clone().attr("id", "network"+json.id);
-					if (i % 2 == modResult) {
-						$reviewNetworkElement.addClass("odd");
-					} else {
-						$reviewNetworkElement.addClass("even");
-					}
-					$reviewNetworkElement.find("#wizard_review_network_label").text("Network " + (i+2-modResult) + ":");
-					$reviewNetworkElement.find("#wizard_review_network_selected").text(json.name);
-					$reviewNetworkContainer.append($reviewNetworkElement.show());
-				});
-				$reviewNetworkContainer.data("directNetworkIds", networkIds.join(""));
+				// prevent a person from moving on if no network has been selected
+				if($selectedDirectNetworks.length == 0 && $selectedVirtualNetworks.length == 0) {
+					$thisPopup.find("#step4 #wiz_message").show();
+					return false;
+				}      
+				
+				var modResult = 0;
+				if ($selectedVirtualNetworks.length == 0) {
+					$thisPopup.find("#wizard_review_virtual_network_container").hide();
+					modResult = 1;
+				} else {
+					$thisPopup.find("#wizard_review_virtual_network_container").show();
+					modResult = 0;
+				}
+			
+				var $reviewNetworkContainer = $("#wizard_review_direct_network_container").empty();
+				if ($selectedDirectNetworks.length != 0) {
+					var networkIds = [];
+					
+					$selectedDirectNetworks.each(function(i) {
+						var json = $(this).data("jsonObj");
+						if (i == 0) {
+							networkIds.push(json.id);
+						} else {
+							networkIds.push(","+json.id);
+						}
+						$reviewNetworkElement = $reviewNetworkTemplate.clone().attr("id", "network"+json.id);
+						if (i % 2 == modResult) {
+							$reviewNetworkElement.addClass("odd");
+						} else {
+							$reviewNetworkElement.addClass("even");
+						}
+						$reviewNetworkElement.find("#wizard_review_network_label").text("Network " + (i+2-modResult) + ":");
+						$reviewNetworkElement.find("#wizard_review_network_selected").text(json.name);
+						$reviewNetworkContainer.append($reviewNetworkElement.show());
+					});
+					$reviewNetworkContainer.data("directNetworkIds", networkIds.join(""));
+				} else {
+					$reviewNetworkContainer.data("directNetworkIds", null);
+				}
 			} else {
-				$reviewNetworkContainer.data("directNetworkIds", null);
+				// Any basic network/security groups handling
 			}
 	    }	
 	    
@@ -965,19 +976,24 @@ function initVMWizard() {
 		    moreCriteria.push("&templateId="+$selectedVmWizardTemplate.data("templateId"));    							
 		    moreCriteria.push("&serviceOfferingId="+$thisPopup.find("input:radio[name=service_offering_radio]:checked").val());
 			
-			var networkIds = null;
-			if ($thisPopup.find("input:checkbox[name=network_virtual_checkbox]:checked").length != 0) {
-				networkIds = $thisPopup.find("#network_virtual_container").data("id");
-			}
-			var directNetworkIds = $thisPopup.find("#wizard_review_direct_network_container").data("directNetworkIds");
-			if (directNetworkIds != null) {
-				if (networkIds != null) {
-					networkIds = networkIds+","+directNetworkIds;
-				} else {
-					networkIds = directNetworkIds;
+			var zoneObj = $thisPopup.find("#wizard_zone option:selected").data("zoneObj");
+			if (zoneObj.networktype == "Advanced") {
+				var networkIds = null;
+				if ($thisPopup.find("input:checkbox[name=network_virtual_checkbox]:checked").length != 0) {
+					networkIds = $thisPopup.find("#network_virtual_container").data("id");
 				}
+				var directNetworkIds = $thisPopup.find("#wizard_review_direct_network_container").data("directNetworkIds");
+				if (directNetworkIds != null) {
+					if (networkIds != null) {
+						networkIds = networkIds+","+directNetworkIds;
+					} else {
+						networkIds = directNetworkIds;
+					}
+				}
+				moreCriteria.push("&networkIds="+networkIds);
+			} else {
+				// add security groups
 			}
-			moreCriteria.push("&networkIds="+networkIds);
 			
 			var diskOfferingId, $diskOfferingElement;    						
 		    if ($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut")) {  //ISO
