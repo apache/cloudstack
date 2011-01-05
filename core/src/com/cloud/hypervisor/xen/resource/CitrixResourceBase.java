@@ -157,6 +157,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage;
@@ -805,14 +806,27 @@ public abstract class CitrixResourceBase implements ServerResource {
                 String result = null;
                 if (vmSpec.getType() != VirtualMachine.Type.User) {
                     result = callHostPlugin(conn, "vmops", "default_network_rules_systemvm", "vmName", vmName);
+                    
+                    if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+                        s_logger.warn("Failed to program default network rules for " + vmName);
+                    } else {
+                        s_logger.info("Programmed default network rules for " + vmName);
+                    }
                 } else {
-                }
-                
-                if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
-                    s_logger.warn("Failed to program default network rules for " + vmName);
-                } else {
-                    s_logger.info("Programmed default network rules for " + vmName);
-                }
+                	//For user vm, program the rules for each nic if the isolation uri scheme is ec2
+                	NicTO[] nics = vmSpec.getNics();
+                	for (NicTO nic : nics) { 
+                		if (nic.getIsolationUri() != null && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
+		                	result = callHostPlugin(conn, "vmops", "default_network_rules", "vmName", vmName, "vmIP", nic.getIp(), "vmMAC", nic.getMac(), "vmID", Long.toString(vmSpec.getId()));
+		                	
+		                    if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+		                        s_logger.warn("Failed to program default network rules for " + vmName+" on nic with ip:"+nic.getIp()+" mac:"+nic.getMac());
+		                    } else {
+		                        s_logger.info("Programmed default network rules for " + vmName+" on nic with ip:"+nic.getIp()+" mac:"+nic.getMac());
+		                    }	                	
+                		}
+                	}
+                }   
             }
 
             Monitor monitor = vmSpec.getMonitor();
