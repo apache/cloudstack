@@ -593,11 +593,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.AgentReportStopped, State.Stopped);
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.OperationFailed, State.Error);
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.ExpungeOperation, State.Expunging);
+    	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
     	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.OperationRetry, State.Starting);
     	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.OperationSucceeded, State.Running);
     	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.OperationFailed, State.Stopped);
     	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.AgentReportRunning, State.Running);
     	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.AgentReportStopped, State.Stopped);
+    	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
     	_stateMachine.addTransition(State.Destroyed, VirtualMachine.Event.RecoveryRequested, State.Stopped);
     	_stateMachine.addTransition(State.Destroyed, VirtualMachine.Event.ExpungeOperation, State.Expunging);
     	_stateMachine.addTransition(State.Creating, VirtualMachine.Event.MigrationRequested, State.Destroyed);
@@ -605,6 +607,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     	_stateMachine.addTransition(State.Running, VirtualMachine.Event.AgentReportRunning, State.Running);
     	_stateMachine.addTransition(State.Running, VirtualMachine.Event.AgentReportStopped, State.Stopped);
     	_stateMachine.addTransition(State.Running, VirtualMachine.Event.StopRequested, State.Stopping);
+    	_stateMachine.addTransition(State.Running, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
     	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.MigrationRequested, State.Migrating);
     	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.OperationSucceeded, State.Running);
     	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.OperationFailed, State.Running);
@@ -613,10 +616,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.AgentReportRunning, State.Running);
     	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.AgentReportStopped, State.Stopped);
     	_stateMachine.addTransition(State.Stopping, VirtualMachine.Event.OperationSucceeded, State.Stopped);
+    	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
     	_stateMachine.addTransition(State.Stopping, VirtualMachine.Event.OperationFailed, State.Running);
     	_stateMachine.addTransition(State.Stopping, VirtualMachine.Event.AgentReportRunning, State.Running);
     	_stateMachine.addTransition(State.Stopping, VirtualMachine.Event.AgentReportStopped, State.Stopped);
     	_stateMachine.addTransition(State.Stopping, VirtualMachine.Event.StopRequested, State.Stopping);
+    	_stateMachine.addTransition(State.Stopping, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
     	_stateMachine.addTransition(State.Expunging, VirtualMachine.Event.OperationFailed, State.Expunging);
     	_stateMachine.addTransition(State.Expunging, VirtualMachine.Event.ExpungeOperation, State.Expunging);
     	
