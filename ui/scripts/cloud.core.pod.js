@@ -598,9 +598,7 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
 	                        clusterSelect.append("<option value='" + items[i].id + "' selected>" + fromdb(items[i].name) + "</option>");	
 	                    else               
 	                        clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		
-	                }
-	                if(!clusterSelect.val())
-	                	$("option", clusterSelect)[0].attr("selected", "selected");
+	                }	               
 	            }			            
 	        }
 	    });	
