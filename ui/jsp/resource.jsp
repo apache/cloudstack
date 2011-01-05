@@ -142,6 +142,8 @@
                 Step 2</div>
             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
                 Step 3</div>
+            <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
+                Step 4</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
             <div class="vmpopup_container_closebutton" id="close_button">
@@ -209,6 +211,8 @@
                 Step 2</div>
             <div class="vmpopup_steps" style="background: url(images/step2_bg.gif) no-repeat top left">
                 Step 3</div>
+            <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
+                Step 4</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
             <div class="vmpopup_container_closebutton" id="close_button">
@@ -307,7 +311,9 @@
                 Step 2</div>
             <div class="vmpopup_steps" style="color: #FFF; background: url(images/step2_selected.gif) no-repeat top left">
                 Step 3</div>
-            <div class="vmpopup_steps" style="background: url(images/laststep_slectedbg.gif) no-repeat top left">
+            <div class="vmpopup_steps" style="background: url(images/step2_bg.gif) no-repeat top left">
+                Step 4</div>   
+             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
             <div class="vmpopup_container_closebutton" id="close_button">
             </div>
@@ -398,6 +404,109 @@
         </div>
     </div>
     <!-- step 3 (end) -->
+    
+     <!-- step 4 (begin) -->
+    <div id="step4" style="display: none;">
+        <div class="zonepopup_container_top">
+           <div class="vmpopup_steps" style="background: url(images/step1_bg_unselected.png) no-repeat top left">
+                Step 1</div>
+            <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
+                Step 2</div>
+             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
+                Step 3</div>
+            <div class="vmpopup_steps" style="color: #FFF; background: url(images/step2_selected.gif) no-repeat top left">
+                Step 4</div>   
+             <div class="vmpopup_steps" style="background: url(images/laststep_slectedbg.gif) no-repeat top left">
+            </div>
+            <div class="vmpopup_container_closebutton" id="close_button">
+            </div>
+        </div>
+        <div class="zonepopup_container_mid">
+            <div class="zonepopup_maincontentarea">
+                <div class="zonepopup_titlebox">
+                    <h2>
+                        Step 3: <strong>Add a Pod</strong></h2>
+                    <p>
+                        Please enter the following info to add a new pod 
+                    </p>
+                </div>
+                <div class="zonepopup_contentpanel">
+                    <div class="zonepoup_formcontent">
+                        <form action="#" method="post" id="form_acquire">
+                        <ol>
+                            <li>
+                                <label for="user_name" style="width: 115px;">
+                                    Name:</label>
+                                <input class="text" type="text" name="add_pod_name" id="add_pod_name" />
+                                <div id="add_pod_name_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
+                                </div>
+                            </li>
+                            <li>
+                                <label for="add_pod_gateway" style="width: 115px;">
+                                    Gateway:</label>
+                                <input class="text" type="text" id="add_pod_gateway" />
+                                <div id="add_pod_gateway_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
+                                </div>
+                            </li>
+                            <li>
+                                <label for="user_name" style="width: 115px;">
+                                    Netmask:</label>
+                                <input class="text" type="text" name="add_pod_netmask" id="add_pod_netmask" />
+                                <div id="add_pod_netmask_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
+                                </div>
+                            </li>
+                            <li>
+                                <label for="user_name" style="width: 115px;">
+                                    Reserved System IP:</label>
+                                <input class="text" style="width: 92px" type="text" name="add_pod_startip" id="add_pod_startip" /><span>-</span>
+                                <input class="text" style="width: 92px" type="text" name="add_pod_endip" id="add_pod_endip" />
+                                <div id="add_pod_startip_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:133px;">
+                                </div>
+                                <div id="add_pod_endip_errormsg" class="dialog_formcontent_errormsg" style="display: none; ">
+                                </div>
+                            </li>
+                            <li id="guestip_container">
+                                <label style="width: 115px;">
+                                    Guest IP Range:</label>
+                                <input class="text" style="width: 92px" type="text" id="startguestip" /><span>-</span>
+                                <input class="text" style="width: 92px" type="text" id="endguestip" />
+                                <div id="startguestip_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:133px;">
+                                </div>
+                                <div id="endguestip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                </div>
+                            </li>  
+							<li id="guestnetmask_container">
+                                <label style="width: 115px;">
+                                    Guest Netmask:</label>
+                                <input class="text" type="text" id="guestnetmask" />
+                                <div id="guestnetmask_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
+                                </div>
+                            </li>	                            
+                            <li id="guestgateway_container">
+                                <label style="width: 115px;">
+                                    Guest Gateway:</label>
+                                <input class="text" type="text" id="guestgateway" />
+                                <div id="guestgateway_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
+                                </div>
+                            </li>                            
+                        </ol>
+                        </form>
+                    </div>
+                </div>
+                <div class="zonepopup_navigationpanel">
+                    <div class="vmpop_prevbutton" id="back_to_step_2" style="display: block;">
+                        Back
+                    </div>
+                    <div class="vmpop_nextbutton" id="submit_button">
+                        Submit
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="zonepopup_container_bot">
+        </div>
+    </div>
+    <!-- step 4 (end) -->
     
     <!-- after submit screen (begin) -->
     <div id="after_submit_screen" style="display: none;">
