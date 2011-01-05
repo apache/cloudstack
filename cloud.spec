@@ -360,6 +360,7 @@ fi
 %pre client
 id %{name} > /dev/null 2>&1 || /usr/sbin/useradd -M -c "Cloud.com unprivileged user" \
      -r -s /bin/sh -d %{_sharedstatedir}/%{name}/management %{name}|| true
+rm -rf %{_localstatedir}/cache/%{name}
 # user harcoded here, also hardcoded on wscript
 
 %post client
