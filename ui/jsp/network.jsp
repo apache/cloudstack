@@ -539,8 +539,88 @@
 </div>
 <!--  Load Balancer template (end) -->
 
-<!--  IP Range template (begin) -->
-<div class="grid_container" id="iprange_template" style="display: none">    
+<!--  Public IP Range template (begin) -->
+<div class="grid_container" id="public_iprange_template" style="display: none">    
+	<div class="grid_header">
+        <div class="grid_header_title" id="grid_header_title">
+        </div>
+        <div class="grid_actionbox" id="iprange_action_link"><p>Actions</p>
+            <div class="grid_actionsdropdown_box" id="iprange_action_menu" style="display: none;">
+                <ul class="actionsdropdown_boxlist" id="action_list">
+                </ul>
+            </div>
+        </div>
+        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; height: 18px;">
+            <div class="gridheader_loader" id="icon">
+            </div>
+            <p id="description">
+                Waiting &hellip;
+            </p>
+        </div>       
+    </div>
+    
+    <div class="grid_rows" id="after_action_info_container" style="display:none">
+        <div class="grid_row_cell" style="width: 90%; border: none;">
+            <div class="row_celltitles">
+                <strong id="after_action_info">Message will appear here</strong></div>
+        </div>
+    </div>        
+ 
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                ID:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="id">
+            </div>
+        </div>
+    </div>   
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                VLAN:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="vlan">
+            </div>
+        </div>
+    </div>    
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Gateway:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="gateway">
+            </div>
+        </div>
+    </div>   
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                Netmask:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="netmask">
+            </div>
+        </div>
+    </div>        
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                IP Range:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="iprange">
+            </div>
+        </div>
+    </div>      
+</div>
+<!--  Public IP Range template (end) -->
+
+<!--  Direct IP Range template (begin) -->
+<div class="grid_container" id="direct_iprange_template" style="display: none">    
 	<div class="grid_header">
         <div class="grid_header_title" id="grid_header_title">
         </div>
@@ -597,7 +677,7 @@
         </div>
     </div>  
 </div>
-<!--  IP Range template (end) -->
+<!--  Direct IP Range template (end) -->
 
 
 <!-- Add IP Range for public netework dialog (begin) -->

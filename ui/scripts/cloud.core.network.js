@@ -191,7 +191,7 @@ function publicNetworkJsonToIpAllocationTab() {
 		success: function(json) {		    
 		    var items = json.listvlaniprangesresponse.vlaniprange;		    
 		    var $container = $thisTab.find("#tab_container").empty();
-		    var $template = $("#iprange_template");
+		    var $template = $("#public_iprange_template");
 		    if(items != null && items.length > 0) {		        
 		        for(var i=0; i<items.length; i++) {
 		            var $newTemplate = $template.clone();
@@ -213,7 +213,9 @@ function publicNetworkIprangeJsonToTemplate(jsonObj, $template) {
     $template.find("#grid_header_title").text(ipRange);
     
     $template.find("#id").text(jsonObj.id);
-    $template.find("#vlan").text(jsonObj.vlan);
+    $template.find("#vlan").text(jsonObj.vlan);    
+    $template.find("#gateway").text(jsonObj.gateway);
+    $template.find("#netmask").text(jsonObj.netmask);    
     $template.find("#iprange").text(ipRange);   
    
     var $actionLink = $template.find("#iprange_action_link");		
@@ -547,7 +549,7 @@ function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 						$thisDialog.dialog("close");
 					
 					    var item = json.createvlaniprangeresponse.vlan;						    
-					    var $newTemplate = $("#iprange_template").clone();
+					    var $newTemplate = $("#public_iprange_template").clone();
 	                    publicNetworkIprangeJsonToTemplate(item, $newTemplate);
 	                    $("#public_network_page").find("#tab_content_ipallocation").find("#tab_container").prepend($newTemplate.show());						   
 					},
@@ -936,7 +938,7 @@ function directNetworkJsonToIpAllocationTab() {
 		success: function(json) {
 		    var items = json.listvlaniprangesresponse.vlaniprange;		    
 		    var $container = $thisTab.find("#tab_container").empty();
-		    var $template = $("#iprange_template");
+		    var $template = $("#direct_iprange_template");
 		    if(items != null && items.length > 0) {		        
 		        for(var i=0; i<items.length; i++) {
 		            var $newTemplate = $template.clone();
@@ -1195,7 +1197,7 @@ function bindAddIpRangeToDirectNetworkButton($button, $midmenuItem1) {
 						$thisDialog.dialog("close");
 					
 					    var item = json.createvlaniprangeresponse.vlan;	
-					    var $newTemplate = $("#iprange_template").clone();
+					    var $newTemplate = $("#direct_iprange_template").clone();
 		                directNetworkIprangeJsonToTemplate(item, $newTemplate);
 		                $("#right_panel_content #direct_network_page #tab_content_ipallocation").find("#tab_container").prepend($newTemplate.show());					    			   
 					},
