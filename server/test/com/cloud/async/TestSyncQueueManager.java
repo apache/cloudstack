@@ -21,6 +21,7 @@ package com.cloud.async;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.testcase.ComponentSetup;
