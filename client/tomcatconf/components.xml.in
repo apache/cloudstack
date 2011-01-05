@@ -105,6 +105,7 @@
         <dao name="SyncQueueItemDao" class="com.cloud.async.dao.SyncQueueItemDaoImpl"/>
         <dao name="StoragePoolDao" class="com.cloud.storage.dao.StoragePoolDaoImpl"/>
         <dao name="StoragePoolHostDao" class="com.cloud.storage.dao.StoragePoolHostDaoImpl"/>
+        <dao name="HostTagsDao" class="com.cloud.host.dao.HostTagsDaoImpl"/>
         <dao name="GuestOSDao" class="com.cloud.storage.dao.GuestOSDaoImpl"/>
         <dao name="GuestOSCategoryDao" class="com.cloud.storage.dao.GuestOSCategoryDaoImpl"/>
         <dao name="ClusterDao" class="com.cloud.dc.dao.ClusterDaoImpl"/>
