@@ -61,12 +61,6 @@ public class UpdateZoneCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the VLAN for the Zone")
     private String vlan;
-    
-//    @Parameter(name=ApiConstants.DOMAIN, type=CommandType.STRING, description="Domain name for the Vms in the zone")
-//    private String domain;
-
-//    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the containing domain, null for public zones")
-//    private Long domainId; 
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -104,17 +98,6 @@ public class UpdateZoneCmd extends BaseCmd {
         return vlan;
     }
     
-//    public String getDomain() {
-//        return domain;
-//    }
-
-//	public Long getDomainId() {
-//		return domainId;
-//	}
-//
-//	public void setDomainId(Long domainId) {
-//		this.domainId = domainId;
-//	}
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

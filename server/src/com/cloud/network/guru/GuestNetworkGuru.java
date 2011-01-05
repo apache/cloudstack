@@ -99,9 +99,12 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
                 network.setGateway(userSpecified.getGateway());
             } else {
                 String guestNetworkCidr = dc.getGuestNetworkCidr();
-                String[] cidrTuple = guestNetworkCidr.split("\\/");
-                network.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));
-                network.setCidr(guestNetworkCidr);
+                //guest network cidr can be null for Basic zone
+                if (guestNetworkCidr != null) {
+                    String[] cidrTuple = guestNetworkCidr.split("\\/");
+                    network.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));
+                    network.setCidr(guestNetworkCidr); 
+                }
             }
             
             network.setDns1(dc.getDns1());
