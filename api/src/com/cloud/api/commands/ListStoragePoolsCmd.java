@@ -27,6 +27,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.async.AsyncJob;
@@ -59,6 +60,9 @@ public class ListStoragePoolsCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID for the storage pool")
     private Long zoneId;
+    
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the storage pool")
+    private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -86,6 +90,10 @@ public class ListStoragePoolsCmd extends BaseListCmd {
 
     public Long getZoneId() {
         return zoneId;
+    }
+    
+    public Long getId() {
+    	return id;
     }
 
     /////////////////////////////////////////////////////

@@ -3680,6 +3680,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public List<? extends StoragePoolVO> searchForStoragePools(ListStoragePoolsCmd cmd) {
         Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
+        c.addCriteria(Criteria.ID, cmd.getId());
         c.addCriteria(Criteria.NAME, cmd.getStoragePoolName());
         c.addCriteria(Criteria.CLUSTERID, cmd.getClusterId());
         c.addCriteria(Criteria.ADDRESS, cmd.getIpAddress());
@@ -3696,6 +3697,7 @@ public class ManagementServerImpl implements ManagementServer {
         Filter searchFilter = new Filter(StoragePoolVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
         SearchCriteria<StoragePoolVO> sc = _poolDao.createSearchCriteria();
 
+        Object id = c.getCriteria(Criteria.ID);
         Object name = c.getCriteria(Criteria.NAME);
         Object host = c.getCriteria(Criteria.HOST);
         Object path = c.getCriteria(Criteria.PATH);
@@ -3713,6 +3715,10 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 
+        if (id != null) {
+        	sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
+        
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
