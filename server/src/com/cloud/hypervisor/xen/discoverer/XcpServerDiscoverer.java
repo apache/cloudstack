@@ -119,6 +119,13 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
 			throw new RuntimeException(msg);
 		}
 		
+        ClusterVO cluster = _clusterDao.findById(clusterId);
+        if(cluster == null || (cluster.getHypervisorType() != HypervisorType.XenServer && cluster.getHypervisorType() != HypervisorType.Xen)) {
+        	if(s_logger.isInfoEnabled())
+        		s_logger.info("invalid cluster id or cluster is not for Xen/XenServer hypervisors"); 
+    		return null;
+        }
+		
         try {
             List<HostVO> eHosts = _hostDao.listByCluster(clusterId);
             if( eHosts.size() > 0 ) {

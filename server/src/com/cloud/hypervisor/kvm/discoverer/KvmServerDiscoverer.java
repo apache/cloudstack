@@ -185,6 +185,14 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 	public Map<? extends ServerResource, Map<String, String>> find(long dcId,
 			Long podId, Long clusterId, URI uri, String username,
 			String password) throws DiscoveryException {
+		
+        ClusterVO cluster = _clusterDao.findById(clusterId);
+        if(cluster == null || cluster.getHypervisorType() != HypervisorType.KVM) {
+        	if(s_logger.isInfoEnabled())
+        		s_logger.info("invalid cluster id or cluster is not for KVM hypervisors"); 
+    		return null;
+        }
+		
 		 Map<KvmDummyResourceBase, Map<String, String>> resources = new HashMap<KvmDummyResourceBase, Map<String, String>>();
 		 Map<String, String> details = new HashMap<String, String>();
 		if (!uri.getScheme().equals("http")) {
