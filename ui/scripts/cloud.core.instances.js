@@ -1413,7 +1413,7 @@ function showInstancesTab(p_domainId, p_account) {
         return false;   //event.preventDefault() + event.stopPropagation() 
     });	
 						
-	var vmPopupStep2PageSize = 11; //max number of templates each page in step2 of New VM wizard is 11 
+	var vmPopupStep2PageSize = 10; //max number of templates each page in step2 of New VM wizard is 10
 	function listTemplatesInVmPopup() {		
 	    var zoneId = vmPopup.find("#wizard_zone").val();
 	    if(zoneId == null || zoneId.length == 0)
@@ -1425,14 +1425,14 @@ function showInstancesTab(p_domainId, p_account) {
         var searchInput = vmPopup.find("#search_input").val();   
         if (selectedTemplateTypeInVmPopup != "blank") {      
             if (searchInput != null && searchInput.length > 0)                 
-                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup+"&response=json"; 
+                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup+"&pagesize="+vmPopupStep2PageSize+"&response=json"; 
             else
-                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&page="+currentPageInTemplateGridInVmPopup+"&response=json";           		    		
+                commandString = "command=listTemplates&templatefilter="+selectedTemplateTypeInVmPopup+"&zoneid="+zoneId+"&page="+currentPageInTemplateGridInVmPopup+"&pagesize="+vmPopupStep2PageSize+"&response=json";           		    		
 		} else {
 		    if (searchInput != null && searchInput.length > 0)                 
-                commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup+"&response=json";  
+                commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&keyword="+searchInput+"&page="+currentPageInTemplateGridInVmPopup+"&pagesize="+vmPopupStep2PageSize+"&response=json";  
             else
-                commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&page="+currentPageInTemplateGridInVmPopup+"&response=json";  
+                commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&page="+currentPageInTemplateGridInVmPopup+"&pagesize="+vmPopupStep2PageSize+"&response=json";  
 		}
 		
 		var loading = vmPopup.find("#wiz_template_loading").show();				

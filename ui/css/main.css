@@ -6726,7 +6726,20 @@ a.add_domainbutton:hover {
 	padding:0;
 }
 
-.rev_wiztemplist_actionsbox a:visted {
+.rev_wiztemplist_actionsbox a:visited {
+	width:auto;
+	height:auto;
+	float:left;
+	color:#2c8bbc;
+	font-size:12px;
+	text-align:left;
+	font-weight:normal;
+	text-decoration:none;
+	margin:0 15px 0 0;
+	padding:0;
+}
+
+.rev_wiztemplist_actionsbox a:hover {
 	width:auto;
 	height:auto;
 	float:left;
@@ -6801,7 +6814,7 @@ a.add_domainbutton:hover {
 
 .rev_wiztemplistbox {
 	width:709px;
-	height:auto;
+	height:23px;
 	float:left;
 	border-bottom:1px solid #666;
 	margin:0;
@@ -6809,10 +6822,11 @@ a.add_domainbutton:hover {
 	background:#FFF repeat top left;
 	cursor:pointer;
 	cursor:hand;
+	overflow:hidden;
 }
 .rev_wiztemp_listtext {
 	width:520px;
-	height:auto;
+	height:14px;
 	float:left;
 	color:#021a28;
 	font-size:11px;
@@ -6820,11 +6834,12 @@ a.add_domainbutton:hover {
 	text-align:left;
 	margin:5px 0 5px 0;
 	padding:0;
+	overflow: hidden;
 }
 
 .rev_wiztemp_ownertext {
-	width:80px;
-	height:auto;
+	width:150px;
+	height:14px;
 	float:left;
 	color:#021a28;
 	font-size:11px;
@@ -6832,6 +6847,7 @@ a.add_domainbutton:hover {
 	text-align:left;
 	margin:5px 0 5px 0;
 	padding:0;
+	overflow: hidden;
 }
 
 
@@ -6853,7 +6869,7 @@ a.add_domainbutton:hover {
 
 .rev_wiztemplistbox_selected {
 	width:709px;
-	height:auto;
+	height:23px;
 	float:left;
 	border-bottom:1px solid #666;
 	margin:0;
@@ -6861,6 +6877,7 @@ a.add_domainbutton:hover {
 	background:#8fe0f4 repeat top left;
 	cursor:pointer;
 	cursor:hand;
+	overflow: hidden;
 }
 
 .rev_wiztemo_centosicons {
