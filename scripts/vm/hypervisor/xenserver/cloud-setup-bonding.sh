@@ -22,15 +22,15 @@ moveConfigToBond() {
         management=$(xe pif-param-get param-name=management uuid=$bondSlave)
         slavedevice=$(xe pif-param-get param-name=device uuid=$bondSlave)
         masterdevice=$(xe pif-param-get param-name=device uuid=$bondMaster)
-        echo "  --configure $masterdevice $bondMasterace DNS=$DNS gateway=$gateway IP=$bondSlaveIp mode=$mode netmask=$netmask"
+        echo "  --configure $masterdevice($bondMaster) DNS=$DNS gateway=$gateway IP=$bondSlaveIp mode=$mode netmask=$netmask"
         xe pif-reconfigure-ip DNS=$DNS gateway=$gateway IP=$bondSlaveIp mode=$mode netmask=$netmask uuid=$bondMaster
         if [ $? -ne 0 ]; then
-          echo "  --Failed to configure $masterdevice, please run xe pif-reconfigure-ip DNS=$DNS gateway=$gateway IP=$bondSlaveIp mode=$mode netmask=$netmask uuid=$bondMaster manually"
+          echo "  --Failed to configure $masterdevice($bondMaster), please run xe pif-reconfigure-ip DNS=$DNS gateway=$gateway IP=$bondSlaveIp mode=$mode netmask=$netmask uuid=$bondMaster manually"
           exit 1
         fi
         echo "  --Succeeded"
         if [ "$management" = "true" ]; then
-          echo "  --move management interface from $slavedevice to $masterdevice"
+          echo "  --move management interface from $slavedevice($bondSlave) to $masterdevice($bondMaster)"
           xe host-management-reconfigure pif-uuid=$bondMaster 
           if [ $? -ne 0 ]; then
             echo "  --Failed to move management interface from $bondSlave to $bondMaster, please run xe host-management-reconfigure pif-uuid=$bondMaster manually"
@@ -38,7 +38,7 @@ moveConfigToBond() {
           fi
           echo "  --Succeeded"
         fi
-        echo "  --remove configuration from $slavedevice"
+        echo "  --remove configuration from $slavedevice($bondSlave)"
         xe pif-reconfigure-ip mode=None uuid=$bondSlave
         echo "  --Succeeded"
         break
@@ -50,9 +50,11 @@ moveConfigToBond() {
 
 poolUuid=$(xe pool-list | grep ^uuid | awk '{print $NF}')
 hostMaster=$(xe pool-param-get uuid=$poolUuid param-name=master)
+masterName=$(host-param-get param-name=hostname uuid=$hostMaster)
+masterAddress=$(xe host-param-get param-name=address uuid=$hostMaster)
 
 echo "#Begin check"
-echo "##check master $hostMaster"
+echo "##check master $masterName $masterAddress $hostMaster"
 masterPifs=$(xe pif-list host-uuid=$hostMaster| grep ^uuid | awk '{print $NF}')
 for pif in $masterPifs; do
   bond=$(xe pif-param-get param-name=bond-master-of uuid=$pif)
@@ -66,7 +68,9 @@ hostSlaves=$(xe host-list | grep ^uuid | awk '{print $NF}')
 
 for hostSlave in $hostSlaves; do
   if [ "$hostSlave" != "$hostMaster" ]; then
-    echo "##check slave $hostSlave"
+    slaveName=$(host-param-get param-name=hostname uuid=$hostSlave)
+    slaverAddress=$(xe host-param-get param-name=address uuid=$hostSlave)
+    echo "##check slave $slaveName $slaveAddress $hostSlave"
     slavePifs=$(xe pif-list host-uuid=$hostSlave| grep ^uuid | awk '{print $NF}')
     for slavePif in $slavePifs; do
       bond=$(xe pif-param-get param-name=bond-master-of uuid=$slavePif)
@@ -86,5 +90,5 @@ for hostSlave in $hostSlaves; do
     echo "##done for slave $hostSlave"
   fi
 done
-echo "#check is successful, add these hosts to cloud stack"
+echo "#check is successful, you can add these hosts to cloud stack"
 
