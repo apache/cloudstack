@@ -385,13 +385,13 @@ function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged").change(function(event) {	
 			if ($(this).val() == "tagged") {
 				$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_vlan_container").show();
-				$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_pod_container").hide();
+				//$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_pod_container").hide();
 								
 				$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").empty().append('<option value="zone-wide">zone-wide</option>').append('<option value="account-specific">account-specific</option>');
 			} 
 			else if($(this).val() == "untagged") {  
 				$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_vlan_container").hide();
-				$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_pod_container").hide();
+				//$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_pod_container").hide();
 				
 				$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").empty().append('<option value="zone-wide">zone-wide</option>');				
 			}			
@@ -419,16 +419,19 @@ function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
     $button.unbind("click").bind("click", function(event) {  
         if($("#public_network_page").find("#tab_content_ipallocation").css("display") == "none")         
             $("#public_network_page").find("#tab_ipallocation").click();
-                          
+         
+        /*                  
         $dialogAddIpRangeToPublicNetwork.find("#info_container").hide();
         $dialogAddIpRangeToPublicNetwork.find("#zone_name").text(fromdb(zoneObj.name));         
 		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_vlan_container, #add_publicip_vlan_domain_container, #add_publicip_vlan_account_container").hide();
 		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged, #add_publicip_vlan_vlan, #add_publicip_vlan_gateway, #add_publicip_vlan_netmask, #add_publicip_vlan_startip, #add_publicip_vlan_endip, #add_publicip_vlan_account").val("");
-		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_pod_container").show();	
+		*/
+		//$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_pod_container").show();	
 		
 		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged").change();            		
 	    $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").change(); // default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 	
-            					
+        
+        /*    					
 		var podSelect = $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_pod").empty();		
 		$.ajax({
 		    data: createURL("command=listPods&zoneId="+zoneObj.id),
@@ -445,6 +448,7 @@ function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 				}
 			}
 		});
+		*/
 		
 		var domainSelect = $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_domain").empty();	
 		if(zoneObj.domainid != null) { //list only domains under zoneObj.domainid
@@ -540,7 +544,7 @@ function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
 				if(endip != null && endip.length > 0)
 				    array1.push("&endip="+todb(endip));			
 													
-				// Allocating ip ranges on a vlan for virtual networking
+				// Add IP Range to public network
 				$.ajax({
 					data: createURL("command=createVlanIpRange&forVirtualNetwork=true&zoneId="+zoneObj.id+vlan+scopeParams+array1.join("")),
 					dataType: "json",

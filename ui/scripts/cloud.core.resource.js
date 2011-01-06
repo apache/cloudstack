@@ -979,7 +979,9 @@ function refreshAddZoneWizard() {
     
     $addZoneWizard.find("#step4").find("#add_publicip_vlan_tagged").change();            		
 	$addZoneWizard.find("#step4").find("#add_publicip_vlan_scope").change(); // default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 	
-            
+     
+    $addZoneWizard.find("#after_submit_screen").find("#spinning_wheel").show();
+	            
     $addZoneWizard.find("#basic_mode").click();
 }
 
@@ -1091,6 +1093,45 @@ function initAddZoneWizard() {
 	                return;	
                 $thisWizard.find("#step2").hide();
                 $thisWizard.find("#step3").show();
+                              
+                var $IpRangeDomainSelect = $thisWizard.find("#step4").find("#add_publicip_vlan_domain").empty();	                
+		        if($thisWizard.find("#step2").find("#domain_dropdown_container").css("display") != "none") { //list only domains under zoneDomain		
+		            var zoneDomainId = $thisWizard.find("#step2").find("#domain_dropdown").val();  
+		            var zoneDomainName = $thisWizard.find("#step2").find("#domain_dropdown option:selected").text();      		    
+		            $IpRangeDomainSelect.append("<option value='" + zoneDomainId + "'>" + zoneDomainName + "</option>"); 	
+                    function populateDomainDropdown(parentDomainId) {
+                        $.ajax({
+                            data: createURL("command=listDomainChildren&id="+parentDomainId),
+                            dataType: "json",
+                            async: false,
+                            success: function(json) {					        
+                                var domains = json.listdomainchildrenresponse.domain;		                  		        	    
+                                if (domains != null && domains.length > 0) {					    
+	                                for (var i = 0; i < domains.length; i++) {	
+		                                $IpRangeDomainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 	
+		                                if(domains[i].haschild == true) 
+                                            populateDomainDropdown(domains[i].id);				   
+	                                }
+                                }				
+                            }
+                        }); 
+                    }
+                    populateDomainDropdown(zoneDomainId);
+                }
+                else { //list all domains            
+                     $.ajax({
+                        data: createURL("command=listDomains"),
+                        dataType: "json",
+                        success: function(json) {           
+                            var items = json.listdomainsresponse.domain;
+                            if(items != null && items.length > 0) {
+                                for(var i=0; i<items.length; i++) {
+                                    $IpRangeDomainSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>"); 
+                                }		
+                            }
+                        }    
+                    });  
+                }                  
                 break;  
                            
             case "go_to_step_4": //step 3 => step 4                   
@@ -1201,9 +1242,7 @@ function addZoneWizardValidatePublicIPRange($thisWizard) {
     return isValid;			
 }
 
-function addZoneWizardSubmit($thisWizard) {
-	$thisWizard.find("#spinning_wheel").show();
-	
+function addZoneWizardSubmit($thisWizard) {	
 	var moreCriteria = [];	
 	
 	var networktype = $thisWizard.find("#step1").find("input:radio[name=basic_advanced]:checked").val();  //"Basic", "Advanced"
@@ -1242,8 +1281,8 @@ function addZoneWizardSubmit($thisWizard) {
 	    moreCriteria.push("&guestcidraddress="+todb(guestcidraddress));	
 	}
 					
-	if($thisWizard.find("#domain_dropdown_container").css("display") != "none") {
-	    var domainId = trim($thisWizard.find("#domain_dropdown").val());
+	if($thisWizard.find("#step2").find("#domain_dropdown_container").css("display") != "none") {
+	    var domainId = trim($thisWizard.find("#step2").find("#domain_dropdown").val());
 	    moreCriteria.push("&domainid="+domainId);	
 	}
 	
@@ -1330,7 +1369,7 @@ function addZoneWizardSubmit($thisWizard) {
         // create pod (end) 
         
         // add IP range to public network in zone (begin)      
-        if($("input[name=basic_advanced]:checked").val() == "Advanced") {            
+        if(networktype == "Advanced") {            
             var isDirect = false;
 			var isTagged = $thisWizard.find("#step4").find("#add_publicip_vlan_tagged").val() == "tagged";
 			
@@ -1418,7 +1457,7 @@ function addZoneWizardSubmit($thisWizard) {
 		});		
     }    
     
-    $thisWizard.find("#spinning_wheel").hide();   
+    $thisWizard.find("#after_submit_screen").find("#spinning_wheel").hide();   
 }
 
 function initUpdateConsoleCertButton($midMenuAddLink2) {
