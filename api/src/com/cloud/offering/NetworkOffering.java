@@ -85,6 +85,7 @@ public interface NetworkOffering {
     
     Availability getAvailability();
     
+    
     boolean isDnsService();
     
     boolean isGatewayService();

@@ -50,4 +50,6 @@ public interface ComponentLibrary {
     Map<String, List<ComponentInfo<Adapter>>> getAdapters();
     
     Map<Class<?>, Class<?>> getFactories();
+    
+    void addInterceptors(List<AnnotationInterceptor<?>> interceptors);
 }

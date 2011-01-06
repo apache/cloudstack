@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -48,6 +49,8 @@ import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.CallbackFilter;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.Factory;
+import net.sf.cglib.proxy.MethodInterceptor;
+import net.sf.cglib.proxy.MethodProxy;
 import net.sf.cglib.proxy.NoOp;
 
 import org.apache.log4j.Logger;
@@ -59,8 +62,6 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.db.DatabaseCallback;
-import com.cloud.utils.db.DatabaseCallbackFilter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.mgmt.JmxUtil;
@@ -79,18 +80,18 @@ public class ComponentLocator implements ComponentLocatorMBean {
     protected static final ThreadLocal<ComponentLocator> s_tl = new ThreadLocal<ComponentLocator>();
     protected static final ConcurrentHashMap<Class<?>, Singleton> s_singletons = new ConcurrentHashMap<Class<?>, Singleton>(111);
     protected static final HashMap<String, ComponentLocator> s_locators = new HashMap<String, ComponentLocator>();
-    protected static final Callback[] s_callbacks = new Callback[] { NoOp.INSTANCE, new DatabaseCallback() };
-    protected static final CallbackFilter s_callbackFilter = new DatabaseCallbackFilter();
     protected static final HashMap<Class<?>, InjectInfo> s_factories = new HashMap<Class<?>, InjectInfo>();
     protected static Boolean s_once = false;
-
+    protected static Callback[] s_callbacks;
+    protected static CallbackFilter s_callbackFilter;
+    protected static final List<AnnotationInterceptor<?>> s_interceptors = new ArrayList<AnnotationInterceptor<?>>();
+    
     protected HashMap<String, Adapters<? extends Adapter>>              _adapterMap;
     protected HashMap<String, ComponentInfo<Manager>>                   _managerMap;
     protected LinkedHashMap<String, ComponentInfo<GenericDao<?, ?>>>    _daoMap;
     protected String                                                    _serverName;
     protected Object                                                    _component;
     protected HashMap<Class<?>, Class<?>>                               _factories;
-    protected List<Injector>                                            _injectors;
     
     static {
         Runtime.getRuntime().addShutdownHook(new CleanupThread());
@@ -150,6 +151,9 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 _managerMap.putAll(library.getManagers());
                 adapters.putAll(library.getAdapters());
                 _factories.putAll(library.getFactories());
+                synchronized(s_interceptors) {
+                    library.addInterceptors(s_interceptors);
+                }
             }
 
             _daoMap.putAll(handler.daos);
@@ -182,6 +186,17 @@ public class ComponentLocator implements ComponentLocatorMBean {
         if (result == null) {
             s_logger.info("Skipping configuration using " + filename);
             return;
+        }
+        
+        synchronized(s_interceptors) {
+            s_callbacks = new Callback[s_interceptors.size() + 2];
+            int i = 0;
+            s_callbacks[i++] = NoOp.INSTANCE;
+            s_callbacks[i++] = new InterceptorDispatcher();
+            for (AnnotationInterceptor<?> interceptor : s_interceptors) {
+                s_callbacks[i++] = interceptor.getCallback();
+            }
+            s_callbackFilter = new InterceptorFilter();
         }
 
         XmlHandler handler = result.first();
@@ -830,7 +845,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
             if (info.name == null) {
                 throw new CloudRuntimeException("Missing name attribute for " + interphace.getName());
             }
-            info.name = info.name + "-" + clazzName;
+            info.name = info.name;
             s_logger.debug("Looking for class " + clazzName);
             try {
                 info.clazz = Class.forName(clazzName);
@@ -1011,6 +1026,53 @@ public class ComponentLocator implements ComponentLocatorMBean {
         public Singleton(Object singleton) {
             this.singleton = singleton;
             this.state = State.Instantiated;
+        }
+    }
+    
+    protected class InterceptorDispatcher implements MethodInterceptor {
+
+        @Override
+        public Object intercept(Object object, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
+            ArrayList<Pair<AnnotationInterceptor<Object>, Object>> interceptors = new ArrayList<Pair<AnnotationInterceptor<Object>, Object>>();
+            for (AnnotationInterceptor<?> interceptor : s_interceptors) {
+                if (interceptor.needToIntercept(method)) {
+                    Object obj = interceptor.interceptStart(method);
+                    interceptors.add(new Pair<AnnotationInterceptor<Object>, Object>((AnnotationInterceptor<Object>)interceptor, obj));
+                }
+            }
+            boolean success = false;
+            try {
+                Object obj = methodProxy.invokeSuper(object, args);
+                success = true;
+                return obj;
+            } finally {
+                for (Pair<AnnotationInterceptor<Object>, Object> interceptor : interceptors) {
+                    if (success) {
+                        interceptor.first().interceptComplete(method, interceptor.second());
+                    } else {
+                        interceptor.first().interceptException(method, interceptor.second());
+                    }
+                }
+            }
+        }
+    }
+    
+    protected static class InterceptorFilter implements CallbackFilter {
+        @Override
+        public int accept(Method method) {
+            int index = 0;
+            for (int i = 2; i < s_callbacks.length; i++) {
+                AnnotationInterceptor<?> interceptor = (AnnotationInterceptor<?>)s_callbacks[i];
+                if (interceptor.needToIntercept(method)) {
+                    if (index == 0) {
+                        index = i;
+                    } else {
+                        return 1;
+                    }
+                }
+            }
+            
+            return index;
         }
     }
 }
