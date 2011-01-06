@@ -146,7 +146,7 @@
                 Step 4</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
-            <div class="vmpopup_container_closebutton" id="close_button">
+            <div class="zonepopup_container_closebutton" id="close_button">
             </div>
         </div>
         <div class="zonepopup_container_mid">
@@ -215,7 +215,7 @@
                 Step 4</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
-            <div class="vmpopup_container_closebutton" id="close_button">
+            <div class="zonepopup_container_closebutton" id="close_button">
             </div>
         </div>
         <div class="zonepopup_container_mid">
@@ -315,7 +315,7 @@
                 Step 4</div>   
              <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
-            <div class="vmpopup_container_closebutton" id="close_button">
+            <div class="zonepopup_container_closebutton" id="close_button">
             </div>
         </div>
         <div class="zonepopup_container_mid">
@@ -393,7 +393,7 @@
                 Step 4</div>   
              <div class="vmpopup_steps" style="background: url(images/laststep_slectedbg.gif) no-repeat top left">
             </div>
-            <div class="vmpopup_container_closebutton" id="close_button">
+            <div class="zonepopup_container_closebutton" id="close_button">
             </div>
         </div>
         <div class="zonepopup_container_mid">
@@ -538,7 +538,7 @@
                 Step 3</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
-            <div class="vmpopup_container_closebutton" id="close_button">
+            <div class="zonepopup_container_closebutton" id="close_button">
             </div>
         </div>
         <div class="zonepopup_container_mid">
