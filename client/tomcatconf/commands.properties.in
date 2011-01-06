@@ -45,6 +45,7 @@ changeServiceForVirtualMachine=com.cloud.api.commands.UpgradeVMCmd;15
 updateVirtualMachine=com.cloud.api.commands.UpdateVMCmd;15
 recoverVirtualMachine=com.cloud.api.commands.RecoverVMCmd;3
 listVirtualMachines=com.cloud.api.commands.ListVMsCmd;15
+getVMPassword=com.cloud.api.commands.GetVMPasswordCmd;15
 
 #### snapshot commands
 createSnapshot=com.cloud.api.commands.CreateSnapshotCmd;15
@@ -247,3 +248,10 @@ listNetworkOfferings=com.cloud.api.commands.ListNetworkOfferingsCmd;15
 createNetwork=com.cloud.api.commands.CreateNetworkCmd;15
 deleteNetwork=com.cloud.api.commands.DeleteNetworkCmd;15
 listNetworks=com.cloud.api.commands.ListNetworksCmd;15
+
+#### SSH key pair commands
+registerSSHKeyPair=com.cloud.api.commands.RegisterSSHKeyPairCmd;15
+createSSHKeyPair=com.cloud.api.commands.CreateSSHKeyPairCmd;15
+deleteSSHKeyPair=com.cloud.api.commands.DeleteSSHKeyPairCmd;15
+listSSHKeyPairs=com.cloud.api.commands.ListSSHKeyPairsCmd;15
+

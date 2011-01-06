@@ -64,8 +64,17 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Column(name="display_name", updatable=true, nullable=true)
     private String displayName;
     
+    @Column(name="encrypted_password", updatable=true, nullable=true)
+    private String encryptedPassword;
+    
+    @Column(name="ssh_keypair_id", updatable=true, nullable=true)
+    private Long sshKeyPairId;
+    
+    @Column(name="ssh_public_key", updatable=true, nullable=true)
+    private String sshPublicKey;
+    
     transient String password;
-
+    
     public String getPassword() {
         return password;
     }
@@ -75,6 +84,33 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     }
     
     @Override
+    public String getSSHPublicKey() {
+    	return sshPublicKey;
+    }
+    
+    public void setSSHPublicKey(String publicKey) {
+        this.sshPublicKey = publicKey;
+    }
+    
+    @Override
+    public String getEncryptedPassword() {
+		return encryptedPassword;
+	}
+
+    @Override
+	public Long getSSHKeyPairId() {
+		return sshKeyPairId;
+	}
+
+	public void setEncryptedPassword(String encryptedPassword) {
+		this.encryptedPassword = encryptedPassword;
+	}
+
+	public void setSSHKeyPairId(Long sshKeyPairId) {
+		this.sshKeyPairId = sshKeyPairId;
+	}
+
+	@Override
     public String getGuestIpAddress() {
 		return guestIpAddress;
 	}
@@ -181,6 +217,24 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
         this.setExternalVlanDbId(vlanDbId);
         this.isoId = null;
         this.displayName = displayName;
+    }
+    
+    public UserVmVO(long id,
+            String instanceName,
+            String displayName,
+            long templateId,
+            long guestOsId,
+            boolean haEnabled,
+            long domainId,
+            long accountId,
+            long serviceOfferingId,
+            String userData, 
+            String name,
+            Long sshKeyPairId,
+            String sshPublicKey) {
+    	this(id, instanceName, displayName, templateId, guestOsId, haEnabled, domainId, accountId, serviceOfferingId, userData, name);
+    	this.sshKeyPairId = sshKeyPairId;
+    	this.sshPublicKey = sshPublicKey;
     }
 
     protected UserVmVO() {

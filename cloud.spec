@@ -484,6 +484,9 @@ fi
 %{_javadir}/%{name}-commons-discovery.jar
 %{_javadir}/%{name}-iControl.jar
 %{_javadir}/%{name}-wsdl4j.jar
+%{_javadir}/%{name}-bcprov-jdk16-1.45.jar
+%{_javadir}/%{name}-jsch-0.1.42.jar
+
 
 %files core
 %defattr(0644,root,root,0755)

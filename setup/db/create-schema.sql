@@ -762,6 +762,7 @@ CREATE TABLE `cloud`.`user_vm` (
   `user_data` varchar(2048),
   `encrypted_password` varchar(1024) COMMENT 'vm password encrypted with the public key referenced in ssh_keypair',
   `ssh_keypair_id` bigint unsigned COMMENT 'id of the ssh keypair used to access the vm and/or encrypt the password',
+  `ssh_public_key` varchar(5120) COMMENT 'ssh public key',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

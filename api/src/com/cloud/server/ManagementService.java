@@ -26,10 +26,13 @@ import java.util.Set;
 import com.cloud.alert.Alert;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateDomainCmd;
+import com.cloud.api.commands.CreateSSHKeyPairCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
 import com.cloud.api.commands.DeletePreallocatedLunCmd;
+import com.cloud.api.commands.DeleteSSHKeyPairCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
+import com.cloud.api.commands.GetVMPasswordCmd;
 import com.cloud.api.commands.ListAccountsCmd;
 import com.cloud.api.commands.ListAlertsCmd;
 import com.cloud.api.commands.ListAsyncJobsCmd;
@@ -50,6 +53,7 @@ import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
+import com.cloud.api.commands.ListSSHKeyPairsCmd;
 import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
@@ -64,6 +68,7 @@ import com.cloud.api.commands.ListZonesByCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RegisterPreallocatedLunCmd;
+import com.cloud.api.commands.RegisterSSHKeyPairCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
@@ -96,6 +101,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.user.SSHKeyPair;
 import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
@@ -405,5 +411,41 @@ public interface ManagementService {
     public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId);
     
     public Long saveCompletedEvent(Long userId, Long accountId, String level, String type, String description, long startEventId);
+
+    /**
+     * Search registered key pairs for the logged in user. 
+     * @param cmd The api command class.
+     * @return The list of key pairs found.
+     */
+    List<? extends SSHKeyPair> listSSHKeyPairs(ListSSHKeyPairsCmd cmd);
+
+    /**
+     * Registers a key pair for a given public key. 
+     * @param cmd The api command class.
+     * @return A VO with the key pair name and a finger print for the public key.  
+     */
+    SSHKeyPair registerSSHKeyPair(RegisterSSHKeyPairCmd cmd);
+
+    /**
+     * Creates a new 
+     * @param cmd The api command class.
+     * @return A VO containing the key pair name, finger print for the public key
+     * and the private key material of the key pair.
+     */
+    SSHKeyPair createSSHKeyPair(CreateSSHKeyPairCmd cmd);
+
+    /**
+     * Deletes a key pair by name.
+     * @param cmd The api command class.
+     * @return True on success. False otherwise.
+     */
+    boolean deleteSSHKeyPair(DeleteSSHKeyPairCmd cmd);
+
+    /**
+     * Finds and returns an encrypted password for a VM.
+     * @param cmd The api command class.
+     * @return The encrypted password.
+     */
+    String getVMPassword(GetVMPasswordCmd cmd);
 
 }

@@ -171,10 +171,12 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
+import com.cloud.user.SSHKeyPair;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
@@ -186,6 +188,7 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.crypt.RSAHelper;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
@@ -260,6 +263,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject RulesManager _rulesMgr;
     @Inject LoadBalancingRulesManager _lbMgr;
     @Inject UsageEventDao _usageEventDao;
+    @Inject SSHKeyPairDao _sshKeyPairDao;
     
     private IpAddrAllocator _IpAllocator;
     ScheduledExecutorService _executor = null;
@@ -2232,6 +2236,19 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
         
+        // Find an SSH public key corresponding to the key pair name, if one is given
+        Long sshKeyPairId = null;
+        String sshPublicKey = null;
+        if (cmd.getSSHKeyPairName() != null && !cmd.getSSHKeyPairName().equals("")) {
+            Account account = UserContext.current().getCaller();
+        	SSHKeyPair pair = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getSSHKeyPairName());
+    		if (pair == null)
+    			throw new InvalidParameterValueException("A key pair with name '" + cmd.getSSHKeyPairName() + "' was not found.");
+    		
+    		sshKeyPairId = pair.getId();
+    		sshPublicKey = pair.getPublicKey();
+        }
+        
         _accountMgr.checkAccess(caller, template);
         
         DataCenterDeployment plan = new DataCenterDeployment(dc.getId());
@@ -2288,7 +2305,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         UserVmVO vm = new UserVmVO(id, instanceName, cmd.getDisplayName(),
-                                   template.getId(), template.getGuestOSId(), offering.getOfferHA(), domainId, owner.getId(), offering.getId(), userData, hostName);
+                                   template.getId(), template.getGuestOSId(), offering.getOfferHA(), domainId, owner.getId(), offering.getId(), 
+                                   userData, hostName, sshKeyPairId, sshPublicKey);
 
 
         if (_itMgr.allocate(vm, template, offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, cmd.getHypervisor(), owner) == null) {
@@ -2335,6 +2353,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("A valid password for this virtual machine was not provided.");
         }
         vm.setPassword(password);
+
+        // Check if an SSH key pair was selected for the instance and if so use it to encrypt & save the vm password
+        if (vm.getSSHKeyPairId() != null && vm.getSSHPublicKey() != null && password != null && !password.equals("saved_password") ) {       	
+        	String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(vm.getSSHPublicKey(), password);
+        	if (encryptedPasswd == null)
+        		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Error encrypting password");
+        	
+        	vm.setEncryptedPassword(encryptedPasswd);
+        	_vmDao.update(vm.getId(), vm);
+        }
         
 	    long userId = UserContext.current().getCallerUserId();
 	    UserVO caller = _userDao.findById(userId);

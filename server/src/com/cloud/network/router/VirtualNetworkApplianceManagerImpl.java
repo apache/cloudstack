@@ -915,7 +915,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     private VmDataCommand generateVmDataCommand(VirtualRouter router, String vmPrivateIpAddress,
-            String userData, String serviceOffering, String zoneName, String guestIpAddress, String vmName, String vmInstanceName, long vmId) {
+            String userData, String serviceOffering, String zoneName, String guestIpAddress, String vmName, String vmInstanceName, long vmId, String publicKey) {
         VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress);
         
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
@@ -930,6 +930,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         cmd.addVmData("metadata", "public-hostname", router.getPublicIpAddress());
         cmd.addVmData("metadata", "instance-id", vmInstanceName);
         cmd.addVmData("metadata", "vm-id", String.valueOf(vmId));
+        cmd.addVmData("metadata", "public-keys", publicKey);
 
         return cmd;
     }
@@ -1453,7 +1454,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         cmds.addCommand(
                 "vmdata",
                 generateVmDataCommand(router, nic.getIp4Address(), userData, serviceOffering, zoneName,
-                        nic.getIp4Address(), profile.getVirtualMachine().getName(), profile.getVirtualMachine().getInstanceName(), profile.getId()));
+                        nic.getIp4Address(), profile.getVirtualMachine().getName(), profile.getVirtualMachine().getInstanceName(), profile.getId(), profile.getVirtualMachine().getSSHPublicKey()));
 
         try {
             _agentMgr.send(router.getHostId(), cmds);
@@ -1681,7 +1682,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         cmds.addCommand(
                                 "vmdata",
                                 generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName,
-                                        nic.getIp4Address(), vm.getName(), vm.getInstanceName(), vm.getId()));
+                                        nic.getIp4Address(), vm.getName(), vm.getInstanceName(), vm.getId(), null));
                     }
                 }
             }

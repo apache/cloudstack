@@ -110,6 +110,7 @@ import com.cloud.storage.upload.UploadMonitorImpl;
 import com.cloud.template.TemplateManagerImpl;
 import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.dao.AccountDaoImpl;
+import com.cloud.user.dao.SSHKeyPairDaoImpl;
 import com.cloud.user.dao.UserAccountDaoImpl;
 import com.cloud.user.dao.UserDaoImpl;
 import com.cloud.user.dao.UserStatisticsDaoImpl;
@@ -234,6 +235,7 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addDao("ItWorkDao", ItWorkDaoImpl.class);
         addDao("FirewallRulesDao", FirewallRulesDaoImpl.class);
         addDao("PortForwardingRulesDao", PortForwardingRulesDaoImpl.class);
+        addDao("SSHKeyPairDao", SSHKeyPairDaoImpl.class);
         addDao("UsageEventDao", UsageEventDaoImpl.class);
         addDao("ClusterDetailsDao", ClusterDetailsDaoImpl.class);
     }

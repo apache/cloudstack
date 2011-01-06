@@ -91,6 +91,9 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.NETWORK_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="list of network ids used by virtual machine")
     private List<Long> networkIds;
 
+    @Parameter(name="keypair", type=CommandType.STRING, description="name of the ssh key pair used to login to the virtual machine")
+    private String sshKeyPairName;
+    
     // unexposed parameter needed for serializing/deserializing the command
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, expose=false)
     private String password;
@@ -168,6 +171,10 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     public String getName() {
         return name;
+    }
+    
+    public String getSSHKeyPairName() {
+    	return sshKeyPairName;
     }
     
     
