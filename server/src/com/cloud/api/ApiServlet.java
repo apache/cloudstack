@@ -263,7 +263,7 @@ public class ApiServlet extends HttpServlet {
             	auditTrailSb.insert(0, "(userId="+UserContext.current().getCallerUserId()+ " accountId="+UserContext.current().getCaller().getId()+ " sessionId="+(session != null ? session.getId() : null)+ ")" );
 
             	try {
-            		String response = _apiServer.handleRequest(params, true, responseType, auditTrailSb);            		
+            		String response = _apiServer.handleRequest(params, false, responseType, auditTrailSb);            		
             		writeResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType);
             	} catch (ServerApiException se) {
             	    String serializedResponseText = _apiServer.getSerializedApiError(se.getErrorCode(), se.getDescription(), params, responseType);
