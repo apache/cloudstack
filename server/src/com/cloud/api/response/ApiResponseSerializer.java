@@ -64,7 +64,7 @@ public class ApiResponseSerializer {
             } else if (result instanceof SuccessResponse) {
             	sb.append("{ \"success\" : \""+((SuccessResponse)result).getSuccess()+"\"} ");
             } else if (result instanceof ExceptionResponse) {
-                sb.append("{\"errorcode\" : \""+((ExceptionResponse)result).getErrorCode() + ", \"errortext\" : \""+ ((ExceptionResponse)result).getErrorText() +"\"} ");
+                sb.append("{\"errorcode\" : "+((ExceptionResponse)result).getErrorCode() + ", \"errortext\" : \""+ ((ExceptionResponse)result).getErrorText() +"\"} ");
             }else {
                 String jsonStr = gson.toJson(result);
                 if ((jsonStr != null) && !"".equals(jsonStr)) {

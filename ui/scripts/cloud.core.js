@@ -1073,10 +1073,11 @@ function handleErrorInDialog2(errorMsg, $thisDialog) {
 }
 
 function parseXMLHttpResponse(XMLHttpResponse) {
-    var start = XMLHttpResponse.responseText.indexOf("h1") + 3;
-	var end = XMLHttpResponse.responseText.indexOf("</h1");
-	var errorMsg = XMLHttpResponse.responseText.substring(start, end);
-	return fromdb(errorMsg);	
+	var property;
+	var json = jQuery.parseJSON(XMLHttpResponse.responseText);
+    for(property in json) {}
+    var errorObj = json[property];
+	return fromdb(errorObj.errortext);	
 }
 
 function showLeftNavigationBasedOnRole() {
