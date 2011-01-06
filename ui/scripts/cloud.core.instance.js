@@ -849,7 +849,7 @@ function initVMWizard() {
 									var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
 									if (networkOfferings != null && networkOfferings.length > 0) {
 										for (var i = 0; i < networkOfferings.length; i++) {
-											if (networkOfferings[i].type == "Virtual" && networkOfferings[i].isdefault) {
+											if (networkOfferings[i].isdefault) {
 												// Create a network from this.
 												$.ajax({
 													data: createURL("command=createNetwork&networkOfferingId="+networkOfferings[i].id+"&name="+todb(networkName)+"&displayText="+todb(networkDesc)+"&zoneId="+$thisPopup.find("#wizard_zone").val()),
