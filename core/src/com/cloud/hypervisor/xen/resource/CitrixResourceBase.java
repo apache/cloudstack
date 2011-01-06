@@ -999,6 +999,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 args += publicIpAddress + "/" + cidrSize;
                 s_logger.debug("ipassoc: source nat ip: " + publicIpAddress);
             } else if (addVif || removeVif || firstIP) {
+            	args += " -f";
             	args += " -l ";
                 args += publicIpAddress + "/" + cidrSize;
                 s_logger.debug("ipassoc: first ip on vif: " + publicIpAddress);
