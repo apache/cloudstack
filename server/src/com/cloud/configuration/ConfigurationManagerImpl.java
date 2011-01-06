@@ -523,7 +523,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	if (!(_LinkLocalIpAllocDao.deleteIpAddressByPod(podId))) {
             throw new CloudRuntimeException("Failed to cleanup private ip addresses for pod " + podId);
         }
-
+    	
+    	//Delete vlans associated with the pod
+    	List<? extends Vlan> vlans = _networkMgr.listPodVlans(podId);
+    	if (vlans != null && !vlans.isEmpty()) {
+    	    for (Vlan vlan: vlans) {
+                _vlanDao.remove(vlan.getId());
+            }
+    	}
+    	
     	//Delete the pod
     	if (!(_podDao.expunge(podId))) {
     	    throw new CloudRuntimeException("Failed to delete pod " + podId);

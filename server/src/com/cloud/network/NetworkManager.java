@@ -20,6 +20,7 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -137,6 +138,6 @@ public interface NetworkManager extends NetworkService {
 	
 	PublicIpAddress getPublicIpAddress(Ip ipAddress);
 	
-	String getPodVlanGateway(long podId);
+	List<? extends Vlan> listPodVlans(long podId);
 	
 }

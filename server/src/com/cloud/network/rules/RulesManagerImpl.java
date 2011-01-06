@@ -526,6 +526,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         
         return allRules;
     }
-
+    
+    @Override
+    public List<? extends PortForwardingRule> listByNetworkId(long networkId) {
+        return _forwardingDao.listByNetworkId(networkId);
+    }
 
 }

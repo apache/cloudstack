@@ -99,6 +99,7 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
@@ -176,7 +177,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject VirtualNetworkApplianceManager _routerMgr;
     @Inject RulesManager _rulesMgr;
     @Inject LoadBalancingRulesManager _lbMgr;
-    @Inject PortForwardingRulesDao _pfRulesDao;
     @Inject UsageEventDao _usageEventDao;
     @Inject PodVlanMapDao _podVlanMapDao;
 
@@ -1636,7 +1636,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     @Override
     public boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException {
-        if (rules.size() == 0) {
+        if (rules == null || rules.size() == 0) {
             s_logger.debug("There are no rules to forward to the network elements");
             return true;
         }
@@ -1742,7 +1742,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         //Reapply pf rules
-        List<PortForwardingRuleVO> pfRules = _pfRulesDao.listByNetworkId(networkId);
+        List<? extends PortForwardingRule> pfRules = _rulesMgr.listByNetworkId(networkId);
         if (!applyRules(pfRules, true)) {
             s_logger.warn("Failed to apply port forwarding rules as a part of network " + network.getId() + " restart");
             return false;
@@ -1843,14 +1843,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public String getPodVlanGateway(long podId) {
+    public List<VlanVO> listPodVlans(long podId) {
         List<VlanVO> vlans = _vlanDao.listVlansForPodByType(podId, VlanType.DirectAttached);
-        //we don't allow vlans to have different gateways, so take the value from the first one
-        if (vlans == null || !vlans.isEmpty()) {
-            return vlans.get(0).getVlanGateway();
-        } else {
-            return null;
-        }
+        return vlans;
     }
     
 }
