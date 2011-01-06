@@ -842,7 +842,7 @@ function initVMWizard() {
 						// Setup Virtual Networks
 						if (virtualNetwork == null) {
 							$.ajax({
-								data: createURL("command=listNetworkOfferings"),
+								data: createURL("command=listNetworkOfferings&traffictype=Guest"),
 								dataType: "json",
 								async: false,
 								success: function(json) {
