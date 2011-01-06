@@ -650,8 +650,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     		throw new InvalidParameterValueException("A zone with ID: " + zoneId + " does not exist.");
     	}
     	
+    	DataCenterVO zone = _zoneDao.findById(zoneId);
+    	
     	// If DNS values are being changed, make sure there are no VMs in this zone
-    	if (dns1 != null || dns2 != null || internalDns1 != null || internalDns2 != null) {
+    	if ((dns1 != null && !dns1.equals(zone.getDns1()))|| (dns2 != null && !dns2.equals(zone.getDns2())) || (internalDns1 != null && !internalDns1.equals(zone.getInternalDns1())) || (internalDns2 != null && !internalDns2.equals(zone.getInternalDns2()))) {
     		if (zoneHasVMs(zoneId)) {
     			throw new InternalErrorException("The zone is not editable because there are VMs in the zone.");
     		}
@@ -680,8 +682,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	}
     	
     	//5. Reached here, hence editable
-    	
-    	DataCenterVO zone = _zoneDao.findById(zoneId);
     	String oldZoneName = zone.getName();
     	
     	if (newZoneName == null) {
@@ -719,8 +719,20 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	
     	if (vnetRange != null) {
     		String[] tokens = vnetRange.split("-");
-	    	int begin = Integer.parseInt(tokens[0]);
-	    	int end = tokens.length == 1 ? (begin + 1) : Integer.parseInt(tokens[1]);
+    		
+	    	int begin = 0;
+			int end = 0;
+			try {
+				begin = Integer.parseInt(tokens[0]);
+				end = tokens.length == 1 ? (begin + 1) : Integer.parseInt(tokens[1]);
+				
+				if( begin < 0 || end > 4096) {
+					throw new InvalidParameterValueException("Please specify a valid vnet range between 0-4096");
+				}
+			} catch (NumberFormatException e) {
+				s_logger.warn("Unable to parse vnet range");
+				throw new InvalidParameterValueException("Please specify a valid vnet range between 0-4096");
+			}
 	    	
 	    	_zoneDao.deleteVnet(zoneId);
 	    	_zoneDao.addVnet(zone.getId(), begin, end);
