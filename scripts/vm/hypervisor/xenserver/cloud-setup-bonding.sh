@@ -20,21 +20,27 @@ moveConfigToBond() {
         gateway=$(xe pif-param-get param-name=gateway uuid=$bondSlave)       
         DNS=$(xe pif-param-get param-name=DNS uuid=$bondSlave)
         management=$(xe pif-param-get param-name=management uuid=$bondSlave)
+        slavedevice=$(xe pif-param-get param-name=device uuid=$bondSlave)
+        masterdevice=$(xe pif-param-get param-name=device uuid=$bondMaster)
+        echo "  --configure $masterdevice $bondMasterace DNS=$DNS gateway=$gateway IP=$bondSlaveIp mode=$mode netmask=$netmask"
         xe pif-reconfigure-ip DNS=$DNS gateway=$gateway IP=$bondSlaveIp mode=$mode netmask=$netmask uuid=$bondMaster
         if [ $? -ne 0 ]; then
-          echo "  --Failed to program pif $bondMaster , please run xe pif-reconfigure-ip DNS=$DNS gateway=$gateway IP=$bondSlaveIp mode=$mode netmask=$netmask uuid=$bondMaster manually"
+          echo "  --Failed to configure $masterdevice, please run xe pif-reconfigure-ip DNS=$DNS gateway=$gateway IP=$bondSlaveIp mode=$mode netmask=$netmask uuid=$bondMaster manually"
           exit 1
         fi
-        echo "  --program pif $bondMasterace DNS=$DNS gateway=$gateway IP=$bondSlaveIp mode=$mode netmask=$netmask"
+        echo "  --Succeeded"
         if [ "$management" = "true" ]; then
+          echo "  --move management interface from $slavedevice to $masterdevice"
           xe host-management-reconfigure pif-uuid=$bondMaster 
           if [ $? -ne 0 ]; then
             echo "  --Failed to move management interface from $bondSlave to $bondMaster, please run xe host-management-reconfigure pif-uuid=$bondMaster manually"
             exit 1
           fi
-          echo "  --move management interface from $bondSlave to $bondMaster"
+          echo "  --Succeeded"
         fi
+        echo "  --remove configuration from $slavedevice"
         xe pif-reconfigure-ip mode=None uuid=$bondSlave
+        echo "  --Succeeded"
         break
       fi
       xe pif-plug uuid=$bondMaster
