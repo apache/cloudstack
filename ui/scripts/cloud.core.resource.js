@@ -673,7 +673,9 @@ function initAddClusterShortcut() {
 			    if(hypervisor == "VmWare")
 			    	clusterType = $thisDialog.find("#type_dropdown").val();
 	            
-		        var isValid = true;
+		        var isValid = true;		        
+		        isValid &= validateDropDownBox("Zone", $thisDialog.find("#zone_dropdown"), $thisDialog.find("#zone_dropdown_errormsg"));	
+		        isValid &= validateDropDownBox("Pod", $thisDialog.find("#pod_dropdown"), $thisDialog.find("#pod_dropdown_errormsg"));	       
 		        if(hypervisor == "VmWare" && clusterType != "CloudManaged") {
 			        isValid &= validateString("vCenter Server", $thisDialog.find("#cluster_hostname"), $thisDialog.find("#cluster_hostname_errormsg"));
 			        isValid &= validateString("vCenter user", $thisDialog.find("#cluster_username"), $thisDialog.find("#cluster_username_errormsg"));
