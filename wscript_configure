@@ -37,7 +37,7 @@ systemjars = {
 		"tomcat6-jsp-2.1-api-6.0.26.jar",
 		#"tomcat6/catalina.jar", # all supported distros put the file there
 	),
-	'RHEL6':
+	'RHEL':
 	(
 		"tomcat6-servlet-2.5-api.jar",
 		"tomcat6-el-2.1-api-6.0.24.jar",
@@ -110,7 +110,7 @@ elif _exists("/etc/centos-release"): conf.env.DISTRO = "CentOS"
 elif _exists("/etc/redhat-release"):
     version = file("/etc/redhat-release").readline()
     if version.find("Red Hat Enterprise Linux Server release 6") != -1:
-        conf.env.DISTRO = "RHEL6"
+        conf.env.DISTRO = "RHEL"
     elif version.find("Centos release") != -1:
         conf.env.DISTRO = "CentOS"
 else: conf.env.DISTRO = "unknown"
