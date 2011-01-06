@@ -10,6 +10,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.Networks;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -55,7 +56,15 @@ public class OvsElement extends AdapterBase implements NetworkElement {
 			DeployDestination dest, ReservationContext context)
 			throws ConcurrentOperationException, ResourceUnavailableException,
 			InsufficientCapacityException {
-		_ovsNetworkMgr.CheckAndUpdateDhcpFlow(network);
+		VirtualMachine instance = vm.getVirtualMachine();
+		
+		if (instance.getType() == VirtualMachine.Type.DomainRouter) {
+			return true;
+		}
+		
+		if (network.getTrafficType() == Networks.TrafficType.Guest) {
+			_ovsNetworkMgr.CheckAndUpdateDhcpFlow(network);
+		}
 		return true;
 	}
 

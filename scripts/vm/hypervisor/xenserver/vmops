@@ -144,14 +144,16 @@ def vlanRemapUtils(session, args):
         cmd.insert(3, args.pop("bridge"))
         cmd.insert(4, args.pop("vifName"))
         cmd.insert(5, args.pop("mac"))
-        cmd.insert(6, args.pop("vlan"))
         cmd.insert(7, args.pop("remap"))
-        cmd.insert(8, args.pop("ip"))
     elif op == "deleteFlow":
         cmd.insert(3, args.pop("bridge"))
         cmd.insert(4, args.pop("vifName"))
         cmd.insert(5, args.pop("mac"))
         cmd.insert(6, args.pop("remap"))
+    elif op == "setTag":
+        cmd.insert(3, args.pop("bridge"))
+        cmd.insert(4, args.pop("vifName"))
+        cmd.insert(5, args.pop("tag"))
 
     try:
         txt = util.pread2(cmd)
@@ -552,6 +554,47 @@ def default_ebtables_rules(vm_name, vif, vm_ip, vm_mac):
         util.SMlog("Failed to program default ebtables OUT rules")
         return 'false' 
     
+def ovs_set_tag_and_flow(session, args):
+    def get_vif_field(name, field):
+        return session.xenapi.VIF.get_record(name).get(field)
+
+    bridge = args.pop('bridge')
+    vm_name = args.pop('vmName')
+    vlanStr = args.pop('vlans')
+
+    try:
+        vm = session.xenapi.VM.get_by_name_label(vm_name)
+        if len(vm) != 1:
+             return 'false'
+        vm_rec = session.xenapi.VM.get_record(vm[0])
+        vm_vifs = vm_rec.get('VIFs')
+        vifrs = []
+        for vif in vm_vifs:
+            rec = (get_vif_field(vif, 'device'), get_vif_field(vif, 'MAC'))
+            vifrs.append(rec)
+        domid = vm_rec.get('domid')
+    except:
+        util.SMlog("### Failed to get domid or vif list for vm  ##" + vm_name)
+        return 'false'
+    
+    if domid == '-1':
+        util.SMlog("### Failed to get domid for vm (-1):  " + vm_name)
+        return 'false'
+
+    if len(vifrs) == 0:
+        return 'SUCCESS'
+
+    if vlanStr.startswith("/"): vlanStr = vlanStr[1:]
+    if vlanStr.endswith("/"): vlanStr = vlanStr[:-1]
+    vlans = vlanStr.split("/")
+    for vifr in vifrs:
+        vifName = "vif" + domid + "." + vifr[0]
+        mac = vifr[1]
+        vlanRemapUtils(session, {"op":"setTag", "vifName":vifName, "bridge":bridge, "tag":vlans[0]})
+        vlanRemapUtils(session, {"op":"createFlow", "vifName":vifName, "bridge":bridge, "mac":mac, "remap":vlanStr})
+
+    return 'SUCCESS'
+
 @echo
 def default_network_rules_systemvm(session, args):
     vm_name = args.pop('vmName')
@@ -627,9 +670,9 @@ def default_network_rules(session, args):
     vifs = [vif]
     try:
         util.pread2(['ifconfig', tap])
-    	vifs.append(tap)
+        vifs.append(tap)
     except:
-    	pass
+        pass
 
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
 
@@ -669,7 +712,7 @@ def default_network_rules(session, args):
         return 'false'
     
     for v in vifs:
-    	default_ebtables_rules(vm_name, v, vm_ip, vm_mac)
+        default_ebtables_rules(vm_name, v, vm_ip, vm_mac)
     
     if write_rule_log_for_vm(vmName, vm_id, vm_ip, domid, '_initial_', '-1') == False:
         util.SMlog("Failed to log default network rules, ignoring")
@@ -983,9 +1026,9 @@ def network_rules(session, args):
     vifs = [vif]
     try:
         util.pread2(['ifconfig', tap])
-    	vifs.append(tap)
+        vifs.append(tap)
     except:
-    	pass
+        pass
     vm_name =  '-'.join(vm_name.split('-')[:-1])
     vmchain = vm_name
     
@@ -1064,5 +1107,5 @@ def network_rules(session, args):
 
 
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, "getvncport": getvncport, "getgateway": getgateway, "preparemigration": preparemigration, "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  "ipassoc": ipassoc, "vm_data": vm_data, "savePassword": savePassword, "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, "networkUsage": networkUsage, "network_rules":network_rules, "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules, "destroy_network_rules_for_vm":destroy_network_rules_for_vm, "default_network_rules_systemvm":default_network_rules_systemvm, "get_rule_logs_for_vms":get_rule_logs_for_vms, "setLinkLocalIP":setLinkLocalIP, "lt2p_vpn":lt2p_vpn, "vlanRemapUtils":vlanRemapUtils,"cleanup_rules":cleanup_rules})
+    XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, "getvncport": getvncport, "getgateway": getgateway, "preparemigration": preparemigration, "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  "ipassoc": ipassoc, "vm_data": vm_data, "savePassword": savePassword, "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, "networkUsage": networkUsage, "network_rules":network_rules, "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules, "destroy_network_rules_for_vm":destroy_network_rules_for_vm, "default_network_rules_systemvm":default_network_rules_systemvm, "get_rule_logs_for_vms":get_rule_logs_for_vms, "setLinkLocalIP":setLinkLocalIP, "lt2p_vpn":lt2p_vpn,"cleanup_rules":cleanup_rules,"vlanRemapUtils":vlanRemapUtils, "ovs_set_tag_and_flow":ovs_set_tag_and_flow})
 

@@ -1328,6 +1328,7 @@ CREATE TABLE `cloud`.`ovs_host_vlan_alloc`(
   `host_id` bigint unsigned COMMENT 'host id',
   `account_id` bigint unsigned COMMENT 'account id',
   `vlan` bigint unsigned COMMENT 'vlan id under account #account_id on host #host_id',
+  `ref` int unsigned NOT NULL DEFAULT 0 COMMENT 'reference count',
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1336,6 +1337,25 @@ CREATE TABLE `cloud`.`ovs_vlan_mapping_dirty`(
   `account_id` bigint unsigned COMMENT 'account id',
   `dirty` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 means vlan mapping of this account was changed',
   PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`ovs_vm_flow_log` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance that needs flows to be synced.',
+  `created` datetime NOT NULL COMMENT 'time the entry was requested',
+  `logsequence` bigint unsigned  COMMENT 'seq number to be sent to agent, uniquely identifies flow update',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`ovs_work` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance that needs rules to be synced.',
+  `mgmt_server_id` bigint unsigned COMMENT 'management server that has taken up the work of doing rule sync',
+  `created` datetime NOT NULL COMMENT 'time the entry was requested',
+  `taken` datetime COMMENT 'time it was taken by the management server',
+  `step` varchar(32) NOT NULL COMMENT 'Step in the work',
+  `seq_no` bigint unsigned  COMMENT 'seq number to be sent to agent, uniquely identifies ruleset update',
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;

@@ -3820,34 +3820,22 @@ public abstract class CitrixResourceBase implements ServerResource {
         return Boolean.valueOf(callHostPlugin(conn, "vmops", "can_bridge_firewall", "host_uuid", _host.uuid));
     }
     
-    //TODO: it's better to move more stuff at host plugin side
     private Answer execute(OvsSetTagAndFlowCommand cmd) {
     	Connection conn = getConnection();
     	try {
-    		Set<VM> vms = VM.getByNameLabel(conn, cmd.getVmName());
-    		VM vm = vms.iterator().next();
-    		Set<VIF> vifs = vm.getVIFs(conn);
-    		String domId = vm.getDomid(conn).toString();
     		String nwName = Networks.BroadcastScheme.VSwitch.toString();
     		Network nw = getNetworkByName(conn, nwName);
     		assert nw!= null : "Why there is no vswith network ???";
     		String bridge = nw.getBridge(conn);
     		
     		/*If VM is domainRouter, this will try to set flow and tag on its
-    		 * none guest network nic. don't worry, it will fail sciently at host
+    		 * none guest network nic. don't worry, it will fail silently at host
     		 * plugin side
     		 */
-    		for (VIF vif : vifs) {
-    			String vifName = "vif" + domId + vif.getDevice(conn);
-    			String result = callHostPlugin(conn, "vmops", "vlanRemapUtils", "op", "createFlow", "bridge",
-						bridge, "vifName", vifName, "mac",
-						vif.getMAC(conn), "remap", cmd.getVlans(),
-						"ip", "placeholder now");
-    			s_logger.debug("set flow for " + vifName + " on " + cmd.getVmName() + " " + result);
-    			
-    		}
+    		String result = callHostPlugin(conn, "vmops", "ovs_set_tag_and_flow", "bridge", bridge,
+    				"vmName", cmd.getVmName(), "vlans", cmd.getVlans());
+			s_logger.debug("set flow for " + cmd.getVmName() + " " + result);
 		
-    		/*
 			if (result.equalsIgnoreCase("SUCCESS")) {
 				return new Answer(cmd, true, "Set flow for " + cmd.getVmName()
 						+ " success, vlans:" + cmd.getVlans());
@@ -3855,9 +3843,6 @@ public abstract class CitrixResourceBase implements ServerResource {
 				return new Answer(cmd, false, "Set flow for " + cmd.getVmName()
 						+ " failed, vlans:" + cmd.getVlans());
 			}
-			*/
-    		return new Answer(cmd, true, "Set flow for " + cmd.getVmName()
-					+ " success, vlans:" + cmd.getVlans());
     	} catch (Exception e) {
     		e.printStackTrace();
     	}

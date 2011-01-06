@@ -1133,7 +1133,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     public void completeStartCommand(UserVmVO vm) {
     	_itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
         _networkGroupMgr.handleVmStateTransition(vm, State.Running);
-
+        _ovsNetworkMgr.handleVmStateTransition(vm, State.Running);
     }
     
     @Override
@@ -1167,6 +1167,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             
             txn.commit();
             _networkGroupMgr.handleVmStateTransition(vm, State.Stopped);
+            _ovsNetworkMgr.handleVmStateTransition(vm, State.Stopped);
         } catch (Throwable th) {
             s_logger.error("Error during stop: ", th);
             throw new CloudRuntimeException("Error during stop: ", th);
@@ -2343,7 +2344,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	    
 	    try {
 			vm = _itMgr.start(vm, null, caller, owner, cmd.getHypervisor());
-		} finally {
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	    finally {
 			updateVmStateForFailedVmCreation(vm.getId());
 		}
 		vm.setPassword(password);
@@ -2397,7 +2401,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		}
 		_vmDao.update(userVm.getId(), userVm);
 	
-		_ovsNetworkMgr.CheckAndCreateTunnel(cmds, profile, dest);
+		_ovsNetworkMgr.UserVmCheckAndCreateTunnel(cmds, profile, dest);
+		_ovsNetworkMgr.applyDefaultFlowToUserVm(cmds, profile, dest);
 		return true;
 	}
 

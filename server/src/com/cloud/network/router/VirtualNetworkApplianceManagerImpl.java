@@ -129,6 +129,7 @@ import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
@@ -294,6 +295,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     RemoteAccessVpnDao _vpnDao;
     @Inject 
     VMInstanceDao _instanceDao;
+    OvsNetworkManager _ovsNetworkMgr;
 
     long _routerTemplateId = -1;
     int _routerRamSize;
@@ -1250,6 +1252,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException{
         NicProfile controlNic = (NicProfile) profile.getParameter("control.nic");
+        _ovsNetworkMgr.RouterCheckAndCreateTunnel(cmds, profile, dest);
+		_ovsNetworkMgr.applyDefaultFlowToRouter(cmds, profile, dest);
+		
         cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20));
 
         DomainRouterVO router = profile.getVirtualMachine();

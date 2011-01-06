@@ -47,4 +47,11 @@ public class VlanMappingDaoImpl extends GenericDaoBase<VlanMappingVO, Long>
         
         return listBy(sc, null);
 	}
+
+	@Override
+	public VlanMappingVO findByAccountIdAndHostId(long accountId, long hostId) {
+		SearchCriteria<VlanMappingVO> sc = AllFieldsSearch.create();
+        sc.setParameters("account_id", accountId);
+		return findOneBy(sc);
+	}
 }

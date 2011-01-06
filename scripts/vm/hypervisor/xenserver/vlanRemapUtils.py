@@ -338,7 +338,7 @@ def formatARPFlow(bridge, inPort, vlan, ports):
 			actions=strip_vlan,%s" % (inPort, vlan, outputs)
 	return flow
 
-def createFlow (bridge, vifName, mac, ip, vlan, remap):
+def createFlow (bridge, vifName, mac, remap):
 	inport = getGreOfPorts(bridge)
 	if len(inport) == 0:
 		log("WARNING: no inport found")
@@ -357,7 +357,7 @@ def createFlow (bridge, vifName, mac, ip, vlan, remap):
 	delFlow(mac)
 
 	#set remap here, remap has format e.g. [1,22,200,13,16]
-	remap = strip(remap, "both")
+	remap = strip(remap)
 	log("")
 	log("Create flow for remap")
 	noneGreOfPorts = getNoneGreOfPort(bridge)
@@ -366,7 +366,7 @@ def createFlow (bridge, vifName, mac, ip, vlan, remap):
 		log("WARNING: no none GRE ofports found, no ARP flow will be created")
 		isARP = False
 
-	for j in remap.split(","):
+	for j in remap.split("/"):
 		delARPFlow(j)
 		for i in inport:
 			flow = formatFlow(i, j, mac, output)
@@ -383,8 +383,19 @@ def createFlow (bridge, vifName, mac, ip, vlan, remap):
 	return 0
 ######################## End Flow creation utils ##########################
 
-def setTag(vifName, vlan):
-	log("")
+def setTag(bridge, vifName, vlan):
+	# The startVM command is slow, we may wait for a while for it creates vif on
+	# open vswitch
+	log("Waiting for %s ..." % vifName)
+	waitPortCmd = [vsctlPath, "--timeout=10 wait-until port %s -- get port %s name" % \
+			(vifName, vifName)]
+	doCmd (waitPortCmd)
+	log("%s is here" % vifName)
+
+	if getVifPort(bridge, vifName) == None:
+		log("WARNING: %s is not on bridge %s" % (vifName, bridge))
+		return 0
+
 	log("Set tag")
 	setTagCmd = [vsctlPath, "set port", vifName, "tag=%s"%vlan]
 	doCmd (setTagCmd)
@@ -398,20 +409,22 @@ def doCreateGRE(bridge, remoteIP, key):
 		log("WARNING: create GRE tunnel on %s for %s success" % (bridge, \
 			remoteIP))
 
-def doCreateFlow (bridge, vifName, mac, ip, vlan, remap):
-	setTag (vifName, vlan)
-	if createFlow(bridge, vifName, mac, ip, vlan, remap) < 0:
-		log ("Create flow failed(bridge=%s, vifName=%s, mac=%s, ip=%s, vlan=%s,\
-remap=%s" % (bridge, vifName, mac, ip, vlan, remap))
+def doCreateFlow (bridge, vifName, mac, remap):
+	if createFlow(bridge, vifName, mac, remap) < 0:
+		log ("Create flow failed(bridge=%s, vifName=%s, mac=%s,\
+remap=%s" % (bridge, vifName, mac, remap))
 	else:
-		log ("Create flow success(bridge=%s, vifName=%s, mac=%s, ip=%s, vlan=%s,\
-remap=%s" % (bridge, vifName, mac, ip, vlan, remap))
+		log ("Create flow success(bridge=%s, vifName=%s, mac=%s,\
+remap=%s" % (bridge, vifName, mac, remap))
+
+def doSetTag (bridge, vifName, tag):
+	setTag(bridge, vifName, tag)
 
 def doDeleteFlow(bridge, vifName, mac, remap):
 	delFlow(mac)
 	log("Delete flows for %s" % mac)
 
-	remap = strip(remap, "both")
+	remap = strip(remap)
 
 	# remove our port from arp flow
 	inport = getGreOfPorts(bridge)
@@ -423,7 +436,7 @@ def doDeleteFlow(bridge, vifName, mac, remap):
 	noneGreOfPorts.remove(mine)
 	log("Delete ARP flows for(vifname=%s, ofport=%s)" % (vifName, mine))
 
-	for j in remap.split(","):
+	for j in remap.split("/"):
 		delARPFlow(j)
 		for i in inport:
 			flow = formatARPFlow(bridge, i, j, noneGreOfPorts)
@@ -457,14 +470,12 @@ if __name__ == "__main__":
 		key = sys.argv[4]
 		doCreateGRE(bridge, remoteIP, key)
 	elif op == "createFlow":
-		checkArgNum(8)
+		checkArgNum(6)
 		bridge = sys.argv[2]
 		vifName = sys.argv[3]
 		mac = sys.argv[4]
-		vlan = sys.argv[5]
-		remap = sys.argv[6]
-		ip = sys.argv[7]
-		doCreateFlow(bridge, vifName, mac, ip, vlan, remap)
+		remap = sys.argv[5]
+		doCreateFlow(bridge, vifName, mac, remap)
 	elif op == "deleteFlow":
 		checkArgNum(6)
 		bridge = sys.argv[2]
@@ -472,6 +483,12 @@ if __name__ == "__main__":
 		mac = sys.argv[4]
 		remap = sys.argv[5]
 		doDeleteFlow(bridge, vifName, mac, remap)
+	elif op == "setTag":
+		checkArgNum(5)
+		bridge = sys.argv[2]
+		vifName = sys.argv[3]
+		tag = sys.argv[4]
+		doSetTag(bridge, vifName, tag)
 	else:
 		log("WARNING: get an unkown op %s" % op)
 		result=errors["ERROR_OP"]
