@@ -1407,12 +1407,14 @@ function addZoneWizardSubmit($thisWizard) {
 				success: function(json) {			    
 				    $thisWizard.find("#after_submit_screen").find("#add_iprange_tick_cross").removeClass().addClass("zonepopup_reviewtick");
 	                $thisWizard.find("#after_submit_screen").find("#add_iprange_message").removeClass().text("Public IP range was created successfully");	
+    			    
     			    var item = json.createvlaniprangeresponse.vlan;						    
 				    vlanId = item.id;					    	    				   
 				},
 				error: function(XMLHttpResponse) {				    
 					handleError(XMLHttpResponse, function() {
-						handleErrorInDialog(XMLHttpResponse, $thisWizard.find("#step4"));	
+						$thisWizard.find("#after_submit_screen").find("#add_iprange_tick_cross").removeClass().addClass("zonepopup_reviewcross");
+	                    $thisWizard.find("#after_submit_screen").find("#add_iprange_message").removeClass().addClass("error").text(("Failed to create public IP range: " + parseXMLHttpResponse(XMLHttpResponse)));			
 					});
 				}
 			});            
