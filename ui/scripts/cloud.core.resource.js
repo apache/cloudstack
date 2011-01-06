@@ -1542,6 +1542,8 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
     
     $dialogAddPool.find("#zone_dropdown").bind("change", function(event) {
 	    var zoneId = $(this).val();
+	    if(zoneId == null)
+	        return;
 	    $.ajax({
 	        data: createURL("command=listPods&zoneId="+zoneId),
 		    dataType: "json",
