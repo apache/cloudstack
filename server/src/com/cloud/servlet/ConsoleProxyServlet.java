@@ -365,26 +365,25 @@ public class ConsoleProxyServlet extends HttpServlet {
     		return true;
 
         VMInstanceVO vm = _ms.findVMInstanceById(vmId);
-        UserVmVO userVm;
         switch(vm.getType())
         {
         case User :
-        	userVm = _ms.findUserVMInstanceById(vmId);
-        	if(userVm.getAccountId() != accountObj.getId()) {
+        case DomainRouter:
+        	if(vm.getAccountId() != accountObj.getId()) {
         		
         		// access from another normal user
         		if(accountObj.getType() == Account.ACCOUNT_TYPE_NORMAL) {
 	        		if(s_logger.isDebugEnabled()) {
-	                    s_logger.debug("VM access is denied. VM owner account " + userVm.getAccountId() 
+	                    s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() 
 		        			+ " does not match the account id in session " + accountObj.getId() + " and caller is a normal user");
 	                }
 	        		return false;
         		}
         		
         		if(accountObj.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || accountObj.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) {
-        			if(!_ms.isChildDomain(accountObj.getDomainId(), userVm.getDomainId())) {
+        			if(!_ms.isChildDomain(accountObj.getDomainId(), vm.getDomainId())) {
     	        		if(s_logger.isDebugEnabled()) {
-    	                    s_logger.debug("VM access is denied. VM owner account " + userVm.getAccountId() 
+    	                    s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() 
     		        			+ " does not match the account id in session " + accountObj.getId() + " and the domain-admin caller does not manage the target domain");
     	                }
         				return false;
@@ -394,7 +393,6 @@ public class ConsoleProxyServlet extends HttpServlet {
         	break;
         	
         case ConsoleProxy :
-        case DomainRouter :
         case SecondaryStorageVm:
     		return false;
     		
