@@ -1073,11 +1073,15 @@ function handleErrorInDialog2(errorMsg, $thisDialog) {
 }
 
 function parseXMLHttpResponse(XMLHttpResponse) {
-	var property;
 	var json = jQuery.parseJSON(XMLHttpResponse.responseText);
-    for(property in json) {}
-    var errorObj = json[property];
-	return fromdb(errorObj.errortext);	
+	if (json != null) {
+		var property;
+		for(property in json) {}
+		var errorObj = json[property];
+		return fromdb(errorObj.errortext);	
+	} else {
+		return null;
+	}
 }
 
 function showLeftNavigationBasedOnRole() {
