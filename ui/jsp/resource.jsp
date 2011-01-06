@@ -536,6 +536,8 @@
                 Step 2</div>
             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
                 Step 3</div>
+            <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
+                Step 4</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
             <div class="zonepopup_container_closebutton" id="close_button">
@@ -547,7 +549,7 @@
                 <div class="zonepopup_contentpanel">
                 	<div id="spinning_wheel" class="zonepoup_loadingbox" style="display:none;">
                     	<div class="zonepoup_loader"></div>
-                        <p> Adding zone and pod....</p>
+                        <p> Adding....</p>
                     </div>
                     
                    <!-- <div id="after_action_message" class="zonepoup_msgbox"></div>-->
