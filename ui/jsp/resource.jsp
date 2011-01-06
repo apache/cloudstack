@@ -394,7 +394,9 @@
                     <div class="vmpop_prevbutton" id="back_to_step_2" style="display: block;">
                         Back
                     </div>
-                    <div class="vmpop_nextbutton" id="submit_button">
+                    <div class="vmpop_nextbutton" id="go_to_step_4" style="display: none;">
+                        Go to Step 4</div>
+                    <div class="vmpop_nextbutton" id="submit_in_step3" style="display: block;">
                         Submit
                     </div>
                 </div>
@@ -405,7 +407,7 @@
     </div>
     <!-- step 3 (end) -->
     
-     <!-- step 4 (begin) -->
+    <!-- step 4 (begin) -->
     <div id="step4" style="display: none;">
         <div class="zonepopup_container_top">
            <div class="vmpopup_steps" style="background: url(images/step1_bg_unselected.png) no-repeat top left">
@@ -425,81 +427,99 @@
             <div class="zonepopup_maincontentarea">
                 <div class="zonepopup_titlebox">
                     <h2>
-                        Step 3: <strong>Add a Pod</strong></h2>
-                    <p>
-                        Please enter the following info to add a new pod 
+                        Step 4: <strong>Add an IP range to public network in zone</strong></h2>
+                    <p>                        
                     </p>
                 </div>
                 <div class="zonepopup_contentpanel">
                     <div class="zonepoup_formcontent">
                         <form action="#" method="post" id="form_acquire">
                         <ol>
-                            <li>
-                                <label for="user_name" style="width: 115px;">
-                                    Name:</label>
-                                <input class="text" type="text" name="add_pod_name" id="add_pod_name" />
-                                <div id="add_pod_name_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
+                            <li id="add_publicip_vlan_container">
+                                <label for="add_publicip_vlan_tagged">
+                                    VLAN:</label>
+                                <select class="select" name="add_publicip_vlan_tagged" id="add_publicip_vlan_tagged">
+                                    <option value="untagged">untagged</option>
+                                    <option value="tagged">tagged</option>
+                                </select>
+                            </li>
+                            <li style="display: none" id="add_publicip_vlan_vlan_container">
+                                <label for="user_name">
+                                    VLAN ID:</label>
+                                <input class="text" type="text" name="add_publicip_vlan_vlan" id="add_publicip_vlan_vlan" />
+                                <div id="add_publicip_vlan_vlan_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                </div>
+                            </li>
+                            <li id="add_publicip_vlan_scope_container">
+                                <label for="add_publicip_vlan_scope">
+                                    Scope:</label>
+                                <select class="select" name="add_publicip_vlan_scope" id="add_publicip_vlan_scope">
+                                    <!--  
+                                    <option value="zone-wide">zone-wide</option>
+                                    <option value="account-specific">account-specific</option>
+                                    -->
+                                </select>
+                            </li>
+                            <li style="display: none" id="add_publicip_vlan_pod_container">
+                                <label for="user_name">
+                                    Pod:</label>
+                                <select class="select" name="add_publicip_vlan_pod" id="add_publicip_vlan_pod">
+                                </select>
+                            </li>
+                            <li style="display: none" id="add_publicip_vlan_domain_container">
+                                <label for="user_name">
+                                    Domain:</label>
+                                <select class="select" name="add_publicip_vlan_domain" id="add_publicip_vlan_domain">
+                                </select>
+                            </li>
+                            <li style="display: none" id="add_publicip_vlan_account_container">
+                                <label for="user_name">
+                                    Account:</label>
+                                <input class="text" type="text" name="add_publicip_vlan_account" id="add_publicip_vlan_account" />
+                                <div id="add_publicip_vlan_account_errormsg" class="dialog_formcontent_errormsg"
+                                    style="display: none;">
                                 </div>
                             </li>
                             <li>
-                                <label for="add_pod_gateway" style="width: 115px;">
+                                <label for="user_name">
                                     Gateway:</label>
-                                <input class="text" type="text" id="add_pod_gateway" />
-                                <div id="add_pod_gateway_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
+                                <input class="text" type="text" name="add_publicip_vlan_gateway" id="add_publicip_vlan_gateway" />
+                                <div id="add_publicip_vlan_gateway_errormsg" class="dialog_formcontent_errormsg"
+                                    style="display: none;">
                                 </div>
                             </li>
                             <li>
-                                <label for="user_name" style="width: 115px;">
+                                <label for="user_name">
                                     Netmask:</label>
-                                <input class="text" type="text" name="add_pod_netmask" id="add_pod_netmask" />
-                                <div id="add_pod_netmask_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
+                                <input class="text" type="text" name="add_publicip_vlan_netmask" id="add_publicip_vlan_netmask" />
+                                <div id="add_publicip_vlan_netmask_errormsg" class="dialog_formcontent_errormsg"
+                                    style="display: none;">
                                 </div>
                             </li>
                             <li>
-                                <label for="user_name" style="width: 115px;">
-                                    Reserved System IP:</label>
-                                <input class="text" style="width: 92px" type="text" name="add_pod_startip" id="add_pod_startip" /><span>-</span>
-                                <input class="text" style="width: 92px" type="text" name="add_pod_endip" id="add_pod_endip" />
-                                <div id="add_pod_startip_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:133px;">
+                                <label for="user_name">
+                                    IP Range:</label>
+                                <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_startip"
+                                    id="add_publicip_vlan_startip" /><span>-</span>
+                                <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_endip"
+                                    id="add_publicip_vlan_endip" />
+                                <div id="add_publicip_vlan_startip_errormsg" class="dialog_formcontent_errormsg"
+                                    style="display: none;">
                                 </div>
-                                <div id="add_pod_endip_errormsg" class="dialog_formcontent_errormsg" style="display: none; ">
+                                <div id="add_publicip_vlan_endip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                                 </div>
-                            </li>
-                            <li id="guestip_container">
-                                <label style="width: 115px;">
-                                    Guest IP Range:</label>
-                                <input class="text" style="width: 92px" type="text" id="startguestip" /><span>-</span>
-                                <input class="text" style="width: 92px" type="text" id="endguestip" />
-                                <div id="startguestip_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:133px;">
-                                </div>
-                                <div id="endguestip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                                </div>
-                            </li>  
-							<li id="guestnetmask_container">
-                                <label style="width: 115px;">
-                                    Guest Netmask:</label>
-                                <input class="text" type="text" id="guestnetmask" />
-                                <div id="guestnetmask_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
-                                </div>
-                            </li>	                            
-                            <li id="guestgateway_container">
-                                <label style="width: 115px;">
-                                    Guest Gateway:</label>
-                                <input class="text" type="text" id="guestgateway" />
-                                <div id="guestgateway_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
-                                </div>
-                            </li>                            
+                            </li>         
                         </ol>
                         </form>
                     </div>
                 </div>
                 <div class="zonepopup_navigationpanel">
-                    <div class="vmpop_prevbutton" id="back_to_step_2" style="display: block;">
+                    <div class="vmpop_prevbutton" id="back_to_step_3" style="display: block;">
                         Back
-                    </div>
-                    <div class="vmpop_nextbutton" id="submit_button">
+                    </div>                    
+                    <div class="vmpop_nextbutton" id="submit_in_step4" style="display: block;">
                         Submit
-                    </div>
+                    </div>                    
                 </div>
             </div>
         </div>
@@ -555,13 +575,13 @@
                       </div>
                     </div>
                     
-                    <div class="zonepopup_reviewbox odd" id="add_guestiprange_message_container" style="display:none">
+                    <div class="zonepopup_reviewbox odd" id="add_iprange_message_container">
                       <div class="zonepopup_reviewtextbox">
-                           <div id="add_guestiprange_tick_cross"> <!-- class "zonepopup_reviewtick" or class "zonepopup_reviewcross" -->
+                           <div id="add_iprange_tick_cross"> <!-- class "zonepopup_reviewtick" or class "zonepopup_reviewcross" -->
                            </div>
                            <div class="zonepopup_review_label">
-                              Guest IP Range:</div>
-                           <span id="add_guestiprange_message"> <!-- add class "error" if in error -->
+                              IP Range:</div>
+                           <span id="add_iprange_message"> <!-- add class "error" if in error -->
                            </span>
                       </div>
                     </div>

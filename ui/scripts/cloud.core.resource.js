@@ -974,8 +974,12 @@ function resourceCountTotal() {
 
 function refreshAddZoneWizard() {
     var $addZoneWizard = $("#add_zone_wizard");
-    $addZoneWizard.find("#step2, #step3, #after_submit_screen").hide();
+    $addZoneWizard.find("#step2, #step3, #step4, #after_submit_screen").hide();
     $addZoneWizard.find("#step1").show();
+    
+    $addZoneWizard.find("#step4").find("#add_publicip_vlan_tagged").change();            		
+	$addZoneWizard.find("#step4").find("#add_publicip_vlan_scope").change(); // default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 	
+            
     $addZoneWizard.find("#basic_mode").click();
 }
 
@@ -1001,6 +1005,36 @@ function initAddZoneWizard() {
         }
         return false;
     });
+     
+    //....
+    $addZoneWizard.find("#step4").find("#add_publicip_vlan_tagged").unbind("change").bind("change", function(event) {	
+		if ($(this).val() == "tagged") {
+			$addZoneWizard.find("#step4").find("#add_publicip_vlan_vlan_container").show();
+			$addZoneWizard.find("#step4").find("#add_publicip_vlan_pod_container").hide();
+							
+			$addZoneWizard.find("#step4").find("#add_publicip_vlan_scope").empty().append('<option value="zone-wide">zone-wide</option>').append('<option value="account-specific">account-specific</option>');
+		} 
+		else if($(this).val() == "untagged") {  
+			$addZoneWizard.find("#step4").find("#add_publicip_vlan_vlan_container").hide();
+			$addZoneWizard.find("#step4").find("#add_publicip_vlan_pod_container").hide();
+			
+			$addZoneWizard.find("#step4").find("#add_publicip_vlan_scope").empty().append('<option value="zone-wide">zone-wide</option>');				
+		}	
+		return false;
+	});
+	
+	$addZoneWizard.find("#step4").find("#add_publicip_vlan_scope").change(function(event) {	   
+	    if($(this).val() == "zone-wide") {
+	        $addZoneWizard.find("#step4").find("#add_publicip_vlan_domain_container").hide();
+			$addZoneWizard.find("#step4").find("#add_publicip_vlan_account_container").hide();    
+	    } 
+	    else if($(this).val() == "account-specific") { 
+	        $addZoneWizard.find("#step4").find("#add_publicip_vlan_domain_container").show();
+			$addZoneWizard.find("#step4").find("#add_publicip_vlan_account_container").show();    
+	    }		    
+	    return false;
+	});	
+    //....
          
     var domainDropdown = $addZoneWizard.find("#domain_dropdown").empty();	
 	$.ajax({
@@ -1029,14 +1063,20 @@ function initAddZoneWizard() {
             case "Basic":  //create VLAN in pod-level      
                 //hide Zone VLAN Range in Add Zone(step 2), show Guest IP Range in Add Pod(step3)                 
                 $thisWizard.find("#step2").find("#add_zone_vlan_container, #add_zone_guestcidraddress_container").hide();
-                $thisWizard.find("#step3").find("#guestip_container, #guestnetmask_container, #guestgateway_container").show();
+                $thisWizard.find("#step3").find("#guestip_container, #guestnetmask_container, #guestgateway_container, #submit_in_step3").show();
+                $thisWizard.find("#step3").find("#go_to_step_4").hide();
                 return true;
                 break;
                 
             case "Advanced":  //create VLAN in zone-level 
                 //show Zone VLAN Range in Add Zone(step 2), hide Guest IP Range in Add Pod(step3) 
                 $thisWizard.find("#step2").find("#add_zone_vlan_container, #add_zone_guestcidraddress_container").show();  
-                $thisWizard.find("#step3").find("#guestip_container, #guestnetmask_container, #guestgateway_container").hide();   
+                $thisWizard.find("#step3").find("#guestip_container, #guestnetmask_container, #guestgateway_container, #submit_in_step3").hide();   
+                $thisWizard.find("#step3").find("#go_to_step_4").show();
+                                
+		        // default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 
+		        $addZoneWizard.find("#step4").find("#add_publicip_vlan_scope").change(); 		
+                
                 return true;
                 break;
             
@@ -1051,7 +1091,23 @@ function initAddZoneWizard() {
 	                return;	
                 $thisWizard.find("#step2").hide();
                 $thisWizard.find("#step3").show();
-                break;   
+                break;  
+                           
+            case "go_to_step_4": //step 3 => step 4                   
+                var isValid = addZoneWizardValidatePod($thisWizard);
+                if($thisWizard.find("#step3").find("#guestip_container").css("display") != "none")
+                    isValid &= addZoneWizardValidateGuestIPRange($thisWizard);
+                if (!isValid) 
+	                return;               
+                          
+                $thisWizard.find("#step3").hide();
+                $thisWizard.find("#step4").show();                
+                break;  
+           
+            case "back_to_step_3": //step 4 => step 3
+                $thisWizard.find("#step4").hide();
+                $thisWizard.find("#step3").show();
+                break;    
            
             case "back_to_step_2": //step 3 => step 2
                 $thisWizard.find("#step3").hide();
@@ -1063,7 +1119,7 @@ function initAddZoneWizard() {
                 $thisWizard.find("#step1").show();
                 break; 
                 
-            case "submit_button": //step 3 => make API call
+            case "submit_in_step3": //step 3 => make API call
                 var isValid = addZoneWizardValidatePod($thisWizard);
                 if($thisWizard.find("#step3").find("#guestip_container").css("display") != "none")
                     isValid &= addZoneWizardValidateGuestIPRange($thisWizard);
@@ -1073,7 +1129,17 @@ function initAddZoneWizard() {
                 $thisWizard.find("#step3").hide();
                 $thisWizard.find("#after_submit_screen").show();
                 addZoneWizardSubmit($thisWizard);
-                break;       
+                break;    
+                
+            case "submit_in_step4": //step 4 => make API call  
+                var isValid = addZoneWizardValidatePublicIPRange($thisWizard);        
+                if (!isValid) 
+	                return;	  	                  
+                
+                $thisWizard.find("#step4").hide();
+                $thisWizard.find("#after_submit_screen").show();
+                addZoneWizardSubmit($thisWizard);
+                break;           
         }           
         return false;
     }); 
@@ -1114,6 +1180,24 @@ function addZoneWizardValidateGuestIPRange($thisWizard) {
     isValid &= validateIp("Guest IP Range", $thisWizard.find("#endguestip"), $thisWizard.find("#endguestip_errormsg"), true);  //optional
     isValid &= validateIp("Guest Netmask", $thisWizard.find("#guestnetmask"), $thisWizard.find("#guestnetmask_errormsg"));  //required when creating
     isValid &= validateIp("Guest Gateway", $thisWizard.find("#guestgateway"), $thisWizard.find("#guestgateway_errormsg"));  
+    return isValid;			
+}
+
+function addZoneWizardValidatePublicIPRange($thisWizard) {   
+    var isValid = true;					
+	var isTagged = $thisWizard.find("#step4").find("#add_publicip_vlan_tagged").val() == "tagged";	
+	
+	isValid &= validateString("Account", $thisWizard.find("#step4").find("#add_publicip_vlan_account"), $thisWizard.find("#step4").find("#add_publicip_vlan_account_errormsg"), true); //optional
+	
+	if (isTagged) {
+		isValid &= validateNumber("VLAN", $thisWizard.find("#step4").find("#add_publicip_vlan_vlan"), $thisWizard.find("#step4").find("#add_publicip_vlan_vlan_errormsg"), 2, 4095);
+	}
+	
+	isValid &= validateIp("Gateway", $thisWizard.find("#step4").find("#add_publicip_vlan_gateway"), $thisWizard.find("#step4").find("#add_publicip_vlan_gateway_errormsg"), false); //required
+	isValid &= validateIp("Netmask", $thisWizard.find("#step4").find("#add_publicip_vlan_netmask"), $thisWizard.find("#step4").find("#add_publicip_vlan_netmask_errormsg"), false); //required
+	isValid &= validateIp("Start IP Range", $thisWizard.find("#step4").find("#add_publicip_vlan_startip"), $thisWizard.find("#step4").find("#add_publicip_vlan_startip_errormsg"), false); //required
+	isValid &= validateIp("End IP Range", $thisWizard.find("#step4").find("#add_publicip_vlan_endip"), $thisWizard.find("#step4").find("#add_publicip_vlan_endip_errormsg"), true); //optional
+	
     return isValid;			
 }
 
@@ -1198,7 +1282,8 @@ function addZoneWizardSubmit($thisWizard) {
         }
     });
     
-    if(zoneId != null) {        
+    if(zoneId != null) {   
+        // create pod (begin) 
         var name = trim($thisWizard.find("#add_pod_name").val());
         var netmask = trim($thisWizard.find("#add_pod_netmask").val());
         var startip = trim($thisWizard.find("#add_pod_startip").val());
@@ -1233,18 +1318,7 @@ function addZoneWizardSubmit($thisWizard) {
 	             
 	            var podTotal = parseInt($("#pod_total").text());
 		        podTotal++;
-		        $("#pod_total").text(podTotal.toString()); 
-	                                    
-                forceLogout = false;  // We don't force a logout if pod(s) exit.
-		        if (forceLogout) {
-			        $("#dialog_confirmation")
-				        .html("<p>You have successfully added your first Zone and Pod.  After clicking 'OK', this UI will automatically refresh to give you access to the rest of cloud features.</p>")
-				        .dialog('option', 'buttons', { 
-					        "OK": function() { 	
-						        window.location.reload();
-					        } 
-				        }).dialog("open");
-		        }
+		        $("#pod_total").text(podTotal.toString()); 	            
 	        },
             error: function(XMLHttpResponse) {	
 				handleError(XMLHttpResponse, function() {				    
@@ -1253,11 +1327,61 @@ function addZoneWizardSubmit($thisWizard) {
 				});
             }
         });	
+        // create pod (end) 
+        
+        // add IP range to public network in zone (begin)      
+        if($("input[name=basic_advanced]:checked").val() == "Advanced") {            
+            var isDirect = false;
+			var isTagged = $thisWizard.find("#step4").find("#add_publicip_vlan_tagged").val() == "tagged";
+			
+			var vlan = trim($thisWizard.find("#step4").find("#add_publicip_vlan_vlan").val());
+			if (isTagged) {
+				vlan = "&vlan="+vlan;
+			} else {
+				vlan = "&vlan=untagged";
+			}
+							
+			var scopeParams = "";
+			if($thisWizard.find("#step4").find("#add_publicip_vlan_scope").val() == "account-specific") {
+			    scopeParams = "&domainId="+trim($thisWizard.find("#step4").find("#add_publicip_vlan_domain").val())+"&account="+trim($thisWizard.find("#step4").find("#add_publicip_vlan_account").val());  
+			} else if (isDirect) {
+				scopeParams = "&isshared=true";
+			}
+			
+			var array1 = [];						
+			var gateway = $thisWizard.find("#step4").find("#add_publicip_vlan_gateway").val();
+			array1.push("&gateway="+todb(gateway));
+			
+			var netmask = $thisWizard.find("#step4").find("#add_publicip_vlan_netmask").val();
+			array1.push("&netmask="+todb(netmask));
+			
+			var startip = $thisWizard.find("#step4").find("#add_publicip_vlan_startip").val();
+			array1.push("&startip="+todb(startip));
+			
+			var endip = $thisWizard.find("#step4").find("#add_publicip_vlan_endip").val();	//optional field (might be empty)
+			if(endip != null && endip.length > 0)
+			    array1.push("&endip="+todb(endip));										
+			
+			$.ajax({
+				data: createURL("command=createVlanIpRange&forVirtualNetwork=true&zoneId="+zoneId+vlan+scopeParams+array1.join("")),
+				dataType: "json",
+				success: function(json) {			    
+				    $thisWizard.find("#after_submit_screen").find("#add_iprange_tick_cross").removeClass().addClass("zonepopup_reviewtick");
+	                $thisWizard.find("#after_submit_screen").find("#add_iprange_message").removeClass().text("Public IP range was created successfully");	
+    			    var item = json.createvlaniprangeresponse.vlan;						    
+				    vlanId = item.id;					    	    				   
+				},
+				error: function(XMLHttpResponse) {				    
+					handleError(XMLHttpResponse, function() {
+						handleErrorInDialog(XMLHttpResponse, $thisWizard.find("#step4"));	
+					});
+				}
+			});            
+        }
+        // add IP range to public network in zone (end)   
     } 
     
     if(podId != null && $thisWizard.find("#step3").find("#guestip_container").css("display") != "none") {     
-        $thisWizard.find("#after_submit_screen").find("#add_guestiprange_message_container").show();
-       
 		var netmask = $thisWizard.find("#step3").find("#guestnetmask").val();
 		var startip = $thisWizard.find("#step3").find("#startguestip").val();
 		var endip = $thisWizard.find("#step3").find("#endguestip").val();	
@@ -1279,23 +1403,20 @@ function addZoneWizardSubmit($thisWizard) {
 			dataType: "json",
 			async: false,
 			success: function(json) { 			    
-			    $thisWizard.find("#after_submit_screen").find("#add_guestiprange_tick_cross").removeClass().addClass("zonepopup_reviewtick");
-	            $thisWizard.find("#after_submit_screen").find("#add_guestiprange_message").removeClass().text("Guest IP range was created successfully");	    
+			    $thisWizard.find("#after_submit_screen").find("#add_iprange_tick_cross").removeClass().addClass("zonepopup_reviewtick");
+	            $thisWizard.find("#after_submit_screen").find("#add_iprange_message").removeClass().text("Guest IP range was created successfully");	    
 			    
 				var item = json.createvlaniprangeresponse.vlan;
 				vlanId = item.id;				
 			},		   
 		    error: function(XMLHttpResponse) {	
 				handleError(XMLHttpResponse, function() {			
-				    $thisWizard.find("#after_submit_screen").find("#add_guestiprange_tick_cross").removeClass().addClass("zonepopup_reviewcross");
-	                $thisWizard.find("#after_submit_screen").find("#add_guestiprange_message").removeClass().addClass("error").text(("Failed to create Guest IP range: " + parseXMLHttpResponse(XMLHttpResponse)));			
+				    $thisWizard.find("#after_submit_screen").find("#add_iprange_tick_cross").removeClass().addClass("zonepopup_reviewcross");
+	                $thisWizard.find("#after_submit_screen").find("#add_iprange_message").removeClass().addClass("error").text(("Failed to create Guest IP range: " + parseXMLHttpResponse(XMLHttpResponse)));			
 			    });
             }
 		});		
-    }
-    else {
-         $thisWizard.find("#after_submit_screen").find("#add_guestiprange_message_container").hide();
-    }
+    }    
     
     $thisWizard.find("#spinning_wheel").hide();   
 }
