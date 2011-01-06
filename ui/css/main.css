@@ -299,15 +299,32 @@ a:hover {
 .vmpopup_container_closebutton {
 	width:13px;
 	height:13px;
-	float:right;
+	float:left;
 	background:url(../images/vm_closebutton.gif) no-repeat top left;
-	margin:8px 10px 0 0;
+	margin:8px 0 0 0;
 	padding:0;
 	cursor:pointer;
 	cursor:hand;
 }
 
 .vmpopup_container_closebutton:hover {
+	background:url(../images/vm_closebutton_hover.gif) no-repeat top left;
+}
+
+
+
+.zonepopup_container_closebutton {
+	width:13px;
+	height:13px;
+	float:left;
+	background:url(../images/vm_closebutton.gif) no-repeat top left;
+	margin:8px 0 0 0;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.zonepopup_container_closebutton:hover {
 	background:url(../images/vm_closebutton_hover.gif) no-repeat top left;
 }
 
