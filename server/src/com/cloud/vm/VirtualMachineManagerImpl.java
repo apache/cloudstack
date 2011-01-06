@@ -17,6 +17,7 @@
  */
 package com.cloud.vm;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -61,6 +62,10 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.element.NetworkElement;
+import com.cloud.network.guru.NetworkGuru;
+import com.cloud.resource.Resource;
+import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -90,6 +95,7 @@ import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -115,6 +121,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     @Inject private ConsoleProxyDao _consoleDao;
     @Inject private SecondaryStorageVmDao _secondaryDao;
     @Inject private UsageEventDao _usageEventDao;
+    @Inject private NicDao _nicsDao;
     
     @Inject(adapter=DeploymentPlanner.class)
     private Adapters<DeploymentPlanner> _planners;
@@ -199,6 +206,58 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
         
         return vm;
     }
+    
+    protected void reserveNics(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+        List<NicVO> nics = _nicsDao.listBy(vmProfile.getId());
+        for (NicVO nic : nics) {
+            Pair<NetworkGuru, NetworkVO> implemented = _networkMgr.implementNetwork(nic.getNetworkId(), dest, context);
+            NetworkGuru concierge = implemented.first();
+            NetworkVO network = implemented.second();
+            NicProfile profile = null;
+            if (nic.getReservationStrategy() == ReservationStrategy.Start) {
+                nic.setState(Resource.State.Reserving);
+                nic.setReservationId(context.getReservationId());
+                _nicsDao.update(nic.getId(), nic);
+                URI broadcastUri = nic.getBroadcastUri();
+                if (broadcastUri == null) {
+                    network.getBroadcastUri();
+                }
+
+                URI isolationUri = nic.getIsolationUri();
+
+                profile = new NicProfile(nic, network, broadcastUri, isolationUri);
+                concierge.reserve(profile, network, vmProfile, dest, context);
+                nic.setIp4Address(profile.getIp4Address());
+                nic.setIp6Address(profile.getIp6Address());
+                nic.setMacAddress(profile.getMacAddress());
+                nic.setIsolationUri(profile.getIsolationUri());
+                nic.setBroadcastUri(profile.getBroadCastUri());
+                nic.setReserver(concierge.getName());
+                nic.setState(Resource.State.Reserved);
+                nic.setNetmask(profile.getNetmask());
+                nic.setGateway(profile.getGateway());
+                nic.setAddressFormat(profile.getFormat());
+                _nicsDao.update(nic.getId(), nic);      
+            } else {
+                profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri());
+            }
+            
+            for (NetworkElement element : _networkElements) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
+                }
+                element.prepare(network, profile, vmProfile, dest, context);
+            }
+
+            vmProfile.addNic(profile);
+            _networksDao.changeActiveNicsBy(network.getId(), 1);
+        }
+    }
+    
+    protected void prepareNics(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestionation dest, ReservationContext context) {
+        
+    }
+    
     
     @Override
     public <T extends VMInstanceVO> T allocate(T vm,
@@ -337,9 +396,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
     @Override
     public <T extends VMInstanceVO> T advanceStart(T vm, Map<String, Object> params, User caller, Account account, HypervisorType hyperType) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         State state = vm.getState();
-        if (state == State.Starting || state == State.Running) {
+        if (state == State.Running) {
             s_logger.debug("VM is already started: " + vm);
             return vm;
+        }
+        
+        if (state == State.Starting) {
+            
         }
         
         if (state != State.Stopped) {

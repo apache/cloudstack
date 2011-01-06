@@ -90,6 +90,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
     protected String                                                    _serverName;
     protected Object                                                    _component;
     protected HashMap<Class<?>, Class<?>>                               _factories;
+    protected List<Injector>                                            _injectors;
     
     static {
         Runtime.getRuntime().addShutdownHook(new CleanupThread());

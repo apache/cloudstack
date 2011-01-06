@@ -36,9 +36,15 @@ public class ItWorkVO {
         Cleanup;
     }
     
-    enum State {
-        Working,
-        Cancelling,
+    enum ResourceType {
+        Volume,
+        Nic
+    }
+    
+    enum Step {
+        Prepare,
+        Start,
+        Started,
     }
     
     @Id
@@ -58,21 +64,53 @@ public class ItWorkVO {
     String threadName;
     
     @Column(name="state")
-    State state;
+    Step step;
     
     @Column(name="cancel_taken")
     @Temporal(value=TemporalType.TIMESTAMP)
     Date taken;
     
+    @Column(name="instance_id")
+    long instanceId;
+    
+    public long getInstanceId() {
+        return instanceId;
+    }
+
+    @Column(name="resource_id")
+    long resourceId;
+    
+    @Column(name="resource_type")
+    ResourceType resourceType;
+    
+    
+    public long getResourceId() {
+        return resourceId;
+    }
+
+    public void setResourceId(long resourceId) {
+        this.resourceId = resourceId;
+    }
+
+    public ResourceType getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(ResourceType resourceType) {
+        this.resourceType = resourceType;
+    }
+
     protected ItWorkVO() {
     }
     
-    protected ItWorkVO(String id, long managementServerId, Type type) {
+    protected ItWorkVO(String id, long managementServerId, Type type, long instanceId) {
         this.id = id;
         this.managementServerId = managementServerId;
         this.type = type;
         this.threadName = Thread.currentThread().getName();
-        this.state = State.Working;
+        this.step = Step.Prepare;
+        this.instanceId = instanceId;
+        this.resourceType = null;
     }
 
     public String getId() {
@@ -99,12 +137,12 @@ public class ItWorkVO {
         return threadName;
     }
     
-    public State getState() {
-        return state;
+    public Step getStep() {
+        return step;
     }
     
-    public void setState(State state) {
-        this.state = state;
+    public void setStep(Step state) {
+        this.step = state;
     }
     
     public Date getTaken() {
