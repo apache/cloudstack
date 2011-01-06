@@ -1007,8 +1007,7 @@ function initAddZoneWizard() {
         }
         return false;
     });
-     
-    //....
+         
     $addZoneWizard.find("#step4").find("#add_publicip_vlan_tagged").unbind("change").bind("change", function(event) {	
 		if ($(this).val() == "tagged") {
 			$addZoneWizard.find("#step4").find("#add_publicip_vlan_vlan_container").show();
@@ -1022,6 +1021,8 @@ function initAddZoneWizard() {
 			
 			$addZoneWizard.find("#step4").find("#add_publicip_vlan_scope").empty().append('<option value="zone-wide">zone-wide</option>');				
 		}	
+		
+		$addZoneWizard.find("#step4").find("#add_publicip_vlan_scope").change();		
 		return false;
 	});
 	
@@ -1036,8 +1037,7 @@ function initAddZoneWizard() {
 	    }		    
 	    return false;
 	});	
-    //....
-         
+             
     var domainDropdown = $addZoneWizard.find("#domain_dropdown").empty();	
 	$.ajax({
 	  data: createURL("command=listDomains"),
