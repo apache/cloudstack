@@ -691,6 +691,12 @@ public class NetUtils {
     	return long2Ip(numericNetmask);
     }
     
+    public static String getCidrNetmask(String cidr) {
+        String[] cidrPair = cidr.split("\\/");
+        long guestCidrSize = Long.parseLong(cidrPair[1]);
+        return getCidrNetmask(guestCidrSize);
+    }
+    
     public static String cidr2Netmask(String cidr) {
         String[] tokens = cidr.split("\\/");
         return getCidrNetmask(Integer.parseInt(tokens[1]));
@@ -878,6 +884,12 @@ public class NetUtils {
         } 
 
         return result;
+    }
+    
+    public static String getDhcpRange(String cidr) {
+        String[] splitResult = cidr.split("\\/");
+        long size = Long.valueOf(splitResult[1]);
+        return NetUtils.getIpRangeStartIpFromCidr(splitResult[0], size);
     }
     	
 }

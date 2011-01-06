@@ -26,6 +26,7 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -35,6 +36,7 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
@@ -67,16 +69,24 @@ public class DhcpElement extends AdapterBase implements NetworkElement{
     @Inject UserVmDao _userVmDao;
     @Inject DomainRouterDao _routerDao;
     
-    private boolean canHandle(GuestIpType ipType, DeployDestination dest) {
+    private boolean canHandle(GuestIpType ipType, DeployDestination dest, TrafficType trafficType) {
         DataCenter dc = dest.getDataCenter();
         String provider = dc.getGatewayProvider();
         
-        return ((ipType == GuestIpType.Virtual && !provider.equals(Provider.VirtualRouter.getName())) || (provider.equals(Provider.VirtualRouter.getName()) && (ipType == GuestIpType.Direct || ipType == GuestIpType.DirectPodBased)));
+        if (provider.equals(Provider.VirtualRouter.getName())) {
+            if (dc.getNetworkType() == NetworkType.Basic) {
+                return (ipType == GuestIpType.Direct && trafficType == TrafficType.Guest);
+            } else {
+                return (ipType == GuestIpType.Direct);
+            }
+        } else {
+            return (ipType == GuestIpType.Virtual);
+        }
     }
 
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
-        if (!canHandle(offering.getGuestIpType(), dest)) {
+        if (!canHandle(network.getGuestType(), dest, offering.getTrafficType())) {
             return false;
         }
         _routerMgr.deployDhcp(network, dest, context.getAccount());
@@ -85,7 +95,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement{
 
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(network.getGuestType(), dest)) {
+        if (canHandle(network.getGuestType(), dest, network.getTrafficType())) {
             
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;

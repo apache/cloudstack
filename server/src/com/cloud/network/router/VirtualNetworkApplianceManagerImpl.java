@@ -72,8 +72,10 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Vlan;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -1022,12 +1024,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
             PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, guestNetwork, _accountService.getSystemUser().getId());
 
-            List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork);
+            List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
             NetworkOfferingVO controlOffering = offerings.get(0);
             NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
 
             List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
-            NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmPublicNetwork).get(0);
+            NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
             List<NetworkVO> publicConfigs = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
             NicProfile defaultNic = new NicProfile();
             defaultNic.setDefaultNic(true);
@@ -1036,7 +1038,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             defaultNic.setNetmask(sourceNatIp.getNetmask());
             defaultNic.setTrafficType(TrafficType.Public);
             defaultNic.setMacAddress(sourceNatIp.getMacAddress());
-            if (sourceNatIp.getVlanTag().equals("untagged")) {
+            if (sourceNatIp.getVlanTag().equals(Vlan.UNTAGGED)) {
                 defaultNic.setBroadcastType(BroadcastDomainType.Native);
             } else {
                 defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
@@ -1053,9 +1055,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             gatewayNic.setMode(guestNetwork.getMode());
             
             String gatewayCidr = guestNetwork.getCidr();
-            String[] cidrPair = gatewayCidr.split("\\/");
-            long guestCidrSize = Long.parseLong(cidrPair[1]);
-            gatewayNic.setNetmask(NetUtils.getCidrNetmask(guestCidrSize));
+            gatewayNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
             networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
             networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
 
@@ -1096,8 +1096,17 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 + guestNetwork;
 
         DataCenterDeployment plan = new DataCenterDeployment(dcId);
-
-        DomainRouterVO router = _routerDao.findByNetworkConfiguration(guestNetwork.getId());
+        DataCenter dc = _dcDao.findById(dcId);
+        DomainRouterVO router = null;
+        Long podId = dest.getPod().getId();
+        
+        //In Basic zone and Guest network we have to start domR per pod, not per network
+        if (dc.getNetworkType() == NetworkType.Basic && guestNetwork.getTrafficType() == TrafficType.Guest) {
+            router = _routerDao.findByNetworkConfigurationAndPod(guestNetwork.getId(), podId);
+        } else {
+            router = _routerDao.findByNetworkConfiguration(guestNetwork.getId());
+        }
+        
         if (router == null) {
             long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, owner.getId(), EventTypes.EVENT_ROUTER_CREATE, "Starting to create router for accountId : " +owner.getAccountId()); 
             long id = _routerDao.getNextInSequence(Long.class, "id");
@@ -1105,7 +1114,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 s_logger.debug("Creating the router " + id);
             }
 
-            List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork);
+            List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
             NetworkOfferingVO controlOffering = offerings.get(0);
             NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
 
@@ -1147,12 +1156,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String type = null;
         String dhcpRange = null;
 
-        // get first ip address from network cidr
-        String cidr = network.getCidr();
-        String[] splitResult = cidr.split("\\/");
-        long size = Long.valueOf(splitResult[1]);
-        dhcpRange = NetUtils.getIpRangeStartIpFromCidr(splitResult[0], size);
-
+        DataCenter dc = dest.getDataCenter();
+        
+        if (dc.getNetworkType() == NetworkType.Advanced) {
+            String cidr = network.getCidr();
+            dhcpRange = NetUtils.getDhcpRange(cidr);
+        } 
+        
         String domain = network.getNetworkDomain();
         if (router.getRole() == Role.DHCP_USERDATA) {
             type = "dhcpsrvr";
@@ -1175,6 +1185,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 buf.append(" dns1=").append(nic.getDns1());
                 if (nic.getDns2() != null) {
                     buf.append(" dns2=").append(nic.getDns2());
+                }
+                if (dc.getNetworkType() == NetworkType.Basic) {
+                    long cidrSize = NetUtils.getCidrSize(nic.getNetmask());
+                    String cidr = NetUtils.getCidrSubNet(nic.getGateway(), cidrSize);
+                    if (cidr != null) {
+                        dhcpRange = NetUtils.getIpRangeStartIpFromCidr(cidr, cidrSize);
+                    }
                 }
             }
             if (nic.getTrafficType() == TrafficType.Management) {

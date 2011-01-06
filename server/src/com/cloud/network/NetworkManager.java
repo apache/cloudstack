@@ -33,9 +33,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
@@ -59,13 +57,14 @@ public interface NetworkManager extends NetworkService {
      * Assigns a new public ip address.
      * 
      * @param dcId
+     * @param podId TODO
      * @param owner
      * @param type
      * @param networkId
      * @return
      * @throws InsufficientAddressCapacityException
      */
-    PublicIp assignPublicIpAddress(long dcId, Account owner, VlanType type, Long networkId) throws InsufficientAddressCapacityException;
+    PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId) throws InsufficientAddressCapacityException;
     
     /**
      * assigns a source nat ip address to an account within a network.
@@ -125,21 +124,19 @@ public interface NetworkManager extends NetworkService {
     AccountVO getNetworkOwner(long configurationId);
     
     List<NetworkVO> getNetworksforOffering(long offeringId, long dataCenterId, long accountId);
-
-    List<NetworkVO> setupNetwork(Account owner, ServiceOfferingVO offering, DeploymentPlan plan) throws ConcurrentOperationException;
     
-	Network getNetwork(long id);
 	String getNextAvailableMacAddressInNetwork(long networkConfigurationId) throws InsufficientAddressCapacityException;
 
 	boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError) throws ResourceUnavailableException;
 	
 	Map<Service, Map<Capability, String>> getZoneCapabilities(long zoneId);
 	
-	long getSystemNetworkIdByZoneAndTrafficTypeAndGuestType(long zoneId, TrafficType trafficType, GuestIpType guestType);
+	Network getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType);
 	
 	List<? extends RemoteAccessVpnElement> getRemoteAccessVpnElements();
 	
 	PublicIpAddress getPublicIpAddress(Ip ipAddress);
 	
-	Network getBasicZoneDefaultPublicNetwork(long zoneId);
+	String getPodVlanGateway(long podId);
+	
 }

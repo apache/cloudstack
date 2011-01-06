@@ -93,13 +93,13 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.Networks.Availability;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -1212,14 +1212,18 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 } else if (offering.getTrafficType() == TrafficType.Control) {
                     broadcastDomainType = BroadcastDomainType.LinkLocal;
                 } else if (offering.getTrafficType() == TrafficType.Public) {
-                    if (zone.getNetworkType() == NetworkType.Basic && offering.getGuestIpType() == GuestIpType.DirectPodBased) {
-                        broadcastDomainType = BroadcastDomainType.Native;
-                    } else if (zone.getNetworkType() == NetworkType.Advanced && offering.getGuestIpType() == null) {
+                    if (zone.getNetworkType() == NetworkType.Advanced) {
                         broadcastDomainType = BroadcastDomainType.Vlan;
                     } else {
                         continue;
                     }
-                } 
+                } else if (offering.getTrafficType() == TrafficType.Guest) {
+                    if (zone.getNetworkType() == NetworkType.Basic) {
+                        broadcastDomainType = BroadcastDomainType.Native;
+                    } else {
+                        continue;
+                    }
+                }
                 userNetwork.setBroadcastDomainType(broadcastDomainType);
                 _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, true); 
             }
@@ -1648,14 +1652,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (forVirtualNetwork){
             if (network == null) {
                 //find default public network in the zone
-                networkId = _networkMgr.getSystemNetworkIdByZoneAndTrafficTypeAndGuestType(zoneId, TrafficType.Public, null);
+                networkId = _networkMgr.getSystemNetworkByZoneAndTrafficType(zoneId, TrafficType.Public).getId();
             } else if (network.getGuestType() != null || network.getTrafficType() != TrafficType.Public){
                 throw new InvalidParameterValueException("Can't find Public network by id=" + networkId);
             }
         } else {
             if (network == null) {
                 if (zone.getNetworkType() == DataCenter.NetworkType.Basic) {
-                    networkId = _networkMgr.getSystemNetworkIdByZoneAndTrafficTypeAndGuestType(zoneId, TrafficType.Public, GuestIpType.DirectPodBased);
+                    networkId = _networkMgr.getSystemNetworkByZoneAndTrafficType(zoneId, TrafficType.Guest).getId();
                 } else {
                     throw new InvalidParameterValueException("Nework id is required for Direct vlan creation ");
                 }
@@ -1677,11 +1681,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             //check if startIp and endIp belong to network Cidr
             String networkCidr = network.getCidr();
             String networkGateway = network.getGateway();
-            
             Long networkZoneId = network.getDataCenterId();
-            String[] splitResult = networkCidr.split("\\/");
-            long size = Long.valueOf(splitResult[1]);
-            String networkNetmask = NetUtils.getCidrNetmask(size);
+            String networkNetmask = NetUtils.getCidrNetmask(networkCidr);
             
             //Check if ip addresses are in network range
             if (!NetUtils.sameSubnet(startIP, networkGateway, networkNetmask)) {
@@ -1719,7 +1720,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Please specify a valid pod.");
         }
 
-        
         if (podId != null && _podDao.findById(podId).getDataCenterId() != zoneId) {
             throw new InvalidParameterValueException("Pod id=" + podId + " doesn't belong to zone id=" + zoneId);
         }
@@ -1753,7 +1753,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 				
 		if(hypervisorType.equalsIgnoreCase("xenserver")) {
 	    	//check for the vlan being added before going to db, to see if it is untagged
-	    	if(vlanType.toString().equalsIgnoreCase("VirtualNetwork") && vlanId.equalsIgnoreCase("untagged"))
+	    	if(vlanType.toString().equalsIgnoreCase("VirtualNetwork") && vlanId.equalsIgnoreCase(Vlan.UNTAGGED))
 	    	{
 	    		if(_configDao.getValue("xen.public.network.device") == null || _configDao.getValue("xen.public.network.device").equals(""))
 	    		{
@@ -1774,13 +1774,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
 
-
-    	
-//    	//check if the account's domain is a child of the zone's domain, for adding vlan ip ranges
-//		if(domainId != null && !_domainDao.isChildDomain(zone.getDomainId(), domainId)){
-//			//this is for account specific case, as domainId != null
-//			throw new PermissionDeniedException("The account associated with specific domain id:"+domainId+" doesn't have permissions to add vlan ip ranges for the zone:"+zone.getId());
-//		}
         //ACL check
         checkAccess(account, zone);
 
@@ -1907,6 +1900,19 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 		// Check if a guest VLAN is using the same tag
 		if (_zoneDao.findVnet(zoneId, vlanId).size() > 0) {
 			throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for the guest network in zone " + zone.getName());
+		}
+		
+		//For untagged vlan check if vlan per pod already exists. If yes, verify that new vlan range has the same netmask and gateway
+		if (zone.getNetworkType() == NetworkType.Basic && vlanId.equalsIgnoreCase(Vlan.UNTAGGED) && podId != null){
+		    List<VlanVO> podVlans = _vlanDao.listVlansForPodByType(podId, VlanType.DirectAttached);
+		    if (podVlans != null && !podVlans.isEmpty()) {
+		        VlanVO podVlan = podVlans.get(0);
+		        if (!podVlan.getVlanNetmask().equals(vlanNetmask)) {
+		            throw new InvalidParameterValueException("Vlan netmask is different from the netmask of Untagged vlan id=" + podVlan.getId() + " existing in the pod " + podId);
+		        } else if (!podVlan.getVlanGateway().equals(vlanGateway)) {
+		            throw new InvalidParameterValueException("Vlan gateway is different from the gateway of Untagged vlan id=" + podVlan.getId() + " existing in the pod " + podId);
+		        }
+		    }
 		}
 		
 		// Everything was fine, so persist the VLAN
@@ -2665,7 +2671,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String name = cmd.getNetworkOfferingName();
         String displayText = cmd.getDisplayText();
         String tags = cmd.getTags();
-        String typeString = cmd.getType();
         String trafficTypeString = cmd.getTraffictype();
         Boolean specifyVlan = cmd.getSpecifyVlan();
         String availabilityStr = cmd.getAvailability();
@@ -2683,16 +2688,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         if (trafficType == null) {
             throw new InvalidParameterValueException("Invalid value for traffictype. Supported traffic types: Public, Management, Control, Guest, Vlan or Storage");
-        }
-        
-        //Verify type
-        for (GuestIpType gType : GuestIpType.values()) {
-            if (gType.name().equalsIgnoreCase(typeString)) {
-                type = gType;
-            }
-        }
-        if (type == null || type == GuestIpType.DirectPodBased) {
-            throw new InvalidParameterValueException("Invalid value for type. Supported types: Virtual, Direct");
         }
         
         //Verify availability
@@ -2717,7 +2712,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));      
         tags = cleanupTags(tags);
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, type, false, specifyVlan, networkRate, multicastRate, maxConnections, false, availability, false, false, false, false, false, false, false);
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, false, specifyVlan, networkRate, multicastRate, maxConnections, false, availability, false, false, false, false, false, false, false);
         
         if ((offering = _networkOfferingDao.persist(offering)) != null) {
             saveConfigurationEvent(userId, null, EventTypes.EVENT_NETWORK_OFFERING_CREATE, "Successfully created new network offering with name: " + name + ".", "noId=" + offering.getId(), "name=" + name,

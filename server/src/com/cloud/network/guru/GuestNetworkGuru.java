@@ -24,7 +24,10 @@ import java.util.TreeSet;
 
 import javax.ejb.Local;
 
-import com.cloud.dc.DataCenterVO;
+import org.apache.log4j.Logger;
+
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
@@ -56,6 +59,7 @@ import com.cloud.vm.dao.NicDao;
 
 @Local(value=NetworkGuru.class)
 public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
+    private static final Logger s_logger = Logger.getLogger(GuestNetworkGuru.class);
     @Inject protected NetworkManager _networkMgr;
     @Inject protected DataCenterDao _dcDao;
     @Inject protected VlanDao _vlanDao;
@@ -69,25 +73,24 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         super();
     } 
     
+    protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
+        //This guru handles only non-system Guest network
+        if (dc.getNetworkType() == NetworkType.Advanced && offering.getTrafficType() == TrafficType.Guest && !offering.isSystemOnly()) {
+            return true;
+        } else {
+            s_logger.trace("We only take care of Guest networks in zone of type " + NetworkType.Advanced);
+            return false;
+        }
+    }
+    
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
-        if (offering.getTrafficType() != TrafficType.Guest || offering.getGuestIpType() != GuestIpType.Virtual) {
+        DataCenter dc = _dcDao.findById(plan.getDataCenterId());
+        if (!canHandle(offering, dc)) {
             return null;
         }
-       
-        BroadcastDomainType broadcastType = null;
-        Mode mode = null;
-        GuestIpType ipType = offering.getGuestIpType();
-        if (ipType == GuestIpType.Virtual) {
-            mode = Mode.Dhcp;
-            broadcastType = BroadcastDomainType.Vlan;
-        } else {
-            broadcastType = BroadcastDomainType.Native;
-            mode = Mode.Dhcp;
-        }
-        DataCenterVO dc = _dcDao.findById(plan.getDataCenterId());
-        
-        NetworkVO network = new NetworkVO(offering.getTrafficType(), offering.getGuestIpType(), mode, broadcastType, offering.getId(), plan.getDataCenterId());
+
+        NetworkVO network = new NetworkVO(offering.getTrafficType(), GuestIpType.Virtual, Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId(), State.Allocated);
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) ||
                 (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {
@@ -135,7 +138,9 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         assert (network.getState() == State.Implementing) : "Why are we implementing " + network;
         
         long dcId = dest.getDataCenter().getId();
-        NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getGuestType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), network.getDataCenterId());
+        
+        
+        NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getGuestType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), network.getDataCenterId(), State.Allocated);
         
         if (network.getBroadcastUri() == null) {
             String vnet = _dcDao.allocateVnet(dcId, network.getAccountId(), context.getReservationId());

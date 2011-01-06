@@ -104,7 +104,6 @@ public interface AccountService {
      * @param cmd - the LockAccount command defining the accountId to be locked.
      * @return account object
      */
-    //Account lockAccount(LockAccountCmd cmd);
 	Account lockAccount(DisableAccountCmd cmd);
 
     /**
@@ -139,6 +138,14 @@ public interface AccountService {
     
     User createUser(CreateUserCmd cmd);
 	boolean deleteUser(DeleteUserCmd deleteUserCmd);
-
+	
+	boolean isAdmin(short accountType);
+	
+	Account finalizeOwner(Account caller, String accountName, Long domainId);
+	
+	Account getActiveAccount(String accountName, Long domainId);
+	
+	Account getAccount(Long accountId);
+	
 
 }

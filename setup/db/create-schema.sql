@@ -200,7 +200,6 @@ CREATE TABLE `cloud`.`nics` (
 CREATE TABLE `cloud`.`network_offerings` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `name` varchar(64) NOT NULL unique COMMENT 'network offering',
-  `type` varchar(32) COMMENT 'type of network',
   `display_text` varchar(255) NOT NULL COMMENT 'text to display to users',
   `nw_rate` smallint unsigned COMMENT 'network rate throttle mbits/s',
   `mc_rate` smallint unsigned COMMENT 'mcast rate throttle mbits/s',

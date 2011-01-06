@@ -47,7 +47,6 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -59,13 +58,12 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.Networks.Availability;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.GuestIpType;
+import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
@@ -694,20 +692,21 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         Integer rateMbps = getIntegerConfigValue(Config.NetworkThrottlingRate.key(), null);  
         Integer multicastRateMbps = getIntegerConfigValue(Config.MulticastThrottlingRate.key(), null);
 
-        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmPublicNetwork, TrafficType.Public, null);
+        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, TrafficType.Public, null);
         publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
-        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmManagementNetwork, TrafficType.Management, null);
+        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemManagementNetwork, TrafficType.Management, null);
         managementNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(managementNetworkOffering);
-        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmControlNetwork, TrafficType.Control, null);
+        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemControlNetwork, TrafficType.Control, null);
         controlNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(controlNetworkOffering);
-        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemVmStorageNetwork, TrafficType.Storage, null);
+        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, TrafficType.Storage, null);
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
-        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, GuestIpType.Virtual, false, false, rateMbps, multicastRateMbps, null, true, Availability.Required, false, false, false, false, false, false, false);
+        NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SysteGuestNetwork, TrafficType.Guest, null);
+        guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
+        
+        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, false, false, rateMbps, multicastRateMbps, null, true, Availability.Required, false, false, false, false, false, false, false);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
-        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Public, GuestIpType.Direct, false, false, rateMbps, multicastRateMbps, null, true, Availability.Required, false, false, false, false, false, false, false);
+        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Public, false, false, rateMbps, multicastRateMbps, null, true, Availability.Required, false, false, false, false, false, false, false);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
-        NetworkOfferingVO defaultGuestDirectPodBasedNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectPodBasedNetworkOffering, "DirectPodBased", TrafficType.Public, GuestIpType.DirectPodBased, true, false, rateMbps, multicastRateMbps, null, true, Availability.Required, false, false, false, false, false, false, false);
-        defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectPodBasedNetworkOffering);
     }
     
     private Integer getIntegerConfigValue(String configKey, Integer dflt) {
@@ -727,6 +726,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         guruNames.put(TrafficType.Management, "PodBasedNetworkGuru-com.cloud.network.guru.PodBasedNetworkGuru");
         guruNames.put(TrafficType.Control, "ControlNetworkGuru-com.cloud.network.guru.ControlNetworkGuru");
         guruNames.put(TrafficType.Storage, "PodBasedNetworkGuru-com.cloud.network.guru.PodBasedNetworkGuru");
+        guruNames.put(TrafficType.Guest, "DirectPodBasedNetworkGuru-com.cloud.network.guru.DirectPodBasedNetworkGuru");
+        
         
         for (DataCenterVO zone : zones) {
             long zoneId = zone.getId();
@@ -747,24 +748,27 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     
                     BroadcastDomainType broadcastDomainType = null;
                     TrafficType trafficType= offering.getTrafficType();
-                    GuestIpType guestIpType = offering.getGuestIpType();
 
                     if (trafficType == TrafficType.Management || trafficType == TrafficType.Storage) {
                         broadcastDomainType = BroadcastDomainType.Native;
                     } else if (trafficType == TrafficType.Control) {
                         broadcastDomainType = BroadcastDomainType.LinkLocal;
-                    }  else if (offering.getTrafficType() == TrafficType.Public) {
-                        if (zone.getNetworkType() == NetworkType.Basic && offering.getGuestIpType() == GuestIpType.DirectPodBased) {
-                            broadcastDomainType = BroadcastDomainType.Native;
-                        } else if (zone.getNetworkType() == NetworkType.Advanced && offering.getGuestIpType() == null) {
+                    } else if (offering.getTrafficType() == TrafficType.Public) {
+                        if (zone.getNetworkType() == NetworkType.Advanced) {
                             broadcastDomainType = BroadcastDomainType.Vlan;
                         } else {
                             continue;
                         }
-                    } 
+                    } else if (offering.getTrafficType() == TrafficType.Guest) {
+                        if (zone.getNetworkType() == NetworkType.Basic) {
+                            broadcastDomainType = BroadcastDomainType.Native;
+                        } else {
+                            continue;
+                        }
+                    }
                     
                     if (broadcastDomainType != null) {
-                        NetworkVO network = new NetworkVO(id, trafficType, guestIpType, mode, broadcastDomainType, networkOfferingId, zoneId, domainId, accountId, related, null, null, true);
+                        NetworkVO network = new NetworkVO(id, trafficType, null, mode, broadcastDomainType, networkOfferingId, zoneId, domainId, accountId, related, null, null, true);
                         network.setGuruName(guruNames.get(network.getTrafficType()));
                         network.setDns1(zone.getDns1());
                         network.setDns2(zone.getDns2());
@@ -781,33 +785,35 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     private void updateVlanWithNetworkId(VlanVO vlan) {
         long zoneId = vlan.getDataCenterId();
         long networkId = 0L;
-        if (vlan.getVlanType() == VlanType.VirtualNetwork) {
-            networkId = getSystemNetworkIdByZoneAndTrafficTypeAndGuestType(zoneId, TrafficType.Public, null);
-        } else if (vlan.getVlanType() == VlanType.DirectAttached) {
-            networkId = getSystemNetworkIdByZoneAndTrafficTypeAndGuestType(zoneId, TrafficType.Public, GuestIpType.DirectPodBased);
+        DataCenterVO zone = _zoneDao.findById(zoneId);
+        
+        if (zone.getNetworkType() == NetworkType.Advanced) {
+            networkId = getSystemNetworkIdByZoneAndTrafficType(zoneId, TrafficType.Public); 
+        } else {
+            networkId = getSystemNetworkIdByZoneAndTrafficType(zoneId, TrafficType.Guest);
         }
-         
+        
         vlan.setNetworkId(networkId);
         _vlanDao.update(vlan.getId(), vlan);
     }
     
-    private long getSystemNetworkIdByZoneAndTrafficTypeAndGuestType(long zoneId, TrafficType trafficType, GuestIpType guestType) {
+    private long getSystemNetworkIdByZoneAndTrafficType(long zoneId, TrafficType trafficType) {
         //find system public network offering
         Long networkOfferingId = null;
         List<NetworkOfferingVO> offerings = _networkOfferingDao.listSystemNetworkOfferings();
         for (NetworkOfferingVO offering: offerings) {
-            if (offering.getTrafficType() == trafficType && offering.getGuestIpType() == guestType) {
+            if (offering.getTrafficType() == trafficType) {
                 networkOfferingId = offering.getId();
                 break;
             }
         }
         
         if (networkOfferingId == null) {
-            throw new InvalidParameterValueException("Unable to find system network offering with traffic type " + trafficType + " and guestIpType " + guestType);
+            throw new InvalidParameterValueException("Unable to find system network offering with traffic type " + trafficType);
         }
         
         List<NetworkVO> networks = _networkDao.listBy(Account.ACCOUNT_ID_SYSTEM, networkOfferingId, zoneId);
-        if (networks == null) {
+        if (networks == null || networks.isEmpty()) {
             throw new InvalidParameterValueException("Unable to find network with traffic type " + trafficType + " in zone " + zoneId);
         }
         return networks.get(0).getId();

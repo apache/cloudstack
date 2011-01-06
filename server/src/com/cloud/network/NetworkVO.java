@@ -142,14 +142,19 @@ public class NetworkVO implements Network {
      * @param broadcastDomainType
      * @param networkOfferingId
      * @param dataCenterId
+     * @param state TODO
      */
-    public NetworkVO(TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId) {
+    public NetworkVO(TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, State state) {
         this.trafficType = trafficType;
         this.mode = mode;
         this.broadcastDomainType = broadcastDomainType;
         this.networkOfferingId = networkOfferingId;
         this.dataCenterId = dataCenterId;
-        this.state = State.Allocated;
+        if (state == null) {
+            state = State.Allocated;
+        } else {
+            this.state = state;
+        }
         this.id = -1;
         this.guestType = guestType;
     }
@@ -183,7 +188,7 @@ public class NetworkVO implements Network {
      * @param isShared TODO
      */
     public NetworkVO(long id, TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, long domainId, long accountId, long related, String name, String displayText, Boolean isShared) {
-        this(trafficType, guestType, mode, broadcastDomainType, networkOfferingId, dataCenterId);
+        this(trafficType, guestType, mode, broadcastDomainType, networkOfferingId, dataCenterId, State.Allocated);
         this.domainId = domainId;
         this.accountId = accountId;
         this.related = related;

@@ -5,9 +5,7 @@ package com.cloud.offerings.dao;
 
 import java.util.List;
 
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.utils.db.GenericDao;
 
 /**
@@ -33,11 +31,8 @@ public interface NetworkOfferingDao extends GenericDao<NetworkOfferingVO, Long> 
      */
     NetworkOfferingVO persistDefaultNetworkOffering(NetworkOfferingVO offering);
     
-    NetworkOfferingVO findByServiceOffering(ServiceOfferingVO offering);
-    
     List<NetworkOfferingVO> listNonSystemNetworkOfferings();
     
     List<NetworkOfferingVO> listSystemNetworkOfferings();
     
-    List<NetworkOfferingVO> findByType(GuestIpType type);
 }

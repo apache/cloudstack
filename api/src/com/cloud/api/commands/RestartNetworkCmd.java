@@ -17,8 +17,6 @@
  */
 package com.cloud.api.commands;
 
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -32,10 +30,10 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.user.UserContext;
 
 @Implementation(description="Reapplies all ip addresses for the particular network", responseObject=IPAddressResponse.class)
 public class RestartNetworkCmd extends BaseAsyncCmd {
@@ -45,12 +43,6 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account to associate with this IP address")
-    private String accountName;
-
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the domain to associate with this IP address")
-    private Long domainId;
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the availability zone you want to acquire an public IP address from")
     private Long zoneId;
@@ -62,20 +54,6 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public String getAccountName() {
-        if (accountName != null) { 
-            return accountName;
-        }
-        return UserContext.current().getCaller().getAccountName();
-    }
-
-    public long getDomainId() {
-        if (domainId != null) {
-            return domainId;
-        }
-        return UserContext.current().getCaller().getDomainId();
-    }
 
     public long getZoneId() {
         return zoneId;
@@ -90,26 +68,16 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     }
     
     public long getEntityOwnerId() {
-        List<? extends Network> networks = _networkService.getVirtualNetworksOwnedByAccountInZone(getAccountName(), getDomainId(), getZoneId());
-        if (networks.size() == 0) {
-            assert (networks.size() <= 1) : "No virtual network is found";
-        }
-        assert (networks.size() <= 1) : "Too many virtual networks.  This logic should be obsolete";
-        
-        return networks.get(0).getAccountId();
+        return _networkService.getNetwork(networkId).getAccountId();
     }
     
     public Long getNetworkId() {
-        if (networkId != null) {
-            return networkId;
+        Network network = _networkService.getNetwork(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Unable to find network by id " + networkId);
+        } else {
+            return network.getId();
         }
-        
-        List<? extends Network> networks = _networkService.getVirtualNetworksOwnedByAccountInZone(getAccountName(), getDomainId(), getZoneId());
-        if (networks.size() == 0) {
-            return null;
-        }
-        assert (networks.size() <= 1) : "Too many virtual networks.  This logic should be obsolete";
-        return networks.get(0).getId();
     }
 
 

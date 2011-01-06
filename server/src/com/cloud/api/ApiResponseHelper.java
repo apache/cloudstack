@@ -113,7 +113,6 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.server.Criteria;
@@ -1090,10 +1089,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             nicResponse.setTrafficType(network.getTrafficType().toString());
             
             //Set type
-            NetworkOffering networkOffering = ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
-            if (networkOffering.getGuestIpType() != null) {
-                nicResponse.setType(networkOffering.getGuestIpType().toString());
-            }
+            nicResponse.setType(network.getGuestType().toString());
             
             nicResponse.setObjectName("nic");
             
@@ -2174,9 +2170,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDisplayText(offering.getDisplayText());
         response.setTags(offering.getTags());
         response.setTrafficType(offering.getTrafficType().toString());
-        if (offering.getGuestIpType() != null) {
-            response.setType(offering.getGuestIpType().toString());
-        }
         response.setMaxconnections(offering.getConcurrentConnections());
         response.setIsDefault(offering.isDefault());
         response.setSpecifyVlan(offering.getSpecifyVlan());

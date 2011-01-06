@@ -122,4 +122,6 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long>, State
 	DomainRouterVO findByNetworkConfiguration(long networkConfigurationId);
 	
 	DomainRouterVO findByNetworkConfigurationIncludingRemoved(long networkConfigurationId);
+	
+	DomainRouterVO findByNetworkConfigurationAndPod(long networkConfigurationId, long podId);
 }

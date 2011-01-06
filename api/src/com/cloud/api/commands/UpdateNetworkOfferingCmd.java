@@ -26,8 +26,8 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.NetworkOfferingResponse;
-import com.cloud.network.Networks.Availability;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.Availability;
 
 @Implementation(description="Updates a network offering.", responseObject=NetworkOfferingResponse.class)
 public class UpdateNetworkOfferingCmd extends BaseCmd {

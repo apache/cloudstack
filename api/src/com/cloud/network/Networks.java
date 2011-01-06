@@ -36,12 +36,6 @@ public class Networks {
         Firewall
     }
     
-    public enum Availability {
-        Required,
-        Optional,
-        Unavailable;
-    }
-    
     /**
      * Different ways to assign ip address to this network.
      */

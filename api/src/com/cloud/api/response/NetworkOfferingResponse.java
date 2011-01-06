@@ -24,9 +24,6 @@ public class NetworkOfferingResponse extends BaseResponse{
     @SerializedName("maxconnections") @Param(description="the max number of concurrent connection the network offering supports")
     private Integer maxConnections;
     
-    @SerializedName("type") @Param(description="type of the network. Supported types are Virtualized, DirectSingle, DirectDual")
-    private String type;
-    
     @SerializedName("traffictype") @Param(description="the traffic type for the network offering, supported types are Public, Management, Control, Guest, Vlan or Storage.")
     private String trafficType;
     
@@ -85,14 +82,6 @@ public class NetworkOfferingResponse extends BaseResponse{
 
     public void setMaxconnections(Integer maxConnections) {
         this.maxConnections = maxConnections;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
     public String getTrafficType() {

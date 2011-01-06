@@ -17,7 +17,6 @@
  */
 package com.cloud.offering;
 
-import com.cloud.network.Networks.Availability;
 import com.cloud.network.Networks.TrafficType;
 
 /**
@@ -29,13 +28,23 @@ public interface NetworkOffering {
     public enum GuestIpType {
     	Virtual,
     	Direct,
-    	DirectPodBased,
     }
     
-    public final String DefaultVirtualizedNetworkOffering = "DefaultVirtualizedNetworkOffering";
-    public final String DefaultDirectNetworkOffering = "DefaultDirectNetworkOffering";
-    public final String DefaultDirectPodBasedNetworkOffering = "DefaultDirectPodBasedNetworkOffering";
-    public final String DefaultDirectChooseVlanNetworkOffering = "DefaultDirectChooseVlanNetworkOffering";
+    public enum Availability {
+        Required,
+        Optional,
+        Unavailable;
+    }
+    
+    public final static String SystemPublicNetwork = "System-Public-Network";
+    public final static String SystemControlNetwork = "System-Control-Network";
+    public final static String SystemManagementNetwork = "System-Management-Network";
+    public final static String SystemStorageNetwork = "System-Storage-Network";
+    public final static String SysteGuestNetwork = "System-Guest-Network";
+    
+    public final static String DefaultVirtualizedNetworkOffering = "DefaultVirtualizedNetworkOffering";
+    public final static String DefaultDirectNetworkOffering = "DefaultDirectNetworkOffering";
+    public final static String DefaultDirectChooseVlanNetworkOffering = "DefaultDirectChooseVlanNetworkOffering";
 
     long getId();
 
@@ -58,11 +67,6 @@ public interface NetworkOffering {
      * @return the rate megabits per sec to which a VM's multicast&broadcast traffic is throttled to
      */
     Integer getMulticastRateMbps();
-    
-    /**
-     * @return the type of IP address to allocate as the primary ip address to a guest
-     */
-    GuestIpType getGuestIpType();
     
     /**
      * @return concurrent connections to be supported.

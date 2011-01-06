@@ -74,7 +74,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
@@ -674,7 +673,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         return _systemAccount;
     }
     
-    public static boolean isAdmin(short accountType) {
+    @Override
+    public boolean isAdmin(short accountType) {
         return ((accountType == Account.ACCOUNT_TYPE_ADMIN) ||
                 (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) ||
                 (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
@@ -1575,5 +1575,50 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 s_logger.error("Exception ", e);
             }
         }
+    }
+    
+    public Account finalizeOwner(Account caller, String accountName, Long domainId) {
+        if (isAdmin(caller.getType())) {
+            if (domainId != null) {             
+                DomainVO domain = _domainDao.findById(domainId);
+                if (domain == null) {
+                    throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
+                }
+
+                if (accountName != null) {
+                    Account owner = _accountDao.findActiveAccount(accountName, domainId);
+                    if (owner == null) {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                    checkAccess(caller, domain);
+                    return owner;
+                } else {
+                    throw new InvalidParameterValueException("Account have to be specified along with domainId");
+                }  
+            } else {
+                return caller;
+            }
+        } else {
+            //regular user can't create resources for other people 
+            return caller;
+        }
+    }
+    
+    @Override
+    public Account getActiveAccount(String accountName, Long domainId) {
+       if (accountName == null || domainId == null) {
+           throw new InvalidParameterValueException("Both accountName and domainId are required for finding active account in the system");
+       } else {
+          return  _accountDao.findActiveAccount(accountName, domainId);
+       } 
+    }
+    
+    @Override
+    public Account getAccount(Long accountId) {
+       if (accountId == null) {
+           throw new InvalidParameterValueException("AccountId is required by account search");
+       } else {
+          return  _accountDao.findById(accountId);
+       } 
     }
 }

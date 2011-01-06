@@ -126,6 +126,8 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         
         NetworkConfigSearch = createSearchBuilder();
         NetworkConfigSearch.and("network", NetworkConfigSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        NetworkConfigSearch.and("podId", NetworkConfigSearch.entity().getPodId(), SearchCriteria.Op.EQ);
+        NetworkConfigSearch.done();    
 
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
@@ -365,5 +367,12 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setParameters("lastHost", hostId);
         sc.setParameters("state", State.Stopped);
         return listBy(sc);
+	}
+	@Override
+	public DomainRouterVO findByNetworkConfigurationAndPod(long networkConfigurationId, long podId) {
+	    SearchCriteria<DomainRouterVO> sc = NetworkConfigSearch.create();
+        sc.setParameters("network", networkConfigurationId);
+        sc.setParameters("podId", podId);
+        return findOneBy(sc);
 	}
 }

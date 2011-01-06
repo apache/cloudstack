@@ -93,7 +93,7 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement,
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
-        if (!canHandle(offering.getGuestIpType(), dest.getDataCenter())) {
+        if (!canHandle(guestConfig.getGuestType(), dest.getDataCenter())) {
             return false;
         }
         _routerMgr.deployVirtualRouter(guestConfig, dest, context.getAccount());

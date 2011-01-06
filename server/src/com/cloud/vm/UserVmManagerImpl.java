@@ -2239,9 +2239,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         s_logger.debug("Allocating in the DB for vm");
           
         if (dc.getNetworkType() == NetworkType.Basic && networkList == null) {
-            Network defaultNetwork = _networkMgr.getBasicZoneDefaultPublicNetwork(dc.getId());
+            Network defaultNetwork = _networkMgr.getSystemNetworkByZoneAndTrafficType(dc.getId(), TrafficType.Guest);
             if (defaultNetwork == null) {
-                throw new InvalidParameterValueException("Unable to find a default directPodBased network to start a vm");
+                throw new InvalidParameterValueException("Unable to find a default Direct network to start a vm");
             } else {
                 networkList = new ArrayList<Long>();
                 networkList.add(defaultNetwork.getId());

@@ -1329,18 +1329,17 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
         return _lbDao.search(sc, searchFilter);
     }
-
-//    @Override
-//    public LoadBalancerVO findLoadBalancer(Long accountId, String name) {
-//        SearchCriteria<LoadBalancerVO> sc = _loadBalancerDao.createSearchCriteria();
-//        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-//        sc.addAnd("name", SearchCriteria.Op.EQ, name);
-//        List<LoadBalancerVO> loadBalancers = _loadBalancerDao.search(sc, null);
-//        if ((loadBalancers != null) && !loadBalancers.isEmpty()) {
-//            return loadBalancers.get(0);
-//        }
-//        return null;
-//    }
-
+    
+    @Override
+    public List<LoadBalancingRule> listByNetworkId(long networkId) {
+        List<LoadBalancerVO> lbs = _lbDao.listByNetworkId(networkId);
+        List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
+        for (LoadBalancerVO lb : lbs) {
+            List<LbDestination> dstList = getExistingDestinations(lb.getId());
+            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
+            lbRules.add(loadBalancing);
+        }
+        return lbRules;
+    }
 
 }

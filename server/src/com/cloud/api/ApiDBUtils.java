@@ -509,7 +509,7 @@ public class ApiDBUtils {
     }
     
     public static long getPublicNetworkIdByZone(long zoneId) {
-        return _networkMgr.getSystemNetworkIdByZoneAndTrafficTypeAndGuestType(zoneId, TrafficType.Public, null);
+        return _networkMgr.getSystemNetworkByZoneAndTrafficType(zoneId, TrafficType.Public).getId();
     }
 
     public static Long getVlanNetworkId(long vlanId) {

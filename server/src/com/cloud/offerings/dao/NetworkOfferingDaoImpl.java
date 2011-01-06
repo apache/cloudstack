@@ -11,14 +11,11 @@ import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value=NetworkOfferingDao.class) @DB(txn=false)
 public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Long> implements NetworkOfferingDao {
@@ -26,9 +23,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     private final static Logger s_logger = Logger.getLogger(NetworkOfferingDaoImpl.class);
     
     final SearchBuilder<NetworkOfferingVO> NameSearch;
-    final SearchBuilder<NetworkOfferingVO> ServiceOfferingSearch;
     final SearchBuilder<NetworkOfferingVO> SystemOfferingSearch;
-    final SearchBuilder<NetworkOfferingVO> TypeSearch;
     
     protected NetworkOfferingDaoImpl() {
         super();
@@ -36,14 +31,6 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
         NameSearch.done();
-        
-        TypeSearch = createSearchBuilder();
-        TypeSearch.and("guestIpType", TypeSearch.entity().getGuestIpType(), SearchCriteria.Op.EQ);
-        TypeSearch.done();
-        
-        ServiceOfferingSearch = createSearchBuilder();
-        ServiceOfferingSearch.and("serviceoffering", ServiceOfferingSearch.entity().getGuestIpType(), SearchCriteria.Op.EQ);
-        ServiceOfferingSearch.done();
         
         SystemOfferingSearch = createSearchBuilder();
         SystemOfferingSearch.and("system", SystemOfferingSearch.entity().isSystemOnly(), SearchCriteria.Op.EQ);
@@ -77,41 +64,10 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     }
     
     @Override
-    public NetworkOfferingVO findByServiceOffering(ServiceOfferingVO offering) {
-        SearchCriteria<NetworkOfferingVO> sc = ServiceOfferingSearch.create();
-        sc.setParameters("serviceoffering", offering.getGuestIpType());
-
-        NetworkOfferingVO vo = findOneBy(sc);
-        if (vo != null) {
-            return vo;
-        }
-        
-        vo = new NetworkOfferingVO(offering);
-        try {
-            return persist(vo);
-        } catch (Exception e) {
-            s_logger.debug("Got a persistence exception.  Assuming it's because service offering id is duplicate");
-            vo = findOneBy(sc);
-            if (vo != null) {
-                return vo;
-            }
-            
-            throw new CloudRuntimeException("Unable to persist network offering", e);
-        }
-    }
-    
-    @Override
     public List<NetworkOfferingVO> listNonSystemNetworkOfferings() {
         SearchCriteria<NetworkOfferingVO> sc = SystemOfferingSearch.create();
         sc.setParameters("system", false);
         return this.listIncludingRemovedBy(sc, null);
-    }
-    
-    @Override
-    public List<NetworkOfferingVO> findByType(GuestIpType type) {
-        SearchCriteria<NetworkOfferingVO> sc = TypeSearch.create();
-        sc.setParameters("guestIpType", type);
-        return listBy(sc);
     }
     
     @Override

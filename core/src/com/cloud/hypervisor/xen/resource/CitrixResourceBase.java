@@ -151,6 +151,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VirtualMachineTO.Monitor;
 import com.cloud.agent.api.to.VirtualMachineTO.SshMonitor;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -2942,7 +2943,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             Set<VIF> routerVIFs = router.getVIFs(conn);
             for (VIF vif : routerVIFs) {
                 Network vifNetwork = vif.getNetwork(conn);
-                if (vlanId.equals("untagged")) {
+                if (vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
                     if (vifNetwork.getUuid(conn).equals(_host.publicNetwork)) {
                         return vif;
                     }

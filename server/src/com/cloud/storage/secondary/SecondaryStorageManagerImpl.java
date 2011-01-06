@@ -56,6 +56,8 @@ import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -440,9 +442,14 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	        Account systemAcct = _accountMgr.getSystemAccount();
 	        
 	        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
+	        DataCenter dc = _dcDao.findById(plan.getDataCenterId());
 
-	        List<NetworkOfferingVO> defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmPublicNetwork);
-	        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork, NetworkOfferingVO.SystemVmManagementNetwork);
+	        List<NetworkOfferingVO> defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork);
+	        if (dc.getNetworkType() == NetworkType.Basic) {
+	            defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SysteGuestNetwork);
+	        }
+	        
+	        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork, NetworkOfferingVO.SystemManagementNetwork);
 	        List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(offerings.size() + 1);
 	        NicProfile defaultNic = new NicProfile();
 	        defaultNic.setDefaultNic(true);
@@ -1504,10 +1511,11 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         cmds.addCommand("checkSsh", check);
         
         SecondaryStorageVmVO secVm = profile.getVirtualMachine();
-		 List<NicVO> nics = _nicDao.listBy(secVm.getId());
+        DataCenter dc = dest.getDataCenter();
+		List<NicVO> nics = _nicDao.listBy(secVm.getId());
         for (NicVO nic : nics) {
         	NetworkVO network = _networkDao.findById(nic.getNetworkId());
-        	if (network.getTrafficType() == TrafficType.Public) {
+        	if ((network.getTrafficType() == TrafficType.Public && dc.getNetworkType() == NetworkType.Advanced) || (network.getTrafficType() == TrafficType.Guest && dc.getNetworkType() == NetworkType.Basic))  {
         		secVm.setPublicIpAddress(nic.getIp4Address());
         		secVm.setPublicNetmask(nic.getNetmask());
         		secVm.setPublicMacAddress(nic.getMacAddress());
