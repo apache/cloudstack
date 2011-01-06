@@ -361,31 +361,7 @@
                                 </div>
                                 <div id="add_pod_endip_errormsg" class="dialog_formcontent_errormsg" style="display: none; ">
                                 </div>
-                            </li>
-                            <li id="guestip_container">
-                                <label style="width: 115px;">
-                                    Guest IP Range:</label>
-                                <input class="text" style="width: 92px" type="text" id="startguestip" /><span>-</span>
-                                <input class="text" style="width: 92px" type="text" id="endguestip" />
-                                <div id="startguestip_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:133px;">
-                                </div>
-                                <div id="endguestip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                                </div>
-                            </li>  
-							<li id="guestnetmask_container">
-                                <label style="width: 115px;">
-                                    Guest Netmask:</label>
-                                <input class="text" type="text" id="guestnetmask" />
-                                <div id="guestnetmask_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
-                                </div>
-                            </li>	                            
-                            <li id="guestgateway_container">
-                                <label style="width: 115px;">
-                                    Guest Gateway:</label>
-                                <input class="text" type="text" id="guestgateway" />
-                                <div id="guestgateway_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
-                                </div>
-                            </li>                            
+                            </li>              
                         </ol>
                         </form>
                     </div>
@@ -394,11 +370,8 @@
                     <div class="vmpop_prevbutton" id="back_to_step_2" style="display: block;">
                         Back
                     </div>
-                    <div class="vmpop_nextbutton" id="go_to_step_4" style="display: none;">
-                        Go to Step 4</div>
-                    <div class="vmpop_nextbutton" id="submit_in_step3" style="display: block;">
-                        Submit
-                    </div>
+                    <div class="vmpop_nextbutton" id="go_to_step_4" style="display: block;">
+                        Go to Step 4</div>                    
                 </div>
             </div>
         </div>
@@ -427,14 +400,40 @@
             <div class="zonepopup_maincontentarea">
                 <div class="zonepopup_titlebox">
                     <h2>
-                        Step 4: <strong>Add an IP range to public network in zone</strong></h2>
+                        Step 4: <strong>Add an IP range</strong></h2>
                     <p>                        
                     </p>
                 </div>
                 <div class="zonepopup_contentpanel">
                     <div class="zonepoup_formcontent">
                         <form action="#" method="post" id="form_acquire">
-                        <ol>
+                        <ol id="guestip_list">                            
+                            <li id="guestip_container">
+                                <label style="width: 115px;">
+                                    Guest IP Range:</label>
+                                <input class="text" style="width: 92px" type="text" id="startguestip" /><span>-</span>
+                                <input class="text" style="width: 92px" type="text" id="endguestip" />
+                                <div id="startguestip_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:133px;">
+                                </div>
+                                <div id="endguestip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                                </div>
+                            </li>  
+							<li id="guestnetmask_container">
+                                <label style="width: 115px;">
+                                    Guest Netmask:</label>
+                                <input class="text" type="text" id="guestnetmask" />
+                                <div id="guestnetmask_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
+                                </div>
+                            </li>	                            
+                            <li id="guestgateway_container">
+                                <label style="width: 115px;">
+                                    Guest Gateway:</label>
+                                <input class="text" type="text" id="guestgateway" />
+                                <div id="guestgateway_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
+                                </div>
+                            </li>              
+                        </ol>
+                        <ol id="publicip_list" style="display:none">
                             <li id="add_publicip_vlan_container">
                                 <label for="add_publicip_vlan_tagged">
                                     VLAN:</label>
@@ -516,10 +515,10 @@
                 <div class="zonepopup_navigationpanel">
                     <div class="vmpop_prevbutton" id="back_to_step_3" style="display: block;">
                         Back
-                    </div>                    
-                    <div class="vmpop_nextbutton" id="submit_in_step4" style="display: block;">
+                    </div>                     
+                    <div class="vmpop_nextbutton" id="submit" style="display: block;">
                         Submit
-                    </div>                    
+                    </div>                   
                 </div>
             </div>
         </div>
