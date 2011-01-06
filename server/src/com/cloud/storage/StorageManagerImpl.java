@@ -1562,14 +1562,15 @@ public class StorageManagerImpl implements StorageManager {
     public void destroyVolume(VolumeVO volume) {
     	Transaction txn = Transaction.currentTxn();
     	txn.start();
-    	
         Long volumeId = volume.getId();
-        _volsDao.destroyVolume(volumeId);
-        
+        _volsDao.destroyVolume(volumeId);      
         String eventParams = "id=" + volumeId;
-        Long userId = UserContext.current().getUserId();
-        if (userId == null) {
-            userId = 1L;
+        Long userId = 1L;
+        if ( UserContext.current() != null ) {
+            userId = UserContext.current().getUserId();
+            if (userId == 0) {
+               userId = 1L;
+            }
         }
         EventVO event = new EventVO();
         event.setAccountId(volume.getAccountId());
