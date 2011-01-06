@@ -40,13 +40,9 @@ function primarystorageGetSearchParams() {
 				
 	return moreCriteria.join("");          
 }
- 
-function primarystorageGetMidmenuId(jsonObj) {
-    return "midmenuItem_primarystorage_" + jsonObj.id; 
-}
 
 function primarystorageToMidmenu(jsonObj, $midmenuItem1) {    
-    $midmenuItem1.attr("id", primarystorageGetMidmenuId(jsonObj));  
+    $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj);      
     
     var $iconContainer = $midmenuItem1.find("#icon_container").show(); 

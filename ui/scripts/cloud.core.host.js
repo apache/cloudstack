@@ -46,12 +46,8 @@ function hostGetSearchParams() {
 	return moreCriteria.join("");          
 }
 
-function hostGetMidmenuId(jsonObj) {
-    return "midmenuItem_host_" + jsonObj.id; 
-}
-
 function hostToMidmenu(jsonObj, $midmenuItem1) {    
-    $midmenuItem1.attr("id", hostGetMidmenuId(jsonObj));  
+    $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj);      
     
     var $iconContainer = $midmenuItem1.find("#icon_container").show(); 
