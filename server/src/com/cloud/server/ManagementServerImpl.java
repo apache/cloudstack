@@ -3710,7 +3710,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (keyword != null) {
             SearchCriteria<StoragePoolVO> ssc = _poolDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("type", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("poolType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
