@@ -62,6 +62,8 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.db.DatabaseCallback;
+import com.cloud.utils.db.DatabaseCallbackFilter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.mgmt.JmxUtil;
@@ -82,8 +84,8 @@ public class ComponentLocator implements ComponentLocatorMBean {
     protected static final HashMap<String, ComponentLocator> s_locators = new HashMap<String, ComponentLocator>();
     protected static final HashMap<Class<?>, InjectInfo> s_factories = new HashMap<Class<?>, InjectInfo>();
     protected static Boolean s_once = false;
-    protected static Callback[] s_callbacks;
-    protected static CallbackFilter s_callbackFilter;
+    protected static Callback[] s_callbacks = new Callback[] { NoOp.INSTANCE, new DatabaseCallback()};
+    protected static CallbackFilter s_callbackFilter = new DatabaseCallbackFilter();
     protected static final List<AnnotationInterceptor<?>> s_interceptors = new ArrayList<AnnotationInterceptor<?>>();
     
     protected HashMap<String, Adapters<? extends Adapter>>              _adapterMap;
@@ -189,14 +191,16 @@ public class ComponentLocator implements ComponentLocatorMBean {
         }
         
         synchronized(s_interceptors) {
-            s_callbacks = new Callback[s_interceptors.size() + 2];
-            int i = 0;
-            s_callbacks[i++] = NoOp.INSTANCE;
-            s_callbacks[i++] = new InterceptorDispatcher();
-            for (AnnotationInterceptor<?> interceptor : s_interceptors) {
-                s_callbacks[i++] = interceptor.getCallback();
+            if (s_interceptors.size() > 0) {
+                s_callbacks = new Callback[s_interceptors.size() + 2];
+                int i = 0;
+                s_callbacks[i++] = NoOp.INSTANCE;
+                s_callbacks[i++] = new InterceptorDispatcher();
+                for (AnnotationInterceptor<?> interceptor : s_interceptors) {
+                    s_callbacks[i++] = interceptor.getCallback();
+                }
+                s_callbackFilter = new InterceptorFilter();
             }
-            s_callbackFilter = new InterceptorFilter();
         }
 
         XmlHandler handler = result.first();

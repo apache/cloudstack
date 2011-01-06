@@ -40,12 +40,17 @@ public class DatabaseCallback implements MethodInterceptor, AnnotationIntercepto
 
     @Override
     public boolean needToIntercept(AnnotatedElement element) {
-        DB db = element.getAnnotation(DB.class);
+        if (!(element instanceof Method)) {
+            return false;
+            
+        }
+        Method method = (Method)element;
+        DB db = method.getAnnotation(DB.class);
         if (db != null) {
             return db.txn();
         }
         
-        Class<?> clazz = element.getClass().getDeclaringClass();
+        Class<?> clazz = method.getDeclaringClass();
         do {
             db = clazz.getAnnotation(DB.class);
             if (db != null) {
