@@ -433,8 +433,8 @@ fi
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-utils.jar
 %{_javadir}/%{name}-api.jar
-%attr(755,root,root) %{_bindir}/cloud-sccs
-%attr(755,root,root) %{_bindir}/cloud-gitrevs
+%attr(0755,root,root) %{_bindir}/cloud-sccs
+%attr(0755,root,root) %{_bindir}/cloud-gitrevs
 %doc %{_docdir}/%{name}-%{version}/sccs-info
 %doc %{_docdir}/%{name}-%{version}/version-info
 %doc %{_docdir}/%{name}-%{version}/configure-info
@@ -459,7 +459,7 @@ fi
 
 %files daemonize
 %defattr(-,root,root,-)
-%attr(755,root,root) %{_bindir}/%{name}-daemonize
+%attr(0755,root,root) %{_bindir}/%{name}-daemonize
 
 %files deps
 %defattr(0644,root,root,0755)
@@ -496,7 +496,7 @@ fi
 %{_prefix}/lib*/python*/site-packages/%{name}*
 %attr(0755,root,root) %{_bindir}/cloud-external-ipallocator.py
 %attr(0755,root,root) %{_initrddir}/cloud-ipallocator
-%dir %attr(770,root,root) %{_localstatedir}/log/%{name}/ipallocator
+%dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/ipallocator
 
 %files setup
 %attr(0755,root,root) %{_bindir}/%{name}-setup-databases
@@ -507,30 +507,30 @@ fi
 %{_datadir}/%{name}/setup/server-setup.xml
 
 %files client
-%defattr(0644,root,root,0755)
+%defattr(0644,root,root,0775)
 %{_sysconfdir}/%{name}/management/*
 %if %{_premium}
 %exclude %{_sysconfdir}/%{name}/management/*premium*
 %endif
-%config(noreplace) %attr(640,root,%{name}) %{_sysconfdir}/%{name}/management/db.properties
+%config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-%{name}.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6.conf
-%dir %attr(770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina
-%dir %attr(770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina/localhost
-%dir %attr(770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina/localhost/client
+%dir %attr(0770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina
+%dir %attr(0770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina/localhost
+%dir %attr(0770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina/localhost/client
 %config %{_sysconfdir}/sysconfig/%{name}-management
 %attr(0755,root,root) %{_initrddir}/%{name}-management
 %dir %{_datadir}/%{name}/management
 %{_datadir}/%{name}/management/*
-%attr(755,root,root) %{_bindir}/%{name}-setup-management
-%attr(755,root,root) %{_bindir}/%{name}-update-xenserver-licenses
-%dir %attr(770,root,%{name}) %{_sharedstatedir}/%{name}/mnt
-%dir %attr(770,%{name},%{name}) %{_sharedstatedir}/%{name}/management
-%dir %attr(770,root,%{name}) %{_localstatedir}/cache/%{name}/management
-%dir %attr(770,root,%{name}) %{_localstatedir}/cache/%{name}/management/work
-%dir %attr(770,root,%{name}) %{_localstatedir}/cache/%{name}/management/temp
-%dir %attr(770,root,%{name}) %{_localstatedir}/log/%{name}/management
-%dir %attr(770,root,%{name}) %{_localstatedir}/log/%{name}/agent
+%attr(0755,root,root) %{_bindir}/%{name}-setup-management
+%attr(0755,root,root) %{_bindir}/%{name}-update-xenserver-licenses
+%dir %attr(0770,root,%{name}) %{_sharedstatedir}/%{name}/mnt
+%dir %attr(0770,%{name},%{name}) %{_sharedstatedir}/%{name}/management
+%dir %attr(0770,root,%{name}) %{_localstatedir}/cache/%{name}/management
+%dir %attr(0770,root,%{name}) %{_localstatedir}/cache/%{name}/management/work
+%dir %attr(0770,root,%{name}) %{_localstatedir}/cache/%{name}/management/temp
+%dir %attr(0770,root,%{name}) %{_localstatedir}/log/%{name}/management
+%dir %attr(0770,root,%{name}) %{_localstatedir}/log/%{name}/agent
 
 %files agent-libs
 %defattr(0644,root,root,0755)
@@ -549,7 +549,7 @@ fi
 %{_libdir}/%{name}/agent/js
 %{_libdir}/%{name}/agent/images
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
-%dir %attr(770,root,root) %{_localstatedir}/log/%{name}/agent
+%dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/agent
 
 
 %files console-proxy
@@ -560,7 +560,7 @@ fi
 %attr(0755,root,root) %{_libexecdir}/console-proxy-runner
 %{_libdir}/%{name}/console-proxy/*
 %attr(0755,root,root) %{_bindir}/%{name}-setup-console-proxy
-%dir %attr(770,root,root) %{_localstatedir}/log/%{name}/console-proxy
+%dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/console-proxy
 
 %files cli
 %{_bindir}/%{name}-tool
@@ -573,7 +573,7 @@ fi
 
 %files test
 %defattr(0644,root,root,0755)
-%attr(755,root,root) %{_bindir}/%{name}-run-test
+%attr(0755,root,root) %{_bindir}/%{name}-run-test
 %{_javadir}/%{name}-test.jar
 %{_sharedstatedir}/%{name}/test/*
 %{_libdir}/%{name}/test/*
@@ -596,14 +596,14 @@ fi
 %{_libdir}/%{name}/agent/premium-scripts/*
 
 %files usage
-%defattr(0644,root,root,0755)
+%defattr(0644,root,root,0775)
 %{_javadir}/%{name}-usage.jar
 %attr(0755,root,root) %{_initrddir}/%{name}-usage
 %attr(0755,root,root) %{_libexecdir}/usage-runner
-%dir %attr(770,root,%{name}) %{_localstatedir}/log/%{name}/usage
+%dir %attr(0770,root,%{name}) %{_localstatedir}/log/%{name}/usage
 %{_sysconfdir}/%{name}/usage/usage-components.xml
 %config(noreplace) %{_sysconfdir}/%{name}/usage/log4j-%{name}_usage.xml
-%config(noreplace) %attr(640,root,%{name}) %{_sysconfdir}/%{name}/usage/db.properties
+%config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/usage/db.properties
 
 %endif
 
