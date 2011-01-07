@@ -40,7 +40,6 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
 
-//FIXME - add description
 @Implementation(responseObject=IngressRuleResponse.class) @SuppressWarnings("rawtypes")
 public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(AuthorizeSecurityGroupIngressCmd.class.getName());
@@ -54,40 +53,31 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, description="TCP is default. UDP is the other supported protocol")
     private String protocol;
 
-    //FIXME - add description
-    @Parameter(name=ApiConstants.START_PORT, type=CommandType.INTEGER)
+    @Parameter(name=ApiConstants.START_PORT, type=CommandType.INTEGER, description="start port for this ingress rule")
     private Integer startPort;
 
-    //FIXME - add description
-    @Parameter(name=ApiConstants.END_PORT, type=CommandType.INTEGER)
+    @Parameter(name=ApiConstants.END_PORT, type=CommandType.INTEGER, description="end port for this ingress rule")
     private Integer endPort;
 
-    //FIXME - add description
-    @Parameter(name=ApiConstants.ICMP_TYPE, type=CommandType.INTEGER)
+    @Parameter(name=ApiConstants.ICMP_TYPE, type=CommandType.INTEGER, description="type of the icmp message being sent")
     private Integer icmpType;
 
-    //FIXME - add description
-    @Parameter(name=ApiConstants.ICMP_CODE, type=CommandType.INTEGER)
+    @Parameter(name=ApiConstants.ICMP_CODE, type=CommandType.INTEGER, description="error code for this icmp message")
     private Integer icmpCode;
 
-    //FIXME - add description
-    @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, required=true)
+    @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, required=true, description="the security group name")
     private String securityGroupName;
 
-    //FIXME - add description
-    @Parameter(name=ApiConstants.CIDR_LIST, type=CommandType.LIST, collectionType=CommandType.STRING)
+    @Parameter(name=ApiConstants.CIDR_LIST, type=CommandType.LIST, collectionType=CommandType.STRING, description="the cidr list associated")
     private List cidrList;
 
-    //FIXME - add description
-    @Parameter(name=ApiConstants.USER_SECURITY_GROUP_LIST, type=CommandType.MAP)
+    @Parameter(name=ApiConstants.USER_SECURITY_GROUP_LIST, type=CommandType.MAP, description="user to security group mapping")
     private Map userSecurityGroupList;
 
-    //FIXME - add description
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING)
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the security group. Must be used with domainId.")
     private String accountName;
 
-    //FIXME - add description
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG)
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the security group. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
 
