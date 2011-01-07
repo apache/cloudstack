@@ -110,9 +110,9 @@ elif _exists("/etc/centos-release"): conf.env.DISTRO = "CentOS"
 elif _exists("/etc/redhat-release"):
     version = file("/etc/redhat-release").readline()
     if version.find("Red Hat Enterprise Linux Server release 6") != -1:
-        conf.env.DISTRO = RHEL6
+        conf.env.DISTRO = "RHEL6"
     elif version.find("Centos release") != -1:
-        conf.env.DISTRO = CentOS
+        conf.env.DISTRO = "CentOS"
 else: conf.env.DISTRO = "unknown"
 if conf.env.DISTRO == "unknown": c = "YELLOW"
 else: 				    c = "GREEN"
