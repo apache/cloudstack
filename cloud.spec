@@ -224,7 +224,7 @@ Requires: qemu-cloud-system-x86
 Requires: qemu-cloud-img
 %endif
 
-%if %{rhel} >= 6
+%if 0%{?rhel} >= 6
 Requires: cloud-qemu-kvm
 Requires: cloud-qemu-img
 %endif
