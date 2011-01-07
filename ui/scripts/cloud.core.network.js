@@ -1122,7 +1122,7 @@ function bindAddNetworkButton($button) {
 						var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
 						if (networkOfferings != null && networkOfferings.length > 0) {
 							for (var i = 0; i < networkOfferings.length; i++) {
-								if (networkOfferings[i].type == "Direct" && networkOfferings[i].isdefault) {
+								if (networkOfferings[i].isdefault) {
 									// Create a network from this.
 									$.ajax({
 										data: createURL("command=createNetwork&name="+name+"&displayText="+desc+"&networkOfferingId="+networkOfferings[i].id+"&zoneId="+zoneObj.id+vlan+scopeParams+"&gateway="+todb(gateway)+"&netmask="+todb(netmask)+"&startip="+todb(startip)+"&endip="+todb(endip)),
