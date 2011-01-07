@@ -90,14 +90,10 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
 			                        $spinningWheel.hide(); 
 			                        			                          			                                             
 			                        if (result.jobstatus == 1) { // Succeeded 	
-			                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label + " action succeeded."));	
-			                            $afterActionInfoContainer.find("#after_action_info").text(label + " action succeeded.");
-                                        $afterActionInfoContainer.removeClass("errorbox").show();  
+			                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label + " action succeeded."));			                            
                                         afterActionSeccessFn(json, $midmenuItem1, id);     
 			                        } else if (result.jobstatus == 2) { // Failed	
-			                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, false, (label + " action failed. Reason: " + fromdb(result.jobresult.errortext)));		
-			                            $afterActionInfoContainer.find("#after_action_info").text(label + " action failed. Reason: " + fromdb(result.jobresult.errortext));
-                                        $afterActionInfoContainer.addClass("errorbox").show();     
+			                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, false, (label + " action failed. Reason: " + fromdb(result.jobresult.errortext)));			                            
 			                        }											                    
 		                        }
 	                        },
@@ -129,11 +125,7 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
 	        async: false,
 	        success: function(json) {	 	                  
 	            $spinningWheel.hide(); 	      
-	            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label + " action succeeded."));	
-	            	              
-	            $afterActionInfoContainer.find("#after_action_info").text(label + " action succeeded.");
-                $afterActionInfoContainer.removeClass("errorbox").show();              	
-                                 				
+	            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label + " action succeeded."));		            
 				afterActionSeccessFn(json, $midmenuItem1, id);				
 	        },
             error: function(XMLHttpResponse) {
