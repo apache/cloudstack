@@ -213,6 +213,6 @@ public interface UserVmManager extends Manager, VirtualMachineManager<UserVmVO> 
 
 	SnapshotVO createTemplateSnapshot(long userId, long volumeId);
 
-	long calcHostAllocatedCpuMemoryCapacity(long hostId, short capacityType, boolean preserve);
-	boolean skipCalculation(VMInstanceVO vm, boolean preserve);
+	long calcHostAllocatedCpuMemoryCapacity(long hostId, short capacityType);
+	boolean skipCalculation(VMInstanceVO vm);
 }
