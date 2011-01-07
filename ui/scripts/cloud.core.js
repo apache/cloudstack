@@ -980,14 +980,10 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
                         if(isMultipleSelectionInMidMenu != true) {
                             $midmenuItem1.click(); 
                         }
-                        else {     
-                            if(selected_midmenu_id != null && selected_midmenu_id.length > 0)
-                                $("#"+selected_midmenu_id).find("#content").removeClass("selected");
-                            selected_midmenu_id = getMidmenuIdFn($midmenuItem1.data("jsonObj"));                                   
-                            $midmenuItem1.find("#content").addClass("selected");                                                                    
-                            clearRightPanel();        
+                        else {                                                            
+                            $midmenuItem1.find("#content").addClass("selected");    
                             toRightPanelFn($midmenuItem1);	 
-                            //$midmenuItem1.click();  
+                            //$midmenuItem1.click();  //$midmenuItem1.click() is not working in multiple-selection middle menu
                             
                             $midmenuItem1.addClass("ui-selected");  //because instance page is using JQuery selectable widget to do multiple-selection
                             selectedItemsInMidMenu[items[i].id] = $midmenuItem1; //because instance page is using JQuery selectable widget to do multiple-selection                        
