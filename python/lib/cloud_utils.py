@@ -34,6 +34,7 @@ Unknown = 0
 Fedora = 1
 CentOS = 2
 Ubuntu = 3
+RHEL6 = 4
 
 IPV4 = 4
 IPV6 = 6
@@ -42,10 +43,14 @@ IPV6 = 6
 
 if os.path.exists("/etc/fedora-release"): distro = Fedora
 elif os.path.exists("/etc/centos-release"): distro = CentOS
-elif os.path.exists("/etc/redhat-release") and not os.path.exists("/etc/fedora-release"): distro = CentOS
+elif os.path.exists("/etc/redhat-release"):
+    version = file("/etc/redhat-release").readline()
+    if version.find("Red Hat Enterprise Linux Server release 6") != -1:
+        distro = RHEL6
+    elif version.find("Centos release") != -1:
+        distro = CentOS
 elif os.path.exists("/etc/legal") and "Ubuntu" in file("/etc/legal").read(-1): distro = Ubuntu
 else: distro = Unknown
-
 logFileName=None
 # ==================  LIBRARY UTILITY CODE=============
 def setLogFile(logFile):
@@ -264,7 +269,7 @@ def check_hostname():
 
 #check function
 def check_kvm():
-	if distro in (Fedora,CentOS):
+	if distro in (Fedora,CentOS,RHEL6):
 		if os.path.exists("/dev/kvm"): return True
 		raise CheckFailed("KVM is not correctly installed on this system, or support for it is not enabled in the BIOS")
 	else:
@@ -284,7 +289,7 @@ def check_cgroups():
 
 #check function
 def check_selinux():
-	if distro not in [Fedora,CentOS]: return # no selinux outside of those
+	if distro not in [Fedora,CentOS,RHEL6]: return # no selinux outside of those
 	enforcing = False
 	try:
 		output = getenforce().stdout.strip()
@@ -365,7 +370,7 @@ class SetupNetworking(ConfigTask):
 		self.runtime_state_changed = False
 		self.was_nm_service_running = None
 		self.was_net_service_running = None
-		if distro in (Fedora, CentOS):
+		if distro in (Fedora, CentOS, RHEL6):
 			self.nmservice = 'NetworkManager'
 			self.netservice = 'network'
 		else:
@@ -376,7 +381,7 @@ class SetupNetworking(ConfigTask):
 	def done(self):
 		try:
 			alreadysetup = False
-			if distro in (Fedora,CentOS):
+			if distro in (Fedora,CentOS, RHEL6):
 				if self.pubNic != None:
 					alreadysetup = alreadysetup or augtool._print("/files/etc/sysconfig/network-scripts/ifcfg-%s"%self.pubNic).stdout.strip()
 				if self.prvNic != None:
@@ -463,12 +468,12 @@ class SetupNetworking(ConfigTask):
 		
 		self.old_net_device = dev
 		
-		if distro in (Fedora, CentOS):
+		if distro in (Fedora, CentOS, RHEL6):
 			inconfigfile = "/".join(augtool.match("/files/etc/sysconfig/network-scripts/*/DEVICE",dev).stdout.strip().split("/")[:-1])
 			if not inconfigfile: raise TaskFailed("Device %s has not been set up in /etc/sysconfig/network-scripts"%dev)
 			pathtoconfigfile = inconfigfile[6:]
 
-		if distro in (Fedora, CentOS):
+		if distro in (Fedora, CentOS, RHEL6):
 			automatic = augtool.match("%s/ONBOOT"%inconfigfile,"yes").stdout.strip()
 		else:
 			automatic = augtool.match("/files/etc/network/interfaces/auto/*/",dev).stdout.strip()
@@ -476,17 +481,17 @@ class SetupNetworking(ConfigTask):
 			if distro is Fedora: raise TaskFailed("Device %s has not been set up in %s as automatic on boot"%dev,pathtoconfigfile)
 			else: raise TaskFailed("Device %s has not been set up in /etc/network/interfaces as automatic on boot"%dev)
 			
-		if distro not in (Fedora , CentOS):
+		if distro not in (Fedora , CentOS, RHEL6):
 			inconfigfile = augtool.match("/files/etc/network/interfaces/iface",dev).stdout.strip()
 			if not inconfigfile: raise TaskFailed("Device %s has not been set up in /etc/network/interfaces"%dev)
 
-		if distro in (Fedora, CentOS):
+		if distro in (Fedora, CentOS, RHEL6):
 			isstatic = augtool.match(inconfigfile + "/BOOTPROTO","none").stdout.strip()
 			if not isstatic: isstatic = augtool.match(inconfigfile + "/BOOTPROTO","static").stdout.strip()
 		else:
 			isstatic = augtool.match(inconfigfile + "/method","static").stdout.strip()
 		if not isstatic:
-			if distro in (Fedora, CentOS): raise TaskFailed("Device %s has not been set up as a static device in %s"%(dev,pathtoconfigfile))
+			if distro in (Fedora, CentOS, RHEL6): raise TaskFailed("Device %s has not been set up as a static device in %s"%(dev,pathtoconfigfile))
 			else: raise TaskFailed("Device %s has not been set up as a static device in /etc/network/interfaces"%dev)
 
 		if is_service_running(self.nmservice):
@@ -503,7 +508,7 @@ class SetupNetworking(ConfigTask):
 			
 		yield "Creating Cloud bridging device and making device %s member of this bridge"%dev
 
-		if distro in (Fedora, CentOS):
+		if distro in (Fedora, CentOS, RHEL6):
 			ifcfgtext = file(pathtoconfigfile).read()
 			newf = "/etc/sysconfig/network-scripts/ifcfg-%s"%self.brname
 			#def restore():
@@ -687,7 +692,7 @@ class SetupLibvirt(ConfigTask):
 	cfgline = "export CGROUP_DAEMON='cpu:/virt'"
 	def done(self):
 		try:
-			if distro in (Fedora,CentOS): 	 libvirtfile = "/etc/sysconfig/libvirtd"
+			if distro in (Fedora,CentOS, RHEL6): 	 libvirtfile = "/etc/sysconfig/libvirtd"
 			elif distro is Ubuntu:	 libvirtfile = "/etc/default/libvirt-bin"
 			else: raise AssertionError, "We should not reach this"
 			return self.cfgline in file(libvirtfile,"r").read(-1)
@@ -696,14 +701,14 @@ class SetupLibvirt(ConfigTask):
 			raise
 	
 	def execute(self):
-		if distro in (Fedora,CentOS): 	 libvirtfile = "/etc/sysconfig/libvirtd"
+		if distro in (Fedora,CentOS, RHEL6): 	 libvirtfile = "/etc/sysconfig/libvirtd"
 		elif distro is Ubuntu:	 libvirtfile = "/etc/default/libvirt-bin"
 		else: raise AssertionError, "We should not reach this"
 		libvirtbin = file(libvirtfile,"r").read(-1)
 		libvirtbin = libvirtbin + "\n" + self.cfgline + "\n"
 		file(libvirtfile,"w").write(libvirtbin)
 		
-		if distro in (CentOS, Fedora):	svc = "libvirtd"
+		if distro in (CentOS, Fedora, RHEL6):	svc = "libvirtd"
 		else:					svc = "libvirt-bin"
 		stop_service(svc)
 		enable_service(svc)
@@ -731,7 +736,7 @@ class SetupLiveMigration(ConfigTask):
 			startswith = stanza.split("=")[0] + '='
 			replace_or_add_line("/etc/libvirt/libvirtd.conf",startswith,stanza)
 
-		if distro is Fedora:
+		if distro in (Fedora, RHEL6):
 			replace_or_add_line("/etc/sysconfig/libvirtd","LIBVIRTD_ARGS=","LIBVIRTD_ARGS=-l")
 		
 		elif distro is Ubuntu:
@@ -743,7 +748,7 @@ class SetupLiveMigration(ConfigTask):
 		else:
 			raise AssertionError("Unsupported distribution")
 		
-		if distro in (CentOS, Fedora):	svc = "libvirtd"
+		if distro in (CentOS, Fedora, RHEL6):	svc = "libvirtd"
 		else:						svc = "libvirt-bin"
 		stop_service(svc)
 		enable_service(svc)
@@ -753,14 +758,14 @@ class SetupRequiredServices(ConfigTask):
 	name = "required services setup"
 	
 	def done(self):
-		if distro is Fedora:  nfsrelated = "rpcbind nfslock"
+		if distro in (Fedora, RHEL6):  nfsrelated = "rpcbind nfslock"
 		elif distro is CentOS: nfsrelated = "portmap nfslock"
 		else: return True
 		return all( [ is_service_running(svc) for svc in nfsrelated.split() ] )
 		
 	def execute(self):
 
-		if distro is Fedora:  nfsrelated = "rpcbind nfslock"
+		if distro in (Fedora, RHEL6):  nfsrelated = "rpcbind nfslock"
 		elif distro is CentOS: nfsrelated = "portmap nfslock"
 		else: raise AssertionError("Unsupported distribution")
 
@@ -772,7 +777,7 @@ class SetupFirewall(ConfigTask):
 	
 	def done(self):
 		
-		if distro in (Fedora, CentOS):
+		if distro in (Fedora, CentOS,RHEL6):
 			if not os.path.exists("/etc/sysconfig/iptables"): return True
 			if ":on" not in chkconfig("--list","iptables").stdout: return True
 		else:
@@ -784,7 +789,7 @@ class SetupFirewall(ConfigTask):
 	
 	def execute(self):
 		ports = "22 1798 16509".split()
-		if distro in (Fedora , CentOS):
+		if distro in (Fedora , CentOS, RHEL6):
 			for p in ports: iptables("-I","INPUT","1","-p","tcp","--dport",p,'-j','ACCEPT')
 			o = service.iptables.save() ; print o.stdout + o.stderr
 		else:
@@ -800,7 +805,7 @@ class SetupFirewall2(ConfigTask):
 	
 	def done(self):
 		
-		if distro in (Fedora, CentOS):
+		if distro in (Fedora, CentOS, RHEL6):
 			if not os.path.exists("/etc/sysconfig/iptables"): return True
 			if ":on" not in chkconfig("--list","iptables").stdout: return True
 			rule = "FORWARD -i %s -o %s -j ACCEPT"%(self.brname,self.brname)
@@ -817,7 +822,7 @@ class SetupFirewall2(ConfigTask):
 		
 		yield "Permitting traffic in the bridge interface, migration port and for VNC ports"
 		
-		if distro in (Fedora , CentOS):
+		if distro in (Fedora , CentOS, RHEL6):
 			
 			for rule in (
 				"-I FORWARD -i %s -o %s -j ACCEPT"%(self.brname,self.brname),
@@ -856,7 +861,7 @@ def config_tasks(brname, pubNic, prvNic):
 			SetupFirewall(),
 			SetupFirewall2(brname),
 		)
-	elif distro in (Ubuntu,Fedora):
+	elif distro in (Ubuntu,Fedora, RHEL6):
 		config_tasks = (
 			SetupNetworking(brname, pubNic, prvNic),
 			SetupCgConfig(),
@@ -929,7 +934,7 @@ def prompt_for_hostpods(zonespods):
 def device_exist(devName):
 	try:
 		alreadysetup = False
-		if distro in (Fedora,CentOS):
+		if distro in (Fedora,CentOS, RHEL6):
 			alreadysetup = augtool._print("/files/etc/sysconfig/network-scripts/ifcfg-%s"%devName).stdout.strip()
 		else:
 			alreadysetup = augtool.match("/files/etc/network/interfaces/iface",devName).stdout.strip()

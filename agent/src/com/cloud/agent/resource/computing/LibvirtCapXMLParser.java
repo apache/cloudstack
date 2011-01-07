@@ -36,7 +36,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
 	private boolean _osType = false;
 	private boolean _domainTypeKVM = false;
 	private boolean _emulatorFlag = false;
-	private String _emulator ;
+	private final StringBuffer _emulator = new StringBuffer() ;
 	private final StringBuffer _capXML = new StringBuffer();
     private static final Logger s_logger = Logger.getLogger(LibvirtCapXMLParser.class);
     private final ArrayList<String> guestOsTypes = new ArrayList<String>();
@@ -53,6 +53,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
 			_domainTypeKVM = false;
 		} else if (qName.equalsIgnoreCase("emulator")) {
 			_emulatorFlag = false;
+			
 		} else if (_host) {
 			_capXML.append("<").append("/").append(qName).append(">");
 		}
@@ -65,7 +66,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
 		} else if (_osType) {
 			guestOsTypes.add(new String(ch, start, length));
 		} else if (_emulatorFlag) {
-			_emulator = new String(ch, start, length);
+			_emulator.append(ch, start, length);
 		}
 	}
 	
@@ -90,6 +91,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
 			}
 		} else if (qName.equalsIgnoreCase("emulator") && _domainTypeKVM) {
 			_emulatorFlag = true;
+			_emulator.delete(0, _emulator.length());
 		} else if (_host) {
 			_capXML.append("<").append(qName);
 			for (int i=0; i < attributes.getLength(); i++) {
@@ -120,7 +122,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
 	}
 	
 	public String getEmulator() {
-		return _emulator;
+		return _emulator.toString();
 	}
 	
 	public static void main(String [] args) {
