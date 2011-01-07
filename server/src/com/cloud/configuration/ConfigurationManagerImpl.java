@@ -285,7 +285,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	if (type.equals(Boolean.class)) {
     		if (!(value.equals("true") || value.equals("false"))) {
  	    		s_logger.error("Configuration variable " + name + " is expecting true or false in stead of " + value);
-    			return "Please enter either \"true\" or \"false\".";
+    			return "Please enter either 'true' or 'false'.";
     		}
     		return null;
     	}
