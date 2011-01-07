@@ -181,7 +181,7 @@ setup_common() {
   fi
 
   ip route  delete default
-  if [ -n $3 ]
+  if [ -n "$3" ]
   then 
     ip route add default via $GW dev $3
   else
