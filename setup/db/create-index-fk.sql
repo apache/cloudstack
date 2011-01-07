@@ -230,11 +230,11 @@ ALTER TABLE `cloud`.`launch_permission` ADD INDEX `i_launch_permission_template_
 
 ALTER TABLE `cloud`.`guest_os` ADD CONSTRAINT `fk_guest_os__category_id` FOREIGN KEY `fk_guest_os__category_id` (`category_id`) REFERENCES `guest_os_category` (`id`) ON DELETE CASCADE;
 
-ALTER TABLE `cloud`.`network_group` ADD CONSTRAINT `fk_network_group___account_id` FOREIGN KEY `fk_network_group__account_id` (`account_id`) REFERENCES `account` (`id`);
+ALTER TABLE `cloud`.`network_group` ADD CONSTRAINT `fk_network_group___account_id` FOREIGN KEY `fk_network_group__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`network_group` ADD CONSTRAINT `fk_network_group__domain_id` FOREIGN KEY `fk_network_group__domain_id` (`domain_id`) REFERENCES `domain` (`id`);
 ALTER TABLE `cloud`.`network_group` ADD INDEX `i_network_group_name`(`name`);
 
-ALTER TABLE `cloud`.`network_ingress_rule` ADD CONSTRAINT `fk_network_ingress_rule___network_group_id` FOREIGN KEY `fk_network_ingress_rule__network_group_id` (`network_group_id`) REFERENCES `network_group` (`id`);
+ALTER TABLE `cloud`.`network_ingress_rule` ADD CONSTRAINT `fk_network_ingress_rule___network_group_id` FOREIGN KEY `fk_network_ingress_rule__network_group_id` (`network_group_id`) REFERENCES `network_group` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`network_ingress_rule` ADD CONSTRAINT `fk_network_ingress_rule___allowed_network_id` FOREIGN KEY `fk_network_ingress_rule__allowed_network_id` (`allowed_network_id`) REFERENCES `network_group` (`id`);
 ALTER TABLE `cloud`.`network_ingress_rule` ADD INDEX `i_network_ingress_rule_network_id`(`network_group_id`);
 ALTER TABLE `cloud`.`network_ingress_rule` ADD INDEX `i_network_ingress_rule_allowed_network`(`allowed_network_id`);
