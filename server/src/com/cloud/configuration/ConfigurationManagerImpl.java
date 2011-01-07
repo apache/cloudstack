@@ -2739,7 +2739,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Object id = cmd.getId();
         Object name = cmd.getNetworkOfferingName();
         Object displayText = cmd.getDisplayText();
-        Object type = cmd.getType();
         Object trafficType = cmd.getTrafficType();
         Object isDefault = cmd.getIsDefault();
         Object specifyVlan = cmd.getSpecifyVlan();
@@ -2764,9 +2763,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         if (displayText != null) {
             sc.addAnd("displayText", SearchCriteria.Op.LIKE, "%" + displayText + "%");
-        }
-        if (type != null) {
-            sc.addAnd("guestIpType", SearchCriteria.Op.EQ, type);
         }
         
         if (trafficType != null) {

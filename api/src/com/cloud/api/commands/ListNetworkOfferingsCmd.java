@@ -49,9 +49,6 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="list network offerings by display text")
     private String displayText;
     
-    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, description="list by type of the network")
-    private String type;
-    
     @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, description="list by traffic type")
     private String trafficType;
     
@@ -78,11 +75,7 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     public String getDisplayText() {
         return displayText;
     }
-
-    public String getType() {
-        return type;
-    }
-
+    
     public String getTrafficType() {
         return trafficType;
     }
