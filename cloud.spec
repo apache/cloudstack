@@ -223,6 +223,12 @@ Requires: kvm
 Requires: qemu-cloud-system-x86
 Requires: qemu-cloud-img
 %endif
+
+%if %{rhel} >= 6
+Requires: cloud-qemu-kvm
+Requires: cloud-qemu-img
+%endif
+
 Requires: libcgroup
 Requires: /usr/bin/uuidgen
 Requires: augeas >= 0.7.1
