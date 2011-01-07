@@ -2795,10 +2795,34 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
     
     @Override
-    public void cleanupVolumes(Long vmId){
+    public void cleanupVolumes(Long vmId) {
+    	VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         List<VolumeVO> volumesForVm = _volsDao.findByInstance(vmId);    	
     	for(VolumeVO vol : volumesForVm){
     		if(vol.getVolumeType().equals(VolumeType.ROOT)){
+    			if(vol.getState() != Volume.State.Destroyed) {
+    				assert(vol.getState() == Volume.State.Destroy);
+    				String volumePath = vol.getPath();
+    	            Long poolId = vol.getPoolId();
+    	            if (poolId != null && volumePath != null && !volumePath.trim().isEmpty()) {
+    	                Answer answer = null;
+    	                StoragePoolVO pool = _storagePoolDao.findById(poolId);
+    				
+    	                final DestroyCommand cmd = new DestroyCommand(pool, vol, vm.getName());
+    	                List<StoragePoolHostVO> poolhosts = _storagePoolHostDao.listByPoolId(poolId);
+	                    for (StoragePoolHostVO poolhost : poolhosts) {
+	                        answer = _agentMgr.easySend(poolhost.getHostId(), cmd);
+	                        if (answer != null && answer.getResult()) {
+	                        	try {
+									_volsDao.update(vol, Volume.Event.OperationSucceeded);
+								} catch (ConcurrentOperationException e) {
+									s_logger.warn("Unable to update volume state. vm: " + vmId + ", vol: " + vol.getId() + " due to ConcurrentOperationException");
+								}
+	                            break;
+	                        }
+	                    }
+    	            }
+    			}
     			destroyVolume(vol);
     		} else {
     			//data volume

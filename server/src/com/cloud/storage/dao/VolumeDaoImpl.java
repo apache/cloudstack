@@ -32,6 +32,7 @@ import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Volume;
+import com.cloud.storage.Volume.Event;
 import com.cloud.storage.Volume.MirrorState;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeVO;
@@ -279,6 +280,13 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public void destroyVolume(long volumeId) {
     	VolumeVO volume = createForUpdate(volumeId);
     	volume.setDestroyed(true);
+    	
+        Volume.State oldState = volume.getState();
+        Volume.State newState = oldState.getNextState(Event.Destroy);
+        
+        assert newState != null : "Event "+  Event.Destroy + " cannot happen from " + oldState; 
+    	volume.setState(newState);
+        
     	update(volumeId, volume);
     }
     
@@ -286,6 +294,13 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public void recoverVolume(long volumeId) {
     	VolumeVO volume = createForUpdate(volumeId);
     	volume.setDestroyed(false);
+    	
+        Volume.State oldState = volume.getState();
+        Volume.State newState = oldState.getNextState(Event.Recover);
+        
+        assert newState != null : "Event "+  Event.Recover + " cannot happen from " + oldState; 
+    	volume.setState(newState);
+    	
     	update(volumeId, volume);
     }
     

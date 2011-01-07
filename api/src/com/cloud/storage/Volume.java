@@ -85,6 +85,7 @@ public interface Volume extends ControlledEntity, BasedOn {
             s_fsm.addTransition(Destroy, Event.OperationSucceeded, Destroyed);
             s_fsm.addTransition(Destroy, Event.OperationFailed, Destroy);
             s_fsm.addTransition(Destroy, Event.OperationRetry, Destroy);
+            s_fsm.addTransition(Destroy, Event.Recover, Ready);
         }
 	}
 	
@@ -94,7 +95,8 @@ public interface Volume extends ControlledEntity, BasedOn {
 	    OperationFailed,
 	    OperationSucceeded,
 	    OperationRetry,
-	    Destroy;
+	    Destroy,
+	    Recover;
 	}
 	
 	enum SourceType {
@@ -156,7 +158,6 @@ public interface Volume extends ControlledEntity, BasedOn {
 	
 	Date getCreated();
 	AsyncInstanceCreateStatus getStatus();
-	
 	boolean getDestroyed();
 	
 	long getDiskOfferingId();
