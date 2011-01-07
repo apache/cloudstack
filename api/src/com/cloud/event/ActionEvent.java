@@ -18,5 +18,4 @@
 package com.cloud.event;
 
 public @interface ActionEvent {
-
 }

@@ -153,9 +153,6 @@ public class ComponentLocator implements ComponentLocatorMBean {
                 _managerMap.putAll(library.getManagers());
                 adapters.putAll(library.getAdapters());
                 _factories.putAll(library.getFactories());
-                synchronized(s_interceptors) {
-                    library.addInterceptors(s_interceptors);
-                }
             }
 
             _daoMap.putAll(handler.daos);
@@ -190,19 +187,6 @@ public class ComponentLocator implements ComponentLocatorMBean {
             return;
         }
         
-        synchronized(s_interceptors) {
-            if (s_interceptors.size() > 0) {
-                s_callbacks = new Callback[s_interceptors.size() + 2];
-                int i = 0;
-                s_callbacks[i++] = NoOp.INSTANCE;
-                s_callbacks[i++] = new InterceptorDispatcher();
-                for (AnnotationInterceptor<?> interceptor : s_interceptors) {
-                    s_callbacks[i++] = interceptor.getCallback();
-                }
-                s_callbackFilter = new InterceptorFilter();
-            }
-        }
-
         XmlHandler handler = result.first();
         HashMap<String, List<ComponentInfo<Adapter>>> adapters = result.second();
         try {
@@ -869,6 +853,34 @@ public class ComponentLocator implements ComponentLocatorMBean {
         @Override
         public void startElement(String namespaceURI, String localName, String qName, Attributes atts)
         throws SAXException {
+            if (qName.equals("interceptors") && s_interceptors.size() == 0) {
+                synchronized(s_interceptors){
+                    if (s_interceptors.size() == 0) {
+                        String libraryName = getAttribute(atts, "library");
+                        try {
+                            Class<?> libraryClazz = Class.forName(libraryName);
+                            InterceptorLibrary  library = (InterceptorLibrary)libraryClazz.newInstance();
+                            library.addInterceptors(s_interceptors);
+                            if (s_interceptors.size() > 0) {
+                                s_callbacks = new Callback[s_interceptors.size() + 2];
+                                int i = 0;
+                                s_callbacks[i++] = NoOp.INSTANCE;
+                                s_callbacks[i++] = new InterceptorDispatcher();
+                                for (AnnotationInterceptor<?> interceptor : s_interceptors) {
+                                    s_callbacks[i++] = interceptor.getCallback();
+                                }
+                                s_callbackFilter = new InterceptorFilter();
+                            }
+                        } catch (ClassNotFoundException e) {
+                            throw new CloudRuntimeException("Unable to find " + libraryName, e);
+                        } catch (InstantiationException e) {
+                            throw new CloudRuntimeException("Unable to instantiate " + libraryName, e);
+                        } catch (IllegalAccessException e) {
+                            throw new CloudRuntimeException("Illegal access " + libraryName, e);
+                        }
+                    }
+                }
+            }
             if (!parse) {
                 if (qName.equals(_serverName)) {
                     parse = true;

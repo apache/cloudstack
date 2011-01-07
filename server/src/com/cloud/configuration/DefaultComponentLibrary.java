@@ -115,11 +115,9 @@ import com.cloud.user.dao.UserDaoImpl;
 import com.cloud.user.dao.UserStatisticsDaoImpl;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapter;
-import com.cloud.utils.component.AnnotationInterceptor;
 import com.cloud.utils.component.ComponentLibrary;
 import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.component.Manager;
-import com.cloud.utils.db.DatabaseCallback;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.ItWorkDaoImpl;
 import com.cloud.vm.UserVmManagerImpl;
@@ -337,8 +335,4 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         return factories;
     }
     
-    @Override
-    public void addInterceptors(List<AnnotationInterceptor<?>> interceptors) {
-        interceptors.add(new DatabaseCallback());
-    }
 }

@@ -51,5 +51,4 @@ public interface ComponentLibrary {
     
     Map<Class<?>, Class<?>> getFactories();
     
-    void addInterceptors(List<AnnotationInterceptor<?>> interceptors);
 }
