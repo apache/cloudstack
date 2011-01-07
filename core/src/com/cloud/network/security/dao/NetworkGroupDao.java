@@ -29,4 +29,5 @@ public interface NetworkGroupDao extends GenericDao<NetworkGroupVO, Long> {
     List<NetworkGroupVO> listAvailableGroups(Long accountId, Long domainId);
     NetworkGroupVO findByAccountAndName(Long accountId, String name);
     List<NetworkGroupVO> findByAccountAndNames(Long accountId, String... names);
+    int removeByAccountId(long accountId);
 }

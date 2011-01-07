@@ -1003,6 +1003,9 @@ public class ManagementServerImpl implements ManagementServer {
                 }
             }
             
+            int numRemoved = _networkSecurityGroupDao.removeByAccountId(accountId);
+            s_logger.info("deleteAccount: Deleted " + numRemoved + " network groups for account " + accountId);
+            
             // Delete the account's VLANs
             List<VlanVO> accountVlans = _vlanDao.listVlansForAccountByType(null, accountId, VlanType.DirectAttached);
             boolean allVlansDeleted = true;
