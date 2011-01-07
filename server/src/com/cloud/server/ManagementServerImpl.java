@@ -2729,7 +2729,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         GetVncPortAnswer answer = (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(), new GetVncPortCommand(vm.getId(), vm.getInstanceName()));
-        if(answer != null) {
+        if(answer != null && answer.getResult()) {
             return new Pair<String, Integer>(answer.getAddress(), answer.getPort());
         }
         	

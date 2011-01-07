@@ -1477,11 +1477,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                         DeleteStoragePoolCommand cmd = new DeleteStoragePoolCommand(sPool);
                         final Answer answer = _agentMgr.easySend(host.getHostId(), cmd);
 
-                        if (answer != null) {
-                            if (answer.getResult() == true) {
-                                deleteFlag = true;
-                                break;
-                            }
+                        if (answer != null && answer.getResult()) {
+                            deleteFlag = true;
+                            break;
                         }
                     }
 
