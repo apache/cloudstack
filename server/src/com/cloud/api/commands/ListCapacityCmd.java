@@ -208,7 +208,7 @@ public class ListCapacityCmd extends BaseCmd{
             }
 
             summedCapacity.setTotalCapacity(totalCapacityMap.get(key));
-            summedCapacity.setUsedCapacity(usedCapacityMap.get(key));
+            summedCapacity.setUsedCapacity((usedCapacityMap.get(key) > totalCapacityMap.get(key)) ? totalCapacityMap.get(key):usedCapacityMap.get(key));
 
             summedCapacities.add(summedCapacity);
         }
