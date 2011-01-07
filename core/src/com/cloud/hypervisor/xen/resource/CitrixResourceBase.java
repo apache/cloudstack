@@ -2593,7 +2593,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
     }
     
-    void startVM(Connection conn, Host host, VM vm, String vmName) {
+    void startVM(Connection conn, Host host, VM vm, String vmName)  throws XmlRpcException {
         try {
             vm.startOn(conn, host, false, true);
         } catch (Exception e) {
