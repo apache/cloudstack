@@ -62,6 +62,10 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.guru.ControlNetworkGuru;
+import com.cloud.network.guru.DirectPodBasedNetworkGuru;
+import com.cloud.network.guru.PodBasedNetworkGuru;
+import com.cloud.network.guru.PublicNetworkGuru;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -722,11 +726,11 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         long id = 1;
         
         HashMap<TrafficType, String> guruNames = new HashMap<TrafficType, String>();
-        guruNames.put(TrafficType.Public, "PublicNetworkGuru-com.cloud.network.guru.PublicNetworkGuru");
-        guruNames.put(TrafficType.Management, "PodBasedNetworkGuru-com.cloud.network.guru.PodBasedNetworkGuru");
-        guruNames.put(TrafficType.Control, "ControlNetworkGuru-com.cloud.network.guru.ControlNetworkGuru");
-        guruNames.put(TrafficType.Storage, "PodBasedNetworkGuru-com.cloud.network.guru.PodBasedNetworkGuru");
-        guruNames.put(TrafficType.Guest, "DirectPodBasedNetworkGuru-com.cloud.network.guru.DirectPodBasedNetworkGuru");
+        guruNames.put(TrafficType.Public, PublicNetworkGuru.class.getSimpleName());
+        guruNames.put(TrafficType.Management, PodBasedNetworkGuru.class.getSimpleName());
+        guruNames.put(TrafficType.Control, ControlNetworkGuru.class.getSimpleName());
+        guruNames.put(TrafficType.Storage, PodBasedNetworkGuru.class.getSimpleName());
+        guruNames.put(TrafficType.Guest, DirectPodBasedNetworkGuru.class.getSimpleName());
         
         
         for (DataCenterVO zone : zones) {
