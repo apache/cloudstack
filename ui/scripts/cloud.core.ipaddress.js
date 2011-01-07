@@ -1001,6 +1001,8 @@ function ipJsonToDetailsTab() {
 }
 
 function ipFindNetworkServiceByName(pName, networkObj) {    
+    if(networkObj == null)
+        return null;
     for(var i=0; i<networkObj.service.length; i++) {
         var networkServiceObj = networkObj.service[i];
         if(networkServiceObj.name == pName)
@@ -1009,7 +1011,9 @@ function ipFindNetworkServiceByName(pName, networkObj) {
     return null;
 }
 
-function ipFindCapabilityByName(pName, networkServiceObj) {    
+function ipFindCapabilityByName(pName, networkServiceObj) {  
+    if(networkServiceObj == null)
+        return null;  
     for(var i=0; i<networkServiceObj.capability.length; i++) {
         var capabilityObj = networkServiceObj.capability[i];
         if(capabilityObj.name == pName)
