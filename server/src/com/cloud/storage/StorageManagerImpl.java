@@ -1477,11 +1477,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                         DeleteStoragePoolCommand cmd = new DeleteStoragePoolCommand(sPool);
                         final Answer answer = _agentMgr.easySend(host.getHostId(), cmd);
 
-                        if (answer != null) {
-                            if (answer.getResult() == true) {
-                                deleteFlag = true;
-                                break;
-                            }
+                        if (answer != null && answer.getResult()) {
+                            deleteFlag = true;
+                            break;
                         }
                     }
 
@@ -2006,18 +2004,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             try {
                 s_logger.info("Storage Garbage Collection Thread is running.");
 
-                GlobalLock scanLock = GlobalLock.getInternLock(this.getClass().getName());
-                try {
-                    if (scanLock.lock(3)) {
-                        try {
-                            cleanupStorage(true);
-                        } finally {
-                            scanLock.unlock();
-                        }
-                    }
-                } finally {
-                    scanLock.releaseRef();
-                }
+                cleanupStorage(true);
 
             } catch (Exception e) {
                 s_logger.error("Caught the following Exception", e);
@@ -2027,89 +2014,99 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     public void cleanupStorage(boolean recurring) {
+    	GlobalLock scanLock = GlobalLock.getInternLock(this.getClass().getName());
+    	
+    	try {    	
+    		if (scanLock.lock(3)) {
+    			try {    				    		
+    				// Cleanup primary storage pools
+    				List<StoragePoolVO> storagePools = _storagePoolDao.listAll();
+    				for (StoragePoolVO pool : storagePools) {
+    					try {
+    						if (recurring && pool.isLocal()) {
+    							continue;
+    						}
 
-        // Cleanup primary storage pools
-        List<StoragePoolVO> storagePools = _storagePoolDao.listAll();
-        for (StoragePoolVO pool : storagePools) {
-            try {
-                if (recurring && pool.isLocal()) {
-                    continue;
-                }
-    
-                List<VMTemplateStoragePoolVO> unusedTemplatesInPool = _tmpltMgr.getUnusedTemplatesInPool(pool);
-                s_logger.debug("Storage pool garbage collector found " + unusedTemplatesInPool.size() + " templates to clean up in storage pool: " + pool.getName());
-                for (VMTemplateStoragePoolVO templatePoolVO : unusedTemplatesInPool) {
-                    if (templatePoolVO.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                        s_logger.debug("Storage pool garbage collector is skipping templatePoolVO with ID: " + templatePoolVO.getId() + " because it is not completely downloaded.");
-                        continue;
-                    }
-    
-                    if (!templatePoolVO.getMarkedForGC()) {
-                        templatePoolVO.setMarkedForGC(true);
-                        _vmTemplatePoolDao.update(templatePoolVO.getId(), templatePoolVO);
-                        s_logger.debug("Storage pool garbage collector has marked templatePoolVO with ID: " + templatePoolVO.getId() + " for garbage collection.");
-                        continue;
-                    }
-    
-                    _tmpltMgr.evictTemplateFromStoragePool(templatePoolVO);
-                }
-            } catch (Exception e) {
-                s_logger.warn("Problem cleaning up primary storage pool " + pool, e);
-            }
-        }
+    						List<VMTemplateStoragePoolVO> unusedTemplatesInPool = _tmpltMgr.getUnusedTemplatesInPool(pool);
+    						s_logger.debug("Storage pool garbage collector found " + unusedTemplatesInPool.size() + " templates to clean up in storage pool: " + pool.getName());
+    						for (VMTemplateStoragePoolVO templatePoolVO : unusedTemplatesInPool) {
+    							if (templatePoolVO.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+    								s_logger.debug("Storage pool garbage collector is skipping templatePoolVO with ID: " + templatePoolVO.getId() + " because it is not completely downloaded.");
+    								continue;
+    							}
 
-        // Cleanup secondary storage hosts
-        List<HostVO> secondaryStorageHosts = _hostDao.listSecondaryStorageHosts();
-        for (HostVO secondaryStorageHost : secondaryStorageHosts) {
-            try {
-                long hostId = secondaryStorageHost.getId();
-                List<VMTemplateHostVO> destroyedTemplateHostVOs = _vmTemplateHostDao.listDestroyed(hostId);
-                s_logger.debug("Secondary storage garbage collector found " + destroyedTemplateHostVOs.size() + " templates to cleanup on secondary storage host: "
-                        + secondaryStorageHost.getName());
-                for (VMTemplateHostVO destroyedTemplateHostVO : destroyedTemplateHostVOs) {
-                    if (!_tmpltMgr.templateIsDeleteable(destroyedTemplateHostVO)) {
-                        s_logger.debug("Not deleting template at: " + destroyedTemplateHostVO.getInstallPath());
-                        continue;
-                    }
-    
-                    String installPath = destroyedTemplateHostVO.getInstallPath();
-    
-                    if (installPath != null) {
-                        Answer answer = _agentMgr.easySend(hostId, new DeleteTemplateCommand(destroyedTemplateHostVO.getInstallPath()));
-    
-                        if (answer == null || !answer.getResult()) {
-                            s_logger.debug("Failed to delete template at: " + destroyedTemplateHostVO.getInstallPath());
-                        } else {
-                            _vmTemplateHostDao.remove(destroyedTemplateHostVO.getId());
-                            s_logger.debug("Deleted template at: " + destroyedTemplateHostVO.getInstallPath());
-                        }
-                    } else {
-                        _vmTemplateHostDao.remove(destroyedTemplateHostVO.getId());
-                    }
-                }
-            } catch (Exception e) {
-                s_logger.warn("problem cleaning up secondary storage " + secondaryStorageHost, e);
-            }
-        }
-        
-        List<VolumeVO> vols = _volsDao.listRemovedButNotDestroyed();
-        for (VolumeVO vol : vols) {
-            try {
-                Long poolId = vol.getPoolId();
-                Answer answer = null;
-                StoragePoolVO pool = _storagePoolDao.findById(poolId);
-                final DestroyCommand cmd = new DestroyCommand(pool, vol, null);
-                answer = sendToPool(pool, cmd);
-                if (answer != null && answer.getResult()) {
-                    s_logger.debug("Destroyed " + vol);
-                    vol.setDestroyed(true);
-                    _volsDao.update(vol.getId(), vol);
-                }
-            } catch (Exception e) {
-                s_logger.warn("Unable to destroy " + vol.getId(), e);
-            }
-        }
+    							if (!templatePoolVO.getMarkedForGC()) {
+    								templatePoolVO.setMarkedForGC(true);
+    								_vmTemplatePoolDao.update(templatePoolVO.getId(), templatePoolVO);
+    								s_logger.debug("Storage pool garbage collector has marked templatePoolVO with ID: " + templatePoolVO.getId() + " for garbage collection.");
+    								continue;
+    							}
 
+    							_tmpltMgr.evictTemplateFromStoragePool(templatePoolVO);
+    						}
+    					} catch (Exception e) {
+    						s_logger.warn("Problem cleaning up primary storage pool " + pool, e);
+    					}
+    				}
+
+    				// Cleanup secondary storage hosts
+    				List<HostVO> secondaryStorageHosts = _hostDao.listSecondaryStorageHosts();
+    				for (HostVO secondaryStorageHost : secondaryStorageHosts) {
+    					try {
+    						long hostId = secondaryStorageHost.getId();
+    						List<VMTemplateHostVO> destroyedTemplateHostVOs = _vmTemplateHostDao.listDestroyed(hostId);
+    						s_logger.debug("Secondary storage garbage collector found " + destroyedTemplateHostVOs.size() + " templates to cleanup on secondary storage host: "
+    								+ secondaryStorageHost.getName());
+    						for (VMTemplateHostVO destroyedTemplateHostVO : destroyedTemplateHostVOs) {
+    							if (!_tmpltMgr.templateIsDeleteable(destroyedTemplateHostVO)) {
+    								s_logger.debug("Not deleting template at: " + destroyedTemplateHostVO.getInstallPath());
+    								continue;
+    							}
+
+    							String installPath = destroyedTemplateHostVO.getInstallPath();
+
+    							if (installPath != null) {
+    								Answer answer = _agentMgr.easySend(hostId, new DeleteTemplateCommand(destroyedTemplateHostVO.getInstallPath()));
+
+    								if (answer == null || !answer.getResult()) {
+    									s_logger.debug("Failed to delete template at: " + destroyedTemplateHostVO.getInstallPath());
+    								} else {
+    									_vmTemplateHostDao.remove(destroyedTemplateHostVO.getId());
+    									s_logger.debug("Deleted template at: " + destroyedTemplateHostVO.getInstallPath());
+    								}
+    							} else {
+    								_vmTemplateHostDao.remove(destroyedTemplateHostVO.getId());
+    							}
+    						}
+    					} catch (Exception e) {
+    						s_logger.warn("problem cleaning up secondary storage " + secondaryStorageHost, e);
+    					}
+    				}
+
+    				List<VolumeVO> vols = _volsDao.listRemovedButNotDestroyed();
+    				for (VolumeVO vol : vols) {
+    					try {
+    						Long poolId = vol.getPoolId();
+    						Answer answer = null;
+    						StoragePoolVO pool = _storagePoolDao.findById(poolId);
+    						final DestroyCommand cmd = new DestroyCommand(pool, vol, null);
+    						answer = sendToPool(pool, cmd);
+    						if (answer != null && answer.getResult()) {
+    							s_logger.debug("Destroyed " + vol);
+    							vol.setDestroyed(true);
+    							_volsDao.update(vol.getId(), vol);
+    						}
+    					} catch (Exception e) {
+    						s_logger.warn("Unable to destroy " + vol.getId(), e);
+    					}
+    				}
+    			} finally {
+    				scanLock.unlock();
+    			}
+    		}
+    	} finally {
+    		scanLock.releaseRef();
+    	}        
     }
     
     @Override

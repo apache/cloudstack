@@ -1531,7 +1531,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             final RebootCommand cmd = new RebootCommand(proxy.getInstanceName());
             final Answer answer = _agentMgr.easySend(proxy.getHostId(), cmd);
 
-            if (answer != null) {
+            if (answer != null && answer.getResult()) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Successfully reboot console proxy " + proxy.getName());
                 }
@@ -1708,7 +1708,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         MigrateCommand cmd = new MigrateCommand(proxy.getInstanceName(), host.getPrivateIpAddress(), false);
         Answer answer = _agentMgr.easySend(fromHost.getId(), cmd);
-        if (answer == null) {
+        if (answer == null || !answer.getResult()) {
             return false;
         }
 

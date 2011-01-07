@@ -32,6 +32,7 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -140,4 +141,5 @@ public interface NetworkManager extends NetworkService {
 	
 	List<? extends Vlan> listPodVlans(long podId);
 	
+	Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 }

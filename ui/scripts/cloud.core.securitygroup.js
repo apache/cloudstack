@@ -221,7 +221,7 @@ function securityGroupJsonToDetailsTab() {
         dataType: "json",
         async: false,
         success: function(json) {  
-            var items = json.listsecurityGroupsresponse.securitygroup;            
+            var items = json.listsecuritygroupsresponse.securitygroup;            
             if(items != null && items.length > 0) {
                 jsonObj = items[0];
                 $midmenuItem1.data("jsonObj", jsonObj);  
@@ -264,7 +264,7 @@ function securityGroupJsonToIngressRuleTab() {
 		data: createURL("command=listSecurityGroups"+"&domainid="+securityGroupObj.domainid+"&account="+securityGroupObj.account+"&securitygroupname="+securityGroupObj.name),
 		dataType: "json",
 		success: function(json) {	
-		    var securityGroupObj = json.listsecurityGroupsresponse.securitygroup[0];		    				    
+		    var securityGroupObj = json.listsecuritygroupsresponse.securitygroup[0];		    				    
 			var items = securityGroupObj.ingressrule;    
 			var $container = $thisTab.find("#tab_container").empty();     																			
 			if (items != null && items.length > 0) {			    

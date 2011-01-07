@@ -168,9 +168,13 @@ function handleMidMenuItemAfterDetailsTabAction($midmenuItem1, isSuccessful, aft
 	    $infoIcon.removeClass("error");	    
 	else
 	    $infoIcon.addClass("error");	
-		
-	if($midmenuItem1.attr("id") == selected_midmenu_id)    
-	    $midmenuItem1.click();
+	
+	if($midmenuItem1.attr("id") == selected_midmenu_id) {
+	    if($("#midmenu_container").find("#multiple_selection_sub_container").length == 0) //single-selection middle menu
+	        $midmenuItem1.click();	    
+	    else  //multiple-selection middle menu
+	        clickItemInMultipleSelectionMidmenu($midmenuItem1);	           
+	}	
 }
   	                
 //***** actions for a tab in right panel (end) **************************************************************************
@@ -907,7 +911,8 @@ function createMultipleSelectionSubContainer() {
                 if($midmenuItem1.find("#content").hasClass("inaction") == false) { //only items not in action are allowed to be selected
                     var id =$midmenuItem1.data("jsonObj").id;                
                     selectedItemsInMidMenu[id] = $midmenuItem1; 
-                    $midmenuItem1.find("#content").addClass("selected");   
+                    $midmenuItem1.find("#content").addClass("selected"); //css of vmops  
+                    selected_midmenu_id = $midmenuItem1.attr("id");
                 }                               
                 clearRightPanel();      
                 var toRightPanelFn = $midmenuItem1.data("toRightPanelFn");
@@ -980,17 +985,8 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
                         if(isMultipleSelectionInMidMenu != true) {
                             $midmenuItem1.click(); 
                         }
-                        else {     
-                            if(selected_midmenu_id != null && selected_midmenu_id.length > 0)
-                                $("#"+selected_midmenu_id).find("#content").removeClass("selected");
-                            selected_midmenu_id = getMidmenuIdFn($midmenuItem1.data("jsonObj"));                                   
-                            $midmenuItem1.find("#content").addClass("selected");                                                                    
-                            clearRightPanel();        
-                            toRightPanelFn($midmenuItem1);	 
-                            //$midmenuItem1.click();  
-                            
-                            $midmenuItem1.addClass("ui-selected");  //because instance page is using JQuery selectable widget to do multiple-selection
-                            selectedItemsInMidMenu[items[i].id] = $midmenuItem1; //because instance page is using JQuery selectable widget to do multiple-selection                        
+                        else {                                                            
+                            clickItemInMultipleSelectionMidmenu($midmenuItem1);                       
                         }                        
                     }                 
                 }  
@@ -1005,6 +1001,19 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
     });	 
     
     return count;
+}
+
+function clickItemInMultipleSelectionMidmenu($midmenuItem1) {
+    $midmenuItem1.find("#content").addClass("selected");  //css of vmops
+    $midmenuItem1.addClass("ui-selected");                //css of JQuery selectable widget   
+    
+    var toRightPanelFn = $midmenuItem1.data("toRightPanelFn");
+    toRightPanelFn($midmenuItem1);	
+    
+    var jsonObj = $midmenuItem1.data("jsonObj");    	
+    selectedItemsInMidMenu[jsonObj.id] = $midmenuItem1;  
+    
+    selected_midmenu_id = $midmenuItem1.attr("id");
 }
 
 var currentLeftMenuId;

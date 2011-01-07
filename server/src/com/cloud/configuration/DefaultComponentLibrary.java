@@ -334,4 +334,5 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         factories.put(EntityManager.class, EntityManagerImpl.class);
         return factories;
     }
+    
 }

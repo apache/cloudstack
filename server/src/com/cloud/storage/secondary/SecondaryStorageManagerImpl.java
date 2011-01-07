@@ -315,7 +315,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		setupCmd.setCopyPassword(copyPasswd);
 		setupCmd.setCopyUserName(TemplateConstants.DEFAULT_HTTP_AUTH_USER);
 		Answer answer = _agentMgr.easySend(storageHost.getId(), setupCmd);
-		if (answer != null) {
+		if (answer != null && answer.getResult()) {
 			if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Successfully programmed http auth into " + secStorageVm.getName());
             }
@@ -359,7 +359,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			}
 		}
 		Answer answer = _agentMgr.easySend(storageHost.getId(), cpc);
-		if (answer != null) {
+		if (answer != null &&  answer.getResult()) {
 			if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Successfully programmed firewall rules into " + secStorageVm.getName());
             }
@@ -1083,7 +1083,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			final RebootCommand cmd = new RebootCommand(secStorageVm.getInstanceName());
 			final Answer answer = _agentMgr.easySend(secStorageVm.getHostId(), cmd);
 
-			if (answer != null) {
+			if (answer != null && answer.getResult()) {
 				if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Successfully reboot secondary storage vm " + secStorageVm.getName());
                 }
@@ -1274,7 +1274,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 		MigrateCommand cmd = new MigrateCommand(secStorageVm.getInstanceName(), host.getPrivateIpAddress(), false);
 		Answer answer = _agentMgr.easySend(fromHost.getId(), cmd);
-		if (answer == null) {
+		if (answer == null || !answer.getResult()) {
 			return false;
 		}
 

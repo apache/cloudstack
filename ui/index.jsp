@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="css/jquery-ui.custom.css" type="text/css" />
     <link rel="stylesheet" href="css/logger.css" type="text/css" />
     <link rel="stylesheet" href="css/main.css" type="text/css" />
+<!--    <link rel="stylesheet" href="custom/custom1/css/custom1.css" type="text/css" />-->
 
 	<!-- Common libraries -->
     <script type="text/javascript" src="scripts/jquery.min.js"></script>

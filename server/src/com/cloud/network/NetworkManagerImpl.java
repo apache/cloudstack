@@ -20,8 +20,6 @@ package com.cloud.network;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -36,11 +34,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.AgentManager.OnError;
-import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.commands.AssociateIPAddrCmd;
@@ -48,10 +42,12 @@ import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListNetworksCmd;
 import com.cloud.api.commands.RestartNetworkCmd;
+import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -75,12 +71,10 @@ import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AccountLimitException;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -92,17 +86,13 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
-import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -165,7 +155,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject EventDao _eventDao = null;
     @Inject ConfigurationDao _configDao;
     @Inject UserVmDao _vmDao = null;
-    @Inject AgentManager _agentMgr;
+    @Inject ResourceLimitDao _limitDao = null;
+    @Inject CapacityDao _capacityDao = null;
     @Inject AlertManager _alertMgr;
     @Inject AccountManager _accountMgr;
     @Inject ConfigurationManager _configMgr;
@@ -173,8 +164,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject NetworkOfferingDao _networkOfferingDao = null;
     @Inject NetworkDao _networksDao = null;
     @Inject NicDao _nicDao = null;
-    @Inject RemoteAccessVpnDao _remoteAccessVpnDao = null;
-    @Inject VirtualNetworkApplianceManager _routerMgr;
     @Inject RulesManager _rulesMgr;
     @Inject LoadBalancingRulesManager _lbMgr;
     @Inject UsageEventDao _usageEventDao;
@@ -355,77 +344,77 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     @Override
     public boolean associateIP(final DomainRouterVO router, final List<String> ipAddrList, final boolean add, long vmId) {
-        Commands cmds = new Commands(OnError.Continue);
-        boolean sourceNat = false;
-        Map<VlanVO, ArrayList<IPAddressVO>> vlanIpMap = new HashMap<VlanVO, ArrayList<IPAddressVO>>();
-        for (final String ipAddress: ipAddrList) {
-            IPAddressVO ip = _ipAddressDao.findById(new Ip(ipAddress));
-
-            VlanVO vlan = _vlanDao.findById(ip.getVlanId());
-            ArrayList<IPAddressVO> ipList = vlanIpMap.get(vlan.getId());
-            if (ipList == null) {
-                ipList = new ArrayList<IPAddressVO>();
-            }
-            ipList.add(ip);
-            vlanIpMap.put(vlan, ipList);
-        }
-        for (Map.Entry<VlanVO, ArrayList<IPAddressVO>> vlanAndIp: vlanIpMap.entrySet()) {
-            boolean firstIP = true;
-            ArrayList<IPAddressVO> ipList = vlanAndIp.getValue();
-            Collections.sort(ipList, new Comparator<IPAddressVO>() {
-                @Override
-                public int compare(IPAddressVO o1, IPAddressVO o2) {
-                    return o1.getAddress().compareTo(o2.getAddress());
-                } });
-
-            for (final IPAddressVO ip: ipList) {
-                sourceNat = ip.isSourceNat();
-                VlanVO vlan = vlanAndIp.getKey();
-                String vlanId = vlan.getVlanTag();
-                String vlanGateway = vlan.getVlanGateway();
-                String vlanNetmask = vlan.getVlanNetmask();
-
-                String vifMacAddress = null;
-                if (firstIP && add) {
-                    String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(ip.getDataCenterId());
-                    vifMacAddress = macAddresses[1];
-                }
-                String vmGuestAddress = null;
-                if(vmId!=0){
-                    vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
-                }
-
-                //cmds.addCommand(new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ip.getAddress(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress));
-
-                firstIP = false;
-            }
-        }
-
-        Answer[] answers = null;
-        try {
-            answers = _agentMgr.send(router.getHostId(), cmds);
-        } catch (final AgentUnavailableException e) {
-            s_logger.warn("Agent unavailable", e);
-            return false;
-        } catch (final OperationTimedoutException e) {
-            s_logger.warn("Timed Out", e);
-            return false;
-        }
-
-        if (answers == null) {
-            return false;
-        }
-
-        if (answers.length != ipAddrList.size()) {
-            return false;
-        }
-
-        // FIXME:  this used to be a loop for all answers, but then we always returned the
-        //         first one in the array, so what should really be done here?
-        if (answers.length > 0) {
-            Answer ans = answers[0];
-            return ans.getResult();
-        }
+//        Commands cmds = new Commands(OnError.Continue);
+//        boolean sourceNat = false;
+//        Map<VlanVO, ArrayList<IPAddressVO>> vlanIpMap = new HashMap<VlanVO, ArrayList<IPAddressVO>>();
+//        for (final String ipAddress: ipAddrList) {
+//            IPAddressVO ip = _ipAddressDao.findById(new Ip(ipAddress));
+//
+//            VlanVO vlan = _vlanDao.findById(ip.getVlanId());
+//            ArrayList<IPAddressVO> ipList = vlanIpMap.get(vlan.getId());
+//            if (ipList == null) {
+//                ipList = new ArrayList<IPAddressVO>();
+//            }
+//            ipList.add(ip);
+//            vlanIpMap.put(vlan, ipList);
+//        }
+//        for (Map.Entry<VlanVO, ArrayList<IPAddressVO>> vlanAndIp: vlanIpMap.entrySet()) {
+//            boolean firstIP = true;
+//            ArrayList<IPAddressVO> ipList = vlanAndIp.getValue();
+//            Collections.sort(ipList, new Comparator<IPAddressVO>() {
+//                @Override
+//                public int compare(IPAddressVO o1, IPAddressVO o2) {
+//                    return o1.getAddress().compareTo(o2.getAddress());
+//                } });
+//
+//            for (final IPAddressVO ip: ipList) {
+//                sourceNat = ip.isSourceNat();
+//                VlanVO vlan = vlanAndIp.getKey();
+//                String vlanId = vlan.getVlanTag();
+//                String vlanGateway = vlan.getVlanGateway();
+//                String vlanNetmask = vlan.getVlanNetmask();
+//
+//                String vifMacAddress = null;
+//                if (firstIP && add) {
+//                    String[] macAddresses = _dcDao.getNextAvailableMacAddressPair(ip.getDataCenterId());
+//                    vifMacAddress = macAddresses[1];
+//                }
+//                String vmGuestAddress = null;
+//                if(vmId!=0){
+//                    vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
+//                }
+//
+//                //cmds.addCommand(new IPAssocCommand(router.getInstanceName(), router.getPrivateIpAddress(), ip.getAddress(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress));
+//
+//                firstIP = false;
+//            }
+//        }
+//
+//        Answer[] answers = null;
+//        try {
+//            answers = _agentMgr.send(router.getHostId(), cmds);
+//        } catch (final AgentUnavailableException e) {
+//            s_logger.warn("Agent unavailable", e);
+//            return false;
+//        } catch (final OperationTimedoutException e) {
+//            s_logger.warn("Timed Out", e);
+//            return false;
+//        }
+//
+//        if (answers == null) {
+//            return false;
+//        }
+//
+//        if (answers.length != ipAddrList.size()) {
+//            return false;
+//        }
+//
+//        // FIXME:  this used to be a loop for all answers, but then we always returned the
+//        //         first one in the array, so what should really be done here?
+//        if (answers.length > 0) {
+//            Answer ans = answers[0];
+//            return ans.getResult();
+//        }
 
         return true;
     }
@@ -995,8 +984,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return to;
     }
 
+    @Override
     @DB
-    protected Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         Transaction.currentTxn();
         Pair<NetworkGuru, NetworkVO> implemented = new Pair<NetworkGuru, NetworkVO>(null, null);
 
@@ -1440,6 +1430,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             isSystem = false;
         }
         
+        //Account/domainId parameters and isSystem are mutually exclusive
+        if (isSystem && (accountName != null || domainId != null)) {
+            throw new InvalidParameterValueException("System network belongs to system, account and domainId parameters can't be specified");
+        }
+        
         if (_accountMgr.isAdmin(account.getType())) {
             if (domainId != null) {
                 if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
@@ -1502,7 +1497,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (type != null) {
             sc.addAnd("guestType", SearchCriteria.Op.EQ, type);
         }
-        if (account.getType() != Account.ACCOUNT_TYPE_ADMIN || (accountName != null && domainId != null)) {
+        
+        if (!isSystem && (account.getType() != Account.ACCOUNT_TYPE_ADMIN || (accountName != null && domainId != null))) {
         	sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
         }
         

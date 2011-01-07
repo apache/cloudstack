@@ -103,6 +103,9 @@ CREATE TABLE `cloud`.`op_it_work` (
   `type` char(32) NOT NULL COMMENT 'type of work',
   `state` char(32) NOT NULL COMMENT 'state',
   `cancel_taken` timestamp COMMENT 'time it was taken over',
+  `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance',
+  `resource_type` char(32) COMMENT 'type of resource being worked on',
+  `resource_id` bigint unsigned COMMENT 'resource id being worked on',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
