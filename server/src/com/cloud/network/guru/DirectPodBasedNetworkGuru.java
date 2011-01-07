@@ -108,7 +108,7 @@ private static final Logger s_logger = Logger.getLogger(DirectPodBasedNetworkGur
             nic.setGateway(ip.getGateway());
             nic.setNetmask(ip.getNetmask());
             if(ip.getVlanTag() != null && ip.getVlanTag().equalsIgnoreCase(Vlan.UNTAGGED)) {
-                nic.setIsolationUri(URI.create("vlan://" + Vlan.UNTAGGED));
+                nic.setIsolationUri(URI.create("ec2://" + Vlan.UNTAGGED));
                 nic.setBroadcastUri(URI.create("vlan://" + Vlan.UNTAGGED));
                 nic.setBroadcastType(BroadcastDomainType.Native);
             }
