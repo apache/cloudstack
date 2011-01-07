@@ -141,7 +141,5 @@ public interface NetworkManager extends NetworkService {
 	
 	List<? extends Vlan> listPodVlans(long podId);
 	
-	Network getBasicZoneDefaultPublicNetwork(long zoneId);
-	
 	Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 }

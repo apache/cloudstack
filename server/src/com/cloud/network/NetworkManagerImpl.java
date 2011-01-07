@@ -42,10 +42,12 @@ import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.api.commands.DisassociateIPAddrCmd;
 import com.cloud.api.commands.ListNetworksCmd;
 import com.cloud.api.commands.RestartNetworkCmd;
+import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -84,19 +86,13 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
-<<<<<<< HEAD
-import com.cloud.network.dao.RemoteAccessVpnDao;
-=======
->>>>>>> changes for injectors
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
-import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -105,10 +101,6 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.Resource;
 import com.cloud.resource.Resource.ReservationStrategy;
-<<<<<<< HEAD
-=======
-import com.cloud.service.ServiceOfferingVO;
->>>>>>> changes for injectors
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
