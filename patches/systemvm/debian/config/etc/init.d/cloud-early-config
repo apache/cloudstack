@@ -185,7 +185,7 @@ setup_common() {
   then 
     ip route add default via $GW dev $3
   else
-    ip route add default via $GW dev eth1
+    ip route add default via $GW dev eth0
   fi
 }
 

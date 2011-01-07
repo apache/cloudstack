@@ -302,6 +302,8 @@ Obsoletes: %{name}-premium-vendor-zynga < %{version}-%{release}
 Requires: java >= 1.6.0
 Requires: %{name}-utils = %{version}-%{release}
 Requires: %{name}-premium-deps
+# there is a fsimage.so in the source code, which adds xen-libs as a dependence, needs to supress it, as rhel doesn't have this pacakge
+AutoReqProv: no
 License:   CSL 1.1
 Group:     System Environment/Libraries
 %description premium
