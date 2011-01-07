@@ -956,10 +956,6 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
 	
 	(page > 1)? $("#midmenu_prevbutton").show(): $("#midmenu_prevbutton").hide();
 	
-	//var $container = $("#midmenu_container").empty(); 
-	//if(isMultipleSelectionInMidMenu == true)
-    //    $container = createMultipleSelectionSubContainer();
-       
     var count = 0;    
     $.ajax({
         cache: false,
@@ -967,8 +963,10 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
         dataType: "json",
         async: false,
         success: function(json) {  
-			var $container = $("#midmenu_container").empty(); 
-			if(isMultipleSelectionInMidMenu == true)
+			var $container;			
+			if(isMultipleSelectionInMidMenu != true)
+			    $container = $("#midmenu_container").empty(); 
+			else
 				$container = createMultipleSelectionSubContainer();
 		
             selectedItemsInMidMenu = {};                           
@@ -979,12 +977,23 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
                     var $midmenuItem1 = $("#midmenu_item").clone();                      
                     $midmenuItem1.data("toRightPanelFn", toRightPanelFn);                             
                     toMidmenuFn(items[i], $midmenuItem1);    
-                    bindClickToMidMenu($midmenuItem1, toRightPanelFn, getMidmenuIdFn);             
+                    if(isMultipleSelectionInMidMenu != true)
+                        bindClickToMidMenu($midmenuItem1, toRightPanelFn, getMidmenuIdFn);             
                       
                     $container.append($midmenuItem1.show());   
                     if(i == 0)  { //click the 1st item in middle menu as default                        
-                        $midmenuItem1.click();                           
-                        if(isMultipleSelectionInMidMenu == true) {                           
+                        if(isMultipleSelectionInMidMenu != true) {
+                            $midmenuItem1.click(); 
+                        }
+                        else {     
+                            if(selected_midmenu_id != null && selected_midmenu_id.length > 0)
+                                $("#"+selected_midmenu_id).find("#content").removeClass("selected");
+                            selected_midmenu_id = getMidmenuIdFn($midmenuItem1.data("jsonObj"));                                   
+                            $midmenuItem1.find("#content").addClass("selected");                                                                    
+                            clearRightPanel();        
+                            toRightPanelFn($midmenuItem1);	 
+                            //$midmenuItem1.click();  
+                            
                             $midmenuItem1.addClass("ui-selected");  //because instance page is using JQuery selectable widget to do multiple-selection
                             selectedItemsInMidMenu[items[i].id] = $midmenuItem1; //because instance page is using JQuery selectable widget to do multiple-selection                        
                         }                        
