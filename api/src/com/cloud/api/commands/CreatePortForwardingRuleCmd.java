@@ -74,11 +74,11 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
 
     @Override
     public String getProtocol() {
-        return protocol;
+        return protocol.trim();
     }
 
     public String getPublicPort() {
-        return publicPort;
+        return publicPort.trim();
     }
     
     @Override
@@ -133,17 +133,17 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
 
     @Override
     public Ip getSourceIpAddress() {
-        return new Ip(ipAddress);
+        return new Ip(ipAddress.trim());
     }
 
     @Override
     public int getSourcePortStart() {
-        return Integer.parseInt(publicPort);
+        return Integer.parseInt(publicPort.trim());
     }
 
     @Override
     public int getSourcePortEnd() {
-        return Integer.parseInt(publicPort);
+        return Integer.parseInt(publicPort.trim());
     }
 
     @Override
