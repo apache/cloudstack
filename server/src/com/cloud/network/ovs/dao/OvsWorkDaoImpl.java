@@ -5,6 +5,7 @@ import java.util.List;
 import javax.ejb.Local;
 import com.cloud.ha.HaWorkVO;
 import com.cloud.network.ovs.dao.OvsWorkVO.Step;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -115,6 +116,7 @@ public class OvsWorkDaoImpl extends GenericDaoBase<OvsWorkVO, Long> implements
 	}
 
 	@Override
+	@DB
 	public void updateStep(Long vmId, Long logSequenceNumber, Step step) {
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();
@@ -183,5 +185,5 @@ public class OvsWorkDaoImpl extends GenericDaoBase<OvsWorkVO, Long> implements
 		update(work, sc);
 		
 		return result;
-	}
+	}	
 }

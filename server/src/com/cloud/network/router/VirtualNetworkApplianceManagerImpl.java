@@ -739,11 +739,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public void completeStartCommand(final DomainRouterVO router) {
-        _itMgr.stateTransitTo(router, VirtualMachine.Event.AgentReportRunning, router.getHostId());
-    }
-
-    @Override
     public void completeStopCommand(final DomainRouterVO router) {
         completeStopCommand(router, VirtualMachine.Event.AgentReportStopped);
     }
@@ -1359,6 +1354,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return false;
         }
 
+        DomainRouterVO router = profile.getVirtualMachine();
+        _ovsNetworkMgr.handleVmStateTransition(router, State.Running);
         return true;
     }
 
@@ -1367,6 +1364,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (answer != null && answer.length > 0) {
             processStopOrRebootAnswer(profile.getVirtualMachine(), answer[0]);
         }
+
+    	DomainRouterVO router = profile.getVirtualMachine();
+    	_ovsNetworkMgr.handleVmStateTransition(router, State.Stopped);
     }
 
     @Override
@@ -1870,4 +1870,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return routersToStop;
     }
     
+	@Override
+	public void completeStartCommand(DomainRouterVO router) {
+		_itMgr.stateTransitTo(router, VirtualMachine.Event.AgentReportRunning, router.getHostId());
+	}
 }

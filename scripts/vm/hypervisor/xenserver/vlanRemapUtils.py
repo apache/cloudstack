@@ -29,6 +29,9 @@ errors = \
 		 "SWITCH_NOT_RUN" : "SWITCH_NOT_RUN", \
 		 "NO_VSCTL" : "NO_VSCTL", \
 		 "COMMAND_FAILED" : "COMMAND_FAILED", \
+		 "TUNNEL_EXISTED" : "TUNNEL_EXISTED", \
+		 "NO_INPORT" : "NO_INPORT", \
+		 "NO_OFPORT" : "NO_OFPORT", \
 
 		 "ERR_ARGS_NUM" : "ERR_ARGS_NUM", \
 		 "ERROR_OP" : "ERROR_OP", \
@@ -137,24 +140,24 @@ def isUUID (uuid):
 
 	return 0
 
-#FIXME: better check method
 def checkGREInterface (bridge, remoteIP, greKey):
-	listIfaces = [vsctlPath, "list interface"]
-	res = doCmd (listIfaces, True)
+	ports = getPortsOnBridge(bridge)
+	if ports == None:
+		return 0
 
-	start = False
-	num = 0
-	keyStr = "key=%s" % greKey
-	uuid = ''
-	for i in res:
-		if "_uuid" in i:
-			(x, uuid) = i.split(":")
-			uuid = strip(uuid)
+	for i in ports:
+		ifaces = getInterfacesOnPort(i)
+		if ifaces == None:
+			continue
 
-		if "options" in i and remoteIP in i and keyStr in i:
-			log("WARNING: GRE tunnel for remote_ip=%s key=%s already here" % \
-					(remoteIP, greKey))
-			return -1
+		for j in ifaces:
+			if j == '[]':
+				continue
+			options = getFieldOfInterface(j, "options")
+			if remoteIP in options and greKey in options:
+				log("WARNING: GRE tunnel for remote_ip=%s key=%s already here, \
+interface(%s)" % (remoteIP, greKey, j))
+				return -1
 
 	return 0
 
@@ -164,7 +167,16 @@ def createGRE (bridge, remoteIP, greKey):
 
 	name = "%sgre" % bridge
 	if checkGREInterface(bridge, remoteIP, greKey) < 0:
+		result = errors["TUNNEL_EXISTED"]
 		return 0
+
+	wait = [vsctlPath, "--timeout=30 wait-until bridge %s -- get bridge %s name" % \
+			(bridge, bridge)]
+	res = doCmd(wait)
+	if bridge not in res:
+		log("WARNIING:Can't find bridge %s for creating tunnel!" % bridge)
+		result = errors["COMMAND_FAILED"]
+		return -1
 
 	createInterface = [vsctlPath, "create interface", "name=%s" % name, \
 			'type=gre options:"remote_ip=%s key=%s"' % (remoteIP, greKey)]
@@ -180,9 +192,18 @@ def createGRE (bridge, remoteIP, greKey):
 		result = errors["COMMAND_FAILED"];
 		return -1
 
-	addBridge = [vsctlPath, "add bridge %s" % bridge, "port %s" % portUUID]
+	addBridge = [vsctlPath, "add bridge %s" % bridge, "ports %s" % portUUID]
 	doCmd (addBridge)
-	return 0
+
+	wait = [vsctlPath, "--timeout=5 wait-until port %s -- get port %s name" % \
+			(name, name)]
+	res = doCmd(wait)
+	if name in res:
+		result = errors["SUCCESS"]
+		return 0
+	else:
+		result = errors["COMMAND_FAILED"]
+		return -1
 ######################## End GRE creation utils ##########################
 
 ######################## Flow creation utils ##########################
@@ -263,7 +284,7 @@ def getOfPortsByType(bridge, askGre):
 	portUuids = getPortsOnBridge(bridge)
 	if portUuids == None:
 		log("WARNING:No ports on bridge %s" % bridge)
-		return -1
+		return []
 
 	OfPorts = []
 	for i in portUuids:
@@ -293,28 +314,14 @@ def getNoneGreOfPort(bridge):
 def getGreOfPorts(bridge):
 	return getOfPortsByType(bridge, True)
 
-def findInPort():
-	listIface = [vsctlPath, "list interface"]
-	res = doCmd (listIface, True)
-
-	inport = []
-	port = ""
-	for i in res:
-		if "ofport" in i:
-			(x, port) = i.split(":")
-			port = port.lstrip().rstrip()
-
-		if "type" in i:
-			(x, type) = i.split(":")
-			type = type.lstrip().rstrip()
-			if type == "gre":
-				inport.append (port)
-	return inport
-
-
 def formatFlow(inPort, vlan, mac, outPut):
 	flow = "in_port=%s dl_vlan=%s dl_dst=%s idle_timeout=0 hard_timeout=0 \
-			actions=strip_vlan,output:%s" % (inPort, vlan, mac, outPut)
+	priority=10000 actions=strip_vlan,output:%s" % (inPort, vlan, mac, outPut)
+	return flow
+
+def formatDropFlow(inPort, vlan):
+	flow = "in_port=%s dl_vlan=%s priority=0 idle_timeout=0 hard_timeout=0 \
+	actions=drop" % (inPort, vlan)
 	return flow
 
 def delFlow(mac):
@@ -327,6 +334,21 @@ def delARPFlow(vlan):
 	delFlow = ["ovs-ofctl del-flows %s" % bridge, '"%s"' % param]
 	doCmd(delFlow)
 
+def delDHCPFlow(vlan):
+	param = "dl_type=0x0800 nw_proto=6 tp_src=547 dl_vlan=%s" % vlan
+	delFlow = ["ovs-ofctl del-flows %s" % bridge, '"%s"' % param]
+	doCmd(delFlow)
+
+def formatDHCPFlow(bridge, inPort, vlan, ports):
+	outputs = ''
+	for i in ports:
+		str = "output:%s," % i
+		outputs += str
+	outputs = outputs[:-1]
+	flow = "in_port=%s dl_vlan=%s dl_type=0x0800 nw_proto=6 tp_src=547 idle_timeout=0 hard_timeout=0 \
+	priority=10000 actions=strip_vlan,%s" % (inPort, vlan, outputs)
+	return flow
+
 def formatARPFlow(bridge, inPort, vlan, ports):
 	outputs = ''
 	for i in ports:
@@ -335,21 +357,25 @@ def formatARPFlow(bridge, inPort, vlan, ports):
 
 	outputs = outputs[:-1]
 	flow = "in_port=%s dl_vlan=%s dl_type=0x0806 idle_timeout=0 hard_timeout=0 \
-			actions=strip_vlan,%s" % (inPort, vlan, outputs)
+	priority=10000 actions=strip_vlan,%s" % (inPort, vlan, outputs)
 	return flow
 
 def createFlow (bridge, vifName, mac, remap):
+	global result
 	inport = getGreOfPorts(bridge)
 	if len(inport) == 0:
 		log("WARNING: no inport found")
+		result = errors["NO_INPORT"]
 		return -1
 
 	output = getVifPort(bridge, vifName)
 	if output == None:
 		log("WARNING: cannot find ofport for %s" % vifName)
+		result = errors["NO_OFPORT"]
 		return -1
 	if output == '[]':
 		log("WARNING: ofport is [] for %s" % vifName)
+		result = errors["NO_OFPORT"]
 		return -1
 
 	#del old flow here, if any, but in normal there should be no old flow
@@ -363,16 +389,23 @@ def createFlow (bridge, vifName, mac, remap):
 	noneGreOfPorts = getNoneGreOfPort(bridge)
 	isARP = True
 	if len(noneGreOfPorts) == 0:
-		log("WARNING: no none GRE ofports found, no ARP flow will be created")
+		log("WARNING: no none GRE ofports found, no ARP flow and DHCP flow will be created")
 		isARP = False
 
 	for j in remap.split("/"):
 		delARPFlow(j)
+		delDHCPFlow(j)
 		for i in inport:
+			flow = formatDropFlow(i, j)
+			param = bridge + ' "%s"' % flow
+			dropflow = ["ovs-ofctl add-flow", param]
+			doCmd (dropflow)
+
 			flow = formatFlow(i, j, mac, output)
 			param = bridge + ' "%s"' % flow
 			addflow = ["ovs-ofctl add-flow", param]
 			doCmd (addflow)
+
 
 			if isARP == True:
 				flow = formatARPFlow(bridge, i, j, noneGreOfPorts)
@@ -380,6 +413,12 @@ def createFlow (bridge, vifName, mac, remap):
 				addflow = ["ovs-ofctl add-flow", param]
 				doCmd (addflow)
 
+				flow = formatDHCPFlow(bridge, i, j, noneGreOfPorts)
+				param = bridge + ' "%s"' % flow
+				addflow = ["ovs-ofctl add-flow", param]
+				doCmd (addflow)
+
+	result = errors["SUCCESS"]
 	return 0
 ######################## End Flow creation utils ##########################
 
@@ -402,20 +441,24 @@ def setTag(bridge, vifName, vlan):
 	return 0
 
 def doCreateGRE(bridge, remoteIP, key):
+	global result
 	if createGRE(bridge, remoteIP, key) < 0:
-		log("WARNING: create GRE tunnel on %s for %s failed" % (bridge, \
+		log("create GRE tunnel on %s for %s failed" % (bridge, \
 			remoteIP))
 	else:
 		log("WARNING: create GRE tunnel on %s for %s success" % (bridge, \
 			remoteIP))
+	print result
 
 def doCreateFlow (bridge, vifName, mac, remap):
+	global result
 	if createFlow(bridge, vifName, mac, remap) < 0:
 		log ("Create flow failed(bridge=%s, vifName=%s, mac=%s,\
 remap=%s" % (bridge, vifName, mac, remap))
 	else:
 		log ("Create flow success(bridge=%s, vifName=%s, mac=%s,\
 remap=%s" % (bridge, vifName, mac, remap))
+	print result
 
 def doSetTag (bridge, vifName, tag):
 	setTag(bridge, vifName, tag)
@@ -469,6 +512,7 @@ if __name__ == "__main__":
 		remoteIP = sys.argv[3]
 		key = sys.argv[4]
 		doCreateGRE(bridge, remoteIP, key)
+		sys.exit(0)
 	elif op == "createFlow":
 		checkArgNum(6)
 		bridge = sys.argv[2]
@@ -476,6 +520,7 @@ if __name__ == "__main__":
 		mac = sys.argv[4]
 		remap = sys.argv[5]
 		doCreateFlow(bridge, vifName, mac, remap)
+		sys.exit(0)
 	elif op == "deleteFlow":
 		checkArgNum(6)
 		bridge = sys.argv[2]

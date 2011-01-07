@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
@@ -388,6 +389,17 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
         }
     }
 
+    private Answer getStartAnswer(Answer[] answers) {
+    	for (Answer ans : answers) {
+    		if (ans instanceof StartAnswer) {
+    			return ans;
+    		}
+    	}
+    	
+    	assert 1 == 0 : "Why there is no Start Answer???";
+    	return null;
+    }
+    
     @Override
     public <T extends VMInstanceVO> T advanceStart(T vm, Map<String, Object> params, User caller, Account account, HypervisorType hyperType) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         State state = vm.getState();
@@ -495,7 +507,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Cluster
             vmGuru.finalizeDeployment(cmds, vmProfile, dest, context);
             try {
                 Answer[] answers = _agentMgr.send(dest.getHost().getId(), cmds);
-                if (answers[0].getResult() && vmGuru.finalizeStart(cmds, vmProfile, dest, context)) {
+                if (getStartAnswer(answers).getResult() && vmGuru.finalizeStart(cmds, vmProfile, dest, context)) {
                     if (!stateTransitTo(vm, Event.OperationSucceeded, dest.getHost().getId())) {
                         throw new CloudRuntimeException("Unable to transition to a new state.");
                     }

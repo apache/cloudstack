@@ -94,6 +94,7 @@ import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
+import com.cloud.agent.api.PingRoutingWithOvsCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PoolEjectCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
@@ -159,7 +160,10 @@ import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.ovs.OvsCreateGreTunnelAnswer;
 import com.cloud.network.ovs.OvsCreateGreTunnelCommand;
+import com.cloud.network.ovs.OvsDeleteFlowCommand;
+import com.cloud.network.ovs.OvsSetTagAndFlowAnswer;
 import com.cloud.network.ovs.OvsSetTagAndFlowCommand;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage;
@@ -247,6 +251,7 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     protected StorageLayer _storage;
     protected boolean _canBridgeFirewall = false;
+    protected boolean _isOvs = false;
     protected HashMap<StoragePoolType, StoragePoolResource> _pools = new HashMap<StoragePoolType, StoragePoolResource>(5);
 
     public enum SRType {
@@ -449,6 +454,8 @@ public abstract class CitrixResourceBase implements ServerResource {
         	return execute((OvsCreateGreTunnelCommand)cmd);
         } else if (cmd instanceof OvsSetTagAndFlowCommand) {
         	return execute((OvsSetTagAndFlowCommand)cmd);
+        } else if (cmd instanceof OvsDeleteFlowCommand) {
+        	return execute((OvsDeleteFlowCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -3312,9 +3319,12 @@ public abstract class CitrixResourceBase implements ServerResource {
             if (newStates == null) {
                 newStates = new HashMap<String, State>();
             }
-            if (!_canBridgeFirewall) {
+            if (!_canBridgeFirewall && !_isOvs) {
             	return new PingRoutingCommand(getType(), id, newStates);
-            } else {
+            } else if (_isOvs) {
+            	List<Pair<String, Long>>ovsStates = ovsFullSyncStates();
+            	return new PingRoutingWithOvsCommand(getType(), id, newStates, ovsStates);
+            }else {
             	HashMap<String, Pair<Long, Long>> nwGrpStates = syncNetworkGroups(conn, id);
             	return new PingRoutingWithNwGroupsCommand(getType(), id, newStates, nwGrpStates);
             }
@@ -3820,7 +3830,61 @@ public abstract class CitrixResourceBase implements ServerResource {
         return Boolean.valueOf(callHostPlugin(conn, "vmops", "can_bridge_firewall", "host_uuid", _host.uuid));
     }
     
-    private Answer execute(OvsSetTagAndFlowCommand cmd) {
+    private Answer execute(OvsDeleteFlowCommand cmd) {
+    	_isOvs = true;
+    	
+    	Connection conn = getConnection();
+    	try {
+    		String nwName = Networks.BroadcastScheme.VSwitch.toString();
+    		Network nw = getNetworkByName(conn, nwName);
+    		assert nw!= null : "Why there is no vswith network ???";
+    		String bridge = nw.getBridge(conn);
+    		String result = callHostPlugin(conn, "vmops", "ovs_delete_flow", "bridge", bridge,
+    				"vmName", cmd.getVmName());
+    		
+    		if (result.equalsIgnoreCase("SUCCESS")) {
+    			return new Answer(cmd, true, "success to delete flows for " + cmd.getVmName());
+    		} else {
+    			return new Answer(cmd, false, result);
+    		}
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
+    	return new Answer(cmd, false, "failed to delete flow for " + cmd.getVmName());
+    }
+    
+    private List<Pair<String, Long>> ovsFullSyncStates() {
+    	Connection conn = getConnection();
+    	try {
+    		String result = callHostPlugin(conn, "vmops", "ovs_get_vm_log", "host_uuid", _host.uuid);
+    		String [] logs = result != null ?result.split(";"): new String [0];
+    		List<Pair<String, Long>> states = new ArrayList<Pair<String, Long>>();
+    		for (String log: logs){
+            	String [] info = log.split(",");
+            	if (info.length != 4) {
+            		s_logger.warn("Wrong element number in ovs log");
+            		continue;
+            	}
+            	
+            	//','.join([bridge, vmName, vmId, seqno])
+            	try {
+            		states.add(new Pair<String,Long>(info[0], Long.parseLong(info[3])));
+            	} catch (NumberFormatException nfe) {
+            		states.add(new Pair<String,Long>(info[0], -1L));
+            	}
+            }
+    		
+    		return states;
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
+    	
+    	return null;
+    }
+    
+    private OvsSetTagAndFlowAnswer execute(OvsSetTagAndFlowCommand cmd) {
+    	_isOvs = true;
+    	
     	Connection conn = getConnection();
     	try {
     		String nwName = Networks.BroadcastScheme.VSwitch.toString();
@@ -3833,48 +3897,47 @@ public abstract class CitrixResourceBase implements ServerResource {
     		 * plugin side
     		 */
     		String result = callHostPlugin(conn, "vmops", "ovs_set_tag_and_flow", "bridge", bridge,
-    				"vmName", cmd.getVmName(), "vlans", cmd.getVlans());
+    				"vmName", cmd.getVmName(), "vlans", cmd.getVlans(), "seqno", cmd.getSeqNo());
 			s_logger.debug("set flow for " + cmd.getVmName() + " " + result);
 		
 			if (result.equalsIgnoreCase("SUCCESS")) {
-				return new Answer(cmd, true, "Set flow for " + cmd.getVmName()
-						+ " success, vlans:" + cmd.getVlans());
+				return new OvsSetTagAndFlowAnswer(cmd, true, result);
 			} else {
-				return new Answer(cmd, false, "Set flow for " + cmd.getVmName()
-						+ " failed, vlans:" + cmd.getVlans());
+				return new OvsSetTagAndFlowAnswer(cmd, false, result);
 			}
     	} catch (Exception e) {
     		e.printStackTrace();
     	}
     	
-		return new Answer(cmd, false, "Set flow for " + cmd.getVmName()
-				+ " failed, vlans:" + cmd.getVlans());
+		return new OvsSetTagAndFlowAnswer(cmd, false, "EXCEPTION");
     }
     
-    private Answer execute(OvsCreateGreTunnelCommand cmd) {
+    
+    private OvsCreateGreTunnelAnswer execute(OvsCreateGreTunnelCommand cmd) {
+    	_isOvs = true;
+    	
     	Connection conn = getConnection();
+    	String bridge = "unkonwn";	
     	try {
-    		String nwName = Networks.BroadcastScheme.VSwitch.toString();
-    		Network nw = getNetworkByName(conn, nwName);
-    		if (nw == null) {
-    			nw = setupvSwitchNetwork(conn);
-			}
+    		//TODO: we may store vswtich network to _host
+    		Network nw = setupvSwitchNetwork(conn);
+    		bridge = nw.getBridge(conn);
     		
 			String result = callHostPlugin(conn, "vmops", "vlanRemapUtils",
-					"op", "createGRE", "bridge", nw.getBridge(conn),
+					"op", "createGRE", "bridge", bridge,
 					"remoteIP", cmd.getRemoteIp(), "greKey", cmd.getKey());
-			if (result.equalsIgnoreCase("SUCCESS")) {
-				return new Answer(cmd, true, "create gre tunnel to "
-						+ cmd.getRemoteIp() + " success");
+			if (result.equalsIgnoreCase("SUCCESS") || result.equalsIgnoreCase("TUNNEL_EXISTED")) {
+				return new OvsCreateGreTunnelAnswer(cmd, true, result);
 			} else {
-				return new Answer(cmd, false, "create gre tunnel to "
-						+ cmd.getRemoteIp() + " failed");
+				return new OvsCreateGreTunnelAnswer(cmd, false, result,
+						_host.ip, cmd.getRemoteIp(), bridge, cmd.getKey());
 			}
     	} catch (Exception e) {
     		e.printStackTrace();
     	}
     	
-    	return new Answer(cmd, false, "create gre tunnel to " + cmd.getRemoteIp() + " failed");
+		return new OvsCreateGreTunnelAnswer(cmd, false, "EXCEPTION", _host.ip,
+				cmd.getRemoteIp(), bridge, cmd.getKey());
     }
     
     private Answer execute(SecurityIngressRulesCmd cmd) {

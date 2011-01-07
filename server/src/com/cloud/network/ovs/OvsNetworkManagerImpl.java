@@ -37,6 +37,8 @@ import com.cloud.network.ovs.dao.VlanMappingVO;
 import com.cloud.network.ovs.dao.VmFlowLogDao;
 import com.cloud.network.ovs.dao.VmFlowLogVO;
 import com.cloud.server.ManagementServer;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
@@ -54,6 +56,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value={OvsNetworkManager.class})
 public class OvsNetworkManagerImpl implements OvsNetworkManager {
@@ -70,10 +73,13 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 	@Inject OvsWorkDao _workDao;
 	@Inject VmFlowLogDao _flowLogDao;
 	@Inject UserVmDao _userVMDao;
+	@Inject VMInstanceDao _instanceDao;
+	@Inject AccountDao _accountDao;
 	String _name;
 	boolean _isEnabled;
 	ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
+    OvsListener _ovsListener;
 
 	private long _serverId;
 	private final long _timeBetweenCleanups = 30; //seconds
@@ -109,6 +115,8 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		_serverId = ((ManagementServer)ComponentLocator.getComponent(ManagementServer.Name)).getId();
 	    _executorPool = Executors.newScheduledThreadPool(10, new NamedThreadFactory("OVS"));
 	    _cleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("OVS-Cleanup"));
+	    _ovsListener = new OvsListener(this, _workDao);
+	    _agentMgr.registerForHostEvents(_ovsListener, true, true, true);
 		
 		return true;
 	}
@@ -198,16 +206,17 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 			if (vm != null && vm.getState() == State.Running) {
 				agentId = vm.getHostId();
 				if (agentId != null ) {
-					//TODO: set flow here
-					OvsSetTagAndFlowCommand cmd = new OvsSetTagAndFlowCommand(vm.getName(),vlans);
+					OvsSetTagAndFlowCommand cmd = new OvsSetTagAndFlowCommand(
+							vm.getName(), vlans, seqnum.toString(), vm.getId());
 					Commands cmds = new Commands(cmd);
 					try {
-						//_agentMgr.send(agentId, cmds, _answerListener);
-						_agentMgr.send(agentId, cmds, null);
-						//TODO: clean dirty in answerListener
+						_agentMgr.send(agentId, cmds, _ovsListener);
+						// TODO: clean dirty in answerListener
 					} catch (AgentUnavailableException e) {
-						s_logger.debug("Unable to send updates for vm: " + userVmId + "(agentid=" + agentId + ")");
-						_workDao.updateStep(work.getInstanceId(), seqnum, Step.Done);
+						s_logger.debug("Unable to send updates for vm: "
+								+ userVmId + "(agentid=" + agentId + ")");
+						_workDao.updateStep(work.getInstanceId(), seqnum,
+								Step.Done);
 					}
 				}
 			}
@@ -283,6 +292,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 			vlans.add(new Long(vo.getVlan()));
 		}
 		
+		assert vlans.size() > 0 : "Vlan map can't be null";
 		StringBuffer buf = new StringBuffer();
 		for (Long i : vlans) {
 			buf.append("/");
@@ -331,9 +341,11 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 				HostVO rHost = _hostDao.findById(i.longValue());
 				cmds.addCommand(
 						0, new OvsCreateGreTunnelCommand(rHost.getPrivateIpAddress(), "1"));
-				_agentMgr.send(i.longValue(), new OvsCreateGreTunnelCommand(myIp, "1"));
+				Commands cmd2s = new Commands( new OvsCreateGreTunnelCommand(myIp, "1"));
+				_agentMgr.send(i.longValue(), cmd2s , _ovsListener);
 				s_logger.debug("Ask host " + i.longValue() + " to create gre tunnel to " + hostId);
 			}
+			_vlanMappingDirtyDao.markDirty(accountId);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}	
@@ -375,11 +387,15 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		
 		assert nic!=null : "Why there is no guest network nic???";
 		String vlans = parseVlanAndMapping(nic.getBroadcastUri().toASCIIString());
-		cmds.addCommand(new OvsSetTagAndFlowCommand(instance.getName(), vlans));
+		VmFlowLogVO log = _flowLogDao.findOrNewByVmId(instance.getId(), instance.getName());
+		cmds.addCommand(new OvsSetTagAndFlowCommand(instance.getName(), vlans,
+				Long.toString(log.getLogsequence()), instance.getId()));
 	}
-
+	
+	//FIXME: if at this router is not start, this will hang 10 secs due to host
+	//plugin cannot found vif for router.
 	@Override
-	public void CheckAndUpdateDhcpFlow(Network nw) {
+	public void CheckAndUpdateDhcpFlow(Network nw, VirtualMachine vm) {
 		if (!_isEnabled) {
 			return;
 		}
@@ -396,8 +412,9 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		
 		try {
 			String vlans = getVlanMapping(accountId);
+			VmFlowLogVO log = _flowLogDao.findOrNewByVmId(vm.getId(), vm.getName());
 			_agentMgr.send(router.getHostId(), new OvsSetTagAndFlowCommand(
-					router.getName(), vlans));
+					router.getName(), vlans, Long.toString(log.getLogsequence()), vm.getId()));
 			s_logger.debug("ask router " + router.getName() + " on host "
 					+ router.getHostId() + " update vlan map to " + vlans);
 		} catch (Exception e) {
@@ -405,7 +422,9 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		}
 	}
 
+	//TODO: handle router
 	@DB
+	@Override
 	public void scheduleFlowUpdateToHosts(Set<Long> affectedVms, boolean updateSeqno, Long delayMs) {
 	    if (!_isEnabled) {
 	        return;
@@ -430,11 +449,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 					s_logger.warn("Ovs failed to acquire lock on vm id " + vmId);
 					continue;
 				}
-				log = _flowLogDao.findByVmId(vmId);
-				if (log == null) {
-					log = new VmFlowLogVO(vmId);
-					log = _flowLogDao.persist(log);
-				}
+				log = _flowLogDao.findOrNewByVmId(vmId, vm.getName());
 		
 				if (log != null && updateSeqno){
 					log.incrLogsequence();
@@ -461,8 +476,8 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		}
 	}
 	
-	protected Set<Long> getAffectedVms(UserVm userVm) {
-		long accountId = userVm.getAccountId();
+	protected Set<Long> getAffectedVms(VMInstanceVO instance) {
+		long accountId = instance.getAccountId();
 		if (!_vlanMappingDirtyDao.isDirty(accountId)) {
 			return null;
 		}
@@ -475,36 +490,47 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		return affectedVms;
 	}
 	
-	protected void handleVmStateChange(UserVm userVm) {
-		Set<Long> affectedVms = getAffectedVms(userVm);
+	protected void handleVmStateChange(VMInstanceVO instance) {
+		Set<Long> affectedVms = getAffectedVms(instance);
 		scheduleFlowUpdateToHosts(affectedVms, true, null);
+		_vlanMappingDirtyDao.clean(instance.getAccountId());
+		s_logger.debug("Clean dirty for account " + instance.getAccountId());
 	}
 	
 	//TODO: think about lock
-	protected void checkAndRemove(UserVm userVm) {
-		long accountId = userVm.getAccountId();
-		long hostId = userVm.getHostId();
+	@DB
+	protected void checkAndRemove(VMInstanceVO instance) {
+		long accountId = instance.getAccountId();
+		long hostId = instance.getHostId();
 		
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();
 		VlanMappingVO vo = _vlanMappingDao.findByAccountIdAndHostId(accountId, hostId);
 		if (vo.unref() == 0) {
 			_vlanMappingDao.remove(vo.getId());
-			s_logger.debug(userVm.getName() + " is the last one on host "
+			s_logger.debug(instance.getName() + " is the last one on host "
 					+ hostId + " for account " + accountId
 					+ ", remove vlan in ovs_host_vlan_alloc");
 			_vlanMappingDirtyDao.markDirty(accountId);
 		} else {
 			_vlanMappingDao.update(vo.getId(), vo);
-			s_logger.debug(userVm.getName()
+			s_logger.debug(instance.getName()
 					+ " reduces reference count of (account,host) = ("
 					+ accountId + "," + hostId + ") to " + vo.getRef());
 		}
+		_flowLogDao.deleteByVmId(instance.getId());
 		txn.commit();
+		
+		try {
+			Commands cmds = new Commands(new OvsDeleteFlowCommand(instance.getName()));
+			_agentMgr.send(hostId, cmds, _ovsListener);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	@Override
-	public void handleVmStateTransition(UserVm userVm, State vmState) {
+	public void handleVmStateTransition(VMInstanceVO instance, State vmState) {
 		if (!_isEnabled) {
 			return;
 		}
@@ -519,12 +545,12 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		case Unknown:
 			return;
 		case Running:
-			handleVmStateChange(userVm);
+			handleVmStateChange(instance);
 			break;
 		case Stopping:
 		case Stopped:
-			checkAndRemove(userVm);
-			handleVmStateChange(userVm);
+			checkAndRemove(instance);
+			handleVmStateChange(instance);
 			break;
 		}
 		
@@ -555,6 +581,55 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 			VirtualMachineProfile<DomainRouterVO> profile,
 			DeployDestination dest) {
 		applyDefaultFlow(cmds, profile.getVirtualMachine(), dest);
+	}
+
+	@Override
+	public void fullSync(List<Pair<String, Long>> states) {
+		if (!_isEnabled) {
+			return;
+		}
+		
+		//TODO:debug code, remove in future
+		List<AccountVO> accounts = _accountDao.listAll();
+		for (AccountVO acnt : accounts) {
+			if (_vlanMappingDirtyDao.isDirty(acnt.getId())) {
+				s_logger.warn("Vlan mapping for account "
+						+ acnt.getAccountName() + " id " + acnt.getId()
+						+ " is dirty");
+			}
+		}
+		
+		if (states.size() ==0) {
+			s_logger.info("Nothing to do, Ovs fullsync is happy");
+			return;
+		}
+		
+		Set<Long>vmIds = new HashSet<Long>();
+		for (Pair<String, Long>state : states) {
+			if (state.second() == -1) {
+				s_logger.warn("Ovs fullsync get wrong seqno for " + state.first());
+				continue;
+			}
+			VmFlowLogVO log = _flowLogDao.findByName(state.first());
+			if (log.getLogsequence() != state.second()) {
+				s_logger.debug("Ovs fullsync detected unmatch seq number for " + state.first() + ", run sync");
+				VMInstanceVO vo = _instanceDao.findById(log.getInstanceId());
+				if (vo == null) {
+					s_logger.warn("Ovs can't find " + state.first() + " in vm_instance!");
+					continue;
+				}
+				
+				if (vo.getType() != VirtualMachine.Type.User && vo.getType() != VirtualMachine.Type.DomainRouter) {
+					s_logger.warn("Ovs fullsync: why we sync a " + vo.getType().toString() + " VM???");
+					continue;
+				}
+				vmIds.add(new Long(vo.getId()));
+			}
+		}
+		
+		if (vmIds.size() > 0) {
+			scheduleFlowUpdateToHosts(vmIds, true, null);
+		}
 	}
 
 }

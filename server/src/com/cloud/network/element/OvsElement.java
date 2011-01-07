@@ -63,7 +63,7 @@ public class OvsElement extends AdapterBase implements NetworkElement {
 		}
 		
 		if (network.getTrafficType() == Networks.TrafficType.Guest) {
-			_ovsNetworkMgr.CheckAndUpdateDhcpFlow(network);
+			_ovsNetworkMgr.CheckAndUpdateDhcpFlow(network, vm.getVirtualMachine());
 		}
 		return true;
 	}

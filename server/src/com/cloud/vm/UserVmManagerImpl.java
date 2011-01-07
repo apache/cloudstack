@@ -1128,14 +1128,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new CloudRuntimeException("Shouldn't even be here!");
         }
     }
-
-    @Override
-    public void completeStartCommand(UserVmVO vm) {
-    	_itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
-        _networkGroupMgr.handleVmStateTransition(vm, State.Running);
-        _ovsNetworkMgr.handleVmStateTransition(vm, State.Running);
-    }
-    
+   
     @Override
     public void completeStopCommand(UserVmVO instance) {
     	completeStopCommand(1L, instance, VirtualMachine.Event.AgentReportStopped);
@@ -1166,8 +1159,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
             
             txn.commit();
-            _networkGroupMgr.handleVmStateTransition(vm, State.Stopped);
-            _ovsNetworkMgr.handleVmStateTransition(vm, State.Stopped);
         } catch (Throwable th) {
             s_logger.error("Error during stop: ", th);
             throw new CloudRuntimeException("Error during stop: ", th);
@@ -2408,7 +2399,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     public boolean finalizeStart(Commands cmds, VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
-        return true;
+    	UserVmVO vm = profile.getVirtualMachine();
+        _networkGroupMgr.handleVmStateTransition(vm, State.Running);
+        _ovsNetworkMgr.handleVmStateTransition(vm, State.Running);
+    	return true;
     }
     
     @Override
@@ -2460,6 +2454,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     
     @Override
     public void finalizeStop(VirtualMachineProfile<UserVmVO> profile, long hostId, String reservationId, Answer...answer) {
+		UserVmVO vm = profile.getVirtualMachine();
+		_networkGroupMgr.handleVmStateTransition(vm, State.Stopped);
+		_ovsNetworkMgr.handleVmStateTransition(vm, State.Stopped);
     }
     
     public String generateRandomPassword() {
@@ -2520,6 +2517,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new CloudRuntimeException("Failed to destroy vm with id " + vmId);
         }
     }
+
+	@Override
+	public void completeStartCommand(UserVmVO vm) {
+		_itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
+	}
     
     
     @Override

@@ -1344,6 +1344,7 @@ CREATE TABLE `cloud`.`ovs_vm_flow_log` (
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance that needs flows to be synced.',
   `created` datetime NOT NULL COMMENT 'time the entry was requested',
   `logsequence` bigint unsigned  COMMENT 'seq number to be sent to agent, uniquely identifies flow update',
+  `vm_name` varchar(255) NOT NULL COMMENT 'vm name',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
