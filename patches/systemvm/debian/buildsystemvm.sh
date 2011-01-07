@@ -429,7 +429,7 @@ signature() {
   (cd ${scriptdir}/vpn;  tar rvf ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tar *)
   gzip -c ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tar  > ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz
   md5sum ${MOUNTPOINT}/usr/share/cloud/cloud-scripts.tgz |awk '{print $1}'  > ${MOUNTPOINT}/var/cache/cloud/cloud-scripts-signature
-  echo "Cloudstack Release 2.2 $(date)" > ${MOUNTPOINT}/etc/cloudstack-release
+  echo "Cloudstack Release $CLOUDSTACK_RELEASE $(date)" > ${MOUNTPOINT}/etc/cloudstack-release
 }
 
 mkdir -p $IMAGENAME
