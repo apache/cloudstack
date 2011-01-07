@@ -1116,8 +1116,7 @@ var vmActionMap = {
         dialogBeforeActionFn : doStartVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;      
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
+            vmToMidmenu(jsonObj, $midmenuItem1);            
         }
     },
     "Stop Instance": {             
@@ -1127,8 +1126,7 @@ var vmActionMap = {
         dialogBeforeActionFn : doStopVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;            
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
+            vmToMidmenu(jsonObj, $midmenuItem1);            
         }
     },
     "Reboot Instance": {        
@@ -1138,8 +1136,7 @@ var vmActionMap = {
         dialogBeforeActionFn : doRebootVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;       
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
+            vmToMidmenu(jsonObj, $midmenuItem1);            
         }
     },
     "Destroy Instance": {        
@@ -1149,8 +1146,7 @@ var vmActionMap = {
         dialogBeforeActionFn : doDestroyVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) {             
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine; 
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
+            vmToMidmenu(jsonObj, $midmenuItem1);            
         }
     },
     "Restore Instance": {          
@@ -1159,8 +1155,7 @@ var vmActionMap = {
         dialogBeforeActionFn : doRestoreVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.recovervirtualmachineresponse.virtualmachine;
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
+            vmToMidmenu(jsonObj, $midmenuItem1);            
         }
     },
     "Edit Instance": {
@@ -1173,8 +1168,7 @@ var vmActionMap = {
         dialogBeforeActionFn : doAttachISO,
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;           
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            //vmToRightPanel($midmenuItem1); //comment this one out, otherwise, it will call listVM API again.
+            vmToMidmenu(jsonObj, $midmenuItem1);            
             setBooleanReadField((jsonObj.isoid != null), $("#right_panel_content").find("#tab_content_details").find("#iso")); 
         }   
     },
@@ -1185,8 +1179,7 @@ var vmActionMap = {
         dialogBeforeActionFn : doDetachISO,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;    
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            //vmToRightPanel($midmenuItem1); //comment this one out, otherwise, it will call listVM API again.
+            vmToMidmenu(jsonObj, $midmenuItem1);           
             setBooleanReadField((jsonObj.isoid != null), $("#right_panel_content").find("#tab_content_details").find("#iso")); 
         }   
     },
@@ -1220,8 +1213,7 @@ var vmActionMap = {
         dialogBeforeActionFn : doChangeService,
         afterActionSeccessFn: function(json, $midmenuItem1, id) {                 
             var jsonObj = json.changeserviceforvirtualmachineresponse.virtualmachine;       
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
+            vmToMidmenu(jsonObj, $midmenuItem1);           
         }
     }      
 }                      
