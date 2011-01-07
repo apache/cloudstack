@@ -63,7 +63,7 @@ public class AddHostCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the Zone ID for the host")
     private Long zoneId;
     
-    @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=false, description="hypervisor type of the host")
+    @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=true, description="hypervisor type of the host")
     private String hypervisor;
 
 
