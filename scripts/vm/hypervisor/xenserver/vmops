@@ -1510,13 +1510,13 @@ def destroy_network_rules_for_vm(session, args):
         vmchain =  '-'.join(vm_name.split('-')[:-1])
         vmchain_default =  '-'.join(vm_name.split('-')[:-2]) + "-def"
 
-    destroy_ebtables_rules(vmchain)
+        try:
+            util.pread2(['iptables', '-F', vmchain_default])
+            util.pread2(['iptables', '-X', vmchain_default])
+        except:
+            util.SMlog("Ignoring failure to delete  chain " + vmchain_default)
     
-    try:
-        util.pread2(['iptables', '-F', vmchain_default])
-        util.pread2(['iptables', '-X', vmchain_default])
-    except:
-        util.SMlog("Ignoring failure to delete  chain " + vmchain_default)
+    destroy_ebtables_rules(vmchain)
     
     try:
         util.pread2(['iptables', '-F', vmchain])
@@ -1698,11 +1698,10 @@ def default_network_rules(session, args):
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
 
      
-    vm_name =  '-'.join(vm_name.split('-')[:-1])
-    vmchain = vm_name
-    vmchain_default = '-'.join(vmchain.split('-')[:-1]) + "-def"
+    vmchain =  '-'.join(vm_name.split('-')[:-1])
+    vmchain_default = '-'.join(vm_name.split('-')[:-2]) + "-def"
     
-    destroy_ebtables_rules(vm_name)
+    destroy_ebtables_rules(vmchain)
     
 
     try:
@@ -1770,10 +1769,9 @@ def check_domid_changed(session, vmName):
 
 def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
     vm_name = vmName
-    if vm_name.startswith('i-') or vm_name.startswith('r-'):
-        vm_name =  '-'.join(vm_name.split('-')[:-2])
-    
     vmchain = vm_name
+    if vm_name.startswith('i-') or vm_name.startswith('r-'):
+        vmchain =  '-'.join(vm_name.split('-')[:-1])
     
     delcmd = "iptables -S BRIDGE-FIREWALL | grep " +  vmchain + " | sed 's/-A/-D/'"
     delcmds = util.pread2(['/bin/bash', '-c', delcmd]).split('\n')
