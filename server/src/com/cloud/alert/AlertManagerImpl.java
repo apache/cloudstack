@@ -350,8 +350,8 @@ public class AlertManagerImpl implements AlertManager {
             if (host.getType() != Host.Type.Routing) {
                 continue;
             }
-            long cpu = _vmMgr.calcHostAllocatedCpuMemoryCapacity(host.getId(), CapacityVO.CAPACITY_TYPE_CPU);
-            long usedMemory = _vmMgr.calcHostAllocatedCpuMemoryCapacity(host.getId(), CapacityVO.CAPACITY_TYPE_MEMORY);            
+            long cpu = _vmMgr.calcHostAllocatedCpuMemoryCapacity(host.getId(), CapacityVO.CAPACITY_TYPE_CPU, false);
+            long usedMemory = _vmMgr.calcHostAllocatedCpuMemoryCapacity(host.getId(), CapacityVO.CAPACITY_TYPE_MEMORY, false);            
             long totalMemory = host.getTotalMemory();
 
             CapacityVO newMemoryCapacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), usedMemory, totalMemory, CapacityVO.CAPACITY_TYPE_MEMORY);

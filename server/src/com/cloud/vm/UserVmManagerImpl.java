@@ -2935,27 +2935,35 @@ public class UserVmManagerImpl implements UserVmManager {
     }
 
 	@Override
-    public boolean skipCalculation(VMInstanceVO vm) {
-    	if(vm.getState() == State.Expunging) {
-    		if(s_logger.isDebugEnabled())
-    			s_logger.debug("Skip counting capacity for Expunging VM : " + vm.getInstanceName());
-    		return true;
+    public boolean skipCalculation(VMInstanceVO vm, boolean preserve) {
+	    if ( preserve ){
+        	if(vm.getState() == State.Expunging) {
+        		if(s_logger.isDebugEnabled())
+        			s_logger.debug("Skip counting capacity for Expunging VM : " + vm.getInstanceName());
+        		return true;
+        	}
+        	
+        	if(vm.getState() == State.Destroyed && vm.getType() != VirtualMachine.Type.User)
+        		return true;
+        	
+        	if(vm.getState() == State.Stopped || vm.getState() == State.Destroyed) {
+        		// for stopped/Destroyed VMs, we will skip counting it if it hasn't been used for a while
+        		
+        		long millisecondsSinceLastUpdate = DateUtil.currentGMTTime().getTime() - vm.getUpdateTime().getTime();
+        		if(millisecondsSinceLastUpdate > _hoursToSkipStoppedVMs*3600000L) {
+        			if(s_logger.isDebugEnabled())
+        				s_logger.debug("Skip counting vm " + vm.getInstanceName() + " in capacity allocation as it has been stopped for " + millisecondsSinceLastUpdate/60000 + " minutes");
+        			return true;
+        		}
+        	}
+        	return false;
+	    } else {
+	        if(vm.getState() == State.Expunging || vm.getState() == State.Destroyed || vm.getState() == State.Stopped ) {
+	            return true;
+	        } else {
+	            return false;
+	        }
     	}
-    	
-    	if(vm.getState() == State.Destroyed && vm.getType() != VirtualMachine.Type.User)
-    		return true;
-    	
-    	if(vm.getState() == State.Stopped || vm.getState() == State.Destroyed) {
-    		// for stopped/Destroyed VMs, we will skip counting it if it hasn't been used for a while
-    		
-    		long millisecondsSinceLastUpdate = DateUtil.currentGMTTime().getTime() - vm.getUpdateTime().getTime();
-    		if(millisecondsSinceLastUpdate > _hoursToSkipStoppedVMs*3600000L) {
-    			if(s_logger.isDebugEnabled())
-    				s_logger.debug("Skip counting vm " + vm.getInstanceName() + " in capacity allocation as it has been stopped for " + millisecondsSinceLastUpdate/60000 + " minutes");
-    			return true;
-    		}
-    	}
-    	return false;
     }
     
     /**
@@ -2965,13 +2973,13 @@ public class UserVmManagerImpl implements UserVmManager {
      * @return
      */
     @Override
-    public long calcHostAllocatedCpuMemoryCapacity(long hostId, short capacityType) {
+    public long calcHostAllocatedCpuMemoryCapacity(long hostId, short capacityType, boolean preserve) {
         assert(capacityType == CapacityVO.CAPACITY_TYPE_MEMORY || capacityType == CapacityVO.CAPACITY_TYPE_CPU) : "Invalid capacity type passed in calcHostAllocatedCpuCapacity()";
     	
         List<VMInstanceVO> vms = _vmInstanceDao.listByLastHostId(hostId);
         long usedCapacity = 0;
         for (VMInstanceVO vm : vms) {
-        	if(skipCalculation(vm))
+        	if(skipCalculation(vm, preserve))
         		continue;
         	
             ServiceOffering so = null;

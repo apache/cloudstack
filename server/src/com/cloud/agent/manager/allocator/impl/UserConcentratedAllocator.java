@@ -170,7 +170,7 @@ public class UserConcentratedAllocator implements PodAllocator {
                     // for CPU/Memory, we now switch to static allocation
                     //
                     if ((capacity.getTotalCapacity() -
-                            _vmMgr.calcHostAllocatedCpuMemoryCapacity(capacity.getHostOrPoolId(), capacityType)) >= capacityNeeded) {
+                            _vmMgr.calcHostAllocatedCpuMemoryCapacity(capacity.getHostOrPoolId(), capacityType, true)) >= capacityNeeded) {
 
                         hostCandidate[0] = capacity.getHostOrPoolId();
                         enoughCapacity = true;
