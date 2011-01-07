@@ -215,7 +215,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     	ModifySshKeysCommand cmd = new ModifySshKeysCommand(pubKey, prvKey);
     	final Answer answer = _agentMgr.easySend(hostId, cmd);
     	
-    	if (answer != null)
+    	if (answer != null && answer.getResult())
     		return true;
     	else
     		return false;
@@ -1268,7 +1268,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             final RebootRouterCommand cmd = new RebootRouterCommand(router.getInstanceName(), router.getPrivateIpAddress());
             final RebootAnswer answer = (RebootAnswer)_agentMgr.easySend(router.getHostId(), cmd);
 
-            if (answer != null &&  resendRouterState(router)) {
+            if (answer != null && answer.getResult() &&  resendRouterState(router)) {
             	processStopOrRebootAnswer(router, answer);
                 event.setDescription("successfully rebooted Domain Router : " + router.getName());
                 _eventDao.persist(event);
@@ -2111,7 +2111,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         boolean stopped = false;
         try {
             answer = _agentMgr.send(router.getHostId(), stop);
-            if (!answer.getResult()) {
+            if (answer == null || !answer.getResult()) {
                 s_logger.error("Unable to stop router");
             } else {
             	stopped = true;
@@ -2185,7 +2185,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
             boolean stopped = false;
             try {
                 answer = _agentMgr.send(hostId, stop);
-                if (!answer.getResult()) {
+                if (answer == null || !answer.getResult()) {
                     s_logger.error("Unable to stop router");
                     event.setDescription("failed to stop Domain Router : " + router.getName());
                     event.setLevel(EventVO.LEVEL_ERROR);
@@ -2286,7 +2286,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     	
         final MigrateCommand cmd = new MigrateCommand(router.getInstanceName(), host.getPrivateIpAddress(), false);
         final Answer answer = _agentMgr.easySend(fromHost.getId(), cmd);
-        if (answer == null) {
+        if (answer == null || !answer.getResult()) {
             return false;
         }
 
@@ -2463,7 +2463,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
         _routerDao.update(router.getId(), router);
         final CreateZoneVlanCommand cmdCreateZoneVlan = new CreateZoneVlanCommand(router);
         CreateZoneVlanAnswer answer = (CreateZoneVlanAnswer) _agentMgr.easySend(router.getHostId(), cmdCreateZoneVlan);
-        if(!answer.getResult()){
+        if(answer == null || !answer.getResult()){
             s_logger.error("Unable to create zone vlan for router: "+router.getName()+ " zoneVlan: "+zoneVlan);
             return null;
         }

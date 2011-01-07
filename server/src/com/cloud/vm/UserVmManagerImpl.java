@@ -534,7 +534,7 @@ public class UserVmManagerImpl implements UserVmManager {
 
     	AttachIsoCommand cmd = new AttachIsoCommand(vmName, isoPath, attach);
     	Answer a = _agentMgr.easySend(vm.getHostId(), cmd);
-    	return (a != null);
+    	return (a != null && a.getResult());
     }
 
     @Override
@@ -1012,7 +1012,7 @@ public class UserVmManagerImpl implements UserVmManager {
             RebootCommand cmd = new RebootCommand(vm.getInstanceName());
             RebootAnswer answer = (RebootAnswer)_agentMgr.easySend(vm.getHostId(), cmd);
            
-            if (answer != null) {
+            if (answer != null && answer.getResult()) {
             	if(!vm.getName().equals(vm.getDisplayName()))
             		event.setDescription("Successfully rebooted VM instance : " + vm.getName()+"("+vm.getDisplayName()+")");
             	else
@@ -1815,7 +1815,7 @@ public class UserVmManagerImpl implements UserVmManager {
         boolean stopped = false;
         try {
             Answer answer = _agentMgr.send(vm.getHostId(), stop);
-            if (!answer.getResult()) {
+            if (answer == null || !answer.getResult()) {
                 s_logger.warn("Unable to stop vm " + vm.getName() + " due to " + answer.getDetails());
             } else {
             	stopped = true;

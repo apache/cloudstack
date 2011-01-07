@@ -6014,7 +6014,7 @@ public class ManagementServerImpl implements ManagementServer {
         	s_logger.trace("Trying to retrieve VNC port from agent about VM " + vm.getName());
         
         GetVncPortAnswer answer = (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(), new GetVncPortCommand(vm.getId(), vm.getInstanceName()));
-        int port = answer == null ? -1 : answer.getPort();
+        int port = (answer == null || !answer.getResult()) ? -1 : answer.getPort();
         
         if(s_logger.isTraceEnabled())
         	s_logger.trace("Retrieved VNC port about VM " + vm.getName() + " is " + port);
