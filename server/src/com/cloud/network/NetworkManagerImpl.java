@@ -1430,6 +1430,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             isSystem = false;
         }
         
+        //Account/domainId parameters and isSystem are mutually exclusive
+        if (isSystem && (accountName != null || domainId != null)) {
+            throw new InvalidParameterValueException("System network belongs to system, account and domainId parameters can't be specified");
+        }
+        
         if (_accountMgr.isAdmin(account.getType())) {
             if (domainId != null) {
                 if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
@@ -1492,7 +1497,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (type != null) {
             sc.addAnd("guestType", SearchCriteria.Op.EQ, type);
         }
-        if (account.getType() != Account.ACCOUNT_TYPE_ADMIN || (accountName != null && domainId != null)) {
+        
+        if (!isSystem && (account.getType() != Account.ACCOUNT_TYPE_ADMIN || (accountName != null && domainId != null))) {
         	sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
         }
         
