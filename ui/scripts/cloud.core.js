@@ -167,7 +167,10 @@ function handleMidMenuItemAfterDetailsTabAction($midmenuItem1, isSuccessful, aft
 	if(isSuccessful)
 	    $infoIcon.removeClass("error");	    
 	else
-	    $infoIcon.addClass("error");	    
+	    $infoIcon.addClass("error");	
+		
+	if($midmenuItem1.attr("id") == selected_midmenu_id)    
+	    $midmenuItem1.click();
 }
   	                
 //***** actions for a tab in right panel (end) **************************************************************************
