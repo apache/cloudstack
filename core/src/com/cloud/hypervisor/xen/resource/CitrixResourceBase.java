@@ -3790,7 +3790,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     @Override
     public StartupCommand[] initialize() throws IllegalArgumentException {
     	_host.pool = getRealPoolUuid();
-        disconnected();
+
         setupServer();
 
         if (!getHostInfo()) {

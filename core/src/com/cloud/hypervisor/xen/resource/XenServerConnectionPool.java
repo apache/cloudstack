@@ -231,7 +231,7 @@ public class XenServerConnectionPool {
     
             Member member = info.refs.remove(uuid);
             
-            if (info.refs.size() == 0 || ( member != null && member.ipAddr.equals(info.masterIp) )) {
+            if (info.refs.size() == 0 ) {
                 cleanup(poolUuid);
             }
         }
