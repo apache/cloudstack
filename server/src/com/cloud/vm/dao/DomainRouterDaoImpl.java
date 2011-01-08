@@ -20,7 +20,6 @@ package com.cloud.vm.dao;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -46,7 +45,6 @@ import com.cloud.vm.VirtualMachine.State;
 public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> implements DomainRouterDao {
     private static final Logger s_logger = Logger.getLogger(DomainRouterDaoImpl.class);
 
-    private static final String FindLonelyRoutersSql = "SELECT dr.id FROM domain_router dr, vm_instance vm WHERE dr.id=vm.id AND vm.state = 'Running' AND dr.id NOT IN (SELECT DISTINCT domain_router_id FROM user_vm uvm, vm_instance vmi WHERE (vmi.state = 'Running' OR vmi.state = 'Starting' OR vmi.state='Stopping' OR vmi.state = 'Migrating') AND vmi.id = uvm.id)";
     private static final String GetNextDhcpAddressSql = "UPDATE domain_router set dhcp_ip_address = (@LAST_DHCP:=dhcp_ip_address) + 1 WHERE id = ?";
     private static final String GetLastDhcpSql = "SELECT @LAST_DHCP";
 
@@ -253,24 +251,6 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         }
         sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging});
         return listBy(sc);
-    }
-
-    @Override
-    public List<Long> findLonelyRouters() {
-        ArrayList<Long> ids = new ArrayList<Long>();
-        PreparedStatement pstmt = null;
-        Transaction txn = Transaction.currentTxn();
-        try {
-            pstmt = txn.prepareAutoCloseStatement(FindLonelyRoutersSql);
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                ids.add(rs.getLong(1));
-            }
-
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Problem finding routers: " + pstmt.toString(), e);
-        }
-        return ids;
     }
 
     @Override

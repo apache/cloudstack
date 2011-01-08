@@ -92,9 +92,6 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long>, State
      * @return DomainRouterVO or null if not found.
      */
     public DomainRouterVO findByPublicIpAddress(String ipAddress);
-
-
-    public List<Long> findLonelyRouters();
     
     /**
      * Gets the next dhcp ip address to be used for vms from this domain router.

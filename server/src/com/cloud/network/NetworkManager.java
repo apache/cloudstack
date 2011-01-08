@@ -120,7 +120,7 @@ public interface NetworkManager extends NetworkService {
     
     void cleanupNics(VirtualMachineProfile<? extends VMInstanceVO> vm);
     
-    List<? extends Nic> getNics (VirtualMachine vm);
+    List<? extends Nic> getNics(VirtualMachine vm);
 	
     List<AccountVO> getAccountsUsingNetwork(long configurationId);    
     AccountVO getNetworkOwner(long configurationId);
@@ -140,6 +140,8 @@ public interface NetworkManager extends NetworkService {
 	PublicIpAddress getPublicIpAddress(Ip ipAddress);
 	
 	List<? extends Vlan> listPodVlans(long podId);
-	
+
 	Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+	List<NetworkVO> listNetworksUsedByVm(long vmId, boolean isSystem);
+
 }

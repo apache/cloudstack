@@ -122,7 +122,6 @@ import com.cloud.network.IpAddrAllocator;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -134,7 +133,6 @@ import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.Criteria;
@@ -933,7 +931,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     public void releaseGuestIpAddress(UserVmVO userVm)  {
     	ServiceOffering offering = _offeringDao.findById(userVm.getServiceOfferingId());
     	
-    	if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtual) {  		
+    	if (offering.getGuestIpType() != Network.GuestIpType.Virtual) {  		
     		IPAddressVO guestIP = (userVm.getGuestIpAddress() == null) ? null : _ipAddressDao.findById(new Ip(userVm.getGuestIpAddress()));
     		if (guestIP != null && guestIP.getAllocatedTime() != null) {
     			_ipAddressDao.unassignIpAddress(new Ip(userVm.getGuestIpAddress()));
@@ -2672,7 +2670,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         if (useVirtualNetwork != null) {
-            sc.setJoinParameters("serviceSearch", "guestIpType", NetworkOffering.GuestIpType.Virtual.toString());
+            sc.setJoinParameters("serviceSearch", "guestIpType", Network.GuestIpType.Virtual.toString());
         }
 
         if (keyword != null) {

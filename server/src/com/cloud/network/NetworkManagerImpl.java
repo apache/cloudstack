@@ -79,6 +79,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -96,7 +97,6 @@ import com.cloud.network.rules.RulesManager;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.Resource;
@@ -685,19 +685,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         _networkGcWait = NumbersUtil.parseInt(_configs.get(Config.NetworkGcWait.key()), 600);
         _networkGcInterval = NumbersUtil.parseInt(_configs.get(Config.NetworkGcInterval.key()), 600);
 
-        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, TrafficType.Public, null);
+        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, TrafficType.Public);
         publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemPublicNetwork, publicNetworkOffering);
-        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemManagementNetwork, TrafficType.Management, null);
+        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemManagementNetwork, TrafficType.Management);
         managementNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(managementNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemManagementNetwork, managementNetworkOffering);
-        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemControlNetwork, TrafficType.Control, null);
+        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemControlNetwork, TrafficType.Control);
         controlNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(controlNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemControlNetwork, controlNetworkOffering);
-        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, TrafficType.Storage, null);
+        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, TrafficType.Storage);
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemStorageNetwork, storageNetworkOffering);
-        NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SysteGuestNetwork, TrafficType.Guest, null);
+        NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SysteGuestNetwork, TrafficType.Guest);
         guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SysteGuestNetwork, guestNetworkOffering);
         
@@ -1424,10 +1424,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         String accountName = cmd.getAccountName();
         String type = cmd.getType();
         Boolean isSystem = cmd.getIsSystem();
+        Boolean isShared = cmd.getIsShared();
         Long accountId = null;
         
         if (isSystem == null) {
             isSystem = false;
+        }
+        
+        if (isShared == null) {
+            isShared = false;
         }
         
         //Account/domainId parameters and isSystem are mutually exclusive
@@ -1500,6 +1505,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         if (!isSystem && (account.getType() != Account.ACCOUNT_TYPE_ADMIN || (accountName != null && domainId != null))) {
         	sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        }
+        
+        if (isShared != null) {
+            sc.addAnd("isShared", SearchCriteria.Op.EQ, isShared);
         }
         
         List<NetworkVO> networks =  _networksDao.search(sc, searchFilter);
@@ -1844,4 +1853,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return vlans;
     }
     
+    @Override
+    public List<NetworkVO> listNetworksUsedByVm(long vmId, boolean isSystem) {
+        List<NetworkVO> networks = new ArrayList<NetworkVO>();
+        
+        List<NicVO> nics = _nicDao.listBy(vmId);
+        if (nics != null) {
+            for (Nic nic : nics) {
+                NetworkVO network = _networksDao.findByIdIncludingRemoved(nic.getNetworkId());
+                NetworkOffering no = _networkOfferingDao.findByIdIncludingRemoved(network.getNetworkOfferingId());
+                if (no.isSystemOnly() == isSystem) {
+                    networks.add(network);
+                }
+            } 
+        }
+        
+        return networks;
+    }
+
 }

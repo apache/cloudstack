@@ -51,7 +51,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import com.cloud.host.Status;
-import com.cloud.offering.NetworkOffering;
+import com.cloud.network.Network;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.DiskOfferingVO;
@@ -751,11 +751,11 @@ public class DatabaseConfig {
         boolean ha = Boolean.parseBoolean(_currentObjectParams.get("enableHA"));
         boolean mirroring = Boolean.parseBoolean(_currentObjectParams.get("mirrored"));
         String guestIpType = _currentObjectParams.get("guestIpType");
-        NetworkOffering.GuestIpType type = null;
+        Network.GuestIpType type = null;
         if (guestIpType == null) {
-            type = NetworkOffering.GuestIpType.Virtual;
+            type = Network.GuestIpType.Virtual;
         } else {
-            type = NetworkOffering.GuestIpType.valueOf(guestIpType);
+            type = Network.GuestIpType.valueOf(guestIpType);
         }
         
         boolean useLocalStorage;

@@ -323,9 +323,8 @@ public class NetworkOfferingVO implements NetworkOffering {
      * Network Offering for all system vms.
      * @param name
      * @param trafficType
-     * @param type
      */
-    public NetworkOfferingVO(String name, TrafficType trafficType, GuestIpType type) {
+    public NetworkOfferingVO(String name, TrafficType trafficType) {
         this(name, "System Offering for " + name, trafficType, true, false, null, null, null, false, Availability.Required, false, false, false, false, false, false, false);
     }
     

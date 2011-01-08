@@ -57,6 +57,9 @@ public class ListNetworksCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.IS_SYSTEM, type=CommandType.BOOLEAN, description="true if network is system, false otherwise")
     private Boolean isSystem;
+    
+    @Parameter(name=ApiConstants.IS_SHARED, type=CommandType.BOOLEAN, description="true if network is shared, false otherwise")
+    private Boolean isShared;
    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -84,6 +87,10 @@ public class ListNetworksCmd extends BaseListCmd {
 
     public Boolean getIsSystem() {
         return isSystem;
+    }
+
+    public Boolean getIsShared() {
+        return isShared;
     }
 
     /////////////////////////////////////////////////////

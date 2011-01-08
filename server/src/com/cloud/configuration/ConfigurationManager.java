@@ -32,7 +32,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering.Availability;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
@@ -172,15 +171,14 @@ public interface ConfigurationManager extends Manager {
      * Creates a new network offering
 	 * @param name
 	 * @param displayText
-	 * @param type
 	 * @param trafficType
 	 * @param tags
 	 * @param maxConnections
 	 * @param id
-     * @param specifyVlan;
+	 * @param specifyVlan;
      * @return network offering object
      */
-    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, GuestIpType type, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability);
+    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability);
     
     Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
     
@@ -188,4 +186,5 @@ public interface ConfigurationManager extends Manager {
     
     Long saveConfigurationEvent(long userId, Long accountId, String type, String description, String... paramsList);
 	
+    DataCenterVO getZone(long id);
 }

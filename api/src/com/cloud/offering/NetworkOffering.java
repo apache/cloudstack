@@ -25,11 +25,6 @@ import com.cloud.network.Networks.TrafficType;
  */
 public interface NetworkOffering {
     
-    public enum GuestIpType {
-    	Virtual,
-    	Direct,
-    }
-    
     public enum Availability {
         Required,
         Optional,

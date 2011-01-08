@@ -62,6 +62,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected final SearchBuilder<VMInstanceVO> HostIdTypesSearch;
     protected final SearchBuilder<VMInstanceVO> HostIdUpTypesSearch;
     protected final SearchBuilder<VMInstanceVO> HostUpSearch;
+    protected final SearchBuilder<VMInstanceVO> TypeStateSearch;
     
     protected final Attribute _updateTimeAttr;
 
@@ -135,6 +136,11 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         HostUpSearch.and("host", HostUpSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         HostUpSearch.and("states", HostUpSearch.entity().getState(), SearchCriteria.Op.IN);
         HostUpSearch.done();
+        
+        TypeStateSearch = createSearchBuilder();
+        TypeStateSearch.and("type", TypeStateSearch.entity().getType(), SearchCriteria.Op.EQ);
+        TypeStateSearch.and("state", TypeStateSearch.entity().getState(), SearchCriteria.Op.EQ);
+        TypeStateSearch.done();
         
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
@@ -280,6 +286,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     public List<VMInstanceVO> listByTypes(Type... types) {
         SearchCriteria<VMInstanceVO> sc = TypesSearch.create();
         sc.setParameters("types", (Object[]) types);
+        return listBy(sc);
+    }
+    
+    @Override
+    public List<VMInstanceVO> listByTypeAndState(State state, VirtualMachine.Type type) {
+        SearchCriteria<VMInstanceVO> sc = TypeStateSearch.create();
+        sc.setParameters("type", type);
+        sc.setParameters("state", state);
         return listBy(sc);
     }
 

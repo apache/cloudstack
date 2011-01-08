@@ -11,7 +11,6 @@ import com.cloud.acl.ControlledEntity;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
 
@@ -20,6 +19,11 @@ import com.cloud.utils.fsm.StateMachine;
  * owned by an account. 
  */
 public interface Network extends ControlledEntity {
+    
+    public enum GuestIpType {
+        Virtual,
+        Direct,
+    }
     
     public static class Service {
         
