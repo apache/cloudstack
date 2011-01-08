@@ -1,6 +1,29 @@
 @charset "UTF-8";
 /* CSS Document */
 
+
+html,body{
+	font-family:Arial, Helvetica, sans-serif;
+	font-size:11px;
+	color:#333;
+	height:auto;
+	font-weight:normal;
+	background:#cc4340 url(../../custom1/images/custom_login_bg.gif) repeat-x top left;
+	margin:0;
+	padding:0;
+	overflow-x:hidden;
+}
+
+.main_loginbox_bot {
+	width:660px;
+	height:109px;
+	float:left;
+	background:url(../../custom1/images/custom1_loginbox_bot.png) no-repeat top left;
+	margin:0;
+	padding:0;
+}
+
+
 #main_header {
 	min-width:980px;
 	width:100%;
