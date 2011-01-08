@@ -621,14 +621,16 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 				ingressRule = _ingressRuleDao.persist(ingressRule);
 				newRules.add(ingressRule);
 			}
-			for (String cidr: cidrList) {
-				IngressRuleVO ingressRule = _ingressRuleDao.findByProtoPortsAndCidr(securityGroup.getId(),protocol, startPort, endPort, cidr);
-				if (ingressRule != null) {
-					continue;
+			if(cidrList != null) {
+				for (String cidr: cidrList) {
+					IngressRuleVO ingressRule = _ingressRuleDao.findByProtoPortsAndCidr(securityGroup.getId(),protocol, startPort, endPort, cidr);
+					if (ingressRule != null) {
+						continue;
+					}
+					ingressRule  = new IngressRuleVO(securityGroup.getId(), startPort, endPort, protocol, cidr);
+					ingressRule = _ingressRuleDao.persist(ingressRule);
+					newRules.add(ingressRule);
 				}
-				ingressRule  = new IngressRuleVO(securityGroup.getId(), startPort, endPort, protocol, cidr);
-				ingressRule = _ingressRuleDao.persist(ingressRule);
-				newRules.add(ingressRule);
 			}
 			if (s_logger.isDebugEnabled()) {
 	            s_logger.debug("Added " + newRules.size() + " rules to security group " + groupName);
