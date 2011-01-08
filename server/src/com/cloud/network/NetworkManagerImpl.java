@@ -1431,10 +1431,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             isSystem = false;
         }
         
-        if (isShared == null) {
-            isShared = false;
-        }
-        
         //Account/domainId parameters and isSystem are mutually exclusive
         if (isSystem && (accountName != null || domainId != null)) {
             throw new InvalidParameterValueException("System network belongs to system, account and domainId parameters can't be specified");
