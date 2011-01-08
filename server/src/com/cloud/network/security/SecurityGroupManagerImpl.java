@@ -1082,16 +1082,16 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 				s_logger.warn("Failed to acquire lock on user vm id=" + userVmId);
 			}
 			try {
-				for (SecurityGroupVO networkGroup:uniqueGroups) {
+				for (SecurityGroupVO securityGroup:uniqueGroups) {
 					//don't let the group be deleted from under us.
-					SecurityGroupVO ngrpLock = _securityGroupDao.lockRow(networkGroup.getId(), false);
+					SecurityGroupVO ngrpLock = _securityGroupDao.lockRow(securityGroup.getId(), false);
 					if (ngrpLock == null) {
-						s_logger.warn("Failed to acquire lock on network group id=" + networkGroup.getId() + " name=" + networkGroup.getName());
+						s_logger.warn("Failed to acquire lock on network group id=" + securityGroup.getId() + " name=" + securityGroup.getName());
 						txn.rollback();
 						return false;
 					}
-					if (_securityGroupVMMapDao.findByVmIdGroupId(userVmId, networkGroup.getId()) == null) {
-						SecurityGroupVMMapVO groupVmMapVO = new SecurityGroupVMMapVO(networkGroup.getId(), userVmId);
+					if (_securityGroupVMMapDao.findByVmIdGroupId(userVmId, securityGroup.getId()) == null) {
+						SecurityGroupVMMapVO groupVmMapVO = new SecurityGroupVMMapVO(securityGroup.getId(), userVmId);
 						_securityGroupVMMapDao.persist(groupVmMapVO);
 					}
 				}
