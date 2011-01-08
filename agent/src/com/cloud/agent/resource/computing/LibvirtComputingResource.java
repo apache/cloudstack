@@ -3270,6 +3270,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	if (f.exists()) {
     		return "/usr/bin/cloud-qemu-system-x86_64";
     	} else {
+    		f = new File("/usr/libexec/cloud-qemu-kvm");
+    		if (f.exists()) {
+    			return "/usr/libexec/cloud-qemu-kvm";
+    		}
+    		
     		if (_conn == null) {
                 return null;
             }
