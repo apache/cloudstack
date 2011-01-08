@@ -25,7 +25,7 @@ public class VlanMappingVO {
 	private long vlan;
 	
 	@Column(name = "ref")
-	private int ref;
+	int ref;
 
 	public VlanMappingVO(long accountId, long hostId, long vlan) {
 		this.hostId = hostId;
@@ -56,6 +56,10 @@ public class VlanMappingVO {
 	
 	public int getRef() {
 		return ref;
+	}
+	
+	public void setRef(int ref) {
+		this.ref = ref;
 	}
 	
 	public void ref() {

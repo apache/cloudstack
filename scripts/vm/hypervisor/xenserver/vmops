@@ -147,13 +147,17 @@ def vlanRemapUtils(session, args):
         cmd.insert(7, args.pop("remap"))
     elif op == "deleteFlow":
         cmd.insert(3, args.pop("bridge"))
-        cmd.insert(4, args.pop("vifName"))
-        cmd.insert(5, args.pop("mac"))
+        cmd.insert(4, args.pop("ofports"))
+        cmd.insert(5, args.pop("macs"))
         cmd.insert(6, args.pop("remap"))
     elif op == "setTag":
         cmd.insert(3, args.pop("bridge"))
         cmd.insert(4, args.pop("vifName"))
         cmd.insert(5, args.pop("tag"))
+    elif op == "askPorts":
+        cmd.insert(3, args.pop("bridge"))
+        cmd.insert(4, args.pop("vifNames"))
+
 
     try:
         txt = util.pread2(cmd)
@@ -592,6 +596,9 @@ def ovs_get_mac_info_from_log(vmName):
 def ovs_get_vlans_info_from_log(vmName):
     return ovs_get_info_from_log(vmName, 3)
 
+def ovs_get_ofports_info_from_log(vmName):
+    return ovs_get_info_from_log(vmName, 4)
+
 def ovs_parse_common_info_from_log(vmName, num):
     info = ovs_get_common_info_from_log(vmName)
     if info == None:
@@ -607,6 +614,10 @@ def ovs_get_vm_id_from_log(vmName):
 def ovs_get_seqno_from_log(vmName):
     return ovs_parse_common_info_from_log(vmName, 3)
 
+def ovs_get_tag_from_log(vmName):
+    return ovs_parse_common_info_from_log(vmName, 4)
+
+
 def ovs_handle_rebooted_vm(session, vmName):
     curr_domid = '-1'
     
@@ -619,7 +630,7 @@ def ovs_handle_rebooted_vm(session, vmName):
 
     util.SMlog("%s rebooted, reset flow for it" % vmName)
     try:
-        vlans = ovs_get_vlans_info_from_log(vmName)
+        vlanstr = ovs_get_vlans_info_from_log(vmName)
         bridge = ovs_get_bridge_from_log(vmName)
     except Exception, e:
         util.SMlog(e.__str__())
@@ -628,22 +639,23 @@ def ovs_handle_rebooted_vm(session, vmName):
         return False
 
     i = 0
-    if vlans == None:
-        util.SMlog("OVSErr: cannot get vlans for %s" % vmName)
+    if vlanstr == None:
+        util.SMlog("OVSErr: cannot get vlanstr for %s" % vmName)
         return False
 
-    tag = vlans.split('/')[0]
+    tag = ovs_get_tag_from_log(vmName)
     nics = []
     macs = []
     for vifr in vifrs:
         vifName = "vif" + curr_domid + "." + vifr[0]
         vlanRemapUtils(session, {"op":"setTag", "vifName":vifName, "bridge":bridge, "tag":tag})
-        vlanRemapUtils(session, {"op":"createFlow", "vifName":vifName, "bridge":bridge, "mac":vifr[1], "remap":vlans})
+        vlanRemapUtils(session, {"op":"createFlow", "vifName":vifName, "bridge":bridge, "mac":vifr[1], "remap":vlanstr})
         nics.append(vifName)
         macs.append(vifr[1])
         i += 1
     seqno = ovs_get_seqno_from_log(vmName)
-    ovs_write_vm_log(bridge, vmName, curr_domid, seqno, nics, macs, vlans)
+    ofports = ovs_get_ofports_info_from_log(vmName)
+    ovs_write_vm_log(bridge, vmName, curr_domid, seqno, nics, macs, tag, vlanstr, ofports)
 
     #see if there is rebooted vm to handle
     ovs_get_vm_log(session, {"host_uuid":hostuuid})
@@ -677,12 +689,12 @@ def ovs_get_vm_log(session, args):
 
     return ";".join(result)
 
-def ovs_write_vm_log(bridge, vmName, vmId, seqno, vifNames, macs, vlans):
+def ovs_write_vm_log(bridge, vmName, vmId, seqno, vifNames, macs, tag, vlans, ofports):
     logfilename = format_ovs_vm_log_name(vmName)
 
     util.SMlog("Writing ovs log to " + logfilename)
     logf = open(logfilename, 'w')
-    output = ','.join([vmName, bridge, vmId, seqno])
+    output = ','.join([vmName, bridge, vmId, seqno, tag])
     result = True
     try:
         logf.write(output)
@@ -694,6 +706,8 @@ def ovs_write_vm_log(bridge, vmName, vmId, seqno, vifNames, macs, vlans):
         logf.write(output)
         logf.write('\n')
         logf.write(vlans)
+        logf.write('\n')
+        logf.write(ofports)
         logf.write('\n')
     except:
         util.SMlog("Failed to write to ovs log file " + logfilename)
@@ -707,23 +721,17 @@ def ovs_delete_flow(session, args):
     bridge = args.pop('bridge')
     vm_name = args.pop('vmName')
 
-    nicStr = ovs_get_nic_info_from_log(vm_name)
-    macStr = ovs_get_mac_info_from_log(vm_name)
-    vlanStr = ovs_get_vlans_info_from_log(vm_name)
+    macs = ovs_get_mac_info_from_log(vm_name)
+    vlans = ovs_get_vlans_info_from_log(vm_name)
+    ofports = ovs_get_ofports_info_from_log(vm_name)
 
-    if nicStr == None or macStr == None or vlanStr == None:
+    if macs == None or vlans == None or ofports == None:
         return 'ERROR_LOG'
 
-    nics = nicStr.split(',')
-    macs = macStr.split(',')
-    if len(nics) != len(macs):
-        return 'ERROR_LOG'
+    vlanRemapUtils(session, {"op":"deleteFlow", "bridge":bridge, \
+            "ofports":ofports, "macs":macs, "remap":vlans})
 
-    i = 0
-    for nic in nics:
-        vlanRemapUtils(session, {"op":"deleteFlow", "bridge":bridge, \
-                "vifName":nic, "mac":macs[i], "remap":vlanStr})
-        i += 1
+    remove_ovs_log_for_vm(vm_name)
     return 'SUCCESS'
 
 def ovs_get_domid_vifrs_hostuuid(session, vm_name):
@@ -755,6 +763,7 @@ def ovs_set_tag_and_flow(session, args):
     bridge = args.pop('bridge')
     vm_name = args.pop('vmName')
     vlanStr = args.pop('vlans')
+    tag = args.pop('tag')
     seqno = args.pop('seqno')
 
     (domid, vifrs, hostuuid) = ovs_get_domid_vifrs_hostuuid(session, vm_name)
@@ -766,6 +775,9 @@ def ovs_set_tag_and_flow(session, args):
     if len(vifrs) == 0:
         return 'SUCCESS'
 
+    #delete old flows first
+    ovs_delete_flow(session, {"bridge":bridge, "vmName":vm_name})
+
     if vlanStr.startswith("/"): vlanStr = vlanStr[1:]
     if vlanStr.endswith("/"): vlanStr = vlanStr[:-1]
     vlans = vlanStr.split("/")
@@ -776,10 +788,11 @@ def ovs_set_tag_and_flow(session, args):
         vifNames.append(vifName)
         mac = vifr[1]
         macs.append(mac)
-        vlanRemapUtils(session, {"op":"setTag", "vifName":vifName, "bridge":bridge, "tag":vlans[0]})
+        vlanRemapUtils(session, {"op":"setTag", "vifName":vifName, "bridge":bridge, "tag":tag})
         vlanRemapUtils(session, {"op":"createFlow", "vifName":vifName, "bridge":bridge, "mac":mac, "remap":vlanStr})
 
-    res = ovs_write_vm_log(bridge, vm_name, domid, seqno, vifNames, macs, vlanStr)
+    ofports = vlanRemapUtils(session, {"op":"askPorts", "bridge":bridge, "vifNames":",".join(vifNames)})
+    res = ovs_write_vm_log(bridge, vm_name, domid, seqno, vifNames, macs, tag, vlanStr, ofports)
     if res == 'false':
         return 'CREATE_LOG_FAILED'
 

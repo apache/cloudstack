@@ -6,6 +6,7 @@ public class OvsSetTagAndFlowCommand extends Command {
 	String vlans;
 	String vmName;
 	String seqno;
+	String tag;
 	Long vmId;
 	
 	@Override
@@ -29,8 +30,13 @@ public class OvsSetTagAndFlowCommand extends Command {
 		return vmId;
 	}
 	
-	public OvsSetTagAndFlowCommand(String vmName, String vlans, String seqno, Long vmId) {
+	public String getTag() {
+		return tag;
+	}
+	
+	public OvsSetTagAndFlowCommand(String vmName, String tag, String vlans, String seqno, Long vmId) {
 		this.vmName = vmName;
+		this.tag = tag;
 		this.vlans = vlans;
 		this.seqno = seqno;
 		this.vmId = vmId;

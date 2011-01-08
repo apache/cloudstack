@@ -15,6 +15,7 @@ import com.cloud.network.PublicIpAddress;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.NetworkOffering;
@@ -58,13 +59,12 @@ public class OvsElement extends AdapterBase implements NetworkElement {
 			InsufficientCapacityException {
 		VirtualMachine instance = vm.getVirtualMachine();
 		
-		if (instance.getType() == VirtualMachine.Type.DomainRouter) {
+		if (network.getTrafficType() != Networks.TrafficType.Guest ||
+			instance.getType() == VirtualMachine.Type.DomainRouter) {
 			return true;
-		}
+		}	
 		
-		if (network.getTrafficType() == Networks.TrafficType.Guest) {
-			_ovsNetworkMgr.CheckAndUpdateDhcpFlow(network, vm.getVirtualMachine());
-		}
+		//_ovsNetworkMgr.CheckAndUpdateDhcpFlow(network, vm.getVirtualMachine());
 		return true;
 	}
 

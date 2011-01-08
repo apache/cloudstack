@@ -3835,9 +3835,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     	
     	Connection conn = getConnection();
     	try {
-    		String nwName = Networks.BroadcastScheme.VSwitch.toString();
-    		Network nw = getNetworkByName(conn, nwName);
-    		assert nw!= null : "Why there is no vswith network ???";
+    		Network nw = setupvSwitchNetwork(conn);
     		String bridge = nw.getBridge(conn);
     		String result = callHostPlugin(conn, "vmops", "ovs_delete_flow", "bridge", bridge,
     				"vmName", cmd.getVmName());
@@ -3861,12 +3859,12 @@ public abstract class CitrixResourceBase implements ServerResource {
     		List<Pair<String, Long>> states = new ArrayList<Pair<String, Long>>();
     		for (String log: logs){
             	String [] info = log.split(",");
-            	if (info.length != 4) {
+            	if (info.length != 5) {
             		s_logger.warn("Wrong element number in ovs log");
             		continue;
             	}
             	
-            	//','.join([bridge, vmName, vmId, seqno])
+            	//','.join([bridge, vmName, vmId, seqno, tag])
             	try {
             		states.add(new Pair<String,Long>(info[0], Long.parseLong(info[3])));
             	} catch (NumberFormatException nfe) {
@@ -3887,9 +3885,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     	
     	Connection conn = getConnection();
     	try {
-    		String nwName = Networks.BroadcastScheme.VSwitch.toString();
-    		Network nw = getNetworkByName(conn, nwName);
-    		assert nw!= null : "Why there is no vswith network ???";
+    		Network nw = setupvSwitchNetwork(conn);
     		String bridge = nw.getBridge(conn);
     		
     		/*If VM is domainRouter, this will try to set flow and tag on its
@@ -3897,7 +3893,8 @@ public abstract class CitrixResourceBase implements ServerResource {
     		 * plugin side
     		 */
     		String result = callHostPlugin(conn, "vmops", "ovs_set_tag_and_flow", "bridge", bridge,
-    				"vmName", cmd.getVmName(), "vlans", cmd.getVlans(), "seqno", cmd.getSeqNo());
+    				"vmName", cmd.getVmName(), "tag", cmd.getTag(),
+    				"vlans", cmd.getVlans(), "seqno", cmd.getSeqNo());
 			s_logger.debug("set flow for " + cmd.getVmName() + " " + result);
 		
 			if (result.equalsIgnoreCase("SUCCESS")) {

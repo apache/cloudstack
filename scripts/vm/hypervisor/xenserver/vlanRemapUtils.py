@@ -17,7 +17,7 @@ vSwitchPidFile = "/var/run/openvswitch/ovs-vswitchd.pid"
 vsctlPath = "/usr/bin/ovs-vsctl"
 vSwitchDaemonName = "ovs-vswitchd"
 
-logFile = "/var/log/cloud/management/vlanRemapUtils.log"
+logFile = "/var/log/vlanRemapUtils.log"
 fLog = None
 
 global result
@@ -256,7 +256,7 @@ def getVifPort(bridge, vifName):
 	portUuids = getPortsOnBridge(bridge)
 	if portUuids == None:
 		log("No ports on bridge %s" % bridge)
-		return -1
+		return None
 
 	for i in portUuids:
 		name = getFieldOfPort(i, "name")
@@ -335,7 +335,17 @@ def delARPFlow(vlan):
 	doCmd(delFlow)
 
 def delDHCPFlow(vlan):
-	param = "dl_type=0x0800 nw_proto=6 tp_src=547 dl_vlan=%s" % vlan
+	param = "dl_type=0x0800 nw_proto=17 tp_dst=68 dl_vlan=%s" % vlan
+	delFlow = ["ovs-ofctl del-flows %s" % bridge, '"%s"' % param]
+	doCmd(delFlow)
+
+def delDHCPClientFlow(vlan):
+	param = "dl_type=0x0800 nw_proto=17 tp_dst=67 dl_vlan=%s" % vlan
+	delFlow = ["ovs-ofctl del-flows %s" % bridge, '"%s"' % param]
+	doCmd(delFlow)
+
+def delDropFlow(vlan):
+	param = "priority=0 dl_vlan=%s" % vlan
 	delFlow = ["ovs-ofctl del-flows %s" % bridge, '"%s"' % param]
 	doCmd(delFlow)
 
@@ -345,7 +355,17 @@ def formatDHCPFlow(bridge, inPort, vlan, ports):
 		str = "output:%s," % i
 		outputs += str
 	outputs = outputs[:-1]
-	flow = "in_port=%s dl_vlan=%s dl_type=0x0800 nw_proto=6 tp_src=547 idle_timeout=0 hard_timeout=0 \
+	flow = "in_port=%s dl_vlan=%s dl_type=0x0800 nw_proto=17 tp_dst=67 idle_timeout=0 hard_timeout=0 \
+	priority=10000 actions=strip_vlan,%s" % (inPort, vlan, outputs)
+	return flow
+
+def formatDHCPClientFlow(bridge, inPort, vlan, ports):
+	outputs = ''
+	for i in ports:
+		str = "output:%s," % i
+		outputs += str
+	outputs = outputs[:-1]
+	flow = "in_port=%s dl_vlan=%s dl_type=0x0800 nw_proto=17 tp_dst=68 idle_timeout=0 hard_timeout=0 \
 	priority=10000 actions=strip_vlan,%s" % (inPort, vlan, outputs)
 	return flow
 
@@ -378,12 +398,7 @@ def createFlow (bridge, vifName, mac, remap):
 		result = errors["NO_OFPORT"]
 		return -1
 
-	#del old flow here, if any, but in normal there should be no old flow
-	#maybe we need add check here
-	delFlow(mac)
-
 	#set remap here, remap has format e.g. [1,22,200,13,16]
-	remap = strip(remap)
 	log("")
 	log("Create flow for remap")
 	noneGreOfPorts = getNoneGreOfPort(bridge)
@@ -393,8 +408,6 @@ def createFlow (bridge, vifName, mac, remap):
 		isARP = False
 
 	for j in remap.split("/"):
-		delARPFlow(j)
-		delDHCPFlow(j)
 		for i in inport:
 			flow = formatDropFlow(i, j)
 			param = bridge + ' "%s"' % flow
@@ -414,6 +427,11 @@ def createFlow (bridge, vifName, mac, remap):
 				doCmd (addflow)
 
 				flow = formatDHCPFlow(bridge, i, j, noneGreOfPorts)
+				param = bridge + ' "%s"' % flow
+				addflow = ["ovs-ofctl add-flow", param]
+				doCmd (addflow)
+
+				flow = formatDHCPClientFlow(bridge, i, j, noneGreOfPorts)
 				param = bridge + ' "%s"' % flow
 				addflow = ["ovs-ofctl add-flow", param]
 				doCmd (addflow)
@@ -463,26 +481,59 @@ remap=%s" % (bridge, vifName, mac, remap))
 def doSetTag (bridge, vifName, tag):
 	setTag(bridge, vifName, tag)
 
-def doDeleteFlow(bridge, vifName, mac, remap):
-	delFlow(mac)
-	log("Delete flows for %s" % mac)
+def doAskPorts(bridge, vifNames):
+	vifs = vifNames.split(",")
+	if len(vifs) == 0:
+		return ' '
+
+	ofports = []
+	for vif in vifs:
+		op = getVifPort(bridge, vif)
+		if op == None:
+			log("doAskPorts: no port(bridge:%s, vif:%s)" % (bridge, vif))
+			continue
+		ofports.append(op)
+
+	return ",".join(ofports)
+
+def doDeleteFlow(bridge, ofports, macs, remap):
+	for i in macs.split(","):
+		delFlow(i)
+		log("Delete flows for %s" % i)
 
 	remap = strip(remap)
 
 	# remove our port from arp flow
 	inport = getGreOfPorts(bridge)
 	if len(inport) == 0:
+		log("WARNING:no inports")
 		return
 
-	mine = getVifPort(bridge, vifName)
 	noneGreOfPorts = getNoneGreOfPort(bridge)
-	noneGreOfPorts.remove(mine)
-	log("Delete ARP flows for(vifname=%s, ofport=%s)" % (vifName, mine))
+	for i in ofports.split(","):
+		try:
+			noneGreOfPorts.remove(i)
+		except:
+			log("WARNING:ofport %s is not on bridge %s" % (i, bridge))
+		log("Delete ARP flows for(ofport=%s)" % i)
 
 	for j in remap.split("/"):
 		delARPFlow(j)
+		delDHCPFlow(j)
+		delDHCPClientFlow(j)
+		delDropFlow(j)
 		for i in inport:
 			flow = formatARPFlow(bridge, i, j, noneGreOfPorts)
+			param = bridge + ' "%s"' % flow
+			addflow = ["ovs-ofctl add-flow", param]
+			doCmd (addflow)
+
+			flow = formatDHCPFlow(bridge, i, j, noneGreOfPorts)
+			param = bridge + ' "%s"' % flow
+			addflow = ["ovs-ofctl add-flow", param]
+			doCmd (addflow)
+
+			flow = formatDHCPClientFlow(bridge, i, j, noneGreOfPorts)
 			param = bridge + ' "%s"' % flow
 			addflow = ["ovs-ofctl add-flow", param]
 			doCmd (addflow)
@@ -524,16 +575,22 @@ if __name__ == "__main__":
 	elif op == "deleteFlow":
 		checkArgNum(6)
 		bridge = sys.argv[2]
-		vifName = sys.argv[3]
-		mac = sys.argv[4]
+		ofports = sys.argv[3]
+		macs = sys.argv[4]
 		remap = sys.argv[5]
-		doDeleteFlow(bridge, vifName, mac, remap)
+		doDeleteFlow(bridge, ofports, macs, remap)
 	elif op == "setTag":
 		checkArgNum(5)
 		bridge = sys.argv[2]
 		vifName = sys.argv[3]
 		tag = sys.argv[4]
 		doSetTag(bridge, vifName, tag)
+	elif op == "askPorts":
+		checkArgNum(4)
+		bridge = sys.argv[2]
+		vifNames = sys.argv[3]
+		print doAskPorts(bridge, vifNames)
+		sys.exit(0)
 	else:
 		log("WARNING: get an unkown op %s" % op)
 		result=errors["ERROR_OP"]

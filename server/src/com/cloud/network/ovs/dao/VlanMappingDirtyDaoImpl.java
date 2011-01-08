@@ -10,19 +10,18 @@ import com.cloud.utils.db.SearchCriteria.Op;
 @Local(value = { VlanMappingDirtyDao.class })
 public class VlanMappingDirtyDaoImpl extends
 		GenericDaoBase<VlanMappingDirtyVO, Long> implements VlanMappingDirtyDao {
-	protected final SearchBuilder<VlanMappingDirtyVO> AllFieldsSearch;
+	protected final SearchBuilder<VlanMappingDirtyVO> AccountIdSearch;
 	
 	public VlanMappingDirtyDaoImpl() {
 		super();
-		AllFieldsSearch = createSearchBuilder();
-        AllFieldsSearch.and("account_id", AllFieldsSearch.entity().getAccountId(), Op.EQ);
-        AllFieldsSearch.and("dirty", AllFieldsSearch.entity().isDirty(), Op.EQ);
-        AllFieldsSearch.done();
+		AccountIdSearch = createSearchBuilder();
+		AccountIdSearch.and("account_id", AccountIdSearch.entity().getAccountId(), Op.EQ);
+		AccountIdSearch.done();
 	}
 	
 	@Override
 	public boolean isDirty(long accountId) {
-		SearchCriteria<VlanMappingDirtyVO> sc = AllFieldsSearch.create();
+		SearchCriteria<VlanMappingDirtyVO> sc = AccountIdSearch.create();
         sc.setParameters("account_id", accountId);
 		VlanMappingDirtyVO vo = findOneBy(sc);
 		if (vo == null) {
@@ -33,7 +32,7 @@ public class VlanMappingDirtyDaoImpl extends
 
 	@Override
 	public void markDirty(long accountId) {
-		SearchCriteria<VlanMappingDirtyVO> sc = AllFieldsSearch.create();
+		SearchCriteria<VlanMappingDirtyVO> sc = AccountIdSearch.create();
         sc.setParameters("account_id", accountId);
 		VlanMappingDirtyVO vo = findOneBy(sc);
 		if (vo == null) {
@@ -47,7 +46,7 @@ public class VlanMappingDirtyDaoImpl extends
 
 	@Override
 	public void clean(long accountId) {
-		SearchCriteria<VlanMappingDirtyVO> sc = AllFieldsSearch.create();
+		SearchCriteria<VlanMappingDirtyVO> sc = AccountIdSearch.create();
         sc.setParameters("account_id", accountId);
 		VlanMappingDirtyVO vo = findOneBy(sc);
 		if (vo == null) {

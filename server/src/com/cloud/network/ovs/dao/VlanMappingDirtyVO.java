@@ -42,11 +42,14 @@ public class VlanMappingDirtyVO {
 		return dirty;
 	}
 	
-	public void markDirty() {
-		dirty = true;
+	public void setDirty(boolean dirty) {
+		this.dirty = dirty;
 	}
 	
+	public void markDirty() {
+		setDirty(true);
+	}
 	public void clean() {
-		dirty = false;
+		setDirty(false);
 	}
 }
