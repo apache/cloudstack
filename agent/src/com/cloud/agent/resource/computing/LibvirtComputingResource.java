@@ -3003,7 +3003,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         long speed = 0;
         long cpus = 0;
         long ram = 0;
-        String osType = null;
+        String cap = null;
         try {
         	final NodeInfo hosts = _conn.nodeInfo();
 
@@ -3016,17 +3016,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             for(String s : oss) {
                 /*Even host supports guest os type more than hvm, we only report hvm to management server*/
             	if (s.equalsIgnoreCase("hvm")) {
-                    osType = "hvm";
+            		cap = "hvm";
                 }
             }
         } catch (LibvirtException e) {
 
         }
+        
+        if (isSnapshotSupported()) {
+        	cap = cap + ",snapshot";
+        }
 
         info.add((int)cpus);
         info.add(speed);
         info.add(ram);
-        info.add(osType);
+        info.add(cap);
         long dom0ram = Math.min(ram/10, 768*1024*1024L);//save a maximum of 10% of system ram or 768M
         dom0ram = Math.max(dom0ram, _dom0MinMem);
         info.add(dom0ram);
@@ -3845,6 +3849,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	}
         }
     	return states;
+    }
+    
+    /*online snapshot supported by enhanced qemu-kvm*/
+    private boolean isSnapshotSupported() {
+    	File f =new File("/usr/bin/cloud-qemu-system-x86_64");
+    	if (f.exists()) {
+    		return true;
+    	} else {
+    		f = new File("/usr/libexec/cloud-qemu-kvm");
+    		if (f.exists()) {
+    			return true;
+    		}
+    	}
+    	return false;
     }
 
 }
