@@ -46,14 +46,19 @@ import com.thoughtworks.xstream.XStream;
 public class ApiXmlDocWriter {
     public static final Logger s_logger = Logger
     .getLogger(ApiXmlDocWriter.class.getName());
-	private static Properties api_commands = new Properties();
+    
+    private static final short DOMAIN_ADMIN_COMMAND = 2;
+    private static final short USER_COMMAND = 8;
+	private static Properties all_api_commands = new Properties();
+	private static Properties domain_admin_api_commands = new Properties();
+	private static Properties regular_user_api_commands = new Properties();
+	
 	private static String dirName="";
 	
 	public static void main (String[] args) {
 		Properties preProcessedCommands = new Properties();
 		Enumeration command = null;
 		String[] fileNames = null;
-		ArrayList<Command> commands = new ArrayList<Command>(); 
 		
 		List<String> argsList = Arrays.asList(args);
 		Iterator<String> iter = argsList.iterator();
@@ -90,10 +95,19 @@ public class ApiXmlDocWriter {
 		for (Object key : preProcessedCommands.keySet()) {
             String preProcessedCommand = preProcessedCommands.getProperty((String)key);
             String[] commandParts = preProcessedCommand.split(";");
-            api_commands.put(key, commandParts[0]);
+            String commandName = commandParts[0];
+            all_api_commands.put(key, commandName);
+            
+            short cmdPermissions = Short.parseShort(commandParts[1]);
+            if ((cmdPermissions & DOMAIN_ADMIN_COMMAND) != 0) {
+                domain_admin_api_commands.put(key, commandName);
+            }
+            if ((cmdPermissions & USER_COMMAND) != 0) {
+                regular_user_api_commands.put(key, commandName);
+            }
 		}
 		
-		command = api_commands.propertyNames();
+		command = all_api_commands.propertyNames();
 		
 		try {
 			//Create object writer
@@ -102,10 +116,12 @@ public class ApiXmlDocWriter {
 			xs.alias("arg", Argument.class);
 
 			ObjectOutputStream out = xs.createObjectOutputStream(new FileWriter(dirName + "/commands.xml"), "commands");
+			ObjectOutputStream outDomainAdmin = xs.createObjectOutputStream(new FileWriter(dirName + "/commandsDomainAdmin.xml"), "commands");
+			ObjectOutputStream regularUser = xs.createObjectOutputStream(new FileWriter(dirName + "/commandsRegularUser.xml"), "commands");
 	
 			while (command.hasMoreElements()) {	    
 				String key = (String) command.nextElement();
-				Class clas = Class.forName(api_commands.getProperty(key));
+				Class clas = Class.forName(all_api_commands.getProperty(key));
 				ArrayList<Argument> request = new ArrayList<Argument>();
 				ArrayList<Argument> response = new ArrayList<Argument>();
 				
@@ -169,15 +185,25 @@ public class ApiXmlDocWriter {
 	            
 	            apiCommand.setRequest(request);
 	            apiCommand.setResponse(response);
-	            commands.add(apiCommand);
 	            
 	            //Write command to xml file
 				out.writeObject(apiCommand);
+				
+				if (domain_admin_api_commands.containsKey(key)){
+				    outDomainAdmin.writeObject(apiCommand);
+				}
+				
+				if (regular_user_api_commands.containsKey(key)){
+				    regularUser.writeObject(apiCommand);
+                }
 			}
+			
 			out.close();
+			outDomainAdmin.close();
+			regularUser.close();	
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			System.exit(2);
-		}
+		} 
 	}
 }
