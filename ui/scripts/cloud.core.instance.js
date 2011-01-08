@@ -899,6 +899,28 @@ function initVMWizard() {
 								$directNetworkElement.find("#network_direct_desc").text(networks[i].displaytext);
 								$networkDirectContainer.append($directNetworkElement.show());
 							}
+							
+							// Add any additional shared direct networks
+							$.ajax({
+								data: createURL("command=listNetworks&isshared=true&zoneId="+$thisPopup.find("#wizard_zone").val()),
+								dataType: "json",
+								async: false,
+								success: function(json) {
+									var sharedNetworks = json.listnetworksresponse.network;
+									if (sharedNetworks != null && sharedNetworks.length > 0) {
+										for (var i = 0; i < sharedNetworks.length; i++) {
+											if (sharedNetworks[i].type != 'Direct') {
+												continue;
+											}
+											var $directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+sharedNetworks[i].id);
+											$directNetworkElement.find("#network_direct_checkbox").data("jsonObj", sharedNetworks[i]);
+											$directNetworkElement.find("#network_direct_name").text(sharedNetworks[i].name);
+											$directNetworkElement.find("#network_direct_desc").text(sharedNetworks[i].displaytext);
+											$networkDirectContainer.append($directNetworkElement.show());
+										}
+									}
+								}
+							});
 						}
 					}
 				});
