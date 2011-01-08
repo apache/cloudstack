@@ -244,7 +244,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected String _consolidationFunction = "AVERAGE";
     protected int _pollingIntervalInSeconds = 60;
 
-    protected StorageLayer _storage;
     protected boolean _canBridgeFirewall = false;
     protected HashMap<StoragePoolType, StoragePoolResource> _pools = new HashMap<StoragePoolType, StoragePoolResource>(5);
 
@@ -4312,23 +4311,6 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         if (_patchPath == null) {
             throw new ConfigurationException("Unable to find all of patch files for xenserver");
         }
-
-        _storage = (StorageLayer) params.get(StorageLayer.InstanceConfigKey);
-        if (_storage == null) {
-            value = (String) params.get(StorageLayer.ClassConfigKey);
-            if (value == null) {
-                value = "com.cloud.storage.JavaStorageLayer";
-            }
-
-            try {
-                Class<?> clazz = Class.forName(value);
-                _storage = (StorageLayer) ComponentLocator.inject(clazz);
-                _storage.configure("StorageLayer", params);
-            } catch (ClassNotFoundException e) {
-                throw new ConfigurationException("Unable to find class " + value);
-            }
-        }
-
         return true;
     }
 
