@@ -1453,6 +1453,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 accountId = account.getId();
             }
         } else {
+            accountName = account.getAccountName();
+            domainId = account.getDomainId();
             accountId = account.getId();
         }
         
@@ -1499,8 +1501,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             sc.addAnd("guestType", SearchCriteria.Op.EQ, type);
         }
         
-        if (!isSystem && (account.getType() != Account.ACCOUNT_TYPE_ADMIN || (accountName != null && domainId != null))) {
+        if (!isSystem && (isShared == null || !isShared) && accountName != null && domainId != null) {
         	sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+        	sc.addAnd("isShared", SearchCriteria.Op.EQ, false);
         }
         
         if (isShared != null) {
