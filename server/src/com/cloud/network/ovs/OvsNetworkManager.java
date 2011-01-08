@@ -34,8 +34,6 @@ public interface OvsNetworkManager extends Manager {
 			VirtualMachineProfile<DomainRouterVO> profile,
 			DeployDestination dest);
 
-	public void CheckAndUpdateDhcpFlow(Network nw, VirtualMachine vm);
-
 	public void handleVmStateTransition(VMInstanceVO userVm, State vmState);
 
 	public void RouterCheckAndCreateTunnel(Commands cmds,

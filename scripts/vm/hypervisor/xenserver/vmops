@@ -682,10 +682,13 @@ def ovs_get_vm_log(session, args):
             ovs_handle_rebooted_vm(session, name)
             if name.startswith('i-'):
                 info = ovs_get_common_info_from_log(name)
+                if info == None:
+                    util.SMlog("ovs_get_common_info_from_log return None for %s" % name)
+                    continue
                 result.append(info)
     except Exception, e:
         util.SMlog(e.__str__())
-        util.SMlog("OVs failed to get rule logs, better luck next time!")
+        util.SMlog("OVs failed to get logs, better luck next time!")
 
     return ";".join(result)
 
@@ -757,7 +760,7 @@ def ovs_get_domid_vifrs_hostuuid(session, vm_name):
 
     except:
         util.SMlog("### Failed to get domid or vif list for vm  ##" + vm_name)
-        return (-1, [])
+        return (-1, [], "-1")
 
 def ovs_set_tag_and_flow(session, args):
     bridge = args.pop('bridge')

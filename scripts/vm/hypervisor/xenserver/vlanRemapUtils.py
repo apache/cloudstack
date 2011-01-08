@@ -349,6 +349,10 @@ def delDropFlow(vlan):
 	delFlow = ["ovs-ofctl del-flows %s" % bridge, '"%s"' % param]
 	doCmd(delFlow)
 
+def formatNormalFlow():
+	flow = "priority=0 idle_timeout=0 hard_timeout=0 actions=normal"
+	return flow
+
 def formatDHCPFlow(bridge, inPort, vlan, ports):
 	outputs = ''
 	for i in ports:
@@ -435,6 +439,12 @@ def createFlow (bridge, vifName, mac, remap):
 				param = bridge + ' "%s"' % flow
 				addflow = ["ovs-ofctl add-flow", param]
 				doCmd (addflow)
+
+	# add normal flow make switch work as L2/L3 switch
+	flow = formatNormalFlow()
+	param = bridge + ' "%s"' % flow
+	addflow = ["ovs-ofctl add-flow", param]
+	doCmd (addflow)
 
 	result = errors["SUCCESS"]
 	return 0
@@ -537,6 +547,12 @@ def doDeleteFlow(bridge, ofports, macs, remap):
 			param = bridge + ' "%s"' % flow
 			addflow = ["ovs-ofctl add-flow", param]
 			doCmd (addflow)
+
+	# add normal flow make switch work as L2/L3 switch
+	flow = formatNormalFlow()
+	param = bridge + ' "%s"' % flow
+	addflow = ["ovs-ofctl add-flow", param]
+	doCmd (addflow)
 
 def checkArgNum(num):
 	if len (sys.argv) < num:

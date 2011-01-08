@@ -14,13 +14,13 @@ public class OvsCreateGreTunnelAnswer extends Answer {
 	}
 	
 	public OvsCreateGreTunnelAnswer(Command cmd, boolean success,
-			String details, String hostIp, String remoteIp, String bridge,
-			String key) {
+			String details, String hostIp, String bridge) {
 		super(cmd, success, details);
+		OvsCreateGreTunnelCommand c = (OvsCreateGreTunnelCommand)cmd;
 		this.hostIp = hostIp;
-		this.remoteIp = remoteIp;
 		this.bridge = bridge;
-		this.key = key;
+		this.remoteIp = c.getRemoteIp();
+		this.key = c.getKey();
 	}
 	
 	public String getHostIp() {

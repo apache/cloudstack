@@ -534,9 +534,8 @@ public abstract class CitrixResourceBase implements ServerResource {
     
     private Network setupvSwitchNetwork(Connection conn) {
 		try {
-			Network vswitchNw = null;
-			
 			if (_host.vswitchNetwork == null) {
+				Network vswitchNw = null;
 				Network.Record rec = new Network.Record();
 				String nwName = Networks.BroadcastScheme.VSwitch.toString();
 				Set<Network> networks = Network.getByNameLabel(conn, nwName);
@@ -551,14 +550,9 @@ public abstract class CitrixResourceBase implements ServerResource {
 
 				enableXenServerNetwork(conn, vswitchNw, "vswitch",
 						"vswicth network");
-				_host.vswitchNetwork = vswitchNw.getUuid(conn);
-			} else {
-				vswitchNw = Network.getByUuid(conn, _host.vswitchNetwork);
-				enableXenServerNetwork(conn, vswitchNw, "vswitch",
-						"vswicth network");
-			}
-			
-			return vswitchNw;
+				_host.vswitchNetwork = vswitchNw;
+			} 
+			return _host.vswitchNetwork;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -3860,7 +3854,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     		for (String log: logs){
             	String [] info = log.split(",");
             	if (info.length != 5) {
-            		s_logger.warn("Wrong element number in ovs log");
+            		s_logger.warn("Wrong element number in ovs log(" + log +")");
             		continue;
             	}
             	
@@ -3916,7 +3910,6 @@ public abstract class CitrixResourceBase implements ServerResource {
     	Connection conn = getConnection();
     	String bridge = "unkonwn";	
     	try {
-    		//TODO: we may store vswtich network to _host
     		Network nw = setupvSwitchNetwork(conn);
     		bridge = nw.getBridge(conn);
     		
@@ -3924,17 +3917,16 @@ public abstract class CitrixResourceBase implements ServerResource {
 					"op", "createGRE", "bridge", bridge,
 					"remoteIP", cmd.getRemoteIp(), "greKey", cmd.getKey());
 			if (result.equalsIgnoreCase("SUCCESS") || result.equalsIgnoreCase("TUNNEL_EXISTED")) {
-				return new OvsCreateGreTunnelAnswer(cmd, true, result);
+				return new OvsCreateGreTunnelAnswer(cmd, true, result, _host.ip, bridge);
 			} else {
 				return new OvsCreateGreTunnelAnswer(cmd, false, result,
-						_host.ip, cmd.getRemoteIp(), bridge, cmd.getKey());
+						_host.ip, bridge);
 			}
     	} catch (Exception e) {
     		e.printStackTrace();
     	}
     	
-		return new OvsCreateGreTunnelAnswer(cmd, false, "EXCEPTION", _host.ip,
-				cmd.getRemoteIp(), bridge, cmd.getKey());
+		return new OvsCreateGreTunnelAnswer(cmd, false, "EXCEPTION", _host.ip, bridge);
     }
     
     private Answer execute(SecurityIngressRulesCmd cmd) {
@@ -5713,7 +5705,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         public String publicNetwork;
         public String privateNetwork;
         public String linkLocalNetwork;
-        public String vswitchNetwork;
+        public Network vswitchNetwork;
         public String storageNetwork1;
         public String storageNetwork2;
         public String guestNetwork;
