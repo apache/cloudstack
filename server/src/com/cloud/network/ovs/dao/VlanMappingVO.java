@@ -64,10 +64,12 @@ public class VlanMappingVO {
 	
 	public void ref() {
 		ref++;
+		setRef(ref);
 	}
 	
 	public int unref() {
 		ref--;
-		return ref;
+		setRef(ref);
+		return getRef();
 	}
 }

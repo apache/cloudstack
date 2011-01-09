@@ -3832,7 +3832,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     		Network nw = setupvSwitchNetwork(conn);
     		String bridge = nw.getBridge(conn);
     		String result = callHostPlugin(conn, "vmops", "ovs_delete_flow", "bridge", bridge,
-    				"vmName", cmd.getVmName());
+    				"vmName", cmd.getVmName(), "reCreate", "true");
     		
     		if (result.equalsIgnoreCase("SUCCESS")) {
     			return new Answer(cmd, true, "success to delete flows for " + cmd.getVmName());

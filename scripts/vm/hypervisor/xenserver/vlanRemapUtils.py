@@ -506,12 +506,20 @@ def doAskPorts(bridge, vifNames):
 
 	return ",".join(ofports)
 
-def doDeleteFlow(bridge, ofports, macs, remap):
+def doDeleteFlow(bridge, ofports, macs, remap, reCreate):
 	for i in macs.split(","):
 		delFlow(i)
 		log("Delete flows for %s" % i)
 
 	remap = strip(remap)
+
+	if reCreate == "false":
+		for j in remap.split("/"):
+			delARPFlow(j)
+			delDHCPFlow(j)
+			delDHCPClientFlow(j)
+			delDropFlow(j)
+		return
 
 	# remove our port from arp flow
 	inport = getGreOfPorts(bridge)
@@ -589,12 +597,13 @@ if __name__ == "__main__":
 		doCreateFlow(bridge, vifName, mac, remap)
 		sys.exit(0)
 	elif op == "deleteFlow":
-		checkArgNum(6)
+		checkArgNum(7)
 		bridge = sys.argv[2]
 		ofports = sys.argv[3]
 		macs = sys.argv[4]
 		remap = sys.argv[5]
-		doDeleteFlow(bridge, ofports, macs, remap)
+		reCreate = sys.argv[6]
+		doDeleteFlow(bridge, ofports, macs, remap, reCreate)
 	elif op == "setTag":
 		checkArgNum(5)
 		bridge = sys.argv[2]

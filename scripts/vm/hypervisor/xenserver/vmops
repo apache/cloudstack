@@ -723,6 +723,7 @@ def ovs_write_vm_log(bridge, vmName, vmId, seqno, vifNames, macs, tag, vlans, of
 def ovs_delete_flow(session, args):
     bridge = args.pop('bridge')
     vm_name = args.pop('vmName')
+    reCreate = args.pop('reCreate')
 
     macs = ovs_get_mac_info_from_log(vm_name)
     vlans = ovs_get_vlans_info_from_log(vm_name)
@@ -732,7 +733,7 @@ def ovs_delete_flow(session, args):
         return 'ERROR_LOG'
 
     vlanRemapUtils(session, {"op":"deleteFlow", "bridge":bridge, \
-            "ofports":ofports, "macs":macs, "remap":vlans})
+            "ofports":ofports, "macs":macs, "remap":vlans, "reCreate":reCreate})
 
     remove_ovs_log_for_vm(vm_name)
     return 'SUCCESS'
@@ -779,7 +780,7 @@ def ovs_set_tag_and_flow(session, args):
         return 'SUCCESS'
 
     #delete old flows first
-    ovs_delete_flow(session, {"bridge":bridge, "vmName":vm_name})
+    ovs_delete_flow(session, {"bridge":bridge, "vmName":vm_name, "reCreate":"false"})
 
     if vlanStr.startswith("/"): vlanStr = vlanStr[1:]
     if vlanStr.endswith("/"): vlanStr = vlanStr[:-1]

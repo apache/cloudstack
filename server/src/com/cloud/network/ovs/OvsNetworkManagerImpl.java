@@ -182,16 +182,20 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 			return;
 		}
 		Long userVmId = work.getInstanceId();
-		UserVm vm = null;
+		VirtualMachine vm = null;
 		Long seqnum = null;
+		Long vmId = work.getInstanceId();
 		s_logger.info("Ovs working on " + work.toString());
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();
 		try {
-			vm = _userVMDao.acquireInLockTable(work.getInstanceId());
+			vm = _userVMDao.acquireInLockTable(vmId);
 			if (vm == null) {
-				s_logger.warn("Ovs unable to acquire lock on vm id=" + userVmId);
-				return ;
+				vm = _routerDao.acquireInLockTable(vmId);
+				if (vm == null) {
+					s_logger.warn("Ovs unable to acquire lock on vm id=" + userVmId);
+					return ;
+				}		
 			}
 			
 			String vlans = getVlanMapping(vm.getAccountId());
@@ -224,7 +228,14 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 			}
 		} finally {
 			if (vm != null) {
-				_userVMDao.releaseFromLockTable(userVmId);
+				if (vm.getType() == VirtualMachine.Type.User) {
+					_userVMDao.releaseFromLockTable(vmId);
+				} else if (vm.getType() == VirtualMachine.Type.DomainRouter) {
+					_routerDao.releaseFromLockTable(vmId);
+				} else {
+					assert 1 == 0 : "Should not be here";
+				}
+				
 				_workDao.updateStep(work.getId(),  Step.Done);
 			}
 			txn.commit();
@@ -382,6 +393,10 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 			return;
 		}
 		
+		if (instance.getType() == VirtualMachine.Type.DomainRouter) {
+			return;
+		}
+		
 		long accountId = instance.getAccountId();
 		DomainRouterVO router = _routerDao.findBy(accountId, instance.getDataCenterId());
 		if (router == null) {
@@ -452,7 +467,13 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 				 _workDao.update(work.getId(), work);	
 			} finally {
 				if (vm != null) {
-					_userVMDao.releaseFromLockTable(vmId);
+					if (vm.getType() == VirtualMachine.Type.User) {
+						_userVMDao.releaseFromLockTable(vmId);
+					} else if (vm.getType() == VirtualMachine.Type.DomainRouter) {
+						_routerDao.releaseFromLockTable(vmId);
+					} else {
+						assert 1 == 0 : "Should not be here";
+					}
 				}
 			}
 			txn.commit();
@@ -500,6 +521,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();
 		VlanMappingVO vo = _vlanMappingDao.findByAccountIdAndHostId(accountId, hostId);
+		assert vo!=null: "Why there is no record for account " + accountId + " host " + hostId;
 		if (vo.unref() == 0) {
 			_vlanMappingDao.remove(vo.getId());
 			_vlanMappingDirtyDao.markDirty(accountId);
@@ -622,7 +644,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		}
 		
 		if (vmIds.size() > 0) {
-			scheduleFlowUpdateToHosts(vmIds, true, null);
+			scheduleFlowUpdateToHosts(vmIds, false, null);
 		}
 	}
 
