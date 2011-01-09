@@ -5,7 +5,7 @@ import java.util.Map;
 
 import com.cloud.host.Host;
 import com.cloud.utils.Pair;
-import com.cloud.vm.State;
+import com.cloud.vm.VirtualMachine.State;
 
 public class PingRoutingWithOvsCommand extends PingRoutingCommand {
 	List<Pair<String, Long>> states;

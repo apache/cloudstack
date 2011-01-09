@@ -295,6 +295,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     RemoteAccessVpnDao _vpnDao;
     @Inject 
     VMInstanceDao _instanceDao;
+    @Inject
     OvsNetworkManager _ovsNetworkMgr;
 
     long _routerTemplateId = -1;

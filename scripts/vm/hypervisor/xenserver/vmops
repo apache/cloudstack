@@ -657,21 +657,17 @@ def ovs_handle_rebooted_vm(session, vmName):
     ofports = ovs_get_ofports_info_from_log(vmName)
     ovs_write_vm_log(bridge, vmName, curr_domid, seqno, nics, macs, tag, vlanstr, ofports)
 
-    #see if there is rebooted vm to handle
-    ovs_get_vm_log(session, {"host_uuid":hostuuid})
     return True
 
 @echo
 def ovs_get_vm_log(session, args):
     host_uuid = args.pop('host_uuid')
     try:
-        session = get_xapi_session()
-
         thishost = session.xenapi.host.get_by_uuid(host_uuid)
         hostrec = session.xenapi.host.get_record(thishost)
         vms = hostrec.get('resident_VMs')
-    except:
-        util.SMlog("Failed to get host from uuid " + host_uuid)
+    except Exception, e:
+        util.SMlog("Failed to get host from uuid %s, exception: %s" % (host_uuid, e.__str__()))
         return ' '
 
     result = []
@@ -800,6 +796,8 @@ def ovs_set_tag_and_flow(session, args):
     if res == 'false':
         return 'CREATE_LOG_FAILED'
 
+    #see if there is rebooted vm to handle
+    ovs_get_vm_log(session, {"host_uuid":hostuuid})
     return 'SUCCESS'
 
 @echo
