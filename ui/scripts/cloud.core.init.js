@@ -614,8 +614,8 @@ var md5Hashed = true;
 				g_timezoneoffset = json.loginresponse.timezoneoffset;					
 				if (json.loginresponse.hypervisortype != null) 
 					g_hypervisorType = json.loginresponse.hypervisortype;				
-				if (json.loginresponse.directattachnetworkgroupsenabled != null) 
-					g_directAttachNetworkGroupsEnabled = json.loginresponse.directattachnetworkgroupsenabled;
+				if (json.loginresponse.directattachsecuritygroupsenabled != null) 
+					g_directAttachSecurityGroupsEnabled = json.loginresponse.directattachsecuritygroupsenabled;
 				if (json.loginresponse.directattacheduntaggedenabled != null) 
 					g_directAttachedUntaggedEnabled = json.loginresponse.directattacheduntaggedenabled;
                 if (json.loginresponse.systemvmuselocalstorage != null) 
@@ -629,7 +629,7 @@ var md5Hashed = true;
 				$.cookie('role', g_role, { expires: 1});
 				$.cookie('timezoneoffset', g_timezoneoffset, { expires: 1});  
 				$.cookie('timezone', g_timezone, { expires: 1});  
-				$.cookie('directattachnetworkgroupsenabled', g_directAttachNetworkGroupsEnabled, { expires: 1}); 
+				$.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1}); 
 				$.cookie('directattacheduntaggedenabled', g_directAttachedUntaggedEnabled, { expires: 1}); 
 				$.cookie('systemvmuselocalstorage', g_systemVmUseLocalStorage, { expires: 1}); 
 				
@@ -684,7 +684,7 @@ var md5Hashed = true;
 	g_domainid = $.cookie("domainid");
 	g_hypervisorType = $.cookie("hypervisortype");
 	g_timezone = $.cookie("timezone");
-	g_directAttachNetworkGroupsEnabled = $.cookie("directattachnetworkgroupsenabled");
+	g_directAttachSecurityGroupsEnabled = $.cookie("directattachsecuritygroupsenabled");
 	g_directAttachedUntaggedEnabled = $.cookie("directattacheduntaggedenabled");
 	g_systemVmUseLocalStorage = $.cookie("systemvmuselocalstorage");
 	
@@ -696,8 +696,8 @@ var md5Hashed = true;
 	if (!g_hypervisorType || g_hypervisorType.length == 0) 		
 		g_hypervisorType = "kvm";
 	
-	if (!g_directAttachNetworkGroupsEnabled || g_directAttachNetworkGroupsEnabled.length == 0) 		
-		g_directAttachNetworkGroupsEnabled = "false";	
+	if (!g_directAttachSecurityGroupsEnabled || g_directAttachSecurityGroupsEnabled.length == 0) 		
+		g_directAttachSecurityGroupsEnabled = "false";	
 		
 	if (!g_directAttachedUntaggedEnabled || g_directAttachedUntaggedEnabled.length == 0) 		
 		g_directAttachedUntaggedEnabled = "false";		

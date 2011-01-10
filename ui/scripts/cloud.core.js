@@ -1108,6 +1108,13 @@ function showLeftNavigationBasedOnRole() {
 	}
 	else{  //isUser() == true					
 	}
+			
+	if(getDirectAttachSecurityGroupsEnabled() == "true") {
+	    $("#leftmenu_security_group_container").show();
+	}		
+	else {
+	    $("#leftmenu_security_group_container").hide();
+	}
 }
    
 function drawBarChart($capacity, percentused) { //percentused == "0.01%" (having % inside)    
@@ -1183,8 +1190,8 @@ var g_timezone = null;
 var g_hypervisorType = "kvm";
 function getHypervisorType() { return g_hypervisorType; }
 
-var g_directAttachNetworkGroupsEnabled = "false";
-function getDirectAttachNetworkGroupsEnabled() { return g_directAttachNetworkGroupsEnabled; }
+var g_directAttachSecurityGroupsEnabled = "false";
+function getDirectAttachSecurityGroupsEnabled() { return g_directAttachSecurityGroupsEnabled; }
 
 var g_directAttachedUntaggedEnabled = "false";
 function getDirectAttachUntaggedEnabled() { return g_directAttachedUntaggedEnabled; }

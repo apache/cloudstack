@@ -412,7 +412,7 @@
                                 </div>
                             </div>
                         </div>  
-                        <div class="leftmenu_expandedlist">
+                        <div class="leftmenu_expandedlist" id="leftmenu_security_group_container" style="display:none;">
                             <div class="leftmenu_content" id="leftmenu_security_group">
                                 <div class="leftmenu_secondindent">
                                    	<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
