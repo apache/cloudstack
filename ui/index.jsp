@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="css/jquery-ui.custom.css" type="text/css" />
     <link rel="stylesheet" href="css/logger.css" type="text/css" />
     <link rel="stylesheet" href="css/main.css" type="text/css" />
-<!--    <link rel="stylesheet" href="custom/custom1/css/custom1.css" type="text/css" />-->
+    <!--<link rel="stylesheet" href="custom/custom1/css/custom1.css" type="text/css" />-->
 
 	<!-- Common libraries -->
     <script type="text/javascript" src="scripts/jquery.min.js"></script>
@@ -104,6 +104,39 @@
                             
                             <div class="error_box" id="login_error" style="display:none;">
                             	<p><fmt:message key="error.login"/></p>
+                            </div>
+                            
+                            <div class="loginoptions_panel">
+                            	<div class="loginoptions_box">
+                                	<div class="loginoptions_dropdownbutton">
+                                    	<p>English</p>
+                                        <div class="loginoptions_ddarrow"></div>
+         							
+                                    <div class="loginoptions_dropdown" style="display:none;">
+                                    	<ul>
+                                        	<li> Fran&ccedil;ais </li>
+                                        	<li> 汉语 </li>
+                                            <li> Fran&ccedil;ais </li>
+                                        	<li> 汉语 </li>
+                                            
+                                        </ul>
+                                    </div>
+                                    </div>
+                                    <div class="loginoptions_dropdownbutton">
+                                    	<p>Default Theme</p>
+                                        <div class="loginoptions_ddarrow"></div>
+                                    
+                                     <div class="loginoptions_dropdown" style="display:none;">>
+                                    	<ul>
+                                        	<li> Custom 1 </li>
+                                        	<li> Custom 2  </li>
+                                            <li> Custom 3  </li>
+                                        	<li> Custom 4  </li>
+                                            
+                                        </ul>
+                                    </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

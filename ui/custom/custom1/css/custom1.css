@@ -8,12 +8,21 @@ html,body{
 	color:#333;
 	height:auto;
 	font-weight:normal;
-	background:#cc4340 url(../../custom1/images/custom_login_bg.gif) repeat-x top left;
+	background:#333a41 url(../../custom1/images/custom_login_bg.gif) repeat-x top left;
 	margin:0;
 	padding:0;
 	overflow-x:hidden;
 }
 
+.login_logobox {
+	width:181px;
+	height:45px;
+	float:left;
+	background:url(../../custom1/images/client_login_logo.png) no-repeat top left;
+	margin:0 0 0 75px;
+	display:inline;
+	padding:0;
+}
 .main_loginbox_bot {
 	width:660px;
 	height:109px;
@@ -58,7 +67,7 @@ html,body{
 	height:21px;
 	float:left;
 	background:url(../../custom1/images/custom1_mgmtconsole_logo.jpg) no-repeat top left;
-	margin:15px 0 0 9px;
+	margin:14px 0 0 2px;
 	display:inline;
 	padding:0;
 }
