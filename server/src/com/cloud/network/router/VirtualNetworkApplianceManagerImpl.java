@@ -1310,12 +1310,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     }
                 }
                 
-                s_logger.debug("Found " + rulesToReapply.size() + " port forwarding rule(s) to apply as a part of domR " + router.getId() + " start.");
+                s_logger.debug("Found " + rulesToReapply.size() + " port forwarding rule(s) to apply as a part of domR " + router + " start.");
                 if (!rulesToReapply.isEmpty()) {
                     createApplyPortForwardingRulesCommands(rulesToReapply, router, cmds);
                 } 
                 
-                s_logger.debug("Found " + vpns.size() + " vpn(s) to apply as a part of domR " + router.getId() + " start.");
+                s_logger.debug("Found " + vpns.size() + " vpn(s) to apply as a part of domR " + router + " start.");
                 if (!vpns.isEmpty()) {
                     for (RemoteAccessVpn vpn : vpns) {
                         createApplyVpnCommands(vpn, router, cmds);
@@ -1331,18 +1331,20 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     lbRules.add(loadBalancing);
                 }
                 
-                s_logger.debug("Found " + lbRules.size() + " load balancing rule(s) to apply as a part of domR " + router.getId() + " start.");
+                s_logger.debug("Found " + lbRules.size() + " load balancing rule(s) to apply as a part of domR " + router + " start.");
                 if (!lbRules.isEmpty()) {
                     createApplyLoadBalancingRulesCommands(lbRules, router, cmds);
                 } 
-                
-                //Resend dhcp
-                createDhcpEntriesCommands(router, cmds);
-                
-                //Resend user data
-                createUserDataCommands(router, cmds);
             } 
         }
+        
+        //Resend dhcp
+        s_logger.debug("Reapplying dhcp entries as a part of domR " + router + " start...");
+        createDhcpEntriesCommands(router, cmds);
+        
+        //Resend user data
+        s_logger.debug("Reapplying user data entries as a part of domR " + router + " start...");
+        createUserDataCommands(router, cmds);
         
         return true;
     }
@@ -1731,7 +1733,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             for (UserVmVO vm : vms) {
                 NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
                 if (nic != null) {
-                    s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router);
+                    s_logger.debug("Creating dhcp entry for vm " + vm + " on domR " + router + ".");
                     
                     DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), vm.getName());
                     dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
