@@ -18,8 +18,10 @@
 
 package com.cloud.api.doc;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -30,6 +32,8 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.log4j.Logger;
 
@@ -57,7 +61,7 @@ public class ApiXmlDocWriter {
 	
 	public static void main (String[] args) {
 		Properties preProcessedCommands = new Properties();
-		Enumeration command = null;
+		Enumeration<?> command = null;
 		String[] fileNames = null;
 		
 		List<String> argsList = Arrays.asList(args);
@@ -114,14 +118,23 @@ public class ApiXmlDocWriter {
 			XStream xs = new XStream();
 			xs.alias("command", Command.class);
 			xs.alias("arg", Argument.class);
+			String xmlDocDir =  dirName + "/xmldoc";
+			String rootAdminDirName = xmlDocDir + "/root_admin";
+			String domainAdminDirName = xmlDocDir + "/domain_admin";
+			String regularUserDirName = xmlDocDir + "/regular_user";
+			(new File(rootAdminDirName)).mkdirs();
+			(new File(domainAdminDirName)).mkdirs();
+			(new File(regularUserDirName)).mkdirs();
 
 			ObjectOutputStream out = xs.createObjectOutputStream(new FileWriter(dirName + "/commands.xml"), "commands");
-			ObjectOutputStream outDomainAdmin = xs.createObjectOutputStream(new FileWriter(dirName + "/commandsDomainAdmin.xml"), "commands");
-			ObjectOutputStream regularUser = xs.createObjectOutputStream(new FileWriter(dirName + "/commandsRegularUser.xml"), "commands");
+			ObjectOutputStream rootAdmin = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + "rootAdminSummary.xml"), "commands");
+			ObjectOutputStream outDomainAdmin = xs.createObjectOutputStream(new FileWriter(domainAdminDirName + "/" + "domainAdminSummary.xml"), "commands");
+			ObjectOutputStream regularUser = xs.createObjectOutputStream(new FileWriter(regularUserDirName + "/regularUserSummary.xml"), "commands");
 	
-			while (command.hasMoreElements()) {	    
+			while (command.hasMoreElements()) {	  
+			    ObjectOutputStream singleCommandOs = null;
 				String key = (String) command.nextElement();
-				Class clas = Class.forName(all_api_commands.getProperty(key));
+				Class<?> clas = Class.forName(all_api_commands.getProperty(key));
 				ArrayList<Argument> request = new ArrayList<Argument>();
 				ArrayList<Argument> response = new ArrayList<Argument>();
 				
@@ -170,7 +183,7 @@ public class ApiXmlDocWriter {
 					}
 				}
 	            
-				Class responseClas = impl.responseObject();
+				Class<?> responseClas = impl.responseObject();
 				
 				//Get response parameters
 				Field[] responseFields = responseClas.getDeclaredFields();
@@ -188,22 +201,76 @@ public class ApiXmlDocWriter {
 	            
 	            //Write command to xml file
 				out.writeObject(apiCommand);
+				rootAdmin.writeObject(apiCommand);
+				
+				//Write single command to xml file
+				singleCommandOs = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + key + ".xml"), "command");
 				
 				if (domain_admin_api_commands.containsKey(key)){
 				    outDomainAdmin.writeObject(apiCommand);
+				    singleCommandOs = xs.createObjectOutputStream(new FileWriter(domainAdminDirName + "/" + key + ".xml"), "command");
 				}
 				
 				if (regular_user_api_commands.containsKey(key)){
+				    singleCommandOs = xs.createObjectOutputStream(new FileWriter(regularUserDirName + "/" + key + ".xml"), "command");
 				    regularUser.writeObject(apiCommand);
                 }
+				singleCommandOs.writeObject(apiCommand);
+				singleCommandOs.close();
 			}
 			
 			out.close();
+			rootAdmin.close();
 			outDomainAdmin.close();
-			regularUser.close();	
+			regularUser.close();
+			
+			//gzip directory with xml doc
+			zipDir(dirName + "xmldoc.zip", xmlDocDir);
+			
+			//Delete directory
+			deleteDir(new File(xmlDocDir));
+			
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			System.exit(2);
 		} 
 	}
+	
+	private static void zipDir(String zipFileName, String dir) throws Exception {
+	    File dirObj = new File(dir);
+	    ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFileName));
+	    addDir(dirObj, out);
+	    out.close();
+	  }
+
+	  static void addDir(File dirObj, ZipOutputStream out) throws IOException {
+	    File[] files = dirObj.listFiles();
+	    byte[] tmpBuf = new byte[1024];
+	    String pathToDir = dirName;
+
+	    for (int i = 0; i < files.length; i++) {
+	      if (files[i].isDirectory()) {
+	        addDir(files[i], out);
+	        continue;
+	      }
+	      FileInputStream in = new FileInputStream(files[i].getPath());
+	      out.putNextEntry(new ZipEntry(files[i].getPath().substring(pathToDir.length())));
+	      int len;
+	      while ((len = in.read(tmpBuf)) > 0) {
+	        out.write(tmpBuf, 0, len);
+	      }
+	      out.closeEntry();
+	      in.close();
+	    }
+	  }
+	
+	private static void deleteDir(File dir) {
+        if (dir.isDirectory()) {
+            String[] children = dir.list();
+            for (int i=0; i<children.length; i++) {
+                deleteDir(new File(dir, children[i]));
+            }
+        }
+        dir.delete();
+	 }
 }
