@@ -2239,6 +2239,18 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
         s_logger.warn(logX(sr, "Unable to remove SR"));
     }
+    
+    private boolean isPVInstalled(Connection conn, VM vm) throws BadServerResponse, XenAPIException, XmlRpcException {
+        VMGuestMetrics vmmetric = vm.getGuestMetrics(conn);
+        if (isRefNull(vmmetric)) {
+            return false;
+        }
+        Map<String, String> PVversion = vmmetric.getPVDriversVersion(conn);
+        if (PVversion != null && PVversion.containsKey("major")) {
+            return true;
+        }
+        return false;
+    }
 
     protected MigrateAnswer execute(final MigrateCommand cmd) {
         Connection conn = getConnection();
@@ -2262,15 +2274,18 @@ public abstract class CitrixResourceBase implements ServerResource {
                     break;
                 }
             }
-            // if it is windows, we will not fake it is migrateable,
-            // windows requires PV driver to migrate
-
+            if ( dsthost == null ) {
+                String msg = "Migration failed due to unable to find host " + ipaddr + " in XenServer pool " + _host.pool;
+                s_logger.warn(msg);
+                return new MigrateAnswer(cmd, false, msg, null);
+            }
             for (VM vm : vms) {
-                if (!cmd.isWindows()) {
+                if (vm.getPVBootloader(conn).equals("pygrub") && !isPVInstalled(conn, vm)) {
+                    // Only fake PV driver for PV kernel, the PV driver is installed, but XenServer doesn't think it is installed
                     String uuid = vm.getUuid(conn);
                     String result = callHostPlugin(conn, "vmops", "preparemigration", "uuid", uuid);
                     if (result == null || result.isEmpty()) {
-                        return new MigrateAnswer(cmd, false, "migration failed", null);
+                        return new MigrateAnswer(cmd, false, "migration failed due to preparemigration failed", null);
                     }
                     // check if pv version is successfully set up
                     int i = 0;
@@ -2279,45 +2294,34 @@ public abstract class CitrixResourceBase implements ServerResource {
                             Thread.sleep(1000);
                         } catch (final InterruptedException ex) {
                         }
-                        VMGuestMetrics vmmetric = vm.getGuestMetrics(conn);
-
-                        if (isRefNull(vmmetric)) {
-                            continue;
-                        }
-
-                        Map<String, String> PVversion = vmmetric.getPVDriversVersion(conn);
-                        if (PVversion != null && PVversion.containsKey("major")) {
-                            break;
-                        }
-
-                    }
-                    Set<VBD> vbds = vm.getVBDs(conn);
-                    for( VBD vbd : vbds) {
-                        VBD.Record vbdRec = vbd.getRecord(conn);
-                        if( vbdRec.type.equals(Types.VbdType.CD.toString()) && !vbdRec.empty ) {
-                            vbd.eject(conn);
+                        if( isPVInstalled(conn, vm) ) {
                             break;
                         }
                     }
-
                     if (i >= 20) {
-                        String msg = "migration failed due to can not fake PV driver for " + vmName;
-                        s_logger.warn(msg);
-                        return new MigrateAnswer(cmd, false, msg, null);
+                        s_logger.warn("Can not fake PV driver for " + vmName);
                     }
                 }
-                final Map<String, String> options = new HashMap<String, String>();
-                vm.poolMigrate(conn, dsthost, options);
+                Set<VBD> vbds = vm.getVBDs(conn);
+                for( VBD vbd : vbds) {
+                    VBD.Record vbdRec = vbd.getRecord(conn);
+                    if( vbdRec.type.equals(Types.VbdType.CD.toString()) && !vbdRec.empty ) {
+                        vbd.eject(conn);
+                        break;
+                    }
+                }
+                try {
+                    vm.poolMigrate(conn, dsthost, new HashMap<String, String>());
+                } catch (Types.VmMissingPvDrivers e1) {
+                    // if PV driver is missing, just shutdown the VM
+                    s_logger.warn("VM " + vmName + " is stopped when trying to migrate it because PV driver is missing, Please install PV driver for this VM");                  
+                    vm.hardShutdown(conn);                   
+                }
                 state = State.Stopping;
-
             }
             return new MigrateAnswer(cmd, true, "migration succeeded", null);
-        } catch (XenAPIException e) {
-            String msg = "migration failed due to " + e.toString();
-            s_logger.warn(msg, e);
-            return new MigrateAnswer(cmd, false, msg, null);
-        } catch (XmlRpcException e) {
-            String msg = "migration failed due to " + e.getMessage();
+        } catch (Exception e) {
+            String msg = "Catch Exception " + e.getClass().getName() + ": Migration failed due to " + e.toString();
             s_logger.warn(msg, e);
             return new MigrateAnswer(cmd, false, msg, null);
         } finally {
