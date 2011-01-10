@@ -325,7 +325,7 @@ function securityGroupIngressRuleJSONToTemplate(jsonObj, $template) {
 var securityGroupIngressRuleActionMap = {      
     "Delete Ingress Rule": {      
         isAsyncJob: true,
-        asyncJobResponse: "revokeSecurityGroupIngress",
+        asyncJobResponse: "revokesecuritygroupingress",
 		dialogBeforeActionFn : doDeleteIngressRule,
         inProcessText: "Deleting Ingress Rule....",
         afterActionSeccessFn: function(json, id, $subgridItem) {                 
@@ -343,8 +343,7 @@ function doDeleteIngressRule($actionLink, $subgridItem) {
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 	
 			var id = $subgridItem.data("jsonObj").id;
-			
-			//???			
+									
 			var securityGroupObj = $subgridItem.data("parentObj");
 			var ingressRuleObj = $subgridItem.data("jsonObj");
                         
