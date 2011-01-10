@@ -145,7 +145,6 @@ public class ApiXmlDocWriter {
 			//Write commands in the order they are represented in commands.properties.in file
 			Iterator<?> it = all_api_commands.keySet().iterator();
 			while (it.hasNext()) {	  
-			    ObjectOutputStream singleCommandOs = null;
 				String key = (String)it.next(); 
 				
 	            //Write admin commands
@@ -153,26 +152,29 @@ public class ApiXmlDocWriter {
 				writeCommand(rootAdmin, key);	
 
 				//Write single commands to separate xml files
-				singleCommandOs = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + key + ".xml"), "command");
+				ObjectOutputStream singleRootAdminCommandOs = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + key + ".xml"), "command");
+				writeCommand(singleRootAdminCommandOs, key);
+				singleRootAdminCommandOs.close();
 				
 				if (domain_admin_api_commands.containsKey(key)){
 				    writeCommand(domainAdmin, key);
-				    singleCommandOs = xs.createObjectOutputStream(new FileWriter(domainAdminDirName + "/" + key + ".xml"), "command");
+				    ObjectOutputStream singleDomainAdminCommandOs = xs.createObjectOutputStream(new FileWriter(domainAdminDirName + "/" + key + ".xml"), "command");
+				    writeCommand(singleDomainAdminCommandOs, key);
+				    singleDomainAdminCommandOs.close();
 				}
 				
 				if (regular_user_api_commands.containsKey(key)){
-				    singleCommandOs = xs.createObjectOutputStream(new FileWriter(regularUserDirName + "/" + key + ".xml"), "command");
 				    writeCommand(regularUser, key);
-                }
-				writeCommand(singleCommandOs, key);
-				singleCommandOs.close();
+				    ObjectOutputStream singleRegularUserCommandOs = xs.createObjectOutputStream(new FileWriter(regularUserDirName + "/" + key + ".xml"), "command");
+				    writeCommand(singleRegularUserCommandOs, key);
+				    singleRegularUserCommandOs.close();
+				}
 			}
 			
 			//Write sorted commands
 			it = all_api_commands_sorted.keySet().iterator();
 			while (it.hasNext()) {     
                 String key = (String)it.next(); 
-                
                 writeCommand(rootAdminSorted, key);
                 
 
@@ -214,7 +216,6 @@ public class ApiXmlDocWriter {
         //Create a new command, set name and description
         Command apiCommand = new Command();
         apiCommand.setName(command);
-        
         
         Implementation impl = (Implementation)clas.getAnnotation(Implementation.class);
         if (impl == null)
