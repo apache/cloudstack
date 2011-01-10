@@ -773,7 +773,7 @@
         </p>
     </div>
     <!-- ***** templates (begin) *************************************************************************************************-->
-    <div id="leftmenu_secondindent_template" class="leftmenu_expandedlist">
+    <div id="leftmenu_secondindent_template" class="leftmenu_expandedlist" style="display:none">
         <div class="leftmenu_content">
             <div class="leftmenu_secondindent">
                 <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
