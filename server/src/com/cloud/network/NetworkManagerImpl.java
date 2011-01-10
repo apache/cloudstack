@@ -1480,7 +1480,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             sc.setJoinParameters("networkOfferingSearch", "systemOnly", false);
         } else {
             sc.setJoinParameters("networkOfferingSearch", "systemOnly", true);
-            sc.setJoinParameters("networkOfferingSearch", "trafficType", TrafficType.Public);
             sc.setJoinParameters("zoneSearch", "networkType", NetworkType.Advanced.toString());
         }
         
