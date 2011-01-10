@@ -109,11 +109,13 @@ import com.cloud.network.listener.RouterStatsListener;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.ServiceOffering.GuestIpType;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskTemplateDao;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
@@ -130,6 +132,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchBuilder;
@@ -191,6 +194,7 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
     ServiceOfferingDao _serviceOfferingDao = null;
     FirewallRulesDao _firewallRulesDao;
     IPAddressDao _publicIpAddressDao;
+    @Inject private GuestOSDao _guestOSDao;
 
     long _routerTemplateId = -1;
     int _routerRamSize;
@@ -917,8 +921,16 @@ public class NetworkManagerImpl implements NetworkManager, VirtualMachineManager
 
 	                try {
 	                    String[] storageIps = new String[2];
+	                    String guestOSDescription = null;
+	                    GuestOSVO guestOS = _guestOSDao.findById(router.getGuestOSId());
+	                    if (guestOS == null) {
+	                        s_logger.debug("Could not find guest OS description for vm: " + router.getName());
+	                        return null;
+	                    } else {
+	                        guestOSDescription = guestOS.getName();
+	                    }
 	                    final StartRouterCommand cmdStartRouter = new StartRouterCommand(router, _networkRate,
-                                   _multicastRate, name, storageIps, vols, mirroredVols);
+                                   _multicastRate, name, storageIps, vols, mirroredVols, guestOSDescription);
 	                    answer = _agentMgr.send(routingHost.getId(), cmdStartRouter);
 	                    if (answer != null && answer.getResult()) {
 	                        if (answer instanceof StartRouterAnswer){

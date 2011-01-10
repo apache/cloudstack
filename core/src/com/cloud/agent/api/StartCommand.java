@@ -46,16 +46,15 @@ public class StartCommand extends AbstractStartCommand {
     String arch;
     String isoPath;
     boolean bootFromISO;
-    String guestOSDescription;
     
     public StartCommand(UserVm vm, String vmName, ServiceOffering offering, int networkRate, int multicastRate, DomainRouter router, String storageHost, String imagePath, String guestNetworkId, int utilization, int cpuWeight, List<VolumeVO> vols, int bits, String isoPath, boolean bootFromISO, String guestOSDescription) {
-    	super(vmName, storageHost, vols);
-        initialize(vm, offering, networkRate, multicastRate, router, imagePath, guestNetworkId, utilization, cpuWeight, bits, isoPath, bootFromISO, guestOSDescription);
+    	super(vmName, storageHost, vols, guestOSDescription);
+        initialize(vm, offering, networkRate, multicastRate, router, imagePath, guestNetworkId, utilization, cpuWeight, bits, isoPath, bootFromISO);
     }
 
 	private void initialize(UserVm vm,
 			ServiceOffering offering, int networkRate, int multicastRate, DomainRouter router, String imagePath,
-			String guestNetworkId, int utilization, int cpuWeight, int bits, String isoPath, boolean bootFromISO, String guestOSDescription) {
+			String guestNetworkId, int utilization, int cpuWeight, int bits, String isoPath, boolean bootFromISO) {
 		id = vm.getId();
         guestIpAddress = vm.getGuestIpAddress();
         if (router != null)
@@ -80,7 +79,6 @@ public class StartCommand extends AbstractStartCommand {
         }
         this.isoPath = isoPath;
         this.bootFromISO = bootFromISO;
-        this.guestOSDescription = guestOSDescription;
 	}
 	
 	public String getArch() {
@@ -99,8 +97,8 @@ public class StartCommand extends AbstractStartCommand {
 			DomainRouter router, String[] storageIps, String imagePath,
 			String guestNetworkId, int utilization, int cpuWeight, List<VolumeVO> vols,
 			boolean mirroredVols, int bits, String isoPath, boolean bootFromISO, String guestOSDescription) {
-		super(vmName, storageIps, vols, mirroredVols);
-        initialize(vm, offering, networkRate, multicastRate, router, imagePath, guestNetworkId, utilization, cpuWeight, bits, isoPath, bootFromISO, guestOSDescription);
+		super(vmName, storageIps, vols, mirroredVols, guestOSDescription);
+        initialize(vm, offering, networkRate, multicastRate, router, imagePath, guestNetworkId, utilization, cpuWeight, bits, isoPath, bootFromISO);
 
 	}
 
@@ -185,14 +183,5 @@ public class StartCommand extends AbstractStartCommand {
 
 	public void setExternalMacAddress(String externalMacAddress) {
 		this.externalMacAddress = externalMacAddress;
-	}
-	
-	public String getGuestOSDescription() {
-		return this.guestOSDescription;
-	}
-	
-	public void setGuestOSDescription(String guestOSDescription) {
-		this.guestOSDescription = guestOSDescription;
-	}
-    
+	}   
 }

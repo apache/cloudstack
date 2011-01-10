@@ -41,8 +41,8 @@ public class StartRouterCommand extends AbstractStartCommand {
     }
     
     public StartRouterCommand(DomainRouterVO router, int networkRateMbps, int networkRateMulticastMbps, 
-            String routerName, String[] storageIps, List<VolumeVO> vols, boolean mirroredVols) {
-        super(routerName, storageIps, vols, mirroredVols);
+            String routerName, String[] storageIps, List<VolumeVO> vols, boolean mirroredVols, String guestOSDescription) {
+        super(routerName, storageIps, vols, mirroredVols, guestOSDescription);
         this.router = router;
         this.networkRateMbps = networkRateMbps;
         this.networkRateMulticastMbps = networkRateMulticastMbps;
@@ -90,6 +90,4 @@ public class StartRouterCommand extends AbstractStartCommand {
 		}
 		return result;
 	}
-
-
 }

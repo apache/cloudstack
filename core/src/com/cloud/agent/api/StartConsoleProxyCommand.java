@@ -40,8 +40,9 @@ public class StartConsoleProxyCommand extends AbstractStartCommand {
 	
     public StartConsoleProxyCommand(int networkRateMbps, int networkRateMulticastMbps, int proxyCmdPort, 
             ConsoleProxyVO proxy, String vmName, String storageHost, 
-    		List<VolumeVO> vols, String vncPort, String urlPort, String mgmtHost, int mgmtPort, boolean sslEnabled) {
-    	super(vmName, storageHost, vols);
+    		List<VolumeVO> vols, String vncPort, String urlPort, String mgmtHost, int mgmtPort, boolean sslEnabled,
+            String guestOSDescription) {
+    	super(vmName, storageHost, vols, guestOSDescription);
     	this.networkRateMbps = networkRateMbps;
     	this.networkRateMulticastMbps = networkRateMulticastMbps;
     	this.proxyCmdPort = proxyCmdPort;

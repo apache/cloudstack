@@ -105,12 +105,14 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.ServiceOffering.GuestIpType;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.servlet.ConsoleProxyServlet;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
@@ -216,6 +218,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager,
 	private EventDao _eventDao;
         @Inject ConfigurationDao _configDao;
 	@Inject ServiceOfferingDao _offeringDao;
+    @Inject private GuestOSDao _guestOSDao;
         private int _networkRate;
         private int _multicastRate;
 	private IpAddrAllocator _IpAllocator;
@@ -627,11 +630,20 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager,
 
 					// carry the console proxy port info over so that we don't
 					// need to configure agent on this
+			        // Determine the VM's OS description
+			        String guestOSDescription = null;
+			        GuestOSVO guestOS = _guestOSDao.findById(proxy.getGuestOSId());
+			        if (guestOS == null) {
+			            s_logger.debug("Could not find guest OS description for vm: " + proxy.getName());
+			            return null;
+			        } else {
+			            guestOSDescription = guestOS.getName();
+			        }			
 					StartConsoleProxyCommand cmdStart = new StartConsoleProxyCommand(_networkRate, _multicastRate,
 							_proxyCmdPort, proxy, proxy.getName(), "", vols,
 							Integer.toString(_consoleProxyPort), 
 							Integer.toString(_consoleProxyUrlPort),
-							_mgmt_host, _mgmt_port, _sslEnabled);
+							_mgmt_host, _mgmt_port, _sslEnabled, guestOSDescription);
 
 					if (s_logger.isDebugEnabled())
 						s_logger.debug("Sending start command for console proxy " + proxy.getName() + " to " + routingHost.getName());

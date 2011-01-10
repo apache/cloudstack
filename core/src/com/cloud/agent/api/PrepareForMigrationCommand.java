@@ -29,7 +29,7 @@ public class PrepareForMigrationCommand extends AbstractStartCommand {
     }
     
     public PrepareForMigrationCommand(String vmName, String vnet, String[] storageHosts, List<VolumeVO> vols, boolean mirrored) {
-        super(vmName, storageHosts, vols, mirrored);
+        super(vmName, storageHosts, vols, mirrored, null);
         this.vnet = vnet;
     }
     

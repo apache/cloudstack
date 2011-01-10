@@ -90,12 +90,14 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.ServiceOffering.GuestIpType;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -204,6 +206,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     @Inject private ConfigurationDao _configDao;
     @Inject private EventDao _eventDao;
     @Inject private ServiceOfferingDao _offeringDao;
+    @Inject private GuestOSDao _guestOSDao;
     
     private IpAddrAllocator _IpAllocator;
     
@@ -368,9 +371,17 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		            
 					// carry the secondary storage vm port info over so that we don't
 					// need to configure agent on this
+                    String guestOSDescription = null;
+                    GuestOSVO guestOS = _guestOSDao.findById(secStorageVm.getGuestOSId());
+                    if (guestOS == null) {
+                        s_logger.debug("Could not find guest OS description for vm: " + secStorageVm.getName());
+                        return null;
+                    } else {
+                        guestOSDescription = guestOS.getName();
+                    }
 					StartSecStorageVmCommand cmdStart = new StartSecStorageVmCommand(_networkRate, 
                                                _multicastRate, _secStorageVmCmdPort, secStorageVm, secStorageVm.getName(), "",
-							vols, _mgmt_host, _mgmt_port, _useSSlCopy);
+							vols, _mgmt_host, _mgmt_port, _useSSlCopy, guestOSDescription);
 
 					if (s_logger.isDebugEnabled())
 						s_logger.debug("Sending start command for secondary storage vm "

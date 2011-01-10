@@ -774,7 +774,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             bootArgs += " pod=" + _pod;
             bootArgs += " localgw=" + _localGateway;
             String result = startSystemVM(vmName, storage.getVlanId(), network, cmd.getVolumes(), bootArgs, storage.getGuestMacAddress(), storage.getGuestIpAddress(), storage
-                    .getPrivateMacAddress(), storage.getPublicMacAddress(), cmd.getProxyCmdPort(), storage.getRamSize(), storage.getGuestOSId(), cmd.getNetworkRateMbps());
+                    .getPrivateMacAddress(), storage.getPublicMacAddress(), cmd.getProxyCmdPort(), storage.getRamSize(), storage.getGuestOSId(), cmd.getNetworkRateMbps(), cmd.getGuestOSDescription());
             if (result == null) {
                 return new StartSecStorageVmAnswer(cmd);
             }
@@ -2193,18 +2193,19 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         return answer;
     }
 
-    protected VM createVmFromTemplate(Connection conn, StartCommand cmd) throws XenAPIException, XmlRpcException {
+    protected VM createVmFromTemplate(Connection conn, String guestOSDescription, String vmName, boolean bootFromISO) throws XenAPIException, XmlRpcException {
         Set<VM> templates;
         VM vm = null;
-        String guestOsTypeName = getGuestOsType(cmd.getGuestOSDescription(), false);
+        String guestOsTypeName = getGuestOsType(guestOSDescription, false);
         templates = VM.getByNameLabel(conn, guestOsTypeName);
         assert templates.size() == 1 : "Should only have 1 template but found " + templates.size();
         VM template = templates.iterator().next();
-        vm = template.createClone(conn, cmd.getVmName());
+        vm = template.createClone(conn, vmName);
         vm.removeFromOtherConfig(conn, "disks");
+        vm.setIsATemplate(conn, false);
 
         if (!(guestOsTypeName.startsWith("Windows") || guestOsTypeName.startsWith("Citrix") || guestOsTypeName.startsWith("Other"))) {
-            if (cmd.getBootFromISO()) {
+            if (bootFromISO) {
                 vm.setPVBootloader(conn, "eliloader");
                 Map<String, String> otherConfig = vm.getOtherConfig(conn);
                 otherConfig.put( "install-repository", "cdrom");
@@ -2392,12 +2393,10 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             List<VolumeVO> vols = cmd.getVolumes();
 
             mounts = mount(vols);
-            vm = createVmFromTemplate(conn, cmd);
+            vm = createVmFromTemplate(conn, cmd.getGuestOSDescription(), cmd.getVmName(), cmd.getBootFromISO());
 
             long memsize = cmd.getRamSize() * 1024L * 1024L;
             setMemory(conn, vm, memsize);
-
-            vm.setIsATemplate(conn, false);
 
             vm.setVCPUsMax(conn, (long) cmd.getCpu());
             vm.setVCPUsAtStartup(conn, (long) cmd.getCpu());
@@ -2805,7 +2804,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             String bootArgs = cmd.getBootArgs();
 
             String result = startSystemVM(vmName, router.getVlanId(), network, cmd.getVolumes(), bootArgs, router.getGuestMacAddress(), router.getPrivateIpAddress(), router
-                    .getPrivateMacAddress(), router.getPublicMacAddress(), 3922, router.getRamSize(), router.getGuestOSId(), cmd.getNetworkRateMbps());
+                    .getPrivateMacAddress(), router.getPublicMacAddress(), 3922, router.getRamSize(), router.getGuestOSId(), cmd.getNetworkRateMbps(), cmd.getGuestOSDescription());
             if (result == null) {
                 networkUsage(router.getPrivateIpAddress(), "create", null);
                 _domrIPMap.put(cmd.getVmName(), router.getPrivateIpAddress());
@@ -2821,7 +2820,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
 
     protected String startSystemVM(String vmName, String vlanId, Network nw0, List<VolumeVO> vols, String bootArgs, String guestMacAddr, String privateIp, String privateMacAddr,
-            String publicMacAddr, int cmdPort, long ramSize, long guestOsId, int networkRateMbps) {
+            String publicMacAddr, int cmdPort, long ramSize, long guestOsId, int networkRateMbps, String guestOSDescription) {
 
         VM vm = null;
         List<Ternary<SR, VDI, VolumeVO>> mounts = null;
@@ -2846,27 +2845,9 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 return msg;
             }
 
-            Set<VM> templates = VM.getByNameLabel(conn, "CentOS 5.3");
-            if (templates.size() == 0) {
-                templates = VM.getByNameLabel(conn, "CentOS 5.3 (64-bit)");
-                if (templates.size() == 0) {
-                    String msg = " can not find template CentOS 5.3 ";
-                    s_logger.warn(msg);
-                    return msg;
-                }
-            }
-
-            VM template = templates.iterator().next();
-
-            vm = template.createClone(conn, vmName);
-
-            vm.removeFromOtherConfig(conn, "disks");
-
-            vm.setPVBootloader(conn, "pygrub");
-
+            vm = createVmFromTemplate(conn, guestOSDescription, vmName, false);
             long memsize = ramSize * 1024L * 1024L;
             setMemory(conn, vm, memsize);
-            vm.setIsATemplate(conn, false);
 
             vm.setVCPUsAtStartup(conn, 1L);
 
@@ -2994,7 +2975,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
             bootArgs += " localgw=" + _localGateway;
 
             String result = startSystemVM(vmName, proxy.getVlanId(), network, cmd.getVolumes(), bootArgs, proxy.getGuestMacAddress(), proxy.getGuestIpAddress(), proxy
-                    .getPrivateMacAddress(), proxy.getPublicMacAddress(), cmd.getProxyCmdPort(), proxy.getRamSize(), proxy.getGuestOSId(), cmd.getNetworkRateMbps());
+                    .getPrivateMacAddress(), proxy.getPublicMacAddress(), cmd.getProxyCmdPort(), proxy.getRamSize(), proxy.getGuestOSId(), cmd.getNetworkRateMbps(), cmd.getGuestOSDescription());
             if (result == null) {
                 return new StartConsoleProxyAnswer(cmd);
             }

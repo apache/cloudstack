@@ -30,17 +30,19 @@ public abstract class AbstractStartCommand extends Command {
 	protected List<VolumeVO> volumes;
 	protected boolean mirroredVols = false;
 	protected BootloaderType bootloader = BootloaderType.PyGrub;
+    protected String guestOSDescription;
 
-	public AbstractStartCommand(String vmName, String storageHost, List<VolumeVO> vols) {
-	    this(vmName, new String[] {storageHost}, vols, false);
+	public AbstractStartCommand(String vmName, String storageHost, List<VolumeVO> vols, String guestOSDescription) {
+	    this(vmName, new String[] {storageHost}, vols, false, guestOSDescription);
 	}
 	
-	public AbstractStartCommand(String vmName, String[] storageHosts, List<VolumeVO> volumes, boolean mirroredVols) {
+	public AbstractStartCommand(String vmName, String[] storageHosts, List<VolumeVO> volumes, boolean mirroredVols, String guestOSDescription) {
 		super();
 		this.vmName = vmName;
 		this.storageHosts = storageHosts;
 		this.volumes = volumes;
 		this.mirroredVols = mirroredVols;
+        this.guestOSDescription = guestOSDescription;
 	}
 
 	public BootloaderType getBootloader() {
@@ -78,5 +80,13 @@ public abstract class AbstractStartCommand extends Command {
 	public String [] getStorageHosts() {
 		return storageHosts;
 	}
+	
+    public void setGuestOSDescription(String guestOSDescription) {
+        this.guestOSDescription = guestOSDescription;
+    }
 
+    public String getGuestOSDescription() {
+        return guestOSDescription;
+    }
+	
 }
