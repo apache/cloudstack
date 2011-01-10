@@ -150,6 +150,7 @@ def vlanRemapUtils(session, args):
         cmd.insert(4, args.pop("ofports"))
         cmd.insert(5, args.pop("macs"))
         cmd.insert(6, args.pop("remap"))
+        cmd.insert(7, args.pop("reCreate"))
     elif op == "setTag":
         cmd.insert(3, args.pop("bridge"))
         cmd.insert(4, args.pop("vifName"))
