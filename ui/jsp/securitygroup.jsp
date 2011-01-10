@@ -224,60 +224,6 @@
 </div>
 <!--  Ingress Rule tab template (end) -->
 
-<!-- Add Disk Offering Dialog -->
-<div id="dialog_add_disk" title="Add Disk Offering" style="display:none">
-	<p>Please fill in the following data to add a new disk Offering.</p>
-	<div class="dialog_formcontent">
-		<form action="#" method="post" id="form1">
-			<ol>
-				<li>
-					<label for="user_name">Name:</label>
-					<input class="text" type="text" name="add_disk_name" id="add_disk_name"/>
-					<div id="add_disk_name_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
-				</li>
-				<li>
-					<label for="user_name">Description:</label>
-					<input class="text" type="text" name="add_disk_description" id="add_disk_description"/>
-					<div id="add_disk_description_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
-				</li>	
-				<li>
-					<label>Custom disk size?:</label>
-					<select class="select" id="customized">						
-						<option value="false">No</option>
-						<option value="true">Yes</option>
-					</select>
-				</li>				
-				<li id="add_disk_disksize_container">
-					<label for="user_name">Disk size (in GB):</label>
-					<input class="text" type="text" name="add_disk_disksize" id="add_disk_disksize"/>
-					<div id="add_disk_disksize_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
-				</li>				
-				<li id="add_disk_tags_container">
-                    <label for="add_disk_tags">
-                        Tags:</label>
-                    <input class="text" type="text" id="add_disk_tags" />
-                    <div id="add_disk_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                    </div>
-                </li>	
-                <li>
-				    <label>
-				        Public?:</label>
-				    <select class="select" id="public_dropdown">
-				        <option value="true">Yes</option>
-				        <option value="false">No</option>
-				    </select>
-				</li>
-				<li id="domain_dropdown_container" style="display: none">
-				    <label>
-				        Domain:</label>
-				    <select class="select" id="domain_dropdown">
-				    </select>
-				</li>    	
-			</ol>
-		</form>
-	</div>
-</div>
-
 <!-- Add Security Group Dialog (begin) -->
 <div id="dialog_add_security_group" title="Add Security Group" style="display: none">
     <div class="dialog_formcontent">
@@ -367,6 +313,21 @@
                     href="#">Add more</a></li>
         </ol>
         </form>
+    </div>
+    <!--Loading box-->
+    <div id="spinning_wheel" class="ui_dialog_loaderbox" style="display: none;">
+        <div class="ui_dialog_loader">
+        </div>
+        <p>
+            Adding....</p>
+    </div>
+    <!--Confirmation msg box-->
+    <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+    <div id="info_container" class="ui_dialog_messagebox error" style="display: none;">
+        <div id="icon" class="ui_dialog_msgicon error">
+        </div>
+        <div id="info" class="ui_dialog_messagebox_text error">
+            (info)</div>
     </div>
 </div>
 <!-- Add Ingress Rule Dialog (end) -->

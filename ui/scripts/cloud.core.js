@@ -722,18 +722,19 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, extraMessage) {
 	}
 }
 
+var $currentMidmenuItem;
 function bindClickToMidMenu($midmenuItem1, toRightPanelFn, getMidmenuIdFn) {
     $midmenuItem1.bind("click", function(event){  
-        var thisMidmenuItem = $(this);
+        $currentMidmenuItem = $(this);
         
         if(selected_midmenu_id != null && selected_midmenu_id.length > 0)
             $("#"+selected_midmenu_id).find("#content").removeClass("selected");
-        selected_midmenu_id = getMidmenuIdFn(thisMidmenuItem.data("jsonObj"));
+        selected_midmenu_id = getMidmenuIdFn($currentMidmenuItem.data("jsonObj"));
                
-        thisMidmenuItem.find("#content").addClass("selected");  
+        $currentMidmenuItem.find("#content").addClass("selected");  
                                               
         clearRightPanel();        
-        toRightPanelFn(thisMidmenuItem);	  
+        toRightPanelFn($currentMidmenuItem);	  
         return false;
     }); 
 }
@@ -1014,6 +1015,7 @@ function clickItemInMultipleSelectionMidmenu($midmenuItem1) {
     selectedItemsInMidMenu[jsonObj.id] = $midmenuItem1;  
     
     selected_midmenu_id = $midmenuItem1.attr("id");
+    $currentMidmenuItem = $midmenuItem1;
 }
 
 var currentLeftMenuId;
