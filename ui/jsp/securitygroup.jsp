@@ -142,6 +142,15 @@
             </div>
         </div>
     </div>
+    <div class="actionpanel_button_wrapper" id="add_ingressrule_button">
+        <div class="actionpanel_button">
+            <div class="actionpanel_button_icons">
+                <img src="images/addvm_actionicon.png" alt="Add Ingress Rule" /></div>
+            <div class="actionpanel_button_links">
+                Add Ingress Rule
+            </div>
+        </div>
+    </div>    
 </div>
 <!--  top buttons (end) -->
 
@@ -293,6 +302,96 @@
     </div>
 </div>
 <!-- Add Security Group Dialog (end) -->
+
+<!-- Add Ingress Rule Dialog (begin) -->
+<div id="dialog_add_ingress_rule" title="Add Ingress Rule" style="display: none">
+    <div class="dialog_formcontent">
+        <form action="#" method="post">
+        <ol>
+            <li>
+                <label for="protocol">
+                    Protocol</label>
+                <select class="select" id="protocol">
+                    <option value="TCP">TCP</option>
+                    <option value="UDP">UDP</option>
+                    <option value="ICMP">ICMP</option>
+                </select>
+            </li>
+            <li id="start_port_container">
+                <label for="start_port">
+                    Start Port:</label>
+                <input class="text" type="text" id="start_port" />
+                <div id="start_port_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li id="end_port_container">
+                <label for="end_port">
+                    End Port:</label>
+                <input class="text" type="text" id="end_port" />
+                <div id="end_port_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li id="icmp_type_container">
+                <label for="start_port">
+                    Type:</label>
+                <input class="text" type="text" id="icmp_type" />
+                <div id="icmp_type_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li id="icmp_code_container">
+                <label for="end_port">
+                    Code:</label>
+                <input class="text" type="text" id="icmp_code" />
+                <div id="icmp_code_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label>
+                    <input type="radio" name="ingress_rule_type" value="cidr" checked>
+                    Add by CIDR:</label>
+                <div id="cidr_container">
+                </div>
+                <a style="margin-left: 110px; display: inline;" id="add_more_cidr" href="#">Add more</a>
+            </li>
+            <li style="margin-top: 7px;">
+                <label>
+                    <input type="radio" name="ingress_rule_type" value="account_securitygroup">
+                    Add by Group:</label>
+                <p style="color: #999;">
+                    Account Name</p>
+                <p style="margin-left: 25px; display: inline; color: #999;">
+                    Security Group Name</p>
+                <div id="account_securitygroup_container">
+                </div>
+                <a style="margin-left: 110px; display: inline;" id="add_more_account_securitygroup"
+                    href="#">Add more</a></li>
+        </ol>
+        </form>
+    </div>
+</div>
+<!-- Add Ingress Rule Dialog (end) -->
+
+<!-- Add Ingress Rule Dialog - CIDR template (begin) -->
+<div id="cidr_template" class="cidr_template" style="display: none">
+    <input class="text" type="text" id="cidr" />
+    <div id="cidr_errormsg" class="dialog_formcontent_errormsg" style="display: none;
+        margin: 0;">
+    </div>
+</div>
+<!-- Add Ingress Rule Dialog - CIDR template (end) -->
+
+<!-- Add Ingress Rule Dialog - Account/Security Group template (begin) -->
+<div id="account_securitygroup_template" class="account_securitygroup_template" style="width: 200px;
+    height: auto; float: left; display: none">
+    <input class="text" style="width: 80px" type="text" id="account" />
+    <span>/</span>
+    <input class="text" style="width: 80px" type="text" id="securitygroup" />
+    <div id="account_securitygroup_template_errormsg" class="dialog_formcontent_errormsg"
+        style="display: none; margin: 0;">
+    </div>
+</div>
+<!-- Add Ingress Rule Dialog - Account/Security Group template (end) -->
+
 
 <div id="hidden_container">
     <!-- advanced search popup (begin) -->

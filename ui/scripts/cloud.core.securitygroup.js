@@ -38,6 +38,7 @@ function securityGroupGetSearchParams() {
 
 function afterLoadSecurityGroupJSP() {    
     initAddSecurityGroupDialog();  
+    initAddIngressRuleDialog();
     
     // switch between different tabs 
     var tabArray = [$("#tab_details"), $("#tab_ingressrule")];
@@ -95,6 +96,243 @@ function initAddSecurityGroupDialog() {
 	    }).dialog("open");		    
 	    return false;        
     });
+}
+
+function initAddIngressRuleDialog() {
+    initDialog("dialog_add_ingress_rule", 400);   
+    
+    var $dialogAddIngressRule = $("#dialog_add_ingress_rule");
+				
+	$dialogAddIngressRule.find("#add_more_cidr").unbind("click").bind("click", function(event){		    
+        $dialogAddIngressRule.find("#cidr_container").append($("#cidr_template").clone().show());
+        return false;
+    });	
+			
+	$dialogAddIngressRule.find("#add_more_account_securitygroup").unbind("click").bind("click", function(event){		    
+        $dialogAddIngressRule.find("#account_securitygroup_container").append($("#account_securitygroup_template").clone().show());
+        return false;
+    });		
+       				
+	$dialogAddIngressRule.find("input[name='ingress_rule_type']").unbind("change").bind("change", function(){		    
+	    if($dialogAddIngressRule.find("input[name='ingress_rule_type']:checked").val() == "cidr") {	
+	        //enable CIDR	        
+	        $dialogAddIngressRule.find(".cidr_template, #add_more_cidr").removeAttr("disabled");	 
+	        	        
+	        //disable Account/Network Group, clear up error fields 	        
+	        $dialogAddIngressRule.find(".account_securitygroup_template, #add_more_account_securitygroup").attr("disabled", "disabled"); 
+	        cleanErrMsg($dialogAddIngressRule.find(".account_securitygroup_template").find("#account"), $dialogAddIngressRule.find(".account_securitygroup_template").find("#account_securitygroup_template_errormsg")); 
+    		cleanErrMsg($dialogAddIngressRule.find(".account_securitygroup_template").find("#securitygroup"), $dialogAddIngressRule.find(".account_securitygroup_template").find("#account_securitygroup_template_errormsg")); 	        	        
+	    }
+	    else if($dialogAddIngressRule.find("input[name='ingress_rule_type']:checked").val() == "account_securitygroup") {
+	        //enable Account/Network Group
+	        $dialogAddIngressRule.find(".account_securitygroup_template, #add_more_account_securitygroup").removeAttr("disabled");	
+	        
+	        //disable CIDR, clear up error fields
+	        $dialogAddIngressRule.find(".cidr_template, #add_more_cidr").attr("disabled", "disabled");   
+	        cleanErrMsg($dialogAddIngressRule.find(".cidr_template").find("#cidr"), $dialogAddIngressRule.find(".cidr_template").find("#cidr_errormsg")); 		              
+	    }
+	});
+		
+	$dialogAddIngressRule.find("#protocol").unbind("change").bind("change", function(event){		    
+	    var thisDropDown = $(this);		   
+	    if(thisDropDown.val() == "ICMP") {		        
+	        $dialogAddIngressRule.find("#icmp_type_container, #icmp_code_container").show();
+	        $dialogAddIngressRule.find("#icmp_type, #icmp_code").val("-1");
+	        
+	        $dialogAddIngressRule.find("#start_port_container, #end_port_container").hide();		        
+	        $dialogAddIngressRule.find("#start_port, #end_port").val("");	
+	        cleanErrMsg($dialogAddIngressRule.find("#start_port"), $dialogAddIngressRule.find("#start_port_errormsg"));	  
+	        cleanErrMsg($dialogAddIngressRule.find("#end_port"), $dialogAddIngressRule.find("#end_port_errormsg"));	                
+	    }
+	    else {  //TCP, UDP
+	        $dialogAddIngressRule.find("#start_port_container, #end_port_container").show();	 
+	        
+	        $dialogAddIngressRule.find("#icmp_type_container, #icmp_code_container").hide();
+	        $dialogAddIngressRule.find("#icmp_type, #icmp_code").val("");
+	        cleanErrMsg($dialogAddIngressRule.find("#icmp_type"),$dialogAddIngressRule.find("#icmp_type_errormsg"));	     
+	        cleanErrMsg($dialogAddIngressRule.find("#icmp_code"),$dialogAddIngressRule.find("#icmp_code_errormsg"));	
+	    }		
+	    return false;
+	});	   
+	
+	//add button ***        
+    $("#add_ingressrule_button").unbind("click").bind("click", function(event) {   
+        if($("#tab_ingressrule").hasClass("off"))
+            $("#tab_ingressrule").click();   
+         
+        $dialogAddIngressRule.find("#protocol").val("TCP");
+        $dialogAddIngressRule.find("#protocol").change();		        
+        
+        $dialogAddIngressRule.find("#start_port").val("");
+        cleanErrMsg($dialogAddIngressRule.find("#start_port"), $dialogAddIngressRule.find("#start_port_errormsg"));
+        
+        $dialogAddIngressRule.find("#end_port").val("");
+        cleanErrMsg($dialogAddIngressRule.find("#end_port"), $dialogAddIngressRule.find("#end_port_errormsg"));
+       
+        $dialogAddIngressRule.find("input[name='ingress_rule_type']").change();
+        
+        $dialogAddIngressRule.find("#cidr_container").empty();
+        $dialogAddIngressRule.find("#add_more_cidr").click();
+        		        
+        $dialogAddIngressRule.find("#account_securitygroup_container").empty();
+        $dialogAddIngressRule.find("#add_more_account_securitygroup").click();
+        		        
+        		        
+        $("#dialog_add_ingress_rule")
+        .dialog('option', 'buttons', { 			    
+            "Add": function() { 
+                var thisDialog = $(this);
+		    	
+		    	var moreCriteria = [];	
+		    	moreCriteria.push("&domainid="+domainId);
+                moreCriteria.push("&account="+account);
+                moreCriteria.push("&securitygroupname="+securityGroupName);   
+                
+		    	var protocol = thisDialog.find("#protocol").val();
+	            if (protocol!=null && protocol.length > 0) 
+		            moreCriteria.push("&protocol="+encodeURIComponent(protocol));	
+		            	            										
+                // validate values (begin)							
+	            var isValid = true;				
+	            if(protocol == "ICMP") {					
+	                isValid &= validateNumber("Type", thisDialog.find("#icmp_type"), thisDialog.find("#icmp_type_errormsg"), -1, 40, false);	//required	
+	                isValid &= validateNumber("Code", thisDialog.find("#icmp_code"), thisDialog.find("#icmp_code_errormsg"), -1 , 15, false);	//required
+	            }	
+	            else {  //TCP, UDP
+	                isValid &= validateNumber("Start Port", thisDialog.find("#start_port"), thisDialog.find("#start_port_errormsg"), 1, 65535, false);	//required	
+	                isValid &= validateNumber("End Port", thisDialog.find("#end_port"), thisDialog.find("#end_port_errormsg"), 1, 65535, false);	//required
+	            }
+	            				          	
+	            if(thisDialog.find("input[name='ingress_rule_type']:checked").val() == "cidr") {					                
+	                isValid &= validateCIDR("CIDR", thisDialog.find(".cidr_template").eq(0).find("#cidr"), thisDialog.find(".cidr_template").eq(0).find("#cidr_errormsg"), false); //required                
+                    for(var i=1; i<thisDialog.find(".cidr_template").length; i++)
+                        isValid &= validateCIDR("CIDR", thisDialog.find(".cidr_template").eq(i).find("#cidr"), thisDialog.find(".cidr_template").eq(0).find("#cidr_errormsg"), true); //optional        
+                }
+                else if(thisDialog.find("input[name='ingress_rule_type']:checked").val() == "account_securitygroup") {			                        
+                    isValid &= validateString("Account", thisDialog.find(".account_securitygroup_template").eq(0).find("#account"), thisDialog.find(".account_securitygroup_template").eq(0).find("#account_securitygroup_template_errormsg"), false);	 //required                
+                    isValid &= validateString("Network Group", thisDialog.find(".account_securitygroup_template").eq(0).find("#securitygroup"), thisDialog.find(".account_securitygroup_template").eq(0).find("#account_securitygroup_template_errormsg"), false);	 //required             
+                    for(var i=1; i<thisDialog.find(".account_securitygroup_template").length; i++) {
+                        isValid &= validateString("Account", thisDialog.find(".account_securitygroup_template").eq(i).find("#account"), thisDialog.find(".account_securitygroup_template").eq(0).find("#account_securitygroup_template_errormsg"), true);	 //optional          
+                        isValid &= validateString("Network Group", thisDialog.find(".account_securitygroup_template").eq(i).find("#securitygroup"), thisDialog.find(".account_securitygroup_template").eq(0).find("#account_securitygroup_template_errormsg"), true);	 //optional     
+                    }
+                }					            
+	            if (!isValid) return;					
+				// validate values (end)
+				          							
+				if(protocol == "ICMP") {        					    
+				    var icmpType = thisDialog.find("#icmp_type").val();	
+				    if (icmpType!=null && icmpType.length > 0)         					        
+		                moreCriteria.push("&icmptype="+encodeURIComponent(icmpType));						            
+		            var icmpCode = thisDialog.find("#icmp_code").val();
+	                if (icmpCode!=null && icmpCode.length > 0) 				                    
+		                moreCriteria.push("&icmpcode="+encodeURIComponent(icmpCode)); 					              					    
+				}
+				else {  //TCP, UDP
+				    var startPort = thisDialog.find("#start_port").val();	
+				    if (startPort!=null && startPort.length > 0) 
+		                moreCriteria.push("&startport="+encodeURIComponent(startPort));	
+		            var endPort = thisDialog.find("#end_port").val();
+	                if (endPort!=null && endPort.length > 0) 
+		                moreCriteria.push("&endport="+encodeURIComponent(endPort));	
+				}        					            
+	            				            				                                      
+                if($dialogAddIngressRule.find("input[name='ingress_rule_type']:checked").val() == "cidr") {	
+                    var array1 = [];	        
+                    var cidrElementArray = $dialogAddIngressRule.find(".cidr_template").find("#cidr");			                        
+                    for(var i=0; i<cidrElementArray.length; i++) {
+                        if(cidrElementArray[i].value.length >  0)
+                            array1.push(cidrElementArray[i].value);
+                    }
+                    if(array1.length > 0)
+	                    moreCriteria.push("&cidrlist="+encodeURIComponent(array1.join(",")));	
+                }	    
+                else if($dialogAddIngressRule.find("input[name='ingress_rule_type']:checked").val() == "account_securitygroup") {			                          
+                    var accountElementArray = $dialogAddIngressRule.find(".account_securitygroup_template").find("#account");	
+                    var securitygroupElementArray = $dialogAddIngressRule.find(".account_securitygroup_template").find("#securitygroup");			                        
+                    for(var i=0; i<accountElementArray.length; i++)	{	  
+                        if(securitygroupElementArray[i].value.length > 0 && accountElementArray[i].value.length > 0)                        
+                            moreCriteria.push("&usersecuritygrouplist["+i+"].account="+accountElementArray[i].value+"&usersecuritygrouplist["+i+"].group="+securitygroupElementArray[i].value);
+                    }
+                }	  		           
+	            				            					            	   
+	            thisDialog.dialog("close");		      
+                               
+		        var ingressRuleTemplate = $("#security_group_ingress_rule_template").clone(true);											   
+                var loadingImg = ingressRuleTemplate.find(".adding_loading");		
+                var rowContainer = ingressRuleTemplate.find("#row_container");    	                               
+                loadingImg.find(".adding_text").text("Adding....");	
+                loadingImg.show();  
+                rowContainer.hide();                                
+                template.find("#ingress_rule_grid").append(ingressRuleTemplate.fadeIn("slow"));	
+                template.find("#ingress_rule_grid").find("#no_ingress_rule").hide();             
+                
+                $.ajax({
+	                data: createURL("command=authorizeSecurityGroupIngress"+moreCriteria.join("")),
+			        dataType: "json",
+			        success: function(json) {					            		            				
+			            var jobId = json.authorizesecuritygroupingress.jobid; 						            	                   
+	                    var timerKey = "ingressRuleJob_"+jobId;
+	                    ingressRuleTemplate.attr("id","ingressRule_"+jobId); //temporary id until API call returns real id							        
+				        $("body").everyTime(
+					        5000,
+					        timerKey,
+					        function() {
+						        $.ajax({
+							       data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+							        dataType: "json",
+							        success: function(json) {
+								        var result = json.queryasyncjobresultresponse;
+								        if (result.jobstatus == 0) {
+									        return; //Job has not completed
+								        } else {
+									        $("body").stopTime(timerKey);											 
+									        if (result.jobstatus == 1) { // Succeeded													            							            
+									            var items = result.jobresult.securitygroup.ingressrule;			            
+									            ingressRuleJSONToTemplate(items[0], ingressRuleTemplate).data("parentSecurityGroupId", securityGroupId).data("parentSecurityGroupDomainId", domainId).data("parentSecurityGroupAccount", account).data("parentSecurityGroupName",securityGroupName);													            
+									            if(items.length > 1) {                               
+                                                    for(var i=1; i<items.length; i++) {         
+                                                        var ingressRuleTemplate2 = $("#security_group_ingress_rule_template").clone(true);                                                               
+                                                        ingressRuleJSONToTemplate(items[i], ingressRuleTemplate2).data("parentSecurityGroupId", securityGroupId).data("parentSecurityGroupDomainId", domainId).data("parentSecurityGroupAccount", account).data("parentSecurityGroupName",securityGroupName);	   
+                                                        template.find("#ingress_rule_grid").append(ingressRuleTemplate2.fadeIn("slow"));	                                                                 
+                                                    }                                    
+                                                }  												        		
+										        loadingImg.hide();  
+                                                rowContainer.show();                                                              
+                                                //hide delete link of network group. (network group is not allowed to delete if it is not empty. i.e. having ingress rule(s) 
+                                                template.find("#delete_link").hide();                                                                                                             												
+									        } else if (result.jobstatus == 2) { // Failed
+									            $("#dialog_alert").text("Unable to add ingress rule due to the error: " + result.jobresult.errortext).dialog("open");
+										        ingressRuleTemplate.slideUp("slow", function() {
+											        $(this).remove();
+										        });
+									        }
+								        }
+							        },
+							        error: function(XMLHttpResponse) {
+								        $("body").stopTime(timerKey);
+								        handleError(XMLHttpResponse);										 
+								        ingressRuleTemplate.slideUp("slow", function() {
+									        $(this).remove();
+								        });
+							        }
+						        });
+					        },
+					        0
+				        );				        
+			        },						
+			        error: function(XMLHttpResponse) {							
+				        handleError(XMLHttpResponse);										 
+				        ingressRuleTemplate.slideUp("slow", function() {
+					        $(this).remove();
+				        });
+			        }						
+		        });				
+	        }, 
+            "Cancel": function() { 				        				        
+	            $(this).dialog("close"); 
+            } 
+        }).dialog("open");           
+    });	 
 }
 
 function doEditSecurityGroup($actionLink, $detailsTab, $midmenuItem1) {       
