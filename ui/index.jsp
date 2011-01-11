@@ -837,14 +837,22 @@
         <div id="zone_content" style="display: none">
             <div id="pods_container">
             </div>	 
+                        
+	        <div id="secondarystorage_header" class="leftmenu_content">
+	            <div class="leftmenu_fourthindent">
+	                <div class="leftmenu_arrows white_nonexpanded_close" id="secondarystorage_arrow">
+	                </div>	                
+	                <span id="secondarystorage_name_label">Secondary Storage</span>	 
+	            </div>
+	        </div>	      
             	            
             <div id="network_header" class="leftmenu_content" style="display: none">
 	            <div class="leftmenu_fourthindent">
-	                <div class="leftmenu_arrows white_nonexpanded_close" id="cluster_arrow">
+	                <div class="leftmenu_arrows white_nonexpanded_close" id="network_arrow">
 	                </div>	                
 	                <span id="network_name_label">Network</span>	 
 	            </div>
-	        </div>	            	                       
+	        </div>		              	                       
         </div>	    
     </div>
     <!-- Zone Template (end) -->
