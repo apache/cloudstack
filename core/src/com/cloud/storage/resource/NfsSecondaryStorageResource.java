@@ -45,7 +45,6 @@ import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
-import com.cloud.agent.api.storage.CreateEntityDownloadURLAnswer;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
@@ -94,6 +93,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     UploadManager _upldMgr;
 	private String _configSslScr;
 	private String _configAuthScr;
+	private String _configIpFirewallScr;
 	private String _publicIp;
 	private String _hostname;
 	private String _localgw;
@@ -189,26 +189,21 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 		if (!_inSystemVM){
 			return new Answer(cmd, true, null);
 		}
-		List<String> iptablesCfg = new ArrayList<String>();
-		iptablesCfg.add("iptables -F HTTP");
+
+		List<String> ipList = new ArrayList<String>();
+		
 		for (PortConfig pCfg:cmd.getPortConfigs()){
 			if (pCfg.isAdd()) {
-				iptablesCfg.add("iptables -A HTTP -i " +  pCfg.getIntf() + " -s " + pCfg.getSourceIp() + " -p tcp -m state --state NEW -m tcp --dport " + pCfg.getPort() + " -j ACCEPT");
+				ipList.add(pCfg.getSourceIp());		
 			}
 		}
 		boolean success = true;
-		StringBuilder result = new StringBuilder();
-		for (String rule: iptablesCfg) {
-			Script command = new Script("/bin/bash", s_logger);
-			command.add("-c");
-			command.add(rule);
-			String tmpresult = command.execute();
-			if (tmpresult != null) {
-				result.append(tmpresult);
-				success = false;
-			}
-		}
-		return new Answer(cmd, success, result.toString());
+		String result;
+		result = configureIpFirewall(ipList);
+		if (result !=null)
+			success = false;
+
+		return new Answer(cmd, success, result);
 	}
 
 	protected GetStorageStatsAnswer execute(final GetStorageStatsCommand cmd) {
@@ -349,6 +344,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         _configAuthScr = Script.findScript(getDefaultScriptsDir(), "config_auth.sh");
         if (_configSslScr != null) {
             s_logger.info("config_auth.sh found in " + _configAuthScr);
+        }
+        
+        _configIpFirewallScr = Script.findScript(getDefaultScriptsDir(), "ipfirewall.sh");
+        if (_configIpFirewallScr != null) {
+            s_logger.info("_configIpFirewallScr found in " + _configIpFirewallScr);
         }
         
         _guid = (String)params.get("guid");
@@ -521,6 +521,19 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 		String result = command.execute();
 		if (result != null) {
 			s_logger.warn("Unable to configure httpd to use auth");
+		}
+		return result;
+	}
+	
+	private String configureIpFirewall(List<String> ipList){
+		Script command = new Script(_configIpFirewallScr);		
+		for (String ip : ipList){
+			command.add(ip);
+		}		
+		
+		String result = command.execute();
+		if (result != null) {
+			s_logger.warn("Unable to configure firewall for command : " +command);
 		}
 		return result;
 	}
