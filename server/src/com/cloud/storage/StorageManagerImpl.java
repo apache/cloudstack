@@ -2654,6 +2654,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             if (state == Volume.State.Ready) {
             	
             	if(vol.getPoolId() == null) {
+            		s_logger.warn("Found volume:"+vol.getId()+" with no storage pool associated with it");
             		throw new StorageUnavailableException("Volume " + vol + " has no storage pool associated with it, and the pool id associated with it is:", vol.getPoolId());
             	}
             		
