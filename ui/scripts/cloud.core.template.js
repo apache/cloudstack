@@ -279,7 +279,10 @@ function templateJsonToDetailsTab() {
     $thisTab.find("#name_edit").val(fromdb(jsonObj.name));
     
     $thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
-    $thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));
+    $thisTab.find("#displaytext_edit").val(fromdb(jsonObj.displaytext));    
+    
+    $thisTab.find("#hypervisor").text(fromdb(jsonObj.hypervisor));    
+    $thisTab.find("#templatetype").text(fromdb(jsonObj.templatetype)); 
     
     var status = "Ready";
 	if (jsonObj.isready == false) 
@@ -304,8 +307,6 @@ function templateJsonToDetailsTab() {
     
     $thisTab.find("#ostypename").text(fromdb(jsonObj.ostypename));
     $thisTab.find("#ostypename_edit").val(jsonObj.ostypeid);    
-    
-    $thisTab.find("#hypervisor").text(fromdb(jsonObj.hypervisor));
     
     $thisTab.find("#account").text(fromdb(jsonObj.account));   
     $thisTab.find("#domain").text(fromdb(jsonObj.domain)); 
