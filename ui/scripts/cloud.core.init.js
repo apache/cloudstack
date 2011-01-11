@@ -73,7 +73,7 @@ $(document).ready(function() {
 				href: id
 			});
 			name = target.text();
-			$.cookie("theme.name", name)
+			$.cookie("theme.name", name);
 			$.cookie("theme", id);
 		} else {
 			if ($currentTheme != null) {
