@@ -8,6 +8,9 @@ public class OvsCreateGreTunnelAnswer extends Answer {
 	String remoteIp;
 	String bridge;
 	String key;
+	long from;
+	long to;
+	int port;
 	
 	public OvsCreateGreTunnelAnswer(Command cmd, boolean success, String details) {
 		super(cmd, success, details);
@@ -21,6 +24,15 @@ public class OvsCreateGreTunnelAnswer extends Answer {
 		this.bridge = bridge;
 		this.remoteIp = c.getRemoteIp();
 		this.key = c.getKey();
+		this.port = -1;
+		this.from = c.getFrom();
+		this.to = c.getTo();
+	}
+	
+	public OvsCreateGreTunnelAnswer(Command cmd, boolean success,
+			String details, String hostIp, String bridge, int port) {
+		this(cmd, success, details, hostIp, bridge);
+		this.port = port;
 	}
 	
 	public String getHostIp() {
@@ -37,5 +49,17 @@ public class OvsCreateGreTunnelAnswer extends Answer {
 	
 	public String getKey() {
 		return key;
+	}
+	
+	public long getFrom() {
+		return from;
+	}
+	
+	public long getTo() {
+		return to;
+	}
+	
+	public int getPort() {
+		return port;
 	}
 }

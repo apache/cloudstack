@@ -1332,6 +1332,14 @@ CREATE TABLE `cloud`.`ovs_host_vlan_alloc`(
   PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`ovs_tunnel_alloc`(
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `from` bigint unsigned COMMENT 'from host id',
+  `to` bigint unsigned COMMENT 'to host id',
+  `in_port` int unsigned COMMENT 'in port on open vswitch',
+  PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `cloud`.`ovs_vlan_mapping_dirty`(
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `account_id` bigint unsigned COMMENT 'account id',

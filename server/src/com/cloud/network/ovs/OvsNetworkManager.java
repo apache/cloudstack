@@ -16,12 +16,8 @@ import com.cloud.vm.VirtualMachineProfile;
 public interface OvsNetworkManager extends Manager {
 	public boolean isOvsNetworkEnabled();
 
-	public long askVlanId(long accountId, long hostId);
-
-	public String getVlanMapping(long accountId);
-
 	public void UserVmCheckAndCreateTunnel(Commands cmds,
-			VirtualMachineProfile<UserVmVO> profile, DeployDestination dest);
+			VirtualMachineProfile<UserVmVO> profile, DeployDestination dest) throws GreTunnelException;
 
 	public void applyDefaultFlowToUserVm(Commands cmds,
 			VirtualMachineProfile<UserVmVO> profile, DeployDestination dest);
@@ -34,7 +30,7 @@ public interface OvsNetworkManager extends Manager {
 
 	public void RouterCheckAndCreateTunnel(Commands cmds,
 			VirtualMachineProfile<DomainRouterVO> profile,
-			DeployDestination dest);
+			DeployDestination dest) throws GreTunnelException;
 	
 	public void fullSync(List<Pair<String, Long>> states);
 	
