@@ -267,19 +267,19 @@ a:hover {
 }
 
 .loginoptions_dropdown {
-	width:97px;
+	width:91px;
 	height:100px;
 	float:left;
 	position:absolute;
-	background:#f2f2f2;
+	background:#FFF url(../images/actiondd_bg.gif) repeat-x top left;
 	border:1px solid #bebebe;
 	border-top:none;
-	top:20px;
-	left:5px;
+	top:21px;
+	left:8px;
 }
 
 .loginoptions_dropdown ul{
-	width:79px;
+	width:73px;
 	height:auto;
 	float:left;
 	margin:3px 0 0 9px;
@@ -288,21 +288,22 @@ a:hover {
 }
 
 .loginoptions_dropdown li{
-	width:74px;
+	width:68px;
 	height:auto;
 	float:left;
 	color:#333;
 	font-size:11px;
 	font-weight:none;
-	background:#f2f2f2;
+	background:none;
 	border-bottom:1px dotted #999;
 	margin:0;
 	padding:5px 0 3px 5px;
 	list-style:none;
+	overflow:hidden;
 }
 
 .loginoptions_dropdown li:hover{
-	background:#bebebe;
+	background:#e9e9e9;
 }
 
 .login_button {
