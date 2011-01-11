@@ -108,33 +108,26 @@
                             
                             <div class="loginoptions_panel">
                             	<div class="loginoptions_box">
-                                	<div class="loginoptions_dropdownbutton">
-                                    	<p>English</p>
+                                	<div id="lang_button" class="loginoptions_dropdownbutton">
+                                    	<p id="lang_name">English</p>
                                         <div class="loginoptions_ddarrow"></div>
          							
-                                    <div class="loginoptions_dropdown" style="display:none;">
-                                    	<ul>
-                                        	<li> Fran&ccedil;ais </li>
-                                        	<li> 汉语 </li>
-                                            <li> Fran&ccedil;ais </li>
-                                        	<li> 汉语 </li>
-                                            
-                                        </ul>
+										<div id="lang_menu" class="loginoptions_dropdown" style="display:none;">
+											<ul>
+												<li id="lang_default"> English </li>
+												<li id="lang_chinese"> Chinese </li>
+											</ul>
+										</div>
                                     </div>
-                                    </div>
-                                    <div class="loginoptions_dropdownbutton">
-                                    	<p>Default Theme</p>
+                                    <div id="theme_button" class="loginoptions_dropdownbutton">
+                                    	<p id="theme_name">Default Theme</p>
                                         <div class="loginoptions_ddarrow"></div>
-                                    
-                                     <div class="loginoptions_dropdown" style="display:none;">>
-                                    	<ul>
-                                        	<li> Custom 1 </li>
-                                        	<li> Custom 2  </li>
-                                            <li> Custom 3  </li>
-                                        	<li> Custom 4  </li>
-                                            
-                                        </ul>
-                                    </div>
+										<div id="theme_menu" class="loginoptions_dropdown" style="display:none;">
+											<ul>
+												<li id="theme_default">Default Theme</li>
+												<li id="custom/custom1/css/custom1.css">Custom - Grey</li>
+											</ul>
+										</div>
                                     </div>
                                 </div>
                             </div>
@@ -163,6 +156,7 @@
                     <p>
                         <fmt:message key="label.welcome"/> <span id="main_username"></span>, <a href="#" id="main_logout"><fmt:message key="label.logout"/></a>
                     </p>
+					<!--
                     <div class="language_dropdownpanel">
                     	<div class="language_icon"></div>
                         <p>English</p>
@@ -175,7 +169,7 @@
                             </ul>
                         </div>
                     </div>
-                    
+                    -->
                 </div>
             </div>
         </div>

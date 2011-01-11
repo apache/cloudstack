@@ -18,7 +18,7 @@
 // Default password is MD5 hashed.  Set the following variable to false to disable this.
 var md5Hashed = true;
  
- $(document).ready(function() { 
+$(document).ready(function() { 
 	function initUI() {
 		var context = $.urlParam('lp');
 		if (context != null) { 
@@ -38,6 +38,83 @@ var md5Hashed = true;
 			$("#leftmenu_dashboard").click();
 		}
 	}	
+	
+	// Setup custom theme
+	var $currentTheme = null;
+	if ($.cookie("theme") != null) {
+		$currentTheme = $("<link>").appendTo("head").attr({
+			rel: "stylesheet",
+			type: "text/css",
+			href: $.cookie("theme")
+		});
+		$("#theme_button p").text($.cookie("theme_name"));
+	}
+	$("#theme_button").click(function(event) {
+		var $menu = $(this).find("#theme_menu");
+		if ($menu.css("display") == "none") {
+			$menu.slideDown(500);
+		} else {
+			$menu.slideUp(500);
+		}
+	});
+	
+	$("#theme_button #theme_menu").click(function(event) {
+		var target = $(event.target);
+		var id = target.attr("id");
+		if ($currentTheme != null) {
+			$currentTheme.remove();
+			$currentTheme = null;
+		}
+		var name = "Default Theme";
+		if (id != "theme_default") {
+			$currentTheme = $("<link>").appendTo("head").attr({
+				rel: "stylesheet",
+				type: "text/css",
+				href: id
+			});
+			name = target.text();
+			$.cookie("theme_name", name)
+			$.cookie("theme", id);
+		} else {
+			if ($currentTheme != null) {
+				$currentTheme.remove();
+			}
+			$.cookie("theme", null);
+			$.cookie("theme_name", null);
+			name = "Default Theme";
+		}
+		$("#theme_button p").text(name);
+		$(this).hide();
+		return false;
+	});
+	
+	// Setup Language option
+	$("#lang_button").click(function(event) {
+		var $menu = $(this).find("#lang_menu");
+		if ($menu.css("display") == "none") {
+			$menu.slideDown(500);
+		} else {
+			$menu.slideUp(500);
+		}
+	});
+	
+	$("#lang_button #lang_menu").click(function(event) {
+		var target = $(event.target);
+		var id = target.attr("id");
+		var name = "English";
+		switch (id) {
+			case "lang_chinese" :
+				// Change Language here
+				name = "Chinese";
+				break;
+			default:
+				name = "English";
+				break;
+		}
+		$("#lang_button p").text(name);
+		$(this).hide();
+		return false;
+	});
 	
 	// Setup drag and slide for the main UI
 	$("#west_panel").resizable({
