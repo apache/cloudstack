@@ -1234,7 +1234,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     }
                 }
                 userNetwork.setBroadcastDomainType(broadcastDomainType);
-                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, true); 
+                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, true, false); 
             }
         }
     }

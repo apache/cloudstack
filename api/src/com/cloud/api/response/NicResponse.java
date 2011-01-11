@@ -43,13 +43,14 @@ public class NicResponse extends BaseResponse {
     @SerializedName("broadcasturi") @Param(description="the broadcast uri of the nic")
     private String broadcastUri;
     
-    //TODO - add description
-    @SerializedName("traffictype")
+    @SerializedName("traffictype") @Param(description="the traffic type of the nic")
     private String trafficType;
     
-    //TODO - add description
-    @SerializedName("type")
+    @SerializedName("type") @Param(description="the type of the nic")
     private String type;
+    
+    @SerializedName("isdefault") @Param(description="true if nic is default, false otherwise")
+    private Boolean isDefault;
 
     public Long getId() {
         return id;
@@ -121,5 +122,13 @@ public class NicResponse extends BaseResponse {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public Boolean getIsDefault() {
+        return isDefault;
+    }
+
+    public void setIsDefault(Boolean isDefault) {
+        this.isDefault = isDefault;
     }
 }

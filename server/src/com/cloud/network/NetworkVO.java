@@ -131,6 +131,9 @@ public class NetworkVO implements Network {
     @Column(name="reservation_id")
     String reservationId;  
     
+    @Column(name="is_default")
+    boolean isDefault;
+    
     public NetworkVO() {
     }
     
@@ -158,8 +161,8 @@ public class NetworkVO implements Network {
         this.guestType = guestType;
     }
     
-    public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText, Boolean isShared) {
-        this(id, that.getTrafficType(), that.getGuestType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related, name, displayText, isShared);
+    public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText, Boolean isShared, boolean isDefault) {
+        this(id, that.getTrafficType(), that.getGuestType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related, name, displayText, isShared, isDefault);
         this.gateway = that.getGateway();
         this.dns1 = that.getDns1();
         this.dns2 = that.getDns2();
@@ -184,9 +187,10 @@ public class NetworkVO implements Network {
      * @param accountId
      * @param name
      * @param displayText
-     * @param isShared TODO
+     * @param isShared
+     * @param isDefault
      */
-    public NetworkVO(long id, TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, long domainId, long accountId, long related, String name, String displayText, Boolean isShared) {
+    public NetworkVO(long id, TrafficType trafficType, GuestIpType guestType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long dataCenterId, long domainId, long accountId, long related, String name, String displayText, Boolean isShared, boolean isDefault) {
         this(trafficType, guestType, mode, broadcastDomainType, networkOfferingId, dataCenterId, State.Allocated);
         this.domainId = domainId;
         this.accountId = accountId;
@@ -195,6 +199,7 @@ public class NetworkVO implements Network {
         this.name = name;
         this.displayText = displayText;
         this.isShared = isShared;
+        this.isDefault = isDefault;
     }
     
     @Override
@@ -372,6 +377,11 @@ public class NetworkVO implements Network {
     @Override
     public boolean isShared() {
         return isShared;
+    }
+    
+    @Override
+    public boolean isDefault() {
+        return isDefault;
     }
 
     public void setShared(boolean isShared) {

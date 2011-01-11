@@ -313,7 +313,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     private int _networkRate;
     private int _multicastRate;
     String _networkDomain;
-    boolean _noDefaultRouteForDirectNetwork;
 
     private VMTemplateVO _template;
 
@@ -700,8 +699,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
 
         _systemAcct = _accountService.getSystemAccount();
-        
-        _noDefaultRouteForDirectNetwork = Boolean.parseBoolean(configs.get(Config.DirectNetworkNoDefaultRoute.key()));
 
         s_logger.info("DomainRouterManager is configured.");
 
@@ -1038,11 +1035,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
             List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
             NetworkOfferingVO controlOffering = offerings.get(0);
-            NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
+            NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false, false).get(0);
 
             List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
             NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
-            List<NetworkVO> publicConfigs = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
+            List<NetworkVO> publicConfigs = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false, false);
             NicProfile defaultNic = new NicProfile();
             defaultNic.setDefaultNic(true);
             defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
@@ -1128,7 +1125,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
             List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
             NetworkOfferingVO controlOffering = offerings.get(0);
-            NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
+            NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false, false).get(0);
 
             List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
             NicProfile gatewayNic = new NicProfile();
@@ -1227,7 +1224,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             buf.append(" domain=" + router.getDomain());
         }
         
-        if (_noDefaultRouteForDirectNetwork && network.getGuestType() == GuestIpType.Direct) {
+        if (!network.isDefault() && network.getGuestType() == GuestIpType.Direct) {
             buf.append(" defaultroute=false");
         } else {
             buf.append(" defaultroute=true");

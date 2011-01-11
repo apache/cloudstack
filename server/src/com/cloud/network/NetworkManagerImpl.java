@@ -134,6 +134,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -783,12 +784,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared) throws ConcurrentOperationException {
-        return setupNetwork(owner, offering, null, plan, name, displayText, isShared);
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault) throws ConcurrentOperationException {
+        return setupNetwork(owner, offering, null, plan, name, displayText, isShared, isDefault);
     }
 
     @Override @DB
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared) throws ConcurrentOperationException {
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault) throws ConcurrentOperationException {
         Transaction.currentTxn();
         Account locked = _accountDao.acquireInLockTable(owner.getId());
         if (locked == null) {
@@ -830,7 +831,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     related = id;
                 } 
     
-                NetworkVO vo = new NetworkVO(id, config, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isShared);
+                NetworkVO vo = new NetworkVO(id, config, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isShared, isDefault);
                 configs.add(_networksDao.persist(vo, vo.getGuestType() != null));
             }
     
@@ -879,6 +880,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 requested.setMode(config.getMode());
             }
             NicProfile profile = concierge.allocate(config, requested, vm);
+            
+            if (vm != null && vm.getVirtualMachine().getType() == Type.User && config.isDefault()) {
+                profile.setDefaultNic(true);
+            }
+            
             if (profile == null) {
                 continue;
             }
@@ -1055,7 +1061,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 _nicDao.update(nic.getId(), nic);
                 URI broadcastUri = nic.getBroadcastUri();
                 if (broadcastUri == null) {
-                    network.getBroadcastUri();
+                    broadcastUri = network.getBroadcastUri();
                 }
 
                 URI isolationUri = nic.getIsolationUri();
@@ -1284,6 +1290,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         String endIP = cmd.getEndIp();
         String netmask = cmd.getNetmask();
         String cidr = null;
+        Boolean isDefault = cmd.isDefault();
         if (gateway != null && netmask != null) {
             cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
         }
@@ -1303,6 +1310,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
         if (networkOffering == null || networkOffering.isSystemOnly()) {
             throw new InvalidParameterValueException("Unable to find network offeirng by id " + networkOfferingId);
+        }
+        
+        //allow isDefault to be set only for Virtual network
+        if (networkOffering.getTrafficType() == TrafficType.Guest) {
+            if (isDefault != null) {
+                throw new InvalidParameterValueException("Can specify isDefault parameter only for Public network. ");
+            } else {
+                isDefault = true;
+            }
+        } else {
+            if (isDefault == null) {
+                isDefault = false;
+            }
         }
         
         //Check if zone exists
@@ -1355,7 +1375,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                }
            }   
            
-           List<NetworkVO> networks = setupNetwork(owner, networkOffering, userNetwork, plan, name, displayText, isShared);
+           List<NetworkVO> networks = setupNetwork(owner, networkOffering, userNetwork, plan, name, displayText, isShared, isDefault);
            Long networkId = null;
            
            Network network = null;
@@ -1426,6 +1446,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         String type = cmd.getType();
         Boolean isSystem = cmd.getIsSystem();
         Boolean isShared = cmd.getIsShared();
+        Boolean isDefault = cmd.isDefault();
         Long accountId = null;
         
         if (isSystem == null) {
@@ -1508,6 +1529,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         if (isShared != null) {
             sc.addAnd("isShared", SearchCriteria.Op.EQ, isShared);
+        }
+        
+        if (isDefault != null) {
+            sc.addAnd("isDefault", SearchCriteria.Op.EQ, isDefault);
         }
         
         List<NetworkVO> networks =  _networksDao.search(sc, searchFilter);
@@ -1708,8 +1733,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException {
         //This method reapplies Ip addresses, LoadBalancer and PortForwarding rules
-        Account caller = UserContext.current().getCaller();
-        
+        Account caller = UserContext.current().getCaller();        
         Long networkId = cmd.getNetworkId();
         Network network = null;
         if (networkId != null) {

@@ -201,5 +201,7 @@ public interface Network extends ControlledEntity {
     boolean isShared();
     
     String getReservationId();
+    
+    boolean isDefault();
 
 }

@@ -60,6 +60,9 @@ public class ListNetworksCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.IS_SHARED, type=CommandType.BOOLEAN, description="true if network is shared, false otherwise")
     private Boolean isShared;
+    
+    @Parameter(name=ApiConstants.IS_DEFAULT, type=CommandType.BOOLEAN, description="true if network is default, false otherwise")
+    private Boolean isDefault;
    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -91,6 +94,10 @@ public class ListNetworksCmd extends BaseListCmd {
 
     public Boolean getIsShared() {
         return isShared;
+    }
+    
+    public Boolean isDefault() {
+        return isDefault;
     }
 
     /////////////////////////////////////////////////////

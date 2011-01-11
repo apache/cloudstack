@@ -134,7 +134,6 @@ import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.SecurityGroupManager;
-import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.Criteria;
@@ -2234,7 +2233,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (dc.getNetworkType() == NetworkType.Basic && networkList == null) {
             Network defaultNetwork = _networkMgr.getSystemNetworkByZoneAndTrafficType(dc.getId(), TrafficType.Guest);
             if (defaultNetwork == null) {
-                throw new InvalidParameterValueException("Unable to find a default Direct network to start a vm");
+                throw new InvalidParameterValueException("Unable to find a default network to start a vm");
             } else {
                 networkList = new ArrayList<Long>();
                 networkList.add(defaultNetwork.getId());
@@ -2246,6 +2245,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
+        short defaultNetworkNumber = 0;
         for (Long networkId : networkList) {
             NetworkVO network = _networkDao.findById(networkId);
             if (network == null) {
@@ -2258,8 +2258,19 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         throw new PermissionDeniedException("Unable to create a vm using network with id " + networkId + ", permission denied");
                     }
                 } 
+                
+                if (network.isDefault()) {
+                    defaultNetworkNumber++;
+                }
                 networks.add(new Pair<NetworkVO, NicProfile>(network, null));
             }
+        }
+        
+        //at least one network default network has to be set
+        if (defaultNetworkNumber == 0) {
+            throw new InvalidParameterValueException("At least 1 default network has to be specified for the vm");
+        } else if (defaultNetworkNumber >1) {
+            throw new InvalidParameterValueException("Only 1 default network per vm is supported");
         }
         
         long id = _vmDao.getNextInSequence(Long.class, "id");

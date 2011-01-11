@@ -73,6 +73,9 @@ public class CreateNetworkCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.IS_SHARED, type=CommandType.BOOLEAN, description="true is network offering supports vlans")
     private Boolean isShared; 
+    
+    @Parameter(name=ApiConstants.IS_DEFAULT, type=CommandType.BOOLEAN, description="true if network is default, false otherwise")
+    private Boolean isDefault;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -123,6 +126,10 @@ public class CreateNetworkCmd extends BaseCmd {
     
     public boolean getIsShared() {
         return isShared == null ? false : isShared;
+    }
+    
+    public Boolean isDefault() {
+        return isDefault;
     }
 
     /////////////////////////////////////////////////////

@@ -151,6 +151,7 @@ CREATE TABLE `cloud`.`networks` (
   `shared` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '0 if network is shared, 1 if network dedicated',
   `network_domain` varchar(255) COMMENT 'domain',
   `reservation_id` char(40) COMMENT 'reservation id',
+  `is_default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is default',
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`)
@@ -214,7 +215,7 @@ CREATE TABLE `cloud`.`network_offerings` (
   `service_offering_id` bigint unsigned UNIQUE COMMENT 'service offering id that this network offering is tied to',
   `created` datetime NOT NULL COMMENT 'time the entry was created',
   `removed` datetime DEFAULT NULL COMMENT 'time the entry was removed',
-  `default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is default',
+  `default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network offering is default',
   `availability` varchar(255) NOT NULL COMMENT 'availability of the network',
   `dns_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides dns service',
   `gateway_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides gateway service',
