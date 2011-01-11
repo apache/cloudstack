@@ -394,8 +394,7 @@ function initVMWizard() {
 				var $securityGroupSelect = $vmPopup.find("#wizard_security_groups").empty();	
 				if (items != null && items.length > 0) {
 					for (var i = 0; i < items.length; i++) {
-					    if(items[i].name != "default")						
-						    $securityGroupSelect.append("<option value='" + fromdb(items[i].name) + "'>" + fromdb(items[i].name) + "</option>"); 
+					    $securityGroupSelect.append("<option value='" + fromdb(items[i].name) + "'>" + fromdb(items[i].name) + "</option>"); 
 					}
 				}					    
 			}
