@@ -1,4 +1,8 @@
-<%@ taglib uri="http://java.sun.com/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
 <fmt:setBundle basename="resources/messages"/>
 <% long now = System.currentTimeMillis(); %>
 
@@ -114,8 +118,8 @@
          							
 										<div id="lang_menu" class="loginoptions_dropdown" style="display:none;">
 											<ul>
-												<li id="lang_default"> English </li>
-												<li id="lang_chinese"> Chinese </li>
+												<li id="en">English</li>
+												<li id="zh">Chinese</li>
 											</ul>
 										</div>
                                     </div>

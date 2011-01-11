@@ -47,7 +47,7 @@ $(document).ready(function() {
 			type: "text/css",
 			href: $.cookie("theme")
 		});
-		$("#theme_button p").text($.cookie("theme_name"));
+		$("#theme_button p").text($.cookie("theme.name"));
 	}
 	$("#theme_button").click(function(event) {
 		var $menu = $(this).find("#theme_menu");
@@ -73,14 +73,14 @@ $(document).ready(function() {
 				href: id
 			});
 			name = target.text();
-			$.cookie("theme_name", name)
+			$.cookie("theme.name", name)
 			$.cookie("theme", id);
 		} else {
 			if ($currentTheme != null) {
 				$currentTheme.remove();
 			}
 			$.cookie("theme", null);
-			$.cookie("theme_name", null);
+			$.cookie("theme.name", null);
 			name = "Default Theme";
 		}
 		$("#theme_button p").text(name);
@@ -89,6 +89,10 @@ $(document).ready(function() {
 	});
 	
 	// Setup Language option
+	if ($.cookie("lang") != null) {
+		$("#lang_button p").text($.cookie("lang.name"));
+	}
+	
 	$("#lang_button").click(function(event) {
 		var $menu = $(this).find("#lang_menu");
 		if ($menu.css("display") == "none") {
@@ -101,18 +105,9 @@ $(document).ready(function() {
 	$("#lang_button #lang_menu").click(function(event) {
 		var target = $(event.target);
 		var id = target.attr("id");
-		var name = "English";
-		switch (id) {
-			case "lang_chinese" :
-				// Change Language here
-				name = "Chinese";
-				break;
-			default:
-				name = "English";
-				break;
-		}
-		$("#lang_button p").text(name);
-		$(this).hide();
+		$.cookie("lang", id);
+		$.cookie("lang.name", target.text());
+		location.replace('/client');
 		return false;
 	});
 	
@@ -594,7 +589,7 @@ $(document).ready(function() {
 	var activeTab = null;
 	function logout(refresh) {
 		g_mySession = null;
-                g_sessionKey = null;
+        g_sessionKey = null;
 		g_username = null;	
 		g_account = null;
 		g_domainid = null;	
