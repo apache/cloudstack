@@ -703,6 +703,19 @@
                             </div>
                         </div>
 						-->
+						
+						<div id="for_basic_zone" style="display: none">		
+						    <h3>Security Groups</h3>						    
+						    <ol>						        
+						        <li>
+						            <select id="wizard_security_groups" class="multiple" multiple="multiple" size="15">
+									</select>
+						        </li>
+						        <li>						            
+							        (Use <strong>Ctrl-click</strong> to select all applicable security groups)							        
+						        </li>
+						    </ol>						      
+						</div>
                     </div>
                 </div>
                 <div class="vmpopup_navigationpanel">

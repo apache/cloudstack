@@ -386,13 +386,28 @@ function initVMWizard() {
 		    }
 	    });
 		
+		$.ajax({					
+		    data: createURL("command=listSecurityGroups"+"&domainid="+g_domainid+"&account="+g_account),		
+			dataType: "json",
+			success: function(json) {			    		
+				var items = json.listsecuritygroupsresponse.securitygroup;					
+				var $securityGroupSelect = $vmPopup.find("#wizard_security_groups").empty();	
+				if (items != null && items.length > 0) {
+					for (var i = 0; i < items.length; i++) {
+					    if(items[i].name != "default")						
+						    $securityGroupSelect.append("<option value='" + fromdb(items[i].name) + "'>" + fromdb(items[i].name) + "</option>"); 
+					}
+				}					    
+			}
+		});		
+		
 	    $.ajax({
 		    data: createURL("command=listServiceOfferings"),
 		    dataType: "json",
 		    async: false,
 		    success: function(json) {
 			    var offerings = json.listserviceofferingsresponse.serviceoffering;
-			    var $container = $("#service_offering_container");
+			    var $container = $vmPopup.find("#service_offering_container");
 			    $container.empty();					    
 			    if (offerings != null && offerings.length > 0) {						    
 				    for (var i = 0; i < offerings.length; i++) {	
@@ -414,8 +429,8 @@ function initVMWizard() {
 		    async: false,
 		    success: function(json) {
 			    var offerings = json.listdiskofferingsresponse.diskoffering;			
-			    var $dataDiskOfferingContainer = $("#data_disk_offering_container").empty();
-		        var $rootDiskOfferingContainer = $("#root_disk_offering_container").empty();
+			    var $dataDiskOfferingContainer = $vmPopup.find("#data_disk_offering_container").empty();
+		        var $rootDiskOfferingContainer = $vmPopup.find("#root_disk_offering_container").empty();
 		        
 		        //***** data disk offering: "no, thanks", "custom", existing disk offerings in database (begin) ****************************************************
 		        //"no, thanks" radio button (default radio button in data disk offering)
@@ -821,6 +836,7 @@ function initVMWizard() {
 			//Setup Networking before showing it.  This only applies to zones with Advanced Networking support.
 			var zoneObj = $thisPopup.find("#wizard_zone option:selected").data("zoneObj");
 			if (zoneObj.networktype == "Advanced") {
+			    $thisPopup.find("#step4").find("#for_basic_zone").hide();			    
 				var networkName = "Virtual Network";
 				var networkDesc = "A dedicated virtualized network for your account.  The broadcast domain is contrained within a VLAN and all public network access is routed out by a virtual router.";
 				$.ajax({
@@ -925,8 +941,9 @@ function initVMWizard() {
 					}
 				});
 				$thisPopup.find("#wizard_review_network").text(networkName);
-			} else {
-				// Basic Network, show security groups
+			} 
+			else {  // Basic Network, show security groups
+			    $thisPopup.find("#step4").find("#for_basic_zone").show();				
 				$thisPopup.find("#wizard_review_network").text("Basic Network");
 			}
 	    }	
@@ -1013,8 +1030,12 @@ function initVMWizard() {
 					}
 				}
 				moreCriteria.push("&networkIds="+networkIds);
-			} else {
-				// add security groups
+			} 
+			else { //zoneObj.networktype == "Basic"		
+				if($thisPopup.find("#wizard_security_groups").val() != null && $thisPopup.find("#wizard_security_groups").val().length > 0) {
+			        var securityGroupList = $thisPopup.find("#wizard_security_groups").val().join(",");
+			        moreCriteria.push("&securitygrouplist="+encodeURIComponent(securityGroupList));	
+			    }						
 			}
 			
 			var diskOfferingId, $diskOfferingElement;    						
