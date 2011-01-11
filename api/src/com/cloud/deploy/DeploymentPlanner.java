@@ -10,6 +10,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.org.Cluster;
 import com.cloud.storage.StoragePool;
@@ -50,11 +51,11 @@ public interface DeploymentPlanner extends Adapter {
         Set<Long> _hostIds;
         Set<Long> _poolIds;
         
-        public void add(InsufficientCapacityException e) {
+        public boolean add(InsufficientCapacityException e) {
             Class<?> scope = e.getScope();
             
             if (scope == null) {
-                return;
+                return false;
             }
             
             if (Host.class.isAssignableFrom(scope)) {
@@ -67,7 +68,35 @@ public interface DeploymentPlanner extends Adapter {
                 addCluster(e.getId());
             } else if (StoragePool.class.isAssignableFrom(scope)) {
                 addPool(e.getId());
+            } else {
+                return false;
             }
+            
+            return true;
+        }
+        
+        public boolean add(ResourceUnavailableException e) {
+            Class<?> scope = e.getScope();
+            
+            if (scope == null) {
+                return false;
+            }
+            
+            if (Host.class.isAssignableFrom(scope)) {
+                addHost(e.getResourceId());
+            } else if (Pod.class.isAssignableFrom(scope)) {
+                addPod(e.getResourceId());
+            } else if (DataCenter.class.isAssignableFrom(scope)) {
+                addDataCenter(e.getResourceId());
+            } else if (Cluster.class.isAssignableFrom(scope)) {
+                addCluster(e.getResourceId());
+            } else if (StoragePool.class.isAssignableFrom(scope)) {
+                addPool(e.getResourceId());
+            } else {
+                return false;
+            }
+            
+            return true;
         }
         
         public void addPool(long poolId) {

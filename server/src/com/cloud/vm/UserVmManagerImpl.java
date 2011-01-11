@@ -2427,6 +2427,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     	UserVmVO vm = profile.getVirtualMachine();
         _networkGroupMgr.handleVmStateTransition(vm, State.Running);
         _ovsNetworkMgr.handleVmStateTransition(vm, State.Running);
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
+        _usageEventDao.persist(usageEvent);
+        
     	return true;
     }
     
