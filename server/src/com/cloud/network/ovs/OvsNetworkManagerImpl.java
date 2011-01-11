@@ -24,6 +24,8 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.ovs.dao.GreTunnelDao;
+import com.cloud.network.ovs.dao.GreTunnelVO;
 import com.cloud.network.ovs.dao.OvsWorkDao;
 import com.cloud.network.ovs.dao.OvsWorkVO;
 import com.cloud.network.ovs.dao.OvsWorkVO.Step;
@@ -69,6 +71,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 	@Inject UserVmDao _userVMDao;
 	@Inject VMInstanceDao _instanceDao;
 	@Inject AccountDao _accountDao;
+	@Inject GreTunnelDao _tunnelDao;
 	String _name;
 	boolean _isEnabled;
 	ScheduledExecutorService _executorPool;
@@ -109,9 +112,16 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		_serverId = ((ManagementServer)ComponentLocator.getComponent(ManagementServer.Name)).getId();
 	    _executorPool = Executors.newScheduledThreadPool(10, new NamedThreadFactory("OVS"));
 	    _cleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("OVS-Cleanup"));
-	    _ovsListener = new OvsListener(this, _workDao);
+	    _ovsListener = new OvsListener(this, _workDao, _tunnelDao);
 	    _agentMgr.registerForHostEvents(_ovsListener, true, true, true);
 		
+		//FIXME:
+		GreTunnelVO t = _tunnelDao.lockRow(new Long(1), true);
+	    if (t == null) {
+	    	t = new GreTunnelVO(0, 0);
+	    	_tunnelDao.persist(t);
+	    }
+	    
 		return true;
 	}
 
@@ -192,9 +202,6 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 				}		
 			}
 			
-			String vlans = getVlanMapping(vm.getAccountId());
-			String tag = Long.toString(_vlanMappingDao.findByAccountIdAndHostId(
-							vm.getAccountId(), vm.getHostId()).getVlan());
 			Long agentId = null;
 			VmFlowLogVO log = _flowLogDao.findByVmId(userVmId);
 			if (log == null) {
@@ -206,12 +213,16 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 			if (vm != null && vm.getState() == State.Running) {
 				agentId = vm.getHostId();
 				if (agentId != null ) {
-					OvsSetTagAndFlowCommand cmd = new OvsSetTagAndFlowCommand(
-							vm.getName(), tag, vlans, seqnum.toString(), vm.getId());
-					Commands cmds = new Commands(cmd);
+					String vlans = getVlanInPortMapping(vm.getAccountId(), vm.getHostId());
+					String tag = Long.toString(_vlanMappingDao.findByAccountIdAndHostId(
+							vm.getAccountId(), vm.getHostId()).getVlan());
+
+					Commands cmds = new Commands(new OvsSetTagAndFlowCommand(
+							vm.getName(), tag, vlans, seqnum.toString(),
+							vm.getId()));
+
 					try {
 						_agentMgr.send(agentId, cmds, _ovsListener);
-						// TODO: clean dirty in answerListener
 					} catch (AgentUnavailableException e) {
 						s_logger.debug("Unable to send updates for vm: "
 								+ userVmId + "(agentid=" + agentId + ")");
@@ -239,9 +250,8 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 	}
 	
 	//TODO: think about lock
-	@Override
 	@DB
-	public long askVlanId(long accountId, long hostId) {
+	protected long askVlanId(long accountId, long hostId) {
 		assert _isEnabled : "Who call me ??? while OvsNetwokr is not enabled!!!";
 		final Transaction txn = Transaction.currentTxn();
 		txn.start();
@@ -287,33 +297,9 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		return vlan;
 	}
 
-	@Override
 	@DB
-	public String getVlanMapping(long accountId) {
-		assert _isEnabled : "Who call me ??? while OvsNetwork is not enabled!!!";
-		final Transaction txn = Transaction.currentTxn();
-		txn.start();
-		
-		List<VlanMappingVO> ours = _vlanMappingDao.listByAccountId(accountId);
-		txn.commit();
-		
-		ArrayList<Long>vlans = new ArrayList<Long>();
-		for (VlanMappingVO vo : ours) {
-			vlans.add(new Long(vo.getVlan()));
-		}
-		
-		assert vlans.size() > 0 : "Vlan map can't be null";
-		StringBuffer buf = new StringBuffer();
-		buf.append("/");
-		for (Long i : vlans) {
-			buf.append(i.toString());
-			buf.append("/");
-		}
-		return buf.toString();
-	}
-
-	protected void CheckAndCreateTunnel(Commands cmds, VMInstanceVO instance,
-			DeployDestination dest) {
+	protected void CheckAndCreateTunnel(VMInstanceVO instance,
+			DeployDestination dest) throws GreTunnelException {
 		if (!_isEnabled) {
 			return;
 		}
@@ -325,39 +311,91 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		
 		long hostId = dest.getHost().getId();
 		long accountId = instance.getAccountId();
-		List<UserVmVO> vms = _userVmDao.listByAccountIdAndHostId(accountId, hostId);
-		if (vms.size() > 1 || (vms.size() == 1 && vms.get(0).getId() != instance.getId())) {
-			s_logger.debug("Already has GRE tunnel for account " + accountId
-					+ " for host " + hostId);
-			return;
+		
+		final Transaction txn = Transaction.currentTxn();
+		txn.start();
+		//TODO: considerate router?
+		List<UserVmVO>vms = _userVmDao.listByAccountId(accountId);
+		List<Long>toHostIds = new ArrayList<Long>();
+		List<Long>fromHostIds = new ArrayList<Long>();
+		GreTunnelVO tvo = _tunnelDao.acquireInLockTable(new Long(1));
+		if (tvo == null) {
+			throw new GreTunnelException("can't lock gre tunnel table for: from=" + hostId);
 		}
 		
-		vms = _userVmDao.listByAccountId(accountId);
-		List<Long>remoteHostIds = new ArrayList<Long>();
 		for (UserVmVO v : vms) {
 			Long rh = v.getHostId();
 			if (rh == null || rh.longValue() == hostId) {
 				continue;
 			}
 			
-			if (!remoteHostIds.contains(rh)) {
-				remoteHostIds.add(rh);
+			GreTunnelVO tunnel = _tunnelDao.getByFromAndTo(hostId, rh.longValue());
+			if (tunnel == null) {
+				tunnel = new GreTunnelVO(hostId, rh.longValue());
+				_tunnelDao.persist(tunnel);
+				
+				if (!toHostIds.contains(rh)) {
+					toHostIds.add(rh);
+				}
 			}
+			
+		    tunnel = _tunnelDao.getByFromAndTo(rh.longValue(), hostId);
+			if (tunnel == null) {
+				tunnel = new GreTunnelVO(rh.longValue(), hostId);
+				_tunnelDao.persist(tunnel);
+				
+				if (!fromHostIds.contains(rh)) {
+					fromHostIds.add(rh);
+				}
+			}	
+			
 		}
+		_tunnelDao.releaseFromLockTable(new Long(1));
+		txn.commit();
 		
 		try {
 			String myIp = dest.getHost().getPrivateIpAddress();
-			for (Long i : remoteHostIds) {
+			for (Long i : toHostIds) {
 				HostVO rHost = _hostDao.findById(i.longValue());
-				cmds.addCommand(
-						0, new OvsCreateGreTunnelCommand(rHost.getPrivateIpAddress(), "1"));
-				Commands cmd2s = new Commands( new OvsCreateGreTunnelCommand(myIp, "1"));
+				Commands cmds = new Commands(
+						new OvsCreateGreTunnelCommand(
+								rHost.getPrivateIpAddress(), "1", hostId,
+								i.longValue()));
+				_agentMgr.send(hostId, cmds , _ovsListener);
+				s_logger.debug("Ask host " + hostId + " to create gre tunnel to " + i.longValue());
+			}
+			
+			for (Long i : fromHostIds) {
+				Commands cmd2s = new Commands(new OvsCreateGreTunnelCommand(myIp, "1", i.longValue(), hostId));
 				_agentMgr.send(i.longValue(), cmd2s , _ovsListener);
 				s_logger.debug("Ask host " + i.longValue() + " to create gre tunnel to " + hostId);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}	
+	}
+	
+	@DB
+	protected String getVlanInPortMapping(long accountId, long from) {
+		List<GreTunnelVO> tunnels = _tunnelDao.getByFrom(from);
+		if (tunnels.size() == 0) {
+			return "[]";
+		} else {
+			Transaction txn = Transaction.currentTxn();
+			txn.start();
+			List<String> maps = new ArrayList<String>();
+			for (GreTunnelVO t : tunnels) {
+				VlanMappingVO m = _vlanMappingDao.lockByAccountIdAndHostId(accountId, t.getTo());
+				if (m == null) {
+					s_logger.debug("Host " + t.getTo() + " has no VM for account " + accountId + ", skip it");
+					continue;
+				}
+				String s = String.format("%1$s:%2$s", m.getVlan(), t.getInPort());
+				maps.add(s);
+			}
+			txn.commit();
+			return maps.toString();
+		}
 	}
 	
 	protected void applyDefaultFlow(Commands cmds,
@@ -372,12 +410,16 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 			return;
 		}
 		
-		String tag = Long.toString(askVlanId(instance.getAccountId(), instance.getHostId()));
-		String vlans = getVlanMapping(instance.getAccountId());
+		long hostId = instance.getHostId();
+		long accountId = instance.getAccountId();
+		String tag = Long.toString(askVlanId(accountId, hostId));
 		CheckAndUpdateDhcpFlow(instance);
-		VmFlowLogVO log = _flowLogDao.findOrNewByVmId(instance.getId(), instance.getName());
-		cmds.addCommand(new OvsSetTagAndFlowCommand(instance.getName(), tag, vlans,
-				Long.toString(log.getLogsequence()), instance.getId()));
+		String vlans = getVlanInPortMapping(accountId, hostId);
+
+		VmFlowLogVO log = _flowLogDao.findOrNewByVmId(instance.getId(),
+				instance.getName());
+		cmds.addCommand(new OvsSetTagAndFlowCommand(instance.getName(), tag,
+				vlans, Long.toString(log.getLogsequence()), instance.getId()));
 	}
 	
 	//FIXME: if router has record in database but not start, this will hang 10 secs due to host
@@ -402,14 +444,16 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		}
 		
 		try {
-			String vlans = getVlanMapping(accountId);
-			String tag = Long.toString(_vlanMappingDao.findByAccountIdAndHostId(router.getAccountId(),
+			String tag = Long.toString(_vlanMappingDao.findByAccountIdAndHostId(accountId,
 							router.getHostId()).getVlan());
+			long hostId = router.getHostId();
 			VmFlowLogVO log = _flowLogDao.findOrNewByVmId(instance.getId(), instance.getName());
+			String vlans = getVlanInPortMapping(accountId, hostId);
 			s_logger.debug("ask router " + router.getName() + " on host "
-					+ router.getHostId() + " update vlan map to " + vlans);
-			_agentMgr.send(router.getHostId(), new OvsSetTagAndFlowCommand(
-					router.getName(), tag, vlans, Long.toString(log.getLogsequence()), instance.getId()));	
+					+ hostId + " update vlan map to " + vlans);
+			Commands cmds = new Commands(new OvsSetTagAndFlowCommand(
+					router.getName(), tag, vlans, Long.toString(log.getLogsequence()), instance.getId()));
+			_agentMgr.send(router.getHostId(), cmds, _ovsListener);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -568,15 +612,15 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 
 	@Override
 	public void UserVmCheckAndCreateTunnel(Commands cmds,
-			VirtualMachineProfile<UserVmVO> profile, DeployDestination dest) {
-		CheckAndCreateTunnel(cmds, (VMInstanceVO)profile.getVirtualMachine(), dest);	
+			VirtualMachineProfile<UserVmVO> profile, DeployDestination dest) throws GreTunnelException {
+		CheckAndCreateTunnel((VMInstanceVO)profile.getVirtualMachine(), dest);	
 	}
 
 	@Override
 	public void RouterCheckAndCreateTunnel(Commands cmds,
 			VirtualMachineProfile<DomainRouterVO> profile,
-			DeployDestination dest) {
-		CheckAndCreateTunnel(cmds, (VMInstanceVO)profile.getVirtualMachine(), dest);	
+			DeployDestination dest) throws GreTunnelException {
+		CheckAndCreateTunnel((VMInstanceVO)profile.getVirtualMachine(), dest);	
 	}
 
 	@Override

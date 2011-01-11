@@ -3835,8 +3835,8 @@ public abstract class CitrixResourceBase implements ServerResource {
     	try {
     		Network nw = setupvSwitchNetwork(conn);
     		String bridge = nw.getBridge(conn);
-    		String result = callHostPlugin(conn, "vmops", "ovs_delete_flow", "bridge", bridge,
-    				"vmName", cmd.getVmName(), "reCreate", "true");
+    		String result = callHostPlugin(conn, "ovsgre", "ovs_delete_flow", "bridge", bridge,
+    				"vmName", cmd.getVmName());
     		
     		if (result.equalsIgnoreCase("SUCCESS")) {
     			return new Answer(cmd, true, "success to delete flows for " + cmd.getVmName());
@@ -3852,7 +3852,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     private List<Pair<String, Long>> ovsFullSyncStates() {
     	Connection conn = getConnection();
     	try {
-    		String result = callHostPlugin(conn, "vmops", "ovs_get_vm_log", "host_uuid", _host.uuid);
+    		String result = callHostPlugin(conn, "ovsgre", "ovs_get_vm_log", "host_uuid", _host.uuid);
     		String [] logs = result != null ?result.split(";"): new String [0];
     		List<Pair<String, Long>> states = new ArrayList<Pair<String, Long>>();
     		for (String log: logs){
@@ -3890,7 +3890,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     		 * none guest network nic. don't worry, it will fail silently at host
     		 * plugin side
     		 */
-    		String result = callHostPlugin(conn, "vmops", "ovs_set_tag_and_flow", "bridge", bridge,
+    		String result = callHostPlugin(conn, "ovsgre", "ovs_set_tag_and_flow", "bridge", bridge,
     				"vmName", cmd.getVmName(), "tag", cmd.getTag(),
     				"vlans", cmd.getVlans(), "seqno", cmd.getSeqNo());
 			s_logger.debug("set flow for " + cmd.getVmName() + " " + result);
@@ -3917,15 +3917,16 @@ public abstract class CitrixResourceBase implements ServerResource {
     		Network nw = setupvSwitchNetwork(conn);
     		bridge = nw.getBridge(conn);
     		
-			String result = callHostPlugin(conn, "vmops", "vlanRemapUtils",
-					"op", "createGRE", "bridge", bridge,
-					"remoteIP", cmd.getRemoteIp(), "greKey", cmd.getKey());
-			if (result.equalsIgnoreCase("SUCCESS") || result.equalsIgnoreCase("TUNNEL_EXISTED")) {
-				return new OvsCreateGreTunnelAnswer(cmd, true, result, _host.ip, bridge);
-			} else {
+			String result = callHostPlugin(conn, "ovsgre", "ovs_create_gre", "bridge", bridge,
+					"remoteIP", cmd.getRemoteIp(), "greKey", cmd.getKey(), "from",
+					Long.toString(cmd.getFrom()), "to", Long.toString(cmd.getTo()));
+			String[] res = result.split(":");
+			if (res.length != 2 || (res.length == 2 && res[1] == "[]")) {
 				return new OvsCreateGreTunnelAnswer(cmd, false, result,
 						_host.ip, bridge);
-			}
+			} else {
+				return new OvsCreateGreTunnelAnswer(cmd, true, result, _host.ip, bridge, Integer.parseInt(res[1]));
+			}	
     	} catch (Exception e) {
     		e.printStackTrace();
     	}

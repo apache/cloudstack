@@ -59,9 +59,30 @@ public class VlanMappingDaoImpl extends GenericDaoBase<VlanMappingVO, Long>
 
 	@Override
 	public VlanMappingVO findByAccountIdAndHostId(long accountId, long hostId) {
+		return getByAccountIdAndHostId(accountId, hostId, false);
+	}
+
+	@Override
+	public List<VlanMappingVO> lockByAccountId(long accountId) {
+		SearchCriteria<VlanMappingVO> sc = accountIdSearch.create();
+        sc.setParameters("account_id", accountId);
+		return lockRows(sc, null, true);
+	}
+
+	@Override
+	public VlanMappingVO lockByAccountIdAndHostId(long accountId, long hostId) {
+		return getByAccountIdAndHostId(accountId, hostId, true);
+	}
+	
+	private VlanMappingVO getByAccountIdAndHostId(long accountId, long hostId, boolean lock) {
 		SearchCriteria<VlanMappingVO> sc = accountHostSearch.create();
         sc.setParameters("account_id", accountId);
         sc.setParameters("host_id", hostId);
-		return findOneBy(sc);
+        
+        if (!lock) {
+        	return findOneBy(sc);
+        } else {
+        	return lockOneRandomRow(sc, true);
+        }
 	}
 }

@@ -129,6 +129,7 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.ovs.GreTunnelException;
 import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
@@ -2392,8 +2393,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		}
 		_vmDao.update(userVm.getId(), userVm);
 	
-		_ovsNetworkMgr.UserVmCheckAndCreateTunnel(cmds, profile, dest);
-		_ovsNetworkMgr.applyDefaultFlowToUserVm(cmds, profile, dest);
+		
+		try {
+			_ovsNetworkMgr.UserVmCheckAndCreateTunnel(cmds, profile, dest);
+			_ovsNetworkMgr.applyDefaultFlowToUserVm(cmds, profile, dest);
+		} catch (GreTunnelException e) {
+			e.printStackTrace();
+		}
+		
 		return true;
 	}
 
