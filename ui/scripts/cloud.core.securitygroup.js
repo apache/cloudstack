@@ -186,9 +186,11 @@ function initAddIngressRuleDialog() {
             "Add": function() { 
                 var $thisDialog = $(this);		  
                 $thisDialog.find("#info_container").hide();  	
+		    	var protocol = $thisDialog.find("#protocol").val();
 		    	          										
                 // validate values 					
-	            var isValid = true;				
+	            var isValid = true;		
+	            		
 	            if(protocol == "ICMP") {					
 	                isValid &= validateNumber("Type", $thisDialog.find("#icmp_type"), $thisDialog.find("#icmp_type_errormsg"), -1, 40, false);	//required	
 	                isValid &= validateNumber("Code", $thisDialog.find("#icmp_code"), $thisDialog.find("#icmp_code_errormsg"), -1 , 15, false);	//required
@@ -226,8 +228,7 @@ function initAddIngressRuleDialog() {
 		    	moreCriteria.push("&domainid=" + domainId);
                 moreCriteria.push("&account=" + account);
                 moreCriteria.push("&securitygroupname=" + securityGroupName);   
-                             
-		    	var protocol = $thisDialog.find("#protocol").val();
+                  	    	
 	            if (protocol!=null && protocol.length > 0) 
 		            moreCriteria.push("&protocol="+encodeURIComponent(protocol));	
 		            	  				          							
