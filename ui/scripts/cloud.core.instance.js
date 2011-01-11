@@ -942,9 +942,11 @@ function initVMWizard() {
 				});
 				$thisPopup.find("#wizard_review_network").text(networkName);
 			} 
-			else {  // Basic Network, show security groups
-			    $thisPopup.find("#step4").find("#for_basic_zone").show();				
-				$thisPopup.find("#wizard_review_network").text("Basic Network");
+			else {  // Basic Network
+			    if(getDirectAttachSecurityGroupsEnabled() == "true" && $selectedVmWizardTemplate.data("hypervisor") != "VmWare" ) {
+			        $thisPopup.find("#step4").find("#for_basic_zone").show();				
+				    $thisPopup.find("#wizard_review_network").text("Basic Network");
+				}
 			}
 	    }	
 	    	
@@ -1031,11 +1033,13 @@ function initVMWizard() {
 				}
 				moreCriteria.push("&networkIds="+networkIds);
 			} 
-			else { //zoneObj.networktype == "Basic"		
-				if($thisPopup.find("#wizard_security_groups").val() != null && $thisPopup.find("#wizard_security_groups").val().length > 0) {
-			        var securityGroupList = $thisPopup.find("#wizard_security_groups").val().join(",");
-			        moreCriteria.push("&securitygrouplist="+encodeURIComponent(securityGroupList));	
-			    }						
+			else {  //Basic zone
+			    if($thisPopup.find("#step4").find("#for_basic_zone").css("style") != "none") {
+				    if($thisPopup.find("#wizard_security_groups").val() != null && $thisPopup.find("#wizard_security_groups").val().length > 0) {
+			            var securityGroupList = $thisPopup.find("#wizard_security_groups").val().join(",");
+			            moreCriteria.push("&securitygrouplist="+encodeURIComponent(securityGroupList));	
+			        }		
+			    }				
 			}
 			
 			var diskOfferingId, $diskOfferingElement;    						
