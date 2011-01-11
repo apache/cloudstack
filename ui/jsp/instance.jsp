@@ -638,77 +638,79 @@
                         </div>
                     </div>
                     <div class="vmpopup_offeringpanel" style="position:relative;">
-                        <div class="vmpopup_offeringbox" id="network_virtual_container" style="display:none">
-                            <input type="checkbox" id="network_virtual" name="network_virtual_checkbox" class="radio" checked="checked" />
-                            <label class="label" id="network_virtual_name">Virtual Network</label>
-                            <div class="vmpopup_offdescriptionbox">
-                                <div class="vmpopup_offdescriptionbox_top">
-                                </div>
-                                <div class="vmpopup_offdescriptionbox_bot">
-                                    <p id="network_virtual_desc">
-                                        A dedicated virtualized network for your account.  The broadcast domain is contrained within a VLAN and all public network access is routed out by a virtual router.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-						<div id="network_direct_container"></div>
-						<!--
-						<div class="vmpopup_offeringbox">
-                            <input type="radio" name="radiogroup" class="radio" selected />
-                            <label class="label">
-                                My Virtual Network with Guest CIDR support.  Specify guest CIDR: 
-							</label>
-							<input type="text" name="disksize" class="text" />
-                            <div class="vmpopup_offdescriptionbox">
-                                <div class="vmpopup_offdescriptionbox_top">
-                                </div>
-                                <div class="vmpopup_offdescriptionbox_bot">
-                                    <p>
-                                        A virtual private network that is fronted by a virtual router.  An optional guest CIDR can be specified.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="vmpopup_offeringbox" style="margin-top: 15px;">
-                            <input type="radio" name="radiogroup" class="radio" />
-                            <label class="label">
-                                My Direct Network:</label>
-                            <div class="vmpopup_offdescriptionbox">
-                                <div class="vmpopup_offdescriptionbox_top">
-                                </div>
-                                <div class="vmpopup_offdescriptionbox_bot">
-                                    <p>
-                                       A network where the virtual instance is directly assigned an IP from.
-									</p>
-                                </div>
-                            </div>
-                        </div>
-						<div class="vmpopup_offeringbox" style="margin-top: 15px;">
-                            <input type="radio" name="radiogroup" class="radio" />
-                            <label class="label">
-                                My Direct Shared Network: </label>
-                            <select class="select">
-							  <option>VLAN 100</option>
-							  <option>VLAN 101</option>
-							  <option>VLAN 102</option>
-							</select>
-                            <div class="vmpopup_offdescriptionbox">
-                                <div class="vmpopup_offdescriptionbox_top">
-                                </div>
-                                <div class="vmpopup_offdescriptionbox_bot">
-                                    <p>
-                                       A network where the virtual instance is directly assigned an IP from.  A VLAN must be selected.
-									</p>
-                                </div>
-                            </div>
-                        </div>
-						-->
-						
-						<div id="for_basic_zone" style="display: none">		
-						    <h3>Security Groups</h3>						    
-						    <ol>						        
+                        <div id="for_advanced_zone" style="display: none;">
+	                        <div class="vmpopup_offeringbox" id="network_virtual_container" style="display:none">
+	                            <input type="checkbox" id="network_virtual" name="network_virtual_checkbox" class="radio" checked="checked" />
+	                            <label class="label" id="network_virtual_name">Virtual Network</label>
+	                            <div class="vmpopup_offdescriptionbox">
+	                                <div class="vmpopup_offdescriptionbox_top">
+	                                </div>
+	                                <div class="vmpopup_offdescriptionbox_bot">
+	                                    <p id="network_virtual_desc">
+	                                        A dedicated virtualized network for your account.  The broadcast domain is contrained within a VLAN and all public network access is routed out by a virtual router.
+	                                    </p>
+	                                </div>
+	                            </div>
+	                        </div>
+							<div id="network_direct_container"></div>
+							<!--
+							<div class="vmpopup_offeringbox">
+	                            <input type="radio" name="radiogroup" class="radio" selected />
+	                            <label class="label">
+	                                My Virtual Network with Guest CIDR support.  Specify guest CIDR: 
+								</label>
+								<input type="text" name="disksize" class="text" />
+	                            <div class="vmpopup_offdescriptionbox">
+	                                <div class="vmpopup_offdescriptionbox_top">
+	                                </div>
+	                                <div class="vmpopup_offdescriptionbox_bot">
+	                                    <p>
+	                                        A virtual private network that is fronted by a virtual router.  An optional guest CIDR can be specified.
+	                                    </p>
+	                                </div>
+	                            </div>
+	                        </div>
+	                        <div class="vmpopup_offeringbox" style="margin-top: 15px;">
+	                            <input type="radio" name="radiogroup" class="radio" />
+	                            <label class="label">
+	                                My Direct Network:</label>
+	                            <div class="vmpopup_offdescriptionbox">
+	                                <div class="vmpopup_offdescriptionbox_top">
+	                                </div>
+	                                <div class="vmpopup_offdescriptionbox_bot">
+	                                    <p>
+	                                       A network where the virtual instance is directly assigned an IP from.
+										</p>
+	                                </div>
+	                            </div>
+	                        </div>
+							<div class="vmpopup_offeringbox" style="margin-top: 15px;">
+	                            <input type="radio" name="radiogroup" class="radio" />
+	                            <label class="label">
+	                                My Direct Shared Network: </label>
+	                            <select class="select">
+								  <option>VLAN 100</option>
+								  <option>VLAN 101</option>
+								  <option>VLAN 102</option>
+								</select>
+	                            <div class="vmpopup_offdescriptionbox">
+	                                <div class="vmpopup_offdescriptionbox_top">
+	                                </div>
+	                                <div class="vmpopup_offdescriptionbox_bot">
+	                                    <p>
+	                                       A network where the virtual instance is directly assigned an IP from.  A VLAN must be selected.
+										</p>
+	                                </div>
+	                            </div>
+	                        </div>
+							-->
+						</div>
+						<div id="for_basic_zone" style="display:none">		
+						    <h3>Security Groups</h3>		
+						    <span id="not_available_message" style="display:none">security group is currently not available</span>				    
+						    <ol id="security_group_section" style="display:none">						        
 						        <li>
-						            <select id="wizard_security_groups" class="multiple" multiple="multiple" size="15">
+						            <select id="security_group_dropdown" class="multiple" multiple="multiple" size="15">
 									</select>
 						        </li>
 						        <li>						            
