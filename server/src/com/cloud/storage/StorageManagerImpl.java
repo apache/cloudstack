@@ -2652,6 +2652,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         for (VolumeVO vol : vols) {
             Volume.State state = vol.getState();
             if (state == Volume.State.Ready) {
+            	
+            	if(vol.getPoolId() == null) {
+            		throw new StorageUnavailableException("Volume " + vol + " has no storage pool associated with it, and the pool id associated with it is:", vol.getPoolId());
+            	}
+            		
                 StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
                 if (pool.getRemoved() != null || pool.isInMaintenance()) {
                     if (vol.isRecreatable()) {
