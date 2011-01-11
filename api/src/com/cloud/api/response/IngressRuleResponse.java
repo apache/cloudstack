@@ -28,12 +28,10 @@ public class IngressRuleResponse extends BaseResponse {
     @SerializedName("protocol") @Param(description="the protocol of the ingress rule")
     private String protocol;
 
-    //FIXME - add description
-    @SerializedName(ApiConstants.ICMP_TYPE)
+    @SerializedName(ApiConstants.ICMP_TYPE) @Param(description="the type of the ICMP message response")
     private Integer icmpType;
 
-    //FIXME - add description
-    @SerializedName(ApiConstants.ICMP_CODE)
+    @SerializedName(ApiConstants.ICMP_CODE) @Param(description="the code for the ICMP message response")
     private Integer icmpCode;
 
     @SerializedName(ApiConstants.START_PORT) @Param(description="the starting IP of the ingress rule")
