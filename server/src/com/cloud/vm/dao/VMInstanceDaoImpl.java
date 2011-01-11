@@ -154,7 +154,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public boolean updateIf(VMInstanceVO vm, VirtualMachine.Event event, Long hostId) {
+    public boolean updateIf(VMInstanceVO vm, VirtualMachine.Event event, Long hostId, String reservationId) {
 
         State oldState = vm.getState();
         State newState = oldState.getNextState(event);
@@ -173,10 +173,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setParameters("update", vm.getUpdated());
 
         vm.incrUpdated();
+        vm.setReservationId(reservationId);
         UpdateBuilder ub = getUpdateBuilder(vm);
         ub.set(vm, "state", newState);
         ub.set(vm, "hostId", hostId);
         ub.set(vm, _updateTimeAttr, new Date());
+        
 
         int result = update(vm, sc);
         if (result == 0 && s_logger.isDebugEnabled()) {

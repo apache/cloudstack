@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.cloud.acl.ControlledEntity;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.fsm.FiniteState;
 import com.cloud.utils.fsm.StateMachine;
 
@@ -223,4 +224,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity {
 	public long getServiceOfferingId();
 	
 	Type getType();
+	
+	HypervisorType getHypervisorType();
 }

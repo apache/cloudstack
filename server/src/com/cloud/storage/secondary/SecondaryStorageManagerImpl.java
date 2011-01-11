@@ -261,7 +261,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId);
 		Account systemAcct = _accountMgr.getSystemAccount();
 		User systemUser = _accountMgr.getSystemUser();
-		return _itMgr.start(secStorageVm, null, systemUser, systemAcct, null);
+		return _itMgr.start(secStorageVm, null, systemUser, systemAcct);
 	}
 
 	
@@ -463,7 +463,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	            s_logger.info("Unable to setup due to concurrent operation. " + e);
 	            return new HashMap<String, Object>();
 	        }
-	        SecondaryStorageVmVO secStorageVm = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, _template.getId(), 
+	        SecondaryStorageVmVO secStorageVm = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, _template.getId(), _template.getHypervisorType(), 
 	        															 _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId());
 	        try {
 	        	secStorageVm = _itMgr.allocate(secStorageVm, _template, _serviceOffering, networks, plan, null, systemAcct);

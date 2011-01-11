@@ -2291,8 +2291,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
         
-        UserVmVO vm = new UserVmVO(id, instanceName, cmd.getDisplayName(),
-                                   template.getId(), template.getGuestOSId(), offering.getOfferHA(), domainId, owner.getId(), offering.getId(), userData, hostName);
+        HypervisorType hypervisorType = null;
+        if (template == null || template.getHypervisorType() == null || template.getHypervisorType() == HypervisorType.None) {
+            hypervisorType = cmd.getHypervisor();
+        } else {
+            hypervisorType = template.getHypervisorType();
+        }
+        
+        UserVmVO vm = new UserVmVO(id, instanceName, cmd.getDisplayName(), template.getId(), hypervisorType,
+                                   template.getGuestOSId(), offering.getOfferHA(), domainId, owner.getId(), offering.getId(), userData, hostName);
 
 
         if (_itMgr.allocate(vm, template, offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, cmd.getHypervisor(), owner) == null) {
@@ -2346,7 +2353,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	    AccountVO owner = _accountDao.findById(vm.getAccountId());
 	    
 	    try {
-			vm = _itMgr.start(vm, null, caller, owner, cmd.getHypervisor());
+			vm = _itMgr.start(vm, null, caller, owner);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -2500,9 +2507,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         userId = accountAndUserValidation(vmId, account, userId, vm);
         UserVO user = _userDao.findById(userId);
-        VolumeVO disk = _volsDao.findByInstance(vmId).get(0);
-        HypervisorType hyperType = _volsDao.getHypervisorType(disk.getId());
-        return _itMgr.start(vm, null, user, account, hyperType);
+        return _itMgr.start(vm, null, user, account);
     }
     
     @Override

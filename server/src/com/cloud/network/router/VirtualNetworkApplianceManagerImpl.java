@@ -1069,7 +1069,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
 
             router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), _template.getId(),
-                    _template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA());
+                    _template.getHypervisorType(), _template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA());
             router = _itMgr.allocate(router, _template, _offering, networks, plan, null, owner);
             if(router != null){
                 EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_CREATE, "successfully create router : " + router.getName(), startEventId);  
@@ -1134,7 +1134,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
 
             router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), _template.getId(),
-                    _template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA());
+                    _template.getHypervisorType(), _template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA());
             router.setRole(Role.DHCP_USERDATA);
             router = _itMgr.allocate(router, _template, _offering, networks, plan, null, owner);
             if(router != null){
@@ -1440,7 +1440,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     private DomainRouterVO start(DomainRouterVO router, User user, Account caller) throws StorageUnavailableException, InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting router " + router);
-        if (_itMgr.start(router, null, user, caller, null) != null) {
+        if (_itMgr.start(router, null, user, caller) != null) {
             return _routerDao.findById(router.getId());
         } else {
             return null;

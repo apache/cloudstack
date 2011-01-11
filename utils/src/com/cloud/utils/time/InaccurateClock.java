@@ -36,8 +36,8 @@ public class InaccurateClock extends Thread {
 	@Override
 	public void run() {
 		while (true) {
-			time = System.currentTimeMillis();
-			try {
+            try {
+                time = System.currentTimeMillis();
 				Thread.sleep(1000);
 			} catch(Exception e) {
 			}
@@ -50,5 +50,10 @@ public class InaccurateClock extends Thread {
 		} else {
 			return System.currentTimeMillis();
 		}
+	}
+	
+	public static long getTimeInSeconds() {
+	    // This is obviously not accurate because it >> 10 is / 1024 but it's close enough since we're inaccurate.
+	    return getTime() >> 10;
 	}
 }

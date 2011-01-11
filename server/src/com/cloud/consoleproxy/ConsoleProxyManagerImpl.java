@@ -562,7 +562,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
         Account systemAcct = _accountMgr.getSystemAccount();
         User systemUser = _accountMgr.getSystemUser();
-        return _itMgr.start(proxy, null, systemUser, systemAcct, null);
+        return _itMgr.start(proxy, null, systemUser, systemAcct);
     }
 
     public ConsoleProxyVO assignProxyFromRunningPool(long dataCenterId) {
@@ -713,7 +713,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         for (NetworkOfferingVO offering : offerings) {
             networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false, false).get(0), null));
         }
-        ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, _template.getId(), _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), 0);
+        ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, _template.getId(), _template.getHypervisorType(), _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), 0);
         try {
             proxy = _itMgr.allocate(proxy, _template, _serviceOffering, networks, plan, null, systemAcct);
         } catch (InsufficientCapacityException e) {

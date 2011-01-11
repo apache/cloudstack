@@ -17,48 +17,43 @@
  */
 package com.cloud.vm;
 
-import java.util.Date;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
 
-import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.time.InaccurateClock;
+import com.cloud.vm.VirtualMachine.State;
 
 @Entity
 @Table(name="op_it_work")
 public class ItWorkVO {
-    enum Type {
-        Start,
-        Cleanup;
-    }
-    
     enum ResourceType {
         Volume,
         Nic
     }
     
     enum Step {
+        Reserve,
         Prepare,
         Start,
         Started,
+        Cancelled,
+        Done
     }
     
     @Id
     @Column(name="id")
     String id;
     
-    @Column(name=GenericDao.CREATED_COLUMN)
-    Date created;
+    @Column(name="created_at")
+    long createdAt;
     
     @Column(name="mgmt_server_id")
     long managementServerId;
     
     @Column(name="type")
-    Type type;
+    State type;
     
     @Column(name="thread")
     String threadName;
@@ -66,9 +61,8 @@ public class ItWorkVO {
     @Column(name="state")
     Step step;
     
-    @Column(name="cancel_taken")
-    @Temporal(value=TemporalType.TIMESTAMP)
-    Date taken;
+    @Column(name="updated_at")
+    long updatedAt;
     
     @Column(name="instance_id")
     long instanceId;
@@ -103,7 +97,7 @@ public class ItWorkVO {
     protected ItWorkVO() {
     }
     
-    protected ItWorkVO(String id, long managementServerId, Type type, long instanceId) {
+    protected ItWorkVO(String id, long managementServerId, State type, long instanceId) {
         this.id = id;
         this.managementServerId = managementServerId;
         this.type = type;
@@ -111,25 +105,27 @@ public class ItWorkVO {
         this.step = Step.Prepare;
         this.instanceId = instanceId;
         this.resourceType = null;
+        this.createdAt = InaccurateClock.getTimeInSeconds();
+        this.updatedAt = createdAt;
     }
 
     public String getId() {
         return id;
     }
 
-    public Date getCreated() {
-        return created;
+    public Long getCreatedAt() {
+        return createdAt;
     }
-
+    
     public long getManagementServerId() {
         return managementServerId;
     }
     
-    public Type getType() {
+    public State getState() {
         return type;
     }
     
-    public void setType(Type type) {
+    public void setState(State type) {
         this.type = type;
     }
     
@@ -145,7 +141,19 @@ public class ItWorkVO {
         this.step = state;
     }
     
-    public Date getTaken() {
-        return taken;
+    public long getUpdatedAt() {
+        return updatedAt;
+    }
+    
+    public void setUpdatedAt(long updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+    
+    public long getSecondsTaskIsInactive() {
+        return InaccurateClock.getTimeInSeconds() - this.updatedAt;
+    }
+    
+    public long getSecondsTaskHasBeenCreated() {
+        return InaccurateClock.getTimeInSeconds() - this.createdAt;
     }
 }

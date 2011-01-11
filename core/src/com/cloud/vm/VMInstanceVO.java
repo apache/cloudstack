@@ -35,6 +35,7 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
 import com.cloud.utils.fsm.FiniteStateObject;
@@ -139,12 +140,17 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name="reservation_id")
     protected String reservationId;
     
+    @Column(name="hypervisor_type")
+    @Enumerated(value=EnumType.STRING) 
+    protected HypervisorType hypervisorType;
+    
     public VMInstanceVO(long id,
                         long serviceOfferingId,
                         String name,
                         String instanceName,
                         Type type,
                         Long vmTemplateId,
+                        HypervisorType hypervisorType,
                         long guestOSId,
                         long domainId,
                         long accountId,
@@ -164,52 +170,9 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.accountId = accountId;
         this.domainId = domainId;
         this.serviceOfferingId = serviceOfferingId;
+        this.hypervisorType = hypervisorType;
     }
-                       
 	
-    public VMInstanceVO(long id,
-                        long serviceOfferingId,
-                        String name,
-                        String instanceName,
-                        Type type,
-                        long vmTemplateId,
-                        long guestOSId,
-                        String privateMacAddress,
-                        String privateIpAddress,
-                        String privateNetmask,
-                        long dataCenterId,
-                        long podId,
-                        long domainId,
-                        long accountId,
-                        boolean haEnabled,
-                        Long hostId) {
-        super();
-        this.id = id;
-        this.name = name;
-        if (vmTemplateId > -1) {
-            this.templateId = vmTemplateId;
-        } else {
-            this.templateId = null;
-        }
-        this.guestOSId = guestOSId;
-        this.privateIpAddress = privateIpAddress;
-        this.privateMacAddress = privateMacAddress;
-        this.privateNetmask = privateNetmask;
-        this.hostId = hostId;
-        this.dataCenterId = dataCenterId;
-        this.podId = podId;
-        this.type = type;
-        this.haEnabled = haEnabled;
-        this.instanceName = instanceName;
-        this.updated = 0;
-        this.updateTime = new Date();
-		this.vncPassword = Long.toHexString(new Random().nextLong());
-		this.state = State.Creating;
-		this.serviceOfferingId = serviceOfferingId;
-		this.domainId = domainId;
-		this.accountId =  accountId;
-    }
-
     protected VMInstanceVO() {
     }
     
@@ -239,6 +202,11 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	@Override
     public long getId() {
 		return id;
+	}
+	
+	@Override
+    public HypervisorType getHypervisorType() {
+	    return hypervisorType;
 	}
 	
 	@Override

@@ -98,11 +98,11 @@ DROP TABLE IF EXISTS `cloud`.`host_tags`;
 CREATE TABLE `cloud`.`op_it_work` (
   `id` char(40) COMMENT 'id',
   `mgmt_server_id` bigint unsigned COMMENT 'management server id',
-  `created` timestamp NOT NULL COMMENT 'when was this work detail created',
+  `created_on` bigint unsigned NOT NULL COMMENT 'when was this work detail created',
   `thread` varchar(255) NOT NULL COMMENT 'thread name',
   `type` char(32) NOT NULL COMMENT 'type of work',
   `state` char(32) NOT NULL COMMENT 'state',
-  `cancel_taken` timestamp COMMENT 'time it was taken over',
+  `updated_on` bigint unsigned NOT NULL COMMENT 'time it was taken over',
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance',
   `resource_type` char(32) COMMENT 'type of resource being worked on',
   `resource_id` bigint unsigned COMMENT 'resource id being worked on',
@@ -746,7 +746,23 @@ CREATE TABLE  `cloud`.`vm_instance` (
   `domain_id` bigint unsigned NOT NULL,
   `service_offering_id` bigint unsigned NOT NULL COMMENT 'service offering id',
   `reservation_id` char(40) COMMENT 'reservation id',
-  PRIMARY KEY  (`id`)
+  `hypervisor_type` char(32) COMMENT 'hypervisor type',
+  PRIMARY KEY  (`id`),
+  INDEX `i_vm_instance__removed`(`removed`),
+  INDEX `i_vm_instance__type`(`type`),
+  INDEX `i_vm_instance__pod_id`(`pod_id`),
+  INDEX `i_vm_instance__update_time`(`update_time`),
+  INDEX `i_vm_instance__update_count`(`update_count`),
+  INDEX `i_vm_instance__state`(`state`),
+  INDEX `i_vm_instance__data_center_id`(`data_center_id`),
+  CONSTRAINT `fk_vm_instance__host_id` FOREIGN KEY `fk_vm_instance__host_id` (`host_id`) REFERENCES `host` (`id`),
+  CONSTRAINT `fk_vm_instance__last_host_id` FOREIGN KEY `fk_vm_instance__last_host_id` (`last_host_id`) REFERENCES `host`(`id`),
+  CONSTRAINT `fk_vm_instance__template_id` FOREIGN KEY `fk_vm_instance__template_id` (`vm_template_id`) REFERENCES `vm_template` (`id`),
+  INDEX `i_vm_instance__template_id`(`vm_template_id`),
+  CONSTRAINT `fk_vm_instance__account_id` FOREIGN KEY `fk_vm_instance__account_id` (`account_id`) REFERENCES `account` (`id`),
+  INDEX `i_vm_instance__account_id`(`account_id`),
+  CONSTRAINT `fk_vm_instance__service_offering_id` FOREIGN KEY `fk_vm_instance__service_offering_id` (`service_offering_id`) REFERENCES `service_offering` (`id`),
+  INDEX `i_vm_instance__service_offering_id`(`service_offering_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`user_vm` (

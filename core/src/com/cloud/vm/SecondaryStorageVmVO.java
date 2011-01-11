@@ -27,6 +27,8 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+
 /**
  * SecondaryStorageVmVO domain object
  */
@@ -89,62 +91,10 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
     
     
     
-    public SecondaryStorageVmVO(long id, long serviceOfferingId, String name, long templateId, long guestOSId, long dataCenterId, 
+    public SecondaryStorageVmVO(long id, long serviceOfferingId, String name, long templateId, HypervisorType hypervisorType, long guestOSId, long dataCenterId, 
     							long domainId, long accountId) {
-	    super(id, serviceOfferingId, name, name, Type.SecondaryStorageVm, templateId, guestOSId, domainId, accountId, true);
+	    super(id, serviceOfferingId, name, name, Type.SecondaryStorageVm, templateId, hypervisorType, guestOSId, domainId, accountId, true);
 	}
-    
-    public SecondaryStorageVmVO(
-    		long id,
-    		long serviceOfferingId,
-            String name,
-            String guestMacAddress,
-            String guestIpAddress,
-            String guestNetMask, 
-            String privateMacAddress,
-            String privateIpAddress,
-            String privateNetmask,
-            long templateId,
-            long guestOSId,
-            String publicMacAddress,
-            String publicIpAddress,
-            String publicNetmask,
-            Long vlanDbId,
-            String vlanId,
-            long podId,
-            long dataCenterId,
-            long domainId,
-            long accountId,
-            String gateway,
-            Long hostId,
-            String dns1,
-            String dns2,
-            String domain,
-            int ramSize,
-            String guid,
-            String nfsShare) {
-    	super(id, serviceOfferingId, name, name, Type.SecondaryStorageVm, templateId, guestOSId,
-    			privateMacAddress, privateIpAddress, privateNetmask, dataCenterId, podId, domainId, accountId, true, hostId);
-    	this.gateway = gateway;
-    	this.publicIpAddress = publicIpAddress;
-    	this.publicNetmask = publicNetmask;
-    	this.publicMacAddress = publicMacAddress;
-    	this.guestIpAddress = guestIpAddress;
-    	this.guestMacAddress = guestMacAddress;
-    	this.guestNetmask = guestNetMask;
-    	this.vlanDbId = vlanDbId;
-    	this.vlanId = vlanId;
-    	this.dns1 = dns1;
-    	this.dns2 = dns2;
-    	this.domain = domain;
-    	this.ramSize = ramSize;
-    	this.setGuid(guid);
-    	this.nfsShare = nfsShare;
-    }
-    
-    public SecondaryStorageVmVO(SecondaryStorageVmVO that) {
-        this(that.id, that.serviceOfferingId, that.instanceName, that.guestMacAddress, that.guestIpAddress, that.guestNetmask, that.privateMacAddress, that.privateIpAddress, that.privateNetmask, that.templateId, that.guestOSId, that.publicMacAddress, that.publicIpAddress, that.publicNetmask, that.vlanDbId, that.vlanId, that.podId, that.dataCenterId, that.domainId, that.accountId, that.gateway, that.hostId, that.dns1, that.dns2, that.domain, that.ramSize, that.guid, that.nfsShare);
-    }
     
     protected SecondaryStorageVmVO() {
         super();

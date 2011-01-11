@@ -213,7 +213,13 @@ public enum Config {
     SSOKey("Hidden", ManagementServer.class, String.class, "security.singlesignon.key", null, "A Single Sign-On key used for logging into the cloud", null),
     SSOAuthTolerance("Advanced", ManagementServer.class, Long.class, "security.singlesignon.tolerance.millis", "300000", "The allowable clock difference in milliseconds between when an SSO login request is made and when it is received.", null),
 	//NetworkType("Hidden", ManagementServer.class, String.class, "network.type", "vlan", "The type of network that this deployment will use.", "vlan,direct"),
-	HashKey("Hidden", ManagementServer.class, String.class, "security.hash.key", null, "for generic key-ed hash", null);
+	HashKey("Hidden", ManagementServer.class, String.class, "security.hash.key", null, "for generic key-ed hash", null),
+
+	VmOpWaitInterval("Advanced", ManagementServer.class, Integer.class, "vm.op.wait.interval", "120", "Seconds to wait before checking if a previous operation has succeeded", null),
+	VmOpLockStateRetry("Advanced", ManagementServer.class, Integer.class, "vm.op.lock.state.retry", "5", "Times to retry locking the state of a VM for operations", "-1 means try forever"),
+	VmOpCleanupInterval("Advanced", ManagementServer.class, Long.class, "vm.op.cleanup.interval", "86400", "Interval to run the thread that cleans up the vm operations in seconds", "Seconds"),
+	VmOpCleanupWait("Advanced", ManagementServer.class, Long.class, "vm.op.cleanup.wait", "3600", "Seconds to wait before cleanuping up any vm work items", "Seconds"),
+	VmOpCancelInterval("Advanced", ManagementServer.class, Long.class, "vm.op.cancel.interval", "3600", "Seconds to wait before cancelling a operation", "Seconds");
 	
 	private final String _category;
 	private final Class<?> _componentClass;
