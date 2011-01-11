@@ -47,7 +47,7 @@ elif os.path.exists("/etc/redhat-release"):
     version = file("/etc/redhat-release").readline()
     if version.find("Red Hat Enterprise Linux Server release 6") != -1:
         distro = RHEL6
-    elif version.find("Centos release") != -1:
+    elif version.find("CentOS release") != -1:
         distro = CentOS
 elif os.path.exists("/etc/legal") and "Ubuntu" in file("/etc/legal").read(-1): distro = Ubuntu
 else: distro = Unknown
