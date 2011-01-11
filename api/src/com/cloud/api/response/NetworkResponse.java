@@ -89,7 +89,7 @@ public class NetworkResponse extends BaseResponse{
     @SerializedName("isdefault") @Param(description="true if network is default, false otherwise")
     private Boolean isDefault;
     
-    @SerializedName("service") @Param(description="the list of services")
+    @SerializedName("service") @Param(description="the list of services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
 
     public Long getId() {

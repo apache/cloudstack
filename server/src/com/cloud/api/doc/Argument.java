@@ -18,10 +18,13 @@
 
 package com.cloud.api.doc;
 
+import java.util.List;
+
 public class Argument{
 	private String name;
 	private String description;
 	private Boolean required;
+	private List<Argument> arguments;
 	
 	public Argument(String name) {
 		this.name = name;
@@ -45,5 +48,12 @@ public class Argument{
 	public void setRequired(Boolean required) {
 		this.required = required;
 	}
-	
+
+    public List<Argument> getArguments() {
+        return arguments;
+    }
+
+    public void setArguments(List<Argument> arguments) {
+        this.arguments = arguments;
+    }
 }
