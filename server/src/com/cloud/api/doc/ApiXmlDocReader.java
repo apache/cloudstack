@@ -203,7 +203,11 @@ public class ApiXmlDocReader {
 							StringBuffer newParameters = new StringBuffer();
 							newParameters.append("\n\t\t\tNew parameters: ");
 							for (Argument newArg: newReqArgs) {
-								newParameters.append(newArg.getName() + ", ");
+							    String isRequiredParam = "optional";
+							    if (newArg.isRequired()) {
+							        isRequiredParam = "required";
+							    }
+								newParameters.append(newArg.getName() + " (" + isRequiredParam +  "), ");
 							}
 							newParameters.delete(newParameters.length()-2, newParameters.length()-1);
 							out.write(newParameters.toString());

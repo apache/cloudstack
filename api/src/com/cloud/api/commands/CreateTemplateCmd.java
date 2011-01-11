@@ -47,7 +47,7 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.BITS, type=CommandType.INTEGER)
+    @Parameter(name=ApiConstants.BITS, type=CommandType.INTEGER, description="32 or 64 bit")
     private Integer bits;
 
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the template. This is usually used for display purposes.")

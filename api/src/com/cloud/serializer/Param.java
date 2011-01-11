@@ -26,4 +26,5 @@ public @interface Param {
 	String name() default "";
 	String propName() default "";
 	String description() default "";
+	boolean expose() default true;
 }

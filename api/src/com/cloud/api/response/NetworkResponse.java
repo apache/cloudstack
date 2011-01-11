@@ -3,6 +3,7 @@ package com.cloud.api.response;
 import java.util.List;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.network.Networks;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -17,20 +18,16 @@ public class NetworkResponse extends BaseResponse{
     @SerializedName("displaytext") @Param(description="the displaytext of the network")
     private String displaytext;
     
-    //TODO - add description
-    @SerializedName("broadcastdomaintype")
+    @SerializedName("broadcastdomaintype") @Param(description="Broadcast domain type of the network")
     private String broadcastDomainType;
     
-    //TODO - add description
-    @SerializedName("traffictype")
+    @SerializedName("traffictype") @Param(description="the traffic type of the network")
     private String trafficType;
     
-    //TODO - add description
-    @SerializedName("gateway")
+    @SerializedName("gateway") @Param(description="the network's gateway")
     private String gateway;
     
-    //TODO - add description
-    @SerializedName("netmask")
+    @SerializedName("netmask") @Param(description="the network's netmask")
     private String netmask;
     
     @SerializedName("startip") @Param(description="the start ip of the network")
@@ -39,61 +36,47 @@ public class NetworkResponse extends BaseResponse{
     @SerializedName("endip") @Param(description="the end ip of the network")
     private String endIp;
     
-    //TODO - add description
-    @SerializedName("zoneid")
+    @SerializedName("zoneid") @Param(description="zone id of the network")
     private Long zoneId;
     
-    //TODO - add description
-    @SerializedName("networkofferingid")
+    @SerializedName("networkofferingid") @Param(description="network offering id the network is created from")
     private Long networkOfferingId;
     
-    //TODO - add description
-    @SerializedName("networkofferingname")
+    @SerializedName("networkofferingname") @Param(description="name of the network offering the network is created from")
     private String networkOfferingName;
     
-    //TODO - add description
-    @SerializedName("networkofferingdisplaytext")
+    @SerializedName("networkofferingdisplaytext") @Param(description="display text of the network offering the network is created from")
     private String networkOfferingDisplayText;
     
-    //TODO - add description
-    @SerializedName("networkofferingavailability")
+    @SerializedName("networkofferingavailability") @Param(description="availability of the network offering the network is created from")
     private String networkOfferingAvailability;
     
-    
-  //TODO - add description
-    @SerializedName("isshared")
+    @SerializedName("isshared") @Param(description="true if network is shared, false otherwise")
     private Boolean isShared;
     
-    //TODO - add description
-    @SerializedName("issystem")
+    @SerializedName("issystem")  @Param(description="true if network is system, false otherwise")
     private Boolean isSystem;
     
-    //TODO - add description
-    @SerializedName("state")
+    @SerializedName("state")  @Param(description="state of the network")
     private String state;
     
     //TODO - add description
     @SerializedName("related")
     private Long related;
     
-    //TODO - add description
-    @SerializedName("broadcasturi")
+    @SerializedName("broadcasturi") @Param(description="broadcast uri of the network")
     private String broadcastUri;
     
-    //TODO - add description
-    @SerializedName("dns1")
+    @SerializedName("dns1") @Param(description="the first dns for the network")
     private String dns1;
     
-    //TODO - add description
-    @SerializedName("dns2")
+    @SerializedName("dns2") @Param(description="the second dns for the network")
     private String dns2;
     
-    //TODO - add description
-    @SerializedName("type")
+    @SerializedName("type") @Param(description="the type of the network")
     private String type;
     
-    //TODO - add description
-    @SerializedName("vlan")
+    @SerializedName("vlan") @Param(description="the vlan of the network")
     private String vlan;
     
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account associated with the network")

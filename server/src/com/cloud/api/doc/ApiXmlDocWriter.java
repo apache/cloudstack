@@ -108,7 +108,11 @@ public class ApiXmlDocWriter {
             String commandName = commandParts[0];
             all_api_commands.put(key, commandName);
             
-            short cmdPermissions = Short.parseShort(commandParts[1]);
+            short cmdPermissions = 1;
+            if (commandParts.length > 1 && commandParts[1] != null) {
+                cmdPermissions = Short.parseShort(commandParts[1]);
+            } 
+           
             if ((cmdPermissions & DOMAIN_ADMIN_COMMAND) != 0) {
                 domain_admin_api_commands.put(key, commandName);
             }
@@ -245,13 +249,13 @@ public class ApiXmlDocWriter {
       
         for (Field f : fields) {
             Parameter parameterAnnotation = f.getAnnotation(Parameter.class);
-            if (parameterAnnotation != null) {
+            if (parameterAnnotation != null && parameterAnnotation.expose()) {
                 Argument reqArg = new Argument(parameterAnnotation.name());
                 reqArg.setRequired(parameterAnnotation.required());
-                if (!parameterAnnotation.description().isEmpty() && parameterAnnotation.expose())
+                if (!parameterAnnotation.description().isEmpty())
                     reqArg.setDescription(parameterAnnotation.description());
-                else if (parameterAnnotation.expose()) {
-                    //System.out.println("Description is missing for the parameter " + parameterAnnotation.name() + " of the command " + apiCommand.getName() );
+                else  {
+                    //System.out.println("Description is missing for the request parameter " + parameterAnnotation.name() + " of the command " + apiCommand.getName());
                 }
                 request.add(reqArg);
             }
@@ -261,13 +265,26 @@ public class ApiXmlDocWriter {
         
         //Get response parameters
         Field[] responseFields = responseClas.getDeclaredFields();
-        for (Field responseField : responseFields) {
+        for (Field responseField : responseFields) {    
             SerializedName nameAnnotation = responseField.getAnnotation(SerializedName.class);
             Param descAnnotation = responseField.getAnnotation(Param.class);
-            Argument respArg = new Argument(nameAnnotation.value());
-            if (descAnnotation != null)
-                respArg.setDescription(descAnnotation.description());
-            response.add(respArg);
+            Argument respArg = new Argument(nameAnnotation.value());   
+            boolean toExpose = true;
+            if (descAnnotation != null) {
+                String description = descAnnotation.description();
+                toExpose = descAnnotation.expose();
+                if (description != null && !description.isEmpty()) {
+                    respArg.setDescription(description);
+                } else if (toExpose){
+                    //System.out.println("Description is missing for the response parameter " + nameAnnotation.value().toString() + " of the command " + apiCommand.getName());
+                }
+            } else {
+                //System.out.println("Description is missing for the response parameter " + nameAnnotation.value().toString() + " of the command " + apiCommand.getName());
+            }
+                
+            if (toExpose) {
+                response.add(respArg);
+            } 
         }
         
         apiCommand.setRequest(request);

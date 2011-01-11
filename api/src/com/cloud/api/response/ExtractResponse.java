@@ -42,7 +42,7 @@ public class ExtractResponse extends BaseResponse {
     @SerializedName("accountid") @Param(description="the account id to which the extracted object belongs")
     private Long accountId;    
  
-    @SerializedName("resultstring") @Param(description="")
+    @SerializedName("resultstring") @Param(expose=false)
     private String resultString;    
 
     @SerializedName(ApiConstants.CREATED) @Param(description="the time and date the object was created")
@@ -51,11 +51,9 @@ public class ExtractResponse extends BaseResponse {
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the extracted object")
     private String state;
     
-    //FIXME - add description
-    @SerializedName("storagetype")
+    @SerializedName("storagetype") @Param(description="type of the storage")
     private String storageType;
 
-    //FIXME - add description
     @SerializedName("storage")
     private String storage;
     
