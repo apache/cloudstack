@@ -19,7 +19,7 @@ import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @SuppressWarnings("rawtypes")
-@Implementation(responseObject=SuccessResponse.class)
+@Implementation(responseObject=SuccessResponse.class, description="Deletes a particular ingress rule from this security group")
 public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(RevokeSecurityGroupIngressCmd.class.getName());
 
