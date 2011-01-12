@@ -1046,6 +1046,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 }
                 i += 2;
                 state = router.getState();
+                if ( state != State.Starting ) {
+                    break;
+                }
             }           
         }
         if (state != State.Starting && state != State.Running) {
