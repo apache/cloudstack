@@ -1008,13 +1008,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             defaultNic.setNetmask(sourceNatIp.getNetmask());
             defaultNic.setTrafficType(TrafficType.Public);
             defaultNic.setMacAddress(sourceNatIp.getMacAddress());
-            if (sourceNatIp.getVlanTag().equals(Vlan.UNTAGGED)) {
-                defaultNic.setBroadcastType(BroadcastDomainType.Native);
-            } else {
-                defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
-                defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
-                defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
-            }
+            defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
+            defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
+            defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
             defaultNic.setDeviceId(2);
             networks.add(new Pair<NetworkVO, NicProfile>(publicConfigs.get(0), defaultNic));
             NicProfile gatewayNic = new NicProfile();
