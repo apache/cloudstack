@@ -200,12 +200,110 @@ a:hover {
 	padding:0;
 }
 
-.loginbutton_box {
-	width:400px;
+
+.loginoptions_panel {
+	width:420px;
 	height:auto;
 	float:left;
-	margin:17px 0 0 0;
+	margin:10px 0 0 0;
 	padding:0;
+}
+
+.loginbutton_box {
+	width:420px;
+	height:auto;
+	float:left;
+	margin:10px 0 0 0;
+	padding:0;
+}
+
+.loginoptions_box {
+	width:auto;
+	height:auto;
+	float:right;
+	margin:0;
+	padding:0;
+}
+
+.loginoptions_dropdownbutton {
+	width: 109px;
+	height:21px;
+	float:left;
+	position:relative;
+	background:url(../images/loginoptions_dropdownbutton.png) no-repeat top left;
+	margin:0 0 0 5px;
+	display:inline;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.loginoptions_dropdownbutton:hover {
+	background:url(../images/loginoptions_dropdownbutton_hover.png) no-repeat top left;
+}
+
+.loginoptions_dropdownbutton p{
+	width:78px;
+	height:auto;
+	float:left;
+	color:#2c8bbc;
+	font-size:11px;
+	font-weight:normal;
+	font-family:Arial, Helvetica, sans-serif;
+	text-align:left;
+	margin:0.4em 0 0 10px;
+	display:inline;
+	padding:0;
+}
+
+.loginoptions_ddarrow {
+	width:7px;
+	height:3px;
+	float:left;
+	background:url(../images/loginoptions_ddarrow.png) no-repeat top left;
+	margin:8px 0 0 5px;
+	display:inline;
+	padding:0;
+}
+
+.loginoptions_dropdown {
+	width:91px;
+	height:auto;
+	float:left;
+	position:absolute;
+	background:#FFF url(../images/actiondd_bg.gif) repeat-x top left;
+	border:1px solid #bebebe;
+	border-top:none;
+	top:21px;
+	left:8px;
+}
+
+.loginoptions_dropdown ul{
+	width:73px;
+	height:auto;
+	float:left;
+	margin:3px 0 0 5px;
+	padding:0 0 10px 0;
+	list-style:none;
+}
+
+.loginoptions_dropdown li{
+	width:80px;
+	height:auto;
+	float:left;
+	color:#333;
+	font-size:11px;
+	font-weight:none;
+	background:none;
+	border-bottom:1px dotted #999;
+	margin:0;
+	padding:5px 0 3px 0px;
+	list-style:none;
+	overflow:hidden;
+}
+
+.loginoptions_dropdown li:hover{
+	background:#e9e9e9;
 }
 
 .login_button {
@@ -308,6 +406,23 @@ a:hover {
 }
 
 .vmpopup_container_closebutton:hover {
+	background:url(../images/vm_closebutton_hover.gif) no-repeat top left;
+}
+
+
+
+.zonepopup_container_closebutton {
+	width:13px;
+	height:13px;
+	float:left;
+	background:url(../images/vm_closebutton.gif) no-repeat top left;
+	margin:8px 0 0 0;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.zonepopup_container_closebutton:hover {
 	background:url(../images/vm_closebutton_hover.gif) no-repeat top left;
 }
 

@@ -95,24 +95,6 @@ ALTER TABLE `cloud`.`cluster_details` ADD CONSTRAINT `fk_cluster_details__cluste
 ALTER TABLE `cloud`.`vm_template` ADD INDEX `i_vm_template__removed`(`removed`);
 ALTER TABLE `cloud`.`vm_template` ADD INDEX `i_vm_template__public`(`public`);
 
-ALTER TABLE `cloud`.`vm_instance` ADD INDEX `i_vm_instance__removed`(`removed`);
-ALTER TABLE `cloud`.`vm_instance` ADD INDEX `i_vm_instance__type`(`type`);
-ALTER TABLE `cloud`.`vm_instance` ADD INDEX `i_vm_instance__pod_id`(`pod_id`);
-ALTER TABLE `cloud`.`vm_instance` ADD INDEX `i_vm_instance__update_time`(`update_time`);
-ALTER TABLE `cloud`.`vm_instance` ADD INDEX `i_vm_instance__update_count`(`update_count`);
-ALTER TABLE `cloud`.`vm_instance` ADD INDEX `i_vm_instance__state`(`state`);
-ALTER TABLE `cloud`.`vm_instance` ADD INDEX `i_vm_instance__data_center_id`(`data_center_id`);
-ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__host_id` FOREIGN KEY `fk_vm_instance__host_id` (`host_id`) REFERENCES `host` (`id`);
-ALTER TABLE `cloud`.`vm_instance` ADD INDEX `i_vm_instance__host_id`(`host_id`);
-ALTER TABLE `cloud`.`vm_instance` ADD INDEX `i_vm_instance__last_host_id`(`last_host_id`);
-
-ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__template_id` FOREIGN KEY `fk_vm_instance__template_id` (`vm_template_id`) REFERENCES `vm_template` (`id`);
-ALTER TABLE `cloud`.`vm_instance` ADD INDEX `i_vm_instance__template_id`(`vm_template_id`);
-ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__account_id` FOREIGN KEY `fk_vm_instance__account_id` (`account_id`) REFERENCES `account` (`id`);
-ALTER TABLE `cloud`.`vm_instance` ADD INDEX `i_vm_instance__account_id`(`account_id`);
-ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__service_offering_id` FOREIGN KEY `fk_vm_instance__service_offering_id` (`service_offering_id`) REFERENCES `service_offering` (`id`);
-ALTER TABLE `cloud`.`vm_instance` ADD INDEX `i_vm_instance__service_offering_id`(`service_offering_id`);
-
 ALTER TABLE `cloud`.`service_offering` ADD CONSTRAINT `fk_service_offering__id` FOREIGN KEY `fk_service_offering__id`(`id`) REFERENCES `disk_offering`(`id`) ON DELETE CASCADE;
 
 ALTER TABLE `cloud`.`user_vm` ADD CONSTRAINT `fk_user_vm__domain_router_id` FOREIGN KEY `fk_user_vm__domain_router_id` (`domain_router_id`) REFERENCES `domain_router` (`id`);

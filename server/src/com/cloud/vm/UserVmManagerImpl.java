@@ -122,7 +122,6 @@ import com.cloud.network.IpAddrAllocator;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -130,11 +129,11 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.ovs.GreTunnelException;
+import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.SecurityGroupManager;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.Criteria;
@@ -266,6 +265,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject UsageEventDao _usageEventDao;
     @Inject SSHKeyPairDao _sshKeyPairDao;
     @Inject UserVmDetailsDao _vmDetailsDao;
+    @Inject OvsNetworkManager _ovsNetworkMgr;
     
     private IpAddrAllocator _IpAllocator;
     ScheduledExecutorService _executor = null;
@@ -939,7 +939,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     public void releaseGuestIpAddress(UserVmVO userVm)  {
     	ServiceOffering offering = _offeringDao.findById(userVm.getServiceOfferingId());
     	
-    	if (offering.getGuestIpType() != NetworkOffering.GuestIpType.Virtual) {  		
+    	if (offering.getGuestIpType() != Network.GuestIpType.Virtual) {  		
     		IPAddressVO guestIP = (userVm.getGuestIpAddress() == null) ? null : _ipAddressDao.findById(new Ip(userVm.getGuestIpAddress()));
     		if (guestIP != null && guestIP.getAllocatedTime() != null) {
     			_ipAddressDao.unassignIpAddress(new Ip(userVm.getGuestIpAddress()));
@@ -1033,13 +1033,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // Recover the VM's disks
         List<VolumeVO> volumes = _volsDao.findByInstanceIdDestroyed(vmId);
         for (VolumeVO volume : volumes) {
-        	_volsDao.recoverVolume(volume.getId());
             // Create an event
             Long templateId = volume.getTemplateId();
             Long diskOfferingId = volume.getDiskOfferingId();
             long sizeMB = volume.getSize()/(1024*1024);
             StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
-            EventUtils.saveEvent(User.UID_SYSTEM, volume.getAccountId(), EventTypes.EVENT_VOLUME_CREATE, "Created volume: "+ volume.getName() +" with size: " + sizeMB + " MB in pool: " + pool.getName());
             
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, templateId , sizeMB);
             _usageEventDao.persist(usageEvent);
@@ -1134,14 +1132,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new CloudRuntimeException("Shouldn't even be here!");
         }
     }
-
-    @Override
-    public void completeStartCommand(UserVmVO vm) {
-    	_itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
-        _networkGroupMgr.handleVmStateTransition(vm, State.Running);
-
-    }
-    
+   
     @Override
     public void completeStopCommand(UserVmVO instance) {
     	completeStopCommand(1L, instance, VirtualMachine.Event.AgentReportStopped);
@@ -1172,7 +1163,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
             
             txn.commit();
-            _networkGroupMgr.handleVmStateTransition(vm, State.Stopped);
         } catch (Throwable th) {
             s_logger.error("Error during stop: ", th);
             throw new CloudRuntimeException("Error during stop: ", th);
@@ -2256,9 +2246,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         s_logger.debug("Allocating in the DB for vm");
           
         if (dc.getNetworkType() == NetworkType.Basic && networkList == null) {
-            Network defaultNetwork = _networkMgr.getBasicZoneDefaultPublicNetwork(dc.getId());
+            Network defaultNetwork = _networkMgr.getSystemNetworkByZoneAndTrafficType(dc.getId(), TrafficType.Guest);
             if (defaultNetwork == null) {
-                throw new InvalidParameterValueException("Unable to find a default directPodBased network to start a vm");
+                throw new InvalidParameterValueException("Unable to find a default network to start a vm");
             } else {
                 networkList = new ArrayList<Long>();
                 networkList.add(defaultNetwork.getId());
@@ -2270,6 +2260,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
+        short defaultNetworkNumber = 0;
         for (Long networkId : networkList) {
             NetworkVO network = _networkDao.findById(networkId);
             if (network == null) {
@@ -2282,8 +2273,19 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         throw new PermissionDeniedException("Unable to create a vm using network with id " + networkId + ", permission denied");
                     }
                 } 
+                
+                if (network.isDefault()) {
+                    defaultNetworkNumber++;
+                }
                 networks.add(new Pair<NetworkVO, NicProfile>(network, null));
             }
+        }
+        
+        //at least one network default network has to be set
+        if (defaultNetworkNumber == 0) {
+            throw new InvalidParameterValueException("At least 1 default network has to be specified for the vm");
+        } else if (defaultNetworkNumber >1) {
+            throw new InvalidParameterValueException("Only 1 default network per vm is supported");
         }
         
         long id = _vmDao.getNextInSequence(Long.class, "id");
@@ -2304,9 +2306,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
         
-        UserVmVO vm = new UserVmVO(id, instanceName, cmd.getDisplayName(),
-                                   template.getId(), template.getGuestOSId(), offering.getOfferHA(), domainId, owner.getId(), offering.getId(), 
-                                   userData, hostName, sshPublicKey);
+        HypervisorType hypervisorType = null;
+        if (template == null || template.getHypervisorType() == null || template.getHypervisorType() == HypervisorType.None) {
+            hypervisorType = cmd.getHypervisor();
+        } else {
+            hypervisorType = template.getHypervisorType();
+        }
+        
+        UserVmVO vm = new UserVmVO(id, instanceName, cmd.getDisplayName(), template.getId(), hypervisorType,
+                                   template.getGuestOSId(), offering.getOfferHA(), domainId, owner.getId(), offering.getId(), userData, hostName, sshPublicKey);
 
 
         if (_itMgr.allocate(vm, template, offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, cmd.getHypervisor(), owner) == null) {
@@ -2371,8 +2379,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	    AccountVO owner = _accountDao.findById(vm.getAccountId());
 	    
 	    try {
-			vm = _itMgr.start(vm, null, caller, owner, cmd.getHypervisor());
-		} finally {
+			vm = _itMgr.start(vm, null, caller, owner);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	    finally {
 			updateVmStateForFailedVmCreation(vm.getId());
 		}
 		vm.setPassword(password);
@@ -2426,12 +2437,26 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		}
 		_vmDao.update(userVm.getId(), userVm);
 	
+		
+		try {
+			_ovsNetworkMgr.UserVmCheckAndCreateTunnel(cmds, profile, dest);
+			_ovsNetworkMgr.applyDefaultFlowToUserVm(cmds, profile, dest);
+		} catch (GreTunnelException e) {
+			e.printStackTrace();
+		}
+		
 		return true;
 	}
 
     @Override
     public boolean finalizeStart(Commands cmds, VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
-        return true;
+    	UserVmVO vm = profile.getVirtualMachine();
+        _networkGroupMgr.handleVmStateTransition(vm, State.Running);
+        _ovsNetworkMgr.handleVmStateTransition(vm, State.Running);
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
+        _usageEventDao.persist(usageEvent);
+        
+    	return true;
     }
     
     @Override
@@ -2483,6 +2508,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     
     @Override
     public void finalizeStop(VirtualMachineProfile<UserVmVO> profile, long hostId, String reservationId, Answer...answer) {
+		UserVmVO vm = profile.getVirtualMachine();
+		_networkGroupMgr.handleVmStateTransition(vm, State.Stopped);
+		_ovsNetworkMgr.handleVmStateTransition(vm, State.Stopped);
     }
     
     public String generateRandomPassword() {
@@ -2508,9 +2536,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         userId = accountAndUserValidation(vmId, account, userId, vm);
         UserVO user = _userDao.findById(userId);
-        VolumeVO disk = _volsDao.findByInstance(vmId).get(0);
-        HypervisorType hyperType = _volsDao.getHypervisorType(disk.getId());
-        return _itMgr.start(vm, null, user, account, hyperType);
+        return _itMgr.start(vm, null, user, account);
     }
     
     @Override
@@ -2543,6 +2569,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new CloudRuntimeException("Failed to destroy vm with id " + vmId);
         }
     }
+
+	@Override
+	public void completeStartCommand(UserVmVO vm) {
+		_itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
+	}
     
     
     @Override
@@ -2701,7 +2732,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         if (useVirtualNetwork != null) {
-            sc.setJoinParameters("serviceSearch", "guestIpType", NetworkOffering.GuestIpType.Virtual.toString());
+            sc.setJoinParameters("serviceSearch", "guestIpType", Network.GuestIpType.Virtual.toString());
         }
 
         if (keyword != null) {

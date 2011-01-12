@@ -53,7 +53,7 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 	 */
 	public List<VMInstanceVO> listNonExpungedByZoneAndTemplate(long zoneId, long templateId);
 	
-    boolean updateIf(VMInstanceVO vm, VirtualMachine.Event event, Long hostId);
+    boolean updateIf(VMInstanceVO vm, VirtualMachine.Event event, Long hostId, String reservationId);
     
     /**
      * Find vm instance with names like.
@@ -84,4 +84,6 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     List<VMInstanceVO> listByZoneIdAndType(long zoneId, VirtualMachine.Type type);
 	List<VMInstanceVO> listUpByHostId(Long hostId);
 	List<VMInstanceVO> listByLastHostId(Long hostId);
+	
+	List<VMInstanceVO> listByTypeAndState(State state, VirtualMachine.Type type);
 }

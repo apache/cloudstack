@@ -148,8 +148,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             Pool pool = pools.iterator().next();
             Pool.Record pr = pool.getRecord(conn);           
             String poolUuid = pr.uuid;
-            Host master = pr.master;
-            Map<Host, Host.Record> thosts = Host.getAllRecords(conn);
+            Map<Host, Host.Record> hosts = Host.getAllRecords(conn);
 
             /*set cluster hypervisor type to xenserver*/
             ClusterVO clu = _clusterDao.findById(clusterId);
@@ -157,7 +156,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             	clu.setGuid(poolUuid);
             } else {
                 if( !clu.getGuid().equals(poolUuid)) {
-                    if (thosts.size() == 1 ) { 
+                    if (hosts.size() == 1 ) { 
                         if( !addHostsToPool(conn, hostIp, clusterId)){
                             String msg = "Unable to add host(" + hostIp + ") to cluster " + clusterId;
                             s_logger.warn(msg);
@@ -170,17 +169,20 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                     }
                 }
             }
+            // can not use this conn after this point, because this host may join a pool, this conn is retired
+            if (conn != null) {
+                try{
+                    Session.logout(conn);
+                } catch (Exception e ) {
+                }
+                conn.dispose();
+                conn = null;
+            }
+            
             poolUuid = clu.getGuid();
             _clusterDao.update(clusterId, clu);
             
-            LinkedHashMap<Host, Host.Record> hosts = new LinkedHashMap<Host, Host.Record>(20);
-            hosts.put(master, master.getRecord(conn));
-            for (Map.Entry<Host, Host.Record> entry : thosts.entrySet()) {
-                if( !master.equals(entry.getKey()) ) {
-                    hosts.put(entry.getKey(), entry.getValue());
-                }
-            }
-                                   
+                    
             if (_checkHvm) {
                 for (Map.Entry<Host, Host.Record> entry : hosts.entrySet()) {
                     Host.Record record = entry.getValue();
@@ -292,15 +294,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         } catch (Exception e) {
         	s_logger.debug("other exceptions: " + e.toString(), e);
         	return null;
-        }
-        finally {
-            if (conn != null) {
-                try{
-                    Session.logout(conn);
-                } catch (Exception e ) {
-                }
-                conn.dispose();
-            }
         }
         return resources;
     }

@@ -56,6 +56,8 @@ import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -80,12 +82,12 @@ import com.cloud.info.RunningHostCountInfo;
 import com.cloud.info.RunningHostInfoAgregator;
 import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.network.IpAddrAllocator;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -259,7 +261,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId);
 		Account systemAcct = _accountMgr.getSystemAccount();
 		User systemUser = _accountMgr.getSystemUser();
-		return _itMgr.start(secStorageVm, null, systemUser, systemAcct, null);
+		return _itMgr.start(secStorageVm, null, systemUser, systemAcct);
 	}
 
 	
@@ -313,7 +315,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		setupCmd.setCopyPassword(copyPasswd);
 		setupCmd.setCopyUserName(TemplateConstants.DEFAULT_HTTP_AUTH_USER);
 		Answer answer = _agentMgr.easySend(storageHost.getId(), setupCmd);
-		if (answer != null) {
+		if (answer != null && answer.getResult()) {
 			if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Successfully programmed http auth into " + secStorageVm.getName());
             }
@@ -357,7 +359,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			}
 		}
 		Answer answer = _agentMgr.easySend(storageHost.getId(), cpc);
-		if (answer != null) {
+		if (answer != null &&  answer.getResult()) {
 			if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Successfully programmed firewall rules into " + secStorageVm.getName());
             }
@@ -440,23 +442,28 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	        Account systemAcct = _accountMgr.getSystemAccount();
 	        
 	        DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
+	        DataCenter dc = _dcDao.findById(plan.getDataCenterId());
 
-	        List<NetworkOfferingVO> defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmPublicNetwork);
-	        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork, NetworkOfferingVO.SystemVmManagementNetwork);
+	        List<NetworkOfferingVO> defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork);
+	        if (dc.getNetworkType() == NetworkType.Basic) {
+	            defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SysteGuestNetwork);
+	        }
+	        
+	        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork, NetworkOfferingVO.SystemManagementNetwork);
 	        List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(offerings.size() + 1);
 	        NicProfile defaultNic = new NicProfile();
 	        defaultNic.setDefaultNic(true);
 	        defaultNic.setDeviceId(2);
 	        try {
-    	        networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, defaultOffering.get(0), plan, null, null, false).get(0), defaultNic));
+    	        networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, defaultOffering.get(0), plan, null, null, false, false).get(0), defaultNic));
                 for (NetworkOfferingVO offering : offerings) {
-                    networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), null));
+                    networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false, false).get(0), null));
                 }
 	        } catch (ConcurrentOperationException e) {
 	            s_logger.info("Unable to setup due to concurrent operation. " + e);
 	            return new HashMap<String, Object>();
 	        }
-	        SecondaryStorageVmVO secStorageVm = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, _template.getId(), 
+	        SecondaryStorageVmVO secStorageVm = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, _template.getId(), _template.getHypervisorType(), 
 	        															 _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId());
 	        try {
 	        	secStorageVm = _itMgr.allocate(secStorageVm, _template, _serviceOffering, networks, plan, null, systemAcct);
@@ -936,7 +943,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		 
 		
 		boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-		_serviceOffering = new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, true, null, NetworkOffering.GuestIpType.Virtual, useLocalStorage, true, null, true);
+		_serviceOffering = new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, true, null, Network.GuestIpType.Virtual, useLocalStorage, true, null, true);
 		_serviceOffering.setUniqueName("Cloud.com-SecondaryStorage");
 		_serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
         _template = _templateDao.findConsoleProxyTemplate();
@@ -1076,7 +1083,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			final RebootCommand cmd = new RebootCommand(secStorageVm.getInstanceName());
 			final Answer answer = _agentMgr.easySend(secStorageVm.getHostId(), cmd);
 
-			if (answer != null) {
+			if (answer != null && answer.getResult()) {
 				if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Successfully reboot secondary storage vm " + secStorageVm.getName());
                 }
@@ -1102,68 +1109,15 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	}
 
 	@Override
-	@DB
 	public boolean destroySecStorageVm(long vmId) {
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-        if (asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Destroy secondary storage vm " + vmId + ", update async job-" + job.getId());
-            }
-            _asyncMgr.updateAsyncJobAttachment(job.getId(), "secstorage_vm", vmId);
+	    SecondaryStorageVmVO ssvm = _secStorageVmDao.findById(vmId);
+	    
+	    try {
+            return _itMgr.expunge(ssvm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+        } catch (ResourceUnavailableException e) {
+            s_logger.warn("Unable to expunge " + ssvm, e);
+            return false;
         }
-        
-		SecondaryStorageVmVO vm = _secStorageVmDao.findById(vmId);
-		if (vm == null || vm.getState() == State.Destroyed) {
-		    String msg = "Unable to find vm or vm is destroyed: " + vmId;
-			if (s_logger.isDebugEnabled()) {
-				s_logger.debug(msg);
-			}
-			return true;
-		}
-		
-		if (s_logger.isDebugEnabled()) {
-			s_logger.debug("Destroying secondary storage vm vm " + vmId);
-		}
-
-		if (! _itMgr.stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, null)) {
-		    String msg = "Unable to destroy the vm because it is not in the correct state: " + vmId;
-			s_logger.debug(msg);
-			return false;
-		}
-
-		Transaction txn = Transaction.currentTxn();
-		List<VolumeVO> vols = null;
-		try {
-			vols = _volsDao.findByInstance(vmId);
-            if (vols.size() != 0) {
-                _storageMgr.destroy(vm, vols);
-			}
-
-			return true;
-		} finally {
-			try {
-				txn.start();
-				// release critical system resources used by the VM before we
-				// delete them
-				if (vm.getPublicIpAddress() != null) {
-                    freePublicIpAddress(vm.getPublicIpAddress(), vm.getDataCenterId(), vm.getPodId());
-                }
-				vm.setPublicIpAddress(null);
-
-				_secStorageVmDao.remove(vm.getId());
-	
-				txn.commit();
-			} catch (Exception e) {
-				s_logger.error("Caught this error: ", e);
-				txn.rollback();
-				return false;
-			} finally {
-				s_logger.debug("secondary storage vm vm is destroyed : "
-						+ vm.getName());
-			}
-		}
 	}
 
 	@DB
@@ -1267,7 +1221,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 		MigrateCommand cmd = new MigrateCommand(secStorageVm.getInstanceName(), host.getPrivateIpAddress(), false);
 		Answer answer = _agentMgr.easySend(fromHost.getId(), cmd);
-		if (answer == null) {
+		if (answer == null || !answer.getResult()) {
 			return false;
 		}
 
@@ -1504,10 +1458,11 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         cmds.addCommand("checkSsh", check);
         
         SecondaryStorageVmVO secVm = profile.getVirtualMachine();
-		 List<NicVO> nics = _nicDao.listBy(secVm.getId());
+        DataCenter dc = dest.getDataCenter();
+		List<NicVO> nics = _nicDao.listBy(secVm.getId());
         for (NicVO nic : nics) {
         	NetworkVO network = _networkDao.findById(nic.getNetworkId());
-        	if (network.getTrafficType() == TrafficType.Public) {
+        	if ((network.getTrafficType() == TrafficType.Public && dc.getNetworkType() == NetworkType.Advanced) || (network.getTrafficType() == TrafficType.Guest && dc.getNetworkType() == NetworkType.Basic))  {
         		secVm.setPublicIpAddress(nic.getIp4Address());
         		secVm.setPublicNetmask(nic.getNetmask());
         		secVm.setPublicMacAddress(nic.getMacAddress());

@@ -60,6 +60,10 @@ public class Commands {
         addCommand(null, cmd);
     }
     
+    public void addCommand(int index, Command cmd) {
+    	_cmds.add(index, cmd);
+    }
+    
     public Answer getAnswer(String id) {
         int i = _ids.indexOf(id);
         return i == -1 ? null : _answers[i];

@@ -27,8 +27,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.network.security.SecurityGroup;
 
-//TODO - add description to implementation
-@Implementation(responseObject=SecurityGroupResponse.class)
+@Implementation(responseObject=SecurityGroupResponse.class, description="Creates a security group")
 public class CreateSecurityGroupCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateSecurityGroupCmd.class.getName());
 

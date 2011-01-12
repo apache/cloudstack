@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import com.thoughtworks.xstream.XStream;
@@ -39,8 +40,8 @@ public class ApiXmlDocReader {
 		String oldFile = null;
 		String dirName = "";
 		
-		HashMap<String, Command> commands = new HashMap<String,Command>();
-		HashMap<String, Command> oldCommands = new HashMap<String,Command>();
+		LinkedHashMap<String, Command> commands = new LinkedHashMap<String,Command>();
+		LinkedHashMap<String, Command> oldCommands = new LinkedHashMap<String,Command>();
 		ArrayList<Command> addedCommands = new ArrayList<Command>();
 		ArrayList<Command> removedCommands = new ArrayList<Command>();
 		HashMap<String, Command> stableCommands = new HashMap<String, Command>();
@@ -117,13 +118,23 @@ public class ApiXmlDocReader {
 			//Print added commands
 	        out.write("Added commands:\n");
 			for (Command c : addedCommands) {
-				out.write("\n	" + c.getName() + " (" + c.getDescription() + "\n");
+			    if (c.getDescription() != null && !c.getDescription().isEmpty()) {
+			        out.write("\n    " + c.getName() + " (" + c.getDescription() + ")\n");
+			    } else {
+			        out.write("\n    " + c.getName() + "\n");
+			    }
+				
 			}
 			
 			//Print removed commands
 			out.write("\nRemoved commands:\n");
 			for (Command c : removedCommands) {
-				out.write("\n	" + c.getName() + " (" + c.getDescription() + ")\n");
+			    if (c.getDescription() != null && !c.getDescription().isEmpty()) {
+			        out.write("\n    " + c.getName() + " (" + c.getDescription() + ")\n");
+			    } else {
+			        out.write("\n    " + c.getName() + "\n");
+			    }
+				
 			}
 
 			//Print differences between commands arguments
@@ -167,18 +178,21 @@ public class ApiXmlDocReader {
 				}
 				
 				//Check if any response arguments were added in new version
-				for (Argument arg : newCommand.getResponse()) {
-					if (oldCommand.getResArgByName(arg.getName()) == null) {
-						newRespArgs.add(arg);
-					} 
+				if (newCommand.getResponse() != null && oldCommand.getResponse() != null) {
+				    for (Argument arg : newCommand.getResponse()) {
+	                    if (oldCommand.getResArgByName(arg.getName()) == null) {
+	                        newRespArgs.add(arg);
+	                    } 
+	                }
+	                
+	                //Check if any response arguments were removed in new version
+	                for (Argument arg : oldCommand.getResponse()) {
+	                    if (newCommand.getResArgByName(arg.getName()) == null) {
+	                        removedRespArgs.add(arg);
+	                    }
+	                }
 				}
 				
-				//Check if any response arguments were removed in new version
-				for (Argument arg : oldCommand.getResponse()) {
-					if (newCommand.getResArgByName(arg.getName()) == null) {
-						removedRespArgs.add(arg);
-					}
-				}
 				
 				if (newReqArgs.size() != 0 || newRespArgs.size() != 0 || removedReqArgs.size() != 0 || removedRespArgs.size() != 0 || stableReqArgs.size() != 0 || stableReqArgs.size() != 0) {
 					out.write("\n\t" + key);
@@ -186,21 +200,33 @@ public class ApiXmlDocReader {
 					if (newReqArgs.size() != 0 || removedReqArgs.size() != 0 || stableReqArgs.size() != 0) {
 						out.write("\n\t\tRequest");
 						if (newReqArgs.size() != 0){
-							out.write("\n\t\t\tNew parameters:  ");
+							StringBuffer newParameters = new StringBuffer();
+							newParameters.append("\n\t\t\tNew parameters: ");
 							for (Argument newArg: newReqArgs) {
-								out.write(newArg.getName());
+							    String isRequiredParam = "optional";
+							    if (newArg.isRequired()) {
+							        isRequiredParam = "required";
+							    }
+								newParameters.append(newArg.getName() + " (" + isRequiredParam +  "), ");
 							}
+							newParameters.delete(newParameters.length()-2, newParameters.length()-1);
+							out.write(newParameters.toString());
 							out.write("\n");
 						}
 						if (removedReqArgs.size() != 0){
-							out.write("\n\t\t\tRemoved parameters:  ");
+						    StringBuffer removedParameters = new StringBuffer();
+						    removedParameters.append("\n\t\t\tRemoved parameters: ");
 							for (Argument removedArg: removedReqArgs) {
-								out.write(removedArg.getName());
+								removedParameters.append(removedArg.getName() + ", ");
 							}
+							removedParameters.delete(removedParameters.length()-2, removedParameters.length()-1);
+							out.write(removedParameters.toString());
+							out.write("\n");
 						}
-						out.write("\n");
+						
 						if (stableReqArgs.size() != 0){
-							out.write("\n\t\t\tChanged parameters:  ");
+						    StringBuffer changedParameters = new StringBuffer();
+						    changedParameters.append("\n\t\t\tChanged parameters: ");
 							for (Argument stableArg: stableReqArgs.values()) {
 								String newRequired = "optional";
 								String oldRequired = "optional";
@@ -208,29 +234,37 @@ public class ApiXmlDocReader {
 									oldRequired = "required";
 								if (newCommand.getReqArgByName(stableArg.getName()).isRequired() == true)
 									newRequired = "required";
-								
-								out.write(stableArg.getName() + " (old version - " + oldRequired + ", new version - " + newRequired + ") ");
+								changedParameters.append(stableArg.getName() + " (old version - " + oldRequired + ", new version - " + newRequired + "), ");
 							}
+							changedParameters.delete(changedParameters.length() - 2, changedParameters.length() - 1);
+							out.write(changedParameters.toString());
+							out.write("\n");
 						}
-						out.write("\n");
+						
 					}
 					
 					//Response
 					if (newRespArgs.size() != 0 || removedRespArgs.size() != 0 || stableRespArgs.size() != 0) {
-						out.write("\n\t\tResponse:");
+					    StringBuffer changedResponseParams = new StringBuffer();
+					    changedResponseParams.append("\n\t\tResponse:");
 						if (newRespArgs.size() != 0){
+						    changedResponseParams.append("\n\t\t\tNew parameters: ");
 							out.write("\n\t\t\tNew parameters:  ");
 							for (Argument newArg: newRespArgs) {
-								out.write(newArg.getName());
+								changedResponseParams.append(newArg.getName() + ", ");
 							}
+							changedResponseParams.delete(changedResponseParams.length() - 2, changedResponseParams.length() - 1);
 							out.write("\n");
 						}
 						if (removedRespArgs.size() != 0){
-							out.write("\n\t\t\tRemoved parameters:  ");
+						    changedResponseParams.append("\n\t\t\tRemoved parameters: ");
 							for (Argument removedArg: removedRespArgs) {
+							    changedResponseParams.append(removedArg.getName());
 								out.write(removedArg.getName());
 							}
 						}
+						changedResponseParams.delete(changedResponseParams.length() - 2, changedResponseParams.length() - 1);
+						out.write(changedResponseParams.toString());
 						out.write("\n");
 					}
 				}	

@@ -55,4 +55,6 @@ public interface NetworkService {
     
     int getActiveNicsInNetwork(long networkId);
     
+    Network getNetwork(long networkId);
+    
 }

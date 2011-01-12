@@ -61,5 +61,7 @@ public interface LoadBalancingRulesService {
      * @return list of load balancers that match the criteria
      */
     List<? extends LoadBalancer> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd);
+    
+    List<LoadBalancingRule> listByNetworkId(long networkId);
 
 }

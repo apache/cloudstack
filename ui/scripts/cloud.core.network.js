@@ -87,7 +87,7 @@ function networkPopulateMiddleMenu($leftmenuItem1) {
     //public network   
     $midmenuContainer.find("#midmenu_container_no_items_available").remove();  //There is always at least one item (i.e. public network) in middle menu. So, "no items available" shouldn't be in middle menu even there is zero direct network item in middle menu.   
     $.ajax({
-        data: createURL("command=listNetworks&isSystem=true&zoneId="+zoneObj.id),
+        data: createURL("command=listNetworks&trafficType=Public&isSystem=true&zoneId="+zoneObj.id),
         dataType: "json",
         async: false,
         success: function(json) {       
@@ -883,7 +883,7 @@ function directNetworkJsonToDetailsTab() {
 	$thisTab.find("#id").text(fromdb(jsonObj.id));				
 	$thisTab.find("#name").text(fromdb(jsonObj.name));	
 	$thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
-	  	
+	$thisTab.find("#default").text((jsonObj.isdefault) ? "Yes" : "No"); 	
     $thisTab.find("#vlan").text(fromdb(jsonObj.vlan));
     $thisTab.find("#gateway").text(fromdb(jsonObj.gateway));
     $thisTab.find("#netmask").text(fromdb(jsonObj.netmask));
@@ -1105,7 +1105,8 @@ function bindAddNetworkButton($button) {
 				} else if (isDirect) {
 					scopeParams = "&isshared=true";
 				}
-												
+				
+				var isDefault = trim($thisDialog.find("#add_publicip_vlan_default").val());
 				var gateway = trim($thisDialog.find("#add_publicip_vlan_gateway").val());
 				var netmask = trim($thisDialog.find("#add_publicip_vlan_netmask").val());
 				var startip = trim($thisDialog.find("#add_publicip_vlan_startip").val());
@@ -1122,10 +1123,10 @@ function bindAddNetworkButton($button) {
 						var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
 						if (networkOfferings != null && networkOfferings.length > 0) {
 							for (var i = 0; i < networkOfferings.length; i++) {
-								if (networkOfferings[i].type == "Direct" && networkOfferings[i].isdefault) {
+								if (networkOfferings[i].isdefault) {
 									// Create a network from this.
 									$.ajax({
-										data: createURL("command=createNetwork&name="+name+"&displayText="+desc+"&networkOfferingId="+networkOfferings[i].id+"&zoneId="+zoneObj.id+vlan+scopeParams+"&gateway="+todb(gateway)+"&netmask="+todb(netmask)+"&startip="+todb(startip)+"&endip="+todb(endip)),
+										data: createURL("command=createNetwork&isDefault="+isDefault+"&name="+name+"&displayText="+desc+"&networkOfferingId="+networkOfferings[i].id+"&zoneId="+zoneObj.id+vlan+scopeParams+"&gateway="+todb(gateway)+"&netmask="+todb(netmask)+"&startip="+todb(startip)+"&endip="+todb(endip)),
 										dataType: "json",
 										success: function(json) {	
 											$thisDialog.find("#spinning_wheel").hide();

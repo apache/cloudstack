@@ -35,6 +35,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
@@ -52,7 +53,6 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
@@ -93,7 +93,7 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement,
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
-        if (!canHandle(offering.getGuestIpType(), dest.getDataCenter())) {
+        if (!canHandle(guestConfig.getGuestType(), dest.getDataCenter())) {
             return false;
         }
         _routerMgr.deployVirtualRouter(guestConfig, dest, context.getAccount());

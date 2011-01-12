@@ -28,7 +28,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.network.Networks.Availability;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.service.ServiceOfferingVO;
@@ -37,11 +36,7 @@ import com.cloud.utils.db.GenericDao;
 @Entity
 @Table(name="network_offerings")
 public class NetworkOfferingVO implements NetworkOffering {
-    public final static String SystemVmPublicNetwork = "System-Public-Network";
-    public final static String SystemVmControlNetwork = "System-Control-Network";
-    public final static String SystemVmManagementNetwork = "System-Management-Network";
-    public final static String SystemVmStorageNetwork = "System-Storage-Network";
-    
+   
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
@@ -61,10 +56,6 @@ public class NetworkOfferingVO implements NetworkOffering {
     
     @Column(name="concurrent_connections")
     Integer concurrentConnections;
-    
-    @Column(name="type")
-    @Enumerated(value=EnumType.STRING)
-    GuestIpType guestIpType;
     
     @Column(name="traffic_type")
     @Enumerated(value=EnumType.STRING)
@@ -119,11 +110,6 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Override
     public String getDisplayText() {
         return displayText;
-    }
-
-    @Override
-    public GuestIpType getGuestIpType() {
-        return guestIpType;
     }
 
     @Override
@@ -198,10 +184,6 @@ public class NetworkOfferingVO implements NetworkOffering {
 
     public void setConcurrentConnections(Integer concurrentConnections) {
         this.concurrentConnections = concurrentConnections;
-    }
-
-    public void setGuestIpType(GuestIpType guestIpType) {
-        this.guestIpType = guestIpType;
     }
 
     public void setTrafficType(TrafficType trafficType) {
@@ -311,10 +293,9 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.dhcpService = dhcpService;
     }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, GuestIpType type, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, boolean lbService, boolean gatewayService, boolean dhcpService, boolean firewallService, boolean dnsService, boolean userDataService, boolean vpnService) {
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, boolean lbService, boolean gatewayService, boolean dhcpService, boolean firewallService, boolean dnsService, boolean userDataService, boolean vpnService) {
         this.name = name;
         this.displayText = displayText;
-        this.guestIpType = type;
         this.rateMbps = rateMbps;
         this.multicastRateMbps = multicastRateMbps;
         this.concurrentConnections = concurrentConnections;
@@ -333,7 +314,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
     
     public NetworkOfferingVO(ServiceOfferingVO offering) {
-        this("Network Offering for " + offering.getName(), "Network Offering for " + offering.getDisplayText(), TrafficType.Guest, offering.getGuestIpType(), false, false, offering.getRateMbps(), offering.getMulticastRateMbps(), null, false, Availability.Required, false, false, false, false, false, false, false);
+        this("Network Offering for " + offering.getName(), "Network Offering for " + offering.getDisplayText(), TrafficType.Guest, false, false, offering.getRateMbps(), offering.getMulticastRateMbps(), null, false, Availability.Required, false, false, false, false, false, false, false);
         this.serviceOfferingId = offering.getId();
     }
     
@@ -342,15 +323,14 @@ public class NetworkOfferingVO implements NetworkOffering {
      * Network Offering for all system vms.
      * @param name
      * @param trafficType
-     * @param type
      */
-    public NetworkOfferingVO(String name, TrafficType trafficType, GuestIpType type) {
-        this(name, "System Offering for " + name, trafficType, type, true, false, null, null, null, false, Availability.Required, false, false, false, false, false, false, false);
+    public NetworkOfferingVO(String name, TrafficType trafficType) {
+        this(name, "System Offering for " + name, trafficType, true, false, null, null, null, false, Availability.Required, false, false, false, false, false, false, false);
     }
     
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("[Network Offering [");
-        return buf.append(id).append("-").append(trafficType).append("-").append(name).append("-").append(guestIpType).append("]").toString();
+        return buf.append(id).append("-").append(trafficType).append("-").append(name).append("]").toString();
     }
 }

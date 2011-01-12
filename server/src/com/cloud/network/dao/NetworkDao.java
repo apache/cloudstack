@@ -19,9 +19,9 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
+import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.NetworkAccountVO;
 import com.cloud.network.NetworkVO;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchBuilder;
 

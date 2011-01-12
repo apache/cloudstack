@@ -486,7 +486,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			final ServiceOfferingVO offering, final VMTemplateVO template,
 			VMInstanceVO vm, Host currentHost, final Set<Host> avoid) {
 		VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(
-				vm, template, offering, null, null, null);
+				vm, template, offering, null, null);
 		DeployDestination dest = null;
 		DataCenterDeployment plan = new DataCenterDeployment(dc.getId(),
 				pod.getId(), sp.getClusterId(), null);
@@ -1531,7 +1531,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		Long dcId = host.getDataCenterId();
 		ReadyCommand ready = new ReadyCommand(dcId);
 		Answer answer = easySend(hostId, ready);
-		if (answer == null) {
+		if (answer == null || !answer.getResult()) {
 			// this is tricky part for secondary storage
 			// make it as disconnected, wait for secondary storage VM to be up
 			// return the attache instead of null, even it is disconnectede

@@ -20,10 +20,55 @@ package com.cloud.vm;
 import javax.ejb.Local;
 
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.time.InaccurateClock;
+import com.cloud.vm.ItWorkVO.Step;
+import com.cloud.vm.VirtualMachine.State;
 
 @Local(value=ItWorkDao.class)
 public class ItWorkDaoImpl extends GenericDaoBase<ItWorkVO, String> implements ItWorkDao {
+    protected final SearchBuilder<ItWorkVO> AllFieldsSearch;
+    protected final SearchBuilder<ItWorkVO> CleanupSearch;
+    
     protected ItWorkDaoImpl() {
         super();
+        
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("instance", AllFieldsSearch.entity().getInstanceId(), Op.EQ);
+        AllFieldsSearch.and("op", AllFieldsSearch.entity().getType(), Op.EQ);
+        AllFieldsSearch.and("step", AllFieldsSearch.entity().getStep(), Op.EQ);
+        AllFieldsSearch.done();
+        
+        CleanupSearch = createSearchBuilder();
+        CleanupSearch.and("step", CleanupSearch.entity().getType(), Op.IN);
+        CleanupSearch.and("time", CleanupSearch.entity().getUpdatedAt(), Op.LT);
+        CleanupSearch.done();
+    }
+    
+    @Override
+    public ItWorkVO findByInstance(long instanceId, State state) {
+        SearchCriteria<ItWorkVO> sc = AllFieldsSearch.create();
+        sc.setParameters("instance", instanceId);
+        sc.setParameters("op", state);
+        
+        return findOneBy(sc);
+    }
+    
+    @Override
+    public void cleanup(long wait) {
+        SearchCriteria<ItWorkVO> sc = CleanupSearch.create();
+        sc.setParameters("step", Step.Done, Step.Cancelled);
+        sc.setParameters("time", InaccurateClock.getTimeInSeconds() - wait);
+        
+        remove(sc);
+    }
+    
+    @Override
+    public boolean update(String id, ItWorkVO work) {
+        work.setUpdatedAt(InaccurateClock.getTimeInSeconds());
+        
+        return super.update(id, work);
     }
 }

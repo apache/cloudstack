@@ -57,6 +57,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     protected final SearchBuilder<UserVmVO> GuestIpSearch;
     protected final SearchBuilder<UserVmVO> ZoneAccountGuestIpSearch;
     protected final SearchBuilder<UserVmVO> ZoneNameSearch;
+    protected final SearchBuilder<UserVmVO> AccountHostSearch;
 
     protected final SearchBuilder<UserVmVO> DestroySearch;
     protected SearchBuilder<UserVmVO> AccountDataCenterVirtualSearch;
@@ -136,6 +137,11 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         ZoneNameSearch.and("dataCenterId", ZoneNameSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         ZoneNameSearch.and("name", ZoneNameSearch.entity().getName(), SearchCriteria.Op.EQ);
         ZoneNameSearch.done();
+        
+        AccountHostSearch = createSearchBuilder();
+        AccountHostSearch.and("accountId", AccountHostSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AccountHostSearch.and("hostId", AccountHostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
+        AccountHostSearch.done();
 
         _updateTimeAttr = _allAttributes.get("updateTime");
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
@@ -401,4 +407,12 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         sc.setParameters("name", name);
         return findOneBy(sc);
     }
+
+	@Override
+	public List<UserVmVO> listByAccountIdAndHostId(long accountId, long hostId) {
+		SearchCriteria<UserVmVO> sc = AccountHostSearch.create();
+		sc.setParameters("hostId", hostId);
+		sc.setParameters("accountId", accountId);
+		return listBy(sc);
+	}
 }

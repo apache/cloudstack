@@ -326,7 +326,17 @@
 	                        </div>
 	                    </div>
 	                </div>
-	                <div class="grid_rows even">
+					<div class="grid_rows even">
+	                    <div class="grid_row_cell" style="width: 20%;">
+	                        <div class="row_celltitles">
+	                            Is Default:</div>
+	                    </div>
+	                    <div class="grid_row_cell" style="width: 79%;">
+	                        <div class="row_celltitles" id="default">
+	                        </div>
+	                    </div>
+	                </div>
+	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
 	                            <%=t.t("vlan")%>:</div>
@@ -336,7 +346,7 @@
 	                        </div>
 	                    </div>
 	                </div>
-	                <div class="grid_rows odd">
+	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
 	                            <%=t.t("gateway")%>:</div>
@@ -346,7 +356,7 @@
 	                        </div>
 	                    </div>
 	                </div>
-	                <div class="grid_rows even">
+	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
 	                            Netmask:</div>
@@ -356,7 +366,7 @@
 	                        </div>
 	                    </div>
 	                </div>	               
-	                <div class="grid_rows odd">
+	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
 	                            Domain:</div>
@@ -366,7 +376,7 @@
 	                        </div>
 	                    </div>
 	                </div>
-	                <div class="grid_rows even">
+	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
 	                            Account:</div>
@@ -996,6 +1006,14 @@
                 <input class="text" type="text" name="add_publicip_vlan_network_desc" id="add_publicip_vlan_network_desc" />
                 <div id="add_publicip_vlan_network_desc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
+            </li>
+			<li>
+                <label for="user_name">
+                    Is Default?</label>
+                <select class="select" name="add_publicip_vlan_default" id="add_publicip_vlan_default">
+                    <option value="false">No</option>
+					<option value="true">Yes</option>
+                </select>
             </li>
             <li id="add_publicip_vlan_container">
                 <label for="add_publicip_vlan_tagged">

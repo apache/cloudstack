@@ -18,7 +18,7 @@
 // Default password is MD5 hashed.  Set the following variable to false to disable this.
 var md5Hashed = true;
  
- $(document).ready(function() { 
+$(document).ready(function() { 
 	function initUI() {
 		var context = $.urlParam('lp');
 		if (context != null) { 
@@ -38,6 +38,78 @@ var md5Hashed = true;
 			$("#leftmenu_dashboard").click();
 		}
 	}	
+	
+	// Setup custom theme
+	var $currentTheme = null;
+	if ($.cookie("theme") != null) {
+		$currentTheme = $("<link>").appendTo("head").attr({
+			rel: "stylesheet",
+			type: "text/css",
+			href: $.cookie("theme")
+		});
+		$("#theme_button p").text($.cookie("theme.name"));
+	}
+	$("#theme_button").click(function(event) {
+		var $menu = $(this).find("#theme_menu");
+		if ($menu.css("display") == "none") {
+			$menu.slideDown(500);
+		} else {
+			$menu.slideUp(500);
+		}
+	});
+	
+	$("#theme_button #theme_menu").click(function(event) {
+		var target = $(event.target);
+		var id = target.attr("id");
+		if ($currentTheme != null) {
+			$currentTheme.remove();
+			$currentTheme = null;
+		}
+		var name = "Default Theme";
+		if (id != "theme_default") {
+			$currentTheme = $("<link>").appendTo("head").attr({
+				rel: "stylesheet",
+				type: "text/css",
+				href: id
+			});
+			name = target.text();
+			$.cookie("theme.name", name);
+			$.cookie("theme", id);
+		} else {
+			if ($currentTheme != null) {
+				$currentTheme.remove();
+			}
+			$.cookie("theme", null);
+			$.cookie("theme.name", null);
+			name = "Default Theme";
+		}
+		$("#theme_button p").text(name);
+		$(this).hide();
+		return false;
+	});
+	
+	// Setup Language option
+	if ($.cookie("lang") != null) {
+		$("#lang_button p").text($.cookie("lang.name"));
+	}
+	
+	$("#lang_button").click(function(event) {
+		var $menu = $(this).find("#lang_menu");
+		if ($menu.css("display") == "none") {
+			$menu.slideDown(500);
+		} else {
+			$menu.slideUp(500);
+		}
+	});
+	
+	$("#lang_button #lang_menu").click(function(event) {
+		var target = $(event.target);
+		var id = target.attr("id");
+		$.cookie("lang", id);
+		$.cookie("lang.name", target.text());
+		location.replace('/client');
+		return false;
+	});
 	
 	// Setup drag and slide for the main UI
 	$("#west_panel").resizable({
@@ -163,7 +235,7 @@ var md5Hashed = true;
 			//configuration	
 			bindAndListMidMenuItems($("#leftmenu_service_offering"), "listServiceOfferings", serviceOfferingGetSearchParams, "listserviceofferingsresponse", "serviceoffering", "jsp/serviceoffering.jsp", afterLoadServiceOfferingJSP, serviceOfferingToMidmenu, serviceOfferingToRightPanel, getMidmenuId, false); 
 			bindAndListMidMenuItems($("#leftmenu_disk_offering"), "listDiskOfferings", diskOfferingGetSearchParams, "listdiskofferingsresponse", "diskoffering", "jsp/diskoffering.jsp", afterLoadDiskOfferingJSP, diskOfferingToMidmenu, diskOfferingToRightPanel, getMidmenuId, false); 
-			bindAndListMidMenuItems($("#leftmenu_network_offering"), "listNetworkOfferings&type=Virtual", networkOfferingGetSearchParams, "listnetworkofferingsresponse", "networkoffering", "jsp/networkoffering.jsp", afterLoadNetworkOfferingJSP, networkOfferingToMidmenu, networkOfferingToRightPanel, getMidmenuId, false);  
+			bindAndListMidMenuItems($("#leftmenu_network_offering"), "listNetworkOfferings&traffictype=Guest", networkOfferingGetSearchParams, "listnetworkofferingsresponse", "networkoffering", "jsp/networkoffering.jsp", afterLoadNetworkOfferingJSP, networkOfferingToMidmenu, networkOfferingToRightPanel, getMidmenuId, false);  
 		}
 	
 		$("#leftmenu_global_setting").bind("click", function(event) {
@@ -517,7 +589,7 @@ var md5Hashed = true;
 	var activeTab = null;
 	function logout(refresh) {
 		g_mySession = null;
-                g_sessionKey = null;
+        g_sessionKey = null;
 		g_username = null;	
 		g_account = null;
 		g_domainid = null;	
@@ -614,8 +686,8 @@ var md5Hashed = true;
 				g_timezoneoffset = json.loginresponse.timezoneoffset;					
 				if (json.loginresponse.hypervisortype != null) 
 					g_hypervisorType = json.loginresponse.hypervisortype;				
-				if (json.loginresponse.directattachnetworkgroupsenabled != null) 
-					g_directAttachNetworkGroupsEnabled = json.loginresponse.directattachnetworkgroupsenabled;
+				if (json.loginresponse.directattachsecuritygroupsenabled != null) 
+					g_directAttachSecurityGroupsEnabled = json.loginresponse.directattachsecuritygroupsenabled;
 				if (json.loginresponse.directattacheduntaggedenabled != null) 
 					g_directAttachedUntaggedEnabled = json.loginresponse.directattacheduntaggedenabled;
                 if (json.loginresponse.systemvmuselocalstorage != null) 
@@ -629,7 +701,7 @@ var md5Hashed = true;
 				$.cookie('role', g_role, { expires: 1});
 				$.cookie('timezoneoffset', g_timezoneoffset, { expires: 1});  
 				$.cookie('timezone', g_timezone, { expires: 1});  
-				$.cookie('directattachnetworkgroupsenabled', g_directAttachNetworkGroupsEnabled, { expires: 1}); 
+				$.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1}); 
 				$.cookie('directattacheduntaggedenabled', g_directAttachedUntaggedEnabled, { expires: 1}); 
 				$.cookie('systemvmuselocalstorage', g_systemVmUseLocalStorage, { expires: 1}); 
 				
@@ -684,7 +756,7 @@ var md5Hashed = true;
 	g_domainid = $.cookie("domainid");
 	g_hypervisorType = $.cookie("hypervisortype");
 	g_timezone = $.cookie("timezone");
-	g_directAttachNetworkGroupsEnabled = $.cookie("directattachnetworkgroupsenabled");
+	g_directAttachSecurityGroupsEnabled = $.cookie("directattachsecuritygroupsenabled");
 	g_directAttachedUntaggedEnabled = $.cookie("directattacheduntaggedenabled");
 	g_systemVmUseLocalStorage = $.cookie("systemvmuselocalstorage");
 	
@@ -696,8 +768,8 @@ var md5Hashed = true;
 	if (!g_hypervisorType || g_hypervisorType.length == 0) 		
 		g_hypervisorType = "kvm";
 	
-	if (!g_directAttachNetworkGroupsEnabled || g_directAttachNetworkGroupsEnabled.length == 0) 		
-		g_directAttachNetworkGroupsEnabled = "false";	
+	if (!g_directAttachSecurityGroupsEnabled || g_directAttachSecurityGroupsEnabled.length == 0) 		
+		g_directAttachSecurityGroupsEnabled = "false";	
 		
 	if (!g_directAttachedUntaggedEnabled || g_directAttachedUntaggedEnabled.length == 0) 		
 		g_directAttachedUntaggedEnabled = "false";		

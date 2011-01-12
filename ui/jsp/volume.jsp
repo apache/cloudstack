@@ -754,6 +754,13 @@
 						<option value="true">Yes</option>
 					</select>
 				</li>
+				<li id="isfeatured_container" style="display:none">
+					<label>Featured?:</label>
+					<select class="select" id="isfeatured">
+					    <option value="false">No</option>
+						<option value="true">Yes</option>						
+					</select>
+				</li>		
 			</ol>
 		</form>
 	</div>

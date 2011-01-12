@@ -36,13 +36,13 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
-import com.cloud.offering.NetworkOffering.GuestIpType;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
@@ -526,6 +526,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         
         return allRules;
     }
-
+    
+    @Override
+    public List<? extends PortForwardingRule> listByNetworkId(long networkId) {
+        return _forwardingDao.listByNetworkId(networkId);
+    }
 
 }

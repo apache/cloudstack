@@ -42,19 +42,18 @@ public class ZoneResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.INTERNAL_DNS2) @Param(description="the second internal DNS for the Zone")
     private String internalDns2;
-
-    //FIXME - add description. This parameter is called "vnet" in updateZone, and vlan in createZone - figure out which one is right.
-    @SerializedName(ApiConstants.VLAN)
+    
+    @SerializedName(ApiConstants.VLAN) @Param(description="the vlan range of the zone")
     private String vlan;
 
     @SerializedName(ApiConstants.GUEST_CIDR_ADDRESS) @Param(description="the guest CIDR address for the Zone")
     private String guestCidrAddress;
     
-    //FIXME - do we need 2 parameters below at all?
+    //TODO - generate description
     @SerializedName("status")
     private String status;
 
-    @SerializedName(ApiConstants.DISPLAY_TEXT)
+    @SerializedName(ApiConstants.DISPLAY_TEXT) @Param(description="the display text of the zone")
     private String displayText;
     
     @SerializedName(ApiConstants.DOMAIN) @Param(description="Domain name for the Vms in the zone")

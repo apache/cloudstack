@@ -72,6 +72,8 @@ import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -102,11 +104,11 @@ import com.cloud.info.RunningHostInfoAgregator;
 import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.maid.StackMaid;
 import com.cloud.network.IpAddrAllocator;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
@@ -560,7 +562,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
         Account systemAcct = _accountMgr.getSystemAccount();
         User systemUser = _accountMgr.getSystemUser();
-        return _itMgr.start(proxy, null, systemUser, systemAcct, null);
+        if (proxy.getState() == VirtualMachine.State.Running) {
+            return proxy;
+        }
+        return _itMgr.start(proxy, null, systemUser, systemAcct);
     }
 
     public ConsoleProxyVO assignProxyFromRunningPool(long dataCenterId) {
@@ -697,17 +702,21 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
 
-        List<NetworkOfferingVO> defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmPublicNetwork);
-        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemVmControlNetwork, NetworkOfferingVO.SystemVmManagementNetwork);
+        List<NetworkOfferingVO> defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork);
+        if (dc.getNetworkType() == NetworkType.Basic) {
+            defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SysteGuestNetwork);
+        }
+        
+        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork, NetworkOfferingVO.SystemManagementNetwork);
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(offerings.size() + 1);
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
-        networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, defaultOffering.get(0), plan, null, null, false).get(0), defaultNic));
+        networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, defaultOffering.get(0), plan, null, null, false, false).get(0), defaultNic));
         for (NetworkOfferingVO offering : offerings) {
-            networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), null));
+            networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false, false).get(0), null));
         }
-        ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, _template.getId(), _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), 0);
+        ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, _template.getId(), _template.getHypervisorType(), _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), 0);
         try {
             proxy = _itMgr.allocate(proxy, _template, _serviceOffering, networks, plan, null, systemAcct);
         } catch (InsufficientCapacityException e) {
@@ -1525,7 +1534,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             final RebootCommand cmd = new RebootCommand(proxy.getInstanceName());
             final Answer answer = _agentMgr.easySend(proxy.getHostId(), cmd);
 
-            if (answer != null) {
+            if (answer != null && answer.getResult()) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Successfully reboot console proxy " + proxy.getName());
                 }
@@ -1551,64 +1560,13 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     }
 
     @Override
-    @DB
     public boolean destroyProxy(long vmId) {
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-        if (asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Destroy console proxy " + vmId + ", update async job-" + job.getId());
-            }
-            _asyncMgr.updateAsyncJobAttachment(job.getId(), "console_proxy", vmId);
-        }
-
-        ConsoleProxyVO vm = _consoleProxyDao.findById(vmId);
-        if (vm == null || vm.getState() == State.Destroyed) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to find vm or vm is destroyed: " + vmId);
-            }
-            return true;
-        }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Destroying console proxy vm " + vmId);
-        }
-
-        if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, null)) {
-            s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vmId);
-            return false;
-        }
-
-        Transaction txn = Transaction.currentTxn();
-        List<VolumeVO> vols = null;
+        ConsoleProxyVO proxy = _consoleProxyDao.findById(vmId);
         try {
-            vols = _volsDao.findByInstance(vmId);
-            if (vols.size() != 0) {
-                _storageMgr.destroy(vm, vols);
-            }
-
-            return true;
-        } finally {
-            try {
-                txn.start();
-                // release critical system resources used by the VM before we
-                // delete them
-                if (vm.getPublicIpAddress() != null) {
-//                    freePublicIpAddress(vm.getPublicIpAddress(), vm.getDataCenterId(), vm.getPodId());
-                }
-                vm.setPublicIpAddress(null);
-
-                _consoleProxyDao.remove(vm.getId());
-
-                txn.commit();
-            } catch (Exception e) {
-                s_logger.error("Caught this error: ", e);
-                txn.rollback();
-                return false;
-            } finally {
-                s_logger.debug("console proxy vm is destroyed : " + vm.getName());
-            }
+            return _itMgr.expunge(proxy, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+        } catch (ResourceUnavailableException e) {
+            s_logger.warn("Unable to expunge " + proxy, e);
+            return false;
         }
     }
 
@@ -1702,7 +1660,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         MigrateCommand cmd = new MigrateCommand(proxy.getInstanceName(), host.getPrivateIpAddress(), false);
         Answer answer = _agentMgr.easySend(fromHost.getId(), cmd);
-        if (answer == null) {
+        if (answer == null || !answer.getResult()) {
             return false;
         }
 
@@ -1905,7 +1863,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, _proxyRamSize, 0, 0, 0, true, null, NetworkOffering.GuestIpType.Virtual,
+        _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, _proxyRamSize, 0, 0, 0, true, null, Network.GuestIpType.Virtual,
                 useLocalStorage, true, null, true);
         _serviceOffering.setUniqueName("Cloud.com-ConsoleProxy");
         _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
@@ -2020,10 +1978,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         cmds.addCommand("checkSsh", check);
         
         ConsoleProxyVO proxy = profile.getVirtualMachine();
+        DataCenter dc = dest.getDataCenter();
         List<NicVO> nics = _nicDao.listBy(proxy.getId());
         for (NicVO nic : nics) {
         	NetworkVO network = _networkDao.findById(nic.getNetworkId());
-        	if (network.getTrafficType() == TrafficType.Public) {
+        	if ((network.getTrafficType() == TrafficType.Public && dc.getNetworkType() == NetworkType.Advanced) || (network.getTrafficType() == TrafficType.Guest && dc.getNetworkType() == NetworkType.Basic)) {
         		proxy.setPublicIpAddress(nic.getIp4Address());
         		proxy.setPublicNetmask(nic.getNetmask());
         		proxy.setPublicMacAddress(nic.getMacAddress());

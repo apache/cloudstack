@@ -26,8 +26,8 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.NetworkOfferingResponse;
-import com.cloud.network.Networks.Availability;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offering.NetworkOffering.Availability;
 
 @Implementation(description="Creates a network offering.", responseObject=NetworkOfferingResponse.class)
 public class CreateNetworkOfferingCmd extends BaseCmd {
@@ -43,9 +43,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, required=true, description="the display text of the network offering")
     private String displayText;
-    
-    @Parameter(name=ApiConstants.TYPE, type=CommandType.STRING, required=true, description="type of the network. Supported types Virtual, Direct")
-    private String type;
     
     @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, required=true, description="the traffic type for the network offering, supported types are Public, Management, Control, Guest, Vlan or Storage.")
     private String traffictype;
@@ -76,10 +73,6 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
 
     public String getTags() {
         return tags;
-    }
-
-    public String getType() {
-        return type;
     }
 
     public String getTraffictype() {

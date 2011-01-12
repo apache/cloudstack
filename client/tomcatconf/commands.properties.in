@@ -103,7 +103,6 @@ listVlanIpRanges=com.cloud.api.commands.ListVlanIpRangesCmd;1
 associateIpAddress=com.cloud.api.commands.AssociateIPAddrCmd;15
 disassociateIpAddress=com.cloud.api.commands.DisassociateIPAddrCmd;15
 listPublicIpAddresses=com.cloud.api.commands.ListPublicIpAddressesCmd;15
-restartNetwork=com.cloud.api.commands.RestartNetworkCmd;15
 
 #### firewall commands
 listPortForwardingRules=com.cloud.api.commands.ListPortForwardingRulesCmd;15
@@ -169,7 +168,6 @@ listCapacity=com.cloud.api.commands.ListCapacityCmd;1
 addHost=com.cloud.api.commands.AddHostCmd;1
 addCluster=com.cloud.api.commands.AddClusterCmd;1
 deleteCluster=com.cloud.api.commands.DeleteClusterCmd;1
-add=com.cloud.api.commands.AddHostCmd;1
 reconnectHost=com.cloud.api.commands.ReconnectHostCmd;1
 updateHost=com.cloud.api.commands.UpdateHostCmd;1
 deleteHost=com.cloud.api.commands.DeleteHostCmd;1
@@ -248,10 +246,10 @@ listNetworkOfferings=com.cloud.api.commands.ListNetworkOfferingsCmd;15
 createNetwork=com.cloud.api.commands.CreateNetworkCmd;15
 deleteNetwork=com.cloud.api.commands.DeleteNetworkCmd;15
 listNetworks=com.cloud.api.commands.ListNetworksCmd;15
+restartNetwork=com.cloud.api.commands.RestartNetworkCmd;15
 
 #### SSH key pair commands
 registerSSHKeyPair=com.cloud.api.commands.RegisterSSHKeyPairCmd;15
 createSSHKeyPair=com.cloud.api.commands.CreateSSHKeyPairCmd;15
 deleteSSHKeyPair=com.cloud.api.commands.DeleteSSHKeyPairCmd;15
 listSSHKeyPairs=com.cloud.api.commands.ListSSHKeyPairsCmd;15
-

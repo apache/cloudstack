@@ -41,7 +41,7 @@ public class SecurityGroupResponse extends BaseResponse {
     @SerializedName("domain") @Param(description="the domain name of the security group")
     private String domainName;
 
-    @SerializedName("ingressrule")  @Param(description="the list of ingress rules associated with the security group")
+    @SerializedName("ingressrule")  @Param(description="the list of ingress rules associated with the security group", responseObject = IngressRuleResponse.class)
     private List<IngressRuleResponse> ingressRules;
 
     public Long getId() {

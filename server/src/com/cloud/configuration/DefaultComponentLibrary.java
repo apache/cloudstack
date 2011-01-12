@@ -72,6 +72,12 @@ import com.cloud.network.dao.NetworkRuleConfigDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
 import com.cloud.network.lb.LoadBalancingRulesManagerImpl;
+import com.cloud.network.ovs.OvsNetworkManagerImpl;
+import com.cloud.network.ovs.dao.GreTunnelDaoImpl;
+import com.cloud.network.ovs.dao.OvsWorkDaoImpl;
+import com.cloud.network.ovs.dao.VlanMappingDaoImpl;
+import com.cloud.network.ovs.dao.VlanMappingDirtyDaoImpl;
+import com.cloud.network.ovs.dao.VmFlowLogDaoImpl;
 import com.cloud.network.router.VirtualNetworkApplianceManagerImpl;
 import com.cloud.network.rules.RulesManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
@@ -240,7 +246,11 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addDao("UsageEventDao", UsageEventDaoImpl.class);
         addDao("ClusterDetailsDao", ClusterDetailsDaoImpl.class);
         addDao("UserVmDetailsDao", UserVmDetailsDaoImpl.class);
-
+        addDao("VlanMappingDao", VlanMappingDaoImpl.class);
+        addDao("VlanMappingDirtyDao", VlanMappingDirtyDaoImpl.class);
+        addDao("OvsWorkDao", OvsWorkDaoImpl.class);
+        addDao("VmFlowLogDao", VmFlowLogDaoImpl.class);
+        addDao("GreTunnelDao", GreTunnelDaoImpl.class);
     }
 
     Map<String, ComponentInfo<Manager>> _managers = new HashMap<String, ComponentInfo<Manager>>();
@@ -295,6 +305,7 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addManager("LoadBalancingRulesManager", LoadBalancingRulesManagerImpl.class);
         addManager("RulesManager", RulesManagerImpl.class);
         addManager("RemoteAccessVpnManager", RemoteAccessVpnManagerImpl.class);
+        addManager("OvsNetworkManager", OvsNetworkManagerImpl.class);
     }
 
     protected <T> List<ComponentInfo<Adapter>> addAdapterChain(Class<T> interphace, List<Pair<String, Class<? extends T>>> adapters) {
@@ -339,4 +350,5 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         factories.put(EntityManager.class, EntityManagerImpl.class);
         return factories;
     }
+    
 }

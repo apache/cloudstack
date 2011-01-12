@@ -77,8 +77,7 @@ import com.cloud.utils.script.Script;
  *
  **/
 public class Agent implements HandlerFactory, IAgentControl {
-    private static final Logger s_logger = Logger.getLogger(Agent.class.getName());
-
+    private static final Logger s_logger = Logger.getLogger(Agent.class.getName());  
     public enum ExitStatus {
         Normal(0), // Normal status = 0.
         Upgrade(65), // Exiting for upgrade.

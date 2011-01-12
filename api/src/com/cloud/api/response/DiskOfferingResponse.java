@@ -45,10 +45,7 @@ public class DiskOfferingResponse extends BaseResponse {
     @SerializedName(ApiConstants.CREATED) @Param(description="the date this disk offering was created")
     private Date created;
 
-    @SerializedName("ismirrored")
-    private Boolean mirrored;
-
-    @SerializedName("iscustomized")
+    @SerializedName("iscustomized") @Param(description="true if disk offering uses custom size, false otherwise")
     private Boolean customized;
     
     @SerializedName(ApiConstants.TAGS) @Param(description="the tags for the disk offering")
@@ -108,14 +105,6 @@ public class DiskOfferingResponse extends BaseResponse {
 
     public void setCreated(Date created) {
         this.created = created;
-    }
-
-    public Boolean isMirrored() {
-        return mirrored;
-    }
-
-    public void setMirrored(Boolean mirrored) {
-        this.mirrored = mirrored;
     }
 
     public String getTags() {

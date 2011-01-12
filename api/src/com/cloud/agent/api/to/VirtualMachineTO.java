@@ -38,7 +38,6 @@ public class VirtualMachineTO {
     String bootArgs;
     String[] bootupScripts;
     boolean rebootOnCrash;
-    Monitor monitor;
 
     VolumeTO[] disks;
     NicTO[] nics;
@@ -68,14 +67,6 @@ public class VirtualMachineTO {
 
     public String getName() {
         return name;
-    }
-
-    public Monitor getMonitor() {
-        return monitor;
-    }
-
-    public void setMonitor(Monitor monitor) {
-        this.monitor = monitor;
     }
 
     public void setName(String name) {
@@ -186,27 +177,5 @@ public class VirtualMachineTO {
 
     public void setNics(NicTO[] nics) {
         this.nics = nics;
-    }
-
-    public static interface Monitor {
-
-    }
-
-    public static class SshMonitor implements Monitor {
-        String ip;
-        int port;
-
-        public String getIp() {
-            return ip;
-        }
-
-        public int getPort() {
-            return port;
-        }
-
-        public SshMonitor(String ip, int port) {
-            this.ip = ip;
-            this.port = port;
-        }
     }
 }

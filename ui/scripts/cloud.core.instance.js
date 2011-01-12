@@ -386,13 +386,27 @@ function initVMWizard() {
 		    }
 	    });
 		
+		$.ajax({					
+		    data: createURL("command=listSecurityGroups"+"&domainid="+g_domainid+"&account="+g_account),		
+			dataType: "json",
+			success: function(json) {			    		
+				var items = json.listsecuritygroupsresponse.securitygroup;					
+				var $securityGroupDropdown = $vmPopup.find("#security_group_dropdown").empty();	
+				if (items != null && items.length > 0) {
+					for (var i = 0; i < items.length; i++) {
+					    $securityGroupDropdown.append("<option value='" + fromdb(items[i].name) + "'>" + fromdb(items[i].name) + "</option>"); 
+					}
+				}					    
+			}
+		});		
+		
 	    $.ajax({
 		    data: createURL("command=listServiceOfferings"),
 		    dataType: "json",
 		    async: false,
 		    success: function(json) {
 			    var offerings = json.listserviceofferingsresponse.serviceoffering;
-			    var $container = $("#service_offering_container");
+			    var $container = $vmPopup.find("#service_offering_container");
 			    $container.empty();					    
 			    if (offerings != null && offerings.length > 0) {						    
 				    for (var i = 0; i < offerings.length; i++) {	
@@ -414,8 +428,8 @@ function initVMWizard() {
 		    async: false,
 		    success: function(json) {
 			    var offerings = json.listdiskofferingsresponse.diskoffering;			
-			    var $dataDiskOfferingContainer = $("#data_disk_offering_container").empty();
-		        var $rootDiskOfferingContainer = $("#root_disk_offering_container").empty();
+			    var $dataDiskOfferingContainer = $vmPopup.find("#data_disk_offering_container").empty();
+		        var $rootDiskOfferingContainer = $vmPopup.find("#root_disk_offering_container").empty();
 		        
 		        //***** data disk offering: "no, thanks", "custom", existing disk offerings in database (begin) ****************************************************
 		        //"no, thanks" radio button (default radio button in data disk offering)
@@ -820,7 +834,10 @@ function initVMWizard() {
 			
 			//Setup Networking before showing it.  This only applies to zones with Advanced Networking support.
 			var zoneObj = $thisPopup.find("#wizard_zone option:selected").data("zoneObj");
-			if (zoneObj.networktype == "Advanced") {
+			if (zoneObj.networktype == "Advanced") {			    
+			    $thisPopup.find("#step4").find("#for_advanced_zone").show();
+			    $thisPopup.find("#step4").find("#for_basic_zone").hide();	
+			    		    
 				var networkName = "Virtual Network";
 				var networkDesc = "A dedicated virtualized network for your account.  The broadcast domain is contrained within a VLAN and all public network access is routed out by a virtual router.";
 				$.ajax({
@@ -840,6 +857,7 @@ function initVMWizard() {
 						var $virtualNetworkElement = $("#vm_popup #network_virtual_container");
 			
 						// Setup Virtual Networks
+						var requiredVirtual = false;
 						if (virtualNetwork == null) {
 							$.ajax({
 								data: createURL("command=listNetworkOfferings&traffictype=Guest"),
@@ -849,7 +867,7 @@ function initVMWizard() {
 									var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
 									if (networkOfferings != null && networkOfferings.length > 0) {
 										for (var i = 0; i < networkOfferings.length; i++) {
-											if (networkOfferings[i].type == "Virtual" && networkOfferings[i].isdefault) {
+											if (networkOfferings[i].isdefault) {
 												// Create a network from this.
 												$.ajax({
 													data: createURL("command=createNetwork&networkOfferingId="+networkOfferings[i].id+"&name="+todb(networkName)+"&displayText="+todb(networkDesc)+"&zoneId="+$thisPopup.find("#wizard_zone").val()),
@@ -860,9 +878,10 @@ function initVMWizard() {
 														if (network.networkofferingavailability != 'Unavailable') {
 															$virtualNetworkElement.show();
 															if (network.networkofferingavailability == 'Required') {
+																requiredVirtual = true;
 																$virtualNetworkElement.find("#network_virtual").attr('disabled', true);
 															}
-															$virtualNetworkElement.data("id", network.id);
+															$virtualNetworkElement.find("#network_virtual").data("id", network.id).data("jsonObj", network);
 														} else {
 															$virtualNetworkElement.hide();
 														}
@@ -877,9 +896,11 @@ function initVMWizard() {
 							if (virtualNetwork.networkofferingavailability != 'Unavailable') {
 								$virtualNetworkElement.show();
 								if (virtualNetwork.networkofferingavailability == 'Required') {
+									requiredVirtual = true;
 									$virtualNetworkElement.find("#network_virtual").attr('disabled', true);
 								}
 								$virtualNetworkElement.data("id", virtualNetwork.id);
+								$virtualNetworkElement.find("#network_virtual").data("id", virtualNetwork.id).data("jsonObj", virtualNetwork);
 							} else {
 								$virtualNetworkElement.hide();
 							}
@@ -887,54 +908,113 @@ function initVMWizard() {
 						
 						// Setup Direct Networks
 						var $networkDirectTemplate = $("#wizard_network_direct_template");
+						var $networkSecondaryDirectTemplate = $("#wizard_network_direct_secondary_template");
 						var $networkDirectContainer = $("#network_direct_container").empty();
+						var $networkDirectSecondaryContainer = $("#network_direct_secondary_container").empty();
+						var availableSecondary = false;
 						if (networks != null && networks.length > 0) {
 							for (var i = 0; i < networks.length; i++) {
 								if (networks[i].type != 'Direct') {
 									continue;
 								}
-								var $directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+networks[i].id);
+								var $directNetworkElement = null;
+								if (networks[i].isdefault) {
+									if (requiredVirtual) {
+										continue;
+									}
+									$directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+networks[i].id);
+								} else {
+									$directNetworkElement = $networkSecondaryDirectTemplate.clone().attr("id", "direct"+networks[i].id);
+								}
 								$directNetworkElement.find("#network_direct_checkbox").data("jsonObj", networks[i]);
 								$directNetworkElement.find("#network_direct_name").text(networks[i].name);
 								$directNetworkElement.find("#network_direct_desc").text(networks[i].displaytext);
-								$networkDirectContainer.append($directNetworkElement.show());
+								if (networks[i].isdefault) {
+									$networkDirectContainer.append($directNetworkElement.show());
+								} else {
+									availableSecondary = true;
+									$networkDirectSecondaryContainer.append($directNetworkElement.show());
+								}
 							}
+							
+							// Add any additional shared direct networks
+							$.ajax({
+								data: createURL("command=listNetworks&isshared=true&zoneId="+$thisPopup.find("#wizard_zone").val()),
+								dataType: "json",
+								async: false,
+								success: function(json) {
+									var sharedNetworks = json.listnetworksresponse.network;
+									if (sharedNetworks != null && sharedNetworks.length > 0) {
+										for (var i = 0; i < sharedNetworks.length; i++) {
+											if (sharedNetworks[i].type != 'Direct') {
+												continue;
+											}
+											if (sharedNetworks[i].isdefault) {
+												if (requiredVirtual) {
+													continue;
+												}
+												$directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+sharedNetworks[i].id);
+											} else {
+												$directNetworkElement = $networkSecondaryDirectTemplate.clone().attr("id", "direct"+sharedNetworks[i].id);
+											}
+											$directNetworkElement.find("#network_direct_checkbox").data("jsonObj", sharedNetworks[i]);
+											$directNetworkElement.find("#network_direct_name").text(sharedNetworks[i].name);
+											$directNetworkElement.find("#network_direct_desc").text(sharedNetworks[i].displaytext);
+											if (sharedNetworks[i].isdefault) {
+												$networkDirectContainer.append($directNetworkElement.show());
+											} else {
+												availableSecondary = true;
+												$networkDirectSecondaryContainer.append($directNetworkElement.show());
+											}
+										}
+									}
+								}
+							});
+						}
+						if (availableSecondary) {
+							$("#secondary_network_title, #secondary_network_desc").show();
 						}
 					}
 				});
-				$thisPopup.find("#wizard_review_network").text(networkName);
-			} else {
-				// Basic Network, show security groups
-				$thisPopup.find("#wizard_review_network").text("Basic Network");
+			} 
+			else {  // Basic Network
+			    $thisPopup.find("#step4").find("#for_basic_zone").show();			    
+			    $thisPopup.find("#step4").find("#for_advanced_zone").hide();	
+			    if(getDirectAttachSecurityGroupsEnabled() == "true" && $selectedVmWizardTemplate.data("hypervisor") != "VmWare" ) {			        
+			        $thisPopup.find("#step4").find("#security_group_section").show();
+			        $thisPopup.find("#step4").find("#not_available_message").hide();	
+				    $thisPopup.find("#step5").find("#wizard_review_network").text("Basic Network");
+				}
+				else {
+				    $thisPopup.find("#step4").find("#not_available_message").show();		
+			        $thisPopup.find("#step4").find("#security_group_section").hide();	
+			        $thisPopup.find("#step5").find("#wizard_review_network").text("");			   
+				}
 			}
 	    }	
 	    	
 	    if (currentStepInVmPopup == 4) { //network
 			var zoneObj = $thisPopup.find("#wizard_zone option:selected").data("zoneObj");
 			if (zoneObj.networktype == "Advanced") {
-				var $selectedDirectNetworks = $thisPopup.find("input:checkbox[name=network_direct_checkbox]:checked");
-				var $selectedVirtualNetworks = $thisPopup.find("input:checkbox[name=network_virtual_checkbox]:checked");
+				var $selectedSecondaryNetworks = $thisPopup.find("input:checkbox[name=secondary_network]:checked");
+				var $selectedPrimaryNetworks = $thisPopup.find("input:radio[name=primary_network]:checked");
 				
 				// prevent a person from moving on if no network has been selected
-				if($selectedDirectNetworks.length == 0 && $selectedVirtualNetworks.length == 0) {
+				if($selectedPrimaryNetworks.length == 0) {
 					$thisPopup.find("#step4 #wiz_message").show();
 					return false;
 				}      
 				
 				var modResult = 0;
-				if ($selectedVirtualNetworks.length == 0) {
-					$thisPopup.find("#wizard_review_virtual_network_container").hide();
-					modResult = 1;
-				} else {
-					$thisPopup.find("#wizard_review_virtual_network_container").show();
-					modResult = 0;
-				}
+				$thisPopup.find("#step5").find("#wizard_review_network").text($selectedPrimaryNetworks.data("jsonObj").name);
+				$thisPopup.find("#wizard_review_primary_network_container").show();
+				modResult = 0;
 			
-				var $reviewNetworkContainer = $("#wizard_review_direct_network_container").empty();
-				if ($selectedDirectNetworks.length != 0) {
+				var $reviewNetworkContainer = $("#wizard_review_secondary_network_container").empty();
+				if ($selectedSecondaryNetworks.length != 0) {
 					var networkIds = [];
 					
-					$selectedDirectNetworks.each(function(i) {
+					$selectedSecondaryNetworks.each(function(i) {
 						var json = $(this).data("jsonObj");
 						if (i == 0) {
 							networkIds.push(json.id);
@@ -978,11 +1058,10 @@ function initVMWizard() {
 			
 			var zoneObj = $thisPopup.find("#wizard_zone option:selected").data("zoneObj");
 			if (zoneObj.networktype == "Advanced") {
-				var networkIds = null;
-				if ($thisPopup.find("input:checkbox[name=network_virtual_checkbox]:checked").length != 0) {
-					networkIds = $thisPopup.find("#network_virtual_container").data("id");
-				}
-				var directNetworkIds = $thisPopup.find("#wizard_review_direct_network_container").data("directNetworkIds");
+				var $selectedPrimaryNetworks = $thisPopup.find("input:radio[name=primary_network]:checked");
+				var networkIds = $selectedPrimaryNetworks.data("jsonObj").id;
+
+				var directNetworkIds = $thisPopup.find("#wizard_review_secondary_network_container").data("directNetworkIds");
 				if (directNetworkIds != null) {
 					if (networkIds != null) {
 						networkIds = networkIds+","+directNetworkIds;
@@ -991,8 +1070,14 @@ function initVMWizard() {
 					}
 				}
 				moreCriteria.push("&networkIds="+networkIds);
-			} else {
-				// add security groups
+			} 
+			else {  //Basic zone
+			    if($thisPopup.find("#step4").find("#security_group_section").css("display") != "none") {
+				    if($thisPopup.find("#security_group_dropdown").val() != null && $thisPopup.find("#security_group_dropdown").val().length > 0) {
+			            var securityGroupList = $thisPopup.find("#security_group_dropdown").val().join(",");
+			            moreCriteria.push("&securitygrouplist="+encodeURIComponent(securityGroupList));	
+			        }		
+			    }				
 			}
 			
 			var diskOfferingId, $diskOfferingElement;    						
@@ -1116,8 +1201,7 @@ var vmActionMap = {
         dialogBeforeActionFn : doStartVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;      
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
+            vmToMidmenu(jsonObj, $midmenuItem1);            
         }
     },
     "Stop Instance": {             
@@ -1127,8 +1211,7 @@ var vmActionMap = {
         dialogBeforeActionFn : doStopVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;            
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
+            vmToMidmenu(jsonObj, $midmenuItem1);            
         }
     },
     "Reboot Instance": {        
@@ -1138,8 +1221,7 @@ var vmActionMap = {
         dialogBeforeActionFn : doRebootVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;       
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
+            vmToMidmenu(jsonObj, $midmenuItem1);            
         }
     },
     "Destroy Instance": {        
@@ -1149,8 +1231,7 @@ var vmActionMap = {
         dialogBeforeActionFn : doDestroyVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) {             
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine; 
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
+            vmToMidmenu(jsonObj, $midmenuItem1);            
         }
     },
     "Restore Instance": {          
@@ -1159,8 +1240,7 @@ var vmActionMap = {
         dialogBeforeActionFn : doRestoreVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.recovervirtualmachineresponse.virtualmachine;
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
+            vmToMidmenu(jsonObj, $midmenuItem1);            
         }
     },
     "Edit Instance": {
@@ -1173,8 +1253,7 @@ var vmActionMap = {
         dialogBeforeActionFn : doAttachISO,
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;           
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            //vmToRightPanel($midmenuItem1); //comment this one out, otherwise, it will call listVM API again.
+            vmToMidmenu(jsonObj, $midmenuItem1);            
             setBooleanReadField((jsonObj.isoid != null), $("#right_panel_content").find("#tab_content_details").find("#iso")); 
         }   
     },
@@ -1185,8 +1264,7 @@ var vmActionMap = {
         dialogBeforeActionFn : doDetachISO,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;    
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            //vmToRightPanel($midmenuItem1); //comment this one out, otherwise, it will call listVM API again.
+            vmToMidmenu(jsonObj, $midmenuItem1);           
             setBooleanReadField((jsonObj.isoid != null), $("#right_panel_content").find("#tab_content_details").find("#iso")); 
         }   
     },
@@ -1220,8 +1298,7 @@ var vmActionMap = {
         dialogBeforeActionFn : doChangeService,
         afterActionSeccessFn: function(json, $midmenuItem1, id) {                 
             var jsonObj = json.changeserviceforvirtualmachineresponse.virtualmachine;       
-            vmToMidmenu(jsonObj, $midmenuItem1);
-            vmToRightPanel($midmenuItem1);
+            vmToMidmenu(jsonObj, $midmenuItem1);           
         }
     }      
 }                      

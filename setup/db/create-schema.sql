@@ -98,11 +98,14 @@ DROP TABLE IF EXISTS `cloud`.`host_tags`;
 CREATE TABLE `cloud`.`op_it_work` (
   `id` char(40) COMMENT 'id',
   `mgmt_server_id` bigint unsigned COMMENT 'management server id',
-  `created` timestamp NOT NULL COMMENT 'when was this work detail created',
+  `created_at` bigint unsigned NOT NULL COMMENT 'when was this work detail created',
   `thread` varchar(255) NOT NULL COMMENT 'thread name',
   `type` char(32) NOT NULL COMMENT 'type of work',
-  `state` char(32) NOT NULL COMMENT 'state',
-  `cancel_taken` timestamp COMMENT 'time it was taken over',
+  `step` char(32) NOT NULL COMMENT 'state',
+  `updated_at` bigint unsigned NOT NULL COMMENT 'time it was taken over',
+  `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance',
+  `resource_type` char(32) COMMENT 'type of resource being worked on',
+  `resource_id` bigint unsigned COMMENT 'resource id being worked on',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -148,6 +151,7 @@ CREATE TABLE `cloud`.`networks` (
   `shared` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '0 if network is shared, 1 if network dedicated',
   `network_domain` varchar(255) COMMENT 'domain',
   `reservation_id` char(40) COMMENT 'reservation id',
+  `is_default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is default',
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`)
@@ -200,7 +204,6 @@ CREATE TABLE `cloud`.`nics` (
 CREATE TABLE `cloud`.`network_offerings` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `name` varchar(64) NOT NULL unique COMMENT 'network offering',
-  `type` varchar(32) COMMENT 'type of network',
   `display_text` varchar(255) NOT NULL COMMENT 'text to display to users',
   `nw_rate` smallint unsigned COMMENT 'network rate throttle mbits/s',
   `mc_rate` smallint unsigned COMMENT 'mcast rate throttle mbits/s',
@@ -212,7 +215,7 @@ CREATE TABLE `cloud`.`network_offerings` (
   `service_offering_id` bigint unsigned UNIQUE COMMENT 'service offering id that this network offering is tied to',
   `created` datetime NOT NULL COMMENT 'time the entry was created',
   `removed` datetime DEFAULT NULL COMMENT 'time the entry was removed',
-  `default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is default',
+  `default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network offering is default',
   `availability` varchar(255) NOT NULL COMMENT 'availability of the network',
   `dns_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides dns service',
   `gateway_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides gateway service',
@@ -674,7 +677,7 @@ CREATE TABLE  `cloud`.`user_ip_address` (
   INDEX `i_user_ip_address__source_nat`(`source_nat`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE VIEW `cloud`.`user_ip_address_view` AS SELECT INET_NTOA(user_ip_address.public_ip_address) as public_ip_address, user_ip_address.data_center_id, user_ip_address.account_id, user_ip_address.domain_id, user_ip_address.source_nat, user_ip_address.allocated, user_ip_address.vlan_db_id, user_ip_address.one_to_one_nat, user_ip_address.state, user_ip_address.mac_address, user_ip_address.network_id as associated_network_id from user_ip_address; 
+CREATE VIEW `cloud`.`user_ip_address_view` AS SELECT INET_NTOA(user_ip_address.public_ip_address) as ip_address, user_ip_address.data_center_id, user_ip_address.account_id, user_ip_address.domain_id, user_ip_address.source_nat, user_ip_address.allocated, user_ip_address.vlan_db_id, user_ip_address.one_to_one_nat, user_ip_address.state, user_ip_address.mac_address, user_ip_address.network_id as associated_network_id from user_ip_address; 
 
 CREATE TABLE  `cloud`.`user_statistics` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT,
@@ -743,7 +746,23 @@ CREATE TABLE  `cloud`.`vm_instance` (
   `domain_id` bigint unsigned NOT NULL,
   `service_offering_id` bigint unsigned NOT NULL COMMENT 'service offering id',
   `reservation_id` char(40) COMMENT 'reservation id',
-  PRIMARY KEY  (`id`)
+  `hypervisor_type` char(32) COMMENT 'hypervisor type',
+  PRIMARY KEY  (`id`),
+  INDEX `i_vm_instance__removed`(`removed`),
+  INDEX `i_vm_instance__type`(`type`),
+  INDEX `i_vm_instance__pod_id`(`pod_id`),
+  INDEX `i_vm_instance__update_time`(`update_time`),
+  INDEX `i_vm_instance__update_count`(`update_count`),
+  INDEX `i_vm_instance__state`(`state`),
+  INDEX `i_vm_instance__data_center_id`(`data_center_id`),
+  CONSTRAINT `fk_vm_instance__host_id` FOREIGN KEY `fk_vm_instance__host_id` (`host_id`) REFERENCES `host` (`id`),
+  CONSTRAINT `fk_vm_instance__last_host_id` FOREIGN KEY `fk_vm_instance__last_host_id` (`last_host_id`) REFERENCES `host`(`id`),
+  CONSTRAINT `fk_vm_instance__template_id` FOREIGN KEY `fk_vm_instance__template_id` (`vm_template_id`) REFERENCES `vm_template` (`id`),
+  INDEX `i_vm_instance__template_id`(`vm_template_id`),
+  CONSTRAINT `fk_vm_instance__account_id` FOREIGN KEY `fk_vm_instance__account_id` (`account_id`) REFERENCES `account` (`id`),
+  INDEX `i_vm_instance__account_id`(`account_id`),
+  CONSTRAINT `fk_vm_instance__service_offering_id` FOREIGN KEY `fk_vm_instance__service_offering_id` (`service_offering_id`) REFERENCES `service_offering` (`id`),
+  INDEX `i_vm_instance__service_offering_id`(`service_offering_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`user_vm` (
@@ -1326,7 +1345,52 @@ CREATE TABLE  `cloud`.`usage_event` (
   `offering_id` bigint unsigned,
   `template_id` bigint unsigned,
   `size` bigint unsigned,  
+  `processed` tinyint NOT NULL default '0',
   PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`ovs_host_vlan_alloc`(
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `host_id` bigint unsigned COMMENT 'host id',
+  `account_id` bigint unsigned COMMENT 'account id',
+  `vlan` bigint unsigned COMMENT 'vlan id under account #account_id on host #host_id',
+  `ref` int unsigned NOT NULL DEFAULT 0 COMMENT 'reference count',
+  PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`ovs_tunnel_alloc`(
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `from` bigint unsigned COMMENT 'from host id',
+  `to` bigint unsigned COMMENT 'to host id',
+  `in_port` int unsigned COMMENT 'in port on open vswitch',
+  PRIMARY KEY(`from`, `to`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`ovs_vlan_mapping_dirty`(
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+  `account_id` bigint unsigned COMMENT 'account id',
+  `dirty` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 means vlan mapping of this account was changed',
+  PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`ovs_vm_flow_log` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance that needs flows to be synced.',
+  `created` datetime NOT NULL COMMENT 'time the entry was requested',
+  `logsequence` bigint unsigned  COMMENT 'seq number to be sent to agent, uniquely identifies flow update',
+  `vm_name` varchar(255) NOT NULL COMMENT 'vm name',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`ovs_work` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance that needs rules to be synced.',
+  `mgmt_server_id` bigint unsigned COMMENT 'management server that has taken up the work of doing rule sync',
+  `created` datetime NOT NULL COMMENT 'time the entry was requested',
+  `taken` datetime COMMENT 'time it was taken by the management server',
+  `step` varchar(32) NOT NULL COMMENT 'Step in the work',
+  `seq_no` bigint unsigned  COMMENT 'seq number to be sent to agent, uniquely identifies ruleset update',
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;

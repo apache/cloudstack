@@ -109,6 +109,8 @@ import com.cloud.agent.api.MirrorCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.NetworkUsageAnswer;
+import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
@@ -1110,6 +1112,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             	return _virtRouterResource.executeRequest(cmd);
             } else if (cmd instanceof CheckSshCommand) {
             	return execute((CheckSshCommand) cmd);
+            } else if (cmd instanceof NetworkUsageCommand) {
+            	return execute((NetworkUsageCommand) cmd);
             } else {
         		s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -2114,19 +2118,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		}
 		long totMem = Long.parseLong(totMemparser.getLine());
 		
-		double rx = 0.0;
-		OutputInterpreter.OneLineParser rxParser = new  OutputInterpreter.OneLineParser();
-		result = executeBashScript("cat /sys/class/net/" + _publicBridgeName + "/statistics/rx_bytes", rxParser);
-		if (result == null && rxParser.getLine() != null) {
-			rx = Double.parseDouble(rxParser.getLine())/1000;
-		}
-		
-		double tx = 0.0;
-		OutputInterpreter.OneLineParser txParser = new  OutputInterpreter.OneLineParser();
-		result = executeBashScript("cat /sys/class/net/" + _publicBridgeName + "/statistics/tx_bytes", txParser);
-		if (result == null && txParser.getLine() != null) {
-			tx = Double.parseDouble(txParser.getLine())/1000;
-		}
+		Pair<Double, Double> nicStats = getNicStats(_publicBridgeName);
 		
 		int numCpus = 0;
 		try {
@@ -2136,8 +2128,28 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			
 		}
 		
-		 HostStatsEntry hostStats = new HostStatsEntry(cmd.getHostId(), cpuUtil, rx, tx, "host", totMem, freeMem, 0, 0);
+		 HostStatsEntry hostStats = new HostStatsEntry(cmd.getHostId(), cpuUtil, nicStats.first()/1000, nicStats.second()/1000, "host", totMem, freeMem, 0, 0);
 		return new GetHostStatsAnswer(cmd, hostStats);
+	}
+	
+	private Answer execute(NetworkUsageCommand cmd) {
+		String vmName = cmd.getDomRName();
+		try {
+			Domain dm = getDomain(vmName);
+			LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+			String xml = dm.getXMLDesc(0);
+			parser.parseDomainXML(xml);
+			List<String> nics = parser.getInterfaces();
+			if (nics.size() != 3) {
+				return new Answer(cmd, false, vmName + " doesn't have public nic");
+			}
+			String pubNic = nics.get(2);
+			Pair<Double, Double> nicStats = getNicStats(pubNic);
+			/*Note: received means bytes received by all the vms, but from host kernel's pov, it's tx*/
+			return new NetworkUsageAnswer(cmd, "", nicStats.first().longValue(), nicStats.second().longValue());
+		} catch (LibvirtException e) {
+			return new Answer(cmd, false, e.toString());
+		}
 	}
 
 	private Answer execute(RebootCommand cmd) {
@@ -3003,7 +3015,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         long speed = 0;
         long cpus = 0;
         long ram = 0;
-        String osType = null;
+        String cap = null;
         try {
         	final NodeInfo hosts = _conn.nodeInfo();
 
@@ -3016,17 +3028,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             for(String s : oss) {
                 /*Even host supports guest os type more than hvm, we only report hvm to management server*/
             	if (s.equalsIgnoreCase("hvm")) {
-                    osType = "hvm";
+            		cap = "hvm";
                 }
             }
         } catch (LibvirtException e) {
 
         }
+        
+        if (isSnapshotSupported()) {
+        	cap = cap + ",snapshot";
+        }
 
         info.add((int)cpus);
         info.add(speed);
         info.add(ram);
-        info.add(osType);
+        info.add(cap);
         long dom0ram = Math.min(ram/10, 768*1024*1024L);//save a maximum of 10% of system ram or 768M
         dom0ram = Math.max(dom0ram, _dom0MinMem);
         info.add(dom0ram);
@@ -3270,6 +3286,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	if (f.exists()) {
     		return "/usr/bin/cloud-qemu-system-x86_64";
     	} else {
+    		f = new File("/usr/libexec/cloud-qemu-kvm");
+    		if (f.exists()) {
+    			return "/usr/libexec/cloud-qemu-kvm";
+    		}
+    		
     		if (_conn == null) {
                 return null;
             }
@@ -3840,6 +3861,38 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	}
         }
     	return states;
+    }
+    
+    /*online snapshot supported by enhanced qemu-kvm*/
+    private boolean isSnapshotSupported() {
+    	File f =new File("/usr/bin/cloud-qemu-system-x86_64");
+    	if (f.exists()) {
+    		return true;
+    	} else {
+    		f = new File("/usr/libexec/cloud-qemu-kvm");
+    		if (f.exists()) {
+    			return true;
+    		}
+    	}
+    	return false;
+    }
+    
+    private Pair<Double, Double> getNicStats(String nicName) {
+    	double rx = 0.0;
+		OutputInterpreter.OneLineParser rxParser = new  OutputInterpreter.OneLineParser();
+		String result = executeBashScript("cat /sys/class/net/" + nicName + "/statistics/rx_bytes", rxParser);
+		if (result == null && rxParser.getLine() != null) {
+			rx = Double.parseDouble(rxParser.getLine());
+		}
+		
+		double tx = 0.0;
+		OutputInterpreter.OneLineParser txParser = new  OutputInterpreter.OneLineParser();
+		result = executeBashScript("cat /sys/class/net/" + nicName + "/statistics/tx_bytes", txParser);
+		if (result == null && txParser.getLine() != null) {
+			tx = Double.parseDouble(txParser.getLine());
+		}
+		
+		return new Pair<Double, Double>(rx, tx);
     }
 
 }

@@ -331,9 +331,10 @@ public class UploadManagerImpl implements UploadManager {
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
     	}
         // Create the directory structure so that its visible under apache server root
+    	String extractDir = "/var/www/html/userdata/";
         Script command = new Script("mkdir", s_logger);
         command.add("-p");
-        command.add("/var/www/html/copy");
+        command.add(extractDir);
         String result = command.execute();
         if (result != null) {
             String errorString = "Error in creating directory =" + result;
@@ -341,11 +342,23 @@ public class UploadManagerImpl implements UploadManager {
             return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
         }
         
-        // Create a symbolic link from the actual directory to the template location. The entity would be directly visible under /var/www/html/ 
+        // Create a random file under the directory for security reasons.
+        String uuid = cmd.getExtractLinkUUID();
+		command = new Script("touch", s_logger);
+    	command.add(extractDir + uuid);
+    	result = command.execute();
+    	if (result != null) {
+    		String errorString = "Error in creating file " +uuid+ " ,error: " + result; 
+    		s_logger.warn(errorString);
+    		return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
+    	}
+
+        
+        // Create a symbolic link from the actual directory to the template location. The entity would be directly visible under /var/www/html/userdata 
         cmd.getInstallPath();
         command = new Script("/bin/bash", s_logger);
         command.add("-c");
-        command.add("ln -sf " + extractMountPoint + File.separator + cmd.getInstallPath() + " /var/www/html/copy/");
+        command.add("ln -sf " + extractMountPoint + File.separator + cmd.getInstallPath() + " " + extractDir + uuid);
         result = command.execute();
         if (result != null) {
             String errorString = "Error in linking  err=" + result; 
@@ -365,8 +378,10 @@ public class UploadManagerImpl implements UploadManager {
         String path = cmd.getPath();
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
-        //We just need to remove the UUID.vhd
-        command.add("unlink /var/www/html/copy/" +path.substring(path.lastIndexOf(File.separator) + 1));
+        
+		//We just need to remove the UUID.vhd
+        String extractUrl = cmd.getExtractUrl();
+        command.add("unlink /var/www/html/userdata/" +extractUrl.substring(extractUrl.lastIndexOf(File.separator) + 1));
         String result = command.execute();
         if (result != null) {
             String errorString = "Error in deleting =" + result;
@@ -617,7 +632,7 @@ public class UploadManagerImpl implements UploadManager {
 	  	//Apache Server is not running. Try to start it.
 	  	if (result != null) { 				  	
 		  	
-	  		s_logger.warn("Apache server not running, trying to start it");
+	  		/*s_logger.warn("Apache server not running, trying to start it");
 			String port = Integer.toString(TemplateConstants.DEFAULT_TMPLT_COPY_PORT);
 			String intf = TemplateConstants.DEFAULT_TMPLT_COPY_INTF;
 			
@@ -639,7 +654,7 @@ public class UploadManagerImpl implements UploadManager {
 			if (result != null) {
 				s_logger.warn("Error in opening up httpd port err=" + result );
 				return false;
-			}			
+			}*/			
 			
 			command = new Script("/bin/bash", s_logger);
 			command.add("-c");

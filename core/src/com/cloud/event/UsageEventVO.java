@@ -63,6 +63,9 @@ public class UsageEventVO implements UsageEvent {
 
     @Column(name="size")
     private Long size;
+    
+    @Column(name="processed")
+    boolean processed;
 
     
 	public UsageEventVO() {
@@ -161,6 +164,14 @@ public class UsageEventVO implements UsageEvent {
     @Override
     public Long getSize() {
         return size;
+    }
+
+    public boolean isProcessed() {
+        return processed;
+    }
+
+    public void setProcessed(boolean processed) {
+        this.processed = processed;
     }
 
 }

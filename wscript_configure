@@ -37,6 +37,12 @@ systemjars = {
 		"tomcat6-jsp-2.1-api-6.0.26.jar",
 		#"tomcat6/catalina.jar", # all supported distros put the file there
 	),
+	'RHEL':
+	(
+		"tomcat6-servlet-2.5-api.jar",
+		"tomcat6-el-2.1-api-6.0.24.jar",
+		"tomcat6-jsp-2.1-api-6.0.24.jar",
+	),
 	'CentOS':
 	(
 		"tomcat6-servlet-2.5-api.jar",
@@ -100,12 +106,17 @@ if Options.platform == 'win32': conf.env.DISTRO = "Windows"
 elif Options.platform == 'darwin': conf.env.DISTRO = "Mac"
 elif _exists("/etc/network"): conf.env.DISTRO = "Ubuntu"
 elif _exists("/etc/fedora-release"): conf.env.DISTRO = "Fedora"
-elif _exists("/etc/centos-release") or _exists("/etc/redhat-release"): conf.env.DISTRO = "CentOS"
+elif _exists("/etc/centos-release"): conf.env.DISTRO = "CentOS"
+elif _exists("/etc/redhat-release"):
+    version = file("/etc/redhat-release").readline()
+    if version.find("Red Hat Enterprise Linux Server release 6") != -1:
+        conf.env.DISTRO = "RHEL"
+    elif version.find("CentOS release") != -1:
+        conf.env.DISTRO = "CentOS"
 else: conf.env.DISTRO = "unknown"
 if conf.env.DISTRO == "unknown": c = "YELLOW"
 else: 				    c = "GREEN"
 conf.check_message_2(conf.env.DISTRO,c)
-
 conf.check_message_1('Detecting installation prefix')
 if Options.options.prefix == Options.default_prefix:
 	if conf.env.DISTRO == 'Windows':

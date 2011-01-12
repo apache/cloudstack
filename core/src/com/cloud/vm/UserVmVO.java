@@ -23,6 +23,7 @@ import javax.persistence.Entity;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.uservm.UserVm;
 
 @Entity
@@ -68,7 +69,8 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     private String sshPublicKey;
     
     transient String password;
-    
+
+    @Override
     public String getPassword() {
         return password;
     }
@@ -152,6 +154,7 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
                     String instanceName,
                     String displayName,
                     long templateId,
+                    HypervisorType hypervisorType,
                     long guestOsId,
                     boolean haEnabled,
                     long domainId,
@@ -160,42 +163,10 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
                     String userData,
                     String name,
                     String sshPublicKey) {
-        super(id, serviceOfferingId, name, instanceName, Type.User, templateId, guestOsId, domainId, accountId, haEnabled);
+        super(id, serviceOfferingId, name, instanceName, Type.User, templateId, hypervisorType, guestOsId, domainId, accountId, haEnabled);
         this.userData = userData;
         this.displayName = displayName != null ? displayName : null;
     	this.sshPublicKey = sshPublicKey;
-    }
-    
-    public UserVmVO(long id,
-                    String name,
-                    long templateId,
-                    long guestOSId,
-                    long accountId,
-                    long domainId,
-                    long serviceOfferingId,
-                    String guestMacAddress,
-                    String guestIpAddress,
-                    String guestNetMask,
-                    String externalIpAddress,
-                    String externalMacAddress,
-                    Long vlanDbId,
-                    Long routerId,
-                    long podId,
-                    long dcId,
-                    boolean haEnabled,
-                    String displayName,
-                    String userData) {
-        super(id, serviceOfferingId, name, name, Type.User, templateId, guestOSId, guestMacAddress, guestIpAddress, guestNetMask, dcId, podId, domainId, accountId, haEnabled, null);
-        this.domainRouterId = routerId;
-        this.guestIpAddress = guestIpAddress;
-        this.guestNetmask = guestNetMask;
-        this.guestMacAddress = guestMacAddress;
-        this.externalIpAddress = externalIpAddress;
-        this.externalMacAddress = externalMacAddress;
-        this.setUserData(userData);
-        this.setExternalVlanDbId(vlanDbId);
-        this.isoId = null;
-        this.displayName = displayName;
     }
     
     protected UserVmVO() {

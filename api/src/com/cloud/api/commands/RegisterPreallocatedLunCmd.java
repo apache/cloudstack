@@ -24,8 +24,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.PreallocatedLunResponse;
 
-//TODO - add description to @Implementation
-@Implementation(responseObject=PreallocatedLunResponse.class)
+@Implementation(description="Registers PreallocatedLun", responseObject=PreallocatedLunResponse.class)
 public class RegisterPreallocatedLunCmd extends BaseCmd {
     private static final String s_name = "registerPreallocatedLunsResponse";
 
@@ -33,20 +32,17 @@ public class RegisterPreallocatedLunCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    //FIXME - add description
-    @Parameter(name=ApiConstants.DISK_SIZE, type=CommandType.LONG, required=true)
+    @Parameter(name=ApiConstants.DISK_SIZE, type=CommandType.LONG, required=true, description="Volume size")
     private Long diskSize;
 
-    //FIXME - add description
-    @Parameter(name=ApiConstants.LUN, type=CommandType.INTEGER, required=true)
+    @Parameter(name=ApiConstants.LUN, type=CommandType.INTEGER, required=true, description="Lun id")
     private Integer lun;
 
     //FIXME - add description
     @Parameter(name=ApiConstants.PORTAL, type=CommandType.STRING, required=true)
     private String portal;
 
-    //FIXME - add description
-    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING)
+    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="tags for the volume")
     private String tags;
 
     @Parameter(name=ApiConstants.TARGET_IQN, type=CommandType.STRING, required=true, description="the target IQN on the storage host where LUN is created")

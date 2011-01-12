@@ -30,7 +30,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.PreallocatedLunResponse;
 
-@Implementation(responseObject=PreallocatedLunResponse.class)
+@Implementation(description="List PreallocatedLuns",responseObject=PreallocatedLunResponse.class)
 public class ListPreallocatedLunsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPreallocatedLunsCmd.class.getName());
 

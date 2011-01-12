@@ -501,6 +501,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         if (template.getTemplateType() ==  Storage.TemplateType.SYSTEM){
             throw new InvalidParameterValueException("Unable to extract the " + desc + " " + template.getName() + " as it is a default System template");
         }
+        if (template.getTemplateType() ==  Storage.TemplateType.PERHOST){
+            throw new InvalidParameterValueException("Unable to extract the " + desc + " " + template.getName() + " as it resides on host and not on SSVM");
+        }
         if (isISO) {
             if (template.getFormat() != ImageFormat.ISO ){
                 throw new InvalidParameterValueException("Unsupported format, could not extract the ISO");

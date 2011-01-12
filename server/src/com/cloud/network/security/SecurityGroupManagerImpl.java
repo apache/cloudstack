@@ -613,22 +613,24 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 						return null;
 					}
 				}
-				IngressRuleVO ingressRule = _ingressRuleDao.findByProtoPortsAndAllowedGroupId(securityGroup.getId(), protocol, startPort, endPort, ngVO.getId());
+				IngressRuleVO ingressRule = _ingressRuleDao.findByProtoPortsAndAllowedGroupId(securityGroup.getId(), protocol, startPortOrType, endPortOrCode, ngVO.getId());
 				if (ingressRule != null) {
 					continue; //rule already exists.
 				}
-				ingressRule  = new IngressRuleVO(securityGroup.getId(), startPort, endPort, protocol, ngVO.getId(), ngVO.getName(), ngVO.getAccountName());
+				ingressRule  = new IngressRuleVO(securityGroup.getId(), startPortOrType, endPortOrCode, protocol, ngVO.getId(), ngVO.getName(), ngVO.getAccountName());
 				ingressRule = _ingressRuleDao.persist(ingressRule);
 				newRules.add(ingressRule);
 			}
-			for (String cidr: cidrList) {
-				IngressRuleVO ingressRule = _ingressRuleDao.findByProtoPortsAndCidr(securityGroup.getId(),protocol, startPort, endPort, cidr);
-				if (ingressRule != null) {
-					continue;
+			if(cidrList != null) {
+				for (String cidr: cidrList) {
+					IngressRuleVO ingressRule = _ingressRuleDao.findByProtoPortsAndCidr(securityGroup.getId(),protocol, startPortOrType, endPortOrCode, cidr);
+					if (ingressRule != null) {
+						continue;
+					}
+					ingressRule  = new IngressRuleVO(securityGroup.getId(), startPortOrType, endPortOrCode, protocol, cidr);
+					ingressRule = _ingressRuleDao.persist(ingressRule);
+					newRules.add(ingressRule);
 				}
-				ingressRule  = new IngressRuleVO(securityGroup.getId(), startPort, endPort, protocol, cidr);
-				ingressRule = _ingressRuleDao.persist(ingressRule);
-				newRules.add(ingressRule);
 			}
 			if (s_logger.isDebugEnabled()) {
 	            s_logger.debug("Added " + newRules.size() + " rules to security group " + groupName);
@@ -1080,16 +1082,16 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 				s_logger.warn("Failed to acquire lock on user vm id=" + userVmId);
 			}
 			try {
-				for (SecurityGroupVO networkGroup:uniqueGroups) {
+				for (SecurityGroupVO securityGroup:uniqueGroups) {
 					//don't let the group be deleted from under us.
-					SecurityGroupVO ngrpLock = _securityGroupDao.lockRow(networkGroup.getId(), false);
+					SecurityGroupVO ngrpLock = _securityGroupDao.lockRow(securityGroup.getId(), false);
 					if (ngrpLock == null) {
-						s_logger.warn("Failed to acquire lock on network group id=" + networkGroup.getId() + " name=" + networkGroup.getName());
+						s_logger.warn("Failed to acquire lock on network group id=" + securityGroup.getId() + " name=" + securityGroup.getName());
 						txn.rollback();
 						return false;
 					}
-					if (_securityGroupVMMapDao.findByVmIdGroupId(userVmId, networkGroup.getId()) == null) {
-						SecurityGroupVMMapVO groupVmMapVO = new SecurityGroupVMMapVO(networkGroup.getId(), userVmId);
+					if (_securityGroupVMMapDao.findByVmIdGroupId(userVmId, securityGroup.getId()) == null) {
+						SecurityGroupVMMapVO groupVmMapVO = new SecurityGroupVMMapVO(securityGroup.getId(), userVmId);
 						_securityGroupVMMapDao.persist(groupVmMapVO);
 					}
 				}

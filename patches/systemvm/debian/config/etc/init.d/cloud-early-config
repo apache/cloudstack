@@ -180,8 +180,13 @@ setup_common() {
     ip route add $MGMTNET via $LOCAL_GW dev eth1
   fi
 
-  ip route  delete default 
-  ip route add default via $GW dev eth2
+  ip route  delete default
+  if [ -n "$3" ]
+  then 
+    ip route add default via $GW dev $3
+  else
+    ip route add default via $GW dev eth0
+  fi
 }
 
 setup_dnsmasq() {

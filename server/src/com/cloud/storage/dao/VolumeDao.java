@@ -36,14 +36,10 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long> {
     List<VolumeVO> findByDetachedDestroyed();
     List<VolumeVO> findByAccountAndPod(long accountId, long podId);
     List<VolumeVO> findByTemplateAndZone(long templateId, long zoneId);
-    List<Long> findVMInstancesByStorageHost(long hostId, Volume.MirrorState mState);
-    List<VolumeVO> findStrandedMirrorVolumes();
     List<Long> findVmsStoredOnHost(long hostId);
     void deleteVolumesByInstance(long instanceId);
     void attachVolume(long volumeId, long vmId, long deviceId);
     void detachVolume(long volumeId);
-    void destroyVolume(long volumeId);
-    void recoverVolume(long volumeId);
     boolean isAnyVolumeActivelyUsingTemplateOnPool(long templateId, long poolId);
     List<VolumeVO> listRemovedButNotDestroyed();
     List<VolumeVO> findCreatedByInstance(long id);
@@ -59,4 +55,6 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long> {
      */
     boolean update(VolumeVO vol, Volume.Event event) throws ConcurrentOperationException;
     HypervisorType getHypervisorType(long volumeId);
+    
+    List<VolumeVO> listVolumesToBeDestroyed();
 }

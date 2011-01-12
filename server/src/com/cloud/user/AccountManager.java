@@ -98,8 +98,6 @@ public interface AccountManager extends AccountService {
 	
 	List<ResourceLimitVO> searchForLimits(Criteria c);
 
-
-	
     /**
      * Disables an account by accountId
      * @param accountId

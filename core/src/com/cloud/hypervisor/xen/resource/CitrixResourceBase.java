@@ -94,6 +94,7 @@ import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
+import com.cloud.agent.api.PingRoutingWithOvsCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PoolEjectCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
@@ -148,17 +149,22 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.api.to.VirtualMachineTO.Monitor;
-import com.cloud.agent.api.to.VirtualMachineTO.SshMonitor;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
+import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.ovs.OvsCreateGreTunnelAnswer;
+import com.cloud.network.ovs.OvsCreateGreTunnelCommand;
+import com.cloud.network.ovs.OvsDeleteFlowCommand;
+import com.cloud.network.ovs.OvsSetTagAndFlowAnswer;
+import com.cloud.network.ovs.OvsSetTagAndFlowCommand;
 import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -245,6 +251,7 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     protected StorageLayer _storage;
     protected boolean _canBridgeFirewall = false;
+    protected boolean _isOvs = false;
     protected HashMap<StoragePoolType, StoragePoolResource> _pools = new HashMap<StoragePoolType, StoragePoolResource>(5);
 
     public enum SRType {
@@ -443,6 +450,12 @@ public abstract class CitrixResourceBase implements ServerResource {
             return execute((CheckSshCommand)cmd);
         } else if (cmd instanceof SecurityIngressRulesCmd) {
             return execute((SecurityIngressRulesCmd) cmd);
+        } else if (cmd instanceof OvsCreateGreTunnelCommand) {
+        	return execute((OvsCreateGreTunnelCommand)cmd);
+        } else if (cmd instanceof OvsSetTagAndFlowCommand) {
+        	return execute((OvsSetTagAndFlowCommand)cmd);
+        } else if (cmd instanceof OvsDeleteFlowCommand) {
+        	return execute((OvsDeleteFlowCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -467,6 +480,86 @@ public abstract class CitrixResourceBase implements ServerResource {
         throw new CloudRuntimeException("Unsupported network type: " + type);
     }
     
+    /**
+     * This is a tricky to create network in xenserver.
+     * if you create a network then create bridge by brctl or openvswitch yourself,
+     * then you will get an expection that is "REQUIRED_NETWROK" when you start a
+     * vm with this network. The soultion is, create a vif of dom0 and plug it in
+     * network, xenserver will create the bridge on behalf of you
+     * @throws XmlRpcException 
+     * @throws XenAPIException 
+     */
+    private void enableXenServerNetwork(Connection conn, Network nw,
+    		String vifNameLabel, String networkDesc) throws XenAPIException, XmlRpcException {
+    	/* Make sure there is a physical bridge on this network */
+        VIF dom0vif = null;
+        Pair<VM, VM.Record> vm = getControlDomain(conn);
+        VM dom0 = vm.first();
+        Set<VIF> vifs = dom0.getVIFs(conn);
+        if (vifs.size() != 0) {
+        	for (VIF vif : vifs) {
+        		Map<String, String> otherConfig = vif.getOtherConfig(conn);
+        		if (otherConfig != null) {
+        		    String nameLabel = otherConfig.get("nameLabel");
+        		    if ((nameLabel != null) && nameLabel.equalsIgnoreCase(vifNameLabel)) {
+        		        dom0vif = vif;
+        		    }
+        		}
+        	}
+        }
+        /* create temp VIF0 */
+        if (dom0vif == null) {
+        	s_logger.debug("Can't find a vif on dom0 for " + networkDesc + ", creating a new one");
+        	VIF.Record vifr = new VIF.Record();
+        	vifr.VM = dom0;
+        	vifr.device = getLowestAvailableVIFDeviceNum(conn, dom0);
+        	if (vifr.device == null) {
+        		s_logger.debug("Failed to create " + networkDesc + ", no vif available");
+        		return;
+        	}
+        	Map<String, String> config = new HashMap<String, String>();
+        	config.put("nameLabel", vifNameLabel);
+        	vifr.otherConfig = config;
+        	vifr.MAC = "FE:FF:FF:FF:FF:FF";
+        	vifr.network = nw;
+        	dom0vif = VIF.create(conn, vifr);
+        	dom0vif.plug(conn);
+        } else {
+        	s_logger.debug("already have a vif on dom0 for " + networkDesc);
+        	if (!dom0vif.getCurrentlyAttached(conn)) {
+        		dom0vif.plug(conn);
+        	}
+        }
+    }
+    
+    private synchronized Network setupvSwitchNetwork(Connection conn) {
+		try {
+			if (_host.vswitchNetwork == null) {
+				Network vswitchNw = null;
+				Network.Record rec = new Network.Record();
+				String nwName = Networks.BroadcastScheme.VSwitch.toString();
+				Set<Network> networks = Network.getByNameLabel(conn, nwName);
+				
+				if (networks.size() == 0) {
+					rec.nameDescription = "vswitch network for " + nwName;
+					rec.nameLabel = nwName;
+					vswitchNw = Network.create(conn, rec);
+				} else {
+					vswitchNw = networks.iterator().next();
+				}
+
+				enableXenServerNetwork(conn, vswitchNw, "vswitch",
+						"vswicth network");
+				_host.vswitchNetwork = vswitchNw;
+			} 
+			return _host.vswitchNetwork;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		return null;
+    }
+    
     protected Network getNetwork(Connection conn, NicTO nic) throws XenAPIException, XmlRpcException {
         Pair<Network, String> network = getNativeNetworkForTraffic(conn, nic.getType());
         if (nic.getBroadcastUri() != null && nic.getBroadcastUri().toString().contains("untagged")) {
@@ -478,7 +571,9 @@ public abstract class CitrixResourceBase implements ServerResource {
             return enableVlanNetwork(conn, vlan, network.first(), network.second());
         } else if (nic.getBroadcastType() == BroadcastDomainType.Native || nic.getBroadcastType() == BroadcastDomainType.LinkLocal) {
             return network.first();
-        } 
+        } else if (nic.getBroadcastType() == BroadcastDomainType.Vswitch) {
+        	return setupvSwitchNetwork(conn);
+        }
         
         throw new CloudRuntimeException("Unable to support this type of network broadcast domain: " + nic.getBroadcastUri());
     }
@@ -827,25 +922,6 @@ public abstract class CitrixResourceBase implements ServerResource {
                 		}
                 	}
                 }   
-            }
-
-            Monitor monitor = vmSpec.getMonitor();
-            if (monitor != null && monitor instanceof SshMonitor) {
-                SshMonitor sshMon = (SshMonitor)monitor;
-                String privateIp = sshMon.getIp();
-                int cmdPort = sshMon.getPort();
-                
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Ping command port, " + privateIp + ":" + cmdPort);
-                }
-    
-                String result = connect(conn, vmName, privateIp, cmdPort);
-                if (result != null) {
-                    throw new CloudRuntimeException("Can not ping System vm " + vmName + "due to:" + result);
-                } 
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Ping command port succeeded for vm " + vmName);
-                }
             }
             
             state = State.Running;
@@ -2163,6 +2239,18 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
         s_logger.warn(logX(sr, "Unable to remove SR"));
     }
+    
+    private boolean isPVInstalled(Connection conn, VM vm) throws BadServerResponse, XenAPIException, XmlRpcException {
+        VMGuestMetrics vmmetric = vm.getGuestMetrics(conn);
+        if (isRefNull(vmmetric)) {
+            return false;
+        }
+        Map<String, String> PVversion = vmmetric.getPVDriversVersion(conn);
+        if (PVversion != null && PVversion.containsKey("major")) {
+            return true;
+        }
+        return false;
+    }
 
     protected MigrateAnswer execute(final MigrateCommand cmd) {
         Connection conn = getConnection();
@@ -2186,15 +2274,18 @@ public abstract class CitrixResourceBase implements ServerResource {
                     break;
                 }
             }
-            // if it is windows, we will not fake it is migrateable,
-            // windows requires PV driver to migrate
-
+            if ( dsthost == null ) {
+                String msg = "Migration failed due to unable to find host " + ipaddr + " in XenServer pool " + _host.pool;
+                s_logger.warn(msg);
+                return new MigrateAnswer(cmd, false, msg, null);
+            }
             for (VM vm : vms) {
-                if (!cmd.isWindows()) {
+                if (vm.getPVBootloader(conn).equals("pygrub") && !isPVInstalled(conn, vm)) {
+                    // Only fake PV driver for PV kernel, the PV driver is installed, but XenServer doesn't think it is installed
                     String uuid = vm.getUuid(conn);
                     String result = callHostPlugin(conn, "vmops", "preparemigration", "uuid", uuid);
                     if (result == null || result.isEmpty()) {
-                        return new MigrateAnswer(cmd, false, "migration failed", null);
+                        return new MigrateAnswer(cmd, false, "migration failed due to preparemigration failed", null);
                     }
                     // check if pv version is successfully set up
                     int i = 0;
@@ -2203,45 +2294,34 @@ public abstract class CitrixResourceBase implements ServerResource {
                             Thread.sleep(1000);
                         } catch (final InterruptedException ex) {
                         }
-                        VMGuestMetrics vmmetric = vm.getGuestMetrics(conn);
-
-                        if (isRefNull(vmmetric)) {
-                            continue;
-                        }
-
-                        Map<String, String> PVversion = vmmetric.getPVDriversVersion(conn);
-                        if (PVversion != null && PVversion.containsKey("major")) {
-                            break;
-                        }
-
-                    }
-                    Set<VBD> vbds = vm.getVBDs(conn);
-                    for( VBD vbd : vbds) {
-                        VBD.Record vbdRec = vbd.getRecord(conn);
-                        if( vbdRec.type.equals(Types.VbdType.CD.toString()) && !vbdRec.empty ) {
-                            vbd.eject(conn);
+                        if( isPVInstalled(conn, vm) ) {
                             break;
                         }
                     }
-
                     if (i >= 20) {
-                        String msg = "migration failed due to can not fake PV driver for " + vmName;
-                        s_logger.warn(msg);
-                        return new MigrateAnswer(cmd, false, msg, null);
+                        s_logger.warn("Can not fake PV driver for " + vmName);
                     }
                 }
-                final Map<String, String> options = new HashMap<String, String>();
-                vm.poolMigrate(conn, dsthost, options);
+                Set<VBD> vbds = vm.getVBDs(conn);
+                for( VBD vbd : vbds) {
+                    VBD.Record vbdRec = vbd.getRecord(conn);
+                    if( vbdRec.type.equals(Types.VbdType.CD.toString()) && !vbdRec.empty ) {
+                        vbd.eject(conn);
+                        break;
+                    }
+                }
+                try {
+                    vm.poolMigrate(conn, dsthost, new HashMap<String, String>());
+                } catch (Types.VmMissingPvDrivers e1) {
+                    // if PV driver is missing, just shutdown the VM
+                    s_logger.warn("VM " + vmName + " is stopped when trying to migrate it because PV driver is missing, Please install PV driver for this VM");                  
+                    vm.hardShutdown(conn);                   
+                }
                 state = State.Stopping;
-
             }
             return new MigrateAnswer(cmd, true, "migration succeeded", null);
-        } catch (XenAPIException e) {
-            String msg = "migration failed due to " + e.toString();
-            s_logger.warn(msg, e);
-            return new MigrateAnswer(cmd, false, msg, null);
-        } catch (XmlRpcException e) {
-            String msg = "migration failed due to " + e.getMessage();
+        } catch (Exception e) {
+            String msg = "Catch Exception " + e.getClass().getName() + ": Migration failed due to " + e.toString();
             s_logger.warn(msg, e);
             return new MigrateAnswer(cmd, false, msg, null);
         } finally {
@@ -2603,7 +2683,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
     }
     
-    void startVM(Connection conn, Host host, VM vm, String vmName) {
+    void startVM(Connection conn, Host host, VM vm, String vmName) throws XmlRpcException {
         try {
             vm.startOn(conn, host, false, true);
         } catch (Exception e) {
@@ -2942,7 +3022,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             Set<VIF> routerVIFs = router.getVIFs(conn);
             for (VIF vif : routerVIFs) {
                 Network vifNetwork = vif.getNetwork(conn);
-                if (vlanId.equals("untagged")) {
+                if (vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
                     if (vifNetwork.getUuid(conn).equals(_host.publicNetwork)) {
                         return vif;
                     }
@@ -3237,9 +3317,12 @@ public abstract class CitrixResourceBase implements ServerResource {
             if (newStates == null) {
                 newStates = new HashMap<String, State>();
             }
-            if (!_canBridgeFirewall) {
+            if (!_canBridgeFirewall && !_isOvs) {
             	return new PingRoutingCommand(getType(), id, newStates);
-            } else {
+            } else if (_isOvs) {
+            	List<Pair<String, Long>>ovsStates = ovsFullSyncStates();
+            	return new PingRoutingWithOvsCommand(getType(), id, newStates, ovsStates);
+            }else {
             	HashMap<String, Pair<Long, Long>> nwGrpStates = syncNetworkGroups(conn, id);
             	return new PingRoutingWithNwGroupsCommand(getType(), id, newStates, nwGrpStates);
             }
@@ -3745,6 +3828,112 @@ public abstract class CitrixResourceBase implements ServerResource {
         return Boolean.valueOf(callHostPlugin(conn, "vmops", "can_bridge_firewall", "host_uuid", _host.uuid));
     }
     
+    private Answer execute(OvsDeleteFlowCommand cmd) {
+    	_isOvs = true;
+    	
+    	Connection conn = getConnection();
+    	try {
+    		Network nw = setupvSwitchNetwork(conn);
+    		String bridge = nw.getBridge(conn);
+    		String result = callHostPlugin(conn, "ovsgre", "ovs_delete_flow", "bridge", bridge,
+    				"vmName", cmd.getVmName());
+    		
+    		if (result.equalsIgnoreCase("SUCCESS")) {
+    			return new Answer(cmd, true, "success to delete flows for " + cmd.getVmName());
+    		} else {
+    			return new Answer(cmd, false, result);
+    		}
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
+    	return new Answer(cmd, false, "failed to delete flow for " + cmd.getVmName());
+    }
+    
+    private List<Pair<String, Long>> ovsFullSyncStates() {
+    	Connection conn = getConnection();
+    	try {
+    		String result = callHostPlugin(conn, "ovsgre", "ovs_get_vm_log", "host_uuid", _host.uuid);
+    		String [] logs = result != null ?result.split(";"): new String [0];
+    		List<Pair<String, Long>> states = new ArrayList<Pair<String, Long>>();
+    		for (String log: logs){
+            	String [] info = log.split(",");
+            	if (info.length != 5) {
+            		s_logger.warn("Wrong element number in ovs log(" + log +")");
+            		continue;
+            	}
+            	
+            	//','.join([bridge, vmName, vmId, seqno, tag])
+            	try {
+            		states.add(new Pair<String,Long>(info[0], Long.parseLong(info[3])));
+            	} catch (NumberFormatException nfe) {
+            		states.add(new Pair<String,Long>(info[0], -1L));
+            	}
+            }
+    		
+    		return states;
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
+    	
+    	return null;
+    }
+    
+    private OvsSetTagAndFlowAnswer execute(OvsSetTagAndFlowCommand cmd) {
+    	_isOvs = true;
+    	
+    	Connection conn = getConnection();
+    	try {
+    		Network nw = setupvSwitchNetwork(conn);
+    		String bridge = nw.getBridge(conn);
+    		
+    		/*If VM is domainRouter, this will try to set flow and tag on its
+    		 * none guest network nic. don't worry, it will fail silently at host
+    		 * plugin side
+    		 */
+    		String result = callHostPlugin(conn, "ovsgre", "ovs_set_tag_and_flow", "bridge", bridge,
+    				"vmName", cmd.getVmName(), "tag", cmd.getTag(),
+    				"vlans", cmd.getVlans(), "seqno", cmd.getSeqNo());
+			s_logger.debug("set flow for " + cmd.getVmName() + " " + result);
+		
+			if (result.equalsIgnoreCase("SUCCESS")) {
+				return new OvsSetTagAndFlowAnswer(cmd, true, result);
+			} else {
+				return new OvsSetTagAndFlowAnswer(cmd, false, result);
+			}
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
+    	
+		return new OvsSetTagAndFlowAnswer(cmd, false, "EXCEPTION");
+    }
+    
+    
+    private OvsCreateGreTunnelAnswer execute(OvsCreateGreTunnelCommand cmd) {
+    	_isOvs = true;
+    	
+    	Connection conn = getConnection();
+    	String bridge = "unkonwn";	
+    	try {
+    		Network nw = setupvSwitchNetwork(conn);
+    		bridge = nw.getBridge(conn);
+    		
+			String result = callHostPlugin(conn, "ovsgre", "ovs_create_gre", "bridge", bridge,
+					"remoteIP", cmd.getRemoteIp(), "greKey", cmd.getKey(), "from",
+					Long.toString(cmd.getFrom()), "to", Long.toString(cmd.getTo()));
+			String[] res = result.split(":");
+			if (res.length != 2 || (res.length == 2 && res[1] == "[]")) {
+				return new OvsCreateGreTunnelAnswer(cmd, false, result,
+						_host.ip, bridge);
+			} else {
+				return new OvsCreateGreTunnelAnswer(cmd, true, result, _host.ip, bridge, Integer.parseInt(res[1]));
+			}	
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
+    	
+		return new OvsCreateGreTunnelAnswer(cmd, false, "EXCEPTION", _host.ip, bridge);
+    }
+    
     private Answer execute(SecurityIngressRulesCmd cmd) {
         Connection conn = getConnection();
         if (s_logger.isTraceEnabled()) {
@@ -3846,7 +4035,8 @@ public abstract class CitrixResourceBase implements ServerResource {
                 }
             }
             // assume the memory Virtualization overhead is 1/64
-            ram = (ram - dom0Ram) * 63/64;
+            // xen hypervisor used 128 M
+            ram = (ram - dom0Ram - (128 * 1024 * 1024)) * 63/64;
             cmd.setMemory(ram);
             cmd.setDom0MinMemory(dom0Ram);
 
@@ -5521,6 +5711,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         public String publicNetwork;
         public String privateNetwork;
         public String linkLocalNetwork;
+        public Network vswitchNetwork;
         public String storageNetwork1;
         public String storageNetwork2;
         public String guestNetwork;

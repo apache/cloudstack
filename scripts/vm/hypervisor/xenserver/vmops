@@ -358,7 +358,7 @@ def can_bridge_firewall(session, args):
         util.pread2(['iptables', '-D', 'FORWARD',  '-j', 'RH-Firewall-1-INPUT'])
     except:
         util.SMlog('Chain BRIDGE-FIREWALL already exists')
-    privnic = get_private_nic(session,args)
+    privnic = get_private_nic(session, args)
     result = 'true'
     try:
         util.pread2(['/bin/bash', '-c', 'iptables -n -L FORWARD | grep BRIDGE-FIREWALL'])
@@ -374,7 +374,7 @@ def can_bridge_firewall(session, args):
         os.makedirs('/var/run/cloud')
  
     cleanup_rules_for_dead_vms(session)
-    cleanup_rules(session)
+    cleanup_rules(session, args)
     
     return result
 
@@ -414,13 +414,13 @@ def destroy_network_rules_for_vm(session, args):
         vmchain =  '-'.join(vm_name.split('-')[:-1])
         vmchain_default =  '-'.join(vm_name.split('-')[:-2]) + "-def"
 
-    destroy_ebtables_rules(vmchain)
+        try:
+            util.pread2(['iptables', '-F', vmchain_default])
+            util.pread2(['iptables', '-X', vmchain_default])
+        except:
+            util.SMlog("Ignoring failure to delete  chain " + vmchain_default)
     
-    try:
-        util.pread2(['iptables', '-F', vmchain_default])
-        util.pread2(['iptables', '-X', vmchain_default])
-    except:
-        util.SMlog("Ignoring failure to delete  chain " + vmchain_default)
+    destroy_ebtables_rules(vmchain)
     
     try:
         util.pread2(['iptables', '-F', vmchain])
@@ -518,8 +518,7 @@ def default_ebtables_rules(vm_name, vif, vm_ip, vm_mac):
     except:
         util.SMlog("Failed to program default ebtables OUT rules")
         return 'false' 
-    
-            
+
 @echo
 def default_network_rules_systemvm(session, args):
     vm_name = args.pop('vmName')
@@ -591,15 +590,21 @@ def default_network_rules(session, args):
         return 'false'
     
     vif = "vif" + domid + ".0"
+    tap = "tap" + domid + ".0"
+    vifs = [vif]
+    try:
+        util.pread2(['ifconfig', tap])
+        vifs.append(tap)
+    except:
+        pass
 
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
 
      
-    vm_name =  '-'.join(vm_name.split('-')[:-1])
-    vmchain = vm_name
-    vmchain_default = '-'.join(vmchain.split('-')[:-1]) + "-def"
+    vmchain =  '-'.join(vm_name.split('-')[:-1])
+    vmchain_default = '-'.join(vm_name.split('-')[:-2]) + "-def"
     
-    destroy_ebtables_rules(vm_name)
+    destroy_ebtables_rules(vmchain)
     
 
     try:
@@ -630,7 +635,8 @@ def default_network_rules(session, args):
         util.SMlog("Failed to program default rules for vm " + vm_name)
         return 'false'
     
-    default_ebtables_rules(vm_name, vif, vm_ip, vm_mac)
+    for v in vifs:
+        default_ebtables_rules(vm_name, v, vm_ip, vm_mac)
     
     if write_rule_log_for_vm(vmName, vm_id, vm_ip, domid, '_initial_', '-1') == False:
         util.SMlog("Failed to log default network rules, ignoring")
@@ -666,10 +672,9 @@ def check_domid_changed(session, vmName):
 
 def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
     vm_name = vmName
-    if vm_name.startswith('i-') or vm_name.startswith('r-'):
-        vm_name =  '-'.join(vm_name.split('-')[:-2])
-    
     vmchain = vm_name
+    if vm_name.startswith('i-') or vm_name.startswith('r-'):
+        vmchain =  '-'.join(vm_name.split('-')[:-1])
     
     delcmd = "iptables -S BRIDGE-FIREWALL | grep " +  vmchain + " | sed 's/-A/-D/'"
     delcmds = util.pread2(['/bin/bash', '-c', delcmd]).split('\n')
@@ -726,7 +731,7 @@ def network_rules_for_rebooted_vm(session, vmName):
         inscmd2 = "iptables -S " +  vmchain_default + " | grep  physdev-in | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' | sed 's/-A/-I/'"
         
         ipts = []
-        for cmd in [delcmd, inscmd]:
+        for cmd in [delcmd, inscmd, inscmd2]:
             cmds = util.pread2(['/bin/bash', '-c', cmd]).split('\n')
             cmds.pop()
             for c in cmds:
@@ -824,7 +829,7 @@ def cleanup_rules_for_dead_vms(session):
 
 
 @echo
-def cleanup_rules(session):
+def cleanup_rules(session, args):
   try:
     chainscmd = "iptables-save | grep '^:' | grep -v '.*-def' | awk '{print $1}' | cut -d':' -f2"
     chains = util.pread2(['/bin/bash', '-c', chainscmd]).split('\n')
@@ -851,9 +856,12 @@ def cleanup_rules(session):
     for vmname in cleanup:
         destroy_network_rules_for_vm(session, {'vmName':vmname})
                     
-    util.SMlog("Cleaned up rules for " + str(len(cleanup)) + " chains")                
+    util.SMlog("Cleaned up rules for " + str(len(cleanup)) + " chains")
+    return str(len(cleanup))                
   except:
     util.SMlog("Failed to cleanup rules !")
+    return '-1';
+
 
 @echo
 def check_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
@@ -939,6 +947,13 @@ def network_rules(session, args):
         return 'false'
    
     vif = "vif" + domid + ".0"
+    tap = "tap" + domid + ".0"
+    vifs = [vif]
+    try:
+        util.pread2(['ifconfig', tap])
+        vifs.append(tap)
+    except:
+        pass
     vm_name =  '-'.join(vm_name.split('-')[:-1])
     vmchain = vm_name
     
@@ -1017,5 +1032,5 @@ def network_rules(session, args):
 
 
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, "getvncport": getvncport, "getgateway": getgateway, "preparemigration": preparemigration, "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  "ipassoc": ipassoc, "vm_data": vm_data, "savePassword": savePassword, "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, "networkUsage": networkUsage, "network_rules":network_rules, "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules, "destroy_network_rules_for_vm":destroy_network_rules_for_vm, "default_network_rules_systemvm":default_network_rules_systemvm, "get_rule_logs_for_vms":get_rule_logs_for_vms, "setLinkLocalIP":setLinkLocalIP, "lt2p_vpn":lt2p_vpn})
+    XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, "getvncport": getvncport, "getgateway": getgateway, "preparemigration": preparemigration, "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  "ipassoc": ipassoc, "vm_data": vm_data, "savePassword": savePassword, "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, "networkUsage": networkUsage, "network_rules":network_rules, "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules, "destroy_network_rules_for_vm":destroy_network_rules_for_vm, "default_network_rules_systemvm":default_network_rules_systemvm, "get_rule_logs_for_vms":get_rule_logs_for_vms, "setLinkLocalIP":setLinkLocalIP, "lt2p_vpn":lt2p_vpn, "cleanup_rules":cleanup_rules})
 

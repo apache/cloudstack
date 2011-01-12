@@ -146,7 +146,7 @@
                 Step 4</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
-            <div class="vmpopup_container_closebutton" id="close_button">
+            <div class="zonepopup_container_closebutton" id="close_button">
             </div>
         </div>
         <div class="zonepopup_container_mid">
@@ -215,7 +215,7 @@
                 Step 4</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
-            <div class="vmpopup_container_closebutton" id="close_button">
+            <div class="zonepopup_container_closebutton" id="close_button">
             </div>
         </div>
         <div class="zonepopup_container_mid">
@@ -315,7 +315,7 @@
                 Step 4</div>   
              <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
-            <div class="vmpopup_container_closebutton" id="close_button">
+            <div class="zonepopup_container_closebutton" id="close_button">
             </div>
         </div>
         <div class="zonepopup_container_mid">
@@ -361,7 +361,53 @@
                                 </div>
                                 <div id="add_pod_endip_errormsg" class="dialog_formcontent_errormsg" style="display: none; ">
                                 </div>
-                            </li>
+                            </li>              
+                        </ol>
+                        </form>
+                    </div>
+                </div>
+                <div class="zonepopup_navigationpanel">
+                    <div class="vmpop_prevbutton" id="back_to_step_2" style="display: block;">
+                        Back
+                    </div>
+                    <div class="vmpop_nextbutton" id="go_to_step_4" style="display: block;">
+                        Go to Step 4</div>                    
+                </div>
+            </div>
+        </div>
+        <div class="zonepopup_container_bot">
+        </div>
+    </div>
+    <!-- step 3 (end) -->
+    
+    <!-- step 4 (begin) -->
+    <div id="step4" style="display: none;">
+        <div class="zonepopup_container_top">
+           <div class="vmpopup_steps" style="background: url(images/step1_bg_unselected.png) no-repeat top left">
+                Step 1</div>
+            <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
+                Step 2</div>
+             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
+                Step 3</div>
+            <div class="vmpopup_steps" style="color: #FFF; background: url(images/step2_selected.gif) no-repeat top left">
+                Step 4</div>   
+             <div class="vmpopup_steps" style="background: url(images/laststep_slectedbg.gif) no-repeat top left">
+            </div>
+            <div class="zonepopup_container_closebutton" id="close_button">
+            </div>
+        </div>
+        <div class="zonepopup_container_mid">
+            <div class="zonepopup_maincontentarea">
+                <div class="zonepopup_titlebox">
+                    <h2>
+                        Step 4: <strong>Add an IP range</strong></h2>
+                    <p>                        
+                    </p>
+                </div>
+                <div class="zonepopup_contentpanel">
+                    <div class="zonepoup_formcontent">
+                        <form action="#" method="post" id="form_acquire">
+                        <ol id="guestip_list">                            
                             <li id="guestip_container">
                                 <label style="width: 115px;">
                                     Guest IP Range:</label>
@@ -385,56 +431,9 @@
                                 <input class="text" type="text" id="guestgateway" />
                                 <div id="guestgateway_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
                                 </div>
-                            </li>                            
+                            </li>              
                         </ol>
-                        </form>
-                    </div>
-                </div>
-                <div class="zonepopup_navigationpanel">
-                    <div class="vmpop_prevbutton" id="back_to_step_2" style="display: block;">
-                        Back
-                    </div>
-                    <div class="vmpop_nextbutton" id="go_to_step_4" style="display: none;">
-                        Go to Step 4</div>
-                    <div class="vmpop_nextbutton" id="submit_in_step3" style="display: block;">
-                        Submit
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="zonepopup_container_bot">
-        </div>
-    </div>
-    <!-- step 3 (end) -->
-    
-    <!-- step 4 (begin) -->
-    <div id="step4" style="display: none;">
-        <div class="zonepopup_container_top">
-           <div class="vmpopup_steps" style="background: url(images/step1_bg_unselected.png) no-repeat top left">
-                Step 1</div>
-            <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
-                Step 2</div>
-             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
-                Step 3</div>
-            <div class="vmpopup_steps" style="color: #FFF; background: url(images/step2_selected.gif) no-repeat top left">
-                Step 4</div>   
-             <div class="vmpopup_steps" style="background: url(images/laststep_slectedbg.gif) no-repeat top left">
-            </div>
-            <div class="vmpopup_container_closebutton" id="close_button">
-            </div>
-        </div>
-        <div class="zonepopup_container_mid">
-            <div class="zonepopup_maincontentarea">
-                <div class="zonepopup_titlebox">
-                    <h2>
-                        Step 4: <strong>Add an IP range to public network in zone</strong></h2>
-                    <p>                        
-                    </p>
-                </div>
-                <div class="zonepopup_contentpanel">
-                    <div class="zonepoup_formcontent">
-                        <form action="#" method="post" id="form_acquire">
-                        <ol>
+                        <ol id="publicip_list" style="display:none">
                             <li id="add_publicip_vlan_container">
                                 <label for="add_publicip_vlan_tagged">
                                     VLAN:</label>
@@ -516,10 +515,10 @@
                 <div class="zonepopup_navigationpanel">
                     <div class="vmpop_prevbutton" id="back_to_step_3" style="display: block;">
                         Back
-                    </div>                    
-                    <div class="vmpop_nextbutton" id="submit_in_step4" style="display: block;">
+                    </div>                     
+                    <div class="vmpop_nextbutton" id="submit" style="display: block;">
                         Submit
-                    </div>                    
+                    </div>                   
                 </div>
             </div>
         </div>
@@ -537,9 +536,11 @@
                 Step 2</div>
             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
                 Step 3</div>
+            <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
+                Step 4</div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
-            <div class="vmpopup_container_closebutton" id="close_button">
+            <div class="zonepopup_container_closebutton" id="close_button">
             </div>
         </div>
         <div class="zonepopup_container_mid">
@@ -548,7 +549,7 @@
                 <div class="zonepopup_contentpanel">
                 	<div id="spinning_wheel" class="zonepoup_loadingbox" style="display:none;">
                     	<div class="zonepoup_loader"></div>
-                        <p> Adding zone and pod....</p>
+                        <p> Adding....</p>
                     </div>
                     
                    <!-- <div id="after_action_message" class="zonepoup_msgbox"></div>-->

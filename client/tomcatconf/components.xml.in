@@ -23,6 +23,7 @@
   documented, please contact the author.
 -->
 <components.xml>
+    <interceptor library="com.cloud.configuration.DefaultIntercetorLibrary"/>
     <management-server class="com.cloud.server.ManagementServerImpl" library="com.cloud.configuration.DefaultComponentLibrary">
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
             <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.RecreateHostAllocator"/>
@@ -45,6 +46,7 @@
             <adapter name="PodBasedNetworkGuru" class="com.cloud.network.guru.PodBasedNetworkGuru"/>
             <adapter name="ControlNetworkGuru" class="com.cloud.network.guru.ControlNetworkGuru"/>
             <adapter name="DirectNetworkGuru" class="com.cloud.network.guru.DirectNetworkGuru"/>
+            <adapter name="DirectPodBasedNetworkGuru" class="com.cloud.network.guru.DirectPodBasedNetworkGuru"/>
         </adapters>
         <adapters key="com.cloud.storage.secondary.SecondaryStorageVmAllocator">
             <adapter name="Balance" class="com.cloud.storage.secondary.SecondaryStorageVmDefaultAllocator"/>

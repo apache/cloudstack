@@ -349,21 +349,18 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " is being used, try it later ");
             }
         }
+        
         if (_volsDao.getHypervisorType(volume.getId()).equals(HypervisorType.KVM)) {
-        	/*for kvm, only Fedora supports snapshot, currently*/
         	StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
         	ClusterVO cluster = _clusterDao.findById(storagePool.getClusterId());
         	List<HostVO> hosts = _hostDao.listByCluster(cluster.getId());
         	if (hosts != null && !hosts.isEmpty()) {
         		HostVO host = hosts.get(0);
-        		_hostDao.loadDetails(host);
-        		String hostOS = host.getDetail("Host.OS");
-        		String hostOSVersion = host.getDetail("Host.OS.Version");
-        		if (! (hostOS != null && hostOS.equalsIgnoreCase("Fedora") && hostOSVersion != null && Integer.parseInt(hostOSVersion) >= 13)) {
-        			throw new CloudRuntimeException("KVM Snapshot is not supported on:" + hostOS + ": " + hostOSVersion + ". Please install Fedora 13 and above to enable snapshot");
-        		}
+        		if (!hostSupportSnapsthot(host))
+        			throw new CloudRuntimeException("KVM Snapshot is not supported on cluster: " + host.getId());
         	}
         }
+        
         SnapshotVO snapshot = null;
         boolean backedUp = false;
         try {
@@ -1247,6 +1244,24 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 		}
 		
 		return success;
+	}
+	
+	private boolean hostSupportSnapsthot(HostVO host) {
+		if (host.getHypervisorType() != HypervisorType.KVM) {
+			return true;
+		}
+		// Determine host capabilities
+		String caps = host.getCapabilities();
+		
+		if (caps != null) {
+            String[] tokens = caps.split(",");
+            for (String token : tokens) {
+            	if (token.contains("snapshot")) {
+            	    return true;
+            	}
+            }
+		}
+		return false;
 	}
 
 

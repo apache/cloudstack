@@ -1,4 +1,8 @@
-<%@ taglib uri="http://java.sun.com/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
 <fmt:setBundle basename="resources/messages"/>
 <% long now = System.currentTimeMillis(); %>
 
@@ -12,6 +16,7 @@
     <link rel="stylesheet" href="css/jquery-ui.custom.css" type="text/css" />
     <link rel="stylesheet" href="css/logger.css" type="text/css" />
     <link rel="stylesheet" href="css/main.css" type="text/css" />
+    <!--<link rel="stylesheet" href="custom/custom1/css/custom1.css" type="text/css" />-->
 
 	<!-- Common libraries -->
     <script type="text/javascript" src="scripts/jquery.min.js"></script>
@@ -45,6 +50,7 @@
     <script type="text/javascript" src="scripts/cloud.core.globalsetting.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.resource.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.zone.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.secondarystorage.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.network.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.pod.js?t=<%=now%>"></script>  
     <script type="text/javascript" src="scripts/cloud.core.cluster.js?t=<%=now%>"></script> 
@@ -104,6 +110,32 @@
                             <div class="error_box" id="login_error" style="display:none;">
                             	<p><fmt:message key="error.login"/></p>
                             </div>
+                            
+                            <div class="loginoptions_panel">
+                            	<div class="loginoptions_box">
+                                	<div id="lang_button" class="loginoptions_dropdownbutton">
+                                    	<p id="lang_name">English</p>
+                                        <div class="loginoptions_ddarrow"></div>
+         							
+										<div id="lang_menu" class="loginoptions_dropdown" style="display:none;">
+											<ul>
+												<li id="en">English</li>
+												<li id="zh">Chinese</li>
+											</ul>
+										</div>
+                                    </div>
+                                    <div id="theme_button" class="loginoptions_dropdownbutton">
+                                    	<p id="theme_name">Default Theme</p>
+                                        <div class="loginoptions_ddarrow"></div>
+										<div id="theme_menu" class="loginoptions_dropdown" style="display:none;">
+											<ul>
+												<li id="theme_default">Default Theme</li>
+												<li id="custom/custom1/css/custom1.css">Custom - Grey</li>
+											</ul>
+										</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -129,6 +161,7 @@
                     <p>
                         <fmt:message key="label.welcome"/> <span id="main_username"></span>, <a href="#" id="main_logout"><fmt:message key="label.logout"/></a>
                     </p>
+					<!--
                     <div class="language_dropdownpanel">
                     	<div class="language_icon"></div>
                         <p>English</p>
@@ -141,7 +174,7 @@
                             </ul>
                         </div>
                     </div>
-                    
+                    -->
                 </div>
             </div>
         </div>
@@ -378,7 +411,7 @@
                                 </div>
                             </div>
                         </div>  
-                        <div class="leftmenu_expandedlist">
+                        <div class="leftmenu_expandedlist" id="leftmenu_security_group_container" style="display:none;">
                             <div class="leftmenu_content" id="leftmenu_security_group">
                                 <div class="leftmenu_secondindent">
                                    	<div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
@@ -739,7 +772,7 @@
         </p>
     </div>
     <!-- ***** templates (begin) *************************************************************************************************-->
-    <div id="leftmenu_secondindent_template" class="leftmenu_expandedlist">
+    <div id="leftmenu_secondindent_template" class="leftmenu_expandedlist" style="display:none">
         <div class="leftmenu_content">
             <div class="leftmenu_secondindent">
                 <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
@@ -805,14 +838,22 @@
         <div id="zone_content" style="display: none">
             <div id="pods_container">
             </div>	 
+                        
+	        <div id="secondarystorage_header" class="leftmenu_content">
+	            <div class="leftmenu_fourthindent">
+	                <div class="leftmenu_arrows white_nonexpanded_close" id="secondarystorage_arrow">
+	                </div>	                
+	                <span id="secondarystorage_name_label">Secondary Storage</span>	 
+	            </div>
+	        </div>	      
             	            
             <div id="network_header" class="leftmenu_content" style="display: none">
 	            <div class="leftmenu_fourthindent">
-	                <div class="leftmenu_arrows white_nonexpanded_close" id="cluster_arrow">
+	                <div class="leftmenu_arrows white_nonexpanded_close" id="network_arrow">
 	                </div>	                
 	                <span id="network_name_label">Network</span>	 
 	            </div>
-	        </div>	            	                       
+	        </div>		              	                       
         </div>	    
     </div>
     <!-- Zone Template (end) -->

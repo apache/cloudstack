@@ -8,7 +8,7 @@ long milliseconds = new Date().getTime();
 <div class="submenu_links">
     <div class="submenu_links_off" id="submenu_network">
         IP Addresses</div>
-    <div class="submenu_links_off" id="submenu_network_groups">
+    <div class="submenu_links_off" id="submenu_security_groups">
         Security Groups</div>
 </div>
 <!-- ***** Network (begin) ********************************************************************************************************************* -->
@@ -544,14 +544,14 @@ long milliseconds = new Date().getTime();
 </div>
 <!-- ***** Network (end) *********************************************************************************************************************** -->
 <!-- ***** Security Groups (begin) ************************************************************************************************************** -->
-<div class="maincontent" id="submenu_content_network_groups" style="display: none;">
+<div class="maincontent" id="submenu_content_security_groups" style="display: none;">
     <div id="maincontent_title">
         <div class="maintitle_icon">
             <img src="images/sgtitle_icons.gif" title="Security Groups" />
         </div>
         <h1>
             Security Groups</h1>
-        <a class="add_networkgroupbutton" id="network_groups_action_new" href="#"></a>
+        <a class="add_networkgroupbutton" id="security_groups_action_new" href="#"></a>
         <div class="search_formarea">
             <form action="#" method="post">
             <ol>
@@ -733,7 +733,7 @@ long milliseconds = new Date().getTime();
     </div>
 </div>
 <!-- Security Group's Ingress Rule Template (begin) -->
-<div id="network_group_ingress_rule_template" style="display: none">
+<div id="security_group_ingress_rule_template" style="display: none">
     <div class="adding_loading" style="height: 25px; display: none;">
         <div class="adding_animation">
         </div>
@@ -767,11 +767,11 @@ long milliseconds = new Date().getTime();
 </div>
 <!-- Security Group's Ingress Rule Template (end) -->
 <!-- Security Group's Ingress Rule - add row (begin) -->
-<div id="network_group_ingress_rule_add_row" class="hostadmin_showdetails_row_even"
+<div id="security_group_ingress_rule_add_row" class="hostadmin_showdetails_row_even"
     style="display: none">
     <div class="hostadmin_showdetailsrow_cell" style="width: 100%">
         <div class="netgrid_celltitles">
-            <a id="network_group_ingress_rule_add_link" href="#">Click here to add a new ingress
+            <a id="security_group_ingress_rule_add_link" href="#">Click here to add a new ingress
                 rule</a>
         </div>
     </div>
@@ -857,14 +857,14 @@ long milliseconds = new Date().getTime();
     height: auto; float: left; display: none">
     <input class="text" style="width: 80px" type="text" id="account" />
     <span>/</span>
-    <input class="text" style="width: 80px" type="text" id="networkgroup" />
+    <input class="text" style="width: 80px" type="text" id="securitygroup" />
     <div id="account_securitygroup_template_errormsg" class="dialog_formcontent_errormsg"
         style="display: none; margin: 0;">
     </div>
 </div>
 <!-- Add Ingress Rule Dialog - Account/Security Group template (end) -->
 <!-- Add Security Groups Dialog (begin) -->
-<div id="dialog_add_network_groups" title="Add Security Group" style="display: none">
+<div id="dialog_add_security_groups" title="Add Security Group" style="display: none">
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>

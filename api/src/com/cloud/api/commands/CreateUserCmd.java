@@ -41,7 +41,7 @@ public class CreateUserCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="Creates the user under the specified account. If no account is specified, the username will be used as the account name.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Creates the user under the specified domain.")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Creates the user under the specified domain. Has to be accompanied with the account parameter")
     private Long domainId;
 
     @Parameter(name=ApiConstants.EMAIL, type=CommandType.STRING, required=true, description="email")

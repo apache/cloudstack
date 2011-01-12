@@ -40,7 +40,7 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
         
         AccountIdNameSearch = createSearchBuilder();
         AccountIdNameSearch.and("accountId", AccountIdNameSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountIdNameSearch.and("groupName", AccountIdNameSearch.entity().getName(), SearchCriteria.Op.EQ);
+        AccountIdNameSearch.and("name", AccountIdNameSearch.entity().getName(), SearchCriteria.Op.EQ);
         
         AccountIdNamesSearch = createSearchBuilder();
         AccountIdNamesSearch.and("accountId", AccountIdNamesSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -74,7 +74,7 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
 	public SecurityGroupVO findByAccountAndName(Long accountId, String name) {
 		SearchCriteria<SecurityGroupVO> sc = AccountIdNameSearch.create();
 		sc.setParameters("accountId", accountId);
-		sc.setParameters("groupName", name);
+		sc.setParameters("name", name);
 
 		return findOneIncludingRemovedBy(sc);
 	}

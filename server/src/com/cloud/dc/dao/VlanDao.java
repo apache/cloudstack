@@ -40,12 +40,8 @@ public interface VlanDao extends GenericDao<VlanVO, Long> {
 	List<VlanVO> listVlansForPodByType(long podId, Vlan.VlanType vlanType);
 	
 	void addToPod(long podId, long vlanDbId);
-	
-//    Pair<String, VlanVO>  assignIpAddress(long zoneId, long accountId, long domainId, VlanType vlanType, boolean sourceNat);
 
 	List<VlanVO> listVlansForAccountByType(Long zoneId, long accountId, VlanType vlanType);
-	
-//	Pair<String, VlanVO> assignPodDirectAttachIpAddress(long zoneId, long podId, long accountId, long domainId);
 	
 	boolean zoneHasDirectAttachUntaggedVlans(long zoneId);
 

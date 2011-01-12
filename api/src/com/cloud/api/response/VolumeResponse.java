@@ -81,13 +81,13 @@ public class VolumeResponse extends BaseResponse {
     @SerializedName("storagetype") @Param(description="shared or local storage")
     private String storageType;
 
-    @SerializedName("sourceid")
+    @SerializedName("sourceid") @Param(description="Id of the snapshot or diskOffering volume is created from")
     private Long sourceId;
 
-    @SerializedName("sourcetype")
+    @SerializedName("sourcetype") @Param(description="Type of the source the volume is created from. Can be: Snapshot,DiskOffering")
     private String sourceType;
 
-    @SerializedName(ApiConstants.HYPERVISOR)
+    @SerializedName(ApiConstants.HYPERVISOR) @Param(description="Hypervisor the volume belongs to")
     private String hypervisor;
 
     @SerializedName(ApiConstants.DISK_OFFERING_ID) @Param(description="ID of the disk offering")
