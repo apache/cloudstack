@@ -70,6 +70,7 @@ function secondaryStorageJsonToDetailsTab() {
     });    
     
     if(jsonObj == null) {
+        secondaryStorageJsonClearRightPanel();  
         $thisTab.find("#tab_spinning_wheel").hide();    
         $thisTab.find("#tab_container").show();      
         return;

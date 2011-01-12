@@ -140,7 +140,7 @@ function buildZoneTree() {
             });      
         } 
         else {
-            //secondarystoragePopulateMiddleMenu($(this));  		 
+            secondaryStorageRefreshDataBinding(); 
         }	    
 	       
 	    return false;
