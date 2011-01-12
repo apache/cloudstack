@@ -508,7 +508,7 @@ var volumeActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {                
             var jsonObj = json.queryasyncjobresultresponse.jobresult.volume;  
             volumeToMidmenu(jsonObj, $midmenuItem1);
-            volumeJsonToDetailsTab($midmenuItem1);   
+            //volumeJsonToDetailsTab($midmenuItem1);   
         }
     },
     "Detach Disk": {
@@ -519,7 +519,7 @@ var volumeActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id){   
             var jsonObj = json.queryasyncjobresultresponse.jobresult.volume;     
             volumeToMidmenu(jsonObj,  $midmenuItem1);
-            volumeJsonToDetailsTab($midmenuItem1);   
+            //volumeJsonToDetailsTab($midmenuItem1);   
         }
     },
     "Create Template": {
