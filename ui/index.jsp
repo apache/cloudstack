@@ -50,6 +50,7 @@
     <script type="text/javascript" src="scripts/cloud.core.globalsetting.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.resource.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.zone.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloud.core.secondarystorage.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.network.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloud.core.pod.js?t=<%=now%>"></script>  
     <script type="text/javascript" src="scripts/cloud.core.cluster.js?t=<%=now%>"></script> 
