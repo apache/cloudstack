@@ -330,8 +330,8 @@ public class UploadMonitorImpl implements UploadMonitor {
         }        
         
         _agentMgr.registerForHostEvents(new UploadListener(this), true, false, false);
-        String cleanupInterval = (String)params.get("extract.url.cleanup.interval");
-        _cleanupInterval = NumbersUtil.parseInt(cleanupInterval, 21600);
+        String cleanupInterval = configs.get("extract.url.cleanup.interval");
+        _cleanupInterval = NumbersUtil.parseInt(cleanupInterval, 14400);
         
         
         String workers = (String)params.get("expunge.workers");
@@ -469,7 +469,7 @@ public class UploadMonitorImpl implements UploadMonitor {
     
     public void cleanupStorage() {
 
-        final int EXTRACT_URL_LIFE_LIMIT_IN_SECONDS = 86400;//FIX ME make it configurable.
+        final int EXTRACT_URL_LIFE_LIMIT_IN_SECONDS = 14400;//FIX ME make it configurable.
         List<UploadVO> extractJobs= _uploadDao.listByModeAndStatus(Mode.HTTP_DOWNLOAD, Status.DOWNLOAD_URL_CREATED);
         
         for (UploadVO extractJob : extractJobs){

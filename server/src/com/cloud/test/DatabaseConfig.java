@@ -52,6 +52,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import com.cloud.host.Status;
 import com.cloud.network.Network;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.DiskOfferingVO;
@@ -269,6 +270,7 @@ public class DatabaseConfig {
 		s_configurationComponents.put("consoleproxy.session.max", "AgentManager");
 		s_configurationComponents.put("consoleproxy.session.timeout", "AgentManager");
 		s_configurationComponents.put("expunge.workers", "UserVmManager");
+		s_configurationComponents.put("extract.url.cleanup.interval", "management-server");
         s_configurationComponents.put("stop.retry.interval", "HighAvailabilityManager");
         s_configurationComponents.put("restart.retry.interval", "HighAvailabilityManager");
         s_configurationComponents.put("investigate.retry.interval", "HighAvailabilityManager");
@@ -325,6 +327,7 @@ public class DatabaseConfig {
         s_defaultConfigurationValues.put("max.account.user.vms", "20");
         s_defaultConfigurationValues.put("max.account.public.ips", "20");
         s_defaultConfigurationValues.put("expunge.interval", "86400");
+        s_defaultConfigurationValues.put("extract.url.cleanup.interval",  "120");
         s_defaultConfigurationValues.put("instance.name", "VM");
         s_defaultConfigurationValues.put("expunge.workers", "1");
         s_defaultConfigurationValues.put("stop.retry.interval", "600");
