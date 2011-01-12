@@ -57,7 +57,7 @@ function secondaryStorageJsonToDetailsTab() {
      
     var jsonObj;
     $.ajax({
-       data: createURL("command=listHosts&type=SecondaryStorage&zoneid="+zoneObj.id),
+        data: createURL("command=listHosts&type=SecondaryStorage&zoneid="+zoneObj.id),
         dataType: "json",
         async: false,
         success: function(json) {              
@@ -68,6 +68,12 @@ function secondaryStorageJsonToDetailsTab() {
             }
         }
     });    
+    
+    if(jsonObj == null) {
+        $thisTab.find("#tab_spinning_wheel").hide();    
+        $thisTab.find("#tab_container").show();      
+        return;
+    }
     
     $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));    
@@ -94,7 +100,7 @@ function secondaryStorageJsonToDetailsTab() {
     });	  
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();          
-    //buildActionLinkForTab("Delete Secondary Storage", secondarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+    buildActionLinkForTab("Delete Secondary Storage", secondaryStorageActionMap, $actionMenu, $midmenuItem1, $thisTab);   
     
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();      
@@ -105,14 +111,50 @@ function secondaryStorageJsonClearRightPanel() {
 }
 
 function secondaryStorageJsonClearDetailsTab() {	    
-    var $thisTab = $("#right_panel_content").find("#tab_content_details");    
-    $thisTab.find("#grid_header_title").text("");         
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");          
     $thisTab.find("#id").text("");
-    
-    $thisTab.find("#name").text("");
+    $thisTab.find("#grid_header_title").text("");    
+    $thisTab.find("#name").text("");   
+    $thisTab.find("#zonename").text("");	
+	$thisTab.find("#type").text("");	
+    $thisTab.find("#ipaddress").text("");
+    $thisTab.find("#state").text("");  
+    $thisTab.find("#version").text("");    
+    $thisTab.find("#disconnected").text("");        
         
     //actions ***   
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();   
 	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());		
 }	
+
+var secondaryStorageActionMap = {
+    "Delete Secondary Storage": {   
+        isAsyncJob: false,   
+        dialogBeforeActionFn: doDeleteSecondaryStorage,       
+        inProcessText: "Deleting Secondary Storage....",
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {                             
+            secondaryStorageJsonClearRightPanel();   
+        }
+    } 
+}
+
+function doDeleteSecondaryStorage($actionLink, $detailsTab, $midmenuItem1) {     
+    var jsonObj = $midmenuItem1.data("jsonObj");    
+       
+    $("#dialog_info")	
+    .text("Please confirm you want to delete this secondary storage")
+	.dialog('option', 'buttons', { 						
+		"Confirm": function() { 
+		    var $thisDialog = $(this);	
+			$thisDialog.dialog("close");       	                                             
+         
+            var id = jsonObj.id;
+            var apiCommand = "command=deleteHost&id="+id;  
+    	    doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);						
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		} 
+	}).dialog("open");
+}

@@ -873,6 +873,7 @@ function bindEventHandlerToDialogAddVlanForZone() {
 	});
 }
 
+/*
 var secondarystorageActionMap = {
     "Delete Secondary Storage": {   
         isAsyncJob: false,   
@@ -885,7 +886,9 @@ var secondarystorageActionMap = {
         }
     } 
 }
+*/
 
+/*
 function doDeleteSecondaryStorage($actionLink, $subgridItem) { 
     var jsonObj = $subgridItem.data("jsonObj");
        
@@ -906,6 +909,7 @@ function doDeleteSecondaryStorage($actionLink, $subgridItem) {
 		} 
 	}).dialog("open");
 }
+*/
 
 var zoneActionMap = {
     "Edit Zone": {
