@@ -1034,10 +1034,20 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_CREATE, "router creation failed", startEventId);
             }
 
-        }
-
-        
+        }       
         State state = router.getState();
+        
+        if ( state == State.Starting ) {
+            // wait 300 seconds
+            for ( int i = 0; i < 300; ) {
+                try {
+                    Thread.sleep(2);
+                } catch (Exception e) {
+                }
+                i += 2;
+                state = router.getState();
+            }           
+        }
         if (state != State.Starting && state != State.Running) {
             long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, owner.getId(), EventTypes.EVENT_ROUTER_START, "Starting router : " +router.getName());
             router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount());
@@ -1047,7 +1057,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_START, "failed to start router", startEventId);
             }
         }
-        return router;
+        state = router.getState();
+        if ( state == State.Running ) {
+            return router;
+        }
+        throw new CloudRuntimeException(router.getName() + " is not running , it is in " + state);
     }
 
     @Override
