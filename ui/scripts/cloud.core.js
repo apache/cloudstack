@@ -506,13 +506,16 @@ function copyActionInfoFromMidMenuToRightPanel($midmenuItem1) {
     }  
     
     var $midMenuSpinningWheel = $midmenuItem1.find("#spinning_wheel");
-    if($midMenuSpinningWheel.css("display") != "none") { 
-        var $detailsTabSpinningWheel = $("#right_panel_content #tab_content_details").find("#spinning_wheel");
+    var $detailsTabSpinningWheel = $("#right_panel_content #tab_content_details").find("#spinning_wheel");
+    if($midMenuSpinningWheel.css("display") != "none") {         
         if($detailsTabSpinningWheel.css("display") == "none") {
             var inProcessText = $midMenuSpinningWheel.data("inProcessText");
             $detailsTabSpinningWheel.find("#description").text(inProcessText);  
             $detailsTabSpinningWheel.show();  
         }
+    }
+    else {
+        $detailsTabSpinningWheel.hide();  
     }
 }
                 
