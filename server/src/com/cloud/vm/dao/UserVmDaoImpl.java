@@ -61,6 +61,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
     protected final SearchBuilder<UserVmVO> DestroySearch;
     protected SearchBuilder<UserVmVO> AccountDataCenterVirtualSearch;
+    protected SearchBuilder<UserVmVO> UserVmSearch;
     protected final Attribute _updateTimeAttr;
     
     protected UserVmDaoImpl() {
@@ -320,18 +321,18 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     
     @Override
     public List<UserVmVO> listByNetworkId(long networkId) {
-        if (AccountDataCenterVirtualSearch == null) {
+        if (UserVmSearch == null) {
             NicDao _nicDao = ComponentLocator.getLocator("management-server").getDao(NicDao.class);
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
             nicSearch.and("ip4Address", nicSearch.entity().getIp4Address(), SearchCriteria.Op.NNULL);
 
-            AccountDataCenterVirtualSearch = createSearchBuilder();
-            AccountDataCenterVirtualSearch.join("nicSearch", nicSearch, AccountDataCenterVirtualSearch.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
-            AccountDataCenterVirtualSearch.done();
+            UserVmSearch = createSearchBuilder();
+            UserVmSearch.join("nicSearch", nicSearch, UserVmSearch.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+            UserVmSearch.done();
         }
 
-        SearchCriteria<UserVmVO> sc = AccountDataCenterVirtualSearch.create();
+        SearchCriteria<UserVmVO> sc = UserVmSearch.create();
         sc.setJoinParameters("nicSearch", "networkId", networkId);
 
         return listBy(sc);
