@@ -2188,7 +2188,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 }
         		
         		//shut down the running vms
-        		if(vmInstance.getState().equals(State.Running) || vmInstance.getState().equals(State.Starting))
+        		if(vmInstance.getState().equals(State.Running) || vmInstance.getState().equals(State.Starting) || vmInstance.getState().equals(State.Stopping))
         		{
         			
         			//if the instance is of type consoleproxy, call the console proxy
