@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -62,7 +63,6 @@ public class UploadMonitorImpl implements UploadMonitor {
 
 	static final Logger s_logger = Logger.getLogger(UploadMonitorImpl.class);
 	
-	private String _hyperVisorType;
     @Inject 
     VMTemplateHostDao _vmTemplateHostDao;
     @Inject 
@@ -84,10 +84,10 @@ public class UploadMonitorImpl implements UploadMonitor {
 
 	private String _name;
 	private Boolean _sslCopy = new Boolean(false);
-	private String _copyAuthPasswd;
     private ScheduledExecutorService _executor = null;
 
 	Timer _timer;
+	int _cleanupInterval;
 
 	final Map<UploadVO, UploadListener> _listenerMap = new ConcurrentHashMap<UploadVO, UploadListener>();
 
@@ -200,7 +200,8 @@ public class UploadMonitorImpl implements UploadMonitor {
 	    _uploadDao.persist(uploadTemplateObj);
 	    try{
     	    // Create Symlink at ssvm
-    	    CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(vmTemplateHost.getInstallPath());
+	    	String uuid = UUID.randomUUID().toString() + ".vhd";
+    	    CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(vmTemplateHost.getInstallPath(), uuid);
     	    long result = send(sserver.getId(), cmd, null);
     	    if (result == -1){
     	        errorString = "Unable to create a link for " +type+ " id:"+template.getId();
@@ -217,7 +218,7 @@ public class UploadMonitorImpl implements UploadMonitor {
                     s_logger.error(errorString);
                     throw new CloudRuntimeException(errorString);
                 }
-                String extractURL = generateCopyUrl(ssVm.getPublicIpAddress(), vmTemplateHost.getInstallPath());
+                String extractURL = generateCopyUrl(ssVm.getPublicIpAddress(), uuid);
                 UploadVO vo = _uploadDao.createForUpdate();
                 vo.setLastUpdated(new Date());
                 vo.setUploadUrl(extractURL);
@@ -259,7 +260,8 @@ public class UploadMonitorImpl implements UploadMonitor {
             _uploadDao.update(uploadJob.getId(), uploadJob);
             
             // Create Symlink at ssvm
-            CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(path);
+            String uuid = UUID.randomUUID().toString() + ".vhd";
+            CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(path, uuid);
             long result = send(ApiDBUtils.findUploadById(uploadId).getHostId(), cmd, null);
             if (result == -1){
                 errorString = "Unable to create a link for " +type+ " id:"+entityId;
@@ -276,7 +278,7 @@ public class UploadMonitorImpl implements UploadMonitor {
                     s_logger.warn(errorString);
                     throw new CloudRuntimeException(errorString);
                 }
-                String extractURL = generateCopyUrl(ssVm.getPublicIpAddress(), path);
+                String extractURL = generateCopyUrl(ssVm.getPublicIpAddress(), uuid);
                 UploadVO vo = _uploadDao.createForUpdate();
                 vo.setLastUpdated(new Date());
                 vo.setUploadUrl(extractURL);
@@ -298,7 +300,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 	    }
     }
 	
-	   private String generateCopyUrl(String ipAddress, String path){
+	   private String generateCopyUrl(String ipAddress, String uuid){
 	        String hostname = ipAddress;
 	        String scheme = "http";
 	        if (_sslCopy) {
@@ -306,7 +308,7 @@ public class UploadMonitorImpl implements UploadMonitor {
 	            hostname = hostname + ".realhostip.com";
 	            scheme = "https";
 	        }
-	        return scheme + "://" + hostname + "/userdata" + path.substring(path.lastIndexOf("/")); 
+	        return scheme + "://" + hostname + "/userdata/" + uuid; 
 	    }
 	
 
@@ -325,13 +327,12 @@ public class UploadMonitorImpl implements UploadMonitor {
         String cert = configs.get("secstorage.secure.copy.cert");
         if ("realhostip.com".equalsIgnoreCase(cert)) {
         	s_logger.warn("Only realhostip.com ssl cert is supported, ignoring self-signed and other certs");
-        }
-        
-        _hyperVisorType = _configDao.getValue("hypervisor.type");
-        
-        _copyAuthPasswd = configs.get("secstorage.copy.password");
+        }        
         
         _agentMgr.registerForHostEvents(new UploadListener(this), true, false, false);
+        String cleanupInterval = (String)params.get("extract.url.cleanup.interval");
+        _cleanupInterval = NumbersUtil.parseInt(cleanupInterval, 21600);
+        
         
         String workers = (String)params.get("expunge.workers");
         int wrks = NumbersUtil.parseInt(workers, 1);
@@ -345,9 +346,8 @@ public class UploadMonitorImpl implements UploadMonitor {
 	}
 
 	@Override
-	public boolean start() {
-	    //FIX ME - Make the timings configurable. // Keep them to 86400 for now.
-	    _executor.scheduleWithFixedDelay(new StorageGarbageCollector(), 86400, 86400, TimeUnit.SECONDS);
+	public boolean start() {	    
+	    _executor.scheduleWithFixedDelay(new StorageGarbageCollector(), _cleanupInterval, _cleanupInterval, TimeUnit.SECONDS);
 		_timer = new Timer();
 		return true;
 	}
@@ -477,7 +477,7 @@ public class UploadMonitorImpl implements UploadMonitor {
                 String path = extractJob.getInstallPath();
                 s_logger.debug("Sending deletion of extract URL "+extractJob.getUploadUrl());
                 // Would delete the symlink for the Type and if Type == VOLUME then also the volume
-                DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(path, extractJob.getType());            
+                DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(path, extractJob.getType(),extractJob.getUploadUrl());            
                 long result = send(extractJob.getHostId(), cmd, null);
                 if (result == -1){
                     s_logger.warn("Unable to delete the link for " +extractJob.getType()+ " id=" +extractJob.getTypeId()+ " url="+extractJob.getUploadUrl());
