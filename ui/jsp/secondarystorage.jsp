@@ -72,7 +72,67 @@
 		                <div class="row_celltitles" id="name">
 		                </div>
 		            </div>
-		        </div>		            
+		        </div>			        
+				<div class="grid_rows odd">
+			        <div class="grid_row_cell" style="width: 20%;">
+			            <div class="row_celltitles">
+			                <%=t.t("zone")%>:</div>
+			        </div>
+			        <div class="grid_row_cell" style="width: 79%;">
+			            <div class="row_celltitles" id="zonename">
+			            </div>
+			        </div>
+			    </div>
+			    <div class="grid_rows even">
+			        <div class="grid_row_cell" style="width: 20%;">
+			            <div class="row_celltitles">
+			                <%=t.t("type")%>:</div>
+			        </div>
+			        <div class="grid_row_cell" style="width: 79%;">
+			            <div class="row_celltitles" id="type">
+			            </div>
+			        </div>
+			    </div>
+			    <div class="grid_rows odd">
+			        <div class="grid_row_cell" style="width: 20%;">
+			            <div class="row_celltitles">
+			                <%=t.t("ip.address")%>:</div>
+			        </div>
+			        <div class="grid_row_cell" style="width: 79%;">
+			            <div class="row_celltitles" id="ipaddress">
+			            </div>
+			        </div>
+			    </div>
+			    <div class="grid_rows even">
+			        <div class="grid_row_cell" style="width: 20%;">
+			            <div class="row_celltitles">
+			                <%=t.t("state")%>:</div>
+			        </div>
+			        <div class="grid_row_cell" style="width: 79%;">
+			            <div class="row_celltitles" id="state">
+			            </div>
+			        </div>
+			    </div>
+			    <div class="grid_rows odd">
+			        <div class="grid_row_cell" style="width: 20%;">
+			            <div class="row_celltitles">
+			                <%=t.t("version")%>:</div>
+			        </div>
+			        <div class="grid_row_cell" style="width: 79%;">
+			            <div class="row_celltitles" id="version">
+			            </div>
+			        </div>
+			    </div>
+			    <div class="grid_rows even">
+			        <div class="grid_row_cell" style="width: 20%;">
+			            <div class="row_celltitles">
+			                <%=t.t("last.disconnected")%>:</div>
+			        </div>
+			        <div class="grid_row_cell" style="width: 79%;">
+			            <div class="row_celltitles" id="disconnected">
+			            </div>
+			        </div>
+			    </div>
 		    </div>
 		</div>    
     </div>     

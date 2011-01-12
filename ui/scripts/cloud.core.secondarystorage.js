@@ -72,7 +72,16 @@ function secondaryStorageJsonToDetailsTab() {
     $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));    
     $thisTab.find("#name").text(fromdb(jsonObj.name));
+   
+    $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));	
+	$thisTab.find("#type").text(jsonObj.type);	
+    $thisTab.find("#ipaddress").text(jsonObj.ipaddress);
+       
+    setHostStateInRightPanel(fromdb(jsonObj.state), $thisTab.find("#state"))
     
+    $thisTab.find("#version").text(jsonObj.version); 
+    setDateField(jsonObj.disconnected, $thisTab.find("#disconnected"));
+       
     //actions ***   
     var $actionLink = $thisTab.find("#action_link"); 
     $actionLink.bind("mouseover", function(event) {	    
