@@ -1354,7 +1354,7 @@ CREATE TABLE `cloud`.`ovs_tunnel_alloc`(
   `from` bigint unsigned COMMENT 'from host id',
   `to` bigint unsigned COMMENT 'to host id',
   `in_port` int unsigned COMMENT 'in port on open vswitch',
-  PRIMARY KEY(`id`)
+  PRIMARY KEY(`from`, `to`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`ovs_vlan_mapping_dirty`(

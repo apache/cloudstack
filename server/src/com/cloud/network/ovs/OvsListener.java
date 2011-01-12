@@ -1,7 +1,10 @@
 package com.cloud.network.ovs;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
+import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 
@@ -13,23 +16,33 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingRoutingWithOvsCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.exception.ConnectionException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
 import com.cloud.network.ovs.dao.GreTunnelDao;
 import com.cloud.network.ovs.dao.GreTunnelVO;
 import com.cloud.network.ovs.dao.OvsWorkDao;
 import com.cloud.network.ovs.dao.OvsWorkVO.Step;
+import com.cloud.network.ovs.dao.VlanMappingDao;
+import com.cloud.network.ovs.dao.VlanMappingVO;
+import com.cloud.utils.component.Inject;
 
 public class OvsListener implements Listener {
 	public static final Logger s_logger = Logger.getLogger(OvsListener.class.getName());
 	OvsNetworkManager _ovsNetworkMgr;
 	OvsWorkDao _workDao;
 	GreTunnelDao _tunnelDao;
+	VlanMappingDao _mappingDao;
+	HostDao _hostDao;
 	
-	public OvsListener(OvsNetworkManager ovsMgr, OvsWorkDao workDao, GreTunnelDao tunnelDao) {
+	public OvsListener(OvsNetworkManager ovsMgr, OvsWorkDao workDao, GreTunnelDao tunnelDao,
+			VlanMappingDao mappingDao, HostDao hostDao) {
 		this._ovsNetworkMgr = ovsMgr;
 		this._workDao = workDao;
 		this._tunnelDao = tunnelDao;
+		this._mappingDao = mappingDao;
+		this._hostDao = hostDao;
 	}
 	
 	@Override
@@ -111,6 +124,48 @@ public class OvsListener implements Listener {
 	@Override
 	public void processConnect(HostVO host, StartupCommand cmd)
 			throws ConnectionException {
+		if (host.getType() != Host.Type.Routing) {
+			return;
+		}
+		
+		List<VlanMappingVO> maps = _mappingDao.listByHostId(host.getId());
+		if (maps.size() == 0) {
+			for (int i=0; i<512; i++) {
+				VlanMappingVO vo = new VlanMappingVO(0, host.getId(), i);
+				_mappingDao.persist(vo);
+			}
+		}
+		
+		try {
+			List<HostVO> hosts = _hostDao.listByType(Host.Type.Routing);
+			for (HostVO h : hosts) {
+				if (h.getId() == host.getId()) {
+					continue;
+				}
+				
+				GreTunnelVO t = _tunnelDao.getByFromAndTo(host.getId(), h.getId());
+				if (t == null) {
+					t = new GreTunnelVO(host.getId(), h.getId());
+					try {
+						_tunnelDao.persist(t);
+					} catch (EntityExistsException e) {
+						s_logger.debug(String.format("Already has (from=%1$s, to=%2$s)", host.getId(), h.getId()));
+					}
+				}
+
+				t = _tunnelDao.getByFromAndTo(h.getId(), host.getId());
+				if (t == null) {
+					t = new GreTunnelVO(h.getId(), host.getId());
+					try {
+						_tunnelDao.persist(t);
+					} catch (EntityExistsException e) {
+						s_logger.debug(String.format("Already has (from=%1$s, to=%2$s)", h.getId(), host.getId()));
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override

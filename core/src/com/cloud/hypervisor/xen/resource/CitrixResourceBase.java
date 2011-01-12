@@ -532,7 +532,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
     }
     
-    private Network setupvSwitchNetwork(Connection conn) {
+    private synchronized Network setupvSwitchNetwork(Connection conn) {
 		try {
 			if (_host.vswitchNetwork == null) {
 				Network vswitchNw = null;

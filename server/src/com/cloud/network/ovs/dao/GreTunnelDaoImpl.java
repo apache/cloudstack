@@ -40,5 +40,13 @@ public class GreTunnelDaoImpl extends GenericDaoBase<GreTunnelVO, Long>
         sc.setParameters("to", to);
 		return findOneBy(sc);
 	}
+	
+	@Override
+	public GreTunnelVO lockByFromAndTo(long from, long to) {
+		SearchCriteria<GreTunnelVO> sc = fromToSearch.create();
+        sc.setParameters("from", from);
+        sc.setParameters("to", to);
+        return lockOneRandomRow(sc, true);
+	}
 
 }
