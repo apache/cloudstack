@@ -381,8 +381,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 	        if( event.equals(Event.Ping) || event.equals(Event.AgentConnected)) {
 	            ub.set(host, _pingTimeAttr, System.currentTimeMillis() >> 10);
 	        }
+        }       
+        if ( event.equals(Event.ManagementServerDown)) {
+            ub.set(host, _pingTimeAttr, (( System.currentTimeMillis() >> 10) - ( 10 * 60 )));
         }
-        
         int result = update(ub, sc, null);
         assert result <= 1 : "How can this update " + result + " rows? ";
         
