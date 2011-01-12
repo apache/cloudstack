@@ -98,11 +98,11 @@ DROP TABLE IF EXISTS `cloud`.`host_tags`;
 CREATE TABLE `cloud`.`op_it_work` (
   `id` char(40) COMMENT 'id',
   `mgmt_server_id` bigint unsigned COMMENT 'management server id',
-  `created_on` bigint unsigned NOT NULL COMMENT 'when was this work detail created',
+  `created_at` bigint unsigned NOT NULL COMMENT 'when was this work detail created',
   `thread` varchar(255) NOT NULL COMMENT 'thread name',
   `type` char(32) NOT NULL COMMENT 'type of work',
-  `state` char(32) NOT NULL COMMENT 'state',
-  `updated_on` bigint unsigned NOT NULL COMMENT 'time it was taken over',
+  `step` char(32) NOT NULL COMMENT 'state',
+  `updated_at` bigint unsigned NOT NULL COMMENT 'time it was taken over',
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance',
   `resource_type` char(32) COMMENT 'type of resource being worked on',
   `resource_id` bigint unsigned COMMENT 'resource id being worked on',
@@ -677,7 +677,7 @@ CREATE TABLE  `cloud`.`user_ip_address` (
   INDEX `i_user_ip_address__source_nat`(`source_nat`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE VIEW `cloud`.`user_ip_address_view` AS SELECT INET_NTOA(user_ip_address.public_ip_address) as public_ip_address, user_ip_address.data_center_id, user_ip_address.account_id, user_ip_address.domain_id, user_ip_address.source_nat, user_ip_address.allocated, user_ip_address.vlan_db_id, user_ip_address.one_to_one_nat, user_ip_address.state, user_ip_address.mac_address, user_ip_address.network_id as associated_network_id from user_ip_address; 
+CREATE VIEW `cloud`.`user_ip_address_view` AS SELECT INET_NTOA(user_ip_address.public_ip_address) as ip_address, user_ip_address.data_center_id, user_ip_address.account_id, user_ip_address.domain_id, user_ip_address.source_nat, user_ip_address.allocated, user_ip_address.vlan_db_id, user_ip_address.one_to_one_nat, user_ip_address.state, user_ip_address.mac_address, user_ip_address.network_id as associated_network_id from user_ip_address; 
 
 CREATE TABLE  `cloud`.`user_statistics` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT,

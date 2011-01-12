@@ -348,51 +348,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Attempting to destroy router " + routerId);
         }
-
-        DomainRouterVO router = _routerDao.acquireInLockTable(routerId);
-
+        
+        DomainRouterVO router = _routerDao.findById(routerId);
         if (router == null) {
-            s_logger.debug("Unable to acquire lock on router " + routerId);
-            return false;
+            return true;
         }
-
-        try {
-            if (router.getState() == State.Destroyed || router.getState() == State.Expunging || router.getRemoved() != null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to find router or router is destroyed: " + routerId);
-                }
-                return true;
-            }
-            
-            if (stopRouterInternal(router.getId())) {
-                return false;
-            } 
-            
-            router = _routerDao.findById(routerId);
-            if (!_itMgr.stateTransitTo(router, VirtualMachine.Event.DestroyRequested, router.getHostId())) {
-                s_logger.debug("VM " + router.toString() + " is not in a state to be destroyed.");
-                return false;
-            }
-        } finally {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Release lock on router " + routerId + " for stop");
-            }
-            _routerDao.releaseFromLockTable(routerId);
-        }
-
-        router.setPublicIpAddress(null);
-        router.setVlanDbId(null);
-        _routerDao.update(router.getId(), router);
-        _routerDao.remove(router.getId());
-
-        List<VolumeVO> vols = _volsDao.findByInstance(routerId);
-        _storageMgr.destroy(router, vols);
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Successfully destroyed router: " + routerId);
-        }
-
-        return true;
+        return _itMgr.expunge(router, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
     }
 
     @Override

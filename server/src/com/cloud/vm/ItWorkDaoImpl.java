@@ -37,12 +37,12 @@ public class ItWorkDaoImpl extends GenericDaoBase<ItWorkVO, String> implements I
         
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("instance", AllFieldsSearch.entity().getInstanceId(), Op.EQ);
-        AllFieldsSearch.and("op", AllFieldsSearch.entity().getState(), Op.EQ);
+        AllFieldsSearch.and("op", AllFieldsSearch.entity().getType(), Op.EQ);
         AllFieldsSearch.and("step", AllFieldsSearch.entity().getStep(), Op.EQ);
         AllFieldsSearch.done();
         
         CleanupSearch = createSearchBuilder();
-        CleanupSearch.and("step", CleanupSearch.entity().getState(), Op.IN);
+        CleanupSearch.and("step", CleanupSearch.entity().getType(), Op.IN);
         CleanupSearch.and("time", CleanupSearch.entity().getUpdatedAt(), Op.LT);
         CleanupSearch.done();
     }

@@ -1557,64 +1557,13 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     }
 
     @Override
-    @DB
     public boolean destroyProxy(long vmId) {
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-        if (asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Destroy console proxy " + vmId + ", update async job-" + job.getId());
-            }
-            _asyncMgr.updateAsyncJobAttachment(job.getId(), "console_proxy", vmId);
-        }
-
-        ConsoleProxyVO vm = _consoleProxyDao.findById(vmId);
-        if (vm == null || vm.getState() == State.Destroyed) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to find vm or vm is destroyed: " + vmId);
-            }
-            return true;
-        }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Destroying console proxy vm " + vmId);
-        }
-
-        if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, null)) {
-            s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vmId);
-            return false;
-        }
-
-        Transaction txn = Transaction.currentTxn();
-        List<VolumeVO> vols = null;
+        ConsoleProxyVO proxy = _consoleProxyDao.findById(vmId);
         try {
-            vols = _volsDao.findByInstance(vmId);
-            if (vols.size() != 0) {
-                _storageMgr.destroy(vm, vols);
-            }
-
-            return true;
-        } finally {
-            try {
-                txn.start();
-                // release critical system resources used by the VM before we
-                // delete them
-                if (vm.getPublicIpAddress() != null) {
-//                    freePublicIpAddress(vm.getPublicIpAddress(), vm.getDataCenterId(), vm.getPodId());
-                }
-                vm.setPublicIpAddress(null);
-
-                _consoleProxyDao.remove(vm.getId());
-
-                txn.commit();
-            } catch (Exception e) {
-                s_logger.error("Caught this error: ", e);
-                txn.rollback();
-                return false;
-            } finally {
-                s_logger.debug("console proxy vm is destroyed : " + vm.getName());
-            }
+            return _itMgr.expunge(proxy, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+        } catch (ResourceUnavailableException e) {
+            s_logger.warn("Unable to expunge " + proxy, e);
+            return false;
         }
     }
 

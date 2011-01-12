@@ -81,14 +81,6 @@ public interface StorageManager extends Manager {
 	 */
 	List<VolumeVO> unshare(VMInstanceVO vm, HostVO host);
 	
-	/**
-     * destroy the storage volumes of a certain vm.
-     * 
-     * @param vm vm to destroy.
-     * @param vols volumes to remove from storage pool
-     */
-	void destroy(VMInstanceVO vm, List<VolumeVO> vols);
-	
     /**
      * Creates volumes for a particular VM.
      * @param account account to create volumes for.
@@ -205,7 +197,7 @@ public interface StorageManager extends Manager {
 	 * Marks the specified volume as destroyed in the management server database. The expunge thread will delete the volume from its storage pool.
 	 * @param volume
 	 */
-	void destroyVolume(VolumeVO volume);
+	void destroyVolume(VolumeVO volume) throws ConcurrentOperationException;
 	
 	/** Create capacity entries in the op capacity table
 	 * @param storagePool
@@ -282,5 +274,5 @@ public interface StorageManager extends Manager {
 
 	void release(VirtualMachineProfile<? extends VMInstanceVO> profile);
 
-	void cleanupVolumes(Long vmId);
+	void cleanupVolumes(long vmId) throws ConcurrentOperationException;
 }

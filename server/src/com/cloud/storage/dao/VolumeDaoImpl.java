@@ -32,8 +32,6 @@ import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Volume;
-import com.cloud.storage.Volume.Event;
-import com.cloud.storage.Volume.MirrorState;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.Pair;
@@ -53,22 +51,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements VolumeDao {
     private static final Logger s_logger = Logger.getLogger(VolumeDaoImpl.class);
     protected final SearchBuilder<VolumeVO> DetachedAccountIdSearch;
-    protected final SearchBuilder<VolumeVO> AccountIdSearch;
-    protected final SearchBuilder<VolumeVO> AccountPodSearch;
     protected final SearchBuilder<VolumeVO> TemplateZoneSearch;
     protected final GenericSearchBuilder<VolumeVO, SumCount> TotalSizeByPoolSearch;
-    protected final SearchBuilder<VolumeVO> InstanceIdSearch;
-    protected final SearchBuilder<VolumeVO> InstanceAndTypeSearch;
-    protected final SearchBuilder<VolumeVO> InstanceIdDestroyedSearch;
-    protected final SearchBuilder<VolumeVO> InstanceIdCreatedSearch;
     protected final SearchBuilder<VolumeVO> DetachedDestroyedSearch;
-    protected final SearchBuilder<VolumeVO> MirrorSearch;
     protected final GenericSearchBuilder<VolumeVO, Long> ActiveTemplateSearch;
     protected final SearchBuilder<VolumeVO> RemovedButNotDestroyedSearch;
-    protected final SearchBuilder<VolumeVO> PoolIdSearch;
-    protected final SearchBuilder<VolumeVO> InstanceAndDeviceIdSearch;
     protected final SearchBuilder<VolumeVO> InstanceStatesSearch;
-    protected final SearchBuilder<VolumeVO> IdStateSearch;
+    
+    protected final SearchBuilder<VolumeVO> AllFieldsSearch;
     
     protected final Attribute _stateAttr;
     
@@ -116,7 +106,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     
     @Override
     public List<VolumeVO> findByAccount(long accountId) {
-        SearchCriteria<VolumeVO> sc = AccountIdSearch.create();
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("destroyed", false);
         return listBy(sc);
@@ -124,14 +114,14 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     
     @Override
     public List<VolumeVO> findByInstance(long id) {
-        SearchCriteria<VolumeVO> sc = InstanceIdSearch.create();
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("instanceId", id);
 	    return listBy(sc);
 	}
    
     @Override
     public List<VolumeVO> findByInstanceAndDeviceId(long instanceId, long deviceId){
-    	SearchCriteria<VolumeVO> sc = InstanceAndDeviceIdSearch.create();
+    	SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
     	sc.setParameters("instanceId", instanceId);
     	sc.setParameters("deviceId", deviceId);
     	return listBy(sc);
@@ -139,14 +129,14 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     
     @Override
     public List<VolumeVO> findByPoolId(long poolId) {
-        SearchCriteria<VolumeVO> sc = PoolIdSearch.create();
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("poolId", poolId);
 	    return listBy(sc);
 	}
     
     @Override 
     public List<VolumeVO> findCreatedByInstance(long id) {
-        SearchCriteria<VolumeVO> sc = InstanceIdCreatedSearch.create();
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("instanceId", id);
         sc.setParameters("status", AsyncInstanceCreateStatus.Created);
         sc.setParameters("destroyed", false);
@@ -164,7 +154,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     
 	@Override
 	public List<VolumeVO> findByInstanceAndType(long id, VolumeType vType) {
-        SearchCriteria<VolumeVO> sc = InstanceAndTypeSearch.create();
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("instanceId", id);
         sc.setParameters("vType", vType.toString());
 	    return listBy(sc);
@@ -172,7 +162,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	
 	@Override
 	public List<VolumeVO> findByInstanceIdDestroyed(long vmId) {
-		SearchCriteria<VolumeVO> sc = InstanceIdDestroyedSearch.create();
+		SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
 		sc.setParameters("instanceId", vmId);
 		sc.setParameters("destroyed", true);
 		return listIncludingRemovedBy(sc);
@@ -187,8 +177,8 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	
 	@Override
 	public List<VolumeVO> findByAccountAndPod(long accountId, long podId) {
-		SearchCriteria<VolumeVO> sc = AccountPodSearch.create();
-        sc.setParameters("account", accountId);
+		SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("accountId", accountId);
         sc.setParameters("pod", podId);
         sc.setParameters("destroyed", false);
         sc.setParameters("status", AsyncInstanceCreateStatus.Created);
@@ -205,38 +195,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 		return listIncludingRemovedBy(sc);
 	}
 
-	@Override @DB
-	public List<Long> findVMInstancesByStorageHost(long hostId, Volume.MirrorState mirrState) {
-		
-		Transaction txn = Transaction.currentTxn();
-		PreparedStatement pstmt = null;
-        List<Long> result = new ArrayList<Long>();
-
-		try {
-			String sql = SELECT_VM_SQL;
-			pstmt = txn.prepareAutoCloseStatement(sql);
-			pstmt.setLong(1, hostId);
-			pstmt.setString(2, mirrState.toString());
-			ResultSet rs = pstmt.executeQuery();
-			while (rs.next()) {
-				result.add(rs.getLong(1));
-			}
-			return result;
-		} catch (SQLException e) {
-			throw new CloudRuntimeException("DB Exception on: " + SELECT_VM_SQL, e);
-		} catch (Throwable e) {
-			throw new CloudRuntimeException("Caught: " + SELECT_VM_SQL, e);
-		}
-	}
-
-	@Override
-	public List<VolumeVO> findStrandedMirrorVolumes() {
-		SearchCriteria<VolumeVO> sc = MirrorSearch.create();
-        sc.setParameters("mirrorState", MirrorState.ACTIVE.toString());
-
-	    return listIncludingRemovedBy(sc);
-	}
-	
 	@Override
 	public boolean isAnyVolumeActivelyUsingTemplateOnPool(long templateId, long poolId) {
 	    SearchCriteria<Long> sc = ActiveTemplateSearch.create();
@@ -251,7 +209,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	
     @Override
     public void deleteVolumesByInstance(long instanceId) {
-        SearchCriteria<VolumeVO> sc = InstanceIdSearch.create();
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("instanceId", instanceId);
         expunge(sc);
     }
@@ -277,34 +235,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
     
     @Override
-    public void destroyVolume(long volumeId) {
-    	VolumeVO volume = createForUpdate(volumeId);
-    	volume.setDestroyed(true);
-    	
-        Volume.State oldState = volume.getState();
-        Volume.State newState = oldState.getNextState(Event.Destroy);
-        
-        assert newState != null : "Event "+  Event.Destroy + " cannot happen from " + oldState; 
-    	volume.setState(newState);
-        
-    	update(volumeId, volume);
-    }
-    
-    @Override
-    public void recoverVolume(long volumeId) {
-    	VolumeVO volume = createForUpdate(volumeId);
-    	volume.setDestroyed(false);
-    	
-        Volume.State oldState = volume.getState();
-        Volume.State newState = oldState.getNextState(Event.Recover);
-        
-        assert newState != null : "Event "+  Event.Recover + " cannot happen from " + oldState; 
-    	volume.setState(newState);
-    	
-    	update(volumeId, volume);
-    }
-    
-    @Override
     public boolean update(VolumeVO vol, Volume.Event event) throws ConcurrentOperationException {
         Volume.State oldState = vol.getState();
         Volume.State newState = oldState.getNextState(event);
@@ -314,7 +244,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         UpdateBuilder builder = getUpdateBuilder(vol);
         builder.set(vol, _stateAttr, newState);
         
-        SearchCriteria<VolumeVO> sc = IdStateSearch.create();
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("id", vol.getId());
         sc.setParameters("state", oldState);
         
@@ -325,6 +255,8 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         }
         return rows == 1;
     }
+    
+    @Override
     @DB
 	public HypervisorType getHypervisorType(long volumeId) {
 		/*lookup from cluster of pool*/
@@ -336,8 +268,9 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
              pstmt = txn.prepareAutoCloseStatement(sql);
              pstmt.setLong(1, volumeId);
              ResultSet rs = pstmt.executeQuery();
-             if (rs.next())
-            	 return HypervisorType.getType(rs.getString(1));
+             if (rs.next()) {
+                return HypervisorType.getType(rs.getString(1));
+            }
              return HypervisorType.None;
          } catch (SQLException e) {
              throw new CloudRuntimeException("DB Exception on: " + SELECT_HYPERTYPE_FROM_VOLUME, e);
@@ -347,97 +280,58 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	}
     
 	protected VolumeDaoImpl() {
-        AccountIdSearch = createSearchBuilder();
-        AccountIdSearch.and("accountId", AccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountIdSearch.and("destroyed", AccountIdSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
-        AccountIdSearch.done();
+	    AllFieldsSearch = createSearchBuilder();
+	    AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
+        AllFieldsSearch.and("destroyed", AllFieldsSearch.entity().getDestroyed(), Op.EQ);
+        AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), Op.EQ);
+        AllFieldsSearch.and("pod", AllFieldsSearch.entity().getPodId(), Op.EQ);
+        AllFieldsSearch.and("status", AllFieldsSearch.entity().getStatus(), Op.EQ);
+        AllFieldsSearch.and("instanceId", AllFieldsSearch.entity().getInstanceId(), Op.EQ);
+        AllFieldsSearch.and("deviceId", AllFieldsSearch.entity().getDeviceId(), Op.EQ);
+        AllFieldsSearch.and("poolId", AllFieldsSearch.entity().getPoolId(), Op.EQ);
+        AllFieldsSearch.and("vType", AllFieldsSearch.entity().getVolumeType(), Op.EQ);
+        AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
+        AllFieldsSearch.done();
         
         DetachedAccountIdSearch = createSearchBuilder();
-        DetachedAccountIdSearch.and("accountId", DetachedAccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        DetachedAccountIdSearch.and("destroyed", DetachedAccountIdSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
-        DetachedAccountIdSearch.and("instanceId", DetachedAccountIdSearch.entity().getInstanceId(), SearchCriteria.Op.NULL);
+        DetachedAccountIdSearch.and("accountId", DetachedAccountIdSearch.entity().getAccountId(), Op.EQ);
+        DetachedAccountIdSearch.and("destroyed", DetachedAccountIdSearch.entity().getDestroyed(), Op.EQ);
+        DetachedAccountIdSearch.and("instanceId", DetachedAccountIdSearch.entity().getInstanceId(), Op.NULL);
         DetachedAccountIdSearch.done();
         
-        AccountPodSearch = createSearchBuilder();
-        AccountPodSearch.and("account", AccountPodSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountPodSearch.and("pod", AccountPodSearch.entity().getPodId(), SearchCriteria.Op.EQ);
-        AccountPodSearch.and("destroyed", AccountPodSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
-        AccountPodSearch.and("status", AccountPodSearch.entity().getStatus(), SearchCriteria.Op.EQ);
-        AccountPodSearch.done();
-        
         TemplateZoneSearch = createSearchBuilder();
-        TemplateZoneSearch.and("template", TemplateZoneSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
-        TemplateZoneSearch.and("zone", TemplateZoneSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        TemplateZoneSearch.and("template", TemplateZoneSearch.entity().getTemplateId(), Op.EQ);
+        TemplateZoneSearch.and("zone", TemplateZoneSearch.entity().getDataCenterId(), Op.EQ);
         TemplateZoneSearch.done();
         
         TotalSizeByPoolSearch = createSearchBuilder(SumCount.class);
         TotalSizeByPoolSearch.select("sum", Func.SUM, TotalSizeByPoolSearch.entity().getSize());
         TotalSizeByPoolSearch.select("count", Func.COUNT, (Object[])null);
-        TotalSizeByPoolSearch.and("poolId", TotalSizeByPoolSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
-        TotalSizeByPoolSearch.and("removed", TotalSizeByPoolSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        TotalSizeByPoolSearch.and("poolId", TotalSizeByPoolSearch.entity().getPoolId(), Op.EQ);
+        TotalSizeByPoolSearch.and("removed", TotalSizeByPoolSearch.entity().getRemoved(), Op.NULL);
         TotalSizeByPoolSearch.done();
-        
       
-        InstanceIdCreatedSearch = createSearchBuilder();
-        InstanceIdCreatedSearch.and("instanceId", InstanceIdCreatedSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
-        InstanceIdCreatedSearch.and("status", InstanceIdCreatedSearch.entity().getStatus(), SearchCriteria.Op.EQ);
-        InstanceIdCreatedSearch.and("destroyed", InstanceIdCreatedSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
-        InstanceIdCreatedSearch.done();
-        
-        InstanceIdSearch = createSearchBuilder();
-        InstanceIdSearch.and("instanceId", InstanceIdSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
-        InstanceIdSearch.done();
-
-        InstanceAndDeviceIdSearch = createSearchBuilder();
-        InstanceAndDeviceIdSearch.and("instanceId", InstanceAndDeviceIdSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
-        InstanceAndDeviceIdSearch.and("deviceId", InstanceAndDeviceIdSearch.entity().getDeviceId(), SearchCriteria.Op.EQ);
-        InstanceAndDeviceIdSearch.done();
-        
-        PoolIdSearch = createSearchBuilder();
-        PoolIdSearch.and("poolId", PoolIdSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
-        PoolIdSearch.done();
-
-        InstanceAndTypeSearch= createSearchBuilder();
-        InstanceAndTypeSearch.and("instanceId", InstanceAndTypeSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
-        InstanceAndTypeSearch.and("vType", InstanceAndTypeSearch.entity().getVolumeType(), SearchCriteria.Op.EQ);
-        InstanceAndTypeSearch.done();
-        
-        InstanceIdDestroyedSearch = createSearchBuilder();
-        InstanceIdDestroyedSearch.and("instanceId", InstanceIdDestroyedSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
-        InstanceIdDestroyedSearch.and("destroyed", InstanceIdDestroyedSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
-        InstanceIdDestroyedSearch.done();
-        
         DetachedDestroyedSearch = createSearchBuilder();
-        DetachedDestroyedSearch.and("instanceId", DetachedDestroyedSearch.entity().getInstanceId(), SearchCriteria.Op.NULL);
-        DetachedDestroyedSearch.and("destroyed", DetachedDestroyedSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        DetachedDestroyedSearch.and("instanceId", DetachedDestroyedSearch.entity().getInstanceId(), Op.NULL);
+        DetachedDestroyedSearch.and("destroyed", DetachedDestroyedSearch.entity().getDestroyed(), Op.EQ);
         DetachedDestroyedSearch.done();
                
-        MirrorSearch = createSearchBuilder();
-        MirrorSearch.and("mirrorVolume", MirrorSearch.entity().getMirrorVolume(), Op.NULL);
-        MirrorSearch.and("mirrorState", MirrorSearch.entity().getMirrorState(), Op.EQ);
-        MirrorSearch.done();
-        
         ActiveTemplateSearch = createSearchBuilder(Long.class);
-        ActiveTemplateSearch.and("pool", ActiveTemplateSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
-        ActiveTemplateSearch.and("template", ActiveTemplateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
-        ActiveTemplateSearch.and("removed", ActiveTemplateSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        ActiveTemplateSearch.and("pool", ActiveTemplateSearch.entity().getPoolId(), Op.EQ);
+        ActiveTemplateSearch.and("template", ActiveTemplateSearch.entity().getTemplateId(), Op.EQ);
+        ActiveTemplateSearch.and("removed", ActiveTemplateSearch.entity().getRemoved(), Op.NULL);
         ActiveTemplateSearch.select(null, Func.COUNT, null);
         ActiveTemplateSearch.done();
         
         RemovedButNotDestroyedSearch = createSearchBuilder();
-        RemovedButNotDestroyedSearch.and("destroyed", RemovedButNotDestroyedSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
-        RemovedButNotDestroyedSearch.and("removed", RemovedButNotDestroyedSearch.entity().getRemoved(), SearchCriteria.Op.NNULL);
+        RemovedButNotDestroyedSearch.and("destroyed", RemovedButNotDestroyedSearch.entity().getDestroyed(), Op.EQ);
+        RemovedButNotDestroyedSearch.and("removed", RemovedButNotDestroyedSearch.entity().getRemoved(), Op.NNULL);
         RemovedButNotDestroyedSearch.done();
         
         InstanceStatesSearch = createSearchBuilder();
-        InstanceStatesSearch.and("instance", InstanceStatesSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
-        InstanceStatesSearch.and("states", InstanceStatesSearch.entity().getState(), SearchCriteria.Op.IN);
+        InstanceStatesSearch.and("instance", InstanceStatesSearch.entity().getInstanceId(), Op.EQ);
+        InstanceStatesSearch.and("states", InstanceStatesSearch.entity().getState(), Op.IN);
         InstanceStatesSearch.done();
-        
-        IdStateSearch = createSearchBuilder();
-        IdStateSearch.and("id", IdStateSearch.entity().getId(), SearchCriteria.Op.EQ);
-        IdStateSearch.and("state", IdStateSearch.entity().getState(), SearchCriteria.Op.EQ);
-        IdStateSearch.done();
         
         _stateAttr = _allAttributes.get("state");
         assert _stateAttr != null : "Couldn't get the state attribute";
@@ -458,4 +352,12 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	    public SumCount() {
 	    }
 	}
+
+    @Override
+    public List<VolumeVO> listVolumesToBeDestroyed() {
+        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
+        sc.setParameters("state", Volume.State.Destroy);
+        
+        return listBy(sc);
+    }
 }

@@ -1027,13 +1027,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // Recover the VM's disks
         List<VolumeVO> volumes = _volsDao.findByInstanceIdDestroyed(vmId);
         for (VolumeVO volume : volumes) {
-        	_volsDao.recoverVolume(volume.getId());
             // Create an event
             Long templateId = volume.getTemplateId();
             Long diskOfferingId = volume.getDiskOfferingId();
             long sizeMB = volume.getSize()/(1024*1024);
             StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
-            EventUtils.saveEvent(User.UID_SYSTEM, volume.getAccountId(), EventTypes.EVENT_VOLUME_CREATE, "Created volume: "+ volume.getName() +" with size: " + sizeMB + " MB in pool: " + pool.getName());
             
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, templateId , sizeMB);
             _usageEventDao.persist(usageEvent);

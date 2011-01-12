@@ -27,6 +27,7 @@ import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.DeleteVolumeCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -60,7 +61,7 @@ public interface StorageService {
      */
     Volume createVolume(CreateVolumeCmd cmd);
 
-    boolean deleteVolume(DeleteVolumeCmd cmd) throws InvalidParameterValueException;
+    boolean deleteVolume(DeleteVolumeCmd cmd) throws ConcurrentOperationException;
     /**
      * Delete the storage pool
      * @param cmd - the command specifying poolId

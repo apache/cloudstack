@@ -1109,68 +1109,15 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	}
 
 	@Override
-	@DB
 	public boolean destroySecStorageVm(long vmId) {
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-        if (asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Destroy secondary storage vm " + vmId + ", update async job-" + job.getId());
-            }
-            _asyncMgr.updateAsyncJobAttachment(job.getId(), "secstorage_vm", vmId);
+	    SecondaryStorageVmVO ssvm = _secStorageVmDao.findById(vmId);
+	    
+	    try {
+            return _itMgr.expunge(ssvm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+        } catch (ResourceUnavailableException e) {
+            s_logger.warn("Unable to expunge " + ssvm, e);
+            return false;
         }
-        
-		SecondaryStorageVmVO vm = _secStorageVmDao.findById(vmId);
-		if (vm == null || vm.getState() == State.Destroyed) {
-		    String msg = "Unable to find vm or vm is destroyed: " + vmId;
-			if (s_logger.isDebugEnabled()) {
-				s_logger.debug(msg);
-			}
-			return true;
-		}
-		
-		if (s_logger.isDebugEnabled()) {
-			s_logger.debug("Destroying secondary storage vm vm " + vmId);
-		}
-
-		if (! _itMgr.stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, null)) {
-		    String msg = "Unable to destroy the vm because it is not in the correct state: " + vmId;
-			s_logger.debug(msg);
-			return false;
-		}
-
-		Transaction txn = Transaction.currentTxn();
-		List<VolumeVO> vols = null;
-		try {
-			vols = _volsDao.findByInstance(vmId);
-            if (vols.size() != 0) {
-                _storageMgr.destroy(vm, vols);
-			}
-
-			return true;
-		} finally {
-			try {
-				txn.start();
-				// release critical system resources used by the VM before we
-				// delete them
-				if (vm.getPublicIpAddress() != null) {
-                    freePublicIpAddress(vm.getPublicIpAddress(), vm.getDataCenterId(), vm.getPodId());
-                }
-				vm.setPublicIpAddress(null);
-
-				_secStorageVmDao.remove(vm.getId());
-	
-				txn.commit();
-			} catch (Exception e) {
-				s_logger.error("Caught this error: ", e);
-				txn.rollback();
-				return false;
-			} finally {
-				s_logger.debug("secondary storage vm vm is destroyed : "
-						+ vm.getName());
-			}
-		}
 	}
 
 	@DB

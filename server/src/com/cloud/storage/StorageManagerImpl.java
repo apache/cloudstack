@@ -114,7 +114,6 @@ import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
@@ -141,7 +140,6 @@ import com.cloud.storage.snapshot.SnapshotScheduler;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -874,7 +872,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 s_logger.debug(e.getMessage());
             }
             if (rootCreated != null) {
-                destroyVolume(rootCreated);
+                try {
+                    destroyVolume(rootCreated);
+                } catch (Exception e1) {
+                    s_logger.warn("Unable to mark a volume as destroyed: " + rootCreated, e1);
+                }
             }
             throw new CloudRuntimeException("Unable to create volumes for " + vm, e);
         }
@@ -951,55 +953,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
 
         return true;
-    }
-
-    @Override
-    public void destroy(VMInstanceVO vm, List<VolumeVO> vols) {
-        if (s_logger.isDebugEnabled() && vm != null) {
-            s_logger.debug("Destroying volumes of " + vm.toString());
-        }
-
-        for (VolumeVO vol : vols) {
-        	_volsDao.detachVolume(vol.getId());
-            _volsDao.destroyVolume(vol.getId());
-
-            // First delete the entries in the snapshot_policy and
-            // snapshot_schedule table for the volume.
-            // They should not get executed after the volume is destroyed.
-            _snapshotMgr.deletePoliciesForVolume(vol.getId());
-
-            String volumePath = vol.getPath();
-            Long poolId = vol.getPoolId();
-            if (poolId != null && volumePath != null && !volumePath.trim().isEmpty()) {
-                Answer answer = null;
-                StoragePoolVO pool = _storagePoolDao.findById(poolId);
-                String vmName = null;
-                if (vm != null) {
-                    vmName = vm.getInstanceName();
-                }
-                final DestroyCommand cmd = new DestroyCommand(pool, vol, vmName);
-                boolean removed = false;
-                List<StoragePoolHostVO> poolhosts = _storagePoolHostDao.listByPoolId(poolId);
-                for (StoragePoolHostVO poolhost : poolhosts) {
-                    answer = _agentMgr.easySend(poolhost.getHostId(), cmd);
-                    if (answer != null && answer.getResult()) {
-                        removed = true;
-                        break;
-                    }
-                }
-
-                if (removed) {
-                    _volsDao.remove(vol.getId());
-                } else {
-                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_STORAGE_MISC, vol.getDataCenterId(), vol.getPodId(),
-                            "Storage cleanup required for storage pool: " + pool.getName(), "Volume folder: " + vol.getFolder() + ", Volume Path: " + vol.getPath() + ", Volume id: " +vol.getId()+ ", Volume Name: " +vol.getName()+ ", Storage PoolId: " +vol.getPoolId());
-					s_logger.warn("destroy volume " + vol.getFolder() + " : " + vol.getPath() + " failed for Volume id : " +vol.getId()+ " Volume Name: " +vol.getName()+ " Storage PoolId : " +vol.getPoolId());
-                }
-            } else {
-                _volsDao.remove(vol.getId());
-            }
-        }
-
     }
 
     @Override
@@ -1597,13 +1550,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         String destPrimaryStorageVolumePath = cvAnswer.getVolumePath();
         String destPrimaryStorageVolumeFolder = cvAnswer.getVolumeFolder();
 
-        // Delete the volume on the source storage pool
-        final DestroyCommand cmd = new DestroyCommand(srcPool, volume, null);
-        Answer destroyAnswer = _agentMgr.easySend(sourceHostId, cmd);
-        
-        if (destroyAnswer == null || !destroyAnswer.getResult()) {
-            throw new CloudRuntimeException("Failed to delete the volume from the source primary storage pool.");
+        try {
+            destroyVolume(volume);
+        } catch (ConcurrentOperationException e) {
+            s_logger.warn("Concurrent Operation", e);
         }
+        
+        expungeVolume(volume);
 
         volume.setPath(destPrimaryStorageVolumePath);
         volume.setFolder(destPrimaryStorageVolumeFolder);
@@ -1849,16 +1802,14 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
     @Override
     @DB
-    public void destroyVolume(VolumeVO volume) {
+    public void destroyVolume(VolumeVO volume) throws ConcurrentOperationException {
     	Transaction txn = Transaction.currentTxn();
     	txn.start();
-    	
-        Long volumeId = volume.getId();
-        _volsDao.destroyVolume(volumeId);
+
+    	_volsDao.update(volume, Volume.Event.Destroy);
+        long volumeId = volume.getId();
         
-        EventUtils.saveEvent(User.UID_SYSTEM, volume.getAccountId(), EventTypes.EVENT_VOLUME_DELETE, "Volume " +volume.getName()+ " deleted");
-        
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), null, null , null);
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volumeId, volume.getName(), null, null , null);
         _usageEventDao.persist(usageEvent);
 
         // Delete the recurring snapshot policies for this volume.
@@ -1994,24 +1945,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         return answer;
     }
 
-    protected class StorageGarbageCollector implements Runnable {
-
-        public StorageGarbageCollector() {
-        }
-
-        @Override
-        public void run() {
-            try {
-                s_logger.info("Storage Garbage Collection Thread is running.");
-
-                cleanupStorage(true);
-
-            } catch (Exception e) {
-                s_logger.error("Caught the following Exception", e);
-            }
-        }
-    }
-
     @Override
     public void cleanupStorage(boolean recurring) {
     	GlobalLock scanLock = GlobalLock.getInternLock(this.getClass().getName());
@@ -2083,19 +2016,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     					}
     				}
 
-    				List<VolumeVO> vols = _volsDao.listRemovedButNotDestroyed();
+    				List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed();
     				for (VolumeVO vol : vols) {
     					try {
-    						Long poolId = vol.getPoolId();
-    						Answer answer = null;
-    						StoragePoolVO pool = _storagePoolDao.findById(poolId);
-    						final DestroyCommand cmd = new DestroyCommand(pool, vol, null);
-    						answer = sendToPool(pool, cmd);
-    						if (answer != null && answer.getResult()) {
-    							s_logger.debug("Destroyed " + vol);
-    							vol.setDestroyed(true);
-    							_volsDao.update(vol.getId(), vol);
-    						}
+    					    expungeVolume(vol);
     					} catch (Exception e) {
     						s_logger.warn("Unable to destroy " + vol.getId(), e);
     					}
@@ -2470,7 +2394,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 	}
 	
 	@Override
-	public boolean deleteVolume(DeleteVolumeCmd cmd) throws InvalidParameterValueException {
+	public boolean deleteVolume(DeleteVolumeCmd cmd) throws ConcurrentOperationException {
     	Account account = UserContext.current().getCaller();
     	Long volumeId = cmd.getId();
     	
@@ -2513,20 +2437,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
            
         // Check that the volume is not already destroyed
-        if (volume.getDestroyed()) {
-            throw new InvalidParameterValueException("Please specify a volume that is not already destroyed.");
+        if (volume.getState() != Volume.State.Destroy) {
+            destroyVolume(volume);
         }
         
-        try {
-			// Destroy the volume
-			destroyVolume(volume);
-		} catch (Exception e) {
-			s_logger.warn("Error destroying volume:"+e);
-			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Error destroying volume:"+e);
-		}
+        expungeVolume(volume);
         
         return true;
-    	
 	}
 
 	private boolean validateVolumeSizeRange(long size) throws InvalidParameterValueException {
@@ -2800,41 +2717,90 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     	//add code here
     }
     
-    @Override
-    public void cleanupVolumes(Long vmId) {
-    	VMInstanceVO vm = _vmInstanceDao.findById(vmId);
-        List<VolumeVO> volumesForVm = _volsDao.findByInstance(vmId);    	
-    	for(VolumeVO vol : volumesForVm){
-    		if(vol.getVolumeType().equals(VolumeType.ROOT)){
-    			if(vol.getState() != Volume.State.Destroyed) {
-    				assert(vol.getState() == Volume.State.Destroy);
-    				String volumePath = vol.getPath();
-    	            Long poolId = vol.getPoolId();
-    	            if (poolId != null && volumePath != null && !volumePath.trim().isEmpty()) {
-    	                Answer answer = null;
-    	                StoragePoolVO pool = _storagePoolDao.findById(poolId);
-    				
-    	                final DestroyCommand cmd = new DestroyCommand(pool, vol, vm.getName());
-    	                List<StoragePoolHostVO> poolhosts = _storagePoolHostDao.listByPoolId(poolId);
-	                    for (StoragePoolHostVO poolhost : poolhosts) {
-	                        answer = _agentMgr.easySend(poolhost.getHostId(), cmd);
-	                        if (answer != null && answer.getResult()) {
-	                        	try {
-									_volsDao.update(vol, Volume.Event.OperationSucceeded);
-								} catch (ConcurrentOperationException e) {
-									s_logger.warn("Unable to update volume state. vm: " + vmId + ", vol: " + vol.getId() + " due to ConcurrentOperationException");
-								}
-	                            break;
-	                        }
-	                    }
-    	            }
-    			}
-    			destroyVolume(vol);
+    public void expungeVolume(VolumeVO vol) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Expunging " + vol);
+        }
+        String vmName = null;
+        if (vol.getVolumeType() == VolumeType.ROOT && vol.getInstanceId() != null) {
+            VirtualMachine vm = _vmInstanceDao.findById(vol.getInstanceId());
+            vmName = vm.getInstanceName();
+        }
+        
+        String volumePath = vol.getPath();
+        Long poolId = vol.getPoolId();
+        if (poolId == null || volumePath == null || volumePath.trim().isEmpty()) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Marking volume that was never created as destroyed: " + vol);
+            }
+            _volsDao.remove(vol.getId());
+            return;
+        }
+        
+        StoragePoolVO pool = _storagePoolDao.findById(poolId);
+        if (pool == null) {
+            s_logger.debug("Removing volume as storage pool is gone: " + poolId);
+            _volsDao.remove(vol.getId());
+            return;
+        }
+        
+        DestroyCommand cmd = new DestroyCommand(pool, vol, vmName);
+        Answer answer = this.sendToPool(pool, cmd);
+        
+        if (answer != null && answer.getResult()) {
+            _volsDao.remove(vol.getId());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Volume successfully expunged from " + poolId);
+            }
+        } else {
+            s_logger.info("Will retry delete of " + vol + " from " + poolId);
+        } 
+    }
+    
+    @Override @DB
+    public void cleanupVolumes(long vmId) throws ConcurrentOperationException {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Cleaning storage for vm: " + vmId);
+        }
+        List<VolumeVO> volumesForVm = _volsDao.findByInstance(vmId);
+        List<VolumeVO> toBeExpunged = new ArrayList<VolumeVO>();
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+    	for (VolumeVO vol : volumesForVm) {
+    		if (vol.getVolumeType().equals(VolumeType.ROOT)) {
+    		    destroyVolume(vol);
+    		    toBeExpunged.add(vol);
     		} else {
-    			//data volume
-    			_volsDao.detachVolume(vol.getId());
+    		    if (s_logger.isDebugEnabled()) {
+    		        s_logger.debug("Detaching " + vol);
+    		    }
+    		    _volsDao.detachVolume(vol.getId());
     		}
     	}
+    	txn.commit();
+    	
+    	for (VolumeVO expunge : toBeExpunged) {
+    	    expungeVolume(expunge);
+    	}
     }
+    
+    protected class StorageGarbageCollector implements Runnable {
+
+        public StorageGarbageCollector() {
+        }
+
+        @Override
+        public void run() {
+            try {
+                s_logger.trace("Storage Garbage Collection Thread is running.");
+
+                cleanupStorage(true);
+
+            } catch (Exception e) {
+                s_logger.error("Caught the following Exception", e);
+            }
+        }
+    }
+
 }
 

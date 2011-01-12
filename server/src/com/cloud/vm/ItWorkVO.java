@@ -58,7 +58,7 @@ public class ItWorkVO {
     @Column(name="thread")
     String threadName;
     
-    @Column(name="state")
+    @Column(name="step")
     Step step;
     
     @Column(name="updated_at")
@@ -121,11 +121,11 @@ public class ItWorkVO {
         return managementServerId;
     }
     
-    public State getState() {
+    public State getType() {
         return type;
     }
     
-    public void setState(State type) {
+    public void setType(State type) {
         this.type = type;
     }
     
@@ -137,8 +137,8 @@ public class ItWorkVO {
         return step;
     }
     
-    public void setStep(Step state) {
-        this.step = state;
+    public void setStep(Step step) {
+        this.step = step;
     }
     
     public long getUpdatedAt() {

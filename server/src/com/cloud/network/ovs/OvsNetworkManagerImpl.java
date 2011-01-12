@@ -44,10 +44,10 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
@@ -108,7 +108,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
 		_name = name;
-		_isEnabled = _configDao.getValue(Config.OvsNetwork.key()).equalsIgnoreCase("true") ? true : false;
+		_isEnabled = Boolean.parseBoolean(_configDao.getValue(Config.OvsNetwork.key()));
 		_serverId = ((ManagementServer)ComponentLocator.getComponent(ManagementServer.Name)).getId();
 	    _executorPool = Executors.newScheduledThreadPool(10, new NamedThreadFactory("OVS"));
 	    _cleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("OVS-Cleanup"));
@@ -470,8 +470,9 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 			return;
 		}
 		
-		if (delayMs == null)
-			delayMs = new Long(100l);
+		if (delayMs == null) {
+            delayMs = new Long(100l);
+        }
 		
 		for (Long vmId: affectedVms) {
 			Transaction txn = Transaction.currentTxn();
@@ -613,14 +614,14 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 	@Override
 	public void UserVmCheckAndCreateTunnel(Commands cmds,
 			VirtualMachineProfile<UserVmVO> profile, DeployDestination dest) throws GreTunnelException {
-		CheckAndCreateTunnel((VMInstanceVO)profile.getVirtualMachine(), dest);	
+		CheckAndCreateTunnel(profile.getVirtualMachine(), dest);	
 	}
 
 	@Override
 	public void RouterCheckAndCreateTunnel(Commands cmds,
 			VirtualMachineProfile<DomainRouterVO> profile,
 			DeployDestination dest) throws GreTunnelException {
-		CheckAndCreateTunnel((VMInstanceVO)profile.getVirtualMachine(), dest);	
+		CheckAndCreateTunnel(profile.getVirtualMachine(), dest);	
 	}
 
 	@Override
