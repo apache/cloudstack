@@ -752,7 +752,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     
                     BroadcastDomainType broadcastDomainType = null;
                     TrafficType trafficType= offering.getTrafficType();
-
+                    
+                    boolean isNetworkDefault = false;
                     if (trafficType == TrafficType.Management || trafficType == TrafficType.Storage) {
                         broadcastDomainType = BroadcastDomainType.Native;
                     } else if (trafficType == TrafficType.Control) {
@@ -765,6 +766,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                         }
                     } else if (offering.getTrafficType() == TrafficType.Guest) {
                         if (zone.getNetworkType() == NetworkType.Basic) {
+                            isNetworkDefault = true;
                             broadcastDomainType = BroadcastDomainType.Native;
                         } else {
                             continue;
@@ -772,7 +774,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     }
                     
                     if (broadcastDomainType != null) {
-                        NetworkVO network = new NetworkVO(id, trafficType, null, mode, broadcastDomainType, networkOfferingId, zoneId, domainId, accountId, related, null, null, true, false);
+                        NetworkVO network = new NetworkVO(id, trafficType, null, mode, broadcastDomainType, networkOfferingId, zoneId, domainId, accountId, related, null, null, true, isNetworkDefault);
                         network.setGuruName(guruNames.get(network.getTrafficType()));
                         network.setDns1(zone.getDns1());
                         network.setDns2(zone.getDns2());

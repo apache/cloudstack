@@ -1444,6 +1444,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         String type = cmd.getType();
+        String trafficType = cmd.getTrafficType();
         Boolean isSystem = cmd.getIsSystem();
         Boolean isShared = cmd.getIsShared();
         Boolean isDefault = cmd.isDefault();
@@ -1533,6 +1534,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         if (isDefault != null) {
             sc.addAnd("isDefault", SearchCriteria.Op.EQ, isDefault);
+        }
+        
+        if (trafficType != null) {
+            sc.addAnd("trafficType", SearchCriteria.Op.EQ, trafficType);
         }
         
         List<NetworkVO> networks =  _networksDao.search(sc, searchFilter);

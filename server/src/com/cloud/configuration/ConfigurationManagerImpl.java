@@ -1216,6 +1216,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 Account systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
                 
                 BroadcastDomainType broadcastDomainType = null;
+                boolean isNetworkDefault = false;
                 if (offering.getTrafficType() == TrafficType.Management) {
                     broadcastDomainType = BroadcastDomainType.Native;
                 } else if (offering.getTrafficType() == TrafficType.Control) {
@@ -1228,13 +1229,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     }
                 } else if (offering.getTrafficType() == TrafficType.Guest) {
                     if (zone.getNetworkType() == NetworkType.Basic) {
+                        isNetworkDefault = true;
                         broadcastDomainType = BroadcastDomainType.Native;
                     } else {
                         continue;
                     }
                 }
                 userNetwork.setBroadcastDomainType(broadcastDomainType);
-                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, true, false); 
+                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, true, isNetworkDefault); 
             }
         }
     }
