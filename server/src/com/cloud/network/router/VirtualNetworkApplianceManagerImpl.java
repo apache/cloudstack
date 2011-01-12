@@ -1440,6 +1440,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         String password = profile.getVirtualMachine().getPassword();
         String userData = profile.getVirtualMachine().getUserData();
+        String sshPublicKey = profile.getVirtualMachine().getDetail("SSH.PublicKey");
         Commands cmds = new Commands(OnError.Stop);
 
         String routerControlIpAddress = null;
@@ -1469,7 +1470,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         cmds.addCommand(
                 "vmdata",
                 generateVmDataCommand(router, nic.getIp4Address(), userData, serviceOffering, zoneName,
-                        nic.getIp4Address(), profile.getVirtualMachine().getName(), profile.getVirtualMachine().getInstanceName(), profile.getId(), profile.getVirtualMachine().getSSHPublicKey()));
+                        nic.getIp4Address(), profile.getVirtualMachine().getName(), profile.getVirtualMachine().getInstanceName(), profile.getId(), sshPublicKey));
 
         try {
             _agentMgr.send(router.getHostId(), cmds);

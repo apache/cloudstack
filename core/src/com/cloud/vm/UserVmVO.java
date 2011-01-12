@@ -17,11 +17,15 @@
  */
 package com.cloud.vm;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.uservm.UserVm;
@@ -65,11 +69,11 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Column(name="display_name", updatable=true, nullable=true)
     private String displayName;
     
-    @Column(name="ssh_public_key", updatable=true, nullable=true)
-    private String sshPublicKey;
-    
     transient String password;
 
+    @Transient
+    Map<String, String> details;
+    
     @Override
     public String getPassword() {
         return password;
@@ -77,15 +81,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     
     public void setPassword(String password) {
         this.password = password;
-    }
-    
-    @Override
-    public String getSSHPublicKey() {
-    	return sshPublicKey;
-    }
-    
-    public void setSSHPublicKey(String publicKey) {
-        this.sshPublicKey = publicKey;
     }
 
 	@Override
@@ -161,12 +156,11 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
                     long accountId,
                     long serviceOfferingId,
                     String userData,
-                    String name,
-                    String sshPublicKey) {
+                    String name) {
         super(id, serviceOfferingId, name, instanceName, Type.User, templateId, hypervisorType, guestOsId, domainId, accountId, haEnabled);
         this.userData = userData;
         this.displayName = displayName != null ? displayName : null;
-    	this.sshPublicKey = sshPublicKey;
+    	this.details = new HashMap<String, String>();
     }
     
     protected UserVmVO() {
@@ -219,4 +213,26 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 	public void setDisplayName(String displayName) {
 	    this.displayName = displayName;
 	}
+	
+    public Map<String, String> getDetails() {
+        return details;
+    }
+    
+    @Override
+    public String getDetail(String name) {
+        assert (details != null) : "Did you forget to load the details?";
+        
+        return details != null ? details.get(name) : null;
+    }
+    
+    public void setDetail(String name, String value) {
+        assert (details != null) : "Did you forget to load the details?";
+        
+        details.put(name, value);
+    }
+    
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
+    }
+	
 }

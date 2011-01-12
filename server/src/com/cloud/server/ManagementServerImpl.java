@@ -332,7 +332,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final UploadDao _uploadDao;
     private final CertificateDao _certDao;
     private final SSHKeyPairDao _sshKeyPairDao;
-    private final UserVmDetailsDao _userVmDetailsDao;
 
 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -406,7 +405,6 @@ public class ManagementServerImpl implements ManagementServer {
         _tmpltMgr = locator.getManager(TemplateManager.class);
         _uploadMonitor = locator.getManager(UploadMonitor.class);
         _sshKeyPairDao = locator.getDao(SSHKeyPairDao.class);
-        _userVmDetailsDao = locator.getDao(UserVmDetailsDao.class);
     	
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
@@ -4757,12 +4755,15 @@ public class ManagementServerImpl implements ManagementServer {
     public String getVMPassword(GetVMPasswordCmd cmd) {   	
         Account account = UserContext.current().getCaller();
         UserVmVO vm = _userVmDao.findById(cmd.getId());
-        UserVmDetailVO password = _userVmDetailsDao.findDetail(cmd.getId(), "Encrypted.Password");
-        
-        if (vm == null || password == null || password.getValue() == null || password.getValue().equals("") || vm.getAccountId() != account.getAccountId())
-        	throw new InvalidParameterValueException("No password for VM with id '" + getId() + "' found.");
+        if (vm == null || vm.getAccountId() != account.getAccountId()) 
+        	throw new InvalidParameterValueException("No VM with id '" + cmd.getId() + "' found.");
+            	
+        _userVmDao.loadDetails(vm);
+        String password = vm.getDetail("Encrypted.Password");         
+        if (password == null || password.equals(""))
+        	throw new InvalidParameterValueException("No password for VM with id '" + cmd.getId() + "' found.");
 
-        return password.getValue();
+        return password;
     }
 
 }

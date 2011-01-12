@@ -2314,12 +2314,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         UserVmVO vm = new UserVmVO(id, instanceName, cmd.getDisplayName(), template.getId(), hypervisorType,
-                                   template.getGuestOSId(), offering.getOfferHA(), domainId, owner.getId(), offering.getId(), userData, hostName, sshPublicKey);
+                                   template.getGuestOSId(), offering.getOfferHA(), domainId, owner.getId(), offering.getId(), userData, hostName);
 
+        vm.setDetail("SSH.PublicKey", sshPublicKey);
 
         if (_itMgr.allocate(vm, template, offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, cmd.getHypervisor(), owner) == null) {
             return null;
         }
+        
+        _vmDao.saveDetails(vm);
         
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Successfully allocated DB entry for " + vm);
@@ -2348,7 +2351,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	public UserVm startVirtualMachine(DeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
 	    long vmId = cmd.getEntityId();
 	    UserVmVO vm = _vmDao.findById(vmId);
-	    Map<String, String> vmDetails = _vmDetailsDao.findDetails(vm.getId());
+	    _vmDao.loadDetails(vm);
 	    
         // Check that the password was passed in and is valid
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
@@ -2364,13 +2367,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         vm.setPassword(password);
 
         // Check if an SSH key pair was selected for the instance and if so use it to encrypt & save the vm password
-        if (vm.getSSHPublicKey() != null && password != null && !password.equals("saved_password") ) {       	
-        	String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(vm.getSSHPublicKey(), password);
+        String sshPublicKey = vm.getDetail("SSH.PublicKey");
+        if (sshPublicKey != null && !sshPublicKey.equals("") && password != null && !password.equals("saved_password") ) {       	
+        	String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(sshPublicKey, password);
         	if (encryptedPasswd == null)
         		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Error encrypting password");
         	
-        	vmDetails.put("Encrypted.Password", encryptedPasswd);
-        	_vmDetailsDao.persist(vm.getId(), vmDetails);
+        	vm.setDetail("Encrypted.Password", encryptedPasswd);
+        	_vmDao.saveDetails(vm);
         }
         
 	    long userId = UserContext.current().getCallerUserId();

@@ -19,6 +19,7 @@ package com.cloud.vm.dao;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
 
@@ -62,6 +63,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     protected final SearchBuilder<UserVmVO> DestroySearch;
     protected SearchBuilder<UserVmVO> AccountDataCenterVirtualSearch;
     protected final Attribute _updateTimeAttr;
+    
+    protected final UserVmDetailsDaoImpl _detailsDao = ComponentLocator.inject(UserVmDetailsDaoImpl.class);
     
     protected UserVmDaoImpl() {
         AccountSearch = createSearchBuilder();
@@ -415,4 +418,19 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 		sc.setParameters("accountId", accountId);
 		return listBy(sc);
 	}
+
+	@Override
+	public void loadDetails(UserVmVO vm) {
+        Map<String, String> details = _detailsDao.findDetails(vm.getId());
+        vm.setDetails(details);
+	}
+	
+	@Override
+    public void saveDetails(UserVmVO vm) {
+        Map<String, String> details = vm.getDetails();
+        if (details == null) {
+            return;
+        }
+        _detailsDao.persist(vm.getId(), details);
+    }
 }
