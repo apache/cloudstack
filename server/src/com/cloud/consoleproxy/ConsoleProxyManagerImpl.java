@@ -562,7 +562,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
         Account systemAcct = _accountMgr.getSystemAccount();
         User systemUser = _accountMgr.getSystemUser();
-        return _itMgr.start(proxy, null, systemUser, systemAcct, null);
+        if (proxy.getState() == VirtualMachine.State.Running) {
+            return proxy;
+        }
+        return _itMgr.start(proxy, null, systemUser, systemAcct);
     }
 
     public ConsoleProxyVO assignProxyFromRunningPool(long dataCenterId) {
@@ -709,11 +712,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
-        networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, defaultOffering.get(0), plan, null, null, false).get(0), defaultNic));
+        networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, defaultOffering.get(0), plan, null, null, false, false).get(0), defaultNic));
         for (NetworkOfferingVO offering : offerings) {
-            networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), null));
+            networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false, false).get(0), null));
         }
-        ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, _template.getId(), _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), 0);
+        ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, _template.getId(), _template.getHypervisorType(), _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), 0);
         try {
             proxy = _itMgr.allocate(proxy, _template, _serviceOffering, networks, plan, null, systemAcct);
         } catch (InsufficientCapacityException e) {
@@ -1557,64 +1560,13 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     }
 
     @Override
-    @DB
     public boolean destroyProxy(long vmId) {
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-        if (asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Destroy console proxy " + vmId + ", update async job-" + job.getId());
-            }
-            _asyncMgr.updateAsyncJobAttachment(job.getId(), "console_proxy", vmId);
-        }
-
-        ConsoleProxyVO vm = _consoleProxyDao.findById(vmId);
-        if (vm == null || vm.getState() == State.Destroyed) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to find vm or vm is destroyed: " + vmId);
-            }
-            return true;
-        }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Destroying console proxy vm " + vmId);
-        }
-
-        if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, null)) {
-            s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vmId);
-            return false;
-        }
-
-        Transaction txn = Transaction.currentTxn();
-        List<VolumeVO> vols = null;
+        ConsoleProxyVO proxy = _consoleProxyDao.findById(vmId);
         try {
-            vols = _volsDao.findByInstance(vmId);
-            if (vols.size() != 0) {
-                _storageMgr.destroy(vm, vols);
-            }
-
-            return true;
-        } finally {
-            try {
-                txn.start();
-                // release critical system resources used by the VM before we
-                // delete them
-                if (vm.getPublicIpAddress() != null) {
-//                    freePublicIpAddress(vm.getPublicIpAddress(), vm.getDataCenterId(), vm.getPodId());
-                }
-                vm.setPublicIpAddress(null);
-
-                _consoleProxyDao.remove(vm.getId());
-
-                txn.commit();
-            } catch (Exception e) {
-                s_logger.error("Caught this error: ", e);
-                txn.rollback();
-                return false;
-            } finally {
-                s_logger.debug("console proxy vm is destroyed : " + vm.getName());
-            }
+            return _itMgr.expunge(proxy, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+        } catch (ResourceUnavailableException e) {
+            s_logger.warn("Unable to expunge " + proxy, e);
+            return false;
         }
     }
 

@@ -19,7 +19,6 @@
 package com.cloud.event.dao;
 
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
@@ -31,6 +30,7 @@ import org.apache.log4j.Logger;
 import com.cloud.event.UsageEventVO;
 import com.cloud.exception.UsageServerException;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -42,58 +42,40 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
     public static final Logger s_logger = Logger.getLogger(UsageEventDaoImpl.class.getName());
 
     private final SearchBuilder<UsageEventVO> latestEventsSearch;
-    private final SearchBuilder<UsageEventVO> allEventsSearch;
-    private static final String GET_LATEST_EVENT_DATE = "SELECT created FROM usage_event ORDER BY created DESC LIMIT 1";
-    private static final String COPY_EVENTS = "INSERT INTO cloud_usage.usage_event SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size FROM cloud.usage_event vmevt WHERE vmevt.created > ? and vmevt.created <= ? ";
-    private static final String COPY_ALL_EVENTS = "INSERT INTO cloud_usage.usage_event SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size FROM cloud.usage_event where created <= ? ";
+    private static final String COPY_EVENTS = "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size) " +
+    		"SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size FROM cloud.usage_event vmevt WHERE vmevt.id > ? and vmevt.created <= ? ";
+    private static final String COPY_ALL_EVENTS = "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size) " +
+    		"SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size FROM cloud.usage_event where id <= ? ";
 
 
     public UsageEventDaoImpl () {
         latestEventsSearch = createSearchBuilder();
-        latestEventsSearch.and("recentEventDate", latestEventsSearch.entity().getCreateDate(), SearchCriteria.Op.GT);
+        latestEventsSearch.and("processed", latestEventsSearch.entity().isProcessed(), SearchCriteria.Op.EQ);
         latestEventsSearch.and("enddate", latestEventsSearch.entity().getCreateDate(), SearchCriteria.Op.LTEQ);
         latestEventsSearch.done();
-
-        allEventsSearch = createSearchBuilder();
-        allEventsSearch.and("enddate", allEventsSearch.entity().getCreateDate(), SearchCriteria.Op.LTEQ);
-        allEventsSearch.done();
-
     }
 
     @Override
-    public List<UsageEventVO> listLatestEvents(Date recentEventDate, Date endDate) {
+    public List<UsageEventVO> listLatestEvents(Date endDate) {
         Filter filter = new Filter(UsageEventVO.class, "createDate", Boolean.TRUE, null, null);
         SearchCriteria<UsageEventVO> sc = latestEventsSearch.create();
-        sc.setParameters("recentEventDate", recentEventDate);
+        sc.setParameters("processed", false);
         sc.setParameters("enddate", endDate);
         return listBy(sc, filter);
     }
 
     @Override
-    public List<UsageEventVO> listAllEvents(Date endDate) {
-        Filter filter = new Filter(UsageEventVO.class, "createDate", Boolean.TRUE, null, null);
-        SearchCriteria<UsageEventVO> sc = latestEventsSearch.create();
-        sc.setParameters("enddate", endDate);
-        return listBy(sc, filter);
-    }
-
-    @Override
-    public List<UsageEventVO> getLatestEventDate() {
-        Filter filter = new Filter(UsageEventVO.class, "createDate", Boolean.FALSE, null, 1L);
+    public List<UsageEventVO> getLatestEvent() {
+        Filter filter = new Filter(UsageEventVO.class, "id", Boolean.FALSE, Long.valueOf(0), Long.valueOf(1));
         return listAll(filter);
     }
 
-    @Override
-    public List<UsageEventVO> searchAllUsageEvents(SearchCriteria<UsageEventVO> sc, Filter filter) {
-        return listIncludingRemovedBy(sc, filter);
-    }
-
-
+    @DB
     public synchronized List<UsageEventVO> getRecentEvents(Date endDate) throws UsageServerException {
         Transaction txn = Transaction.open(Transaction.USAGE_DB);
-        Date recentEventDate = getMostRecentEventDate();
+        long recentEventId = getMostRecentEventId();
         String sql = COPY_EVENTS;
-        if (recentEventDate == null) {
+        if (recentEventId == 0) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("no recent event date, copying all events");
             }
@@ -105,13 +87,13 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
             txn.start();
             pstmt = txn.prepareAutoCloseStatement(sql);
             int i = 1;
-            if (recentEventDate != null) {
-                pstmt.setString(i++, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), recentEventDate));
+            if (recentEventId != 0) {
+                pstmt.setLong(i++, recentEventId);
             }
             pstmt.setString(i, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), endDate));
             pstmt.executeUpdate();
             txn.commit();
-            return findRecentEvents(recentEventDate, endDate);
+            return findRecentEvents(endDate);
         } catch (Exception ex) {
             txn.rollback();
             s_logger.error("error copying events from cloud db to usage db", ex);
@@ -121,37 +103,31 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
         }
     }
 
-    private Date getMostRecentEventDate() throws UsageServerException {
+    @DB
+    private long getMostRecentEventId() throws UsageServerException {
         Transaction txn = Transaction.open(Transaction.USAGE_DB);
-        PreparedStatement pstmt = null;
-        String sql = GET_LATEST_EVENT_DATE;
         try {
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                String mostRecentTimestampStr = rs.getString(1);
-                if (mostRecentTimestampStr != null) {
-                    return DateUtil.parseDateString(s_gmtTimeZone, mostRecentTimestampStr);
+            List<UsageEventVO> latestEvents = getLatestEvent();
+
+            if(latestEvents !=null && latestEvents.size() == 1){
+                UsageEventVO latestEvent = latestEvents.get(0);
+                if(latestEvent != null){
+                    return latestEvent.getId();
                 }
             }
+            return 0;
         } catch (Exception ex) {
-            s_logger.error("error getting most recent event date", ex);
+            s_logger.error("error getting most recent event id", ex);
             throw new UsageServerException(ex.getMessage());
         } finally {
             txn.close();
         }
-        return null;
     }
 
-    private List<UsageEventVO> findRecentEvents(Date recentEventDate, Date endDate) throws UsageServerException {
+    private List<UsageEventVO> findRecentEvents(Date endDate) throws UsageServerException {
         Transaction txn = Transaction.open(Transaction.USAGE_DB);
         try {
-            int i = 1;
-            if (recentEventDate == null) {
-                return listAllEvents(endDate);
-            } else {
-                return listLatestEvents(recentEventDate, endDate);
-            }
+            return listLatestEvents(endDate);
         } catch (Exception ex) {
             s_logger.error("error getting most recent event date", ex);
             throw new UsageServerException(ex.getMessage());

@@ -28,7 +28,7 @@ public class ServiceResponse extends BaseResponse {
     @SerializedName(ApiConstants.NAME) @Param(description="the service name")
     private String name;
     
-    @SerializedName("capability") @Param(description="the list of capabilities")
+    @SerializedName("capability") @Param(description="the list of capabilities", responseObject = CapabilityResponse.class)
     private List<CapabilityResponse> capabilities;
 
     public String getName() {

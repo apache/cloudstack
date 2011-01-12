@@ -24,8 +24,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.PreallocatedLunResponse;
 
-//TODO - add description to @Implementation
-@Implementation(responseObject=PreallocatedLunResponse.class)
+@Implementation(description="Registers PreallocatedLun", responseObject=PreallocatedLunResponse.class)
 public class RegisterPreallocatedLunCmd extends BaseCmd {
     private static final String s_name = "registerPreallocatedLunsResponse";
 

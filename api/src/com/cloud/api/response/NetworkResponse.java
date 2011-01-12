@@ -3,7 +3,6 @@ package com.cloud.api.response;
 import java.util.List;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.network.Networks;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -54,14 +53,13 @@ public class NetworkResponse extends BaseResponse{
     @SerializedName("isshared") @Param(description="true if network is shared, false otherwise")
     private Boolean isShared;
     
-    @SerializedName("issystem")  @Param(description="true if network is system, false otherwise")
+    @SerializedName("issystem") @Param(description="true if network is system, false otherwise")
     private Boolean isSystem;
     
-    @SerializedName("state")  @Param(description="state of the network")
+    @SerializedName("state") @Param(description="state of the network")
     private String state;
-    
-    //TODO - add description
-    @SerializedName("related")
+
+    @SerializedName("related") @Param(description="related to what other network configuration")
     private Long related;
     
     @SerializedName("broadcasturi") @Param(description="broadcast uri of the network")
@@ -88,7 +86,10 @@ public class NetworkResponse extends BaseResponse{
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain associated with the network")
     private String domain;
     
-    @SerializedName("service") @Param(description="the list of services")
+    @SerializedName("isdefault") @Param(description="true if network is default, false otherwise")
+    private Boolean isDefault;
+    
+    @SerializedName("service") @Param(description="the list of services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
 
     public Long getId() {
@@ -305,5 +306,13 @@ public class NetworkResponse extends BaseResponse{
 
     public void setServices(List<ServiceResponse> services) {
         this.services = services;
+    }
+
+    public Boolean getIsDefault() {
+        return isDefault;
+    }
+
+    public void setIsDefault(Boolean isDefault) {
+        this.isDefault = isDefault;
     }
 }

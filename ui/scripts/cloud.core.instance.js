@@ -391,11 +391,10 @@ function initVMWizard() {
 			dataType: "json",
 			success: function(json) {			    		
 				var items = json.listsecuritygroupsresponse.securitygroup;					
-				var $securityGroupSelect = $vmPopup.find("#wizard_security_groups").empty();	
+				var $securityGroupDropdown = $vmPopup.find("#security_group_dropdown").empty();	
 				if (items != null && items.length > 0) {
 					for (var i = 0; i < items.length; i++) {
-					    if(items[i].name != "default")						
-						    $securityGroupSelect.append("<option value='" + fromdb(items[i].name) + "'>" + fromdb(items[i].name) + "</option>"); 
+					    $securityGroupDropdown.append("<option value='" + fromdb(items[i].name) + "'>" + fromdb(items[i].name) + "</option>"); 
 					}
 				}					    
 			}
@@ -835,8 +834,10 @@ function initVMWizard() {
 			
 			//Setup Networking before showing it.  This only applies to zones with Advanced Networking support.
 			var zoneObj = $thisPopup.find("#wizard_zone option:selected").data("zoneObj");
-			if (zoneObj.networktype == "Advanced") {
-			    $thisPopup.find("#step4").find("#for_basic_zone").hide();			    
+			if (zoneObj.networktype == "Advanced") {			    
+			    $thisPopup.find("#step4").find("#for_advanced_zone").show();
+			    $thisPopup.find("#step4").find("#for_basic_zone").hide();	
+			    		    
 				var networkName = "Virtual Network";
 				var networkDesc = "A dedicated virtualized network for your account.  The broadcast domain is contrained within a VLAN and all public network access is routed out by a virtual router.";
 				$.ajax({
@@ -856,6 +857,7 @@ function initVMWizard() {
 						var $virtualNetworkElement = $("#vm_popup #network_virtual_container");
 			
 						// Setup Virtual Networks
+						var requiredVirtual = false;
 						if (virtualNetwork == null) {
 							$.ajax({
 								data: createURL("command=listNetworkOfferings&traffictype=Guest"),
@@ -876,9 +878,10 @@ function initVMWizard() {
 														if (network.networkofferingavailability != 'Unavailable') {
 															$virtualNetworkElement.show();
 															if (network.networkofferingavailability == 'Required') {
+																requiredVirtual = true;
 																$virtualNetworkElement.find("#network_virtual").attr('disabled', true);
 															}
-															$virtualNetworkElement.data("id", network.id);
+															$virtualNetworkElement.find("#network_virtual").data("id", network.id).data("jsonObj", network);
 														} else {
 															$virtualNetworkElement.hide();
 														}
@@ -893,9 +896,11 @@ function initVMWizard() {
 							if (virtualNetwork.networkofferingavailability != 'Unavailable') {
 								$virtualNetworkElement.show();
 								if (virtualNetwork.networkofferingavailability == 'Required') {
+									requiredVirtual = true;
 									$virtualNetworkElement.find("#network_virtual").attr('disabled', true);
 								}
 								$virtualNetworkElement.data("id", virtualNetwork.id);
+								$virtualNetworkElement.find("#network_virtual").data("id", virtualNetwork.id).data("jsonObj", virtualNetwork);
 							} else {
 								$virtualNetworkElement.hide();
 							}
@@ -903,17 +908,33 @@ function initVMWizard() {
 						
 						// Setup Direct Networks
 						var $networkDirectTemplate = $("#wizard_network_direct_template");
+						var $networkSecondaryDirectTemplate = $("#wizard_network_direct_secondary_template");
 						var $networkDirectContainer = $("#network_direct_container").empty();
+						var $networkDirectSecondaryContainer = $("#network_direct_secondary_container").empty();
+						var availableSecondary = false;
 						if (networks != null && networks.length > 0) {
 							for (var i = 0; i < networks.length; i++) {
 								if (networks[i].type != 'Direct') {
 									continue;
 								}
-								var $directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+networks[i].id);
+								var $directNetworkElement = null;
+								if (networks[i].isdefault) {
+									if (requiredVirtual) {
+										continue;
+									}
+									$directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+networks[i].id);
+								} else {
+									$directNetworkElement = $networkSecondaryDirectTemplate.clone().attr("id", "direct"+networks[i].id);
+								}
 								$directNetworkElement.find("#network_direct_checkbox").data("jsonObj", networks[i]);
 								$directNetworkElement.find("#network_direct_name").text(networks[i].name);
 								$directNetworkElement.find("#network_direct_desc").text(networks[i].displaytext);
-								$networkDirectContainer.append($directNetworkElement.show());
+								if (networks[i].isdefault) {
+									$networkDirectContainer.append($directNetworkElement.show());
+								} else {
+									availableSecondary = true;
+									$networkDirectSecondaryContainer.append($directNetworkElement.show());
+								}
 							}
 							
 							// Add any additional shared direct networks
@@ -928,24 +949,46 @@ function initVMWizard() {
 											if (sharedNetworks[i].type != 'Direct') {
 												continue;
 											}
-											var $directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+sharedNetworks[i].id);
+											if (sharedNetworks[i].isdefault) {
+												if (requiredVirtual) {
+													continue;
+												}
+												$directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+sharedNetworks[i].id);
+											} else {
+												$directNetworkElement = $networkSecondaryDirectTemplate.clone().attr("id", "direct"+sharedNetworks[i].id);
+											}
 											$directNetworkElement.find("#network_direct_checkbox").data("jsonObj", sharedNetworks[i]);
 											$directNetworkElement.find("#network_direct_name").text(sharedNetworks[i].name);
 											$directNetworkElement.find("#network_direct_desc").text(sharedNetworks[i].displaytext);
-											$networkDirectContainer.append($directNetworkElement.show());
+											if (sharedNetworks[i].isdefault) {
+												$networkDirectContainer.append($directNetworkElement.show());
+											} else {
+												availableSecondary = true;
+												$networkDirectSecondaryContainer.append($directNetworkElement.show());
+											}
 										}
 									}
 								}
 							});
 						}
+						if (availableSecondary) {
+							$("#secondary_network_title, #secondary_network_desc").show();
+						}
 					}
 				});
-				$thisPopup.find("#wizard_review_network").text(networkName);
 			} 
 			else {  // Basic Network
-			    if(getDirectAttachSecurityGroupsEnabled() == "true" && $selectedVmWizardTemplate.data("hypervisor") != "VmWare" ) {
-			        $thisPopup.find("#step4").find("#for_basic_zone").show();				
-				    $thisPopup.find("#wizard_review_network").text("Basic Network");
+			    $thisPopup.find("#step4").find("#for_basic_zone").show();			    
+			    $thisPopup.find("#step4").find("#for_advanced_zone").hide();	
+			    if(getDirectAttachSecurityGroupsEnabled() == "true" && $selectedVmWizardTemplate.data("hypervisor") != "VmWare" ) {			        
+			        $thisPopup.find("#step4").find("#security_group_section").show();
+			        $thisPopup.find("#step4").find("#not_available_message").hide();	
+				    $thisPopup.find("#step5").find("#wizard_review_network").text("Basic Network");
+				}
+				else {
+				    $thisPopup.find("#step4").find("#not_available_message").show();		
+			        $thisPopup.find("#step4").find("#security_group_section").hide();	
+			        $thisPopup.find("#step5").find("#wizard_review_network").text("");			   
 				}
 			}
 	    }	
@@ -953,29 +996,25 @@ function initVMWizard() {
 	    if (currentStepInVmPopup == 4) { //network
 			var zoneObj = $thisPopup.find("#wizard_zone option:selected").data("zoneObj");
 			if (zoneObj.networktype == "Advanced") {
-				var $selectedDirectNetworks = $thisPopup.find("input:checkbox[name=network_direct_checkbox]:checked");
-				var $selectedVirtualNetworks = $thisPopup.find("input:checkbox[name=network_virtual_checkbox]:checked");
+				var $selectedSecondaryNetworks = $thisPopup.find("input:checkbox[name=secondary_network]:checked");
+				var $selectedPrimaryNetworks = $thisPopup.find("input:radio[name=primary_network]:checked");
 				
 				// prevent a person from moving on if no network has been selected
-				if($selectedDirectNetworks.length == 0 && $selectedVirtualNetworks.length == 0) {
+				if($selectedPrimaryNetworks.length == 0) {
 					$thisPopup.find("#step4 #wiz_message").show();
 					return false;
 				}      
 				
 				var modResult = 0;
-				if ($selectedVirtualNetworks.length == 0) {
-					$thisPopup.find("#wizard_review_virtual_network_container").hide();
-					modResult = 1;
-				} else {
-					$thisPopup.find("#wizard_review_virtual_network_container").show();
-					modResult = 0;
-				}
+				$thisPopup.find("#step5").find("#wizard_review_network").text($selectedPrimaryNetworks.data("jsonObj").name);
+				$thisPopup.find("#wizard_review_primary_network_container").show();
+				modResult = 0;
 			
-				var $reviewNetworkContainer = $("#wizard_review_direct_network_container").empty();
-				if ($selectedDirectNetworks.length != 0) {
+				var $reviewNetworkContainer = $("#wizard_review_secondary_network_container").empty();
+				if ($selectedSecondaryNetworks.length != 0) {
 					var networkIds = [];
 					
-					$selectedDirectNetworks.each(function(i) {
+					$selectedSecondaryNetworks.each(function(i) {
 						var json = $(this).data("jsonObj");
 						if (i == 0) {
 							networkIds.push(json.id);
@@ -1019,11 +1058,10 @@ function initVMWizard() {
 			
 			var zoneObj = $thisPopup.find("#wizard_zone option:selected").data("zoneObj");
 			if (zoneObj.networktype == "Advanced") {
-				var networkIds = null;
-				if ($thisPopup.find("input:checkbox[name=network_virtual_checkbox]:checked").length != 0) {
-					networkIds = $thisPopup.find("#network_virtual_container").data("id");
-				}
-				var directNetworkIds = $thisPopup.find("#wizard_review_direct_network_container").data("directNetworkIds");
+				var $selectedPrimaryNetworks = $thisPopup.find("input:radio[name=primary_network]:checked");
+				var networkIds = $selectedPrimaryNetworks.data("jsonObj").id;
+
+				var directNetworkIds = $thisPopup.find("#wizard_review_secondary_network_container").data("directNetworkIds");
 				if (directNetworkIds != null) {
 					if (networkIds != null) {
 						networkIds = networkIds+","+directNetworkIds;
@@ -1034,9 +1072,9 @@ function initVMWizard() {
 				moreCriteria.push("&networkIds="+networkIds);
 			} 
 			else {  //Basic zone
-			    if($thisPopup.find("#step4").find("#for_basic_zone").css("style") != "none") {
-				    if($thisPopup.find("#wizard_security_groups").val() != null && $thisPopup.find("#wizard_security_groups").val().length > 0) {
-			            var securityGroupList = $thisPopup.find("#wizard_security_groups").val().join(",");
+			    if($thisPopup.find("#step4").find("#security_group_section").css("display") != "none") {
+				    if($thisPopup.find("#security_group_dropdown").val() != null && $thisPopup.find("#security_group_dropdown").val().length > 0) {
+			            var securityGroupList = $thisPopup.find("#security_group_dropdown").val().join(",");
 			            moreCriteria.push("&securitygrouplist="+encodeURIComponent(securityGroupList));	
 			        }		
 			    }				

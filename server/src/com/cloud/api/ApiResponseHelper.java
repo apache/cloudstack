@@ -739,7 +739,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         volResponse.setDeviceId(volume.getDeviceId());
 
         Long instanceId = volume.getInstanceId();
-        if (instanceId != null) {
+        if (instanceId != null && volume.getState() != Volume.State.Destroy) {
             VMInstanceVO vm = ApiDBUtils.findVMInstanceById(instanceId);
             volResponse.setVirtualMachineId(vm.getId());
             volResponse.setVirtualMachineName(vm.getName());
@@ -1083,13 +1083,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                 if (singleNic.getIsolationUri() != null) {
                     nicResponse.setIsolationUri(singleNic.getIsolationUri().toString());
                 }
-            }  
-            //Set traffic type
+            } 
             Network network = ApiDBUtils.findNetworkById(singleNic.getNetworkId());
             nicResponse.setTrafficType(network.getTrafficType().toString());
-            
-            //Set type
             nicResponse.setType(network.getGuestType().toString());
+            nicResponse.setIsDefault(singleNic.isDefaultNic());
             
             nicResponse.setObjectName("nic");
             
@@ -2225,6 +2223,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         
         response.setIsShared(network.isShared());
+        response.setIsDefault(network.isDefault());
         response.setState(network.getState().toString());
         response.setRelated(network.getRelated());
         response.setDns1(network.getDns1());

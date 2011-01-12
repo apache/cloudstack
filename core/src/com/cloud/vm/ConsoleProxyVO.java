@@ -29,6 +29,8 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+
 /**
  * ConsoleProxyVO domain object
  */
@@ -97,64 +99,11 @@ public class ConsoleProxyVO extends VMInstanceVO implements ConsoleProxy {
 	/**
 	 * Correct constructor to use.
 	 */
-	public ConsoleProxyVO(long id, long serviceOfferingId, String name, long templateId, long guestOSId, long dataCenterId, long domainId, long accountId, int activeSession) {
-	    super(id, serviceOfferingId, name, name, Type.ConsoleProxy, templateId, guestOSId, domainId, accountId, false);
+	public ConsoleProxyVO(long id, long serviceOfferingId, String name, long templateId, HypervisorType hypervisorType, long guestOSId, long dataCenterId, long domainId, long accountId, int activeSession) {
+	    super(id, serviceOfferingId, name, name, Type.ConsoleProxy, templateId, hypervisorType, guestOSId, domainId, accountId, false);
 	    this.activeSession = activeSession;
 	}
 	
-	public ConsoleProxyVO(ConsoleProxyVO that) {
-	    this(that.id, that.serviceOfferingId, that.instanceName, that.guestMacAddress, that.guestIpAddress, that.guestNetmask, that.privateMacAddress, that.privateIpAddress, that.privateNetmask, that.templateId, that.guestOSId, that.publicMacAddress, that.publicIpAddress, that.publicNetmask, that.vlanDbId, that.vlanId, that.podId, that.dataCenterId, that.domainId, that.accountId, that.gateway, that.hostId, that.dns1, that.dns2, that.domain, that.ramSize, that.activeSession);
-	    this.vncPassword = that.vncPassword;
-	    this.sslEnabled = that.sslEnabled;
-	    this.sessionDetails = that.sessionDetails;
-	}
-	
-    public ConsoleProxyVO(
-    		long id,
-    		long serviceOfferingId,
-            String name,
-            String guestMacAddress,
-            String guestIpAddress,
-            String guestNetMask,
-            String privateMacAddress,
-            String privateIpAddress,
-            String privateNetmask,
-            long templateId,
-            long guestOSId,
-            String publicMacAddress,
-            String publicIpAddress,
-            String publicNetmask,
-            Long vlanDbId,
-            String vlanId,
-            long podId,
-            long dataCenterId,
-            long domainId,
-            long accountId,
-            String gateway,
-            Long hostId,
-            String dns1,
-            String dns2,
-            String domain,
-            int ramSize,
-            int activeSession) {
-    	super(id, serviceOfferingId, name, name, Type.ConsoleProxy, templateId, guestOSId,
-    			privateMacAddress, privateIpAddress, privateNetmask, dataCenterId, podId, domainId, accountId, true, hostId);
-    	this.gateway = gateway;
-    	this.publicIpAddress = publicIpAddress;
-    	this.publicNetmask = publicNetmask;
-    	this.publicMacAddress = publicMacAddress;
-    	this.guestIpAddress = guestIpAddress;
-    	this.guestMacAddress = guestMacAddress;
-    	this.guestNetmask = guestNetMask;
-    	this.vlanDbId = vlanDbId;
-    	this.vlanId = vlanId;
-    	this.dns1 = dns1;
-    	this.dns2 = dns2;
-    	this.domain = domain;
-    	this.ramSize = ramSize;
-    	this.activeSession = activeSession;
-    }
-    
     protected ConsoleProxyVO() {
         super();
     }

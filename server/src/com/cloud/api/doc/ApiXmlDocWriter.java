@@ -47,6 +47,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.response.BaseResponse;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import com.thoughtworks.xstream.XStream;
@@ -230,7 +231,7 @@ public class ApiXmlDocWriter {
         else
             System.out.println("Command " + apiCommand.getName() + " misses description");
         
-        //Get request parameters        
+        //Set request parameters   
         Field[] fields = clas.getDeclaredFields();
         
         //Get fields from superclass
@@ -246,51 +247,73 @@ public class ApiXmlDocWriter {
             }
             superClass = superClass.getSuperclass();
         }
-      
-        for (Field f : fields) {
-            Parameter parameterAnnotation = f.getAnnotation(Parameter.class);
-            if (parameterAnnotation != null && parameterAnnotation.expose()) {
-                Argument reqArg = new Argument(parameterAnnotation.name());
-                reqArg.setRequired(parameterAnnotation.required());
-                if (!parameterAnnotation.description().isEmpty())
-                    reqArg.setDescription(parameterAnnotation.description());
-                else  {
-                    //System.out.println("Description is missing for the request parameter " + parameterAnnotation.name() + " of the command " + apiCommand.getName());
-                }
-                request.add(reqArg);
-            }
-        }
+        request = setRequestFields(fields);
         
-        Class<?> responseClas = impl.responseObject();
         
         //Get response parameters
+        Class<?> responseClas = impl.responseObject();
         Field[] responseFields = responseClas.getDeclaredFields();
-        for (Field responseField : responseFields) {    
-            SerializedName nameAnnotation = responseField.getAnnotation(SerializedName.class);
-            Param descAnnotation = responseField.getAnnotation(Param.class);
-            Argument respArg = new Argument(nameAnnotation.value());   
-            boolean toExpose = true;
-            if (descAnnotation != null) {
-                String description = descAnnotation.description();
-                toExpose = descAnnotation.expose();
-                if (description != null && !description.isEmpty()) {
-                    respArg.setDescription(description);
-                } else if (toExpose){
-                    //System.out.println("Description is missing for the response parameter " + nameAnnotation.value().toString() + " of the command " + apiCommand.getName());
-                }
-            } else {
-                //System.out.println("Description is missing for the response parameter " + nameAnnotation.value().toString() + " of the command " + apiCommand.getName());
-            }
-                
-            if (toExpose) {
-                response.add(respArg);
-            } 
-        }
+        response = setResponseFields(responseFields);
         
         apiCommand.setRequest(request);
         apiCommand.setResponse(response);
         
         out.writeObject(apiCommand);
+	}
+	
+	
+	private static ArrayList<Argument> setRequestFields(Field[] fields) {
+	    ArrayList<Argument> arguments = new ArrayList<Argument>();
+	    for (Field f : fields) {
+            Parameter parameterAnnotation = f.getAnnotation(Parameter.class);
+            if (parameterAnnotation != null && parameterAnnotation.expose()) {
+                Argument reqArg = new Argument(parameterAnnotation.name());
+                reqArg.setRequired(parameterAnnotation.required());
+                if (!parameterAnnotation.description().isEmpty()) {
+                    reqArg.setDescription(parameterAnnotation.description());
+                }   
+                arguments.add(reqArg);
+            }
+        } 
+	    return arguments;
+	}
+	
+	private static ArrayList<Argument> setResponseFields(Field[] responseFields) {
+	    ArrayList<Argument> arguments = new ArrayList<Argument>();
+	    for (Field responseField : responseFields) {    
+            SerializedName nameAnnotation = responseField.getAnnotation(SerializedName.class);
+            Param paramAnnotation = responseField.getAnnotation(Param.class);
+            Argument respArg = new Argument(nameAnnotation.value());   
+            boolean toExpose = true;
+            if (paramAnnotation != null) {
+                String description = paramAnnotation.description();
+                Class fieldClass = paramAnnotation.responseObject();
+                toExpose = paramAnnotation.expose();
+                if (description != null && !description.isEmpty()) {
+                    respArg.setDescription(description);
+                } 
+                
+                if (fieldClass != null) {
+                    Class<?> superClass = fieldClass.getSuperclass();
+                    if (superClass != null) {
+                        String superName = superClass.getName();
+                        if (superName.equals(BaseResponse.class.getName())) {
+                            ArrayList<Argument> fieldArguments = new ArrayList<Argument>();
+                            Field[] fields = fieldClass.getDeclaredFields();
+                            fieldArguments = setResponseFields(fields);
+                            respArg.setArguments(fieldArguments);
+                        }
+                    }
+                }
+            } 
+                
+            if (toExpose) {
+                arguments.add(respArg);
+            } 
+            
+            
+        }
+	    return arguments;
 	}
 	
 	private static void zipDir(String zipFileName, String dir) throws Exception {

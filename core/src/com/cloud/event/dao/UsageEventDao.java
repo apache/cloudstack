@@ -29,13 +29,9 @@ import com.cloud.utils.db.SearchCriteria;
 
 public interface UsageEventDao extends GenericDao<UsageEventVO, Long> {
     
-    public List<UsageEventVO> searchAllUsageEvents(SearchCriteria<UsageEventVO> sc, Filter filter);
+    public List<UsageEventVO> listLatestEvents(Date endDate);
 
-    public List<UsageEventVO> listLatestEvents(Date recentEventDate, Date endDate);
-
-    public List<UsageEventVO> listAllEvents(Date endDate);
-
-    public List<UsageEventVO> getLatestEventDate();
+    public List<UsageEventVO> getLatestEvent();
     
     List<UsageEventVO> getRecentEvents(Date endDate) throws UsageServerException;
 

@@ -38,8 +38,7 @@ public interface Volume extends ControlledEntity, BasedOn {
 	    Creating("The volume is being created.  getPoolId() should reflect the pool where it is being created."),
 	    Ready("The volume is ready to be used."),
 	    Used("The volume is used"),
-	    Destroy("The volume is set to be desctroyed but can be recovered."),
-	    Destroyed("The volume is destroyed.  Should be removed.");
+	    Destroy("The volume is set to be destroyed but can be recovered.");
 	    
 	    String _description;
 	    
@@ -75,17 +74,13 @@ public interface Volume extends ControlledEntity, BasedOn {
         private final static StateMachine<State, Event> s_fsm = new StateMachine<State, Event>();
         static {
             s_fsm.addTransition(Allocated, Event.Create, Creating);
-            s_fsm.addTransition(Allocated, Event.Destroy, Destroyed);
+            s_fsm.addTransition(Allocated, Event.Destroy, Destroy);
             s_fsm.addTransition(Creating, Event.OperationRetry, Creating);
             s_fsm.addTransition(Creating, Event.OperationFailed, Allocated);
             s_fsm.addTransition(Creating, Event.OperationSucceeded, Ready);
             s_fsm.addTransition(Creating, Event.Destroy, Destroy);
             s_fsm.addTransition(Ready, Event.Destroy, Destroy);
             s_fsm.addTransition(Ready, Event.Start, Used);
-            s_fsm.addTransition(Destroy, Event.OperationSucceeded, Destroyed);
-            s_fsm.addTransition(Destroy, Event.OperationFailed, Destroy);
-            s_fsm.addTransition(Destroy, Event.OperationRetry, Destroy);
-            s_fsm.addTransition(Destroy, Event.Recover, Ready);
         }
 	}
 	
@@ -95,8 +90,7 @@ public interface Volume extends ControlledEntity, BasedOn {
 	    OperationFailed,
 	    OperationSucceeded,
 	    OperationRetry,
-	    Destroy,
-	    Recover;
+	    Destroy;
 	}
 	
 	enum SourceType {

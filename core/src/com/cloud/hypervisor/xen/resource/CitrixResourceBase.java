@@ -532,7 +532,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
     }
     
-    private Network setupvSwitchNetwork(Connection conn) {
+    private synchronized Network setupvSwitchNetwork(Connection conn) {
 		try {
 			if (_host.vswitchNetwork == null) {
 				Network vswitchNw = null;
@@ -4035,7 +4035,8 @@ public abstract class CitrixResourceBase implements ServerResource {
                 }
             }
             // assume the memory Virtualization overhead is 1/64
-            ram = (ram - dom0Ram) * 63/64;
+            // xen hypervisor used 128 M
+            ram = (ram - dom0Ram - (128 * 1024 * 1024)) * 63/64;
             cmd.setMemory(ram);
             cmd.setDom0MinMemory(dom0Ram);
 

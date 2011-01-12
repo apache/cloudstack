@@ -26,5 +26,8 @@ public @interface Param {
 	String name() default "";
 	String propName() default "";
 	String description() default "";
+	
+	// 2 parameters below are used by cloudstack api
 	boolean expose() default true;
+	Class<?> responseObject() default Object.class;
 }

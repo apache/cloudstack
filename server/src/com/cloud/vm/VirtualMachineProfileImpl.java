@@ -51,9 +51,8 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     BootloaderType _bootloader;
     
     VirtualMachine.Type _type;
-    HypervisorType _hyperType;
     
-    public VirtualMachineProfileImpl(T vm, VMTemplateVO template, ServiceOfferingVO offering, Account owner, Map<String, Object> params, HypervisorType hyperType) {
+    public VirtualMachineProfileImpl(T vm, VMTemplateVO template, ServiceOfferingVO offering, Account owner, Map<String, Object> params) {
         _vm = vm;
         _template = template;
         _offering = offering;
@@ -63,11 +62,10 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
             _params = new HashMap<String, Object>();
         }
         _type = vm.getType();
-        _hyperType = hyperType;
     }
     
     public VirtualMachineProfileImpl(T vm) {
-        this(vm, null, null, null, null, null);
+        this(vm, null, null, null, null);
     }
     
     public VirtualMachineProfileImpl(VirtualMachine.Type type) {
@@ -112,11 +110,7 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     
     @Override
     public HypervisorType getHypervisorType() {
-    	if (_hyperType != null && !_hyperType.equals(HypervisorType.None)) {
-    		return _hyperType;
-    	}
-        getTemplate();
-        return _template.getHypervisorType();
+        return _vm.getHypervisorType();
     }
 
     @Override

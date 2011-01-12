@@ -57,6 +57,11 @@ function afterLoadVolumeJSP() {
     initDialog("dialog_create_template_from_snapshot", 450);    
 	initDialog("dialog_confirmation_delete_snapshot");
 	initDialog("dialog_download_volume");
+	
+	if(isAdmin())
+	    $("#dialog_create_template_from_snapshot").find("#isfeatured_container").show();
+	else
+	    $("#dialog_create_template_from_snapshot").find("#isfeatured_container").hide();		
 	        
     $.ajax({
         data: createURL("command=listOsTypes"),
@@ -1045,6 +1050,11 @@ function doCreateTemplateFromSnapshotInVolumePage($actionLink, $subgridItem) {
          
          var password = thisDialog.find("#password").val();	
          array1.push("&passwordEnabled="+password);                                         
+       
+         if(thisDialog.find("#isfeatured_container").css("display")!="none") {				
+		     var isFeatured = thisDialog.find("#isfeatured").val();						    	
+             array1.push("&isfeatured="+isFeatured);
+         }	
        
          var id = jsonObj.id;
          var apiCommand = "command=createTemplate&snapshotid="+id+array1.join("");    	 

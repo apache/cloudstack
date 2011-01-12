@@ -613,21 +613,21 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 						return null;
 					}
 				}
-				IngressRuleVO ingressRule = _ingressRuleDao.findByProtoPortsAndAllowedGroupId(securityGroup.getId(), protocol, startPort, endPort, ngVO.getId());
+				IngressRuleVO ingressRule = _ingressRuleDao.findByProtoPortsAndAllowedGroupId(securityGroup.getId(), protocol, startPortOrType, endPortOrCode, ngVO.getId());
 				if (ingressRule != null) {
 					continue; //rule already exists.
 				}
-				ingressRule  = new IngressRuleVO(securityGroup.getId(), startPort, endPort, protocol, ngVO.getId(), ngVO.getName(), ngVO.getAccountName());
+				ingressRule  = new IngressRuleVO(securityGroup.getId(), startPortOrType, endPortOrCode, protocol, ngVO.getId(), ngVO.getName(), ngVO.getAccountName());
 				ingressRule = _ingressRuleDao.persist(ingressRule);
 				newRules.add(ingressRule);
 			}
 			if(cidrList != null) {
 				for (String cidr: cidrList) {
-					IngressRuleVO ingressRule = _ingressRuleDao.findByProtoPortsAndCidr(securityGroup.getId(),protocol, startPort, endPort, cidr);
+					IngressRuleVO ingressRule = _ingressRuleDao.findByProtoPortsAndCidr(securityGroup.getId(),protocol, startPortOrType, endPortOrCode, cidr);
 					if (ingressRule != null) {
 						continue;
 					}
-					ingressRule  = new IngressRuleVO(securityGroup.getId(), startPort, endPort, protocol, cidr);
+					ingressRule  = new IngressRuleVO(securityGroup.getId(), startPortOrType, endPortOrCode, protocol, cidr);
 					ingressRule = _ingressRuleDao.persist(ingressRule);
 					newRules.add(ingressRule);
 				}

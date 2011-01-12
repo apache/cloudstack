@@ -26,6 +26,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.utils.net.NetUtils;
 
@@ -92,66 +93,17 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Enumerated(EnumType.STRING)
     private Role role = Role.DHCP_FIREWALL_LB_PASSWD_USERDATA;
     
-    public DomainRouterVO(DomainRouterVO that) {
-        this(that.id, that.serviceOfferingId, that.instanceName, that.privateMacAddress, that.privateIpAddress, that.privateNetmask, that.templateId, that.guestOSId, that.guestMacAddress, that.guestIpAddress, that.guestNetmask, that.accountId, that.domainId, that.publicMacAddress, that.publicIpAddress, that.publicNetmask, that.vlanDbId, that.vlanId, that.podId, that.dataCenterId, that.ramSize, that.gateway, that.domain, that.dns1, that.dns2);
-        this.vnet = that.vnet;
-        this.role = that.role;
-    }
-    
-    public DomainRouterVO(long id,
-                          long serviceOfferingId,
-                          String name,
-                          String privateMacAddress,
-                          String privateIpAddress,
-                          String privateNetmask,
-                          long templateId,
-                          long guestOSId,
-                          String guestMacAddress,
-                          String guestIpAddress,
-                          String guestNetmask,
-                          long accountId,
-                          long domainId,
-                          String publicMacAddress,
-                          String publicIpAddress,
-                          String publicNetMask,
-                          Long vlanDbId, String vlanId,
-                          long podId,
-                          long dataCenterId,
-                          int ramSize,
-                          String gateway,
-                          String domain,
-                          String dns1,
-                          String dns2) {
-        super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, guestOSId, privateMacAddress, privateIpAddress, privateNetmask, dataCenterId, podId, domainId, accountId, true, null);
-        this.privateMacAddress = privateMacAddress;
-        this.guestMacAddress = guestMacAddress;
-        this.guestIpAddress = guestIpAddress;
-        this.publicIpAddress = publicIpAddress;
-        this.publicMacAddress = publicMacAddress;
-        this.publicNetmask = publicNetMask;
-        this.vlanDbId = vlanDbId;
-        this.vlanId = vlanId;
-        this.ramSize = ramSize;
-        this.gateway = gateway;
-        this.domain = domain;
-        this.dns1 = dns1;
-        this.dns2 = dns2;
-        this.dataCenterId = dataCenterId;
-        this.accountId = accountId;
-        this.domainId = domainId;
-        this.guestNetmask = guestNetmask;
-    }
-    
     public DomainRouterVO(long id,
             long serviceOfferingId,
             String name,
             long templateId,
+            HypervisorType hypervisorType,
             long guestOSId,
             long domainId,
             long accountId,
             long networkConfigurationId,
             boolean haEnabled) {
-        super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, guestOSId, domainId, accountId, haEnabled);
+        super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.networkId = networkConfigurationId;
     }
 

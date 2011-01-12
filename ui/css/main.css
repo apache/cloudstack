@@ -268,7 +268,7 @@ a:hover {
 
 .loginoptions_dropdown {
 	width:91px;
-	height:100px;
+	height:auto;
 	float:left;
 	position:absolute;
 	background:#FFF url(../images/actiondd_bg.gif) repeat-x top left;
@@ -282,13 +282,13 @@ a:hover {
 	width:73px;
 	height:auto;
 	float:left;
-	margin:3px 0 0 9px;
+	margin:3px 0 0 5px;
 	padding:0 0 10px 0;
 	list-style:none;
 }
 
 .loginoptions_dropdown li{
-	width:68px;
+	width:80px;
 	height:auto;
 	float:left;
 	color:#333;
@@ -297,7 +297,7 @@ a:hover {
 	background:none;
 	border-bottom:1px dotted #999;
 	margin:0;
-	padding:5px 0 3px 5px;
+	padding:5px 0 3px 0px;
 	list-style:none;
 	overflow:hidden;
 }

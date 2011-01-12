@@ -31,7 +31,7 @@ public class VlanMappingVO {
 		this.hostId = hostId;
 		this.accountId = accountId;
 		this.vlan = vlan;
-		this.ref = 1;
+		this.ref = 0;
 	}
 
 	public VlanMappingVO() {
@@ -44,6 +44,10 @@ public class VlanMappingVO {
 
 	public long getAccountId() {
 		return accountId;
+	}
+	
+	public void setAccountId(long accountId) {
+		this.accountId = accountId;
 	}
 
 	public long getVlan() {
