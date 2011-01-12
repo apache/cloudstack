@@ -174,12 +174,9 @@ function bindStartVMButton() {
                     inProcessText: "Starting Instance....",
                     asyncJobResponse: "startvirtualmachineresponse",                  
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {                    
-                        var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;      
-                        
-                        vmToMidmenu(jsonObj, $midmenuItem1);                     
-                        if( ($("#right_panel_content #tab_content_details").length > 0)
-                          && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
-                          && (jsonObj.id == $("#right_panel_content #tab_content_details").data("jsonObj").id)) 
+                        var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;                         
+                        vmToMidmenu(jsonObj, $midmenuItem1);                                             
+                        if(jsonObj.id.toString() == $("#right_panel_content #tab_content_details").find("#id").text())
                             vmToRightPanel($midmenuItem1);                              
                     }
                 }          
@@ -225,10 +222,8 @@ function bindStopVMButton() {
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {                         
                         var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;  
                         vmToMidmenu(jsonObj, $midmenuItem1);   
-                        if( ($("#right_panel_content #tab_content_details").length > 0)
-                          && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
-                          && (jsonObj.id == $("#right_panel_content #tab_content_details").data("jsonObj").id)) 
-                            vmToRightPanel($midmenuItem1);                                          
+                        if(jsonObj.id.toString() == $("#right_panel_content #tab_content_details").find("#id").text())
+                            vmToRightPanel($midmenuItem1);                                             
                     }
                 }                      
 			                    
@@ -273,10 +268,8 @@ function bindRebootVMButton() {
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {  
                         var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;  
                         vmToMidmenu(jsonObj, $midmenuItem1);    
-                        if( ($("#right_panel_content #tab_content_details").length > 0)
-                          && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
-                          && (jsonObj.id == $("#right_panel_content #tab_content_details").data("jsonObj").id)) 
-                            vmToRightPanel($midmenuItem1);                                         
+                        if(jsonObj.id.toString() == $("#right_panel_content #tab_content_details").find("#id").text())
+                            vmToRightPanel($midmenuItem1);                                             
                     }
                 }                       
 			                    
@@ -321,10 +314,8 @@ function bindDestroyVMButton() {
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {  
                         var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine; 
                         vmToMidmenu(jsonObj, $midmenuItem1);  
-                        if( ($("#right_panel_content #tab_content_details").length > 0)
-                          && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
-                          && (jsonObj.id == $("#right_panel_content #tab_content_details").data("jsonObj").id)) 
-                            vmToRightPanel($midmenuItem1);                                           
+                        if(jsonObj.id.toString() == $("#right_panel_content #tab_content_details").find("#id").text())
+                            vmToRightPanel($midmenuItem1);                                              
                     }
                 }                            
 			                    
