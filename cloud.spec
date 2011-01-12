@@ -218,14 +218,19 @@ Requires: jpackage-utils
 Requires: %{name}-daemonize
 Requires: /sbin/service
 Requires: /sbin/chkconfig
+
+%if 0%{?rhel} >= 6
+Requires: cloud-kvm
+%else
 Requires: kvm
+%endif
+
 %if 0%{?fedora} >= 12
 Requires: qemu-cloud-system-x86
 Requires: qemu-cloud-img
 %endif
 
 %if 0%{?rhel} >= 6
-Requires: cloud-qemu-kvm
 Requires: cloud-qemu-img
 %endif
 
