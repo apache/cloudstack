@@ -114,6 +114,38 @@ function buildZoneTree() {
 		return false;
 	});  
 	
+	$("#secondarystorage_header").unbind("click").bind("click", function(event) {	   
+	    selectRowInZoneTree($(this));	
+	    
+	    clearMiddleMenu();
+	    hideMiddleMenu();	
+	    
+        if(currentRightPanelJSP != "jsp/secondarystorage.jsp") {            
+            removeDialogs();
+            
+            var $thisNode = $(this);    
+            $("#right_panel").load("jsp/secondarystorage.jsp", function(){     
+                currentRightPanelJSP = "jsp/secondarystorage.jsp";                 
+                 
+                /*                      
+                $(this).data("onRefreshFn", function() {		        
+                    var zoneObj = $midmenuItem1.data("jsonObj");
+                    if(zoneObj == null)
+                        return;
+                    $("#zone_"+zoneObj.id).find("#secondarystorage_header").click();
+                }); 
+                */
+                
+                afterLoadSecondaryStorageJSP($thisNode);                       
+            });      
+        } 
+        else {
+            //secondarystoragePopulateMiddleMenu($(this));  		 
+        }	    
+	       
+	    return false;
+	});
+	
 	$("#network_header").unbind("click").bind("click", function(event) {	   
 	    selectRowInZoneTree($(this));	
 	    
@@ -308,8 +340,9 @@ function zoneJSONToTreeNode(jsonObj, $zoneNode) {
     var zoneid = jsonObj.id;
     $zoneNode.attr("id", "zone_" + zoneid);  
     $zoneNode.data("jsonObj", jsonObj);
+    $zoneNode.find("#secondarystorage_header").data("zoneObj", jsonObj);    
     
-   if(jsonObj.networktype == "Advanced") {
+    if(jsonObj.networktype == "Advanced") {
         $zoneNode.find("#network_header").show().data("jsonObj", jsonObj);		 
     }
         
