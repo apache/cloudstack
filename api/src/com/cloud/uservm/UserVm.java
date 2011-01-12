@@ -69,9 +69,5 @@ public interface UserVm extends VirtualMachine, ControlledEntity {
     
     void setUserData(String userData);
 
-	String getEncryptedPassword();
-
-	Long getSSHKeyPairId();
-
 	String getSSHPublicKey();
 }

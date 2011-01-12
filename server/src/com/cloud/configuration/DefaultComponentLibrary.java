@@ -130,6 +130,7 @@ import com.cloud.vm.dao.InstanceGroupVMMapDaoImpl;
 import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.SecondaryStorageVmDaoImpl;
 import com.cloud.vm.dao.UserVmDaoImpl;
+import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 
 public class DefaultComponentLibrary implements ComponentLibrary {
@@ -238,6 +239,8 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addDao("SSHKeyPairDao", SSHKeyPairDaoImpl.class);
         addDao("UsageEventDao", UsageEventDaoImpl.class);
         addDao("ClusterDetailsDao", ClusterDetailsDaoImpl.class);
+        addDao("UserVmDetailsDao", UserVmDetailsDaoImpl.class);
+
     }
 
     Map<String, ComponentInfo<Manager>> _managers = new HashMap<String, ComponentInfo<Manager>>();

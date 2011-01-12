@@ -64,12 +64,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Column(name="display_name", updatable=true, nullable=true)
     private String displayName;
     
-    @Column(name="encrypted_password", updatable=true, nullable=true)
-    private String encryptedPassword;
-    
-    @Column(name="ssh_keypair_id", updatable=true, nullable=true)
-    private Long sshKeyPairId;
-    
     @Column(name="ssh_public_key", updatable=true, nullable=true)
     private String sshPublicKey;
     
@@ -91,24 +85,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     public void setSSHPublicKey(String publicKey) {
         this.sshPublicKey = publicKey;
     }
-    
-    @Override
-    public String getEncryptedPassword() {
-		return encryptedPassword;
-	}
-
-    @Override
-	public Long getSSHKeyPairId() {
-		return sshKeyPairId;
-	}
-
-	public void setEncryptedPassword(String encryptedPassword) {
-		this.encryptedPassword = encryptedPassword;
-	}
-
-	public void setSSHKeyPairId(Long sshKeyPairId) {
-		this.sshKeyPairId = sshKeyPairId;
-	}
 
 	@Override
     public String getGuestIpAddress() {
@@ -181,10 +157,13 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
                     long domainId,
                     long accountId,
                     long serviceOfferingId,
-                    String userData, String name) {
+                    String userData,
+                    String name,
+                    String sshPublicKey) {
         super(id, serviceOfferingId, name, instanceName, Type.User, templateId, guestOsId, domainId, accountId, haEnabled);
         this.userData = userData;
         this.displayName = displayName != null ? displayName : null;
+    	this.sshPublicKey = sshPublicKey;
     }
     
     public UserVmVO(long id,
@@ -219,24 +198,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
         this.displayName = displayName;
     }
     
-    public UserVmVO(long id,
-            String instanceName,
-            String displayName,
-            long templateId,
-            long guestOsId,
-            boolean haEnabled,
-            long domainId,
-            long accountId,
-            long serviceOfferingId,
-            String userData, 
-            String name,
-            Long sshKeyPairId,
-            String sshPublicKey) {
-    	this(id, instanceName, displayName, templateId, guestOsId, haEnabled, domainId, accountId, serviceOfferingId, userData, name);
-    	this.sshKeyPairId = sshKeyPairId;
-    	this.sshPublicKey = sshPublicKey;
-    }
-
     protected UserVmVO() {
         super();
     }

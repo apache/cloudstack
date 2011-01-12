@@ -262,6 +262,7 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -272,6 +273,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class ManagementServerImpl implements ManagementServer {	
@@ -330,6 +332,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final UploadDao _uploadDao;
     private final CertificateDao _certDao;
     private final SSHKeyPairDao _sshKeyPairDao;
+    private final UserVmDetailsDao _userVmDetailsDao;
 
 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -403,6 +406,7 @@ public class ManagementServerImpl implements ManagementServer {
         _tmpltMgr = locator.getManager(TemplateManager.class);
         _uploadMonitor = locator.getManager(UploadMonitor.class);
         _sshKeyPairDao = locator.getDao(SSHKeyPairDao.class);
+        _userVmDetailsDao = locator.getDao(UserVmDetailsDao.class);
     	
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
@@ -4750,13 +4754,15 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public String getVMPassword(GetVMPasswordCmd cmd) {
+    public String getVMPassword(GetVMPasswordCmd cmd) {   	
         Account account = UserContext.current().getCaller();
         UserVmVO vm = _userVmDao.findById(cmd.getId());
-        if (vm == null || vm.getEncryptedPassword() == null || vm.getEncryptedPassword().equals("") || vm.getAccountId() != account.getAccountId())
-                throw new InvalidParameterValueException("No password for VM with id '" + getId() + "' found.");
+        UserVmDetailVO password = _userVmDetailsDao.findDetail(cmd.getId(), "Encrypted.Password");
+        
+        if (vm == null || password == null || password.getValue() == null || password.getValue().equals("") || vm.getAccountId() != account.getAccountId())
+        	throw new InvalidParameterValueException("No password for VM with id '" + getId() + "' found.");
 
-        return vm.getEncryptedPassword();
+        return password.getValue();
     }
 
 }
