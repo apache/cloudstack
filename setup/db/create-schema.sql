@@ -1337,6 +1337,7 @@ CREATE TABLE  `cloud`.`usage_event` (
   `offering_id` bigint unsigned,
   `template_id` bigint unsigned,
   `size` bigint unsigned,  
+  `processed` tinyint NOT NULL default '0',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
