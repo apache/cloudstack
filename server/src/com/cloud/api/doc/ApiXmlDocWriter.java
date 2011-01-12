@@ -201,10 +201,10 @@ public class ApiXmlDocWriter {
 			regularUserSorted.close();
 			
 			//gzip directory with xml doc
-			zipDir(dirName + "xmldoc.zip", xmlDocDir);
+			//zipDir(dirName + "xmldoc.zip", xmlDocDir);
 			
 			//Delete directory
-			deleteDir(new File(xmlDocDir));
+			//deleteDir(new File(xmlDocDir));
 			
 		} catch (Exception ex) {
 			ex.printStackTrace();
