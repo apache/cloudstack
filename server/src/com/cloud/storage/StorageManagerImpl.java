@@ -2723,8 +2723,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
         String vmName = null;
         if (vol.getVolumeType() == VolumeType.ROOT && vol.getInstanceId() != null) {
-            VirtualMachine vm = _vmInstanceDao.findById(vol.getInstanceId());
-            vmName = vm.getInstanceName();
+            VirtualMachine vm = _vmInstanceDao.findByIdIncludingRemoved(vol.getInstanceId());
+            if (vm != null) {
+                vmName = vm.getInstanceName();
+            }
         }
         
         String volumePath = vol.getPath();

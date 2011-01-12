@@ -562,6 +562,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
         Account systemAcct = _accountMgr.getSystemAccount();
         User systemUser = _accountMgr.getSystemUser();
+        if (proxy.getState() == VirtualMachine.State.Running) {
+            return proxy;
+        }
         return _itMgr.start(proxy, null, systemUser, systemAcct);
     }
 

@@ -739,7 +739,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         volResponse.setDeviceId(volume.getDeviceId());
 
         Long instanceId = volume.getInstanceId();
-        if (instanceId != null) {
+        if (instanceId != null && volume.getState() != Volume.State.Destroy) {
             VMInstanceVO vm = ApiDBUtils.findVMInstanceById(instanceId);
             volResponse.setVirtualMachineId(vm.getId());
             volResponse.setVirtualMachineName(vm.getName());
