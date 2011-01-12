@@ -1254,7 +1254,7 @@ var vmActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;           
             vmToMidmenu(jsonObj, $midmenuItem1);            
-            setBooleanReadField((jsonObj.isoid != null), $("#right_panel_content").find("#tab_content_details").find("#iso")); 
+            //setBooleanReadField((jsonObj.isoid != null), $("#right_panel_content").find("#tab_content_details").find("#iso")); 
         }   
     },
     "Detach ISO": {
@@ -1265,7 +1265,7 @@ var vmActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;    
             vmToMidmenu(jsonObj, $midmenuItem1);           
-            setBooleanReadField((jsonObj.isoid != null), $("#right_panel_content").find("#tab_content_details").find("#iso")); 
+            //setBooleanReadField((jsonObj.isoid != null), $("#right_panel_content").find("#tab_content_details").find("#iso")); 
         }   
     },
     "Reset Password": {                
