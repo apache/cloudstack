@@ -18,10 +18,8 @@
 
 function afterLoadSecondaryStorageJSP($midmenuItem1) {
     var $topButtonContainer = clearButtonsOnTop();			    	       
-	$("#top_buttons").appendTo($topButtonContainer);     
-        
-    //initDialog("dialog_add_external_cluster_in_secondaryStorage_page", 320);
-         
+	$("#top_buttons").appendTo($topButtonContainer); 
+	initDialog("dialog_add_secondarystorage");   
     secondaryStorageRefreshDataBinding();    	
 }
 
@@ -31,15 +29,9 @@ function secondaryStorageRefreshDataBinding() {
 }
 
 function secondaryStorageJsonToRightPanel($midmenuItem1) {	    
-    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);      
-           
-    /*
-    bindEventHandlerToDialogAddVlanForZone();    
-    bindAddPodButton($("#add_pod_button"), $midmenuItem1);   
-    bindAddSecondaryStorageButton($("#add_secondarystorage_button"), $midmenuItem1);
-    */
-          
-   secondaryStorageJsonToDetailsTab();    
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);  
+    bindAddSecondaryStorageButton($midmenuItem1.data("zoneObj"));   
+    secondaryStorageJsonToDetailsTab();    
 }
 
 function secondaryStorageJsonToDetailsTab() {	    

@@ -151,3 +151,46 @@
     </div>
 </div>
 <!--  top buttons (end) -->
+
+<!-- Add Secondary Storage Dialog (begin) -->
+<div id="dialog_add_secondarystorage" title="Add Secondary Storage" style="display: none">
+    <p>
+        Add a new storage for zone <b><span id="zone_name"></span></b>
+    </p>
+    <div class="dialog_formcontent">
+        <form action="#" method="post" id="form1">
+        <ol>
+            <li>
+                <label>
+                    NFS Server:</label>
+                <input class="text" type="text" name="nfs_server" id="nfs_server" />
+                <div id="nfs_server_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li>
+                <label for="path">
+                    Path:</label>
+                <input class="text" type="text" name="path" id="path" />
+                <div id="path_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+        </ol>
+        </form>
+    </div>
+    <!--Loading box-->
+    <div id="spinning_wheel" class="ui_dialog_loaderbox" style="display: none;">
+        <div class="ui_dialog_loader">
+        </div>
+        <p>
+            Adding....</p>
+    </div>
+    <!--Confirmation msg box-->
+    <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
+    <div id="info_container" class="ui_dialog_messagebox error" style="display: none;">
+        <div id="icon" class="ui_dialog_msgicon error">
+        </div>
+        <div id="info" class="ui_dialog_messagebox_text error">
+            (info)</div>
+    </div>
+</div>
+<!-- Add Secondary Storage Dialog (end) -->

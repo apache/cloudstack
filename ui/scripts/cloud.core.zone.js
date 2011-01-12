@@ -52,7 +52,7 @@ function zoneJsonToRightPanel($leftmenuItem1) {
                
     bindAddPodButton($("#add_pod_button"), $leftmenuItem1);                  
     //bindAddVLANButton($("#add_vlan_button"), $leftmenuItem1);
-    bindAddSecondaryStorageButton($("#add_secondarystorage_button"), $leftmenuItem1);
+    bindAddSecondaryStorageButton($leftmenuItem1.data("jsonObj"));
           
     var pods;
     var zoneObj = $leftmenuItem1.data("jsonObj");
@@ -581,13 +581,8 @@ function bindAddVLANButton($button, $leftmenuItem1) {
 }
 
 
-function bindAddSecondaryStorageButton($button, $leftmenuItem1) {    
-    $button.show();      
-    $button.unbind("click").bind("click", function(event) {
-        //if($("#tab_content_secondarystorage").css("display") == "none")
-        //    $("#tab_secondarystorage").click();    
-        
-        var zoneObj = $leftmenuItem1.data("jsonObj");    
+function bindAddSecondaryStorageButton(zoneObj) {        
+    $("#add_secondarystorage_button").unbind("click").bind("click", function(event) {   
         $("#dialog_add_secondarystorage").find("#zone_name").text(fromdb(zoneObj.name));   
         $("#dialog_add_secondarystorage").find("#info_container").hide();		    
    
@@ -615,16 +610,8 @@ function bindAddSecondaryStorageButton($button, $leftmenuItem1) {
 				    dataType: "json",
 				    success: function(json) {	
 				        $thisDialog.find("#spinning_wheel").hide();				        
-				        $thisDialog.dialog("close");
-										    
-					    $("#zone_"+zoneId).find("#secondarystorage_header").click();
-					    /*
-					    var $subgridItem = $("#secondary_storage_tab_template").clone(true);	                        
-				        secondaryStorageJSONToTemplate(json.addsecondarystorageresponse.secondarystorage, $subgridItem);	
-	                    $subgridItem.find("#after_action_info").text("Secondary storage was added successfully.");
-                        $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
-                        $("#tab_content_secondarystorage").find("#tab_container").append($subgridItem.show());  
-                        */
+				        $thisDialog.dialog("close");										    
+					    $("#zone_"+zoneId).find("#secondarystorage_header").click();					    
 				    },			
                     error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {
