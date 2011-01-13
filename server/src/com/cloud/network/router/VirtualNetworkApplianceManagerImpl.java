@@ -1419,6 +1419,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         VirtualRouter router = startDhcp ? deployDhcp(network, dest, profile.getOwner()) : deployVirtualRouter(network, dest, profile.getOwner());
 
+        _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
+        
         String password = profile.getVirtualMachine().getPassword();
         String userData = profile.getVirtualMachine().getUserData();
         String sshPublicKey = profile.getVirtualMachine().getDetail("SSH.PublicKey");
