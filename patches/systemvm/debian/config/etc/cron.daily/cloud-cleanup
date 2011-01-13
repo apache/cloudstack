@@ -1,0 +1,11 @@
+#!/bin/sh
+# /etc/cron.daily/cloud-cleanup: cleanup old cloudstack logs
+
+cd /
+output=$(find /var/log/cloud -mtime +7 -size +1M -exec rm -v '{}' \; )
+logger -t cloud "cloud-cleanup cronjob: cleaning up logfiles in /var/log/cloud older than 7 days and more than 1M in size"
+
+[ "$output" != "" ] && logger -t cloud  $output
+[ -z "$output"  ] && logger -t cloud  "No files removed"
+
+exit 0
