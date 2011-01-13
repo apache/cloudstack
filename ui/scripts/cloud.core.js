@@ -124,9 +124,9 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
 	        dataType: "json",
 	        async: false,
 	        success: function(json) {	 	                  
-	            $spinningWheel.hide(); 	      
-	            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label + " action succeeded."));		            
-				afterActionSeccessFn(json, $midmenuItem1, id);				
+	            $spinningWheel.hide(); 	 
+	            afterActionSeccessFn(json, $midmenuItem1, id); //this line will update $midmenuItem1.data("jsonObj")	     
+	            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label + " action succeeded.")); //updated $midmenuItem1.data("jsonObj") will be used here	     
 	        },
             error: function(XMLHttpResponse) {
 				handleError(XMLHttpResponse, function() {

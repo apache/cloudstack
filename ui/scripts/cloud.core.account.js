@@ -537,7 +537,7 @@ var accountActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {             
             var item = json.queryasyncjobresultresponse.jobresult.account;
             accountToMidmenu(item, $midmenuItem1);           
-            accountJsonToDetailsTab();
+            //accountJsonToDetailsTab();
         }
     }    
     ,
@@ -549,7 +549,7 @@ var accountActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {  
             var item = json.queryasyncjobresultresponse.jobresult.account;
             accountToMidmenu(item, $midmenuItem1);           
-            accountJsonToDetailsTab();
+            //accountJsonToDetailsTab();
         }
     }    
     ,
@@ -560,7 +560,7 @@ var accountActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             var item = json.enableaccountresponse.account;                  
             accountToMidmenu(item, $midmenuItem1);           
-            accountJsonToDetailsTab();
+            //accountJsonToDetailsTab();
         }
     } 
     ,
@@ -569,11 +569,14 @@ var accountActionMap = {
         asyncJobResponse: "deleteaccountresponse",
         dialogBeforeActionFn : doDeleteAccount,
         inProcessText: "Deleting account....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {                   
-            $midmenuItem1.slideUp("slow", function() {
-                $(this).remove();
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {    
+            $midmenuItem1.slideUp("slow", function() {                
+                $(this).remove();  
+                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                    clearRightPanel();
+                    accountClearRightPanel();
+                }                
             });
-            accountClearRightPanel();
         }
     }          
 }; 
