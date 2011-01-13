@@ -1,7 +1,7 @@
 /var/log/apache2/*.log {
-	weekly
+	daily
 	missingok
-	rotate 52
+	rotate 5
 	compress
 	delaycompress
 	notifempty
