@@ -1571,7 +1571,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                                            isPublic,
                                            featured,
                                            isExtractable,
-                                           null,
+                                           TemplateType.USER,
                                            null,
                                            null,
                                            requiresHvmValue,
