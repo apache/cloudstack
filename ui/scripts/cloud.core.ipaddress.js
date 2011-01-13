@@ -1030,7 +1030,9 @@ function ipClearDetailsTab() {
     $thisTab.find("#zonename").text("");
     $thisTab.find("#vlanname").text("");   
     $thisTab.find("#source_nat").text("");
-    $thisTab.find("#network_type").text("");
+    $thisTab.find("#network_type").text("");    
+    $thisTab.find("#networkid").text("");  
+    $thisTab.find("#associatednetworkid").text("");    
     $thisTab.find("#domain").text("");
     $thisTab.find("#account").text("");
     $thisTab.find("#allocated").text("");    
@@ -1060,10 +1062,13 @@ var ipActionMap = {
         inProcessText: "Releasing IP....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             $midmenuItem1.slideUp("slow", function(){
-                $(this).remove();
+                $(this).remove();                    
+                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#ipaddress").text()) {
+                    clearRightPanel();
+                    ipClearRightPanel();
+                }
             });  
-            clearRightPanel();
-            ipClearRightPanel();
+            
         }
     },
     "Enable Static NAT": {                      
@@ -1071,18 +1076,19 @@ var ipActionMap = {
         asyncJobResponse: "createipforwardingruleresponse",
         dialogBeforeActionFn: doEnableStaticNAT,
         inProcessText: "Enabling Static NAT....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id){   
-            var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-            var ipObj = $midmenuItem1.data("jsonObj");           
-            ipObj.isstaticnat = true;   
-            setBooleanReadField(ipObj.isstaticnat, $("#right_panel_content #tab_content_details").find("#static_nat"));     
-         
-            var item = json.queryasyncjobresultresponse.jobresult.portforwardingrule;        
-            var $thisTab =$("#right_panel_content #tab_content_details");
-            $thisTab.find("#vm_of_static_nat").text(getVmName(item.virtualmachinename, item.virtualmachinedisplayname));
-	        $thisTab.find("#vm_of_static_nat_container").show();	 
-	        
-	        ipToRightPanel($midmenuItem1);      
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {              
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#ipaddress").text()) {    
+                var ipObj = $midmenuItem1.data("jsonObj");                 
+                ipObj.isstaticnat = true;   
+                setBooleanReadField(ipObj.isstaticnat, $("#right_panel_content #tab_content_details").find("#static_nat"));     
+             
+                var item = json.queryasyncjobresultresponse.jobresult.portforwardingrule;        
+                var $thisTab =$("#right_panel_content #tab_content_details");
+                $thisTab.find("#vm_of_static_nat").text(getVmName(item.virtualmachinename, item.virtualmachinedisplayname));
+	            $thisTab.find("#vm_of_static_nat_container").show();	 
+    	        
+	            ipToRightPanel($midmenuItem1);   
+	        }   
         }        
     },
     "Disable Static NAT": {                      
@@ -1090,17 +1096,18 @@ var ipActionMap = {
         asyncJobResponse: "deleteipforwardingruleresponse",
         dialogBeforeActionFn: doDisableStaticNAT,
         inProcessText: "Disabling Static NAT....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id){   
-            var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-            var ipObj = $midmenuItem1.data("jsonObj");           
-            ipObj.isstaticnat = false;   
-            setBooleanReadField(ipObj.isstaticnat, $("#right_panel_content #tab_content_details").find("#static_nat"));              
-            
-            var $thisTab =$("#right_panel_content #tab_content_details");
-            $thisTab.find("#vm_of_static_nat").text("");
-            $thisTab.find("#vm_of_static_nat_container").hide();   
-            
-            ipToRightPanel($midmenuItem1);        
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {          
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#ipaddress").text()) {    
+                var ipObj = $midmenuItem1.data("jsonObj");               
+                ipObj.isstaticnat = false;   
+                setBooleanReadField(ipObj.isstaticnat, $("#right_panel_content #tab_content_details").find("#static_nat"));              
+                
+                var $thisTab = $("#right_panel_content #tab_content_details");
+                $thisTab.find("#vm_of_static_nat").text("");
+                $thisTab.find("#vm_of_static_nat_container").hide();   
+                
+                ipToRightPanel($midmenuItem1);  
+            }      
         }        
     }
 }   
