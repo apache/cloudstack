@@ -2316,7 +2316,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UserVmVO vm = new UserVmVO(id, instanceName, cmd.getDisplayName(), template.getId(), hypervisorType,
                                    template.getGuestOSId(), offering.getOfferHA(), domainId, owner.getId(), offering.getId(), userData, hostName);
 
-        vm.setDetail("SSH.PublicKey", sshPublicKey);
+        if (sshPublicKey != null)
+        	vm.setDetail("SSH.PublicKey", sshPublicKey);
 
         if (_itMgr.allocate(vm, template, offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, cmd.getHypervisor(), owner) == null) {
             return null;
