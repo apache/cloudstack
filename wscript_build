@@ -297,7 +297,8 @@ def build_xml_api_description ():
 		cp = [ _join(relationship,x) for x in task.generator.env.CLASSPATH.split(pathsep) ]
 
 		jarnames = ['utils','server','core', 'api']
-		props = "client/tomcatconf/commands.properties.in"
+		props = ["client/tomcatconf/commands.properties.in"]
+		if buildpremium: props.append("cloudstack-proprietary/premium/tomcatconf/commands-ext.properties.in")
 
 		sources = []
 		for i in jarnames:
