@@ -327,19 +327,6 @@ EOF
 
 }
 
-xenstore_utils() {
-  chroot . apt-get --no-install-recommends -q -y --force-yes install libxenstore
-  for f in $(find ${scriptdir}/xe/usr/bin -name xen*)
-  do
-    cp $f ./usr/bin
-  done
-  for f in $(find ${scriptdir}/xe/ -name xe-*)
-  do
-    cp $f ./usr/sbin/
-    chmod a+x ./usr/sbin/xe-*
-  done
-}
-
 vpn_config() {
   cp -r ${scriptdir}/vpn/* ./
 }
@@ -351,7 +338,11 @@ packages() {
   export DEBIAN_FRONTEND DEBIAN_PRIORITY DEBCONF_DB_OVERRIDE
 
   #basic stuff
-  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub e2fsprogs dhcp3-client dnsmasq tcpdump socat wget  python bzip2 sed gawk diff grep gzip less tar telnet traceroute psmisc lsof procps monit inetutils-ping iputils-arping httping dnsutils zip unzip ethtool uuid file iproute acpid iptables-persistent sysstat
+  chroot .  apt-get --no-install-recommends -q -y --force-yes install rsyslog logrotate cron chkconfig insserv net-tools ifupdown vim-tiny netbase iptables openssh-server grub e2fsprogs dhcp3-client dnsmasq tcpdump socat wget  python bzip2 sed gawk diff grep gzip less tar telnet traceroute psmisc lsof procps monit inetutils-ping iputils-arping httping dnsutils zip unzip ethtool uuid file iproute acpid iptables-persistent 
+
+  #sysstat
+  chroot . echo 'sysstat/enabled boolean true' | debconf-set-selections
+  chroot .  apt-get --no-install-recommends -q -y --force-yes install sysstat
   #apache
   chroot .  apt-get --no-install-recommends -q -y --force-yes install apache2 ssl-cert 
   #haproxy
@@ -365,12 +356,15 @@ packages() {
   #vmware tools
   chroot . apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
   #xenstore utils
-  xenstore_utils
+  chroot . apt-get --no-install-recommends -q -y --force-yes install xenstore-utils libxenstore3.0
 
   echo "***** getting sun jre 6*********"
-  DEBIAN_FRONTEND=readline
-  export DEBIAN_FRONTEND 
-  chroot . echo sun-java6-jdk shared/accepted-sun-dlj-v1-1 boolean true | debconf-set-selections
+  chroot . echo 'sun-java6-bin shared/accepted-sun-dlj-v1-1 boolean true
+	sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true
+	sun-java6-jre sun-java6-jre/stopthread boolean true
+	sun-java6-jre sun-java6-jre/jcepolicy note
+	sun-java6-bin shared/present-sun-dlj-v1-1 note
+	sun-java6-jre shared/present-sun-dlj-v1-1 note ' | chroot . debconf-set-selections
   chroot .  apt-get --no-install-recommends -q -y install  sun-java6-jre 
 
 }
