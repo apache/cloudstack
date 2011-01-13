@@ -64,6 +64,7 @@ import com.cloud.agent.api.CheckOnHostAnswer;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
@@ -456,6 +457,8 @@ public abstract class CitrixResourceBase implements ServerResource {
         	return execute((OvsSetTagAndFlowCommand)cmd);
         } else if (cmd instanceof OvsDeleteFlowCommand) {
         	return execute((OvsDeleteFlowCommand)cmd);
+        } else if (cmd instanceof CleanupNetworkRulesCmd){
+            return execute((CleanupNetworkRulesCmd)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -637,6 +640,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
     }
     
+<<<<<<< HEAD
     protected VBD createVbd(Connection conn, VolumeTO volume, String vmName, VM vm, BootloaderType bootLoaderType) throws XmlRpcException, XenAPIException {
         VolumeType type = volume.getType();
         
@@ -5701,6 +5705,24 @@ public abstract class CitrixResourceBase implements ServerResource {
             return new Answer(cmd, false, msg);
         } 
     }
+    
+    private Answer execute(CleanupNetworkRulesCmd cmd) {
+        if (!_canBridgeFirewall) {
+            return new Answer(cmd, true, null);
+        }
+        String result = callHostPlugin("cleanup_rules");
+        int numCleaned = Integer.parseInt(result);
+        if (result == null || result.isEmpty() || (numCleaned < 0)) {
+            s_logger.warn("Failed to cleanup rules for host " + _host.ip);
+            return new Answer(cmd, false, result);
+        }
+        if (numCleaned > 0) {
+            s_logger.info("Cleaned up rules for " + result + " vms on host " + _host.ip);
+        }
+        return new Answer(cmd, true, result);
+    }
+
+    
 
     protected class Nic {
         public Network n;

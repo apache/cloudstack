@@ -862,7 +862,6 @@ def cleanup_rules(session, args):
     util.SMlog("Failed to cleanup rules !")
     return '-1';
 
-
 @echo
 def check_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
     vm_name = vmName;
