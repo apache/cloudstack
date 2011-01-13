@@ -664,7 +664,7 @@
 	                                </div>
 	                                <div class="vmpopup_offdescriptionbox_bot">
 	                                    <p id="network_virtual_desc">
-	                                        A dedicated virtualized network for your account.  The broadcast domain is contrained within a VLAN and all public network access is routed out by a virtual router.
+	                                        A dedicated virtualized network for your account.  The broadcast domain is contained within a VLAN and all public network access is routed out by a virtual router.
 	                                    </p>
 	                                </div>
 	                            </div>

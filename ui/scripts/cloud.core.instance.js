@@ -830,7 +830,7 @@ function initVMWizard() {
 			    $thisPopup.find("#step4").find("#for_basic_zone").hide();	
 			    		    
 				var networkName = "Virtual Network";
-				var networkDesc = "A dedicated virtualized network for your account.  The broadcast domain is contrained within a VLAN and all public network access is routed out by a virtual router.";
+				var networkDesc = "A dedicated virtualized network for your account.  The broadcast domain is contained within a VLAN and all public network access is routed out by a virtual router.";
 				$.ajax({
 					data: createURL("command=listNetworks&domainid="+g_domainid+"&account="+g_account+"&zoneId="+$thisPopup.find("#wizard_zone").val()),
 					dataType: "json",
