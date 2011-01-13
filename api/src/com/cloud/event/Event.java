@@ -21,6 +21,7 @@ import java.util.Date;
 
 public interface Event {
     public enum State {
+        Created,
         Scheduled,
         Started,
         Completed;

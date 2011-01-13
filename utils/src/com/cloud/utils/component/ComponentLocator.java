@@ -853,7 +853,7 @@ public class ComponentLocator implements ComponentLocatorMBean {
         @Override
         public void startElement(String namespaceURI, String localName, String qName, Attributes atts)
         throws SAXException {
-            if (qName.equals("interceptors") && s_interceptors.size() == 0) {
+            if (qName.equals("interceptor") && s_interceptors.size() == 0) {
                 synchronized(s_interceptors){
                     if (s_interceptors.size() == 0) {
                         String libraryName = getAttribute(atts, "library");

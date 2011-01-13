@@ -163,6 +163,7 @@ import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEvent;
 import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
@@ -2917,7 +2918,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
-    @Override
+    @Override @ActionEvent
     public boolean deleteDomain(DeleteDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Account account = UserContext.current().getCaller();
         Long domainId = cmd.getId();

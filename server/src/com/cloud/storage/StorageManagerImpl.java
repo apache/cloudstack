@@ -89,6 +89,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEvent;
 import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
@@ -1569,7 +1570,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     
     
     /*Just allocate a volume in the database, don't send the createvolume cmd to hypervisor. The volume will be finally created only when it's attached to a VM.*/
-    @Override
+    @Override @ActionEvent (create=true)
     public VolumeVO allocVolume(CreateVolumeCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceAllocationException {
         // FIXME:  some of the scheduled event stuff might be missing here...
         Account account = UserContext.current().getCaller();
@@ -1727,7 +1728,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         return volume;
     }
 
-    @Override @DB
+    @Override @DB @ActionEvent
     public VolumeVO createVolume(CreateVolumeCmd cmd) {
         VolumeVO volume = _volsDao.findById(cmd.getEntityId());
 //        VolumeVO createdVolume = null;

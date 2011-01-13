@@ -40,7 +40,7 @@ public class EventUtils {
         event.setAccountId(accountId);
         event.setType(type);
         event.setState(Event.State.Started);
-        event.setDescription(description);
+        event.setDescription("Starting job for "+description);
         event.setStartId(startEventId);
         event = _eventDao.persist(event);
     	return event.getId();
@@ -101,6 +101,18 @@ public class EventUtils {
         event.setLevel(level);
         event.setParameters(params);
         event.setStartId(startEventId);
+        event = _eventDao.persist(event);
+        return event.getId();
+    }
+    
+    public static Long saveCreatedEvent(Long userId, Long accountId, String level, String type, String description) {
+        EventVO event = new EventVO();
+        event.setUserId(userId);
+        event.setAccountId(accountId);
+        event.setType(type);
+        event.setLevel(level);
+        event.setState(Event.State.Created);
+        event.setDescription(description);
         event = _eventDao.persist(event);
         return event.getId();
     }

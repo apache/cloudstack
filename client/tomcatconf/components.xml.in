@@ -23,7 +23,7 @@
   documented, please contact the author.
 -->
 <components.xml>
-    <interceptor library="com.cloud.configuration.DefaultIntercetorLibrary"/>
+    <interceptor library="com.cloud.configuration.DefaultInterceptorLibrary"/>
     <management-server class="com.cloud.server.ManagementServerImpl" library="com.cloud.configuration.DefaultComponentLibrary">
         <adapters key="com.cloud.agent.manager.allocator.HostAllocator">
             <adapter name="FirstFitRouting" class="com.cloud.agent.manager.allocator.impl.RecreateHostAllocator"/>

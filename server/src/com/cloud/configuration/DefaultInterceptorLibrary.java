@@ -19,6 +19,7 @@ package com.cloud.configuration;
 
 import java.util.List;
 
+import com.cloud.event.ActionEventCallback;
 import com.cloud.utils.component.AnnotationInterceptor;
 import com.cloud.utils.component.InterceptorLibrary;
 import com.cloud.utils.db.DatabaseCallback;
@@ -28,5 +29,6 @@ public class DefaultInterceptorLibrary implements InterceptorLibrary {
     @Override
     public void addInterceptors(List<AnnotationInterceptor<?>> interceptors) {
         interceptors.add(new DatabaseCallback());
+        interceptors.add(new ActionEventCallback());
     }
 }
