@@ -1613,12 +1613,22 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
        } 
     }
     
+    
+    @Override
+    public Account getActiveAccount(Long accountId) {
+       if (accountId == null) {
+           throw new InvalidParameterValueException("AccountId is required by account search");
+       } else {
+          return  _accountDao.findById(accountId);
+       } 
+    }
+    
     @Override
     public Account getAccount(Long accountId) {
        if (accountId == null) {
            throw new InvalidParameterValueException("AccountId is required by account search");
        } else {
-          return  _accountDao.findById(accountId);
+          return  _accountDao.findByIdIncludingRemoved(accountId);
        } 
     }
 }

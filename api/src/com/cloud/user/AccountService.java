@@ -145,7 +145,8 @@ public interface AccountService {
 	
 	Account getActiveAccount(String accountName, Long domainId);
 	
-	Account getAccount(Long accountId);
+	Account getActiveAccount(Long accountId);
 	
+	Account getAccount(Long accountId);
 
 }
