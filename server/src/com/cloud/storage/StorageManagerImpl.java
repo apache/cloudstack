@@ -1780,8 +1780,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 //                    String eventParams = "id=" + createdVolume.getId() + "\ndoId=" + diskOffering.getId() + "\ntId=" + -1 + "\ndcId=" + dc.getId() + "\nsize=" + sizeMB;
 //                    event.setDescription("Created volume: " + createdVolume.getName() + " with size: " + sizeMB + " MB in pool: " + pool.getName());
 //                    event.setDescription("Created volume: " + createdVolume.getName() + " with size: " + sizeMB + " MB");
-                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOffering.getId(), null , sizeMB);
-                    _usageEventDao.persist(usageEvent);
 /*
                 } else {
                     event.setDescription("Unable to create a volume for " + volume);
