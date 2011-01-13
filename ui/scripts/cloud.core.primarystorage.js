@@ -225,8 +225,10 @@ var primarystorageActionMap = {
             $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();
             });   
-            clearRightPanel();
-            primarystorageClearRightPanel();
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                clearRightPanel();
+                primarystorageClearRightPanel();
+            }
         }
     }
 }

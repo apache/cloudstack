@@ -912,9 +912,11 @@ var zoneActionMap = {
         afterActionSeccessFn: function(json, $leftmenuItem1, id) {   
             $leftmenuItem1.slideUp(function() {
                 $(this).remove();
-            });
-            clearRightPanel();
-            zoneJsonClearRightPanel();
+            });            
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                clearRightPanel();
+                zoneJsonClearRightPanel();
+            }
         }
     }
 }

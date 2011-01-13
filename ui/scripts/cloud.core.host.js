@@ -681,8 +681,10 @@ var hostActionMap = {
             $midmenuItem1.slideUp("slow", function() {
                $(this).remove();
             });   
-            clearRightPanel();
-            hostClearRightPanel();
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                clearRightPanel();
+                hostClearRightPanel();
+            }
         }
     },    
     "Update OS Preference": {              
