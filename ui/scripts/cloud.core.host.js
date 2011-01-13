@@ -60,6 +60,7 @@ function hostToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function hostToRightPanel($midmenuItem1) {       
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);  
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);        
     hostJsonToDetailsTab();   
 }
@@ -644,8 +645,8 @@ var hostActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {            
             var item = json.queryasyncjobresultresponse.jobresult.host;
             hostToMidmenu(item, $midmenuItem1);
-            hostToRightPanel($midmenuItem1);            
-            $("#right_panel_content #after_action_info").text("We are actively enabling maintenance on your host. Please refresh periodically for an updated status."); 
+            //hostToRightPanel($midmenuItem1);            
+            //$("#right_panel_content #after_action_info").text("We are actively enabling maintenance on your host. Please refresh periodically for an updated status."); 
         }
     },
     "Cancel Maintenance Mode": {              
@@ -656,8 +657,8 @@ var hostActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {            
             var item = json.queryasyncjobresultresponse.jobresult.host;  
             hostToMidmenu(item, $midmenuItem1);  
-            hostToRightPanel($midmenuItem1);            
-            $("#right_panel_content #after_action_info").text("We are actively cancelling your scheduled maintenance.  Please refresh periodically for an updated status."); 
+            //hostToRightPanel($midmenuItem1);            
+            //$("#right_panel_content #after_action_info").text("We are actively cancelling your scheduled maintenance.  Please refresh periodically for an updated status."); 
         }
     },
     "Force Reconnect": {              
@@ -668,8 +669,8 @@ var hostActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {
             var item = json.queryasyncjobresultresponse.jobresult.host;
             hostToMidmenu(item, $midmenuItem1);  
-            hostToRightPanel($midmenuItem1);            
-            $("#right_panel_content #after_action_info").text("We are actively reconnecting your host.  Please refresh periodically for an updated status."); 
+            //hostToRightPanel($midmenuItem1);            
+            //$("#right_panel_content #after_action_info").text("We are actively reconnecting your host.  Please refresh periodically for an updated status."); 
         }
     },
     "Remove Host": {              
@@ -691,7 +692,7 @@ var hostActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {     
             var item = json.updatehostresponse.host;
             hostToMidmenu(item, $midmenuItem1);      
-            hostToRightPanel($midmenuItem1);         
+            //hostToRightPanel($midmenuItem1);         
         }
     }          
 } 

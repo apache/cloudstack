@@ -55,6 +55,7 @@ function primarystorageToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function primarystorageToRightPanel($midmenuItem1) {  
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);  
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);        
     primarystorageJsonToDetailsTab();  
 }
