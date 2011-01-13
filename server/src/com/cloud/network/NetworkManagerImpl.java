@@ -169,7 +169,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject LoadBalancingRulesManager _lbMgr;
     @Inject UsageEventDao _usageEventDao;
     @Inject PodVlanMapDao _podVlanMapDao;
-
     @Inject(adapter=NetworkGuru.class)
     Adapters<NetworkGuru> _networkGurus;
     @Inject(adapter=NetworkElement.class)
