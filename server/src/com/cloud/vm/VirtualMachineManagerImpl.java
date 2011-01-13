@@ -594,6 +594,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
                 cmds.addCommand(new StartCommand(vmTO));
                 
                 vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
+                vm.setPodId(dest.getPod().getId());
                 try {
                     Answer[] answers = _agentMgr.send(dest.getHost().getId(), cmds);
                     if (getStartAnswer(answers).getResult() && vmGuru.finalizeStart(cmds, vmProfile, dest, ctx)) {
