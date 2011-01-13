@@ -1279,6 +1279,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     				DomainSnapshot snap = vm.snapshotLookupByName(snapshotName);
     				snap.delete(0);
     			}
+
+    			/*libvirt on RHEL6 doesn't handle resume event emitted from qemu*/
+    			vm = getDomain(cmd.getVmName());
+    			state = vm.getInfo().state;
+    			if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
+    				vm.resume();
+    			}
     		} else {
     			/*VM is not running, create a snapshot by ourself*/
     			final Script command = new Script(_manageSnapshotPath, _timeout, s_logger);
@@ -1346,6 +1353,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 				s_logger.debug(snapshot);
 				DomainSnapshot snap = vm.snapshotLookupByName(snapshotName);
 				snap.delete(0);
+				
+				/*libvirt on RHEL6 doesn't handle resume event emitted from qemu*/
+				vm = getDomain(cmd.getVmName());
+    			state = vm.getInfo().state;
+    			if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
+    				vm.resume();
+    			}
 			} else {
 				command = new Script(_manageSnapshotPath, _timeout, s_logger);   			
     			command.add("-d", snapshotPath);  			
@@ -3868,12 +3882,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	File f =new File("/usr/bin/cloud-qemu-system-x86_64");
     	if (f.exists()) {
     		return true;
-    	} else {
-    		f = new File("/usr/libexec/cloud-qemu-kvm");
-    		if (f.exists()) {
-    			return true;
-    		}
+    	} 
+
+    	f = new File("/usr/libexec/cloud-qemu-kvm");
+    	if (f.exists()) {
+    		return true;
     	}
+    	
+    	f = new File("/usr/bin/cloud-qemu-img");
+    	if (f.exists()) {
+    		return true;
+    	}
+
     	return false;
     }
     
