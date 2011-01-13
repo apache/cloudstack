@@ -1133,6 +1133,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                    routerResponse.setPublicIp(singleNic.getIp4Address());
                    routerResponse.setPublicMacAddress(singleNic.getMacAddress());
                    routerResponse.setPublicNetmask(singleNic.getNetmask());
+                   routerResponse.setGateway(singleNic.getGateway());
                } else if (network.getTrafficType() == TrafficType.Control) {
                    routerResponse.setPrivateIp(singleNic.getIp4Address());
                    routerResponse.setPrivateMacAddress(singleNic.getMacAddress());

@@ -1740,7 +1740,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             //because it happens just in case when this method is called as a part of account cleanup.
             //In all other cases return false
             router = _routerDao.findByNetworkConfigurationIncludingRemoved(network.getId());
-            if (router != null && router.getState() == State.Destroyed && router.isRemoved()) {
+            if (router != null && (router.getState() == State.Destroyed || router.getState() == State.Expunging)) {
                 return true;
             }
             s_logger.warn("Unable to associate ip addresses, virtual router doesn't exist in the network " + network.getId());
