@@ -1377,6 +1377,7 @@ public abstract class CitrixResourceBase implements ServerResource {
                 args += " -l ";
                 args += publicIpAddress + "/" + cidrSize;
             } else if (firstIP) {
+            	args += " -f";
             	args += " -l ";
                 args += publicIpAddress + "/" + cidrSize;
             } else {

@@ -73,6 +73,8 @@ add_nat_entry() {
   local ipNoMask=$(echo $2 | awk -F'/' '{print $1}')
    ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
       ip addr add dev $correctVif $pubIp
+      iptables -A FORWARD -i $correctVif -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+      iptables -A FORWARD -i eth0 -o $correctVif  -j ACCEPT
       iptables -t nat -I POSTROUTING   -j SNAT -o $correctVif --to-source $ipNoMask ;
       arping -c 3 -I $correctVif -A -U -s $ipNoMask $ipNoMask;
      "
@@ -92,6 +94,8 @@ del_nat_entry() {
   local mask=$(echo $2 | awk -F'/' '{print $2}')
   [ "$mask" == "" ] && mask="32"
    ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$dRIp "\
+      iptables -D FORWARD -i $correctVif -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+      iptables -D FORWARD -i eth0 -o $correctVif  -j ACCEPT
       iptables -t nat -D POSTROUTING   -j SNAT -o $correctVif --to-source $ipNoMask;
       ip addr del dev $correctVif "$ipNoMask/$mask"
      "
@@ -143,6 +147,8 @@ remove_an_ip () {
           ip addr del dev $correctVif \$replaceIpMask;
           replaceIp=\`echo \$replaceIpMask | awk -F/ '{print \$1}'\`;
           ip addr add dev $correctVif \$replaceIp/$existingMask;
+          iptables -t nat -D POSTROUTING   -j SNAT -o $correctVif --to-source $ipNoMask ;
+          iptables -t nat -A POSTROUTING   -j SNAT -o $correctVif --to-source \$replaceIp ;
         fi
        "
     result=$?
