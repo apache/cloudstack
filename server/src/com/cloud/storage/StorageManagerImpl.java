@@ -2623,14 +2623,14 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
             Pair<VolumeTO, StoragePool> created = createVolume(newVol, _diskOfferingDao.findById(newVol.getDiskOfferingId()), vm, vols, dest);
             if (created == null) {
-                long poolId = newVol.getPoolId();
+                Long poolId = newVol.getPoolId();
                 newVol.setPoolId(null);
                 try {
                     _volsDao.update(newVol, Volume.Event.OperationFailed);
                 } catch (ConcurrentOperationException e) {
                     throw new CloudRuntimeException("Unable to update the failure on a volume: " + newVol, e);
                 }
-                throw new StorageUnavailableException("Unable to create " + newVol, poolId);
+                throw new StorageUnavailableException("Unable to create " + newVol, poolId==null?-1L:poolId);
             }
             created.first().setDeviceId(newVol.getDeviceId().intValue());
             newVol.setStatus(AsyncInstanceCreateStatus.Created);
