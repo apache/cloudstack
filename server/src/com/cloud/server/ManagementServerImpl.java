@@ -2876,7 +2876,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long parentId = cmd.getParentDomainId();
         Long ownerId = UserContext.current().getCaller().getId();
         Account account = UserContext.current().getCaller();
-
+       
         if (ownerId == null) {
             ownerId = Long.valueOf(1);
         }
@@ -3153,7 +3153,9 @@ public class ManagementServerImpl implements ManagementServer {
         List<UserVmVO> instances = _userVmDao.listUpByHostId(hostId);
         for (UserVmVO vm : instances) {
             ServiceOffering so = findServiceOfferingById(vm.getServiceOfferingId());
-            mem += so.getRamSize() * 1024L * 1024L;
+            if (so != null) {
+            	mem += so.getRamSize() * 1024L * 1024L;
+            }
         }
         return mem;
     }
