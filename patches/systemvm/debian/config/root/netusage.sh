@@ -33,7 +33,7 @@ delete_public_interface () {
 }
 
 get_usage () {
-  iptables -L NETWORK_STATS -n -v -x | awk '\$1 ~ /^[0-9]+\$/ { printf \"%s:\", \$2}'; /root/clearUsageRules.sh > /dev/null
+  iptables -L NETWORK_STATS -n -v -x | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; /root/clearUsageRules.sh > /dev/null
   if [ $? -gt 0  -a $? -ne 2 ]
   then
      printf $?
