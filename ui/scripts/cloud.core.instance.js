@@ -849,6 +849,7 @@ function initVMWizard() {
 			
 						// Setup Virtual Networks
 						var requiredVirtual = false;
+						var defaultNetworkAdded = false;
 						if (virtualNetwork == null) {
 							$.ajax({
 								data: createURL("command=listNetworkOfferings&traffictype=Guest"),
@@ -872,6 +873,7 @@ function initVMWizard() {
 																requiredVirtual = true;
 																$virtualNetworkElement.find("#network_virtual").attr('disabled', true);
 															}
+															defaultNetworkAdded = true;
 															$virtualNetworkElement.find("#network_virtual").data("id", network.id).data("jsonObj", network);
 														} else {
 															$virtualNetworkElement.hide();
@@ -890,6 +892,7 @@ function initVMWizard() {
 									requiredVirtual = true;
 									$virtualNetworkElement.find("#network_virtual").attr('disabled', true);
 								}
+								defaultNetworkAdded = true;
 								$virtualNetworkElement.data("id", virtualNetwork.id);
 								$virtualNetworkElement.find("#network_virtual").data("id", virtualNetwork.id).data("jsonObj", virtualNetwork);
 							} else {
@@ -902,8 +905,7 @@ function initVMWizard() {
 						var $networkSecondaryDirectTemplate = $("#wizard_network_direct_secondary_template");
 						var $networkDirectContainer = $("#network_direct_container").empty();
 						var $networkDirectSecondaryContainer = $("#network_direct_secondary_container").empty();
-						var availableSecondary = false;
-						var defaultNetworkAdded = false;
+						
 						if (networks != null && networks.length > 0) {
 							for (var i = 0; i < networks.length; i++) {
 								if (networks[i].type != 'Direct') {
@@ -915,10 +917,11 @@ function initVMWizard() {
 										continue;
 									}
 									$directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+networks[i].id);
-									if (i == 0) {
+									if (defaultNetworkAdded || i > 0) {
 										// Only check the first default network
-										$directNetworkElement.find("#network_direct_checkbox").attr("checked", "checked");
+										$directNetworkElement.find("#network_direct_checkbox").removeAttr("checked");
 									}
+									defaultNetworkAdded = true;
 								} else {
 									$directNetworkElement = $networkSecondaryDirectTemplate.clone().attr("id", "direct"+networks[i].id);
 								}
@@ -951,10 +954,11 @@ function initVMWizard() {
 												continue;
 											}
 											$directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+sharedNetworks[i].id);
-											if (i == 0) {
+											if (defaultNetworkAdded || i > 0) {
 												// Only check the first default network
-												$directNetworkElement.find("#network_direct_checkbox").attr("checked", "checked");
+												$directNetworkElement.find("#network_direct_checkbox").removeAttr("checked");
 											}
+											defaultNetworkAdded = true;
 										} else {
 											$directNetworkElement = $networkSecondaryDirectTemplate.clone().attr("id", "direct"+sharedNetworks[i].id);
 										}
