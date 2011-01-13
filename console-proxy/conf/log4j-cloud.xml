@@ -46,7 +46,7 @@
      <priority value="WARN"/>
    </category>
    
-   <category name="com.cloud.consoleproxy.ConsoleProxyViwer">
+   <category name="com.cloud.consoleproxy.ConsoleProxyViewer">
      <priority value="WARN"/>
    </category>
 
