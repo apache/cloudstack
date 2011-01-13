@@ -196,7 +196,7 @@ var routerActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {
             var item = json.queryasyncjobresultresponse.jobresult.domainrouter;    
             routerToMidmenu(item, $midmenuItem1);  
-            routerJsonToDetailsTab($midmenuItem1);   
+            //routerJsonToDetailsTab($midmenuItem1);   
         }
     },
     "Stop Router": {          
@@ -207,7 +207,7 @@ var routerActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {
             var item = json.queryasyncjobresultresponse.jobresult.domainrouter;    
             routerToMidmenu(item, $midmenuItem1);  
-            routerJsonToDetailsTab($midmenuItem1);   
+            //routerJsonToDetailsTab($midmenuItem1);   
         }
     },
     "Reboot Router": {           
@@ -218,7 +218,7 @@ var routerActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {
             var item = json.queryasyncjobresultresponse.jobresult.domainrouter;    
             routerToMidmenu(item, $midmenuItem1);  
-            routerJsonToDetailsTab($midmenuItem1);    
+            //routerJsonToDetailsTab($midmenuItem1);    
         }
     }
 }   

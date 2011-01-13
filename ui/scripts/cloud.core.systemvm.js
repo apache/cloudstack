@@ -156,7 +156,7 @@ var systemVmActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {            
             var jsonObj = json.queryasyncjobresultresponse.jobresult.systemvm;  
             systemvmToMidmenu(jsonObj, $midmenuItem1);
-            systemvmToRightPanel($midmenuItem1);            
+            //systemvmToRightPanel($midmenuItem1);            
         }
     },
     "Stop System VM": {            
@@ -167,7 +167,7 @@ var systemVmActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {           
             var jsonObj = json.queryasyncjobresultresponse.jobresult.systemvm;                  	
             systemvmToMidmenu(jsonObj, $midmenuItem1);
-            systemvmToRightPanel($midmenuItem1);      
+            //systemvmToRightPanel($midmenuItem1);      
         }
     },
     "Reboot System VM": {        
@@ -178,7 +178,7 @@ var systemVmActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {            
             var jsonObj = json.queryasyncjobresultresponse.jobresult.systemvm;              
             systemvmToMidmenu(jsonObj, $midmenuItem1);
-            systemvmToRightPanel($midmenuItem1);      
+            //systemvmToRightPanel($midmenuItem1);      
         }
     }
 }   

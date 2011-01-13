@@ -89,9 +89,9 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
 			                        $("body").stopTime(timerKey);				                        
 			                        $spinningWheel.hide(); 
 			                        			                          			                                             
-			                        if (result.jobstatus == 1) { // Succeeded 	
-			                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label + " action succeeded."));			                            
-                                        afterActionSeccessFn(json, $midmenuItem1, id);     
+			                        if (result.jobstatus == 1) { // Succeeded 				                            	                            
+                                        afterActionSeccessFn(json, $midmenuItem1, id); //this line will update $midmenuItem1.data("jsonObj")
+                                        handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label + " action succeeded.")); //updated $midmenuItem1.data("jsonObj") will be used here	 
 			                        } else if (result.jobstatus == 2) { // Failed	
 			                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, false, (label + " action failed. Reason: " + fromdb(result.jobresult.errortext)));			                            
 			                        }											                    
