@@ -659,11 +659,15 @@ public abstract class CitrixResourceBase implements ServerResource {
         if (volume.getType() == VolumeType.ISO) {
             vbdr.mode = Types.VbdMode.RO;
             vbdr.type = Types.VbdType.CD;
+        } else if (volume.getType() == VolumeType.ROOT) {
+            vbdr.mode = Types.VbdMode.RW;
+            vbdr.type = Types.VbdType.DISK;
+            vbdr.unpluggable = false;           
         } else {
             vbdr.mode = Types.VbdMode.RW;
-            vbdr.type = Types.VbdType.DISK;           
-        }
-        
+            vbdr.type = Types.VbdType.DISK;
+            vbdr.unpluggable = true;
+        }       
         VBD vbd = VBD.create(conn, vbdr);
         
         if (s_logger.isDebugEnabled()) {
