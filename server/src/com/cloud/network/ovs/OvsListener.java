@@ -50,30 +50,7 @@ public class OvsListener implements Listener {
 		Set<Long> failedFlowVms = new HashSet<Long>();
 		try {
 			for (Answer ans : answers) {
-				if (ans instanceof OvsCreateGreTunnelAnswer) {
-					OvsCreateGreTunnelAnswer r = (OvsCreateGreTunnelAnswer) ans;
-					String s = String
-							.format("(hostIP:%1$s, remoteIP:%2$s, bridge:%3$s, greKey:%4$s)",
-									r.getHostIp(), r.getRemoteIp(),
-									r.getBridge(), r.getKey());
-					if (!r.getResult()) {
-						s_logger.warn("Create GRE tunnel failed due to "
-								+ r.getDetails() + s);
-					} else {
-						GreTunnelVO tunnel = _tunnelDao.getByFromAndTo(
-								r.getFrom(), r.getTo());
-						if (tunnel == null) {
-							throw new GreTunnelException(
-									"No record matches from = " + r.getFrom() + " to = " + r.getTo());
-						} else {
-							tunnel.setInPort(r.getPort());
-							_tunnelDao.update(tunnel.getId(), tunnel);
-							s_logger.info("Create GRE tunnel success" + s
-									+ " from " + r.getFrom() + " to "
-									+ r.getTo() + " inport=" + r.getPort());
-						}
-					}
-				} else if (ans instanceof OvsSetTagAndFlowAnswer) {
+				if (ans instanceof OvsSetTagAndFlowAnswer) {
 					OvsSetTagAndFlowAnswer r = (OvsSetTagAndFlowAnswer) ans;
 					if (!r.getResult()) {
 						s_logger.warn("Failed to set flow for VM "

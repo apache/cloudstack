@@ -369,6 +369,24 @@ def get_interface_on_port(nameOruuid):
 			return str.split(",")
 	return None
 
+def get_gre_ports(bridge):
+	portUuids = get_ports_on_bridge(bridge)
+	if portUuids == None:
+		pr("WARNING:No ports on bridge %s" % bridge)
+		return []
+
+	OfPorts = []
+	for i in portUuids:
+		iface = get_filed_of_port(i, "interfaces")
+		iface = strip(iface, "both")
+		type = get_field_of_interface(iface, "type")
+		if type == 'gre':
+			port = get_field_of_interface(iface, "ofport")
+			if port != '[]':
+				OfPorts.append(port)
+
+	return OfPorts
+
 def get_ofports_by_tag(bridge, tag):
 	portUuids = get_ports_on_bridge(bridge)
 	if portUuids == None:
@@ -395,10 +413,15 @@ def format_flow(inPort, vlan, mac, outPut):
 	priority=10000 actions=strip_vlan,output:%s" % (inPort, vlan, mac, outPut)
 	return flow
 
-def format_drop_flow(inPort, vlan):
-	flow = "in_port=%s dl_vlan=%s priority=0 idle_timeout=0 hard_timeout=0 \
-	actions=drop" % (inPort, vlan)
+def format_drop_flow(inPort):
+	flow = "in_port=%s priority=1000 idle_timeout=0 hard_timeout=0 \
+	actions=drop" % inPort
 	return flow
+
+def add_drop_flow(bridge, inPorts):
+	for i in inPorts:
+		flow = format_drop_flow(i)
+		add_flow(bridge, flow)
 
 def del_flow(bridge, mac):
 	param = "dl_dst=%s" % mac
@@ -477,9 +500,6 @@ def create_flow (bridge, vifName, mac, vlans):
 	for v in vlans.split(","):
 		try:
 			(vlan, inPort) = v.split(":")
-			flow = format_drop_flow(inPort, vlan)
-			add_flow(bridge, flow)
-
 			flow = format_flow(inPort, vlan, mac, output)
 			add_flow(bridge, flow)
 		except Exception, e:
@@ -489,6 +509,10 @@ def create_flow (bridge, vifName, mac, vlans):
 	# add normal flow make switch work as L2/L3 switch
 	flow = format_normal_flow()
 	add_flow(bridge, flow)
+
+	inports = get_gre_ports(bridge)
+	for i in inports:
+		add_drop_flow(bridge, i)
 
 	return errors["SUCCESS"]
 ######################## End Flow creation utils ##########################
@@ -669,7 +693,7 @@ def ovs_get_domid_vifrs_hostuuid(session, vmName):
 	try:
 		vm = session.xenapi.VM.get_by_name_label(vmName)
 		if len(vm) != 1:
-			 return 'NO_VM'
+			return (-1, [], "-1")
 		vm_rec = session.xenapi.VM.get_record(vm[0])
 		vm_vifs = vm_rec.get('VIFs')
 		vifrs = []

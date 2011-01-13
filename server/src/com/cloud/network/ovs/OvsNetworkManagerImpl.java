@@ -17,6 +17,7 @@ import javax.persistence.EntityExistsException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -294,6 +295,31 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		return target.getVlan();
 	}
 
+	private void handleCreateTunnelAnswer(Answer[] answers) throws GreTunnelException {
+		OvsCreateGreTunnelAnswer r = (OvsCreateGreTunnelAnswer) answers[0];
+		String s = String.format(
+				"(hostIP:%1$s, remoteIP:%2$s, bridge:%3$s, greKey:%4$s)",
+				r.getHostIp(), r.getRemoteIp(), r.getBridge(), r.getKey());
+
+		if (!r.getResult()) {
+			s_logger.warn("Create GRE tunnel failed due to " + r.getDetails()
+					+ s);
+		} else {
+			GreTunnelVO tunnel = _tunnelDao.getByFromAndTo(r.getFrom(), r.getTo());
+			if (tunnel == null) {
+				throw new GreTunnelException("No record matches from = "
+						+ r.getFrom() + " to = " + r.getTo());
+			} else {
+				tunnel.setInPort(r.getPort());
+				_tunnelDao.update(tunnel.getId(), tunnel);
+				s_logger.info("Create GRE tunnel success" + s + " from "
+						+ r.getFrom() + " to " + r.getTo() + " inport="
+						+ r.getPort());
+			}
+		}
+		
+	}
+
 	@DB
 	protected void CheckAndCreateTunnel(VMInstanceVO instance,
 			DeployDestination dest) throws GreTunnelException {
@@ -309,7 +335,6 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		final Transaction txn = Transaction.currentTxn();
 		long hostId = dest.getHost().getId();
 		long accountId = instance.getAccountId();
-		//TODO: considerate router?
 		List<UserVmVO>vms = _userVmDao.listByAccountId(accountId);
 		DomainRouterVO router = _routerDao.findBy(accountId, instance.getDataCenterId());
 		List<VMInstanceVO>ins = new ArrayList<VMInstanceVO>();
@@ -360,14 +385,16 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 						new OvsCreateGreTunnelCommand(
 								rHost.getPrivateIpAddress(), "1", hostId,
 								i.longValue()));
-				_agentMgr.send(hostId, cmds , _ovsListener);
 				s_logger.debug("Ask host " + hostId + " to create gre tunnel to " + i.longValue());
+				Answer[] answers = _agentMgr.send(hostId, cmds);
+				handleCreateTunnelAnswer(answers);
 			}
 			
 			for (Long i : fromHostIds) {
 				Commands cmd2s = new Commands(new OvsCreateGreTunnelCommand(myIp, "1", i.longValue(), hostId));
-				_agentMgr.send(i.longValue(), cmd2s , _ovsListener);
 				s_logger.debug("Ask host " + i.longValue() + " to create gre tunnel to " + hostId);
+				Answer[] answers = _agentMgr.send(i.longValue(), cmd2s);
+				handleCreateTunnelAnswer(answers);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
