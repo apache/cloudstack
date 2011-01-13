@@ -907,7 +907,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 			String minuteEarlyTicket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId(), 
 				new Date(now.getTime() - 60*1000));
 			if(!minuteEarlyTicket.startsWith(ticketInUrl)) {
-				s_logger.error("Access ticket expired or has been modified. vmId: " + cmd.getVmId());
+				s_logger.error("Access ticket expired or has been modified. vmId: " + cmd.getVmId() + "ticket in URL: " + ticketInUrl + ", tickets to check against: " + ticket + "," + minuteEarlyTicket);
 				return new ConsoleAccessAuthenticationAnswer(cmd, false);
 			}
 		}
