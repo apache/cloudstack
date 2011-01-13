@@ -332,8 +332,10 @@ var serviceOfferingActionMap = {
             $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();
             });            
-            clearRightPanel();
-            serviceOfferingClearRightPanel();
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                clearRightPanel();
+                serviceOfferingClearRightPanel();
+            }
         }
     }    
 }  

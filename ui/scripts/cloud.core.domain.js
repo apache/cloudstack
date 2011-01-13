@@ -633,8 +633,10 @@ var domainActionMap = {
             $midmenuItem1.slideUp(function() {                
                 $(this).remove();
             });           
-            clearRightPanel();
-            domainJsonClearRightPanel();
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                clearRightPanel();
+                domainJsonClearRightPanel();
+            }
         }
     }    
 } 
