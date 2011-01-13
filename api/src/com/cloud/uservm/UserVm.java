@@ -68,4 +68,7 @@ public interface UserVm extends VirtualMachine, ControlledEntity {
     Long getDomainRouterId();
     
     void setUserData(String userData);
+
+	String getDetail(String name);
+
 }

@@ -19,6 +19,7 @@ package com.cloud.vm.dao;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
 
@@ -61,7 +62,10 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
     protected final SearchBuilder<UserVmVO> DestroySearch;
     protected SearchBuilder<UserVmVO> AccountDataCenterVirtualSearch;
+    protected SearchBuilder<UserVmVO> UserVmSearch;
     protected final Attribute _updateTimeAttr;
+    
+    protected final UserVmDetailsDaoImpl _detailsDao = ComponentLocator.inject(UserVmDetailsDaoImpl.class);
     
     protected UserVmDaoImpl() {
         AccountSearch = createSearchBuilder();
@@ -320,18 +324,18 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     
     @Override
     public List<UserVmVO> listByNetworkId(long networkId) {
-        if (AccountDataCenterVirtualSearch == null) {
+        if (UserVmSearch == null) {
             NicDao _nicDao = ComponentLocator.getLocator("management-server").getDao(NicDao.class);
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
             nicSearch.and("ip4Address", nicSearch.entity().getIp4Address(), SearchCriteria.Op.NNULL);
 
-            AccountDataCenterVirtualSearch = createSearchBuilder();
-            AccountDataCenterVirtualSearch.join("nicSearch", nicSearch, AccountDataCenterVirtualSearch.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
-            AccountDataCenterVirtualSearch.done();
+            UserVmSearch = createSearchBuilder();
+            UserVmSearch.join("nicSearch", nicSearch, UserVmSearch.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+            UserVmSearch.done();
         }
 
-        SearchCriteria<UserVmVO> sc = AccountDataCenterVirtualSearch.create();
+        SearchCriteria<UserVmVO> sc = UserVmSearch.create();
         sc.setJoinParameters("nicSearch", "networkId", networkId);
 
         return listBy(sc);
@@ -415,4 +419,19 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 		sc.setParameters("accountId", accountId);
 		return listBy(sc);
 	}
+
+	@Override
+	public void loadDetails(UserVmVO vm) {
+        Map<String, String> details = _detailsDao.findDetails(vm.getId());
+        vm.setDetails(details);
+	}
+	
+	@Override
+    public void saveDetails(UserVmVO vm) {
+        Map<String, String> details = vm.getDetails();
+        if (details == null) {
+            return;
+        }
+        _detailsDao.persist(vm.getId(), details);
+    }
 }

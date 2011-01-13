@@ -779,10 +779,17 @@ CREATE TABLE `cloud`.`user_vm` (
   `external_mac_address` varchar(17)  COMMENT 'mac address within the external network',
   `external_vlan_db_id` bigint unsigned  COMMENT 'foreign key into vlan table',
   `user_data` varchar(2048),
-  `encrypted_password` varchar(1024) COMMENT 'vm password encrypted with the public key referenced in ssh_keypair',
-  `ssh_keypair_id` bigint unsigned COMMENT 'id of the ssh keypair used to access the vm and/or encrypt the password',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`user_vm_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 CREATE TABLE `cloud`.`domain_router` (
   `id` bigint unsigned UNIQUE NOT NULL COMMENT 'Primary Key',

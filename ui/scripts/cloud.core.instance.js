@@ -174,12 +174,9 @@ function bindStartVMButton() {
                     inProcessText: "Starting Instance....",
                     asyncJobResponse: "startvirtualmachineresponse",                  
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {                    
-                        var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;      
-                        
-                        vmToMidmenu(jsonObj, $midmenuItem1);                     
-                        if( ($("#right_panel_content #tab_content_details").length > 0)
-                          && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
-                          && (jsonObj.id == $("#right_panel_content #tab_content_details").data("jsonObj").id)) 
+                        var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;                         
+                        vmToMidmenu(jsonObj, $midmenuItem1);                                             
+                        if(jsonObj.id.toString() == $("#right_panel_content #tab_content_details").find("#id").text())
                             vmToRightPanel($midmenuItem1);                              
                     }
                 }          
@@ -225,10 +222,8 @@ function bindStopVMButton() {
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {                         
                         var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;  
                         vmToMidmenu(jsonObj, $midmenuItem1);   
-                        if( ($("#right_panel_content #tab_content_details").length > 0)
-                          && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
-                          && (jsonObj.id == $("#right_panel_content #tab_content_details").data("jsonObj").id)) 
-                            vmToRightPanel($midmenuItem1);                                          
+                        if(jsonObj.id.toString() == $("#right_panel_content #tab_content_details").find("#id").text())
+                            vmToRightPanel($midmenuItem1);                                             
                     }
                 }                      
 			                    
@@ -273,10 +268,8 @@ function bindRebootVMButton() {
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {  
                         var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;  
                         vmToMidmenu(jsonObj, $midmenuItem1);    
-                        if( ($("#right_panel_content #tab_content_details").length > 0)
-                          && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
-                          && (jsonObj.id == $("#right_panel_content #tab_content_details").data("jsonObj").id)) 
-                            vmToRightPanel($midmenuItem1);                                         
+                        if(jsonObj.id.toString() == $("#right_panel_content #tab_content_details").find("#id").text())
+                            vmToRightPanel($midmenuItem1);                                             
                     }
                 }                       
 			                    
@@ -321,10 +314,8 @@ function bindDestroyVMButton() {
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {  
                         var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine; 
                         vmToMidmenu(jsonObj, $midmenuItem1);  
-                        if( ($("#right_panel_content #tab_content_details").length > 0)
-                          && ($("#right_panel_content #tab_content_details").data("jsonObj") != null )
-                          && (jsonObj.id == $("#right_panel_content #tab_content_details").data("jsonObj").id)) 
-                            vmToRightPanel($midmenuItem1);                                           
+                        if(jsonObj.id.toString() == $("#right_panel_content #tab_content_details").find("#id").text())
+                            vmToRightPanel($midmenuItem1);                                              
                     }
                 }                            
 			                    
@@ -858,6 +849,7 @@ function initVMWizard() {
 			
 						// Setup Virtual Networks
 						var requiredVirtual = false;
+						var defaultNetworkAdded = false;
 						if (virtualNetwork == null) {
 							$.ajax({
 								data: createURL("command=listNetworkOfferings&traffictype=Guest"),
@@ -881,6 +873,7 @@ function initVMWizard() {
 																requiredVirtual = true;
 																$virtualNetworkElement.find("#network_virtual").attr('disabled', true);
 															}
+															defaultNetworkAdded = true;
 															$virtualNetworkElement.find("#network_virtual").data("id", network.id).data("jsonObj", network);
 														} else {
 															$virtualNetworkElement.hide();
@@ -899,6 +892,7 @@ function initVMWizard() {
 									requiredVirtual = true;
 									$virtualNetworkElement.find("#network_virtual").attr('disabled', true);
 								}
+								defaultNetworkAdded = true;
 								$virtualNetworkElement.data("id", virtualNetwork.id);
 								$virtualNetworkElement.find("#network_virtual").data("id", virtualNetwork.id).data("jsonObj", virtualNetwork);
 							} else {
@@ -911,7 +905,7 @@ function initVMWizard() {
 						var $networkSecondaryDirectTemplate = $("#wizard_network_direct_secondary_template");
 						var $networkDirectContainer = $("#network_direct_container").empty();
 						var $networkDirectSecondaryContainer = $("#network_direct_secondary_container").empty();
-						var availableSecondary = false;
+						
 						if (networks != null && networks.length > 0) {
 							for (var i = 0; i < networks.length; i++) {
 								if (networks[i].type != 'Direct') {
@@ -923,6 +917,11 @@ function initVMWizard() {
 										continue;
 									}
 									$directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+networks[i].id);
+									if (defaultNetworkAdded || i > 0) {
+										// Only check the first default network
+										$directNetworkElement.find("#network_direct_checkbox").removeAttr("checked");
+									}
+									defaultNetworkAdded = true;
 								} else {
 									$directNetworkElement = $networkSecondaryDirectTemplate.clone().attr("id", "direct"+networks[i].id);
 								}
@@ -936,41 +935,46 @@ function initVMWizard() {
 									$networkDirectSecondaryContainer.append($directNetworkElement.show());
 								}
 							}
+						}
 							
-							// Add any additional shared direct networks
-							$.ajax({
-								data: createURL("command=listNetworks&isshared=true&zoneId="+$thisPopup.find("#wizard_zone").val()),
-								dataType: "json",
-								async: false,
-								success: function(json) {
-									var sharedNetworks = json.listnetworksresponse.network;
-									if (sharedNetworks != null && sharedNetworks.length > 0) {
-										for (var i = 0; i < sharedNetworks.length; i++) {
-											if (sharedNetworks[i].type != 'Direct') {
+						// Add any additional shared direct networks
+						$.ajax({
+							data: createURL("command=listNetworks&isshared=true&zoneId="+$thisPopup.find("#wizard_zone").val()),
+							dataType: "json",
+							async: false,
+							success: function(json) {
+								var sharedNetworks = json.listnetworksresponse.network;
+								if (sharedNetworks != null && sharedNetworks.length > 0) {
+									for (var i = 0; i < sharedNetworks.length; i++) {
+										if (sharedNetworks[i].type != 'Direct') {
+											continue;
+										}
+										if (sharedNetworks[i].isdefault) {
+											if (requiredVirtual) {
 												continue;
 											}
-											if (sharedNetworks[i].isdefault) {
-												if (requiredVirtual) {
-													continue;
-												}
-												$directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+sharedNetworks[i].id);
-											} else {
-												$directNetworkElement = $networkSecondaryDirectTemplate.clone().attr("id", "direct"+sharedNetworks[i].id);
+											$directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+sharedNetworks[i].id);
+											if (defaultNetworkAdded || i > 0) {
+												// Only check the first default network
+												$directNetworkElement.find("#network_direct_checkbox").removeAttr("checked");
 											}
-											$directNetworkElement.find("#network_direct_checkbox").data("jsonObj", sharedNetworks[i]);
-											$directNetworkElement.find("#network_direct_name").text(sharedNetworks[i].name);
-											$directNetworkElement.find("#network_direct_desc").text(sharedNetworks[i].displaytext);
-											if (sharedNetworks[i].isdefault) {
-												$networkDirectContainer.append($directNetworkElement.show());
-											} else {
-												availableSecondary = true;
-												$networkDirectSecondaryContainer.append($directNetworkElement.show());
-											}
+											defaultNetworkAdded = true;
+										} else {
+											$directNetworkElement = $networkSecondaryDirectTemplate.clone().attr("id", "direct"+sharedNetworks[i].id);
+										}
+										$directNetworkElement.find("#network_direct_checkbox").data("jsonObj", sharedNetworks[i]);
+										$directNetworkElement.find("#network_direct_name").text(sharedNetworks[i].name);
+										$directNetworkElement.find("#network_direct_desc").text(sharedNetworks[i].displaytext);
+										if (sharedNetworks[i].isdefault) {
+											$networkDirectContainer.append($directNetworkElement.show());
+										} else {
+											availableSecondary = true;
+											$networkDirectSecondaryContainer.append($directNetworkElement.show());
 										}
 									}
 								}
-							});
-						}
+							}
+						});
 						if (availableSecondary) {
 							$("#secondary_network_title, #secondary_network_desc").show();
 						}
@@ -1254,7 +1258,7 @@ var vmActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;           
             vmToMidmenu(jsonObj, $midmenuItem1);            
-            setBooleanReadField((jsonObj.isoid != null), $("#right_panel_content").find("#tab_content_details").find("#iso")); 
+            //setBooleanReadField((jsonObj.isoid != null), $("#right_panel_content").find("#tab_content_details").find("#iso")); 
         }   
     },
     "Detach ISO": {
@@ -1265,7 +1269,7 @@ var vmActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;    
             vmToMidmenu(jsonObj, $midmenuItem1);           
-            setBooleanReadField((jsonObj.isoid != null), $("#right_panel_content").find("#tab_content_details").find("#iso")); 
+            //setBooleanReadField((jsonObj.isoid != null), $("#right_panel_content").find("#tab_content_details").find("#iso")); 
         }   
     },
     "Reset Password": {                

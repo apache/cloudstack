@@ -1,0 +1,13 @@
+/var/log/apache2/*.log {
+	weekly
+	missingok
+	rotate 52
+	compress
+	delaycompress
+	notifempty
+	create 640 root adm
+	sharedscripts
+	postrotate
+		/etc/init.d/apache2 reload > /dev/null
+	endscript
+}

@@ -17,9 +17,13 @@ bzip2 -c systemvm.qcow2 > systemvm.qcow2.bz2
 echo "Done qcow2"
 echo "Converting raw image to vmdk"
 qemu-img  convert -f raw -O vmdk systemvm.img systemvm.vmdk
-echo "Compressing vmdk..."
-bzip2 -c systemvm.vmdk > systemvm.vmdk.bz2
-echo "Done vmdk"
+echo "Done creating vmdk"
+echo "Creating ova appliance "
+ovftool systemvm.vmx systemvm.ova
+echo "Done creating OVA"
+echo "Cleaning up..."
+rm -vf systemvm.vmdk
+rm -vf systemvm.vhd.bak
 
 echo "Compressing raw image..."
 bzip2 -c systemvm.img > systemvm.img.bz2
@@ -32,5 +36,4 @@ md5sum systemvm.vhd  >> md5sum
 md5sum systemvm.vhd.bz2  >> md5sum
 md5sum systemvm.qcow2  >> md5sum
 md5sum systemvm.qcow2.bz2  >> md5sum
-md5sum systemvm.vmdk  >> md5sum
-md5sum systemvm.vmdk.bz2  >> md5sum
+md5sum systemvm.ova  >> md5sum

@@ -116,6 +116,7 @@ import com.cloud.storage.upload.UploadMonitorImpl;
 import com.cloud.template.TemplateManagerImpl;
 import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.dao.AccountDaoImpl;
+import com.cloud.user.dao.SSHKeyPairDaoImpl;
 import com.cloud.user.dao.UserAccountDaoImpl;
 import com.cloud.user.dao.UserDaoImpl;
 import com.cloud.user.dao.UserStatisticsDaoImpl;
@@ -135,6 +136,7 @@ import com.cloud.vm.dao.InstanceGroupVMMapDaoImpl;
 import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.SecondaryStorageVmDaoImpl;
 import com.cloud.vm.dao.UserVmDaoImpl;
+import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 
 public class DefaultComponentLibrary implements ComponentLibrary {
@@ -240,8 +242,10 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addDao("ItWorkDao", ItWorkDaoImpl.class);
         addDao("FirewallRulesDao", FirewallRulesDaoImpl.class);
         addDao("PortForwardingRulesDao", PortForwardingRulesDaoImpl.class);
+        addDao("SSHKeyPairDao", SSHKeyPairDaoImpl.class);
         addDao("UsageEventDao", UsageEventDaoImpl.class);
         addDao("ClusterDetailsDao", ClusterDetailsDaoImpl.class);
+        addDao("UserVmDetailsDao", UserVmDetailsDaoImpl.class);
         addDao("VlanMappingDao", VlanMappingDaoImpl.class);
         addDao("VlanMappingDirtyDao", VlanMappingDirtyDaoImpl.class);
         addDao("OvsWorkDao", OvsWorkDaoImpl.class);

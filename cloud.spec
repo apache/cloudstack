@@ -218,14 +218,19 @@ Requires: jpackage-utils
 Requires: %{name}-daemonize
 Requires: /sbin/service
 Requires: /sbin/chkconfig
+
+%if 0%{?rhel} >= 6
+Requires: cloud-kvm
+%else
 Requires: kvm
+%endif
+
 %if 0%{?fedora} >= 12
 Requires: qemu-cloud-system-x86
 Requires: qemu-cloud-img
 %endif
 
 %if 0%{?rhel} >= 6
-Requires: cloud-qemu-kvm
 Requires: cloud-qemu-img
 %endif
 
@@ -492,6 +497,9 @@ fi
 %{_javadir}/%{name}-commons-discovery.jar
 %{_javadir}/%{name}-iControl.jar
 %{_javadir}/%{name}-wsdl4j.jar
+%{_javadir}/%{name}-bcprov-jdk16-1.45.jar
+%{_javadir}/%{name}-jsch-0.1.42.jar
+
 
 %files core
 %defattr(0644,root,root,0755)

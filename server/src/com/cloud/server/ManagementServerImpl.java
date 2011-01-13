@@ -75,10 +75,13 @@ import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateDomainCmd;
+import com.cloud.api.commands.CreateSSHKeyPairCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
 import com.cloud.api.commands.DeletePreallocatedLunCmd;
+import com.cloud.api.commands.DeleteSSHKeyPairCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
+import com.cloud.api.commands.GetVMPasswordCmd;
 import com.cloud.api.commands.ListAccountsCmd;
 import com.cloud.api.commands.ListAlertsCmd;
 import com.cloud.api.commands.ListAsyncJobsCmd;
@@ -99,6 +102,7 @@ import com.cloud.api.commands.ListPodsByCmd;
 import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
+import com.cloud.api.commands.ListSSHKeyPairsCmd;
 import com.cloud.api.commands.ListServiceOfferingsCmd;
 import com.cloud.api.commands.ListStoragePoolsCmd;
 import com.cloud.api.commands.ListSystemVMsCmd;
@@ -112,6 +116,7 @@ import com.cloud.api.commands.ListZonesByCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
 import com.cloud.api.commands.RegisterPreallocatedLunCmd;
+import com.cloud.api.commands.RegisterSSHKeyPairCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
 import com.cloud.api.commands.UpdateDomainCmd;
@@ -222,12 +227,15 @@ import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.SSHKeyPair;
+import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserAccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.EnumUtils;
@@ -249,10 +257,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.MacAddress;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.utils.ssh.SSHKeysHelper;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -263,6 +273,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class ManagementServerImpl implements ManagementServer {	
@@ -320,6 +331,8 @@ public class ManagementServerImpl implements ManagementServer {
     private final UploadMonitor _uploadMonitor;
     private final UploadDao _uploadDao;
     private final CertificateDao _certDao;
+    private final SSHKeyPairDao _sshKeyPairDao;
+
 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
 
@@ -391,6 +404,7 @@ public class ManagementServerImpl implements ManagementServer {
         _asyncMgr = locator.getManager(AsyncJobManager.class);
         _tmpltMgr = locator.getManager(TemplateManager.class);
         _uploadMonitor = locator.getManager(UploadMonitor.class);
+        _sshKeyPairDao = locator.getDao(SSHKeyPairDao.class);
     	
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
@@ -4663,4 +4677,93 @@ public class ManagementServerImpl implements ManagementServer {
 		}
 		return _hashKey;
 	}
+	
+    @Override
+    public SSHKeyPair createSSHKeyPair(CreateSSHKeyPairCmd cmd) {
+            Account account = UserContext.current().getCaller();
+            SSHKeyPairVO s = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getName());
+            if (s != null)
+                     throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
+
+            SSHKeysHelper keys = new SSHKeysHelper();
+
+            String name = cmd.getName();
+            String publicKey = keys.getPublicKey();
+            String fingerprint = keys.getPublicKeyFingerPrint();
+            String privateKey = keys.getPrivateKey();
+
+            return createAndSaveSSHKeyPair(name, fingerprint, publicKey, privateKey);
+    }
+
+    @Override
+    public boolean deleteSSHKeyPair(DeleteSSHKeyPairCmd cmd) {
+            Account account = UserContext.current().getCaller();
+            SSHKeyPairVO s = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getName());
+            if (s == null)
+                     throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' does not exist.");
+
+            return _sshKeyPairDao.deleteByName(account.getAccountId(), account.getDomainId(), cmd.getName());
+    }
+
+    @Override
+    public List<? extends SSHKeyPair> listSSHKeyPairs(ListSSHKeyPairsCmd cmd) {
+            Account account = UserContext.current().getCaller();
+
+            if (cmd.getName() != null && cmd.getName().length() > 0)
+                    return _sshKeyPairDao.listKeyPairsByName(account.getAccountId(), account.getDomainId(), cmd.getName());
+
+            if (cmd.getFingerprint() != null && cmd.getFingerprint().length() > 0)
+                    return _sshKeyPairDao.listKeyPairsByFingerprint(account.getAccountId(), account.getDomainId(), cmd.getFingerprint());
+
+            return _sshKeyPairDao.listKeyPairs(account.getAccountId(), account.getDomainId());
+    }
+
+    @Override
+    public SSHKeyPair registerSSHKeyPair(RegisterSSHKeyPairCmd cmd) {
+            Account account = UserContext.current().getCaller();
+            SSHKeyPairVO s = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getName());
+            if (s != null)
+                     throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
+
+            String name = cmd.getName();
+            String publicKey = SSHKeysHelper.getPublicKeyFromKeyMaterial(cmd.getPublicKey());
+            String fingerprint = SSHKeysHelper.getPublicKeyFingerprint(publicKey);
+
+            if (publicKey == null)
+                     throw new InvalidParameterValueException("Public key is invalid");
+
+            return createAndSaveSSHKeyPair(name, fingerprint, publicKey, null);
+    }
+    
+    private SSHKeyPair createAndSaveSSHKeyPair(String name, String fingerprint, String publicKey, String privateKey) {
+        Account account = UserContext.current().getCaller();
+        SSHKeyPairVO newPair = new SSHKeyPairVO();
+
+        newPair.setAccountId(account.getAccountId());
+        newPair.setDomainId(account.getDomainId());
+        newPair.setName(name);
+        newPair.setFingerprint(fingerprint);
+        newPair.setPublicKey(publicKey);
+        newPair.setPrivateKey(privateKey); // transient; not saved.
+
+        _sshKeyPairDao.persist(newPair);
+
+        return newPair;
+    }
+
+    @Override
+    public String getVMPassword(GetVMPasswordCmd cmd) {   	
+        Account account = UserContext.current().getCaller();
+        UserVmVO vm = _userVmDao.findById(cmd.getId());
+        if (vm == null || vm.getAccountId() != account.getAccountId()) 
+        	throw new InvalidParameterValueException("No VM with id '" + cmd.getId() + "' found.");
+            	
+        _userVmDao.loadDetails(vm);
+        String password = vm.getDetail("Encrypted.Password");         
+        if (password == null || password.equals(""))
+        	throw new InvalidParameterValueException("No password for VM with id '" + cmd.getId() + "' found.");
+
+        return password;
+    }
+
 }

@@ -72,10 +72,9 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Vlan;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -105,18 +104,18 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
-import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.Networks.BroadcastDomainType;
-import com.cloud.network.Networks.IsolationType;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.SshKeysDistriMonitor;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
 import com.cloud.network.VpnUserVO;
+import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.IsolationType;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -127,8 +126,8 @@ import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.ovs.GreTunnelException;
 import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.router.VirtualRouter.Role;
@@ -177,11 +176,11 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -887,7 +886,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     private VmDataCommand generateVmDataCommand(VirtualRouter router, String vmPrivateIpAddress,
-            String userData, String serviceOffering, String zoneName, String guestIpAddress, String vmName, String vmInstanceName, long vmId) {
+            String userData, String serviceOffering, String zoneName, String guestIpAddress, String vmName, String vmInstanceName, long vmId, String publicKey) {
         VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress);
         
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
@@ -902,6 +901,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         cmd.addVmData("metadata", "public-hostname", router.getPublicIpAddress());
         cmd.addVmData("metadata", "instance-id", vmInstanceName);
         cmd.addVmData("metadata", "vm-id", String.valueOf(vmId));
+        cmd.addVmData("metadata", "public-keys", publicKey);
 
         return cmd;
     }
@@ -1033,24 +1033,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             } else {
                 EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_CREATE, "router creation failed", startEventId);
             }
-
-        }       
-        State state = router.getState();
-        
-        if ( state == State.Starting ) {
-            // wait 300 seconds
-            for ( int i = 0; i < 300; ) {
-                try {
-                    Thread.sleep(2);
-                } catch (Exception e) {
-                }
-                i += 2;
-                state = router.getState();
-                if ( state != State.Starting ) {
-                    break;
-                }
-            }           
         }
+
+        State state = router.getState();
         if (state != State.Starting && state != State.Running) {
             long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, owner.getId(), EventTypes.EVENT_ROUTER_START, "Starting router : " +router.getName());
             router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount());
@@ -1060,11 +1045,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_START, "failed to start router", startEventId);
             }
         }
-        state = router.getState();
-        if ( state == State.Running ) {
-            return router;
-        }
-        throw new CloudRuntimeException(router.getName() + " is not running , it is in " + state);
+        
+        return router;
     }
 
     @Override
@@ -1437,8 +1419,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         VirtualRouter router = startDhcp ? deployDhcp(network, dest, profile.getOwner()) : deployVirtualRouter(network, dest, profile.getOwner());
 
+        _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
+        
         String password = profile.getVirtualMachine().getPassword();
         String userData = profile.getVirtualMachine().getUserData();
+        String sshPublicKey = profile.getVirtualMachine().getDetail("SSH.PublicKey");
         Commands cmds = new Commands(OnError.Stop);
 
         String routerControlIpAddress = null;
@@ -1468,7 +1453,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         cmds.addCommand(
                 "vmdata",
                 generateVmDataCommand(router, nic.getIp4Address(), userData, serviceOffering, zoneName,
-                        nic.getIp4Address(), profile.getVirtualMachine().getName(), profile.getVirtualMachine().getInstanceName(), profile.getId()));
+                        nic.getIp4Address(), profile.getVirtualMachine().getName(), profile.getVirtualMachine().getInstanceName(), profile.getId(), sshPublicKey));
 
         try {
             _agentMgr.send(router.getHostId(), cmds);
@@ -1696,7 +1681,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         cmds.addCommand(
                                 "vmdata",
                                 generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName,
-                                        nic.getIp4Address(), vm.getName(), vm.getInstanceName(), vm.getId()));
+                                        nic.getIp4Address(), vm.getName(), vm.getInstanceName(), vm.getId(), null));
                     }
                 }
             }

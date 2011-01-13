@@ -17,11 +17,15 @@
  */
 package com.cloud.vm;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.uservm.UserVm;
@@ -67,6 +71,9 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     
     transient String password;
 
+    @Transient
+    Map<String, String> details;
+    
     @Override
     public String getPassword() {
         return password;
@@ -75,8 +82,8 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     public void setPassword(String password) {
         this.password = password;
     }
-    
-    @Override
+
+	@Override
     public String getGuestIpAddress() {
 		return guestIpAddress;
 	}
@@ -148,10 +155,12 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
                     long domainId,
                     long accountId,
                     long serviceOfferingId,
-                    String userData, String name) {
+                    String userData,
+                    String name) {
         super(id, serviceOfferingId, name, instanceName, Type.User, templateId, hypervisorType, guestOsId, domainId, accountId, haEnabled);
         this.userData = userData;
         this.displayName = displayName != null ? displayName : null;
+    	this.details = new HashMap<String, String>();
     }
     
     protected UserVmVO() {
@@ -204,4 +213,26 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 	public void setDisplayName(String displayName) {
 	    this.displayName = displayName;
 	}
+	
+    public Map<String, String> getDetails() {
+        return details;
+    }
+    
+    @Override
+    public String getDetail(String name) {
+        assert (details != null) : "Did you forget to load the details?";
+        
+        return details != null ? details.get(name) : null;
+    }
+    
+    public void setDetail(String name, String value) {
+        assert (details != null) : "Did you forget to load the details?";
+        
+        details.put(name, value);
+    }
+    
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
+    }
+	
 }

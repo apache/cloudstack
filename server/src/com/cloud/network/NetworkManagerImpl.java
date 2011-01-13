@@ -169,7 +169,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject LoadBalancingRulesManager _lbMgr;
     @Inject UsageEventDao _usageEventDao;
     @Inject PodVlanMapDao _podVlanMapDao;
-
     @Inject(adapter=NetworkGuru.class)
     Adapters<NetworkGuru> _networkGurus;
     @Inject(adapter=NetworkElement.class)
@@ -1122,7 +1121,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     private Account findAccountByIpAddress(Ip ipAddress) {
         IPAddressVO address = _ipAddressDao.findById(ipAddress);
         if ((address != null) && (address.getAllocatedToAccountId() != null)) {
-            return _accountMgr.getAccount(address.getAllocatedToAccountId());
+            return _accountMgr.getActiveAccount(address.getAllocatedToAccountId());
         }
         return null;
     }
@@ -1161,14 +1160,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 return true;
             }
 
-            Account Account = _accountMgr.getAccount(accountId);
-            if (Account == null) {
+            Account account = _accountMgr.getAccount(accountId);
+            if (account == null) {
                 return false;
             }
 
             if ((ipVO.getAllocatedToAccountId() == null) || (ipVO.getAllocatedToAccountId().longValue() != accountId)) {
                 // FIXME: is the user visible in the admin account's domain????
-                if (!BaseCmd.isAdmin(Account.getType())) {
+                if (!BaseCmd.isAdmin(account.getType())) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("permission denied disassociating IP address " + ipAddress + "; acct: " + accountId + "; ip (acct / dc / dom / alloc): "
                                 + ipVO.getAllocatedToAccountId() + " / " + ipVO.getDataCenterId() + " / " + ipVO.getAllocatedInDomainId() + " / " + ipVO.getAllocatedTime());
@@ -1567,8 +1566,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         } else {
             Account owner = _accountMgr.getAccount(network.getAccountId());
-            Domain domain = _domainDao.findById(owner.getDomainId());
-            _accountMgr.checkAccess(caller, domain);
+            _accountMgr.checkAccess(caller, owner);
         }
         
         //Don't allow to remove network if there are non-destroyed vms using it
@@ -1748,7 +1746,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
-        Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
+        Account owner = _accountMgr.getActiveAccount(cmd.getEntityOwnerId());
         if (!_accountMgr.isAdmin(caller.getType())) {
             _accountMgr.checkAccess(caller, network);
         } else {

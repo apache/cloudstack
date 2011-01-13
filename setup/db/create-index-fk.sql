@@ -105,6 +105,8 @@ ALTER TABLE `cloud`.`user_vm` ADD INDEX `i_user_vm__external_ip_address`(`extern
 ALTER TABLE `cloud`.`user_vm` ADD CONSTRAINT `fk_user_vm__external_vlan_db_id` FOREIGN KEY `fk_user_vm__external_vlan_db_id` (`external_vlan_db_id`) REFERENCES `vlan` (`id`);
 ALTER TABLE `cloud`.`user_vm` ADD INDEX `i_user_vm__external_vlan_db_id`(`external_vlan_db_id`);
 
+ALTER TABLE `cloud`.`user_vm_details` ADD CONSTRAINT `fk_user_vm_details__vm_id` FOREIGN KEY `fk_user_vm_details__vm_id`(`vm_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE;
+
 #ALTER TABLE `cloud`.`domain_router` ADD CONSTRAINT `fk_domain_router__public_ip_address` FOREIGN KEY `fk_domain_router__public_ip_address` (`public_ip_address`) REFERENCES `user_ip_address` (`public_ip_address`);
 ALTER TABLE `cloud`.`domain_router` ADD INDEX `i_domain_router__public_ip_address`(`public_ip_address`);
 ALTER TABLE `cloud`.`domain_router` ADD CONSTRAINT `fk_domain_router__id` FOREIGN KEY `fk_domain_router__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE;

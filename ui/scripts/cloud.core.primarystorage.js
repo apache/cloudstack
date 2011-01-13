@@ -55,6 +55,7 @@ function primarystorageToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function primarystorageToRightPanel($midmenuItem1) {  
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);  
     $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);        
     primarystorageJsonToDetailsTab();  
 }
@@ -200,8 +201,8 @@ var primarystorageActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {             
             var item = json.queryasyncjobresultresponse.jobresult.storagepool; 
             primarystorageToMidmenu(item, $midmenuItem1);
-            primarystorageToRightPanel($midmenuItem1);                        
-            $("#right_panel_content #after_action_info").text("We are actively enabling maintenance. Please refresh periodically for an updated status."); 
+            //primarystorageToRightPanel($midmenuItem1);                        
+            //$("#right_panel_content #after_action_info").text("We are actively enabling maintenance. Please refresh periodically for an updated status."); 
         }
     },
     "Cancel Maintenance Mode": {              
@@ -212,8 +213,8 @@ var primarystorageActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {       
             var item = json.queryasyncjobresultresponse.jobresult.storagepool;    
             primarystorageToMidmenu(item, $midmenuItem1);
-            primarystorageToRightPanel($midmenuItem1);            
-            $("#right_panel_content #after_action_info").text("We are actively cancelling your scheduled maintenance.  Please refresh periodically for an updated status."); 
+            //primarystorageToRightPanel($midmenuItem1);            
+            //$("#right_panel_content #after_action_info").text("We are actively cancelling your scheduled maintenance.  Please refresh periodically for an updated status."); 
         }
     },
     "Delete Primary Storage": {              

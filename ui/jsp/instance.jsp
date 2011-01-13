@@ -356,7 +356,7 @@
 
 <!-- VM Primary Network Template (begin) -->
 <div class="vmpopup_offeringbox" id="wizard_network_direct_template" style="display:none">
-	<input type="radio" name="primary_network" class="radio" id="network_direct_checkbox" />
+	<input type="radio" name="primary_network" class="radio" id="network_direct_checkbox" checked="checked" />
 	<label class="label" id="network_direct_name">
 	</label>
 	<div class="vmpopup_offdescriptionbox">

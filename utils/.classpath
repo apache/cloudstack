@@ -9,5 +9,8 @@
 	<classpathentry kind="lib" path="/thirdparty/commons-dbcp-1.2.2.jar"/>
 	<classpathentry kind="lib" path="/thirdparty/commons-pool-1.4.jar"/>
 	<classpathentry kind="lib" path="/thirdparty/junit-4.8.1.jar"/>
+	<classpathentry kind="lib" path="/deps/cloud-bcprov-jdk16-1.45.jar"/>
+	<classpathentry kind="lib" path="/deps/cloud-jsch-0.1.42.jar"/>
+	<classpathentry kind="lib" path="/deps/cloud-commons-codec-1.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -399,14 +399,14 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
 			                        $("body").stopTime(timerKey);	
 			                        $midmenuItem1.find("#content").removeClass("inaction");
 			                        $midmenuItem1.find("#spinning_wheel").hide();			                        
-			                        hideDetailsTabActionSpinningWheel(id, inProcessText);				                        			                       
+			                        hideDetailsTabActionSpinningWheel(id, inProcessText, $midmenuItem1);				                        			                       
 			                        if (result.jobstatus == 1) { // Succeeded  
 			                            $midmenuItem1.find("#info_icon").removeClass("error").show();
 			                            $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 			                            
 			                            afterActionSeccessFn(json, $midmenuItem1, id);  			                            
-			                        } else if (result.jobstatus == 2) { // Failed	
-			                            $midmenuItem1.find("#info_icon").addClass("error").show();
-			                            $midmenuItem1.data("afterActionInfo", (label + " action failed. Reason: " + fromdb(result.jobresult.errortext)));    
+			                        } else if (result.jobstatus == 2) { // Failed				                            
+			                            var errorMsg = label + " action failed. Reason: " + fromdb(result.jobresult.errortext);
+			                            handleErrorInMidMenu2(errorMsg, $midmenuItem1, id, inProcessText); 
 			                        }											                    
 		                        }
 	                        },
@@ -438,7 +438,7 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
 				$midmenuItem1.find("#spinning_wheel").hide();				
 				$midmenuItem1.find("#info_icon").removeClass("error").show();
 			    $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 		
-			    hideDetailsTabActionSpinningWheel(id, inProcessText);	
+			    hideDetailsTabActionSpinningWheel(id, inProcessText, $midmenuItem1);	
 				afterActionSeccessFn(json, $midmenuItem1, id); 		
 	        },
             error: function(XMLHttpResponse) {	                
@@ -449,29 +449,34 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
     //Sync job (end) *****
 }
 
-function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1, id, inProcessText) { 
-    $midmenuItem1.find("#content").removeClass("inaction");
-	$midmenuItem1.find("#spinning_wheel").hide();	
-	$midmenuItem1.find("#info_icon").addClass("error").show();		
-	$midmenuItem1.find("#first_row").text("Action failed");		
-	hideDetailsTabActionSpinningWheel(id, inProcessText);		
-		                        
+function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1, id, inProcessText) {     
     var errorMsg = "";
     if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
         errorMsg = parseXMLHttpResponse(XMLHttpResponse);		
     }
+    handleErrorInMidMenu2(errorMsg, $midmenuItem1, id, inProcessText); 
+}  
+
+function handleErrorInMidMenu2(errorMsg, $midmenuItem1, id, inProcessText) { 
+    $midmenuItem1.find("#content").removeClass("inaction");
+	$midmenuItem1.find("#spinning_wheel").hide();	
+	$midmenuItem1.find("#info_icon").addClass("error").show();		
+	//$midmenuItem1.find("#first_row").text("Action failed");		
+	$midmenuItem1.data("afterActionInfo", errorMsg); 
+	hideDetailsTabActionSpinningWheel(id, inProcessText, $midmenuItem1);	                    
+    
     if(errorMsg.length > 0) 
         $midmenuItem1.find("#second_row").text(fromdb(errorMsg));   
     else
         $midmenuItem1.find("#second_row").html("&nbsp;");     
 }  
 
-function hideDetailsTabActionSpinningWheel(id, inProcessText) {			                        
+function hideDetailsTabActionSpinningWheel(id, inProcessText, $midmenuItem1) {			                        
     var $detailsTab = $("#right_panel_content #tab_content_details");  
     var jsonObj = $detailsTab.data("jsonObj");
     var $spinningWheel = $detailsTab.find("#spinning_wheel");         
-    if(jsonObj != null && ("id" in jsonObj) && jsonObj.id == id && ($spinningWheel.find("#description").text() == inProcessText)) {                                                                           
-        $spinningWheel.hide();     
+    if((id == $detailsTab.find("#id").text()) && (inProcessText == $spinningWheel.find("#description").text())) {     
+        copyActionInfoFromMidMenuToRightPanel($midmenuItem1); 
     }
 }	
 
@@ -506,13 +511,16 @@ function copyActionInfoFromMidMenuToRightPanel($midmenuItem1) {
     }  
     
     var $midMenuSpinningWheel = $midmenuItem1.find("#spinning_wheel");
-    if($midMenuSpinningWheel.css("display") != "none") { 
-        var $detailsTabSpinningWheel = $("#right_panel_content #tab_content_details").find("#spinning_wheel");
+    var $detailsTabSpinningWheel = $("#right_panel_content #tab_content_details").find("#spinning_wheel");
+    if($midMenuSpinningWheel.css("display") != "none") {         
         if($detailsTabSpinningWheel.css("display") == "none") {
             var inProcessText = $midMenuSpinningWheel.data("inProcessText");
             $detailsTabSpinningWheel.find("#description").text(inProcessText);  
             $detailsTabSpinningWheel.show();  
         }
+    }
+    else {
+        $detailsTabSpinningWheel.hide();  
     }
 }
                 
