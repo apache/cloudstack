@@ -1,6 +1,6 @@
 /var/log/ppp-connect-errors {
-	weekly
-	rotate 4
+	daily
+	rotate 5
 	missingok
 	notifempty
 	compress
