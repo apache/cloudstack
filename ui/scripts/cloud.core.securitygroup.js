@@ -664,10 +664,12 @@ var securityGroupActionMap = {
         inProcessText: "Deleting Security Group....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {  
             $midmenuItem1.slideUp("slow", function() {
-                $(this).remove();
-            });    
-            clearRightPanel();
-            securityGroupClearRightPanel();
+                $(this).remove();                
+                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                    clearRightPanel();
+                    securityGroupClearRightPanel();
+                }
+            });                
         }
     }    
 }  
