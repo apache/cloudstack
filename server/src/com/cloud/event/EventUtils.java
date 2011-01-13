@@ -20,12 +20,13 @@ public class EventUtils {
     /*
      * Save event after scheduling an async job
      */
-    public static Long saveScheduledEvent(Long userId, Long accountId, String type, String description) {
+    public static Long saveScheduledEvent(Long userId, Long accountId, String type, String description, long startEventId) {
         EventVO event = new EventVO();
         event.setUserId(userId);
         event.setAccountId(accountId);
         event.setType(type);
         event.setState(Event.State.Scheduled);
+        event.setStartId(startEventId);
         event.setDescription("Scheduled async job for "+description);
         event = _eventDao.persist(event);
         return event.getId();

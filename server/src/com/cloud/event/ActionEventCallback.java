@@ -24,7 +24,6 @@ import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
-import com.cloud.api.BaseAsyncCmd;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
@@ -40,28 +39,20 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
 
     @Override
     public Object intercept(Object object, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
-        if(args.length > 0){
-            if((args[0] != null)  && (args[0] instanceof BaseAsyncCmd)){
-                UserContext ctx = UserContext.current();
-                Long userID = ctx.getCallerUserId();
-                userId = (userID == null) ? User.UID_SYSTEM : userID;
-                BaseAsyncCmd cmd = (BaseAsyncCmd)args[0];
-                eventType = cmd.getEventType();
-                accountId = cmd.getEntityOwnerId();
-                description = cmd.getEventDescription();
-                Long startEventID = cmd.getStartEventId();
-                if(startEventID == null){
-                    startEventId = 0;
-                }
-            }
-        }
-        EventVO event = null;
         ActionEvent actionEvent = method.getAnnotation(ActionEvent.class);
+        EventVO event = null;
         if (actionEvent != null) {
             create = actionEvent.create();
-        }
-        if(!create){
-            event = interceptStart(method);
+            UserContext ctx = UserContext.current();
+            Long userID = ctx.getCallerUserId();
+            userId = (userID == null) ? User.UID_SYSTEM : userID;
+            eventType = actionEvent.eventType();
+            description = actionEvent.eventDescription();
+            startEventId = ctx.getStartEventId();
+
+            if(!create){
+                event = interceptStart(method);
+            }
         }
         try {
             return methodProxy.invokeSuper(object, args);
@@ -114,6 +105,8 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
             if(create){
                 //This start event has to be used for subsequent events of this action
                 startEventId = EventUtils.saveCreatedEvent(userId, accountId, EventVO.LEVEL_INFO, eventType, "Successfully created entity for "+description);
+                UserContext ctx = UserContext.current();
+                ctx.setStartEventId(startEventId);
             } else {
                 EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, eventType, "Successfully completed "+description, startEventId);
             }

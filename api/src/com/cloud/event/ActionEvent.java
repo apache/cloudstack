@@ -28,4 +28,6 @@ import java.lang.annotation.Target;
 @Retention(RUNTIME)
 public @interface ActionEvent {
     boolean create() default false;
+    String eventType();
+    String eventDescription();
 }

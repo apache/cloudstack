@@ -933,6 +933,7 @@ public abstract class CitrixResourceBase implements ServerResource {
                 for (NicTO nic : nics) { 
                     if(nic.getType() == TrafficType.Control){
                         networkUsage(conn, nic.getIp(), "create", null);
+                        break;
                     }
                 }
             }

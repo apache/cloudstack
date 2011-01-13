@@ -2918,7 +2918,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
-    @Override @ActionEvent
+    @Override
     public boolean deleteDomain(DeleteDomainCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Account account = UserContext.current().getCaller();
         Long domainId = cmd.getId();

@@ -31,6 +31,7 @@ public class UserContext {
     private long userId;
     private String sessionId;
     private Account account;
+    private long startEventId = 0;
 
     private boolean apiServer;
 
@@ -102,4 +103,13 @@ public class UserContext {
 	public static void unregisterContext() {
 	    s_currentContext.set(null);
 	}
+
+    public void setStartEventId(long startEventId) {
+        this.startEventId = startEventId;
+    }
+
+    public long getStartEventId() {
+        return startEventId;
+    }
+
 }

@@ -1570,7 +1570,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     
     
     /*Just allocate a volume in the database, don't send the createvolume cmd to hypervisor. The volume will be finally created only when it's attached to a VM.*/
-    @Override @ActionEvent (create=true)
+    @Override
     public VolumeVO allocVolume(CreateVolumeCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceAllocationException {
         // FIXME:  some of the scheduled event stuff might be missing here...
         Account account = UserContext.current().getCaller();
@@ -1728,7 +1728,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         return volume;
     }
 
-    @Override @DB @ActionEvent
+    @Override @DB
     public VolumeVO createVolume(CreateVolumeCmd cmd) {
         VolumeVO volume = _volsDao.findById(cmd.getEntityId());
 //        VolumeVO createdVolume = null;
