@@ -120,6 +120,9 @@ public class VolumeResponse extends BaseResponse {
     @SerializedName("serviceofferingdisplaytext") @Param(description="the display text of the service offering for root disk")
     private String serviceOfferingDisplayText;
     
+    @SerializedName("isextractable") @Param(description="true if the volume is extractable, false otherwise")
+    private Boolean extractable;
+    
     public Long getObjectId() {
     	return getId();
     }
@@ -378,5 +381,13 @@ public class VolumeResponse extends BaseResponse {
 
 	public void setServiceOfferingDisplayText(String serviceOfferingDisplayText) {
 		this.serviceOfferingDisplayText = serviceOfferingDisplayText;
+	}
+
+	public Boolean getExtractable() {
+		return extractable;
+	}
+
+	public void setExtractable(Boolean extractable) {
+		this.extractable = extractable;
 	}
 }

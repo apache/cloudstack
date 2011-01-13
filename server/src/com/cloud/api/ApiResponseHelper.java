@@ -803,6 +803,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());
         volResponse.setAttached(volume.getAttached());
         volResponse.setDestroyed(volume.getDestroyed());
+        VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());      
+		boolean isExtractable = template != null&&  template.isExtractable()&&  !(template.getTemplateType()== TemplateType.SYSTEM);
+        volResponse.setExtractable(isExtractable);
         volResponse.setObjectName("volume");
         return volResponse;
     }
@@ -1335,6 +1338,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             templateResponse.setReady(templateHostRef.getDownloadState()==Status.DOWNLOADED);
             templateResponse.setFeatured(template.isFeatured());
+            templateResponse.setExtractable(template.isExtractable() && !(template.getTemplateType()== TemplateType.SYSTEM));
             templateResponse.setPasswordEnabled(template.getEnablePassword());
             templateResponse.setCrossZones(template.isCrossZones());
             templateResponse.setFormat(template.getFormat());
@@ -1851,6 +1855,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 isoResponse.setName(iso.getName());
                 isoResponse.setDisplayText(iso.getDisplayText());
                 isoResponse.setPublic(iso.isPublicTemplate());
+                isoResponse.setExtractable(iso.isExtractable() && !(iso.getTemplateType()== TemplateType.PERHOST));
                 isoResponse.setReady(true);
                 isoResponse.setBootable(iso.isBootable());
                 isoResponse.setFeatured(iso.isFeatured());
@@ -1875,6 +1880,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 isoResponse.setName(iso.getName());
                 isoResponse.setDisplayText(iso.getDisplayText());
                 isoResponse.setPublic(iso.isPublicTemplate());
+                isoResponse.setExtractable(iso.isExtractable() && !(iso.getTemplateType()== TemplateType.PERHOST));
                 isoResponse.setCreated(isoHost.getCreated());
                 isoResponse.setReady(isoHost.getDownloadState() == Status.DOWNLOADED);
                 isoResponse.setBootable(iso.isBootable());
