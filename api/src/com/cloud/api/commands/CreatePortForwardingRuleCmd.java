@@ -69,7 +69,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
     }
 
     public String getPrivatePort() {
-        return privatePort;
+        return privatePort.trim();
     }
 
     @Override
@@ -178,12 +178,12 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
 
     @Override
     public int getDestinationPortStart() {
-        return Integer.parseInt(privatePort);
+        return Integer.parseInt(privatePort.trim());
     }
 
     @Override
     public int getDestinationPortEnd() {
-        return Integer.parseInt(privatePort);
+        return Integer.parseInt(privatePort.trim());
     }
 
     @Override
