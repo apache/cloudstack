@@ -903,6 +903,7 @@ function initVMWizard() {
 						var $networkDirectContainer = $("#network_direct_container").empty();
 						var $networkDirectSecondaryContainer = $("#network_direct_secondary_container").empty();
 						var availableSecondary = false;
+						var defaultNetworkAdded = false;
 						if (networks != null && networks.length > 0) {
 							for (var i = 0; i < networks.length; i++) {
 								if (networks[i].type != 'Direct') {
@@ -914,6 +915,10 @@ function initVMWizard() {
 										continue;
 									}
 									$directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+networks[i].id);
+									if (i == 0) {
+										// Only check the first default network
+										$directNetworkElement.find("#network_direct_checkbox").attr("checked", "checked");
+									}
 								} else {
 									$directNetworkElement = $networkSecondaryDirectTemplate.clone().attr("id", "direct"+networks[i].id);
 								}
@@ -927,41 +932,45 @@ function initVMWizard() {
 									$networkDirectSecondaryContainer.append($directNetworkElement.show());
 								}
 							}
+						}
 							
-							// Add any additional shared direct networks
-							$.ajax({
-								data: createURL("command=listNetworks&isshared=true&zoneId="+$thisPopup.find("#wizard_zone").val()),
-								dataType: "json",
-								async: false,
-								success: function(json) {
-									var sharedNetworks = json.listnetworksresponse.network;
-									if (sharedNetworks != null && sharedNetworks.length > 0) {
-										for (var i = 0; i < sharedNetworks.length; i++) {
-											if (sharedNetworks[i].type != 'Direct') {
+						// Add any additional shared direct networks
+						$.ajax({
+							data: createURL("command=listNetworks&isshared=true&zoneId="+$thisPopup.find("#wizard_zone").val()),
+							dataType: "json",
+							async: false,
+							success: function(json) {
+								var sharedNetworks = json.listnetworksresponse.network;
+								if (sharedNetworks != null && sharedNetworks.length > 0) {
+									for (var i = 0; i < sharedNetworks.length; i++) {
+										if (sharedNetworks[i].type != 'Direct') {
+											continue;
+										}
+										if (sharedNetworks[i].isdefault) {
+											if (requiredVirtual) {
 												continue;
 											}
-											if (sharedNetworks[i].isdefault) {
-												if (requiredVirtual) {
-													continue;
-												}
-												$directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+sharedNetworks[i].id);
-											} else {
-												$directNetworkElement = $networkSecondaryDirectTemplate.clone().attr("id", "direct"+sharedNetworks[i].id);
+											$directNetworkElement = $networkDirectTemplate.clone().attr("id", "direct"+sharedNetworks[i].id);
+											if (i == 0) {
+												// Only check the first default network
+												$directNetworkElement.find("#network_direct_checkbox").attr("checked", "checked");
 											}
-											$directNetworkElement.find("#network_direct_checkbox").data("jsonObj", sharedNetworks[i]);
-											$directNetworkElement.find("#network_direct_name").text(sharedNetworks[i].name);
-											$directNetworkElement.find("#network_direct_desc").text(sharedNetworks[i].displaytext);
-											if (sharedNetworks[i].isdefault) {
-												$networkDirectContainer.append($directNetworkElement.show());
-											} else {
-												availableSecondary = true;
-												$networkDirectSecondaryContainer.append($directNetworkElement.show());
-											}
+										} else {
+											$directNetworkElement = $networkSecondaryDirectTemplate.clone().attr("id", "direct"+sharedNetworks[i].id);
+										}
+										$directNetworkElement.find("#network_direct_checkbox").data("jsonObj", sharedNetworks[i]);
+										$directNetworkElement.find("#network_direct_name").text(sharedNetworks[i].name);
+										$directNetworkElement.find("#network_direct_desc").text(sharedNetworks[i].displaytext);
+										if (sharedNetworks[i].isdefault) {
+											$networkDirectContainer.append($directNetworkElement.show());
+										} else {
+											availableSecondary = true;
+											$networkDirectSecondaryContainer.append($directNetworkElement.show());
 										}
 									}
 								}
-							});
-						}
+							}
+						});
 						if (availableSecondary) {
 							$("#secondary_network_title, #secondary_network_desc").show();
 						}
