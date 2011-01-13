@@ -850,6 +850,7 @@ function initVMWizard() {
 						// Setup Virtual Networks
 						var requiredVirtual = false;
 						var defaultNetworkAdded = false;
+						var availableSecondary = false;
 						if (virtualNetwork == null) {
 							$.ajax({
 								data: createURL("command=listNetworkOfferings&traffictype=Guest"),
