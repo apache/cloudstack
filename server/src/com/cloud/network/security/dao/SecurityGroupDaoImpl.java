@@ -88,4 +88,10 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
 
 		return listBy(sc);
 	}
+	@Override
+	public int removeByAccountId(long accountId) {
+	    SearchCriteria sc = AccountIdSearch.create();
+	    sc.setParameters("accountId", accountId);
+	    return expunge(sc);
+	} 
 }

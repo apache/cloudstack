@@ -78,6 +78,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupManager;
+import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.server.Criteria;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
@@ -131,6 +132,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Inject private VMTemplateDao _templateDao;
     @Inject private PodVlanMapDao _podVlanMapDao;
     @Inject private NetworkDao _networkDao;
+    @Inject private SecurityGroupDao _securityGroupDao;
 	
 	
 	@Inject private SecurityGroupManager _networkGroupMgr;
@@ -898,6 +900,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 accountCleanupNeeded = true;
             }
             
+            int numRemoved = _securityGroupDao.removeByAccountId(accountId);
+            s_logger.info("deleteAccount: Deleted " + numRemoved + " network groups for account " + accountId);
             
             // Delete the account's VLANs
             List<VlanVO> accountVlans = _vlanDao.listVlansForAccountByType(null, accountId, VlanType.DirectAttached);
