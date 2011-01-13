@@ -127,7 +127,9 @@ var secondaryStorageActionMap = {
         dialogBeforeActionFn: doDeleteSecondaryStorage,       
         inProcessText: "Deleting Secondary Storage....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {                             
-            secondaryStorageJsonClearRightPanel();   
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                secondaryStorageJsonClearRightPanel();   
+            }
         }
     } 
 }

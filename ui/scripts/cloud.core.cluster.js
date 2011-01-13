@@ -105,8 +105,10 @@ var clusterActionMap = {
             $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();
             });
-            clearRightPanel();
-            clusterClearRightPanel();
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                clearRightPanel();
+                clusterClearRightPanel();
+            }
         }
     }
 }

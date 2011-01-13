@@ -914,7 +914,8 @@ function directNetworkJsonClearDetailsTab() {
 	$thisTab.find("#grid_header_title").text("");			
 	$thisTab.find("#id").text("");				
 	$thisTab.find("#name").text("");	
-	$thisTab.find("#displaytext").text("");	  	
+	$thisTab.find("#displaytext").text("");	 
+	$thisTab.find("#default").text(""); 	 	
     $thisTab.find("#vlan").text("");
     $thisTab.find("#gateway").text("");
     $thisTab.find("#netmask").text("");        
@@ -1229,9 +1230,11 @@ var directNetworkActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();
-            });    
-            clearRightPanel();
-            directNetworkClearRightPanel();
+            });               
+            if(id.toString() == $("#right_panel_content").find("#direct_network_page").find("#tab_content_details").find("#id").text()) {
+                clearRightPanel();
+                directNetworkClearRightPanel();
+            }
         }
     }    
 }  
