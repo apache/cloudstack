@@ -927,7 +927,16 @@ public abstract class CitrixResourceBase implements ServerResource {
                 	}
                 }   
             }
-            
+            if (vmSpec.getType() == VirtualMachine.Type.DomainRouter) {
+                // Create network usage rules for domR
+                NicTO[] nics = vmSpec.getNics();
+                for (NicTO nic : nics) { 
+                    if(nic.getType() == TrafficType.Control){
+                        networkUsage(conn, nic.getIp(), "create", null);
+                    }
+                }
+            }
+    
             state = State.Running;
             return new StartAnswer(cmd);
         } catch (Exception e) {
