@@ -102,9 +102,11 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
             long domainId,
             long accountId,
             long networkConfigurationId,
-            boolean haEnabled) {
+            boolean haEnabled, 
+            String networkDomain) {
         super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.networkId = networkConfigurationId;
+        this.domain = networkDomain;
     }
 
     public void setGateway(String gateway) {

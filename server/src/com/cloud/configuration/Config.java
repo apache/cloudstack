@@ -58,7 +58,7 @@ public enum Config {
 	GuestVlanBits("Network", ManagementServer.class, Integer.class, "guest.vlan.bits", "12", "The number of bits to reserve for the VLAN identifier in the guest subnet.", null),
 	MulticastThrottlingRate("Network", ManagementServer.class, Integer.class, "multicast.throttling.rate", "10", "Default multicast rate in megabits per second allowed.", null),
 	NetworkThrottlingRate("Network", ManagementServer.class, Integer.class, "network.throttling.rate", "200", "Default data transfer rate in megabits per second allowed.", null),
-	GuestDomainSuffix("Network", AgentManager.class, String.class, "guest.domain.suffix", "cloud-test.cloud.internal", "Default domain name for vms inside virtualized networks fronted by router", null),
+	GuestDomainSuffix("Network", AgentManager.class, String.class, "guest.domain.suffix", "cloud.internal", "Default domain name for vms inside virtualized networks fronted by router", null),
 	DirectNetworkNoDefaultRoute("Network", ManagementServer.class, Boolean.class, "direct.network.no.default.route", "false", "Direct Network Dhcp Server should not send a default route", "true/false"),
 	OvsNetwork("Network", ManagementServer.class, Boolean.class, "open.vswitch.network", "false", "enable/disable open vswitch network", null),
 	

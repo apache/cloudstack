@@ -76,6 +76,9 @@ public class CreateNetworkCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.IS_DEFAULT, type=CommandType.BOOLEAN, description="true if network is default, false otherwise")
     private Boolean isDefault;
+    
+    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
+    private String networkDomain;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -132,6 +135,9 @@ public class CreateNetworkCmd extends BaseCmd {
         return isDefault;
     }
 
+    public String getNetworkDomain() {
+        return networkDomain;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

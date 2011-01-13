@@ -185,6 +185,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     int _networkGcWait;
     int _networkGcInterval;
+    String _networkDomain;
 
     private Map<String, String> _configs;
     
@@ -685,6 +686,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Integer multicastRateMbps = getIntegerConfigValue(Config.MulticastThrottlingRate.key(), null);
         _networkGcWait = NumbersUtil.parseInt(_configs.get(Config.NetworkGcWait.key()), 600);
         _networkGcInterval = NumbersUtil.parseInt(_configs.get(Config.NetworkGcInterval.key()), 600);
+        
+        _configs = _configDao.getConfiguration("Network", params);
+        _networkDomain = _configs.get(Config.GuestDomainSuffix.key());
 
         NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, TrafficType.Public);
         publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
@@ -1288,6 +1292,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         String startIP = cmd.getStartIp();
         String endIP = cmd.getEndIp();
         String netmask = cmd.getNetmask();
+        String networkDomain = cmd.getNetworkDomain();
         String cidr = null;
         Boolean isDefault = cmd.isDefault();
         if (gateway != null && netmask != null) {
@@ -1324,6 +1329,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
+        //If networkDomain is not specified, take it from the global configuration
+        if (networkDomain == null) {
+            networkDomain = _networkDomain;
+        }
+        
         //Check if zone exists
         if (zoneId == null || ((_dcDao.findById(zoneId)) == null)) {
             throw new InvalidParameterValueException("Please specify a valid zone.");
@@ -1356,6 +1366,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
            //Create network
            DataCenterDeployment plan = new DataCenterDeployment(zoneId, null, null, null);
            NetworkVO userNetwork = new NetworkVO();
+           userNetwork.setNetworkDomain(networkDomain);
            
            //cidr should be set only when the user is admin
            if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN) {

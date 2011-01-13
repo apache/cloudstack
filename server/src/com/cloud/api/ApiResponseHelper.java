@@ -2234,6 +2234,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setRelated(network.getRelated());
         response.setDns1(network.getDns1());
         response.setDns2(network.getDns2());
+        response.setNetworkDomain(network.getNetworkDomain());
         
         //populate capability
         Map<Service, Map<Capability, String>>  serviceCapabilitiesMap = ApiDBUtils.getZoneCapabilities(network.getDataCenterId());

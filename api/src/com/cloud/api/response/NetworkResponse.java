@@ -91,7 +91,10 @@ public class NetworkResponse extends BaseResponse{
     
     @SerializedName("service") @Param(description="the list of services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
-
+    
+    @SerializedName("networkdomain") @Param(description="the network domain")
+    private String networkDomain;
+    
     public Long getId() {
         return id;
     }
@@ -315,4 +318,13 @@ public class NetworkResponse extends BaseResponse{
     public void setIsDefault(Boolean isDefault) {
         this.isDefault = isDefault;
     }
+
+    public String getNetworkDomain() {
+        return networkDomain;
+    }
+
+    public void setNetworkDomain(String networkDomain) {
+        this.networkDomain = networkDomain;
+    }
+    
 }

@@ -171,6 +171,7 @@ public class NetworkVO implements Network {
         this.broadcastDomainType = that.getBroadcastDomainType();
         this.guruName = guruName;
         this.state = that.getState();
+        this.networkDomain = that.getNetworkDomain();
         if (state == null) {
             state = State.Allocated;
         }
@@ -284,6 +285,7 @@ public class NetworkVO implements Network {
         this.broadcastDomainType = broadcastDomainType;
     }
     
+    @Override
     public String getNetworkDomain() {
         return networkDomain;
     }
