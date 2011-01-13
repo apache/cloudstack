@@ -911,16 +911,15 @@ var zoneActionMap = {
         inProcessText: "Deleting Zone....",
         afterActionSeccessFn: function(json, $leftmenuItem1, id) {   
             $leftmenuItem1.slideUp(function() {
-                $(this).remove();
+                $(this).remove();                                
+                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                    clearRightPanel();
+                    zoneJsonClearRightPanel();
+                }                
             });            
-            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
-                clearRightPanel();
-                zoneJsonClearRightPanel();
-            }
         }
     }
 }
-
 
 function doEditZone($actionLink, $detailsTab, $leftmenuItem1) {       
     var $readonlyFields  = $detailsTab.find("#name, #dns1, #dns2, #internaldns1, #internaldns2, #vlan, #guestcidraddress");

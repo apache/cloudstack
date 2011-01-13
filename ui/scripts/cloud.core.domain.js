@@ -631,12 +631,12 @@ var domainActionMap = {
         inProcessText: "Deleting Domain....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {        
             $midmenuItem1.slideUp(function() {                
-                $(this).remove();
-            });           
-            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
-                clearRightPanel();
-                domainJsonClearRightPanel();
-            }
+                $(this).remove();   
+                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                    clearRightPanel();
+                    domainJsonClearRightPanel();
+                }                
+            });                
         }
     }    
 } 
