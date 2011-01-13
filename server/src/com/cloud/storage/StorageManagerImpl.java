@@ -2444,7 +2444,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         try {
 			expungeVolume(volume);
 		} catch (Exception e) {
-			s_logger.warn("Failed to expunge volume:"+e);
+			s_logger.warn("Failed to expunge volume:",e);
 			return false;
 		}
         
