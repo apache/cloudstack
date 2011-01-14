@@ -100,6 +100,9 @@ public interface DeploymentPlanner extends Adapter {
         }
         
         public void addPool(long poolId) {
+        	if (_poolIds == null) {
+        		_poolIds = new HashSet<Long>();
+        	}
             _poolIds.add(poolId);
         }
         
