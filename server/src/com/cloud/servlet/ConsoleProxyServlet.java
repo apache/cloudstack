@@ -75,6 +75,12 @@ public class ConsoleProxyServlet extends HttpServlet {
 				sendResponse(resp, "Service is not ready");
 				return;
 			}
+			
+			if(_ms.getHashKey() == null) {
+	        	s_logger.info("Console/thumbnail access denied. Ticket service is not ready yet");
+				sendResponse(resp, "Service is not ready");
+	        	return;
+			}
 				
             String userId = null;
             String account = null;
@@ -361,10 +367,15 @@ public class ConsoleProxyServlet extends HttpServlet {
 	
 	private boolean checkSessionPermision(HttpServletRequest req, long vmId, Account accountObj) {
 
+        VMInstanceVO vm = _ms.findVMInstanceById(vmId);
+        if(vm == null) {
+        	s_logger.debug("Console/thumbnail access denied. VM " + vmId + " does not exist in system any more");
+        	return false;
+        }
+		
 		if(accountObj.getType() == Account.ACCOUNT_TYPE_ADMIN)
     		return true;
-
-        VMInstanceVO vm = _ms.findVMInstanceById(vmId);
+        
         switch(vm.getType())
         {
         case User :
