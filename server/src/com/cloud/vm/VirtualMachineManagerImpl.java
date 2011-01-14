@@ -84,6 +84,7 @@ import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -139,6 +140,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
     @Inject protected AlertManager _alertMgr;
     @Inject protected GuestOSCategoryDao _guestOsCategoryDao;
     @Inject protected GuestOSDao _guestOsDao;
+    @Inject protected VolumeDao _volsDao;
     
     @Inject(adapter=DeploymentPlanner.class)
     protected Adapters<DeploymentPlanner> _planners;
@@ -363,8 +365,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
         _networkMgr.cleanupNics(profile);
     	//Clean up volumes based on the vm's instance id
     	_storageMgr.cleanupVolumes(vm.getId());
-    	
-    	_vmDao.remove(vm.getId());
     	
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Expunged " + vm);
@@ -863,6 +863,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
         return true;
     }
     
+    
     @Override
     public <T extends VMInstanceVO> T migrate(T vm, long srcHostId, DeployDestination dest) throws ResourceUnavailableException {
         s_logger.info("Migrating " + vm + " to " + dest);
@@ -890,7 +891,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
             alertType = AlertManager.ALERT_TYPE_CONSOLE_PROXY_MIGRATE;
         }
         
-        VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm); 
+        VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+        _networkMgr.prepareNicForMigration(profile, dest);
+        _storageMgr.prepareForMigration(profile, dest);
+        
         HypervisorGuru hvGuru = _hvGurus.get(vm.getHypervisorType());
         VirtualMachineTO to = hvGuru.implement(profile);
         PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(to);
@@ -915,7 +919,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
             
             boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
             MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows);
-            MigrateAnswer ma = (MigrateAnswer)_agentMgr.send(vm.getHostId(), mc);
+            MigrateAnswer ma = (MigrateAnswer)_agentMgr.send(vm.getLastHostId(), mc);
             if (!ma.getResult()) {
                 return null;
             }
@@ -960,7 +964,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
     }
     
     @Override
-    public boolean migrate(VirtualMachine.Type vmType, long vmId, long srcHostId) throws InsufficientServerCapacityException {
+    public boolean migrateAway(VirtualMachine.Type vmType, long vmId, long srcHostId) throws InsufficientServerCapacityException {
         VirtualMachineGuru<? extends VMInstanceVO> vmGuru = _vmGurus.get(vmType);
         VMInstanceVO vm = vmGuru.findById(vmId);
         if (vm == null) {
@@ -973,6 +977,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
         Long hostId = vm.getHostId();
         if (hostId == null) {
             s_logger.debug("Unable to migrate because the VM doesn't have a host id: " + vm);
+            return true;
         }
         
         Host host = _hostDao.findById(hostId);

@@ -687,7 +687,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         long vmId = work.getInstanceId();
         long srcHostId = work.getHostId();
         try {
-            if (!_itMgr.migrate(work.getType(), vmId, srcHostId)) {
+            if (!_itMgr.migrateAway(work.getType(), vmId, srcHostId)) {
                 s_logger.warn("Unable to migrate vm from " + srcHostId);
                 _agentMgr.maintenanceFailed(srcHostId);
             }

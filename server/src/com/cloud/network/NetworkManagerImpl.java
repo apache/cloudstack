@@ -1097,6 +1097,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             _networksDao.changeActiveNicsBy(network.getId(), 1);
         }
     }
+    
+    @Override
+    public <T extends VMInstanceVO> void prepareNicForMigration(VirtualMachineProfile<T> vm, DeployDestination dest) {
+        List<NicVO> nics = _nicDao.listBy(vm.getId());
+        for (NicVO nic : nics) {
+            Network network = _networksDao.findById(nic.getNetworkId());
+            
+            NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri());
+            
+            vm.addNic(profile);
+        }
+    }
+    
 
     @Override
     public void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean forced) {

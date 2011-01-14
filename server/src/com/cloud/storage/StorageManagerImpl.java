@@ -2559,6 +2559,19 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
     
     @Override
+    public void prepareForMigration(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) {
+        List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Preparing " + vols.size() + " volumes for " + vm);
+        }
+        
+        for (VolumeVO vol : vols) {
+            StoragePool pool = _storagePoolDao.findById(vol.getPoolId());
+            vm.addDisk(new VolumeTO(vol, pool));
+        }
+    }
+    
+    @Override
     public void prepare(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException {
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
         if (s_logger.isDebugEnabled()) {

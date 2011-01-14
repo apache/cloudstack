@@ -144,4 +144,6 @@ public interface NetworkManager extends NetworkService {
 	Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 	List<NetworkVO> listNetworksUsedByVm(long vmId, boolean isSystem);
 
+    <T extends VMInstanceVO> void prepareNicForMigration(VirtualMachineProfile<T> vm, DeployDestination dest);
+
 }

@@ -275,4 +275,6 @@ public interface StorageManager extends Manager {
 	void release(VirtualMachineProfile<? extends VMInstanceVO> profile);
 
 	void cleanupVolumes(long vmId) throws ConcurrentOperationException;
+	
+	void prepareForMigration(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest);
 }

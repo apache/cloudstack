@@ -92,7 +92,7 @@ public interface VirtualMachineManager extends Manager {
 	
 	<T extends VMInstanceVO> boolean destroy(T vm, User caller, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 	
-	boolean migrate(VirtualMachine.Type type, long vmid, long hostId) throws InsufficientServerCapacityException;
+	boolean migrateAway(VirtualMachine.Type type, long vmid, long hostId) throws InsufficientServerCapacityException;
 	
 	<T extends VMInstanceVO> T migrate(T vm, long srcHostId, DeployDestination dest) throws ResourceUnavailableException; 
 }
