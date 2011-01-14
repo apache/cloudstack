@@ -186,14 +186,19 @@ public class UploadMonitorImpl implements UploadMonitor {
 	    
 	    Type type = (template.getFormat() == ImageFormat.ISO) ? Type.ISO : Type.TEMPLATE ;
 	    
+	    //Check if ssvm is up
+	    HostVO sserver = storageServers.get(0);
+	    if(sserver.getStatus() != com.cloud.host.Status.Up){
+	    	throw new CloudRuntimeException("Couldnt create extract link - Secondary Storage Vm is not up");
+	    }
+	    
 	    //Check if it already exists.
 	    List<UploadVO> extractURLList = _uploadDao.listByTypeUploadStatus(template.getId(), type, UploadVO.Status.DOWNLOAD_URL_CREATED);	    
 	    if (extractURLList.size() > 0) {
             return extractURLList.get(0);
         }
 	    
-	    // It doesn't exist so create a DB entry.
-	    HostVO sserver = storageServers.get(0);
+	    // It doesn't exist so create a DB entry.	    
 	    UploadVO uploadTemplateObj = new UploadVO(sserver.getId(), template.getId(), new Date(), 
 	                                                Status.DOWNLOAD_URL_NOT_CREATED, 0, type, Mode.HTTP_DOWNLOAD); 
 	    uploadTemplateObj.setInstallPath(vmTemplateHost.getInstallPath());	                                                
@@ -259,6 +264,11 @@ public class UploadMonitorImpl implements UploadMonitor {
             uploadJob.setLastUpdated(new Date());
             _uploadDao.update(uploadJob.getId(), uploadJob);
             
+            List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(dataCenterId, State.Running);
+            if (ssVms.size() == 0){
+            	errorString = "Couldnt find a running SSVM in the zone" + dataCenterId+ ". Couldnt create the extraction URL.";
+                throw new CloudRuntimeException(errorString);
+            }
             // Create Symlink at ssvm
             String uuid = UUID.randomUUID().toString() + ".vhd";
             CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(path, uuid);
@@ -269,26 +279,22 @@ public class UploadMonitorImpl implements UploadMonitor {
                 throw new CloudRuntimeException(errorString);
             }
             
-            //Construct actual URL locally now that the symlink exists at SSVM
-            List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(dataCenterId, State.Running);
-            if (ssVms.size() > 0) {
-                SecondaryStorageVmVO ssVm = ssVms.get(0);
-                if (ssVm.getPublicIpAddress() == null) {
-                    errorString = "A running secondary storage vm has a null public ip?";
-                    s_logger.warn(errorString);
-                    throw new CloudRuntimeException(errorString);
-                }
-                String extractURL = generateCopyUrl(ssVm.getPublicIpAddress(), uuid);
-                UploadVO vo = _uploadDao.createForUpdate();
-                vo.setLastUpdated(new Date());
-                vo.setUploadUrl(extractURL);
-                vo.setUploadState(Status.DOWNLOAD_URL_CREATED);
-                _uploadDao.update(uploadId, vo);
-                success = true;
-                return;
+            //Construct actual URL locally now that the symlink exists at SSVM            
+            SecondaryStorageVmVO ssVm = ssVms.get(0);
+            if (ssVm.getPublicIpAddress() == null) {
+                errorString = "A running secondary storage vm has a null public ip?";
+                s_logger.warn(errorString);
+                throw new CloudRuntimeException(errorString);
             }
-            errorString = "Couldnt find a running SSVM in the zone" + dataCenterId+ ". Couldnt create the extraction URL.";
-            throw new CloudRuntimeException(errorString);
+            String extractURL = generateCopyUrl(ssVm.getPublicIpAddress(), uuid);
+            UploadVO vo = _uploadDao.createForUpdate();
+            vo.setLastUpdated(new Date());
+            vo.setUploadUrl(extractURL);
+            vo.setUploadState(Status.DOWNLOAD_URL_CREATED);
+            _uploadDao.update(uploadId, vo);
+            success = true;
+            return;
+                        
 	    }finally{
 	        if(!success){
 	            UploadVO uploadJob = _uploadDao.createForUpdate(uploadId);

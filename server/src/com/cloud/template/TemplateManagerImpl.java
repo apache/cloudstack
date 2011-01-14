@@ -493,7 +493,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         if (isISO) {
             desc = "ISO";
         }
-
+        eventId = eventId == null ? 0:eventId;
         VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null) {
             throw new InvalidParameterValueException("Unable to find " +desc+ " with id " + templateId);

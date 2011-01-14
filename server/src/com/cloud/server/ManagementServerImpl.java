@@ -4360,7 +4360,7 @@ public class ManagementServerImpl implements ManagementServer {
                 return uploadJob.getId();
             }else{ // Volume is copied now make it visible under apache and create a URL.
                 _uploadMonitor.createVolumeDownloadURL(volumeId, volumeLocalPath, Upload.Type.VOLUME, zoneId, uploadJob.getId());                
-                EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, cmd.getEventType(), "Completed extraction of "+volume.getName()+ " in mode:" +mode, null, cmd.getStartEventId());
+                EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, cmd.getEventType(), "Completed extraction of "+volume.getName()+ " in mode:" +mode, null, cmd.getStartEventId() == null ? 0:cmd.getStartEventId());
                 return uploadJob.getId();
             }
         }
