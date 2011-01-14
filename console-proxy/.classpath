@@ -4,6 +4,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="/thirdparty/log4j-1.2.15.jar"/>
 	<classpathentry kind="lib" path="/thirdparty/gson.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/console"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/console-common"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
