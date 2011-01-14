@@ -34,12 +34,20 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckVirtualMachineAnswer;
+import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.MigrateAnswer;
+import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.PrepareForMigrationAnswer;
+import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
+import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -59,6 +67,8 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.Host;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.network.NetworkManager;
@@ -71,6 +81,8 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.VolumeType;
+import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -123,6 +135,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
     @Inject protected UsageEventDao _usageEventDao;
     @Inject protected NicDao _nicsDao;
     @Inject protected AccountManager _accountMgr;
+    @Inject protected HostDao _hostDao;
+    @Inject protected AlertManager _alertMgr;
+    @Inject protected GuestOSCategoryDao _guestOsCategoryDao;
+    @Inject protected GuestOSDao _guestOsDao;
     
     @Inject(adapter=DeploymentPlanner.class)
     protected Adapters<DeploymentPlanner> _planners;
@@ -348,6 +364,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
         _networkMgr.cleanupNics(profile);
     	//Clean up volumes based on the vm's instance id
     	_storageMgr.cleanupVolumes(vm.getId());
+    	
+    	_vmDao.remove(vm.getId());
     	
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Expunged " + vm);
@@ -744,12 +762,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
     private void setStateMachine() {
     	_stateMachine = new StateMachine2<State, VirtualMachine.Event, VMInstanceVO>();
 
-    	_stateMachine.addTransition(null, VirtualMachine.Event.CreateRequested, State.Creating);
-    	_stateMachine.addTransition(State.Creating, VirtualMachine.Event.OperationSucceeded, State.Stopped);
-    	_stateMachine.addTransition(State.Creating, VirtualMachine.Event.OperationFailed, State.Error);
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.StartRequested, State.Starting);
-    	_stateMachine.addTransition(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging);
-    	_stateMachine.addTransition(State.Error, VirtualMachine.Event.ExpungeOperation, State.Expunging);
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.DestroyRequested, State.Destroyed);
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.StopRequested, State.Stopped);
     	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.AgentReportStopped, State.Stopped);
@@ -764,7 +777,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
     	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
     	_stateMachine.addTransition(State.Destroyed, VirtualMachine.Event.RecoveryRequested, State.Stopped);
     	_stateMachine.addTransition(State.Destroyed, VirtualMachine.Event.ExpungeOperation, State.Expunging);
-    	_stateMachine.addTransition(State.Creating, VirtualMachine.Event.MigrationRequested, State.Destroyed);
     	_stateMachine.addTransition(State.Running, VirtualMachine.Event.MigrationRequested, State.Migrating);
     	_stateMachine.addTransition(State.Running, VirtualMachine.Event.AgentReportRunning, State.Running);
     	_stateMachine.addTransition(State.Running, VirtualMachine.Event.AgentReportStopped, State.Stopped);
@@ -777,8 +789,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
     	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.MigrationFailedOnDest, State.Running);
     	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.AgentReportRunning, State.Running);
     	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.AgentReportStopped, State.Stopped);
+        _stateMachine.addTransition(State.Migrating, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
     	_stateMachine.addTransition(State.Stopping, VirtualMachine.Event.OperationSucceeded, State.Stopped);
-    	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
     	_stateMachine.addTransition(State.Stopping, VirtualMachine.Event.OperationFailed, State.Running);
     	_stateMachine.addTransition(State.Stopping, VirtualMachine.Event.AgentReportRunning, State.Running);
     	_stateMachine.addTransition(State.Stopping, VirtualMachine.Event.AgentReportStopped, State.Stopped);
@@ -786,6 +798,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
     	_stateMachine.addTransition(State.Stopping, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
     	_stateMachine.addTransition(State.Expunging, VirtualMachine.Event.OperationFailed, State.Expunging);
     	_stateMachine.addTransition(State.Expunging, VirtualMachine.Event.ExpungeOperation, State.Expunging);
+        _stateMachine.addTransition(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging);
+        _stateMachine.addTransition(State.Error, VirtualMachine.Event.ExpungeOperation, State.Expunging);
     	
     	_stateMachine.registerListeners(_stateListner);
     }
@@ -848,6 +862,156 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
         }
 
         return true;
+    }
+    
+    @Override
+    public <T extends VMInstanceVO> T migrate(T vm, long srcHostId, DeployDestination dest) throws ResourceUnavailableException {
+        s_logger.info("Migrating " + vm + " to " + dest);
+        
+        long dstHostId = dest.getHost().getId();
+        Host fromHost = _hostDao.findById(srcHostId);
+        if (fromHost == null) {
+            s_logger.info("Unable to find the host to migrate from: " + srcHostId);
+            return null;
+        } 
+        VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
+        
+        vm = vmGuru.findById(vm.getId());
+        if (vm == null || vm.getRemoved() != null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Unable to find the vm " + vm);
+            }
+            return null;
+        }
+        
+        short alertType = AlertManager.ALERT_TYPE_USERVM_MIGRATE;
+        if (VirtualMachine.Type.DomainRouter.equals(vm.getType())) {
+            alertType = AlertManager.ALERT_TYPE_DOMAIN_ROUTER_MIGRATE;
+        } else if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
+            alertType = AlertManager.ALERT_TYPE_CONSOLE_PROXY_MIGRATE;
+        }
+        
+        VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm); 
+        HypervisorGuru hvGuru = _hvGurus.get(vm.getHypervisorType());
+        VirtualMachineTO to = hvGuru.implement(profile);
+        PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(to);
+        
+        PrepareForMigrationAnswer pfma;
+        try {
+            pfma = (PrepareForMigrationAnswer)_agentMgr.send(dstHostId, pfmc);
+        } catch (OperationTimedoutException e1) {
+            throw new AgentUnavailableException("Operation timed out", dstHostId);
+        }
+        if (!pfma.getResult()) {
+            throw new AgentUnavailableException(pfma.getDetails(), dstHostId);
+        }
+        
+        boolean migrated = false;
+        try {
+            vm.setLastHostId(srcHostId);
+            if (vm == null || vm.getRemoved() != null || vm.getHostId() == null || vm.getHostId() != srcHostId || !stateTransitTo(vm, Event.MigrationRequested, dstHostId)) {
+                s_logger.info("Migration cancelled because state has changed: " + vm);
+                return null;
+            } 
+            
+            boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
+            MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows);
+            MigrateAnswer ma = (MigrateAnswer)_agentMgr.send(vm.getHostId(), mc);
+            if (!ma.getResult()) {
+                return null;
+            }
+            
+            CheckVirtualMachineCommand cvm = new CheckVirtualMachineCommand(vm.getInstanceName());
+            CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer)_agentMgr.send(dstHostId, cvm);
+            if (!answer.getResult()) {
+                s_logger.debug("Unable to complete migration for " + vm.toString());
+                stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
+                return null;
+            }
+
+            State state = answer.getState();
+            if (state == State.Stopped) {
+                s_logger.warn("Unable to complete migration as we can not detect it on " + dest.getHost());
+                stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
+                return null;
+            }
+
+            // FIXME:          _networkGroupMgr.handleVmStateTransition(vm, State.Running);
+            stateTransitTo(vm, VirtualMachine.Event.OperationSucceeded, dstHostId);
+            migrated = true;
+            return vm;
+        } catch (final OperationTimedoutException e) {
+            s_logger.debug("operation timed out");
+            if (e.isActive()) {
+                // FIXME: scheduleRestart(vm, true);
+            }
+            throw new AgentUnavailableException("Operation timed out: ", dstHostId);
+        } finally {
+            if (!migrated) {
+                s_logger.info("Migration was unsuccessful.  Cleaning up: " + vm.toString());
+
+                _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(), "Unable to migrate vm " + vm.getName() + " from host " + fromHost.getName() + " in zone " + dest.getDataCenter().getName() + " and pod " + dest.getPod().getName(), "Migrate Command failed.  Please check logs.");
+
+                stateTransitTo(vm, Event.MigrationFailedOnSource, srcHostId);
+                
+                Command cleanup = vmGuru.cleanup(vm, null);
+                _agentMgr.easySend(dstHostId, cleanup);
+            }
+        }
+    }
+    
+    @Override
+    public boolean migrate(VirtualMachine.Type vmType, long vmId, long srcHostId) throws InsufficientServerCapacityException {
+        VirtualMachineGuru<? extends VMInstanceVO> vmGuru = _vmGurus.get(vmType);
+        VMInstanceVO vm = vmGuru.findById(vmId);
+        if (vm == null) {
+            s_logger.debug("Unable to find a VM for " + vmId);
+            return true;
+        }
+        
+        VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm); 
+        
+        Long hostId = vm.getHostId();
+        if (hostId == null) {
+            s_logger.debug("Unable to migrate because the VM doesn't have a host id: " + vm);
+        }
+        
+        Host host = _hostDao.findById(hostId);
+        
+        DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null);
+        ExcludeList excludes = new ExcludeList();
+        excludes.addHost(hostId);
+        
+        DeployDestination dest = null;
+        while (true) {
+            for (DeploymentPlanner planner : _planners) {
+                dest = planner.plan(profile, plan, excludes);
+                if (dest != null) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Planner " + planner + " found " + dest + " for migrating to.");
+                    }
+                    break;
+                }
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Planner " + planner + " was unable to find anything.");
+                }
+            }
+            
+            if (dest == null) {
+                throw new InsufficientServerCapacityException("Unable to find a server to migrate to.", host.getClusterId());
+            }
+            
+            excludes.addHost(dest.getHost().getId());
+            
+            try {
+                vm = migrate(vm, srcHostId, dest);
+            } catch (ResourceUnavailableException e) {
+                s_logger.debug("Unable to migrate to unavailable " + dest);
+            }
+            if (vm != null) {
+                return true;
+            }
+        } 
     }
     
     protected class CleanupTask implements Runnable {

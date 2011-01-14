@@ -43,7 +43,6 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.HostVO;
@@ -284,11 +283,6 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     }
 
     @Override
-    public boolean completeMigration(ConsoleProxyVO vm, HostVO host) throws AgentUnavailableException, OperationTimedoutException {
-        return false;
-    }
-
-    @Override
     public void completeStartCommand(ConsoleProxyVO vm) {
     }
 
@@ -302,21 +296,6 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
             return null;
         }
         return VirtualMachineName.getConsoleProxyId(vmName);
-    }
-
-    @Override
-    public ConsoleProxyVO get(long id) {
-        return null;
-    }
-
-    @Override
-    public boolean migrate(ConsoleProxyVO vm, HostVO host) throws AgentUnavailableException, OperationTimedoutException {
-        return false;
-    }
-
-    @Override
-    public HostVO prepareForMigration(ConsoleProxyVO vm) throws InsufficientCapacityException, StorageUnavailableException {
-        return null;
     }
 
     @Override

@@ -24,10 +24,8 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.HostVO;
 import com.cloud.utils.exception.ExecutionException;
 
 /**
@@ -76,14 +74,6 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      * @return id if the handler works for this vm and can parse id.  null if not.
      */
     Long convertToId(String vmName);
-    
-    /**
-     * Retrieves the vm based on the id given.
-     * 
-     * @param id id of the vm.
-     * @return VMInstanceVO
-     */
-    T get(long id);
     
     /**
      * Complete the start command.  HA calls this when it determines that
@@ -138,12 +128,12 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      * @param vm vm to migrate.
      * @return HostVO if a host is found.
      */
-    HostVO prepareForMigration(T vm) throws InsufficientCapacityException, StorageUnavailableException;
+//    HostVO prepareForMigration(T vm) throws InsufficientCapacityException, StorageUnavailableException;
     
-    /**
-     * Migrate the vm.
-     */
-    boolean migrate(T vm, HostVO host) throws AgentUnavailableException, OperationTimedoutException;
-    
-    boolean completeMigration(T vm, HostVO host) throws AgentUnavailableException, OperationTimedoutException;
+//    /**
+//     * Migrate the vm.
+//     */
+//    boolean migrate(T vm, HostVO host) throws AgentUnavailableException, OperationTimedoutException;
+//    
+//    boolean completeMigration(T vm, HostVO host) throws AgentUnavailableException, OperationTimedoutException;
 }

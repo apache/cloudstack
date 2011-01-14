@@ -29,7 +29,6 @@ import com.cloud.host.HostVO;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
-import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.ConsoleProxyDao;
 
@@ -66,10 +65,5 @@ public class StaticConsoleProxyManager extends AgentBasedConsoleProxyManager imp
         }
         
         return true;
-    }
-    
-    @Override
-    public ConsoleProxyVO get(long id) {
-        return _proxyDao.findById(id);
     }
 }

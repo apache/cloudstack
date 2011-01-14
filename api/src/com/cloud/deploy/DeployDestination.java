@@ -81,4 +81,9 @@ public class DeployDestination {
         }
         return this._host.getId() == that._host.getId();
     }
+    
+    @Override
+    public String toString() {
+        return new StringBuilder("Dest[").append(_dc.getId()).append("-").append(_pod.getId()).append("-").append(_cluster.getId()).append("-").append(_host.getId()).append("]").toString();
+    }
 }

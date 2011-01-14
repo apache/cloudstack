@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.Formatter;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -41,15 +40,11 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeAnswer;
 import com.cloud.agent.api.AttachVolumeCommand;
-import com.cloud.agent.api.CheckVirtualMachineAnswer;
-import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
-import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.SnapshotCommand;
@@ -113,7 +108,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
-import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
@@ -1177,11 +1171,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
     }
 
-    @Override
-    public UserVmVO get(long id) {
-        return getVirtualMachine(id);
-    }
-    
     public String getRandomPrivateTemplateName() {
     	return UUID.randomUUID().toString();
     }
@@ -1260,82 +1249,82 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return stopped;
     }
 
-    @Override
-    public HostVO prepareForMigration(UserVmVO vm) throws StorageUnavailableException {
-        long vmId = vm.getId();
-        boolean mirroredVols = vm.isMirroredVols();
-        DataCenterVO dc = _dcDao.findById(vm.getDataCenterId());
-        HostPodVO pod = _podDao.findById(vm.getPodId());
-        ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
-        VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
-        StoragePoolVO sp = _storageMgr.getStoragePoolForVm(vm.getId());
-
-        List<VolumeVO> vols = _volsDao.findCreatedByInstance(vmId);
-
-        String [] storageIps = new String[2];
-        VolumeVO vol = vols.get(0);
-        storageIps[0] = vol.getHostIp();
-        if (mirroredVols && (vols.size() == 2)) {
-            storageIps[1] = vols.get(1).getHostIp();
-        }
-
-        PrepareForMigrationCommand cmd = new PrepareForMigrationCommand(vm.getInstanceName(), vm.getVnet(), storageIps, vols, mirroredVols);
-
-        HostVO vmHost = null;
-        HashSet<Host> avoid = new HashSet<Host>();
-
-        HostVO fromHost = _hostDao.findById(vm.getHostId());
-        if (fromHost.getClusterId() == null) {
-            s_logger.debug("The host is not in a cluster");
-            return null;
-        }
-        avoid.add(fromHost);
-
-        while ((vmHost = (HostVO)_agentMgr.findHost(Host.Type.Routing, dc, pod, sp, offering, template, vm, null, avoid)) != null) {
-            avoid.add(vmHost);
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Trying to migrate router to host " + vmHost.getName());
-            }
-            
-            _storageMgr.share(vm, vols, vmHost, false);
-
-            Answer answer = _agentMgr.easySend(vmHost.getId(), cmd);
-            if (answer != null && answer.getResult()) {
-                return vmHost;
-            }
-
-            _storageMgr.unshare(vm, vols, vmHost);
-
-        }
-
-        return null;
-    }
-
-    @Override
-    public boolean migrate(UserVmVO vm, HostVO host) throws AgentUnavailableException, OperationTimedoutException {
-        HostVO fromHost = _hostDao.findById(vm.getHostId());
-
-    	if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.MigrationRequested, vm.getHostId())) {
-    		s_logger.debug("State for " + vm.toString() + " has changed so migration can not take place.");
-    		return false;
-    	}
-        boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
-        MigrateCommand cmd = new MigrateCommand(vm.getInstanceName(), host.getPrivateIpAddress(), isWindows);
-        Answer answer = _agentMgr.send(fromHost.getId(), cmd);
-        if (answer == null) {
-            return false;
-        }
-
-        List<VolumeVO> vols = _volsDao.findCreatedByInstance(vm.getId());
-        if (vols.size() == 0) {
-            return true;
-        }
-
-        _storageMgr.unshare(vm, vols, fromHost);
-
-        return true;
-    }
+//    @Override
+//    public HostVO prepareForMigration(UserVmVO vm) throws StorageUnavailableException {
+//        long vmId = vm.getId();
+//        boolean mirroredVols = vm.isMirroredVols();
+//        DataCenterVO dc = _dcDao.findById(vm.getDataCenterId());
+//        HostPodVO pod = _podDao.findById(vm.getPodId());
+//        ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
+//        VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
+//        StoragePoolVO sp = _storageMgr.getStoragePoolForVm(vm.getId());
+//
+//        List<VolumeVO> vols = _volsDao.findCreatedByInstance(vmId);
+//
+//        String [] storageIps = new String[2];
+//        VolumeVO vol = vols.get(0);
+//        storageIps[0] = vol.getHostIp();
+//        if (mirroredVols && (vols.size() == 2)) {
+//            storageIps[1] = vols.get(1).getHostIp();
+//        }
+//
+//        PrepareForMigrationCommand cmd = new PrepareForMigrationCommand(vm.getInstanceName(), vm.getVnet(), storageIps, vols, mirroredVols);
+//
+//        HostVO vmHost = null;
+//        HashSet<Host> avoid = new HashSet<Host>();
+//
+//        HostVO fromHost = _hostDao.findById(vm.getHostId());
+//        if (fromHost.getClusterId() == null) {
+//            s_logger.debug("The host is not in a cluster");
+//            return null;
+//        }
+//        avoid.add(fromHost);
+//
+//        while ((vmHost = (HostVO)_agentMgr.findHost(Host.Type.Routing, dc, pod, sp, offering, template, vm, null, avoid)) != null) {
+//            avoid.add(vmHost);
+//
+//            if (s_logger.isDebugEnabled()) {
+//                s_logger.debug("Trying to migrate router to host " + vmHost.getName());
+//            }
+//            
+//            _storageMgr.share(vm, vols, vmHost, false);
+//
+//            Answer answer = _agentMgr.easySend(vmHost.getId(), cmd);
+//            if (answer != null && answer.getResult()) {
+//                return vmHost;
+//            }
+//
+//            _storageMgr.unshare(vm, vols, vmHost);
+//
+//        }
+//
+//        return null;
+//    }
+//
+//    @Override
+//    public boolean migrate(UserVmVO vm, HostVO host) throws AgentUnavailableException, OperationTimedoutException {
+//        HostVO fromHost = _hostDao.findById(vm.getHostId());
+//
+//    	if (!_itMgr.stateTransitTo(vm, VirtualMachine.Event.MigrationRequested, vm.getHostId())) {
+//    		s_logger.debug("State for " + vm.toString() + " has changed so migration can not take place.");
+//    		return false;
+//    	}
+//        boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
+//        MigrateCommand cmd = new MigrateCommand(vm.getInstanceName(), host.getPrivateIpAddress(), isWindows);
+//        Answer answer = _agentMgr.send(fromHost.getId(), cmd);
+//        if (answer == null) {
+//            return false;
+//        }
+//
+//        List<VolumeVO> vols = _volsDao.findCreatedByInstance(vm.getId());
+//        if (vols.size() == 0) {
+//            return true;
+//        }
+//
+//        _storageMgr.unshare(vm, vols, fromHost);
+//
+//        return true;
+//    }
 
     @Override
     public boolean expunge(UserVmVO vm, long callerUserId, Account caller) {
@@ -1413,39 +1402,39 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 //		_storageMgr.destroy(null, destroyedVolumes);
     }
 
-    @Override @DB
-    public boolean completeMigration(UserVmVO vm, HostVO host) throws AgentUnavailableException, OperationTimedoutException {
-        CheckVirtualMachineCommand cvm = new CheckVirtualMachineCommand(vm.getInstanceName());
-        CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer)_agentMgr.send(host.getId(), cvm);
-        if (!answer.getResult()) {
-            s_logger.debug("Unable to complete migration for " + vm.toString());
-            _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
-            return false;
-        }
-
-        State state = answer.getState();
-        if (state == State.Stopped) {
-            s_logger.warn("Unable to complete migration as we can not detect it on " + host.toString());
-            _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
-            return false;
-        }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Marking port " + answer.getVncPort() + " on " + host.getId());
-        }
-
-        Transaction txn = Transaction.currentTxn();
-        try {
-            txn.start();
-            _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationSucceeded, host.getId());
-            txn.commit();
-            _networkGroupMgr.handleVmStateTransition(vm, State.Running);
-            return true;
-        } catch(Exception e) {
-            s_logger.warn("Exception during completion of migration process " + vm.toString());
-            return false;
-        }
-    }
+//    @Override @DB
+//    public boolean completeMigration(UserVmVO vm, HostVO host) throws AgentUnavailableException, OperationTimedoutException {
+//        CheckVirtualMachineCommand cvm = new CheckVirtualMachineCommand(vm.getInstanceName());
+//        CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer)_agentMgr.send(host.getId(), cvm);
+//        if (!answer.getResult()) {
+//            s_logger.debug("Unable to complete migration for " + vm.toString());
+//            _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
+//            return false;
+//        }
+//
+//        State state = answer.getState();
+//        if (state == State.Stopped) {
+//            s_logger.warn("Unable to complete migration as we can not detect it on " + host.toString());
+//            _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
+//            return false;
+//        }
+//
+//        if (s_logger.isDebugEnabled()) {
+//            s_logger.debug("Marking port " + answer.getVncPort() + " on " + host.getId());
+//        }
+//
+//        Transaction txn = Transaction.currentTxn();
+//        try {
+//            txn.start();
+//            _itMgr.stateTransitTo(vm, VirtualMachine.Event.OperationSucceeded, host.getId());
+//            txn.commit();
+//            _networkGroupMgr.handleVmStateTransition(vm, State.Running);
+//            return true;
+//        } catch(Exception e) {
+//            s_logger.warn("Exception during completion of migration process " + vm.toString());
+//            return false;
+//        }
+//    }
   
     @Override
     public void deletePrivateTemplateRecord(Long templateId){
@@ -2240,8 +2229,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (cmd.getSSHKeyPairName() != null && !cmd.getSSHKeyPairName().equals("")) {
             Account account = UserContext.current().getCaller();
         	SSHKeyPair pair = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getSSHKeyPairName());
-    		if (pair == null)
-    			throw new InvalidParameterValueException("A key pair with name '" + cmd.getSSHKeyPairName() + "' was not found.");
+    		if (pair == null) {
+                throw new InvalidParameterValueException("A key pair with name '" + cmd.getSSHKeyPairName() + "' was not found.");
+            }
     		
     		sshPublicKey = pair.getPublicKey();
         }
@@ -2323,8 +2313,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UserVmVO vm = new UserVmVO(id, instanceName, cmd.getDisplayName(), template.getId(), hypervisorType,
                                    template.getGuestOSId(), offering.getOfferHA(), domainId, owner.getId(), offering.getId(), userData, hostName);
 
-        if (sshPublicKey != null)
-        	vm.setDetail("SSH.PublicKey", sshPublicKey);
+        if (sshPublicKey != null) {
+            vm.setDetail("SSH.PublicKey", sshPublicKey);
+        }
 
         if (_itMgr.allocate(vm, template, offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, cmd.getHypervisor(), owner) == null) {
             return null;
@@ -2378,8 +2369,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         String sshPublicKey = vm.getDetail("SSH.PublicKey");
         if (sshPublicKey != null && !sshPublicKey.equals("") && password != null && !password.equals("saved_password") ) {       	
         	String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(sshPublicKey, password);
-        	if (encryptedPasswd == null)
-        		throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Error encrypting password");
+        	if (encryptedPasswd == null) {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Error encrypting password");
+            }
         	
         	vm.setDetail("Encrypted.Password", encryptedPasswd);
         	_vmDao.saveDetails(vm);

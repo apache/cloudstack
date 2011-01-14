@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -35,11 +34,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CheckVirtualMachineAnswer;
-import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.agent.api.SecStorageSetupCommand;
@@ -92,7 +87,6 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
@@ -1018,11 +1012,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	}
 
 	@Override
-	public SecondaryStorageVmVO get(long id) {
-		return _secStorageVmDao.findById(id);
-	}
-
-	@Override
 	public Long convertToId(String vmName) {
 		if (!VirtualMachineName.isValidSystemVmName(vmName, _instance, "s")) {
 			return null;
@@ -1210,100 +1199,100 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         return true;
 	}
 
-	@Override
-	public boolean migrate(SecondaryStorageVmVO secStorageVm, HostVO host) {
-		HostVO fromHost = _hostDao.findById(secStorageVm.getId());
-
-		if (! _itMgr.stateTransitTo(secStorageVm, VirtualMachine.Event.MigrationRequested, secStorageVm.getHostId())) {
-			s_logger.debug("State for " + secStorageVm.toString() + " has changed so migration can not take place.");
-			return false;
-		}
-
-		MigrateCommand cmd = new MigrateCommand(secStorageVm.getInstanceName(), host.getPrivateIpAddress(), false);
-		Answer answer = _agentMgr.easySend(fromHost.getId(), cmd);
-		if (answer == null || !answer.getResult()) {
-			return false;
-		}
-
-		_storageMgr.unshare(secStorageVm, fromHost);
-
-		return true;
-	}
-
-	@Override
-	public boolean completeMigration(SecondaryStorageVmVO secStorageVm, HostVO host)
-			throws AgentUnavailableException, OperationTimedoutException {
-		CheckVirtualMachineCommand cvm = new CheckVirtualMachineCommand(secStorageVm.getInstanceName());
-		CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) _agentMgr.send(host.getId(), cvm);
-		if (!answer.getResult()) {
-			s_logger.debug("Unable to complete migration for " + secStorageVm.getId());
-			 _itMgr.stateTransitTo(secStorageVm, VirtualMachine.Event.AgentReportStopped, null);
-			return false;
-		}
-
-		State state = answer.getState();
-		if (state == State.Stopped) {
-			s_logger.warn("Unable to complete migration as we can not detect it on " + host.getId());
-			 _itMgr.stateTransitTo(secStorageVm, VirtualMachine.Event.AgentReportStopped, null);
-			return false;
-		}
-
-		 _itMgr.stateTransitTo(secStorageVm, VirtualMachine.Event.OperationSucceeded, host.getId());
-		return true;
-	}
-
-	@Override
-	public HostVO prepareForMigration(SecondaryStorageVmVO secStorageVm) throws StorageUnavailableException {
-		
-		VMTemplateVO template = _templateDao.findById(secStorageVm.getTemplateId());
-		long routerId = secStorageVm.getId();
-		boolean mirroredVols = secStorageVm.isMirroredVols();
-		DataCenterVO dc = _dcDao.findById(secStorageVm.getDataCenterId());
-		HostPodVO pod = _podDao.findById(secStorageVm.getPodId());
-		StoragePoolVO sp = _storageMgr.getStoragePoolForVm(secStorageVm.getId());
- 
-		List<VolumeVO> vols = _volsDao.findCreatedByInstance(routerId);
-
-		String[] storageIps = new String[2];
-		VolumeVO vol = vols.get(0);
-		storageIps[0] = vol.getHostIp();
-		if (mirroredVols && (vols.size() == 2)) {
-			storageIps[1] = vols.get(1).getHostIp();
-		}
-
-		PrepareForMigrationCommand cmd = new PrepareForMigrationCommand(secStorageVm.getName(), null, storageIps, vols, mirroredVols);
-
-		HostVO routingHost = null;
-		HashSet<Host> avoid = new HashSet<Host>();
-
-		HostVO fromHost = _hostDao.findById(secStorageVm.getHostId());
-        if (fromHost.getClusterId() == null) {
-            s_logger.debug("The host is not in a cluster");
-            return null;
-        }
-		avoid.add(fromHost);
-
-		while ((routingHost = (HostVO) _agentMgr.findHost(Host.Type.Routing,
-				dc, pod, sp, _serviceOffering, template, secStorageVm, fromHost, avoid)) != null) {
-			avoid.add(routingHost);
-			if (s_logger.isDebugEnabled()) {
-				s_logger.debug("Trying to migrate router to host " + routingHost.getName());
-			}
-
-			if( !_storageMgr.share(secStorageVm, vols, routingHost, false) ) {
-				s_logger.warn("Can not share " + vol.getPath() + " to " + secStorageVm.getName());
-				throw new StorageUnavailableException("Can not share " + vol.getPath() + " to " + secStorageVm.getName(), vol.getPoolId());
-			}
-
-			Answer answer = _agentMgr.easySend(routingHost.getId(), cmd);
-			if (answer != null && answer.getResult()) {
-				return routingHost;
-			}
-			_storageMgr.unshare(secStorageVm, vols, routingHost);
-		}
-
-		return null;
-	}
+//	@Override
+//	public boolean migrate(SecondaryStorageVmVO secStorageVm, HostVO host) {
+//		HostVO fromHost = _hostDao.findById(secStorageVm.getId());
+//
+//		if (! _itMgr.stateTransitTo(secStorageVm, VirtualMachine.Event.MigrationRequested, secStorageVm.getHostId())) {
+//			s_logger.debug("State for " + secStorageVm.toString() + " has changed so migration can not take place.");
+//			return false;
+//		}
+//
+//		MigrateCommand cmd = new MigrateCommand(secStorageVm.getInstanceName(), host.getPrivateIpAddress(), false);
+//		Answer answer = _agentMgr.easySend(fromHost.getId(), cmd);
+//		if (answer == null || !answer.getResult()) {
+//			return false;
+//		}
+//
+//		_storageMgr.unshare(secStorageVm, fromHost);
+//
+//		return true;
+//	}
+//
+//	@Override
+//	public boolean completeMigration(SecondaryStorageVmVO secStorageVm, HostVO host)
+//			throws AgentUnavailableException, OperationTimedoutException {
+//		CheckVirtualMachineCommand cvm = new CheckVirtualMachineCommand(secStorageVm.getInstanceName());
+//		CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) _agentMgr.send(host.getId(), cvm);
+//		if (!answer.getResult()) {
+//			s_logger.debug("Unable to complete migration for " + secStorageVm.getId());
+//			 _itMgr.stateTransitTo(secStorageVm, VirtualMachine.Event.AgentReportStopped, null);
+//			return false;
+//		}
+//
+//		State state = answer.getState();
+//		if (state == State.Stopped) {
+//			s_logger.warn("Unable to complete migration as we can not detect it on " + host.getId());
+//			 _itMgr.stateTransitTo(secStorageVm, VirtualMachine.Event.AgentReportStopped, null);
+//			return false;
+//		}
+//
+//		 _itMgr.stateTransitTo(secStorageVm, VirtualMachine.Event.OperationSucceeded, host.getId());
+//		return true;
+//	}
+//
+//	@Override
+//	public HostVO prepareForMigration(SecondaryStorageVmVO secStorageVm) throws StorageUnavailableException {
+//		
+//		VMTemplateVO template = _templateDao.findById(secStorageVm.getTemplateId());
+//		long routerId = secStorageVm.getId();
+//		boolean mirroredVols = secStorageVm.isMirroredVols();
+//		DataCenterVO dc = _dcDao.findById(secStorageVm.getDataCenterId());
+//		HostPodVO pod = _podDao.findById(secStorageVm.getPodId());
+//		StoragePoolVO sp = _storageMgr.getStoragePoolForVm(secStorageVm.getId());
+// 
+//		List<VolumeVO> vols = _volsDao.findCreatedByInstance(routerId);
+//
+//		String[] storageIps = new String[2];
+//		VolumeVO vol = vols.get(0);
+//		storageIps[0] = vol.getHostIp();
+//		if (mirroredVols && (vols.size() == 2)) {
+//			storageIps[1] = vols.get(1).getHostIp();
+//		}
+//
+//		PrepareForMigrationCommand cmd = new PrepareForMigrationCommand(secStorageVm.getName(), null, storageIps, vols, mirroredVols);
+//
+//		HostVO routingHost = null;
+//		HashSet<Host> avoid = new HashSet<Host>();
+//
+//		HostVO fromHost = _hostDao.findById(secStorageVm.getHostId());
+//        if (fromHost.getClusterId() == null) {
+//            s_logger.debug("The host is not in a cluster");
+//            return null;
+//        }
+//		avoid.add(fromHost);
+//
+//		while ((routingHost = (HostVO) _agentMgr.findHost(Host.Type.Routing,
+//				dc, pod, sp, _serviceOffering, template, secStorageVm, fromHost, avoid)) != null) {
+//			avoid.add(routingHost);
+//			if (s_logger.isDebugEnabled()) {
+//				s_logger.debug("Trying to migrate router to host " + routingHost.getName());
+//			}
+//
+//			if( !_storageMgr.share(secStorageVm, vols, routingHost, false) ) {
+//				s_logger.warn("Can not share " + vol.getPath() + " to " + secStorageVm.getName());
+//				throw new StorageUnavailableException("Can not share " + vol.getPath() + " to " + secStorageVm.getName(), vol.getPoolId());
+//			}
+//
+//			Answer answer = _agentMgr.easySend(routingHost.getId(), cmd);
+//			if (answer != null && answer.getResult()) {
+//				return routingHost;
+//			}
+//			_storageMgr.unshare(secStorageVm, vols, routingHost);
+//		}
+//
+//		return null;
+//	}
 
 	@Override
 	public void onAgentConnect(Long dcId, StartupCommand cmd){

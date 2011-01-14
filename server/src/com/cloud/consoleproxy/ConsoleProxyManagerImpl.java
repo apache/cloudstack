@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -42,14 +41,10 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CheckVirtualMachineAnswer;
-import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ConsoleAccessAuthenticationAnswer;
 import com.cloud.agent.api.ConsoleAccessAuthenticationCommand;
 import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
-import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
@@ -91,7 +86,6 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
-import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -115,7 +109,6 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
@@ -1465,11 +1458,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     }
 
     @Override
-    public ConsoleProxyVO get(long id) {
-        return _consoleProxyDao.findById(id);
-    }
-
-    @Override
     public Long convertToId(String vmName) {
         if (!VirtualMachineName.isValidConsoleProxyName(vmName, _instance)) {
             return null;
@@ -1649,100 +1637,100 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         }
     }
 
-    @Override
-    public boolean migrate(ConsoleProxyVO proxy, HostVO host) {
-        HostVO fromHost = _hostDao.findById(proxy.getId());
-
-        if (! _itMgr.stateTransitTo(proxy, VirtualMachine.Event.MigrationRequested, proxy.getHostId())) {
-            s_logger.debug("State for " + proxy.toString() + " has changed so migration can not take place.");
-            return false;
-        }
-
-        MigrateCommand cmd = new MigrateCommand(proxy.getInstanceName(), host.getPrivateIpAddress(), false);
-        Answer answer = _agentMgr.easySend(fromHost.getId(), cmd);
-        if (answer == null || !answer.getResult()) {
-            return false;
-        }
-
-        _storageMgr.unshare(proxy, fromHost);
-
-        return true;
-    }
-
-    @Override
-    public boolean completeMigration(ConsoleProxyVO proxy, HostVO host) throws AgentUnavailableException, OperationTimedoutException {
-
-        CheckVirtualMachineCommand cvm = new CheckVirtualMachineCommand(proxy.getInstanceName());
-        CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) _agentMgr.send(host.getId(), cvm);
-        if (!answer.getResult()) {
-            s_logger.debug("Unable to complete migration for " + proxy.getId());
-            _itMgr.stateTransitTo(proxy, VirtualMachine.Event.AgentReportStopped, null);
-            return false;
-        }
-
-        State state = answer.getState();
-        if (state == State.Stopped) {
-            s_logger.warn("Unable to complete migration as we can not detect it on " + host.getId());
-            _itMgr.stateTransitTo(proxy, VirtualMachine.Event.AgentReportStopped, null);
-            return false;
-        }
-
-        _itMgr.stateTransitTo(proxy, VirtualMachine.Event.OperationSucceeded, host.getId());
-        return true;
-    }
-
-    @Override
-    public HostVO prepareForMigration(ConsoleProxyVO proxy) throws StorageUnavailableException {
-
-        VMTemplateVO template = _templateDao.findById(proxy.getTemplateId());
-        long routerId = proxy.getId();
-        boolean mirroredVols = proxy.isMirroredVols();
-        DataCenterVO dc = _dcDao.findById(proxy.getDataCenterId());
-        HostPodVO pod = _podDao.findById(proxy.getPodId());
-        StoragePoolVO sp = _storageMgr.getStoragePoolForVm(proxy.getId());
-
-        List<VolumeVO> vols = _volsDao.findCreatedByInstance(routerId);
-
-        String[] storageIps = new String[2];
-        VolumeVO vol = vols.get(0);
-        storageIps[0] = vol.getHostIp();
-        if (mirroredVols && (vols.size() == 2)) {
-            storageIps[1] = vols.get(1).getHostIp();
-        }
-
-        PrepareForMigrationCommand cmd = new PrepareForMigrationCommand(proxy.getName(), null, storageIps, vols, mirroredVols);
-
-        HostVO routingHost = null;
-        HashSet<Host> avoid = new HashSet<Host>();
-
-        HostVO fromHost = _hostDao.findById(proxy.getHostId());
-        if (fromHost.getClusterId() == null) {
-            s_logger.debug("The host is not in a cluster");
-            return null;
-        }
-        avoid.add(fromHost);
-
-        while ((routingHost = (HostVO) _agentMgr.findHost(Host.Type.Routing, dc, pod, sp, _serviceOffering, template, proxy, fromHost, avoid)) != null) {
-            avoid.add(routingHost);
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Trying to migrate router to host " + routingHost.getName());
-            }
-
-            if (!_storageMgr.share(proxy, vols, routingHost, false)) {
-                s_logger.warn("Can not share " + proxy.getName());
-                throw new StorageUnavailableException("Can not share " + proxy.getName(), vol.getPoolId());
-            }
-
-            Answer answer = _agentMgr.easySend(routingHost.getId(), cmd);
-            if (answer != null && answer.getResult()) {
-                return routingHost;
-            }
-            _storageMgr.unshare(proxy, vols, routingHost);
-        }
-
-        return null;
-    }
+//    @Override
+//    public boolean migrate(ConsoleProxyVO proxy, HostVO host) {
+//        HostVO fromHost = _hostDao.findById(proxy.getId());
+//
+//        if (! _itMgr.stateTransitTo(proxy, VirtualMachine.Event.MigrationRequested, proxy.getHostId())) {
+//            s_logger.debug("State for " + proxy.toString() + " has changed so migration can not take place.");
+//            return false;
+//        }
+//
+//        MigrateCommand cmd = new MigrateCommand(proxy.getInstanceName(), host.getPrivateIpAddress(), false);
+//        Answer answer = _agentMgr.easySend(fromHost.getId(), cmd);
+//        if (answer == null || !answer.getResult()) {
+//            return false;
+//        }
+//
+//        _storageMgr.unshare(proxy, fromHost);
+//
+//        return true;
+//    }
+//
+//    @Override
+//    public boolean completeMigration(ConsoleProxyVO proxy, HostVO host) throws AgentUnavailableException, OperationTimedoutException {
+//
+//        CheckVirtualMachineCommand cvm = new CheckVirtualMachineCommand(proxy.getInstanceName());
+//        CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) _agentMgr.send(host.getId(), cvm);
+//        if (!answer.getResult()) {
+//            s_logger.debug("Unable to complete migration for " + proxy.getId());
+//            _itMgr.stateTransitTo(proxy, VirtualMachine.Event.AgentReportStopped, null);
+//            return false;
+//        }
+//
+//        State state = answer.getState();
+//        if (state == State.Stopped) {
+//            s_logger.warn("Unable to complete migration as we can not detect it on " + host.getId());
+//            _itMgr.stateTransitTo(proxy, VirtualMachine.Event.AgentReportStopped, null);
+//            return false;
+//        }
+//
+//        _itMgr.stateTransitTo(proxy, VirtualMachine.Event.OperationSucceeded, host.getId());
+//        return true;
+//    }
+//
+//    @Override
+//    public HostVO prepareForMigration(ConsoleProxyVO proxy) throws StorageUnavailableException {
+//
+//        VMTemplateVO template = _templateDao.findById(proxy.getTemplateId());
+//        long routerId = proxy.getId();
+//        boolean mirroredVols = proxy.isMirroredVols();
+//        DataCenterVO dc = _dcDao.findById(proxy.getDataCenterId());
+//        HostPodVO pod = _podDao.findById(proxy.getPodId());
+//        StoragePoolVO sp = _storageMgr.getStoragePoolForVm(proxy.getId());
+//
+//        List<VolumeVO> vols = _volsDao.findCreatedByInstance(routerId);
+//
+//        String[] storageIps = new String[2];
+//        VolumeVO vol = vols.get(0);
+//        storageIps[0] = vol.getHostIp();
+//        if (mirroredVols && (vols.size() == 2)) {
+//            storageIps[1] = vols.get(1).getHostIp();
+//        }
+//
+//        PrepareForMigrationCommand cmd = new PrepareForMigrationCommand(proxy.getName(), null, storageIps, vols, mirroredVols);
+//
+//        HostVO routingHost = null;
+//        HashSet<Host> avoid = new HashSet<Host>();
+//
+//        HostVO fromHost = _hostDao.findById(proxy.getHostId());
+//        if (fromHost.getClusterId() == null) {
+//            s_logger.debug("The host is not in a cluster");
+//            return null;
+//        }
+//        avoid.add(fromHost);
+//
+//        while ((routingHost = (HostVO) _agentMgr.findHost(Host.Type.Routing, dc, pod, sp, _serviceOffering, template, proxy, fromHost, avoid)) != null) {
+//            avoid.add(routingHost);
+//
+//            if (s_logger.isDebugEnabled()) {
+//                s_logger.debug("Trying to migrate router to host " + routingHost.getName());
+//            }
+//
+//            if (!_storageMgr.share(proxy, vols, routingHost, false)) {
+//                s_logger.warn("Can not share " + proxy.getName());
+//                throw new StorageUnavailableException("Can not share " + proxy.getName(), vol.getPoolId());
+//            }
+//
+//            Answer answer = _agentMgr.easySend(routingHost.getId(), cmd);
+//            if (answer != null && answer.getResult()) {
+//                return routingHost;
+//            }
+//            _storageMgr.unshare(proxy, vols, routingHost);
+//        }
+//
+//        return null;
+//    }
 
     private String getCapacityScanLockName() {
         // to improve security, it may be better to return a unique mashed

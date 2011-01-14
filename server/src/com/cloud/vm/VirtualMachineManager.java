@@ -20,10 +20,12 @@ package com.cloud.vm;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -89,4 +91,8 @@ public interface VirtualMachineManager extends Manager {
 	<T extends VMInstanceVO> boolean remove(T vm, User caller, Account account);
 	
 	<T extends VMInstanceVO> boolean destroy(T vm, User caller, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+	
+	boolean migrate(VirtualMachine.Type type, long vmid, long hostId) throws InsufficientServerCapacityException;
+	
+	<T extends VMInstanceVO> T migrate(T vm, long srcHostId, DeployDestination dest) throws ResourceUnavailableException; 
 }
