@@ -640,7 +640,6 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
     }
     
-<<<<<<< HEAD
     protected VBD createVbd(Connection conn, VolumeTO volume, String vmName, VM vm, BootloaderType bootLoaderType) throws XmlRpcException, XenAPIException {
         VolumeType type = volume.getType();
         
@@ -5710,7 +5709,8 @@ public abstract class CitrixResourceBase implements ServerResource {
         if (!_canBridgeFirewall) {
             return new Answer(cmd, true, null);
         }
-        String result = callHostPlugin("cleanup_rules");
+        Connection conn = getConnection();
+        String result = callHostPlugin(conn, "vmops","cleanup_rules");
         int numCleaned = Integer.parseInt(result);
         if (result == null || result.isEmpty() || (numCleaned < 0)) {
             s_logger.warn("Failed to cleanup rules for host " + _host.ip);
