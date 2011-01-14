@@ -599,7 +599,8 @@ function bindAddExternalFirewallButton($button, $midmenuItem1) {
 				isValid &= validateString("User Name", $thisDialog.find("#username"), $thisDialog.find("#username_errormsg"), false); //required
 				isValid &= validateString("Password", $thisDialog.find("#password"), $thisDialog.find("#password_errormsg"), false);  //required				
 				isValid &= validateString("Public Interface", $thisDialog.find("#public_interface"), $thisDialog.find("#public_interface_errormsg"), true);  //optinal
-				isValid &= validateString("Private Interface", $thisDialog.find("#private_interface"), $thisDialog.find("#private_interface_errormsg"), true);  //optinal
+				isValid &= validateString("Private Interface", $thisDialog.find("#private_interface"), $thisDialog.find("#private_interface_errormsg"), true);  //optinal				
+				isValid &= validateString("User Interface", $thisDialog.find("#user_interface"), $thisDialog.find("#user_interface_errormsg"), true);  //optinal				
 				isValid &= validateString("Public Zone", $thisDialog.find("#public_zone"), $thisDialog.find("#public_zone_errormsg"), true);  //optinal
 				isValid &= validateString("Private Zone", $thisDialog.find("#private_zone"), $thisDialog.find("#private_zone_errormsg"), true);  //optinal
 				if (!isValid) 
@@ -651,6 +652,18 @@ function bindAddExternalFirewallButton($button, $midmenuItem1) {
 				    }  		
 				    url.push("privateInterface="+privateInterface); 
 				}
+				 
+				var userInterface = $thisDialog.find("#user_interface").val();
+				if(userInterface != null && userInterface.length > 0) {
+				    if(isQuestionMarkAdded == false) {
+				        url.push("?");
+				        isQuestionMarkAdded = true;
+				    }
+				    else {
+				        url.push("&");
+				    }  				    
+				    url.push("userInterface="+userInterface); 
+				} 
 				    
 				var publicZone = $thisDialog.find("#public_zone").val();
 				if(publicZone != null && publicZone.length > 0) {
