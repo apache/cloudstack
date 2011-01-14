@@ -860,6 +860,7 @@
             <option value='KVM'>KVM</option>
             -->
         </select>
+        <span id="hypervisor_span" style="display:none"></span>
     </div>
     <div class="rev_wiztemp_ownertext">
         [Submitted by: <span id="submitted_by"></span>]</div>

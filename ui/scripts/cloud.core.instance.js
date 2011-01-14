@@ -157,9 +157,18 @@ function afterLoadInstanceJSP() {
        success: function(json) {            
            var items = json.listhypervisorsresponse.hypervisor;
            var $hypervisorDropdown = $("#vmiso_in_vmwizard").find("#hypervisor_select");
-           if(items != null && items.length > 0) {                
-               for(var i=0; i<items.length; i++) {                    
-                   $hypervisorDropdown.append("<option value='"+fromdb(items[i].name)+"'>"+fromdb(items[i].name)+"</option>");
+           var $hypervisorSpan = $("#vmiso_in_vmwizard").find("#hypervisor_span");
+           if(items != null && items.length > 0) {    
+               if(items.length == 1) {
+                   $hypervisorSpan.text(fromdb(items[0].name)).show();
+                   $hypervisorDropdown.hide();
+               }
+               else {   
+                   $hypervisorDropdown.show();
+                   $hypervisorSpan.text("").hide();
+                   for(var i=0; i<items.length; i++) {                    
+                       $hypervisorDropdown.append("<option value='"+fromdb(items[i].name)+"'>"+fromdb(items[i].name)+"</option>");
+                   }
                }
            }
        }    
@@ -787,10 +796,15 @@ function initVMWizard() {
 			$thisPopup.find("#wizard_review_zone").text($thisPopup.find("#wizard_zone option:selected").text());    
 			
 			// This is taking from the selected template but need to change this to the dropdown that supports ISO.		
-			if($selectedVmWizardTemplate.data("templateType") == "template")
+			if($selectedVmWizardTemplate.data("templateType") == "template") {
 			    $selectedVmWizardTemplate.data("hypervisor", $selectedVmWizardTemplate.find("#hypervisor_text").text());
-			else 
-			    $selectedVmWizardTemplate.data("hypervisor", $selectedVmWizardTemplate.find("#hypervisor_select").val());			
+			}
+			else {
+			    if($selectedVmWizardTemplate.find("#hypervisor_select").css("display") != "none")
+			        $selectedVmWizardTemplate.data("hypervisor", $selectedVmWizardTemplate.find("#hypervisor_select").val());
+			    else //if($selectedVmWizardTemplate.find("#hypervisor_span").css("display") != "none")
+			        $selectedVmWizardTemplate.data("hypervisor", $selectedVmWizardTemplate.find("#hypervisor_span").text());
+			}			
 			$thisPopup.find("#wizard_review_hypervisor").text($selectedVmWizardTemplate.data("hypervisor"));   	
 						
 			$thisPopup.find("#wizard_review_template").text($selectedVmWizardTemplate.data("templateName")); 
