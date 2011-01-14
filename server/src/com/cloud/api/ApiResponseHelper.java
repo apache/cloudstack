@@ -1972,7 +1972,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (poolIdsToIgnore.contains(capacity.getHostOrPoolId())) {
                 continue;
             }
-            
+            short capacityType = capacity.getCapacityType();
             String key = capacity.getCapacityType() + "_" + capacity.getDataCenterId();
             String keyForPodTotal = key + "_-1";
             
@@ -1994,7 +1994,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (usedCapacity == null) {
                 usedCapacity = new Long(capacity.getUsedCapacity());
             } else {
-                usedCapacity = new Long(capacity.getUsedCapacity() + usedCapacity);
+                usedCapacity = new Long(capacity.getUsedCapacity() + usedCapacity);                
+            }
+            
+            if (capacityType == Capacity.CAPACITY_TYPE_CPU || capacityType == Capacity.CAPACITY_TYPE_MEMORY){ // Reserved Capacity accounts for stopped vms that have been stopped within an interval
+            	usedCapacity += capacity.getReservedCapacity();
             }
 
             totalCapacityMap.put(key, totalCapacity);
@@ -2015,7 +2019,11 @@ public class ApiResponseHelper implements ResponseGenerator {
                 } else {
                     usedCapacity = new Long(capacity.getUsedCapacity() + usedCapacity);
                 }
-
+                
+                if (capacityType == Capacity.CAPACITY_TYPE_CPU || capacityType == Capacity.CAPACITY_TYPE_MEMORY){ // Reserved Capacity accounts for stopped vms that have been stopped within an interval
+                	usedCapacity += capacity.getReservedCapacity();
+                }
+                
                 totalCapacityMap.put(keyForPodTotal, totalCapacity);
                 usedCapacityMap.put(keyForPodTotal, usedCapacity);
             }
