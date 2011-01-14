@@ -150,6 +150,20 @@ function afterLoadInstanceJSP() {
 			}					
 		}
 	});	
+	
+	$.ajax({
+       data: createURL("command=listHypervisors"),
+       dataType: "json",
+       success: function(json) {            
+           var items = json.listhypervisorsresponse.hypervisor;
+           var $hypervisorDropdown = $("#vmiso_in_vmwizard").find("#hypervisor_select");
+           if(items != null && items.length > 0) {                
+               for(var i=0; i<items.length; i++) {                    
+                   $hypervisorDropdown.append("<option value='"+fromdb(items[i].name)+"'>"+fromdb(items[i].name)+"</option>");
+               }
+           }
+       }    
+    }); 	
 }
 
 function bindStartVMButton() {    

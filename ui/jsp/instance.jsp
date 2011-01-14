@@ -854,9 +854,11 @@
     <div class="rev_wiztemp_hypervisortext">
         Hypervisor:
         <select id="hypervisor_select" class="select" style="width: 70px; float: none; height: 15px; font-size: 10px; margin: 0 0 0 5px; display: inline;">
+            <!--  
             <option value='XenServer'>XenServer</option>
             <option value='VmWare'>VmWare</option>
             <option value='KVM'>KVM</option>
+            -->
         </select>
     </div>
     <div class="rev_wiztemp_ownertext">
