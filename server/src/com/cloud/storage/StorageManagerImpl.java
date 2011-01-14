@@ -2260,7 +2260,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 				throw new ExecutionException(msg);
 			}
 			
-			if (primaryStorage.getStatus().equals(Status.Up)) {
+			if (primaryStorage.getStatus().equals(Status.Up) || primaryStorage.getStatus().equals(Status.PrepareForMaintenance)) {
 				throw new StorageUnavailableException("Primary storage with id " + primaryStorageId + " is not ready to complete migration, as the status is:" + primaryStorage.getStatus().toString(), primaryStorageId);
 			}
 			
