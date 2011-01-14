@@ -20,6 +20,8 @@ package com.cloud.api.commands;
 
 import java.util.List;
 
+import javax.naming.InsufficientResourcesException;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -34,6 +36,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;

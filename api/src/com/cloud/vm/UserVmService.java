@@ -19,6 +19,8 @@ package com.cloud.vm;
 
 import java.util.List;
 
+import javax.naming.InsufficientResourcesException;
+
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
@@ -121,10 +123,11 @@ public interface UserVmService {
      * @throws InsufficientCapacityException if there is insufficient capacity to deploy the VM.
      * @throws ConcurrentOperationException if there are multiple users working on the same VM or in the same environment.
      * @throws ResourceUnavailableException if the resources required to deploy the VM is not currently available.
+     * @throws InsufficientResourcesException 
      * @throws PermissionDeniedException if the caller doesn't have any access rights to the VM.
      * @throws InvalidParameterValueException if the parameters are incorrect. 
      */
-    UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException;
     
     /**
      * Starts the virtual machine created from createVirtualMachine.

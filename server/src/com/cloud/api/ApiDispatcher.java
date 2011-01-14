@@ -94,7 +94,7 @@ public class ApiDispatcher {
             } else if (t instanceof ServerApiException) {
                 s_logger.warn(t.getClass() + " : " + ((ServerApiException) t).getDescription());
                 if (UserContext.current().getCaller().getType() == Account.ACCOUNT_TYPE_ADMIN) {
-                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, errorMsg);
+                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR, errorMsg.length() > 0 ? errorMsg : ((ServerApiException) t).getDescription());
                 } else {
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
                 }      

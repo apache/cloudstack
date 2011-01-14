@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
+import javax.naming.InsufficientResourcesException;
 
 import org.apache.log4j.Logger;
 
@@ -2114,7 +2115,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
     
 	@Override @DB
-    public UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
+    public UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException {
         Account caller = UserContext.current().getCaller();
         
         String accountName = cmd.getAccountName();
@@ -2142,6 +2143,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
             _accountMgr.checkAccess(caller, domain);
             _accountMgr.checkAccess(owner, domain);
+        }
+        //check if we have available pools for vm deployment
+        List<StoragePoolVO> availablePools = _storagePoolDao.listPoolsByStatus(com.cloud.host.Status.Up);
+        
+        if( availablePools == null || availablePools.size() < 1) {
+        	throw new StorageUnavailableException("There are no available pools in the UP state for vm deployment",-1);
         }
         
         ServiceOfferingVO offering = _serviceOfferingDao.findById(cmd.getServiceOfferingId());
