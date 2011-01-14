@@ -386,14 +386,12 @@ public class ApiServer implements HttpRequestHandler {
                 params.put("ctxAccountId", String.valueOf(account.getId()));
             }
 
-            long startEventId = ctx.getStartEventId();
-            
             // save the scheduled event
             Long eventId = EventUtils.saveScheduledEvent((userId == null) ? User.UID_SYSTEM : userId, asyncCmd.getEntityOwnerId(),
-                    asyncCmd.getEventType(), asyncCmd.getEventDescription(), startEventId);
-            
-            if(startEventId == 0){
-                ctx.setStartEventId(eventId);
+                    asyncCmd.getEventType(), asyncCmd.getEventDescription());
+
+            if (eventId != null) {
+                params.put("starteventid", eventId.toString());
             }
 
             AsyncJobVO job = new AsyncJobVO();
