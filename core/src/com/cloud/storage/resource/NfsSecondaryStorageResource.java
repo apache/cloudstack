@@ -217,47 +217,49 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
     
     protected Answer execute(final DeleteTemplateCommand cmd) {
-    	String relativeTemplatePath = cmd.getTemplatePath();
-    	String parent = _parent;
-    	    
-    	if (relativeTemplatePath.startsWith(File.separator)) {
-    		relativeTemplatePath = relativeTemplatePath.substring(1);
-    	}
-    	
-    	if (!parent.endsWith(File.separator)) {
+        String relativeTemplatePath = cmd.getTemplatePath();
+        String parent = _parent;
+
+        if (relativeTemplatePath.startsWith(File.separator)) {
+            relativeTemplatePath = relativeTemplatePath.substring(1);
+        }
+
+        if (!parent.endsWith(File.separator)) {
             parent += File.separator;
         }
-    	String absoluteTemplatePath = parent + relativeTemplatePath;
-		File tmpltParent = new File(absoluteTemplatePath).getParentFile();
-	    if (!tmpltParent.exists()) {
-            return new Answer(cmd, false, "template parent directory " + tmpltParent.getName()
-                    + " doesn't exist, Template path ( " + relativeTemplatePath + " ) is wrong");
+        String absoluteTemplatePath = parent + relativeTemplatePath;
+        File tmpltParent = new File(absoluteTemplatePath).getParentFile();
+        String details = null;
+        if (!tmpltParent.exists()) {
+            details = "template parent directory " + tmpltParent.getName() + " doesn't exist";
+            s_logger.debug(details);
+            return new Answer(cmd, true, details);
         }
         File[] tmpltFiles = tmpltParent.listFiles();
         if (tmpltFiles == null || tmpltFiles.length == 0) {
-            return new Answer(cmd, false, "No files under template parent directory " + tmpltParent.getName()
-                    + " Template path ( " + relativeTemplatePath + " ) is wrong");
-        }
-        boolean found = false;
-        for (File f : tmpltFiles) {
-            if (f.getName().equals("template.properties")) {
-                found = true;
-                break;
+            details = "No files under template parent directory " + tmpltParent.getName();
+            s_logger.debug(details);
+        } else {
+            boolean found = false;
+            for (File f : tmpltFiles) {
+                if (!found && f.getName().equals("template.properties")) {
+                    found = true;
+                }
+                if (!f.delete()) {
+                    return new Answer(cmd, false, "Unable to delete file " + f.getName() + " under Template path "
+                            + relativeTemplatePath);
+                }
+            }
+            if (!found) {
+                details = "Can not find template.properties under " + tmpltParent.getName();
+                s_logger.debug(details);
             }
         }
-        if (!found) {
-            return new Answer(cmd, false, "Can not find template.properties, Template path ( " + relativeTemplatePath
-                    + " ) is wrong");
-        }
-        for (File f : tmpltFiles) {
-            if( !f.delete() ) {
-                return new Answer(cmd, false, "Unable to delete file " + f.getName() 
-                        + " Template path ( " + relativeTemplatePath + " ) is wrong");
-            }
-        }
-        if ( !tmpltParent.delete() ) {
-            return new Answer(cmd, false, "Unable to delete directory " + tmpltParent.getName() 
-                    + " Template path ( " + relativeTemplatePath + " ) is wrong");
+        if (!tmpltParent.delete()) {
+            details = "Unable to delete directory " + tmpltParent.getName() + " under Template path "
+                    + relativeTemplatePath;
+            s_logger.debug(details);
+            return new Answer(cmd, false, details);
         }
         return new Answer(cmd, true, null);
     }

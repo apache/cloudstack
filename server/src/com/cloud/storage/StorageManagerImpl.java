@@ -2001,7 +2001,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     								Answer answer = _agentMgr.easySend(hostId, new DeleteTemplateCommand(destroyedTemplateHostVO.getInstallPath()));
 
     								if (answer == null || !answer.getResult()) {
-    									s_logger.debug("Failed to delete template at: " + destroyedTemplateHostVO.getInstallPath());
+    									s_logger.debug("Failed to delete template at: " + destroyedTemplateHostVO.getInstallPath() + " due to " 
+    									        + ((answer == null)? "answer is null" : answer.getDetails()));
     								} else {
     									_vmTemplateHostDao.remove(destroyedTemplateHostVO.getId());
     									s_logger.debug("Deleted template at: " + destroyedTemplateHostVO.getInstallPath());
