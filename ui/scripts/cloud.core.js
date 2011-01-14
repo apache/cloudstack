@@ -90,8 +90,13 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
 			                        $spinningWheel.hide(); 
 			                        			                          			                                             
 			                        if (result.jobstatus == 1) { // Succeeded 				                            	                            
-                                        afterActionSeccessFn(json, $midmenuItem1, id); //this line will update $midmenuItem1.data("jsonObj")
-                                        handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label + " action succeeded.")); //updated $midmenuItem1.data("jsonObj") will be used here	 
+                                        var afterActionInfo = afterActionSeccessFn(json, $midmenuItem1, id); //afterActionSeccessFn() will update $midmenuItem1.data("jsonObj")
+                                        
+                                        //handleMidMenuItemAfterDetailsTabAction() will used updated $midmenuItem1.data("jsonObj")
+                                        if(afterActionInfo == null)
+                                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label + " action succeeded.")); 
+                                        else
+                                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, afterActionInfo); 
 			                        } else if (result.jobstatus == 2) { // Failed	
 			                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, false, (label + " action failed. Reason: " + fromdb(result.jobresult.errortext)));			                            
 			                        }											                    
@@ -125,8 +130,8 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
 	        async: false,
 	        success: function(json) {	 	                  
 	            $spinningWheel.hide(); 	 
-	            afterActionSeccessFn(json, $midmenuItem1, id); //this line will update $midmenuItem1.data("jsonObj")	     
-	            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label + " action succeeded.")); //updated $midmenuItem1.data("jsonObj") will be used here	     
+	            afterActionSeccessFn(json, $midmenuItem1, id); //afterActionSeccessFn() will update $midmenuItem1.data("jsonObj")   
+	            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label + " action succeeded.")); //handleMidMenuItemAfterDetailsTabAction() will used updated $midmenuItem1.data("jsonObj")
 	        },
             error: function(XMLHttpResponse) {
 				handleError(XMLHttpResponse, function() {

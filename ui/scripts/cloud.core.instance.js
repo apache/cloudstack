@@ -1310,22 +1310,15 @@ var vmActionMap = {
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;   
             vmToMidmenu(jsonObj, $midmenuItem1);      
             
-            var afterActionInfo = "New password of instance " + getVmName(jsonObj.name, jsonObj.displayname) + " is " + fromdb(jsonObj.password);
-            
             $("#dialog_info")
-            .text(afterActionInfo)    
+            .text("New password of instance " + getVmName(jsonObj.name, jsonObj.displayname) + " is " + fromdb(jsonObj.password))    
 	        .dialog('option', 'buttons', { 	
 		        "OK": function() { 
 			        $(this).dialog("close"); 
 		        } 
 	        }).dialog("open");	
-	         
-            /*         
-            var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");    
-	        $afterActionInfoContainer.find("#after_action_info").text(afterActionInfo);  
-            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, afterActionInfo); //override default afterActionInfo("Reset Password action succeeded")		    
-	        $afterActionInfoContainer.removeClass("errorbox").show();    
-		    */   
+	        
+	        return "New password is " + fromdb(jsonObj.password);
         }
     },       
     "Change Service": {
