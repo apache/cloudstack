@@ -82,16 +82,16 @@ function afterLoadTemplateJSP() {
 	        
 	    return false;
 	});		
-	$("#dialog_add_template #add_template_hypervisor").change();	
-			    
-		
+	
 	if(isAdmin())
 	    $("#dialog_add_template #add_template_featured_container, #dialog_edit_template #edit_template_featured_container").show();
 	else
 	    $("#dialog_add_template #add_template_featured_container, #dialog_edit_template #edit_template_featured_container").hide();		
 	
 	//add button ***	   
-    $("#add_template_button").unbind("click").bind("click", function(event) {        
+    $("#add_template_button").unbind("click").bind("click", function(event) {     
+        $("#dialog_add_template #add_template_hypervisor").change();	    
+       
         $("#dialog_add_template")
 		.dialog('option', 'buttons', { 				
 			"Create": function() { 		
