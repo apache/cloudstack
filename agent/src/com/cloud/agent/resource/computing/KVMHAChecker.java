@@ -34,9 +34,8 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
 	private List<NfsStoragePool> _pools;
 	private String _hostIP;
 	private long _heartBeatCheckerTimeout = 300000; /*5 minutes*/
-	public KVMHAChecker(List<NfsStoragePool> pools,  Connect conn, String host) {
+	public KVMHAChecker(List<NfsStoragePool> pools, String host) {
 		this._pools = pools;
-		this._libvirtConnection = conn;
 		this._hostIP = host;
 	}
 	

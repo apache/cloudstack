@@ -35,11 +35,10 @@ public class KVMHAMonitor extends KVMHABase implements Runnable{
 	private String _hostIP; /*private ip address*/
 
 		
-	public KVMHAMonitor(NfsStoragePool pool, Connect conn, String host, String scriptPath) {
+	public KVMHAMonitor(NfsStoragePool pool, String host, String scriptPath) {
 		if (pool != null) {
 			this._storagePool.put(pool._poolUUID, pool);
-		}
-		this._libvirtConnection = conn;		
+		}	
 		this._hostIP = host;
 		this._heartBeatPath = scriptPath;
 	}

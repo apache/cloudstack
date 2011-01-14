@@ -37,7 +37,6 @@ import com.cloud.utils.script.Script;
 
 
 public class KVMHABase {
-	protected Connect _libvirtConnection;
 	private long _timeout = 60000; /*1 minutes*/
 	protected static String _heartBeatPath;
 	protected long _heartBeatUpdateTimeout = 5000; /*5 sec*/
@@ -111,7 +110,7 @@ public class KVMHABase {
 		StoragePool pool = null;
 		String poolName = null;
 		try {
-			pool = _libvirtConnection.storagePoolLookupByUUIDString(storagePool._poolUUID);
+			pool = LibvirtConnection.getConnection().storagePoolLookupByUUIDString(storagePool._poolUUID);
 			if (pool != null) {
 				StoragePoolInfo spi = pool.getInfo();
 				if (spi.state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
@@ -187,11 +186,11 @@ public class KVMHABase {
 	
 		NfsStoragePool pool = new KVMHAMonitor.NfsStoragePool(null,null,null,null, PoolType.PrimaryStorage);
 	
-		KVMHAMonitor haWritter = new KVMHAMonitor(pool, null, "192.168.1.163", null);
+		KVMHAMonitor haWritter = new KVMHAMonitor(pool, "192.168.1.163", null);
 		Thread ha = new Thread(haWritter);
 		ha.start();
 		
-		KVMHAChecker haChecker = new KVMHAChecker(haWritter.getStoragePools(), null, "192.168.1.163");
+		KVMHAChecker haChecker = new KVMHAChecker(haWritter.getStoragePools(), "192.168.1.163");
 		
 		ExecutorService exe = Executors.newFixedThreadPool(1);
 		Future<Boolean> future = exe.submit((Callable<Boolean>)haChecker);
