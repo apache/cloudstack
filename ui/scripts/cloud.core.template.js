@@ -54,8 +54,21 @@ function templateGetSearchParams() {
 
 function afterLoadTemplateJSP() {      
     var $detailsTab = $("#right_panel_content #tab_content_details");   
-    
-    //add button ***   
+       
+    $.ajax({
+        data: createURL("command=listHypervisors"),
+        dataType: "json",
+        success: function(json) {            
+            var items = json.listhypervisorsresponse.hypervisor;
+            var $hypervisorDropdown = $("#dialog_add_template").find("#add_template_hypervisor");
+            if(items != null && items.length > 0) {                
+                for(var i=0; i<items.length; i++) {                    
+                    $hypervisorDropdown.append("<option value='"+fromdb(items[i].name)+"'>"+fromdb(items[i].name)+"</option>");
+                }
+            }
+        }    
+    })   
+        
 	$("#dialog_add_template #add_template_hypervisor").bind("change", function(event) {	      
 	    var formatSelect = $("#dialog_add_template #add_template_format").empty();	     
 	    var selectedHypervisorType = $(this).val();
