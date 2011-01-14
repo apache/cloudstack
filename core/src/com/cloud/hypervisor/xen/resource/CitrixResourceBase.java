@@ -4340,13 +4340,9 @@ public abstract class CitrixResourceBase implements ServerResource {
     protected VDI getVDIbyUuid(Connection conn, String uuid) {
         try {
             return VDI.getByUuid(conn, uuid);
-        } catch (XenAPIException e) {
-            String msg = "VDI getByUuid for uuid: " + uuid + " failed due to " + e.toString();
-            s_logger.warn(msg, e);
-            throw new CloudRuntimeException(msg, e);
         } catch (Exception e) {
-            String msg = "VDI getByUuid for uuid: " + uuid + " failed due to " + e.getMessage();
-            s_logger.warn(msg, e);
+            String msg = "Catch Exception " + e.getClass().getName() + " :VDI getByUuid for uuid: " + uuid + " failed due to " + e.toString();
+            s_logger.debug(msg);
             throw new CloudRuntimeException(msg, e);
         }
     }
@@ -4541,8 +4537,6 @@ public abstract class CitrixResourceBase implements ServerResource {
         try {
             vdi = getVDIbyUuid(conn, volumeUUID);
         } catch (Exception e) {
-            String msg = "getVDIbyUuid for " + volumeUUID + " failed due to " + e.toString();
-            s_logger.warn(msg);
             return new Answer(cmd, true, "Success");
         }
         Set<VBD> vbds = null;
