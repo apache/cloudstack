@@ -73,6 +73,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -121,6 +122,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
     @Inject protected SecondaryStorageVmDao _secondaryDao;
     @Inject protected UsageEventDao _usageEventDao;
     @Inject protected NicDao _nicsDao;
+    @Inject protected AccountManager _accountMgr;
     
     @Inject(adapter=DeploymentPlanner.class)
     protected Adapters<DeploymentPlanner> _planners;
@@ -302,7 +304,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
     @Override
     public <T extends VMInstanceVO> boolean expunge(T vm, User caller, Account account) throws ResourceUnavailableException {
         try {
-            return advanceExpunge(vm, caller, account);
+            if (advanceExpunge(vm, caller, account)) {
+                //Mark vms as removed
+                remove(vm, _accountMgr.getSystemUser(), account);
+                return true;
+            } else {
+                s_logger.info("Did not expunge " + vm);
+                return false;
+            }
         } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Operation timed out", e);
         } catch (ConcurrentOperationException e) {
