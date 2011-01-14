@@ -166,7 +166,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.haEnabled = haEnabled;
         this.mirroredVols = false;
         this.vncPassword = Long.toHexString(new Random().nextLong());
-        this.state = State.Creating;
+        this.state = State.Stopped;
         this.accountId = accountId;
         this.domainId = domainId;
         this.serviceOfferingId = serviceOfferingId;

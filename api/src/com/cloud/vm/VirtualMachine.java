@@ -32,7 +32,6 @@ import com.cloud.utils.fsm.StateMachine;
  */
 public interface VirtualMachine extends RunningOn, ControlledEntity {
     public enum State implements FiniteState<State, Event> {
-        Creating(true, "VM is being created"),
         Starting(true, "VM is being started.  At this state, you should find host id filled which means it's being started on that host."),
         Running(false, "VM is running.  host id has the host that it is running on."),
         Stopping(true, "VM is being stopped.  host id has the host that it is being stopped on."),
@@ -85,9 +84,9 @@ public interface VirtualMachine extends RunningOn, ControlledEntity {
         
         protected static final StateMachine<State, VirtualMachine.Event> s_fsm = new StateMachine<State, VirtualMachine.Event>();
         static {
-            s_fsm.addTransition(null, VirtualMachine.Event.CreateRequested, State.Creating); 
-            s_fsm.addTransition(State.Creating, VirtualMachine.Event.OperationSucceeded, State.Stopped); 
-            s_fsm.addTransition(State.Creating, VirtualMachine.Event.OperationFailed, State.Error); 
+//            s_fsm.addTransition(null, VirtualMachine.Event.CreateRequested, State.Creating); 
+//            s_fsm.addTransition(State.Creating, VirtualMachine.Event.OperationSucceeded, State.Stopped); 
+//            s_fsm.addTransition(State.Creating, VirtualMachine.Event.OperationFailed, State.Error); 
             s_fsm.addTransition(State.Stopped, VirtualMachine.Event.StartRequested, State.Starting); 
             s_fsm.addTransition(State.Stopped, VirtualMachine.Event.DestroyRequested, State.Destroyed); 
             s_fsm.addTransition(State.Error, VirtualMachine.Event.DestroyRequested, State.Destroyed); 
@@ -102,7 +101,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity {
             s_fsm.addTransition(State.Starting, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
             s_fsm.addTransition(State.Destroyed, VirtualMachine.Event.RecoveryRequested, State.Stopped); 
             s_fsm.addTransition(State.Destroyed, VirtualMachine.Event.ExpungeOperation, State.Expunging); 
-            s_fsm.addTransition(State.Creating, VirtualMachine.Event.MigrationRequested, State.Destroyed); 
+//            s_fsm.addTransition(State.Creating, VirtualMachine.Event.MigrationRequested, State.Destroyed); 
             s_fsm.addTransition(State.Running, VirtualMachine.Event.MigrationRequested, State.Migrating); 
             s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportRunning, State.Running); 
             s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportStopped, State.Stopped); 

@@ -481,7 +481,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private static boolean isInAssignableState(ConsoleProxyVO proxy) {
         // console proxies that are in states of being able to serve user VM
         State state = proxy.getState();
-        if (state == State.Running || state == State.Starting || state == State.Creating || state == State.Migrating) {
+        if (state == State.Running || state == State.Starting || state == State.Migrating) {
             return true;
         }
 
@@ -599,7 +599,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     }
 
     public ConsoleProxyVO assignProxyFromStoppedPool(long dataCenterId) {
-        List<ConsoleProxyVO> l = _consoleProxyDao.getProxyListInStates(dataCenterId, State.Creating, State.Starting, State.Stopped, State.Migrating);
+        List<ConsoleProxyVO> l = _consoleProxyDao.getProxyListInStates(dataCenterId, State.Starting, State.Stopped, State.Migrating);
         if (l != null && l.size() > 0) {
             return l.get(0);
         }
@@ -1047,56 +1047,56 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         }
     }
 
-    private void checkPendingProxyVMs() {
-        // drive state to change away from transient states
-        List<ConsoleProxyVO> l = _consoleProxyDao.getProxyListInStates(State.Creating);
-        if (l != null && l.size() > 0) {
-            for (ConsoleProxyVO proxy : l) {
-                if (proxy.getLastUpdateTime() == null
-                        || (proxy.getLastUpdateTime() != null && System.currentTimeMillis() - proxy.getLastUpdateTime().getTime() > 60000)) {
-                    try {
-                        ConsoleProxyVO readyProxy = null;
-                        if (_allocProxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
-                            try {
-                                readyProxy = allocProxyStorage(proxy.getDataCenterId(), proxy.getId());
-                            } finally {
-                                _allocProxyLock.unlock();
-                            }
-
-                            if (readyProxy != null) {
-                                GlobalLock proxyLock = GlobalLock.getInternLock(getProxyLockName(readyProxy.getId()));
-                                try {
-                                    if (proxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
-                                        try {
-                                            readyProxy = start(readyProxy.getId());
-                                        } finally {
-                                            proxyLock.unlock();
-                                        }
-                                    } else {
-                                        if (s_logger.isInfoEnabled()) {
-                                            s_logger.info("Unable to acquire synchronization lock to start console proxy : " + readyProxy.getName());
-                                        }
-                                    }
-                                } finally {
-                                    proxyLock.releaseRef();
-                                }
-                            }
-                        } else {
-                            if (s_logger.isInfoEnabled()) {
-                                s_logger.info("Unable to acquire synchronization lock to allocate proxy storage, wait for next turn");
-                            }
-                        }
-                    } catch (StorageUnavailableException e) {
-                        s_logger.warn("Storage unavailable", e);
-                    } catch (InsufficientCapacityException e) {
-                        s_logger.warn("insuffiient capacity", e);
-                    } catch (ResourceUnavailableException e) {
-                        s_logger.debug("Concurrent operation: " + e.getMessage());
-                    }
-                }
-            }
-        }
-    }
+//    private void checkPendingProxyVMs() {
+//        // drive state to change away from transient states
+//        List<ConsoleProxyVO> l = _consoleProxyDao.getProxyListInStates(State.Creating);
+//        if (l != null && l.size() > 0) {
+//            for (ConsoleProxyVO proxy : l) {
+//                if (proxy.getLastUpdateTime() == null
+//                        || (proxy.getLastUpdateTime() != null && System.currentTimeMillis() - proxy.getLastUpdateTime().getTime() > 60000)) {
+//                    try {
+//                        ConsoleProxyVO readyProxy = null;
+//                        if (_allocProxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
+//                            try {
+//                                readyProxy = allocProxyStorage(proxy.getDataCenterId(), proxy.getId());
+//                            } finally {
+//                                _allocProxyLock.unlock();
+//                            }
+//
+//                            if (readyProxy != null) {
+//                                GlobalLock proxyLock = GlobalLock.getInternLock(getProxyLockName(readyProxy.getId()));
+//                                try {
+//                                    if (proxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
+//                                        try {
+//                                            readyProxy = start(readyProxy.getId());
+//                                        } finally {
+//                                            proxyLock.unlock();
+//                                        }
+//                                    } else {
+//                                        if (s_logger.isInfoEnabled()) {
+//                                            s_logger.info("Unable to acquire synchronization lock to start console proxy : " + readyProxy.getName());
+//                                        }
+//                                    }
+//                                } finally {
+//                                    proxyLock.releaseRef();
+//                                }
+//                            }
+//                        } else {
+//                            if (s_logger.isInfoEnabled()) {
+//                                s_logger.info("Unable to acquire synchronization lock to allocate proxy storage, wait for next turn");
+//                            }
+//                        }
+//                    } catch (StorageUnavailableException e) {
+//                        s_logger.warn("Storage unavailable", e);
+//                    } catch (InsufficientCapacityException e) {
+//                        s_logger.warn("insuffiient capacity", e);
+//                    } catch (ResourceUnavailableException e) {
+//                        s_logger.debug("Concurrent operation: " + e.getMessage());
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     private Runnable getCapacityScanTask() {
         return new Runnable() {
@@ -1144,7 +1144,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                     }
 
                     try {
-                        checkPendingProxyVMs();
+                       // checkPendingProxyVMs();
 
                         // scan default data center first
                         long defaultId = 0;

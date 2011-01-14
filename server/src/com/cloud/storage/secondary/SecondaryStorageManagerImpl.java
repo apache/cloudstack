@@ -337,7 +337,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			s_logger.warn("No storage hosts found in zone " + zoneId + " , skip programming firewall rules");
 			return true;
 		}
-		List<SecondaryStorageVmVO> alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates( State.Running, State.Migrating, State.Creating, State.Starting);
+		List<SecondaryStorageVmVO> alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates( State.Running, State.Migrating, State.Starting);
 
 		String copyPort = Integer.toString(TemplateConstants.DEFAULT_TMPLT_COPY_PORT);
 		SecStorageFirewallCfgCommand cpc = new SecStorageFirewallCfgCommand();
@@ -525,58 +525,58 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	
 	
 
-	private void checkPendingSecStorageVMs() {
-		// drive state to change away from transient states
-		List<SecondaryStorageVmVO> l = _secStorageVmDao.getSecStorageVmListInStates(State.Creating);
-		if (l != null && l.size() > 0) {
-			for (SecondaryStorageVmVO secStorageVm : l) {
-				if (secStorageVm.getLastUpdateTime() == null ||
-					(secStorageVm.getLastUpdateTime() != null && System.currentTimeMillis() - secStorageVm.getLastUpdateTime().getTime() > 60000)) {
-					try {
-						SecondaryStorageVmVO readysecStorageVm = null;
-						if (_allocLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
-							try {
-								readysecStorageVm = allocSecStorageVmStorage(secStorageVm.getDataCenterId(), secStorageVm.getId());
-							} finally {
-								_allocLock.unlock();
-							}
-
-							if (readysecStorageVm != null) {
-								GlobalLock secStorageVmLock = GlobalLock.getInternLock(getSecStorageVmLockName(readysecStorageVm.getId()));
-								try {
-									if (secStorageVmLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
-										try {											
-												readysecStorageVm = start(readysecStorageVm.getId());
-										} finally {
-											secStorageVmLock.unlock();
-										}
-									} else {
-										if (s_logger.isInfoEnabled()) {
-                                            s_logger.info("Unable to acquire synchronization lock to start secondary storage vm : " + readysecStorageVm.getName());
-                                        }
-									}
-								} finally {
-									secStorageVmLock.releaseRef();
-								}
-							}
-						} else {
-							if (s_logger.isInfoEnabled()) {
-                                s_logger.info("Unable to acquire synchronization lock to allocate secondary storage vm storage, wait for next turn");
-                            }
-						}
-					} catch (StorageUnavailableException e) {
-						s_logger.warn("Storage unavailable", e);
-					} catch (InsufficientCapacityException e) {
-						s_logger.warn("insuffiient capacity", e);
-					} catch (ConcurrentOperationException e) {
-						s_logger.debug("Concurrent operation: " + e.getMessage());
-					} catch (ResourceUnavailableException e) {
-						s_logger.debug("Concurrent operation: " + e.getMessage());
-					}
-				}
-			}
-		}
-	}
+//	private void checkPendingSecStorageVMs() {
+//		// drive state to change away from transient states
+//		List<SecondaryStorageVmVO> l = _secStorageVmDao.getSecStorageVmListInStates(State.Creating);
+//		if (l != null && l.size() > 0) {
+//			for (SecondaryStorageVmVO secStorageVm : l) {
+//				if (secStorageVm.getLastUpdateTime() == null ||
+//					(secStorageVm.getLastUpdateTime() != null && System.currentTimeMillis() - secStorageVm.getLastUpdateTime().getTime() > 60000)) {
+//					try {
+//						SecondaryStorageVmVO readysecStorageVm = null;
+//						if (_allocLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
+//							try {
+//								readysecStorageVm = allocSecStorageVmStorage(secStorageVm.getDataCenterId(), secStorageVm.getId());
+//							} finally {
+//								_allocLock.unlock();
+//							}
+//
+//							if (readysecStorageVm != null) {
+//								GlobalLock secStorageVmLock = GlobalLock.getInternLock(getSecStorageVmLockName(readysecStorageVm.getId()));
+//								try {
+//									if (secStorageVmLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
+//										try {											
+//												readysecStorageVm = start(readysecStorageVm.getId());
+//										} finally {
+//											secStorageVmLock.unlock();
+//										}
+//									} else {
+//										if (s_logger.isInfoEnabled()) {
+//                                            s_logger.info("Unable to acquire synchronization lock to start secondary storage vm : " + readysecStorageVm.getName());
+//                                        }
+//									}
+//								} finally {
+//									secStorageVmLock.releaseRef();
+//								}
+//							}
+//						} else {
+//							if (s_logger.isInfoEnabled()) {
+//                                s_logger.info("Unable to acquire synchronization lock to allocate secondary storage vm storage, wait for next turn");
+//                            }
+//						}
+//					} catch (StorageUnavailableException e) {
+//						s_logger.warn("Storage unavailable", e);
+//					} catch (InsufficientCapacityException e) {
+//						s_logger.warn("insuffiient capacity", e);
+//					} catch (ConcurrentOperationException e) {
+//						s_logger.debug("Concurrent operation: " + e.getMessage());
+//					} catch (ResourceUnavailableException e) {
+//						s_logger.debug("Concurrent operation: " + e.getMessage());
+//					}
+//				}
+//			}
+//		}
+//	}
 
 	private Runnable getCapacityScanTask() {
 		return new Runnable() {
@@ -616,14 +616,14 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                     }
 
 					try {
-						checkPendingSecStorageVMs();
+						//checkPendingSecStorageVMs();
 						
 						List<DataCenterVO> datacenters = _dcDao.listAllIncludingRemoved();
 
 
 						for (DataCenterVO dc: datacenters){
 							if(isZoneReady(zoneHostInfoMap, dc.getId())) {
-								List<SecondaryStorageVmVO> alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(dc.getId(), State.Running, State.Migrating, State.Creating, State.Starting);
+								List<SecondaryStorageVmVO> alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(dc.getId(), State.Running, State.Migrating, State.Starting);
 								List<SecondaryStorageVmVO> stopped = _secStorageVmDao.getSecStorageVmListInStates(dc.getId(), State.Stopped, State.Stopping);
 								if (alreadyRunning.size() == 0) {
 									if (stopped.size() == 0) {
@@ -693,7 +693,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
 	public SecondaryStorageVmVO assignSecStorageVmFromStoppedPool(long dataCenterId) {
 		List<SecondaryStorageVmVO> l = _secStorageVmDao.getSecStorageVmListInStates(
-				dataCenterId, State.Creating, State.Starting, State.Stopped,
+				dataCenterId, State.Starting, State.Stopped,
 				State.Migrating);
 		if (l != null && l.size() > 0) {
             return l.get(0);

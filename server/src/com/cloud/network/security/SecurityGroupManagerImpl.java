@@ -248,7 +248,6 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 			return;
 		}
 		switch (vmState) {
-		case Creating:
 		case Destroyed:
 		case Error:
 		case Migrating:

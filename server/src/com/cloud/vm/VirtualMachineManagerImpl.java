@@ -223,7 +223,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
             _storageMgr.allocateRawVolume(VolumeType.DATADISK, "DATA-" + vm.getId(), offering.first(), offering.second(), vm, owner);
         }
 
-        stateTransitTo(vm, Event.OperationSucceeded, null);
         txn.commit();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocation completed for VM: " + vm);
@@ -676,7 +675,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
             return true;
         }
         
-        if (state == State.Creating || state == State.Destroyed || state == State.Expunging || state == State.Error) {
+        if (state == State.Destroyed || state == State.Expunging || state == State.Error) {
             s_logger.debug("Stopped called on " + vm + " but the state is " + state);
             return true;
         }

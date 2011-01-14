@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
-import javax.naming.InsufficientResourcesException;
 
 import org.apache.log4j.Logger;
 
@@ -1207,7 +1206,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             return true;
         }
         
-        if (state == State.Creating || state == State.Destroyed || state == State.Expunging || state == State.Error) {
+        if (state == State.Destroyed || state == State.Expunging || state == State.Error) {
         	s_logger.warn("Stopped called on " + vm.toString() + " but the state is " + state.toString());
         	return true;
         }

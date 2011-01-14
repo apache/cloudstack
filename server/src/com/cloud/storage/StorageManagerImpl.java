@@ -89,7 +89,6 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.ActionEvent;
 import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
@@ -438,7 +437,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     			
 	        	SearchCriteria<VolumeVO> volumeSC = volumeSB.create();
 	        	volumeSC.setParameters("poolId", storagePool.getId());
-	        	volumeSC.setJoinParameters("activeVmSB", "state", new Object[] {State.Creating, State.Starting, State.Running, State.Stopping, State.Migrating});
+	        	volumeSC.setJoinParameters("activeVmSB", "state", State.Starting, State.Running, State.Stopping, State.Migrating);
     			
     			List<VolumeVO> volumes = _volsDao.search(volumeSC, null);
     			if (volumes.size() > 0) {

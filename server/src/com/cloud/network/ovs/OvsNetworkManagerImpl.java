@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
-import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 
@@ -617,7 +616,6 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		}
 		
 		switch (vmState) {
-		case Creating:
 		case Destroyed:
 		case Error:
 		case Migrating:
