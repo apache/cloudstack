@@ -6,8 +6,6 @@
 # /proc/cmdline can have a different number of arguments depending on whether or not a second
 # DNS server is specified.
 
-grep dns2 /proc/cmdline 1> /dev/null 2>&1
-HAVEDNS2=$?
 
 # ping dns server
 echo ================================================
@@ -61,12 +59,7 @@ then
 else
     echo "ERROR: NFS is not currently mounted"
     echo "Try manually mounting from inside the VM"
-    if [ $HAVEDNS2 -eq 0 ]
-    then
-	NFSSERVER=`awk '{print $24}' /proc/cmdline|awk -F= '{print $2}'|awk -F: '{print $1}'`
-    else
-	NFSSERVER=`awk '{print $23}' /proc/cmdline|awk -F= '{print $2}'|awk -F: '{print $1}'`
-    fi
+    NFSSERVER=`awk '{print $17}' /proc/cmdline|awk -F= '{print $2}'|awk -F: '{print $1}'`
     echo "NFS server is " $NFSSERVER
     ping -c 2 -w 2 $NFSSERVER
     if [ $? -eq 0 ]
@@ -82,12 +75,7 @@ fi
 
 # check for connectivity to the management server
 echo ================================================
-if [ $HAVEDNS2 -eq 0 ]
-then
-    MGMTSERVER=`awk '{print $21}' /proc/cmdline | awk -F= '{print $2}'`
-else
-    MGMTSERVER=`awk '{print $20}' /proc/cmdline | awk -F= '{print $2}'`
-fi
+MGMTSERVER=`awk '{print $12}' /proc/cmdline | awk -F= '{print $2}'`
 echo Management server is $MGMTSERVER.  Checking connectivity.
 socatout=$(echo | socat - TCP:$MGMTSERVER:8250,connect-timeout=3 2>&1)
 if [ $? -eq 0 ]
