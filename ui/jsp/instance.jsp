@@ -670,7 +670,7 @@
 	                            </div>
 	                        </div>
 							<div id="network_direct_container"></div>
-							<h3 id="secondary_network_title" style="display:none">
+							<h3 id="secondary_network_title" style="display:none; margin-top:15px;">
 							Additional Networks:
 							</h3>
 							<p id="secondary_network_desc" style="display:none">
