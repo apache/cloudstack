@@ -345,16 +345,26 @@ function templateJsonToDetailsTab() {
         noAvailableActions = false;		
     }
 	
-	// "Download Template", "Delete Template"	
+	// "Download Template"	
 	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
 		|| (jsonObj.isready == false) || jsonObj.templatetype == "SYSTEM") {
 	    //do nothing	
     }
     else {
-        buildActionLinkForTab("Download Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);
-        buildActionLinkForTab("Delete Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);
+        buildActionLinkForTab("Download Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);        
         noAvailableActions = false;	
     }
+     
+    // "Delete Template"	
+	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
+		|| (jsonObj.isready == false && jsonObj.status != null && jsonObj.status.indexOf("Downloaded") != -1) 
+		|| jsonObj.templatetype == "SYSTEM") {
+	    //do nothing	
+    }
+    else {        
+        buildActionLinkForTab("Delete Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);
+        noAvailableActions = false;	
+    } 
             
     // no available actions 
 	if(noAvailableActions == true) {
