@@ -1888,7 +1888,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (status) {
         	return _vmDao.findById(vmId);
         } else {
-        	throw new CloudRuntimeException("Failed to reboot vm with id: " + vmId);
+        	s_logger.warn("Failed to reboot vm with id: " + vmId);
+        	return null;
         }
 	}
 
