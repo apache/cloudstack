@@ -337,15 +337,23 @@ function isoJsonToDetailsTab() {
     }
 	*/
     
-	// "Download ISO", "Delete ISO"
+	// "Download ISO"
 	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) || (jsonObj.isready == false)) {
 	    //do nothing
 	}
 	else {	    
-	    buildActionLinkForTab("Download ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
-	    buildActionLinkForTab("Delete ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+	    buildActionLinkForTab("Download ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);		    
 	    noAvailableActions = false;
 	}    		   
+	
+	// "Delete ISO"
+	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) || (jsonObj.isready == false && jsonObj.status != null && jsonObj.status.indexOf("Downloaded") != -1)) {
+	    //do nothing
+	}
+	else {	   	    
+	    buildActionLinkForTab("Delete ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+	    noAvailableActions = false;
+	}    	
 	
 	// no available actions 
 	if(noAvailableActions == true) {
