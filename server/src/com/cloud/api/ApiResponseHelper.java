@@ -1059,11 +1059,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             cpuUsed = decimalFormat.format(cpuUtil) + "%";
             userVmResponse.setCpuUsed(cpuUsed);
 
-            Long networkKbRead = Double.doubleToLongBits(vmStats.getNetworkReadKBs());
-            userVmResponse.setNetworkKbsRead(networkKbRead);
+            Double networkKbRead = Double.valueOf(vmStats.getNetworkReadKBs());
+            userVmResponse.setNetworkKbsRead(networkKbRead.longValue());
 
-            Long networkKbWrite = Double.doubleToLongBits(vmStats.getNetworkWriteKBs());
-            userVmResponse.setNetworkKbsWrite(networkKbWrite);
+            Double networkKbWrite = Double.valueOf(vmStats.getNetworkWriteKBs());
+            userVmResponse.setNetworkKbsWrite(networkKbWrite.longValue());
         }
 
         userVmResponse.setGuestOsId(userVm.getGuestOSId());
