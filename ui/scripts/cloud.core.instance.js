@@ -1170,9 +1170,10 @@ function initVMWizard() {
 				                            bindClickToMidMenu($midmenuItem1, vmToRightPanel, getMidmenuId);  
 				                            
 				                            if (item.passwordenabled == true) {							                                									        
-										        var extraMessage = "New password: " + item.password;
-										        afterAddingMidMenuItem($midmenuItem1, true, extraMessage);
-										        var afterActionInfo = "Instance " + getVmName(item.name, item.displayname) + " has been created successfully.  New password is: " + item.password;
+										        var secondRowText = "New password is " + item.password;
+										        afterAddingMidMenuItem($midmenuItem1, true, secondRowText);
+										        
+										        var afterActionInfo = "Instance " + getVmName(item.name, item.displayname) + " has been created successfully.  New password is " + item.password;
 										        $midmenuItem1.data("afterActionInfo", afterActionInfo); 
 										        
 										        $("#dialog_info")

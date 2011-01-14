@@ -695,7 +695,7 @@ function beforeAddingMidMenuItem() {
 	$("#midmenu_container").prepend($midmenuItem1.show());
 	return $midmenuItem1;
 }
-function afterAddingMidMenuItem($midmenuItem1, isSuccessful, extraMessage) {
+function afterAddingMidMenuItem($midmenuItem1, isSuccessful, secondRowText) {
     $midmenuItem1.find("#content").removeClass("inaction"); 
 	$midmenuItem1.find("#spinning_wheel").hide();	
 
@@ -730,8 +730,8 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, extraMessage) {
 	    });	    
 	}
 	
-	if(extraMessage != null) {
-	    $midmenuItem1.find("#second_row").text(extraMessage);  	 
+	if(secondRowText != null) {
+	    $midmenuItem1.find("#second_row").text(secondRowText);  	 
 	}
 }
 
