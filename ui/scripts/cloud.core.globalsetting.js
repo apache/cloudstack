@@ -44,10 +44,15 @@ function populateGlobalSettingGrid() {
         success: function(json) {           
             var items = json.listconfigurationsresponse.configuration;
             $container = $("#tab_content_details").find("#grid_content").empty();
-            $template = $("#globalsetting_template");            
+            $templateText = $("#globalsetting_template_text");    
+            $templatePassword = $("#globalsetting_template_password");          
             if(items != null && items.length > 0) {
                 for(var i=0; i<items.length; i++) {
-                    var $newTemplate = $template.clone();
+                    var $newTemplate;
+                    if(items[i].name.toLowerCase().indexOf("password") == -1)
+                        $newTemplate = $templateText.clone();
+                    else
+                        $newTemplate = $templatePassword.clone();
                     globalsettingJSONToTemplate(items[i], $newTemplate);
                     $container.append($newTemplate.show());
                 }
@@ -69,7 +74,7 @@ function globalsettingJSONToTemplate(jsonObj, template) {
 
 function doEditGlobalSetting() {
     var $detailsTab = $("#right_panel_content #tab_content_details"); 
-    var $readonlyFields  = $detailsTab.find("#value");
+    var $readonlyFields  = $detailsTab.find("#globalsetting_template_text #value, #globalsetting_template_password #password_mask");
     var $editFields = $detailsTab.find("#value_edit"); 
                  
     $readonlyFields.hide();
@@ -89,7 +94,9 @@ function doEditGlobalSetting() {
 }
 
 function doEditGlobalSetting2($readonlyFields, $editFields) {        
-    $("#right_panel_content #tab_content_details").find("#globalsetting_template").each(function(index) {        
+    var isChanged = false;
+    
+    $("#right_panel_content #tab_content_details").find("#globalsetting_template_text,#globalsetting_template_password").each(function(index) {        
         var $thisRow =$(this);  
         
         if($thisRow.find("#value_edit").val() != $thisRow.find("#value").text()) {            
@@ -109,14 +116,16 @@ function doEditGlobalSetting2($readonlyFields, $editFields) {
 	            success: function(json) {		              	           
 		            var jsonObj = json.updateconfigurationresponse.configuration;	
 		            globalsettingJSONToTemplate(jsonObj, $thisRow);  
-		            
-		            $editFields.hide();      
-                    $readonlyFields.show();       
-                    $("#save_button, #cancel_button").hide();   
-        		    	    
-		            $("#dialog_alert_restart_management_server").dialog("open");
+		            isChanged = true;
 	            }
             });		           
         }
-    });    
+    });         
+    
+	$editFields.hide();      
+    $readonlyFields.show();       
+    $("#save_button, #cancel_button").hide();   
+    
+    if(isChanged == true)     
+         $("#dialog_alert_restart_management_server").dialog("open"); 		    	       
 }

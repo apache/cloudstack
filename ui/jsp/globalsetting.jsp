@@ -70,27 +70,51 @@
         </div>            
     </div>
 </div>
-<!-- global setting grid template (begin) -->
 
-    <div id="globalsetting_template" class="grid_rows even" style="display:none; position:none;">
-        <div class="grid_row_cell" style="width: 35%; border:none;">
-            <div class="row_celltitles" id="name">
-            </div>
-        </div>
-        <div class="grid_row_cell" style="width: 23%; border:none; padding:1px;">
-            <div class="row_celltitles" id="value">
-            </div>
-            <input class="text" id="value_edit" style="width: 120px; display: none;" type="text" />
-            <div id="value_edit_errormsg">
-            </div>
-        </div>
-        <div class="grid_row_cell" style="width: 40%; border:none;">
-            <div class="row_celltitles" id="description">description
-            </div>
+<!-- global setting grid template - text type (begin) -->
+<div id="globalsetting_template_text" class="grid_rows even" style="display: none; position: none;">
+    <div class="grid_row_cell" style="width: 35%; border: none;">
+        <div class="row_celltitles" id="name">
         </div>
     </div>
+    <div class="grid_row_cell" style="width: 23%; border: none; padding: 1px;">
+        <div class="row_celltitles" id="value">
+        </div>
+        <input class="text" id="value_edit" style="width: 120px; display: none;" type="text" />
+        <div id="value_edit_errormsg">
+        </div>
+    </div>
+    <div class="grid_row_cell" style="width: 40%; border: none;">
+        <div class="row_celltitles" id="description">
+            description
+        </div>
+    </div>
+</div>
+<!-- global setting grid template - text type (end) -->
 
-<!-- global setting grid template (end) -->
+<!-- global setting grid template - password type (begin) -->
+<div id="globalsetting_template_password" class="grid_rows even" style="display: none; position: none;">
+    <div class="grid_row_cell" style="width: 35%; border: none;">
+        <div class="row_celltitles" id="name">
+        </div>
+    </div>
+    <div class="grid_row_cell" style="width: 23%; border: none; padding: 1px;">
+        <div class="row_celltitles" id="value" style="display:none">
+        </div>        
+        <div class="row_celltitles" id="password_mask">
+            ********
+        </div>        
+        <input class="text" id="value_edit" style="width: 120px; display: none;" type="password" />
+        <div id="value_edit_errormsg">
+        </div>
+    </div>
+    <div class="grid_row_cell" style="width: 40%; border: none;">
+        <div class="row_celltitles" id="description">
+            description
+        </div>
+    </div>
+</div>
+<!-- global setting grid template - password type (end) -->
 
 <div id="dialog_alert_restart_management_server" title="Alert" style="display:none">
     <p>
