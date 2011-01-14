@@ -63,7 +63,8 @@ public class VolumeTO {
         this.storagePoolUuid = pool.getUuid();
         this.mountPoint = volume.getFolder();
         this.chainInfo = volume.getChainInfo();
-        this.deviceId = volume.getDeviceId();
+        if (volume.getDeviceId() != null)
+        	this.deviceId = volume.getDeviceId();
     }
    
     public long getDeviceId() {
