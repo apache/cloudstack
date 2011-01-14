@@ -264,6 +264,9 @@ public class ApiXmlDocWriter {
 	
 	private static ArrayList<Argument> setRequestFields(Field[] fields) {
 	    ArrayList<Argument> arguments = new ArrayList<Argument>();
+	    ArrayList<Argument> requiredArguments = new ArrayList<Argument>();
+	    ArrayList<Argument> optionalArguments = new ArrayList<Argument>();
+	    Argument id = null;
 	    for (Field f : fields) {
             Parameter parameterAnnotation = f.getAnnotation(Parameter.class);
             if (parameterAnnotation != null && parameterAnnotation.expose()) {
@@ -272,14 +275,37 @@ public class ApiXmlDocWriter {
                 if (!parameterAnnotation.description().isEmpty()) {
                     reqArg.setDescription(parameterAnnotation.description());
                 }   
-                arguments.add(reqArg);
+                
+                if (reqArg.isRequired() == true) {
+                    if (parameterAnnotation.name().equals("id")) {
+                        id = reqArg;
+                    } else {
+                        requiredArguments.add(reqArg);
+                    }
+                } else {
+                    optionalArguments.add(reqArg);
+                }  
             }
         } 
+	    
+	    Collections.sort(requiredArguments);
+	    Collections.sort(optionalArguments);
+	    
+	    //sort required and optional arguments here
+	    if (id != null) {
+	        arguments.add(id);
+	    }
+	    arguments.addAll(requiredArguments);
+	    arguments.addAll(optionalArguments);
+	    
 	    return arguments;
 	}
 	
 	private static ArrayList<Argument> setResponseFields(Field[] responseFields) {
 	    ArrayList<Argument> arguments = new ArrayList<Argument>();
+	    ArrayList<Argument> sortedArguments = new ArrayList<Argument>();
+        Argument id = null;
+        
 	    for (Field responseField : responseFields) {    
             SerializedName nameAnnotation = responseField.getAnnotation(SerializedName.class);
             Param paramAnnotation = responseField.getAnnotation(Param.class);
@@ -308,11 +334,20 @@ public class ApiXmlDocWriter {
             } 
                 
             if (toExpose) {
-                arguments.add(respArg);
-            } 
-            
-            
+                if (nameAnnotation.value().equals("id")) {
+                    id = respArg;
+                } else {
+                    sortedArguments.add(respArg);
+                }
+            }    
         }
+	    
+	    Collections.sort(sortedArguments);
+
+	    if (id != null) {
+            arguments.add(id);
+        }
+        arguments.addAll(sortedArguments);
 	    return arguments;
 	}
 	

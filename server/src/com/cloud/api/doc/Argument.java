@@ -20,7 +20,7 @@ package com.cloud.api.doc;
 
 import java.util.List;
 
-public class Argument{
+public class Argument implements Comparable{
 	private String name;
 	private String description;
 	private Boolean required;
@@ -56,4 +56,12 @@ public class Argument{
     public void setArguments(List<Argument> arguments) {
         this.arguments = arguments;
     }
+    
+    public int compareTo(Object anotherAgrument) throws ClassCastException {
+        if (!(anotherAgrument instanceof Argument))
+            throw new ClassCastException("An Argument object expected.");
+        Argument argument = (Argument)anotherAgrument;
+        return this.getName().compareToIgnoreCase(argument.getName());    
+      }
+
 }
