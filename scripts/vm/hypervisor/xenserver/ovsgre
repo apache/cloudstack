@@ -288,6 +288,9 @@ def ovs_create_gre (session, args):
 	res = do_cmd(wait)
 	if name in res:
 		port = get_field_of_interface(name, "ofport");
+		noFlood = [vsctlPath, "ovs-ofctl mod-port %s %s noflood" % (bridge, \
+			name)]
+		do_cmd(noFlood)
 		result = "SUCCESS:%s" % port
 	else:
 		result = errors["COMMAND_FAILED"]
