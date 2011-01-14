@@ -24,7 +24,7 @@ CATALINA_TMPDIR="@MSENVIRON@/temp"
 
 # Use JAVA_OPTS to set java.library.path for libtcnative.so
 #JAVA_OPTS="-Djava.library.path=/usr/lib64"
-JAVA_OPTS="-Djava.awt.headless=true -Xmx128M -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=@MSLOGDIR@"
+JAVA_OPTS="-Djava.awt.headless=true -Xmx256M -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=@MSLOGDIR@ -XX:PermSize=128M"
 
 # What user should run tomcat
 TOMCAT_USER="@MSUSER@"
