@@ -1450,6 +1450,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                         _storagePoolHostDao.deleteStoragePoolHostDetails(host.getHostId(),host.getPoolId());
                     }
                     sPool.setUuid(null);
+                    sPool.setStatus(Status.Removed);
                     _storagePoolDao.update(id, sPool);
                     _storagePoolDao.remove(id);
                     return true;
