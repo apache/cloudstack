@@ -375,7 +375,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 		
 		if(accountObj.getType() == Account.ACCOUNT_TYPE_ADMIN)
     		return true;
-        
+
         switch(vm.getType())
         {
         case User :

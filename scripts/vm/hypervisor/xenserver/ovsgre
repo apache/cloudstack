@@ -263,21 +263,23 @@ def ovs_create_gre (session, args):
 	res = do_cmd(wait)
 	if bridge not in res:
 		pr("WARNIING:Can't find bridge %s for creating tunnel!" % bridge)
-		result = errors["COMMAND_FAILED"]
+		result = "COMMAND_FAILED_NO_BRIDGE"
 		return result
 
 	createInterface = [vsctlPath, "create interface", "name=%s" % name, \
 			'type=gre options:"remote_ip=%s key=%s"' % (remoteIP, greKey)]
 	ifaceUUID = do_cmd (createInterface)
 	if is_uuid (ifaceUUID) < 0:
-		result = errors["COMMAND_FAILED"];
+		pr("create interface failed, %s is not UUID" % ifaceUUID)
+		result = "COMMAND_FAILED_CREATE_INTERFACE_FAILED"
 		return result
 
 	createPort = [vsctlPath, "create port", "name=%s" % name, \
 			"interfaces=[%s]" % ifaceUUID]
 	portUUID = do_cmd (createPort)
 	if is_uuid (portUUID) < 0:
-		result = errors["COMMAND_FAILED"];
+		pr("create port failed, %s is not UUID" % portUUID)
+		result = "COMMAND_FAILED_CREATE_PORT_FAILED"
 		return result
 
 	addBridge = [vsctlPath, "add bridge %s" % bridge, "ports %s" % portUUID]
@@ -293,7 +295,8 @@ def ovs_create_gre (session, args):
 		do_cmd(noFlood)
 		result = "SUCCESS:%s" % port
 	else:
-		result = errors["COMMAND_FAILED"]
+		pr("create gre tunnel failed")
+		result = "COMMAND_FAILED_CREATE_TUNNEL_FAILED"
 	
 	return result
 ######################## End GRE creation utils ##########################
@@ -421,10 +424,9 @@ def format_drop_flow(inPort):
 	actions=drop" % inPort
 	return flow
 
-def add_drop_flow(bridge, inPorts):
-	for i in inPorts:
-		flow = format_drop_flow(i)
-		add_flow(bridge, flow)
+def add_drop_flow(bridge, port):
+	flow = format_drop_flow(port)
+	add_flow(bridge, flow)
 
 def del_flow(bridge, mac):
 	param = "dl_dst=%s" % mac
