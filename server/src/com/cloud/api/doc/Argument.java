@@ -62,6 +62,10 @@ public class Argument implements Comparable{
             throw new ClassCastException("An Argument object expected.");
         Argument argument = (Argument)anotherAgrument;
         return this.getName().compareToIgnoreCase(argument.getName());    
-      }
+    }
+    
+    public boolean hasArguments() {
+        return (arguments!= null && !arguments.isEmpty());
+    }
 
 }

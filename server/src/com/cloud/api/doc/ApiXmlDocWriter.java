@@ -303,7 +303,9 @@ public class ApiXmlDocWriter {
 	
 	private static ArrayList<Argument> setResponseFields(Field[] responseFields) {
 	    ArrayList<Argument> arguments = new ArrayList<Argument>();
+	    ArrayList<Argument> sortedChildlessArguments = new ArrayList<Argument>();
 	    ArrayList<Argument> sortedArguments = new ArrayList<Argument>();
+	    
         Argument id = null;
         
 	    for (Field responseField : responseFields) {    
@@ -311,6 +313,7 @@ public class ApiXmlDocWriter {
             Param paramAnnotation = responseField.getAnnotation(Param.class);
             Argument respArg = new Argument(nameAnnotation.value());   
             boolean toExpose = true;
+            boolean hasChildren = false;
             if (paramAnnotation != null) {
                 String description = paramAnnotation.description();
                 Class fieldClass = paramAnnotation.responseObject();
@@ -328,6 +331,7 @@ public class ApiXmlDocWriter {
                             Field[] fields = fieldClass.getDeclaredFields();
                             fieldArguments = setResponseFields(fields);
                             respArg.setArguments(fieldArguments);
+                            hasChildren = true;
                         }
                     }
                 }
@@ -337,16 +341,23 @@ public class ApiXmlDocWriter {
                 if (nameAnnotation.value().equals("id")) {
                     id = respArg;
                 } else {
-                    sortedArguments.add(respArg);
+                    if (hasChildren) {
+                        respArg.setName(nameAnnotation.value() + "(*)");
+                        sortedArguments.add(respArg);
+                    } else {
+                        sortedChildlessArguments.add(respArg);
+                    }
                 }
             }    
         }
 	    
 	    Collections.sort(sortedArguments);
+	    Collections.sort(sortedChildlessArguments);
 
 	    if (id != null) {
             arguments.add(id);
         }
+        arguments.addAll(sortedChildlessArguments);
         arguments.addAll(sortedArguments);
 	    return arguments;
 	}
