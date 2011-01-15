@@ -600,7 +600,7 @@ function bindAddExternalFirewallButton($button, $midmenuItem1) {
 				isValid &= validateString("Password", $thisDialog.find("#password"), $thisDialog.find("#password_errormsg"), false);  //required				
 				isValid &= validateString("Public Interface", $thisDialog.find("#public_interface"), $thisDialog.find("#public_interface_errormsg"), true);  //optinal
 				isValid &= validateString("Private Interface", $thisDialog.find("#private_interface"), $thisDialog.find("#private_interface_errormsg"), true);  //optinal				
-				isValid &= validateString("User Interface", $thisDialog.find("#user_interface"), $thisDialog.find("#user_interface_errormsg"), true);  //optinal				
+				isValid &= validateString("Usage Interface", $thisDialog.find("#usage_interface"), $thisDialog.find("#usage_interface_errormsg"), true);  //optinal				
 				isValid &= validateString("Public Zone", $thisDialog.find("#public_zone"), $thisDialog.find("#public_zone_errormsg"), true);  //optinal
 				isValid &= validateString("Private Zone", $thisDialog.find("#private_zone"), $thisDialog.find("#private_zone_errormsg"), true);  //optinal
 				if (!isValid) 
@@ -653,8 +653,8 @@ function bindAddExternalFirewallButton($button, $midmenuItem1) {
 				    url.push("privateInterface="+privateInterface); 
 				}
 				 
-				var userInterface = $thisDialog.find("#user_interface").val();
-				if(userInterface != null && userInterface.length > 0) {
+				var usageInterface = $thisDialog.find("#usage_interface").val();
+				if(usageInterface != null && usageInterface.length > 0) {
 				    if(isQuestionMarkAdded == false) {
 				        url.push("?");
 				        isQuestionMarkAdded = true;
@@ -662,7 +662,7 @@ function bindAddExternalFirewallButton($button, $midmenuItem1) {
 				    else {
 				        url.push("&");
 				    }  				    
-				    url.push("userInterface="+userInterface); 
+				    url.push("usageInterface="+usageInterface); 
 				} 
 				    
 				var publicZone = $thisDialog.find("#public_zone").val();

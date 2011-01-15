@@ -842,9 +842,9 @@
             </li>             
             <li>
                 <label>
-                    User Interface:</label>
-                <input class="text" type="text" id="user_interface" />
-                <div id="user_interface_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                    Usage Interface:</label>
+                <input class="text" type="text" id="usage_interface" />
+                <div id="usage_interface_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>                  
             <li>
