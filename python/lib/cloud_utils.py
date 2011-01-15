@@ -972,9 +972,9 @@ def setup_agent_config(configfile, host, zone, pod, cluster, guid, pubNic, prvNi
 		if prvNic == None or not device_exist(prvNic):
 			confopts["private.network.device"] = pubNic	
 		
-	if prvNic != None and device_exits(prvNic):
+	if prvNic != None and device_exist(prvNic):
 		confopts["private.network.device"] = prvNic	
-		if pubNic == None or not device_exits(pubNic):
+		if pubNic == None or not device_exist(pubNic):
 			confopts["public.network.device"] = prvNic	
 
 	stderr("Querying %s for zones and pods",host)
