@@ -2150,6 +2150,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (template == null || template.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to use template " + cmd.getTemplateId());
         }
+        
+        if (template.getTemplateType().equals(TemplateType.SYSTEM)) {
+        	throw new InvalidParameterValueException("Unable to use system template " + cmd.getTemplateId()+" to deploy a user vm");
+        }
+        
         boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
         if (isIso && !template.isBootable()) {
             throw new InvalidParameterValueException("Installing from ISO requires an ISO that is bootable: " + template.getId());
