@@ -646,10 +646,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		String pubPif = null;
 		String privPif = null;
 		if (_publicBridgeName != null) {
-			pubPif = Script.runSimpleBashScript("ls /sys/class/net/" + _publicBridgeName + "/brif/ |egrep eth[0-9]+");			
+			pubPif = Script.runSimpleBashScript("brctl show | grep " + _publicBridgeName + " | awk '{print $4}'");			
 		}
 		if (_privBridgeName != null) {
-			privPif = Script.runSimpleBashScript("ls /sys/class/net/" + _privBridgeName + "/brif/ |egrep eth[0-9]+");	
+			privPif = Script.runSimpleBashScript("brctl show | grep " + _privBridgeName + " | awk '{print $4}'");	
 		}
 		return new Pair<String, String>(privPif, pubPif);
 	}
