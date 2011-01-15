@@ -1777,7 +1777,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
     
     @Override
-    public boolean stop(DomainRouterVO router) throws AgentUnavailableException {
+    public boolean stop(DomainRouterVO router) throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }

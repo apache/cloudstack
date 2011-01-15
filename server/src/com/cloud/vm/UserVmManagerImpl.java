@@ -1193,7 +1193,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     @Override
-    public boolean stop(UserVmVO vm) {
+    public boolean stop(UserVmVO vm) throws ResourceUnavailableException {
         return stop(1L, vm);
     }
 

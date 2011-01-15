@@ -3957,23 +3957,6 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
     
-    @Override
-    public VirtualMachine stopSystemVm(long vmId) {
-        
-        // verify parameters      
-        VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(vmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
-        if (systemVm == null) {
-            throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + vmId);
-        }
-
-        // FIXME: We need to return the system VM from this method, so what do we do with the boolean response from stopConsoleProxy and stopSecondaryStorageVm?
-        if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
-            return stopConsoleProxy(vmId);
-        } else {
-            return stopSecondaryStorageVm(vmId);
-        }
-    }
-
 	@Override
 	public VMInstanceVO stopSystemVM(StopSystemVmCmd cmd) {
 		Long id = cmd.getId();

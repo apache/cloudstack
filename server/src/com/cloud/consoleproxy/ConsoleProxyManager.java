@@ -52,4 +52,5 @@ public interface ConsoleProxyManager extends Manager {
 	
     public void onAgentConnect(HostVO host, StartupCommand cmd);
 	public void onAgentDisconnect(long agentId, Status state);
+	
 }

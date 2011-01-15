@@ -48,7 +48,6 @@ import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
-import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -118,7 +117,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
-import com.cloud.user.AccountService;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
@@ -221,7 +220,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     @Inject private AgentManager _agentMgr;
     @Inject private StorageManager _storageMgr;
     @Inject NetworkManager _networkMgr;
-    @Inject AccountService _accountMgr;
+    @Inject AccountManager _accountMgr;
     @Inject private EventDao _eventDao;
     @Inject GuestOSDao _guestOSDao = null;
     @Inject ServiceOfferingDao _offeringDao;
@@ -1429,32 +1428,54 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     @DB
     protected void completeStopCommand(ConsoleProxyVO proxy, VirtualMachine.Event ev) {
-        Transaction txn = Transaction.currentTxn();
-        try {
-            txn.start();
-            String privateIpAddress = proxy.getPrivateIpAddress();
-            if (privateIpAddress != null) {
-                proxy.setPrivateIpAddress(null);
-//                freePrivateIpAddress(privateIpAddress, proxy.getDataCenterId(), proxy.getId());
-            }
-            String guestIpAddress = proxy.getGuestIpAddress();
-            if (guestIpAddress != null) {
-                proxy.setGuestIpAddress(null);
-                _dcDao.releaseLinkLocalIpAddress(guestIpAddress, proxy.getDataCenterId(), proxy.getId());
-            }
-
-            if (!_itMgr.stateTransitTo(proxy, ev, null)) {
-                s_logger.debug("Unable to update the console proxy");
-                return;
-            }
-            txn.commit();
+        
+      Transaction txn = Transaction.currentTxn();
+      try {
+          txn.start();
+          SubscriptionMgr.getInstance().notifySubscribers(
+                ConsoleProxyManager.ALERT_SUBJECT,
+                this,
+                new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_DOWN, proxy.getDataCenterId(), proxy.getId(), proxy,
+                        null));
+        
+          if (!_itMgr.stateTransitTo(proxy, ev, null)) {
+              s_logger.debug("Unable to update the console proxy");
+              return;
+          }
+          txn.commit();
         } catch (Exception e) {
             s_logger.error("Unable to complete stop command due to ", e);
         }
-
-        if (_storageMgr.unshare(proxy, null) == null) {
-            s_logger.warn("Unable to set share to false for " + proxy.getId());
-        }
+        
+          if (_storageMgr.unshare(proxy, null) == null) {
+              s_logger.warn("Unable to set share to false for " + proxy.getId());
+          }
+//        Transaction txn = Transaction.currentTxn();
+//        try {
+//            txn.start();
+//            String privateIpAddress = proxy.getPrivateIpAddress();
+//            if (privateIpAddress != null) {
+//                proxy.setPrivateIpAddress(null);
+////                freePrivateIpAddress(privateIpAddress, proxy.getDataCenterId(), proxy.getId());
+//            }
+//            String guestIpAddress = proxy.getGuestIpAddress();
+//            if (guestIpAddress != null) {
+//                proxy.setGuestIpAddress(null);
+//                _dcDao.releaseLinkLocalIpAddress(guestIpAddress, proxy.getDataCenterId(), proxy.getId());
+//            }
+//
+//            if (!_itMgr.stateTransitTo(proxy, ev, null)) {
+//                s_logger.debug("Unable to update the console proxy");
+//                return;
+//            }
+//            txn.commit();
+//        } catch (Exception e) {
+//            s_logger.error("Unable to complete stop command due to ", e);
+//        }
+//
+//        if (_storageMgr.unshare(proxy, null) == null) {
+//            s_logger.warn("Unable to set share to false for " + proxy.getId());
+//        }
     }
 
     @Override
@@ -1492,10 +1513,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
          */
         try {
             return stop(proxy);
-        } catch (AgentUnavailableException e) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Stopping console proxy " + proxy.getName() + " failed : exception " + e.toString());
-            }
+        } catch (ResourceUnavailableException e) {
+            s_logger.warn("Stopping console proxy " + proxy.getName() + " failed : exception " + e.toString());
             return false;
         }
     }
@@ -1587,44 +1606,21 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     }
 
     @Override
-    public boolean stop(ConsoleProxyVO proxy) throws AgentUnavailableException {
+    public boolean stop(ConsoleProxyVO proxy) throws ResourceUnavailableException {
         if (!_itMgr.stateTransitTo(proxy, VirtualMachine.Event.StopRequested, proxy.getHostId())) {
             s_logger.debug("Unable to stop console proxy: " + proxy.toString());
             return false;
         }
 
-        // IPAddressVO ip = _ipAddressDao.findById(proxy.getPublicIpAddress());
-        // VlanVO vlan = _vlanDao.findById(new Long(ip.getVlanDbId()));
-
         GlobalLock proxyLock = GlobalLock.getInternLock(getProxyLockName(proxy.getId()));
         try {
             if (proxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                 try {
-                    StopCommand cmd = new StopCommand(proxy, true, Integer.toString(_consoleProxyPort), Integer.toString(_consoleProxyUrlPort),
-                            proxy.getPublicIpAddress());
-                    try {
-                        Long proxyHostId = proxy.getHostId();
-                        if (proxyHostId == null) {
-                            s_logger.debug("Unable to stop due to proxy " + proxy.getId()
-                                    + " as host is no longer available, proxy may already have been stopped");
-                            return false;
-                        }
-                        StopAnswer answer = (StopAnswer) _agentMgr.send(proxyHostId, cmd);
-                        if (answer == null || !answer.getResult()) {
-                            s_logger.debug("Unable to stop due to " + (answer == null ? "answer is null" : answer.getDetails()));
-                            return false;
-                        }
+                    boolean result = _itMgr.stop(proxy, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());    
+                    if (result) {
                         completeStopCommand(proxy, VirtualMachine.Event.OperationSucceeded);
-
-                        SubscriptionMgr.getInstance().notifySubscribers(
-                                ConsoleProxyManager.ALERT_SUBJECT,
-                                this,
-                                new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_DOWN, proxy.getDataCenterId(), proxy.getId(), proxy,
-                                        null));
-                        return true;
-                    } catch (OperationTimedoutException e) {
-                        throw new AgentUnavailableException(proxy.getHostId());
                     }
+                    return result;
                 } finally {
                     proxyLock.unlock();
                 }

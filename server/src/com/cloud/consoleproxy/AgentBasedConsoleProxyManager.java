@@ -40,9 +40,9 @@ import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.HostVO;
@@ -305,7 +305,7 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     }
 
     @Override
-    public boolean stop(ConsoleProxyVO vm) throws AgentUnavailableException {
+    public boolean stop(ConsoleProxyVO vm) throws ResourceUnavailableException {
         return false;
     }
 

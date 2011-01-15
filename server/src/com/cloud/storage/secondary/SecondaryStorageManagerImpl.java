@@ -39,7 +39,6 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -978,7 +977,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	}
 
 	@Override
-	public void completeStopCommand(SecondaryStorageVmVO vm) {
+    public void completeStopCommand(SecondaryStorageVmVO vm) {
 		completeStopCommand(vm, VirtualMachine.Event.AgentReportStopped);
 	}
 
@@ -987,16 +986,14 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		Transaction txn = Transaction.currentTxn();
 		try {
 			txn.start();
-			String privateIpAddress = secStorageVm.getPrivateIpAddress();
-			if (privateIpAddress != null) {
-				secStorageVm.setPrivateIpAddress(null);
-				// FIXME: freePrivateIpAddress(privateIpAddress, secStorageVm.getDataCenterId(), secStorageVm.getId());
-			}
-			String guestIpAddress = secStorageVm.getGuestIpAddress();
-			if (guestIpAddress != null) {
-				secStorageVm.setGuestIpAddress(null);
-				_dcDao.releaseLinkLocalIpAddress(guestIpAddress, secStorageVm.getDataCenterId(), secStorageVm.getId());
-			}
+			
+			 SubscriptionMgr.getInstance().notifySubscribers(
+                     SecStorageVmAlertEventArgs.ALERT_SUBJECT, this,
+                     new SecStorageVmAlertEventArgs(
+                         SecStorageVmAlertEventArgs.SSVM_DOWN,
+                         secStorageVm.getDataCenterId(), secStorageVm.getId(), secStorageVm, null)
+                 );
+			 
 			if (! _itMgr.stateTransitTo(secStorageVm, ev, null)) {
 				s_logger.debug("Unable to update the secondary storage vm");
 				return;
@@ -1042,7 +1039,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		}
 		try {
 			return stop(secStorageVm);
-		} catch (AgentUnavailableException e) {
+		} catch (ResourceUnavailableException e) {
 			if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Stopping secondary storage vm " + secStorageVm.getName() + " faled : exception " + e.toString());
             }
@@ -1137,51 +1134,24 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	}
 
 	@Override
-	public boolean stop(SecondaryStorageVmVO secStorageVm) throws AgentUnavailableException {
+	public boolean stop(SecondaryStorageVmVO secStorageVm) throws ResourceUnavailableException {
 		if (! _itMgr.stateTransitTo(secStorageVm, VirtualMachine.Event.StopRequested, secStorageVm.getHostId())) {
 		    String msg = "Unable to stop secondary storage vm: " + secStorageVm.toString();
 			s_logger.debug(msg);
 			return false;
 		}
 
-		// IPAddressVO ip = _ipAddressDao.findById(secStorageVm.getPublicIpAddress());
-		// VlanVO vlan = _vlanDao.findById(new Long(ip.getVlanDbId()));
-
         if (secStorageVm.getHostId() != null) {
             GlobalLock secStorageVmLock = GlobalLock.getInternLock(getSecStorageVmLockName(secStorageVm.getId()));
             try {
                 if (secStorageVmLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                     try {
-                        StopCommand cmd = new StopCommand(secStorageVm, true,
-                                Integer.toString(0),
-                                Integer.toString(0),
-                                secStorageVm.getPublicIpAddress());
-                        try {
-                            StopAnswer answer = (StopAnswer) _agentMgr.send(secStorageVm.getHostId(), cmd);
-                            if (answer == null || !answer.getResult()) {
-                                String msg = "Unable to stop due to " + (answer == null ? "answer is null" : answer.getDetails());
-                                s_logger.debug(msg);
-                                return false;
-                            }
+                        boolean result = _itMgr.stop(secStorageVm, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());    
+                        if (result) {
                             completeStopCommand(secStorageVm, VirtualMachine.Event.OperationSucceeded);
-                            
-                            SubscriptionMgr.getInstance().notifySubscribers(
-                                    SecStorageVmAlertEventArgs.ALERT_SUBJECT, this,
-                                    new SecStorageVmAlertEventArgs(
-                                        SecStorageVmAlertEventArgs.SSVM_DOWN,
-                                        secStorageVm.getDataCenterId(), secStorageVm.getId(), secStorageVm, null)
-                                );
-                            final EventVO event = new EventVO();
-                            event.setUserId(User.UID_SYSTEM);
-                            event.setAccountId(Account.ACCOUNT_ID_SYSTEM);
-                            event.setType(EventTypes.EVENT_SSVM_STOP);
-                            event.setLevel(EventVO.LEVEL_INFO);
-                            event.setDescription("Secondary Storage Vm stopped - " + secStorageVm.getName());
-                            _eventDao.persist(event);
-						return true;
-                        } catch (OperationTimedoutException e) {
-                            throw new AgentUnavailableException(secStorageVm.getHostId());
                         }
+                        
+                       return result;
                     } finally {
                         secStorageVmLock.unlock();
                     }

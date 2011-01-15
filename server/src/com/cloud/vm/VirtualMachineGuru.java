@@ -109,9 +109,9 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      * 
      * @param vm vm to Stop.
      * @return true if stopped and false if not.
-     * @throws AgentUnavailableException if the agent is unavailable.
+     * @throws ResourceUnavailableException TODO
      */
-    boolean stop(T vm) throws AgentUnavailableException;
+    boolean stop(T vm) throws ResourceUnavailableException;
     
     /**
      * Produce a cleanup command to be sent to the agent to cleanup anything

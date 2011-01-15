@@ -416,6 +416,8 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     @Override
     public boolean removeAllLoadBalanacers(Ip ip) {   
         List<FirewallRuleVO> rules = _rulesDao.listByIpAndNotRevoked(ip);
+        if (rules != null)
+        s_logger.debug("Found " + rules.size() + " lb rules to cleanup");
         for (FirewallRule rule : rules) {
             if (rule.getPurpose() == Purpose.LoadBalancing) {
                 boolean result = deleteLoadBalancerRule(rule.getId(), true);

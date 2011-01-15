@@ -370,9 +370,7 @@ public interface ManagementServer extends ManagementService {
 	String getConsoleAccessUrlRoot(long vmId);
 	ConsoleProxyVO findConsoleProxyById(long instanceId);
 	VMInstanceVO findSystemVMById(long instanceId);
-	
 	VirtualMachine startSystemVm(long vmId);
-	VirtualMachine stopSystemVm(long vmId);
 
 	/**
 	 * Returns a configuration value with the specified name

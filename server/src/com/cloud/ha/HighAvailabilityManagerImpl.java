@@ -915,7 +915,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         	} else {
         		assert false : "Who decided there's other steps but didn't modify the guy who does the work?";
         	}
-        } catch (final AgentUnavailableException e) {
+        } catch (final ResourceUnavailableException e) {
             s_logger.debug("Agnet is not available" + e.getMessage());
         } catch (OperationTimedoutException e) {
         	s_logger.debug("operation timed out: " + e.getMessage());

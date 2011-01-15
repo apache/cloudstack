@@ -51,6 +51,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
@@ -141,6 +142,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
     @Inject protected GuestOSCategoryDao _guestOsCategoryDao;
     @Inject protected GuestOSDao _guestOsDao;
     @Inject protected VolumeDao _volsDao;
+    @Inject protected ConsoleProxyManager _consoleProxyMgr;
     
     @Inject(adapter=DeploymentPlanner.class)
     protected Adapters<DeploymentPlanner> _planners;
@@ -552,16 +554,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
         ItWorkVO work = start.third();
         
         T startedVm = null;
+        ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
+        VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
+        DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodId(), null, null);
+        HypervisorGuru hvGuru = _hvGurus.get(vm.getHypervisorType());
+        VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, null, params);
+        
         
         try {
-            ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
-            VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
-            
-            DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodId(), null, null);
-            
-            HypervisorGuru hvGuru = _hvGurus.get(vm.getHypervisorType());
-            VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, null, params);
-    
             Journal journal = start.second().getJournal();
             
             ExcludeList avoids = new ExcludeList();
