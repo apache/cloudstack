@@ -24,11 +24,11 @@
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
             <%=t.t("Details")%></div>		
-		<div class="content_tabs off" id="tab_port_forwarding">
+		<div class="content_tabs off" id="tab_port_forwarding" style="display: none">
             <%=t.t("Port Forwarding")%></div>
-        <div class="content_tabs off" id="tab_load_balancer">
+        <div class="content_tabs off" id="tab_load_balancer" style="display: none">
             <%=t.t("Load Balancer")%></div>
-		<div class="content_tabs off" id="tab_vpn">
+		<div class="content_tabs off" id="tab_vpn" style="display: none">
             <%=t.t("VPN")%></div>
     </div>  
     <div id="tab_content_details">

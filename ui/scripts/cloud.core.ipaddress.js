@@ -1189,6 +1189,16 @@ function doDisableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {
 }
 //***** Details tab (end) ******************************************************************************************************************
 
+function ipSetRuleState(stateValue, $stateField) {
+    $stateField.text(stateValue);    
+    if(stateValue == "Active")  //green      
+        $stateField.removeClass("status_red status_gray").addClass("status_green");
+    else if(stateValue == "Deleting") //red
+        $stateField.removeClass("status_green status_gray").addClass("status_red");
+    else //gray
+        $stateField.removeClass("status_red status_green").addClass("status_gray");
+}
+
 //***** Port Forwarding tab (begin) ********************************************************************************************************
 function ipClearPortForwardingTab() {
    $("#tab_content_port_forwarding #grid_content").empty(); 
@@ -1211,9 +1221,8 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     $template.find("#row_container #vm_name").text(vmName);		    
     var virtualMachineId = fromdb(jsonObj.virtualmachineid);
    
-    $template.find("#row_container #state").text(fromdb(jsonObj.state));
-    $template.find("#row_container_edit #state").text(fromdb(jsonObj.state));
-   
+    ipSetRuleState(fromdb(jsonObj.state), $template.find("#row_container #state"));
+    
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     if($midmenuItem1 == null)
         return;    
@@ -1438,8 +1447,8 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
     $template.find("#row_container #algorithm").text(fromdb(jsonObj.algorithm));	
     $template.find("#row_container_edit #algorithm_select").val(fromdb(jsonObj.algorithm));			    	    
      
-    $template.find("#row_container #state").text(fromdb(jsonObj.state));	
-        
+    ipSetRuleState(fromdb(jsonObj.state), $template.find("#row_container #state")); 
+            
     $template.find("#manage_link").unbind("click").bind("click", function(event){	
         var $managementArea = $template.find("#management_area");
         var $vmSubgrid = $managementArea.find("#subgrid_content");
