@@ -1721,6 +1721,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             templateHostVO.setPhysicalSize(answer.getphysicalSize());
             _templateHostDao.persist(templateHostVO);
 
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, privateTemplate.getAccountId(), secondaryStorageHost.getDataCenterId(), privateTemplate.getId(), privateTemplate.getName(), null, null , templateHostVO.getSize());
+            _usageEventDao.persist(usageEvent);
+            
             // Increment the number of templates
             _accountMgr.incrementResourceCount(volume.getAccountId(), ResourceType.template);
 
