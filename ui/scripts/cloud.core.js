@@ -783,7 +783,7 @@ function switchToTab(tabIndex, tabArray, tabContentArray, afterSwitchFnArray) {
 function updateVmStateInMidMenu(jsonObj, $midmenuItem1) {         
     if(jsonObj.state == "Running")
         $midmenuItem1.find("#icon").attr("src", "images/status_green.png");
-    else if(jsonObj.state == "Stopped")
+    else if(jsonObj.state == "Stopped" || jsonObj.state == "Error")
         $midmenuItem1.find("#icon").attr("src", "images/status_red.png");
     else  //Destroyed, Creating, ~                                  
         $midmenuItem1.find("#icon").attr("src", "images/status_gray.png");
@@ -852,7 +852,7 @@ function resetViewConsoleAction(jsonObj, $detailsTab) {
 function setVmStateInRightPanel(stateValue, $stateField) {    
     if(stateValue == "Running")
         $stateField.text(stateValue).removeClass("red gray").addClass("green");
-    else if(stateValue == "Stopped")
+    else if(stateValue == "Stopped" || stateValue == "Error")
         $stateField.text(stateValue).removeClass("green gray").addClass("red");
     else  //Destroyed, Creating, ~                                  
         $stateField.text(stateValue).removeClass("green red").addClass("gray");            			       
