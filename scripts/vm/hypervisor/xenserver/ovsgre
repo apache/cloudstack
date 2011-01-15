@@ -285,7 +285,7 @@ def ovs_create_gre (session, args):
 	addBridge = [vsctlPath, "add bridge %s" % bridge, "ports %s" % portUUID]
 	do_cmd (addBridge)
 
-	wait = [vsctlPath, "--timeout=5 wait-until port %s -- get port %s name" % \
+	wait = [vsctlPath, "--timeout=30 wait-until port %s -- get port %s name" % \
 			(name, name)]
 	res = do_cmd(wait)
 	if name in res:
@@ -446,11 +446,6 @@ def del_arp_and_dhcp_flow(bridge, vlan, inPort):
 	flow = ["ovs-ofctl del-flows %s" % bridge, '"%s"' % param]
 	do_cmd(flow)
 
-def del_drop_flow(bridge, vlan):
-	param = "priority=0 dl_vlan=%s" % vlan
-	flow = ["ovs-ofctl del-flows %s" % bridge, '"%s"' % param]
-	do_cmd(flow)
-
 def format_normal_flow():
 	flow = "priority=0 idle_timeout=0 hard_timeout=0 actions=normal"
 	return flow
@@ -573,14 +568,6 @@ def delete_vm_flows(bridge, vmName, reCreate=True):
 			pr(e.__str__())
 			pr("invalid map")
 	
-	for v in vlans:
-		try:
-			(vlan, inport) = v.split(":")
-			del_drop_flow(bridge, vlan)
-		except Exception, e:
-			pr(e.__str__())
-			pr("invalid map")
-
 	if reCreate == False:
 		return
 
