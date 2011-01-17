@@ -78,7 +78,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             // validate that the template is usable by the account
             if (!template.isPublicTemplate()) {
                 Account owner = _accountDao.findById(template.getAccountId());
-                if (BaseCmd.isAdmin(owner.getType()) || (owner.getId() != account.getId())) {
+                if (BaseCmd.isAdmin(owner.getType()) || (owner.getId() == account.getId())) {
                     return true;
                 }
                 

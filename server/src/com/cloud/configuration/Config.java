@@ -165,7 +165,7 @@ public enum Config {
 	NetworkGcWait("Advanced", ManagementServer.class, Integer.class, "network.gc.wait", "600", "Seconds to wait before shutting down a network that's not in used", null),
 	NetworkGcInterval("Advanced", ManagementServer.class, Integer.class, "network.gc.interval", "600", "Seconds to wait before checking for networks to shutdown", null),
 	HostCapacityCheckerWait("Advanced", ManagementServer.class, Integer.class, "host.capacity.checker.wait", "3600", "Seconds to wait before starting host capacity background checker", null),
-	HostCapacityCheckerInterval("Advanced", ManagementServer.class, Integer.class, "host.capacity.checker.interval", "3600", "Seconds to wait before starting host capacity background checker", null),
+	HostCapacityCheckerInterval("Advanced", ManagementServer.class, Integer.class, "host.capacity.checker.interval", "3600", "Seconds to wait before recalculating host's capacity", null),
 	VmHostCapacityReleaseInterval("Advanced", ManagementServer.class, Integer.class, "vm.resource.release.interval", "86400", "Seconds to wait before release VM's cpu and memory when VM in stopped state", null),
 	
 	VmTransitionWaitInterval("Advanced", ManagementServer.class, Integer.class, "vm.tranisition.wait.interval", "3600", "Seconds to wait before taking over a VM in transition state", null),
