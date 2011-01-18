@@ -147,7 +147,6 @@ if [ -n "$cksum" ]
 then
   verify_cksum $cksum $tmpltimg
 fi
-
 tmpltimg2=$(uncompress $tmpltimg)
 rollback_if_needed $tmpltfs $? "failed to uncompress $tmpltimg\n"
 
@@ -156,10 +155,10 @@ rollback_if_needed $tmpltfs $? "tar archives not supported\n"
 
 if [ ${tmpltname%.vhd} != ${tmpltname} ]
 then
-  if  which  vhd-util 2>/dev/null
+  if  which  vhd-util &>/dev/null
   then 
     vhd-util check -n ${tmpltimg2} > /dev/null
-    rollback_if_needed $tmpltfs $? "vhd tool check $tmpltimg2 failed\n"
+    rollback_if_needed $tmpltfs $? "vhd check of $tmpltimg2 failed\n"
   fi
 fi
 

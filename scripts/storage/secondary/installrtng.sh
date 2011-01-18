@@ -89,6 +89,7 @@ mkdir -p $destdir
 if [ $? -ne 0 ]
 then
   printf "Failed to write to mount point $mntpoint -- is it mounted?\n"
+  exit 3
 fi
 
 if [ "$Fflag" == "1" ]
@@ -120,6 +121,7 @@ touch $tmpfile
 if [ $? -ne 0 ]
 then
   printf "Failed to create temporary file in directory $(dirname $0) -- is it read-only or full?\n"
+  exit 4
 fi
 
 if [ "$uflag" == "1" ]
@@ -139,15 +141,17 @@ then
   if [ $? -ne 0 ]
   then
     printf "Failed to create temporary file in directory $(dirname $0) -- is it read-only or full?\n"
+    exit 6
   fi
 fi
 
 
-$(dirname $0)/createtmplt.sh -s 2 -d 'SystemVM Template' -n $localfile -t $destdir/ -f $tmpfile -u  &> /dev/null
+installrslt=$($(dirname $0)/createtmplt.sh -s 2 -d 'SystemVM Template' -n $localfile -t $destdir/ -f $tmpfile -u)
 
 if [ $? -ne 0 ]
 then
-  echo "Failed to install system vm template $tmpltimg to $destdir"
+  echo "Failed to install system vm template $tmpltimg to $destdir: $installrslt"
+  exit 7
 fi
 
 if [ "$ext" == "ova" ]
