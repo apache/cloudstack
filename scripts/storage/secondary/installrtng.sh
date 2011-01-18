@@ -6,11 +6,17 @@ usage() {
   printf "%s: -m <secondary storage mount point> -u <http url for system vm template> [-h <hypervisor name: kvm|vmware|xenserver>]\n" $(basename $0) >&2
 }
 
+failed() {
+  echo "Installation failed"
+  exit $1
+}
+
 mflag=
 fflag=
 ext="vhd"
 templateId=1
 hyper=
+DISKSPACE=10000000  #free disk space required in kilobytes
 while getopts 'm:h:f:u:Ft:e:' OPTION
 do
   case $OPTION in
@@ -31,7 +37,7 @@ do
   h)    hyper="$OPTARG"
   		;;
   ?)	usage
-		exit 2
+		failed 2
 		;;
   esac
 done
@@ -39,19 +45,19 @@ done
 if [[ "$mflag$fflag" != "11"  && "$mflag$uflag" != "11" ]]
 then
   usage
-  exit 2
+  failed 2
 fi
 
 if [ -z "$hyper" ]
 then
   usage
-  exit 2
+  failed 2
 fi
 
 if [[ "$fflag" == "1" && ! -f $tmpltimg ]] 
 then
   echo "template image file $tmpltimg doesn't exist"
-  exit 3
+  failed 3
 fi
 
 if [ "$hyper" == "kvm" ]
@@ -68,7 +74,7 @@ then
    templateId=8
 else
    usage
-   exit 2
+   failed 2
 fi
    
 
@@ -78,7 +84,7 @@ localfile=$(uuidgen).$ext
 if [ ! -d $mntpoint ] 
 then
   echo "mount point $mntpoint doesn't exist\n"
-  exit 4
+  failed 4
 fi
 
 mntpoint=`echo "$mntpoint" | sed 's|/*$||'`
@@ -89,7 +95,7 @@ mkdir -p $destdir
 if [ $? -ne 0 ]
 then
   printf "Failed to write to mount point $mntpoint -- is it mounted?\n"
-  exit 3
+  failed 3
 fi
 
 if [ "$Fflag" == "1" ]
@@ -98,21 +104,21 @@ then
   if [ $? -ne 0 ]
   then
     echo "Failed to clean up template directory $destdir -- check permissions?"
-    exit 2
+    failed 2
   fi
 fi
 
 if [ -f $destdir/template.properties ]
 then
   echo "Data already exists at destination $destdir -- use -f to force cleanup of old template"
-  exit 4
+  failed 4
 fi
 
 destvhdfiles=$(find $destdir -name \*.$ext)
 if [ "$destvhdfiles" != "" ]
 then
   echo "Data already exists at destination $destdir -- use -F to force cleanup of old template"
-  exit 5
+  failed 5
 fi
 
 tmpfile=$(dirname $0)/$localfile
@@ -121,8 +127,14 @@ touch $tmpfile
 if [ $? -ne 0 ]
 then
   printf "Failed to create temporary file in directory $(dirname $0) -- is it read-only or full?\n"
-  exit 4
+  failed 4
 fi
+
+destcap=$(df -P $destdir | awk '{print $4}' | tail -1 )
+[ $destcap -lt $DISKSPACE ] && echo "Insufficient free disk space for target folder $destdir: avail=${destcap}k req=${DISKSPACE}k" && failed 4
+
+localcap=$(df -P $(dirname $0) | awk '{print $4}' | tail -1 )
+[ $localcap -lt $DISKSPACE ] && echo "Insufficient free disk space for local temporary folder $(dirname $0): avail=${localcap}k req=${DISKSPACE}k" && failed 4
 
 if [ "$uflag" == "1" ]
 then
@@ -130,7 +142,7 @@ then
   if [ $? -ne 0 ]
   then
     echo "Failed to fetch system vm template from $url"
-    exit 5
+    failed 5
   fi
 fi
 
@@ -141,7 +153,7 @@ then
   if [ $? -ne 0 ]
   then
     printf "Failed to create temporary file in directory $(dirname $0) -- is it read-only or full?\n"
-    exit 6
+    failed 6
   fi
 fi
 
@@ -151,7 +163,7 @@ installrslt=$($(dirname $0)/createtmplt.sh -s 2 -d 'SystemVM Template' -n $local
 if [ $? -ne 0 ]
 then
   echo "Failed to install system vm template $tmpltimg to $destdir: $installrslt"
-  exit 7
+  failed 7
 fi
 
 if [ "$ext" == "ova" ]
