@@ -1019,7 +1019,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
             network.setState(Network.State.Implementing);
-            network.setReservationId(context.getReservationId());
+            
             _networksDao.update(networkId, network);
 
             Network result = guru.implement(network, offering, dest, context);
@@ -1038,6 +1038,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 element.implement(network, offering, dest, context);
             }
 
+            network.setReservationId(context.getReservationId());
             network.setState(Network.State.Implemented);
             _networksDao.update(network.getId(), network);
             implemented.set(guru, network);
@@ -1675,6 +1676,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         txn.start();
         if (success) {
             if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Network id=" + networkId + " is shutdown successfully, cleaning up corresponding resources now.");
             }
             NetworkGuru guru = _networkGurus.get(network.getGuruName());
             guru.destroy(network, _networkOfferingDao.findById(network.getNetworkOfferingId()));
@@ -1732,7 +1734,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                             s_logger.debug("We found network " + networkId + " to be free for the first time.  Adding it to the list: " + currentTime);
                         }
                         stillFree.put(networkId, currentTime);
-                    } else if (time < (currentTime + _networkGcWait)) {
+                    } else if (time > (currentTime - _networkGcWait)) {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Network " + networkId + " is still free but it's not time to shutdown yet: " + time);
                         }
@@ -1919,6 +1921,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         return networks;
+    }
+    
+    @Override
+    public void resetBroadcastUri(long networkId) {
+        NetworkVO network = _networksDao.findById(networkId);
+        network.setBroadcastUri(null);
+        _networksDao.update(networkId, network);
     }
 
 }
