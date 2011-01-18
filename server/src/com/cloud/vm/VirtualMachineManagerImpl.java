@@ -558,7 +558,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodId(), null, null);
         HypervisorGuru hvGuru = _hvGurus.get(vm.getHypervisorType());
-        VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, null, params);
         
         
         try {
@@ -567,7 +566,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
             ExcludeList avoids = new ExcludeList();
             int retry = _retry;
             while (retry-- != 0) { // It's != so that it can match -1.
-                
+            	//Note: need to re-intialize vmProfile in every re-try, or you will got a lot of duplicate disks and nics.
+            	VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, null, params);
+            	
                 DeployDestination dest = null;
                 for (DeploymentPlanner planner : _planners) {
                     dest = planner.plan(vmProfile, plan, avoids);

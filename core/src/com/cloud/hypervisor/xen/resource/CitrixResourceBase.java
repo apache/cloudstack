@@ -172,6 +172,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.resource.StoragePoolResource;
@@ -741,18 +742,28 @@ public abstract class CitrixResourceBase implements ServerResource {
         
         if (!(guestOsTypeName.startsWith("Windows") || guestOsTypeName.startsWith("Citrix") || guestOsTypeName.startsWith("Other"))) {
             if (vmSpec.getBootloader() == BootloaderType.CD) {
-                vm.setPVBootloader(conn, "eliloader");
-                Map<String, String> otherConfig = vm.getOtherConfig(conn);
-                otherConfig.put( "install-repository", "cdrom");
-                vm.setOtherConfig(conn, otherConfig);
+            	VolumeTO [] disks = vmSpec.getDisks();
+            	for (VolumeTO disk : disks) {
+            		if (disk.getType() == Volume.VolumeType.ISO && disk.getOsType() != null) {
+            			String isoGuestOsName = getGuestOsType(disk.getOsType(), vmSpec.getBootloader() == BootloaderType.CD);
+            			if (!isoGuestOsName.equals(guestOsTypeName)) {
+            				vmSpec.setBootloader(BootloaderType.PyGrub);
+            			}
+            		}
+            	}
+            }
+            if (vmSpec.getBootloader() == BootloaderType.CD) {
+            	vm.setPVBootloader(conn, "eliloader");
+            	Map<String, String> otherConfig = vm.getOtherConfig(conn);
+            	otherConfig.put( "install-repository", "cdrom");
+            	vm.setOtherConfig(conn, otherConfig);
             } else if (vmSpec.getBootloader() == BootloaderType.PyGrub ){
-                vm.setPVBootloader(conn, "pygrub");
+            	vm.setPVBootloader(conn, "pygrub");
             } else {
-                vm.destroy(conn);
-                throw new CloudRuntimeException("Unable to handle boot loader type: " + vmSpec.getBootloader());
+            	vm.destroy(conn);
+            	throw new CloudRuntimeException("Unable to handle boot loader type: " + vmSpec.getBootloader());
             }
         }
-        
         return vm;
     }
     

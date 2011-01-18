@@ -37,6 +37,7 @@ public class VolumeTO {
     private String storagePoolUuid;
     private long deviceId;
     private String chainInfo;
+    private String guestOsType;
     
     public VolumeTO(long id, Volume.VolumeType type, Storage.StorageResourceType resourceType, StoragePoolType poolType, 
     	String poolUuid, String name, String mountPoint, String path, long size, String chainInfo) {
@@ -51,6 +52,21 @@ public class VolumeTO {
         this.mountPoint = mountPoint;
         this.chainInfo = chainInfo;
     }
+    
+    public VolumeTO(long id, Volume.VolumeType type, Storage.StorageResourceType resourceType, StoragePoolType poolType, 
+        	String poolUuid, String name, String mountPoint, String path, long size, String chainInfo, String guestOsType) {
+            this.id = id;
+            this.name= name;
+            this.path = path;
+            this.size = size;
+            this.type = type;
+            this.resourceType = resourceType;
+            this.storagePoolType = poolType;
+            this.storagePoolUuid = poolUuid;
+            this.mountPoint = mountPoint;
+            this.chainInfo = chainInfo;
+            this.guestOsType = guestOsType;
+        }
     
     public VolumeTO(Volume volume, StoragePool pool) {
         this.id = volume.getId();
@@ -113,6 +129,10 @@ public class VolumeTO {
     
     public String getChainInfo() {
     	return chainInfo;
+    }
+    
+    public String getOsType() {
+    	return guestOsType;
     }
     
     @Override
