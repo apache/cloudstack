@@ -26,8 +26,8 @@ echo CLASSPATH to run the agent: "$CLASSPATH"
 export PATH=/sbin:/usr/sbin:"$PATH"
 SERVICEARGS=
 for x in private public ; do
-	configuration=`grep -q "^$x.network.device" "@AGENTSYSCONFDIR@"/agent.properties`
-	if [ $? -eq 0 ] ; then
+	configuration=`grep "^$x.network.device" "@AGENTSYSCONFDIR@"/agent.properties||true`
+	if [ -n "$configuration" ] ; then
 		echo "Using manually-configured network device $CONFIGURATION"
 	else
 		defaultroute=`ip route | grep ^default | cut -d ' ' -f 5`
