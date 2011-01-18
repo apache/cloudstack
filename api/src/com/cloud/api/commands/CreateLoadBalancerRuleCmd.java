@@ -51,14 +51,14 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="name of the load balancer rule")
     private String loadBalancerRuleName;
 
-    @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.STRING, required=true, description="the private port of the private ip address/virtual machine where the network traffic will be load balanced to")
-    private String privatePort;
+    @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.INTEGER, required=true, description="the private port of the private ip address/virtual machine where the network traffic will be load balanced to")
+    private Integer privatePort;
 
     @Parameter(name=ApiConstants.PUBLIC_IP, type=CommandType.STRING, required=true, description="public ip address from where the network traffic will be load balanced from")
     private String publicIp;
 
-    @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.STRING, required=true, description="the public port from where the network traffic will be load balanced from")
-    private String publicPort;
+    @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.INTEGER, required=true, description="the public port from where the network traffic will be load balanced from")
+    private Integer publicPort;
 
 
     /////////////////////////////////////////////////////
@@ -79,7 +79,7 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
         return loadBalancerRuleName;
     }
 
-    public String getPrivatePort() {
+    public Integer getPrivatePort() {
         return privatePort;
     }
 
@@ -87,7 +87,7 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
         return publicIp;
     }
 
-    public String getPublicPort() {
+    public Integer getPublicPort() {
         return publicPort;
     }
     
@@ -136,12 +136,12 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
 
     @Override
     public int getSourcePortStart() {
-        return Integer.parseInt(publicPort);
+        return publicPort.intValue();
     }
 
     @Override
     public int getSourcePortEnd() {
-        return Integer.parseInt(publicPort);
+        return publicPort.intValue();
     }
 
     @Override
@@ -176,12 +176,12 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
 
     @Override
     public int getDefaultPortStart() {
-        return Integer.parseInt(privatePort);
+        return privatePort.intValue();
     }
 
     @Override
     public int getDefaultPortEnd() {
-        return Integer.parseInt(privatePort);
+        return privatePort.intValue();
     }
 
 }
