@@ -110,11 +110,14 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 			throws ConfigurationException {
 		_name = name;
 		_isEnabled = Boolean.parseBoolean(_configDao.getValue(Config.OvsNetwork.key()));
-		_serverId = ((ManagementServer)ComponentLocator.getComponent(ManagementServer.Name)).getId();
-	    _executorPool = Executors.newScheduledThreadPool(10, new NamedThreadFactory("OVS"));
-	    _cleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("OVS-Cleanup"));
-	    _ovsListener = new OvsListener(this, _workDao, _tunnelDao, _vlanMappingDao, _hostDao);
-	    _agentMgr.registerForHostEvents(_ovsListener, true, true, true);
+		
+		if (_isEnabled) {
+			_serverId = ((ManagementServer)ComponentLocator.getComponent(ManagementServer.Name)).getId();
+			_executorPool = Executors.newScheduledThreadPool(10, new NamedThreadFactory("OVS"));
+			_cleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("OVS-Cleanup"));
+			_ovsListener = new OvsListener(this, _workDao, _tunnelDao, _vlanMappingDao, _hostDao);
+			_agentMgr.registerForHostEvents(_ovsListener, true, true, true);
+		}
 		
 		return true;
 	}
