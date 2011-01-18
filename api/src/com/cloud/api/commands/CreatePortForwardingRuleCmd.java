@@ -47,14 +47,14 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the IP address of the port forwarding rule")
     private String ipAddress;
 
-    @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.STRING, required=true, description="the private port of the port forwarding rule")
-    private String privatePort;
+    @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.INTEGER, required=true, description="the private port of the port forwarding rule")
+    private Integer privatePort;
 
     @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, required=true, description="the protocol for the port fowarding rule. Valid values are TCP or UDP.")
     private String protocol;
 
-    @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.STRING, required=true, description="	the public port of the port forwarding rule")
-    private String publicPort;
+    @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.INTEGER, required=true, description="	the public port of the port forwarding rule")
+    private Integer publicPort;
 
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the ID of the virtual machine for the port forwarding rule")
     private Long virtualMachineId;
@@ -68,8 +68,8 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
         return ipAddress;
     }
 
-    public String getPrivatePort() {
-        return privatePort.trim();
+    public Integer getPrivatePort() {
+        return privatePort;
     }
 
     @Override
@@ -77,8 +77,8 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
         return protocol.trim();
     }
 
-    public String getPublicPort() {
-        return publicPort.trim();
+    public Integer getPublicPort() {
+        return publicPort;
     }
     
     @Override
@@ -138,12 +138,12 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
 
     @Override
     public int getSourcePortStart() {
-        return Integer.parseInt(publicPort.trim());
+        return publicPort.intValue();
     }
 
     @Override
     public int getSourcePortEnd() {
-        return Integer.parseInt(publicPort.trim());
+        return publicPort.intValue();
     }
 
     @Override
@@ -178,12 +178,12 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
 
     @Override
     public int getDestinationPortStart() {
-        return Integer.parseInt(privatePort.trim());
+        return privatePort.intValue();
     }
 
     @Override
     public int getDestinationPortEnd() {
-        return Integer.parseInt(privatePort.trim());
+        return privatePort.intValue();
     }
 
     @Override
