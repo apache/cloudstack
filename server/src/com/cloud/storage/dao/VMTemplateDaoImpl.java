@@ -357,9 +357,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
         if (isIso) {
             sql += " t.format = 'ISO'";
-            if (accountType == Account.ACCOUNT_TYPE_NORMAL){
-            	sql += " AND t.public = 1 ";
-            }
+//            if (accountType == Account.ACCOUNT_TYPE_NORMAL){
+//            	sql += " AND t.public = 1 ";
+//            }
             if (!hyperType.equals(HypervisorType.None)) {
             	sql += " AND goh.hypervisor_type = '" + hyperType.toString() + "'";
             }
