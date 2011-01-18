@@ -129,7 +129,10 @@ function afterLoadInstanceJSP() {
     initDialog("dialog_confirmation_stop_vm");
     initDialog("dialog_confirmation_reboot_vm");
     initDialog("dialog_confirmation_destroy_vm");
-    initDialog("dialog_confirmation_restore_vm");    
+    
+    if(isAdmin() || isDomainAdmin())
+        initDialog("dialog_confirmation_restore_vm");   
+     
     initDialog("dialog_confirmation_start_router");
     initDialog("dialog_confirmation_stop_router");
     initDialog("dialog_confirmation_reboot_router");    
@@ -1707,9 +1710,8 @@ function vmJsonToDetailsTab(){
 			   
 	// Show State of the VM
 	if (jsonObj.state == 'Destroyed') {
-		buildActionLinkForTab("Restore Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
-		//to hide view console in details tab....(to-do)
-		//to hide volume tab....(to-do)	
+	    if(isAdmin() || isDomainAdmin())
+		    buildActionLinkForTab("Restore Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);		
 	} 
 	else if (jsonObj.state == 'Running') {
 		//instanceTemplate.find("#vm_action_start, #vm_action_reset_password, #vm_action_change_service").removeClass().addClass("vmaction_links_off");
