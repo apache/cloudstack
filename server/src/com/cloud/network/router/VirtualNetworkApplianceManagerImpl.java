@@ -369,6 +369,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (newServiceOffering == null) {
             throw new InvalidParameterValueException("Unable to find service offering with id " + serviceOfferingId);
         }
+        
+     // Check that the router is stopped
+        if (!router.getState().equals(State.Stopped)) {
+            s_logger.warn("Unable to upgrade router " + router.toString() + " in state " + router.getState());
+            throw new InvalidParameterValueException("Unable to upgrade router " + router.toString() + " in state " + router.getState() + "; make sure the router is stopped and not in an error state before upgrading.");
+        }
 
         ServiceOfferingVO currentServiceOffering = _serviceOfferingDao.findById(router.getServiceOfferingId());
 
