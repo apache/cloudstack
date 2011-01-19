@@ -99,7 +99,7 @@ public enum Config {
 	ConsoleProxyRamSize("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.ram.size", "1024", "RAM size (in MB) used to create new console proxy VMs", null),
 	ConsoleProxySessionMax("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.session.max", "50", "The max number of viewer sessions console proxy is configured to serve for", null),
 	ConsoleProxySessionTimeout("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.session.timeout", "300000", "Timeout(in milliseconds) that console proxy tries to maintain a viewer session before it times out the session for no activity", null),
-	ConsoleProxyDisableRpFilter("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.disable.rpfilter", "false", "disable rp_filter on console proxy VM public interface", null),
+	ConsoleProxyDisableRpFilter("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.disable.rpfilter", "true", "disable rp_filter on console proxy VM public interface", null),
 	
 	// ConsoleProxyURLPort("Console Proxy", ManagementServer.class, Integer.class, "consoleproxy.url.port", "80", "Console proxy port for AJAX viewer", null),
 	
