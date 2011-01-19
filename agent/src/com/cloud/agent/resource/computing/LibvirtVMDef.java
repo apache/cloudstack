@@ -303,7 +303,12 @@ public class LibvirtVMDef {
 			_bus = bus;
 
 		}
+		/*device id starting from 0, but iso is 3*/
 		private String getDevLabel(int devId, diskBus bus) {
+			if ( devId >= 2 ) {
+				devId++;
+			}
+			
 			char suffix = (char)('a' + devId);
 			if (bus == diskBus.SCSI) {
 				return "sd" + suffix;
@@ -311,7 +316,9 @@ public class LibvirtVMDef {
 				return "vd" + suffix;
 			}
 			return "hd" + suffix;
+			
 		}
+		
 		public void defFileBasedDisk(String filePath, int devId, diskBus bus, diskFmtType diskFmtType) {
 			
 			_diskType = diskType.FILE;

@@ -2257,12 +2257,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 					disk.defISODisk(volPath);
 				}
 			} else {
-				int devId = 0;
-				if (volume.getType() == VolumeType.ROOT) {
-					devId = 0;
-				} else {
-					devId = 1;
-				}
+				int devId = (int)volume.getDeviceId();
+				
 				disk.defFileBasedDisk(volume.getPath(), devId, diskBusType, DiskDef.diskFmtType.QCOW2);
 			}
 
