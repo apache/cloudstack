@@ -245,6 +245,10 @@ public class VolumeVO implements Volume {
         return recreatable;
     }
     
+    public void setRecreatable(boolean recreatable) {
+        this.recreatable = recreatable;
+    }
+    
     public String getIscsiName() {
 		return iscsiName;
 	}

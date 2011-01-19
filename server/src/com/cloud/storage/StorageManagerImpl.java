@@ -165,6 +165,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -2194,7 +2195,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         				}
            				else if(restart)
         				{
-    						if(_routerMgr.stopRouter(vmInstance.getId()) == null)
+    						if(_routerMgr.startRouter(vmInstance.getId()) == null)
     						{
     						    String errorMsg = "There was an error starting the domain router id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance";
     							s_logger.warn(errorMsg);
@@ -2519,6 +2520,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         
         if(type.equals(VolumeType.ROOT)) {
             vol.setDeviceId(0l);
+            if(!vm.getType().equals(Type.User))
+            	vol.setRecreatable(true);
         } else {
             vol.setDeviceId(1l);
         }
