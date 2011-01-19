@@ -334,7 +334,10 @@ function isoJsonToDetailsTab() {
     var noAvailableActions = true;
 
     // "Edit ISO", "Copy ISO"
-	if ((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == false) {		
+	if ((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) 
+	    || (jsonObj.isready == false)
+	    || (jsonObj.domainid ==	-1)
+	    ) {		
 		//do nothing
     }
     else {        
@@ -348,7 +351,12 @@ function isoJsonToDetailsTab() {
 	// "Create VM"
 	// Commenting this out for Beta2 as it does not support the new network.
 	/*
-	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) || jsonObj.isready == false) || (jsonObj.bootable == false)) {
+	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) 
+	    || jsonObj.isready == false) 
+	    || (jsonObj.bootable == false)
+	    || (jsonObj.domainid ==	-1)
+	    ) {
+	    //do nothing
 	}
     else {        
         buildActionLinkForTab("Create VM", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
@@ -357,7 +365,10 @@ function isoJsonToDetailsTab() {
 	*/
     
 	// "Download ISO"
-	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) || (jsonObj.isready == false)) {
+	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
+	    || (jsonObj.isready == false)
+	    || (jsonObj.domainid ==	-1)
+	    ) {
 	    //do nothing
 	}
 	else {	    
@@ -366,7 +377,10 @@ function isoJsonToDetailsTab() {
 	}    		   
 	
 	// "Delete ISO"
-	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) || (jsonObj.isready == false && jsonObj.status != null && jsonObj.status.indexOf("Downloaded") != -1)) {
+	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
+	    || (jsonObj.isready == false && jsonObj.status != null && jsonObj.status.indexOf("Downloaded") != -1)
+	    || (jsonObj.domainid ==	-1)
+	    ) {
 	    //do nothing
 	}
 	else {	   	    
