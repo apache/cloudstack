@@ -111,6 +111,8 @@ public class Session extends XenAPIObject {
             print.printf("%1$20s: %2$s\n", "authUserSid", this.authUserSid);
             print.printf("%1$20s: %2$s\n", "authUserName", this.authUserName);
             print.printf("%1$20s: %2$s\n", "rbacPermissions", this.rbacPermissions);
+            print.printf("%1$20s: %2$s\n", "tasks", this.tasks);
+            print.printf("%1$20s: %2$s\n", "parent", this.parent);
             return writer.toString();
         }
 
@@ -131,11 +133,13 @@ public class Session extends XenAPIObject {
             map.put("auth_user_sid", this.authUserSid == null ? "" : this.authUserSid);
             map.put("auth_user_name", this.authUserName == null ? "" : this.authUserName);
             map.put("rbac_permissions", this.rbacPermissions == null ? new LinkedHashSet<String>() : this.rbacPermissions);
+            map.put("tasks", this.tasks == null ? new LinkedHashSet<Task>() : this.tasks);
+            map.put("parent", this.parent == null ? new Session("OpaqueRef:NULL") : this.parent);
             return map;
         }
 
         /**
-         * unique identifier/object reference
+         * Unique identifier/object reference
          */
         public String uuid;
         /**
@@ -182,6 +186,14 @@ public class Session extends XenAPIObject {
          * list with all RBAC permissions for this session
          */
         public Set<String> rbacPermissions;
+        /**
+         * list of tasks created using the current session
+         */
+        public Set<Task> tasks;
+        /**
+         * references the parent session that created this session
+         */
+        public Session parent;
     }
 
     /**
@@ -421,6 +433,40 @@ public class Session extends XenAPIObject {
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
             return Types.toSetOfString(result);
+    }
+
+    /**
+     * Get the tasks field of the given session.
+     *
+     * @return value of the field
+     */
+    public Set<Task> getTasks(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "session.get_tasks";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toSetOfTask(result);
+    }
+
+    /**
+     * Get the parent field of the given session.
+     *
+     * @return value of the field
+     */
+    public Session getParent(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "session.get_parent";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toSession(result);
     }
 
     /**

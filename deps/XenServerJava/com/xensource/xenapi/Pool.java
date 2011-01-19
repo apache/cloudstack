@@ -163,7 +163,7 @@ public class Pool extends XenAPIObject {
         }
 
         /**
-         * unique identifier/object reference
+         * Unique identifier/object reference
          */
         public String uuid;
         /**
@@ -2175,6 +2175,88 @@ public class Pool extends XenAPIObject {
         String method_call = "pool.set_vswitch_controller";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(address)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * This call tests if a location is valid
+     *
+     * @param config Location config settings to test
+     * @return An XMLRPC result
+     */
+    public String testArchiveTarget(Connection c, Map<String, String> config) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "pool.test_archive_target";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(config)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toString(result);
+    }
+
+    /**
+     * This call attempts to enable pool-wide local storage caching
+     *
+     * @return Task
+     */
+    public Task enableLocalStorageCachingAsync(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.pool.enable_local_storage_caching";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * This call attempts to enable pool-wide local storage caching
+     *
+     */
+    public void enableLocalStorageCaching(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "pool.enable_local_storage_caching";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * This call disables pool-wide local storage caching
+     *
+     * @return Task
+     */
+    public Task disableLocalStorageCachingAsync(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.pool.disable_local_storage_caching";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * This call disables pool-wide local storage caching
+     *
+     */
+    public void disableLocalStorageCaching(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "pool.disable_local_storage_caching";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         return;
     }

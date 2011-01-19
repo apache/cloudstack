@@ -1,7 +1,7 @@
 XenServerJava
 =============
 
-Version 5.6.0-1.
+Version 5.6.100-1.
 
 XenServerJava is a complete SDK for Citrix XenServer, exposing the XenServer
 API as Java classes.

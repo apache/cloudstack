@@ -134,10 +134,9 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             }         
             String hostname = url.getHost();
             InetAddress ia = InetAddress.getByName(hostname);
-            String hostIp = ia.getHostAddress();
-            
-            conn = _connPool.masterConnect(hostIp, username, password);
-            
+            String hostIp = ia.getHostAddress();           
+            String masterIp = _connPool.getMasterIp(hostIp, username, password);          
+            conn = _connPool.masterConnect(masterIp, username, password);
             if (conn == null) {
                 String msg = "Unable to get a connection to " + url;
                 s_logger.debug(msg);
@@ -329,7 +328,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             username = host.getDetail("username");
             password = host.getDetail("password");
             String address = host.getPrivateIpAddress();
-            Connection hostConn = XenServerConnectionPool.slaveConnect(address, username, password);
+            Connection hostConn = _connPool.slaveConnect(address, username, password);
             if (hostConn == null) {
                 continue;
             }
@@ -356,7 +355,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             throw new CloudRuntimeException("Unable to reach the pool master of the existing cluster");
         }
         
-        if( !XenServerConnectionPool.joinPool(conn, hostIp, masterIp, username, password) ){
+        if( !_connPool.joinPool(conn, hostIp, masterIp, username, password) ){
             s_logger.warn("Unable to join the pool");
             throw new DiscoveryException("Unable to join the pool");
         }   

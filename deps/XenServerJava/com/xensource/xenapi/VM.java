@@ -163,6 +163,8 @@ public class VM extends XenAPIObject {
             print.printf("%1$20s: %2$s\n", "parent", this.parent);
             print.printf("%1$20s: %2$s\n", "children", this.children);
             print.printf("%1$20s: %2$s\n", "biosStrings", this.biosStrings);
+            print.printf("%1$20s: %2$s\n", "protectionPolicy", this.protectionPolicy);
+            print.printf("%1$20s: %2$s\n", "isSnapshotFromVmpp", this.isSnapshotFromVmpp);
             return writer.toString();
         }
 
@@ -235,11 +237,13 @@ public class VM extends XenAPIObject {
             map.put("parent", this.parent == null ? new VM("OpaqueRef:NULL") : this.parent);
             map.put("children", this.children == null ? new LinkedHashSet<VM>() : this.children);
             map.put("bios_strings", this.biosStrings == null ? new HashMap<String, String>() : this.biosStrings);
+            map.put("protection_policy", this.protectionPolicy == null ? new VMPP("OpaqueRef:NULL") : this.protectionPolicy);
+            map.put("is_snapshot_from_vmpp", this.isSnapshotFromVmpp == null ? false : this.isSnapshotFromVmpp);
             return map;
         }
 
         /**
-         * unique identifier/object reference
+         * Unique identifier/object reference
          */
         public String uuid;
         /**
@@ -494,6 +498,14 @@ public class VM extends XenAPIObject {
          * BIOS strings
          */
         public Map<String, String> biosStrings;
+        /**
+         * Ref pointing to a protection policy for this VM
+         */
+        public VMPP protectionPolicy;
+        /**
+         * true if this snapshot was created by the protection policy
+         */
+        public Boolean isSnapshotFromVmpp;
     }
 
     /**
@@ -1709,6 +1721,40 @@ public class VM extends XenAPIObject {
     }
 
     /**
+     * Get the protection_policy field of the given VM.
+     *
+     * @return value of the field
+     */
+    public VMPP getProtectionPolicy(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.get_protection_policy";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toVMPP(result);
+    }
+
+    /**
+     * Get the is_snapshot_from_vmpp field of the given VM.
+     *
+     * @return value of the field
+     */
+    public Boolean getIsSnapshotFromVmpp(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.get_is_snapshot_from_vmpp";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toBoolean(result);
+    }
+
+    /**
      * Set the name/label field of the given VM.
      *
      * @param label New value to set
@@ -2541,7 +2587,7 @@ public class VM extends XenAPIObject {
     }
 
     /**
-     * Checkpoints the specified VM, making a new VM. Checkppoint automatically exploits the capabilities of the underlying storage repository in which the VM's disk images are stored (e.g. Copy on Write) and saves the memory image as well.
+     * Checkpoints the specified VM, making a new VM. Checkpoint automatically exploits the capabilities of the underlying storage repository in which the VM's disk images are stored (e.g. Copy on Write) and saves the memory image as well.
      *
      * @param newName The name of the checkpointed VM
      * @return Task
@@ -2564,7 +2610,7 @@ public class VM extends XenAPIObject {
     }
 
     /**
-     * Checkpoints the specified VM, making a new VM. Checkppoint automatically exploits the capabilities of the underlying storage repository in which the VM's disk images are stored (e.g. Copy on Write) and saves the memory image as well.
+     * Checkpoints the specified VM, making a new VM. Checkpoint automatically exploits the capabilities of the underlying storage repository in which the VM's disk images are stored (e.g. Copy on Write) and saves the memory image as well.
      *
      * @param newName The name of the checkpointed VM
      * @return The reference of the newly created VM.
@@ -4171,6 +4217,22 @@ public class VM extends XenAPIObject {
         String method_call = "VM.copy_bios_strings";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(host)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Set the value of the protection_policy field
+     *
+     * @param value The value
+     */
+    public void setProtectionPolicy(Connection c, VMPP value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VM.set_protection_policy";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
         Map response = c.dispatch(method_call, method_params);
         return;
     }

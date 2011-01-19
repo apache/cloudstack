@@ -42,7 +42,7 @@ import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfig;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 import org.apache.xmlrpc.client.XmlRpcHttpClientConfig;
-import org.apache.xmlrpc.client.XmlRpcCommonsTransportFactory;
+
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.SessionAuthenticationFailed;
 import com.xensource.xenapi.Types.XenAPIException;
@@ -57,7 +57,7 @@ public class Connection
     /**
      * The version of the bindings that this class belongs to.
      */
-    public static final String BINDINGS_VERSION = "5.6.0-1";
+    public static final String BINDINGS_VERSION = "5.6.100-1";
     
     /**
      * true if the connection is to the Rio edition of XenServer. Certain function calls are not allowed.
@@ -68,7 +68,6 @@ public class Connection
     public Boolean rioConnection = false;
 
     private APIVersion apiVersion;
-    protected int _wait;
 
     /**
      * Updated when Session.login_with_password() is called.
@@ -86,7 +85,7 @@ public class Connection
     /**
      * As seen by the xmlrpc library. From our point of view it's a server.
      */
-    protected XmlRpcClient client;
+    private final XmlRpcClient client;
 
     private final boolean deprecatedConstructorUsed;
 
@@ -164,11 +163,10 @@ public class Connection
      * When this constructor is used, a call to dispose() will do nothing. The programmer is responsible for manually
      * logging out the Session.
      */
-    public Connection(URL url, int wait)
+    public Connection(URL url)
     {
         deprecatedConstructorUsed = false;
-        _wait = wait;
-        
+
         this.client = getClientFromURL(url);
     }
 
@@ -181,11 +179,10 @@ public class Connection
      * Connection object does not call Session.logout. The programmer is responsible for ensuring the Session is logged
      * in and out correctly.
      */
-    public Connection(URL url, String sessionReference, int wait)
+    public Connection(URL url, String sessionReference)
     {
         deprecatedConstructorUsed = false;
 
-        this._wait = wait;
         this.client = getClientFromURL(url);
         this.sessionReference = sessionReference;
     }
@@ -281,11 +278,8 @@ public class Connection
     {
         config.setTimeZone(TimeZone.getTimeZone("UTC"));
         config.setServerURL(url);
-        config.setReplyTimeout(_wait * 1000);
-        config.setConnectionTimeout(_wait / 10 * 1000);
         XmlRpcClient client = new XmlRpcClient();
         client.setConfig(config);
-        client.setTransportFactory(new XmlRpcCommonsTransportFactory(client));
         return client;
     }
 
@@ -347,8 +341,7 @@ public class Connection
                                 new Connection(new URL(client_url.getProtocol(),
                                                        (String)error[1],
                                                        client_url.getPort(),
-                                                       client_url.getFile()),
-                                                       _wait);
+                                                       client_url.getFile()));
                             tmp_conn.sessionReference = sessionReference;
                             try
                             {

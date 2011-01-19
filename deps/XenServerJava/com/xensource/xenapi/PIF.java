@@ -121,6 +121,8 @@ public class PIF extends XenAPIObject {
             print.printf("%1$20s: %2$s\n", "management", this.management);
             print.printf("%1$20s: %2$s\n", "otherConfig", this.otherConfig);
             print.printf("%1$20s: %2$s\n", "disallowUnplug", this.disallowUnplug);
+            print.printf("%1$20s: %2$s\n", "tunnelAccessPIFOf", this.tunnelAccessPIFOf);
+            print.printf("%1$20s: %2$s\n", "tunnelTransportPIFOf", this.tunnelTransportPIFOf);
             return writer.toString();
         }
 
@@ -151,11 +153,13 @@ public class PIF extends XenAPIObject {
             map.put("management", this.management == null ? false : this.management);
             map.put("other_config", this.otherConfig == null ? new HashMap<String, String>() : this.otherConfig);
             map.put("disallow_unplug", this.disallowUnplug == null ? false : this.disallowUnplug);
+            map.put("tunnel_access_PIF_of", this.tunnelAccessPIFOf == null ? new LinkedHashSet<Tunnel>() : this.tunnelAccessPIFOf);
+            map.put("tunnel_transport_PIF_of", this.tunnelTransportPIFOf == null ? new LinkedHashSet<Tunnel>() : this.tunnelTransportPIFOf);
             return map;
         }
 
         /**
-         * unique identifier/object reference
+         * Unique identifier/object reference
          */
         public String uuid;
         /**
@@ -215,33 +219,41 @@ public class PIF extends XenAPIObject {
          */
         public String DNS;
         /**
-         * indicates which bond this interface is part of
+         * Indicates which bond this interface is part of
          */
         public Bond bondSlaveOf;
         /**
-         * indicates this PIF represents the results of a bond
+         * Indicates this PIF represents the results of a bond
          */
         public Set<Bond> bondMasterOf;
         /**
-         * indicates wich VLAN this interface receives untagged traffic from
+         * Indicates wich VLAN this interface receives untagged traffic from
          */
         public VLAN VLANMasterOf;
         /**
-         * indicates which VLANs this interface transmits tagged traffic to
+         * Indicates which VLANs this interface transmits tagged traffic to
          */
         public Set<VLAN> VLANSlaveOf;
         /**
-         * indicates whether the control software is listening for connections on this interface
+         * Indicates whether the control software is listening for connections on this interface
          */
         public Boolean management;
         /**
-         * additional configuration
+         * Additional configuration
          */
         public Map<String, String> otherConfig;
         /**
-         * prevent this PIF from being unplugged; set this to notify the management tool-stack that the PIF has a special use and should not be unplugged under any circumstances (e.g. because you're running storage traffic over it)
+         * Prevent this PIF from being unplugged; set this to notify the management tool-stack that the PIF has a special use and should not be unplugged under any circumstances (e.g. because you're running storage traffic over it)
          */
         public Boolean disallowUnplug;
+        /**
+         * Indicates to which tunnel this PIF gives access
+         */
+        public Set<Tunnel> tunnelAccessPIFOf;
+        /**
+         * Indicates to which tunnel this PIF provides transport
+         */
+        public Set<Tunnel> tunnelTransportPIFOf;
     }
 
     /**
@@ -654,6 +666,40 @@ public class PIF extends XenAPIObject {
     }
 
     /**
+     * Get the tunnel_access_PIF_of field of the given PIF.
+     *
+     * @return value of the field
+     */
+    public Set<Tunnel> getTunnelAccessPIFOf(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "PIF.get_tunnel_access_PIF_of";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toSetOfTunnel(result);
+    }
+
+    /**
+     * Get the tunnel_transport_PIF_of field of the given PIF.
+     *
+     * @return value of the field
+     */
+    public Set<Tunnel> getTunnelTransportPIFOf(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "PIF.get_tunnel_transport_PIF_of";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toSetOfTunnel(result);
+    }
+
+    /**
      * Set the other_config field of the given PIF.
      *
      * @param otherConfig New value to set
@@ -877,6 +923,42 @@ public class PIF extends XenAPIObject {
     }
 
     /**
+     * Scan for physical interfaces on a host and create PIF objects to represent them. Use BIOS-based device names.
+     *
+     * @param host The host on which to scan
+     * @return Task
+     */
+    public static Task scanBiosAsync(Connection c, Host host) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "Async.PIF.scan_bios";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Scan for physical interfaces on a host and create PIF objects to represent them. Use BIOS-based device names.
+     *
+     * @param host The host on which to scan
+     * @return List of newly created PIFs
+     */
+    public static Set<PIF> scanBios(Connection c, Host host) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "PIF.scan_bios";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(host)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toSetOfPIF(result);
+    }
+
+    /**
      * Create a PIF object matching a particular network interface
      *
      * @param host The host on which the interface exists
@@ -924,7 +1006,8 @@ public class PIF extends XenAPIObject {
     public Task forgetAsync(Connection c) throws
        BadServerResponse,
        XenAPIException,
-       XmlRpcException {
+       XmlRpcException,
+       Types.PifTunnelStillExists {
         String method_call = "Async.PIF.forget";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -940,7 +1023,8 @@ public class PIF extends XenAPIObject {
     public void forget(Connection c) throws
        BadServerResponse,
        XenAPIException,
-       XmlRpcException {
+       XmlRpcException,
+       Types.PifTunnelStillExists {
         String method_call = "PIF.forget";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -988,7 +1072,8 @@ public class PIF extends XenAPIObject {
     public Task plugAsync(Connection c) throws
        BadServerResponse,
        XenAPIException,
-       XmlRpcException {
+       XmlRpcException,
+       Types.TransportPifNotConfigured {
         String method_call = "Async.PIF.plug";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1004,7 +1089,8 @@ public class PIF extends XenAPIObject {
     public void plug(Connection c) throws
        BadServerResponse,
        XenAPIException,
-       XmlRpcException {
+       XmlRpcException,
+       Types.TransportPifNotConfigured {
         String method_call = "PIF.plug";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};

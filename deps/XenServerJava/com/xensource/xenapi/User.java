@@ -119,7 +119,7 @@ public class User extends XenAPIObject {
         }
 
         /**
-         * unique identifier/object reference
+         * Unique identifier/object reference
          */
         public String uuid;
         /**
@@ -138,10 +138,11 @@ public class User extends XenAPIObject {
 
     /**
      * Get a record containing the current state of the given user.
+     * @deprecated
      *
      * @return all fields from the object
      */
-    public User.Record getRecord(Connection c) throws
+   @Deprecated public User.Record getRecord(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
@@ -155,11 +156,12 @@ public class User extends XenAPIObject {
 
     /**
      * Get a reference to the user instance with the specified UUID.
+     * @deprecated
      *
      * @param uuid UUID of object to return
      * @return reference to the object
      */
-    public static User getByUuid(Connection c, String uuid) throws
+   @Deprecated public static User getByUuid(Connection c, String uuid) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
@@ -173,11 +175,12 @@ public class User extends XenAPIObject {
 
     /**
      * Create a new user instance, and return its handle.
+     * @deprecated
      *
      * @param record All constructor arguments
      * @return Task
      */
-    public static Task createAsync(Connection c, User.Record record) throws
+   @Deprecated public static Task createAsync(Connection c, User.Record record) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
@@ -192,11 +195,12 @@ public class User extends XenAPIObject {
 
     /**
      * Create a new user instance, and return its handle.
+     * @deprecated
      *
      * @param record All constructor arguments
      * @return reference to the newly created object
      */
-    public static User create(Connection c, User.Record record) throws
+   @Deprecated public static User create(Connection c, User.Record record) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
@@ -211,10 +215,11 @@ public class User extends XenAPIObject {
 
     /**
      * Destroy the specified user instance.
+     * @deprecated
      *
      * @return Task
      */
-    public Task destroyAsync(Connection c) throws
+   @Deprecated public Task destroyAsync(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
@@ -228,9 +233,10 @@ public class User extends XenAPIObject {
 
     /**
      * Destroy the specified user instance.
+     * @deprecated
      *
      */
-    public void destroy(Connection c) throws
+   @Deprecated public void destroy(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {

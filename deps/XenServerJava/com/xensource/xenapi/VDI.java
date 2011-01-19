@@ -125,6 +125,8 @@ public class VDI extends XenAPIObject {
             print.printf("%1$20s: %2$s\n", "snapshots", this.snapshots);
             print.printf("%1$20s: %2$s\n", "snapshotTime", this.snapshotTime);
             print.printf("%1$20s: %2$s\n", "tags", this.tags);
+            print.printf("%1$20s: %2$s\n", "allowCaching", this.allowCaching);
+            print.printf("%1$20s: %2$s\n", "onBoot", this.onBoot);
             return writer.toString();
         }
 
@@ -159,11 +161,13 @@ public class VDI extends XenAPIObject {
             map.put("snapshots", this.snapshots == null ? new LinkedHashSet<VDI>() : this.snapshots);
             map.put("snapshot_time", this.snapshotTime == null ? new Date(0) : this.snapshotTime);
             map.put("tags", this.tags == null ? new LinkedHashSet<String>() : this.tags);
+            map.put("allow_caching", this.allowCaching == null ? false : this.allowCaching);
+            map.put("on_boot", this.onBoot == null ? Types.OnBoot.UNRECOGNIZED : this.onBoot);
             return map;
         }
 
         /**
-         * unique identifier/object reference
+         * Unique identifier/object reference
          */
         public String uuid;
         /**
@@ -266,6 +270,14 @@ public class VDI extends XenAPIObject {
          * user-specified tags for categorization purposes
          */
         public Set<String> tags;
+        /**
+         * true if this VDI is to be cached in the local cache SR
+         */
+        public Boolean allowCaching;
+        /**
+         * The behaviour of this VDI on a VM boot
+         */
+        public Types.OnBoot onBoot;
     }
 
     /**
@@ -831,6 +843,40 @@ public class VDI extends XenAPIObject {
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
             return Types.toSetOfString(result);
+    }
+
+    /**
+     * Get the allow_caching field of the given VDI.
+     *
+     * @return value of the field
+     */
+    public Boolean getAllowCaching(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VDI.get_allow_caching";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toBoolean(result);
+    }
+
+    /**
+     * Get the on_boot field of the given VDI.
+     *
+     * @return value of the field
+     */
+    public Types.OnBoot getOnBoot(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "VDI.get_on_boot";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toOnBoot(result);
     }
 
     /**

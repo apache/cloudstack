@@ -23,8 +23,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
+
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
+import org.apache.xmlrpc.client.XmlRpcClient;
+import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.APIVersion;
@@ -43,11 +49,30 @@ public class XenServerConnectionPool {
     protected int _retries;
     protected int _interval;
 
+    static {
+        try {
+            javax.net.ssl.TrustManager[] trustAllCerts = new javax.net.ssl.TrustManager[1]; 
+            javax.net.ssl.TrustManager tm = new TrustAllManager(); 
+            trustAllCerts[0] = tm; 
+            javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext.getInstance("TLS"); 
+            sc.init(null, trustAllCerts, null); 
+            javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+            HostnameVerifier hv = new HostnameVerifier() {
+                public boolean verify(String hostName, SSLSession session) {
+                    return true;
+                }
+            };
+            HttpsURLConnection.setDefaultHostnameVerifier(hv);
+        } catch (Exception e) {
+        }
+    }
+    
+
     protected XenServerConnectionPool() {
         _retries = 3;
         _interval = 3;
     }
-
+   
     private void addConnect(String poolUuid, XenServerConnection conn){
         if( poolUuid == null ) return;
         if (s_logger.isDebugEnabled()) {
@@ -96,7 +121,7 @@ public class XenServerConnectionPool {
         }
     }
 
-    static public boolean joinPool(Connection conn, String hostIp, String masterIp, String username, String password) {      
+    public boolean joinPool(Connection conn, String hostIp, String masterIp, String username, String password) {      
         try {
             Pool.join(conn, masterIp, username, password);
             if (s_logger.isDebugEnabled()) {
@@ -114,7 +139,7 @@ public class XenServerConnectionPool {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Logging on as the slave to " + hostIp);
                     }
-                    slaveConn = new Connection(getURL(hostIp), 100);
+                    slaveConn = new Connection(getURL(hostIp));
                     slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, username, password);
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Slave logon successful. session= " + slaveSession);
@@ -175,7 +200,7 @@ public class XenServerConnectionPool {
                     masterConn = null;
                     Session slaveSession = null;
 
-                    slaveConn = new Connection(getURL(slaveIp), 100);
+                    slaveConn = new Connection(getURL(slaveIp));
                     slaveSession = Session.slaveLocalLoginWithPassword(slaveConn,
                             username, password);
     
@@ -193,7 +218,7 @@ public class XenServerConnectionPool {
                     Session.localLogout(slaveConn);
                     slaveConn = null;
                     s_logger.debug("Logging on as the master to " + masterIp);
-                    masterConn = new Connection(getURL(masterIp), 100);
+                    masterConn = new Connection(getURL(masterIp));
                     Session.loginWithPassword(masterConn, username, password,
                             APIVersion.latest().toString());
                     removeConnect(poolUuid);
@@ -240,7 +265,7 @@ public class XenServerConnectionPool {
         }
     }
 
-    public static void logout(Connection conn) {
+    private void logout(Connection conn) {
         try {
             s_logger.debug("Logging out of the session "
                     + conn.getSessionReference());
@@ -252,40 +277,49 @@ public class XenServerConnectionPool {
         }
     }
 
-    public Connection masterConnect(String ip, String username, String password) {
-        Connection slaveConn = null;
-        Connection masterConn = null;
+    public Connection slaveConnect(String ip, String username, String password) {
+        Connection conn = null;
         try{ 
-            slaveConn = new Connection(getURL(ip), 100);
+            conn = new Connection(getURL(ip));
+            Session.slaveLocalLoginWithPassword(conn, username, password);
+            return conn;
+        }catch ( Exception e){
+            s_logger.debug("Failed to slave local login to " + ip);
+        } 
+        return null;
+    }
+    
+    public Connection masterConnect(String ip, String username, String password) {
+        Connection conn = null;
+        try{ 
+            conn = new Connection(getURL(ip));
+            s_logger.debug("Logging on as the master to " + ip);
+            Session.loginWithPassword(conn, username, password,
+                    APIVersion.latest().toString());
+            return conn;
+        }catch ( Exception e){
+            s_logger.debug("Failed to slave local login to " + ip);
+        } 
+        throw new RuntimeException("can not log in to master " + ip);
+    }
+    
+  
+    public String getMasterIp(String ip, String username, String password) {
+        Connection slaveConn = null;
+        try{ 
+            slaveConn = new Connection(getURL(ip));
             Session.slaveLocalLoginWithPassword(slaveConn, username, password);
 
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Slave logon to " + ip);
             }
             String masterIp = null;
-            try {
-                Pool.Record pr = getPoolRecord(slaveConn);
-                Host master = pr.master;
-                masterIp = master.getAddress(slaveConn);
-
-                s_logger.debug("Logging on as the master to " + masterIp);
-                masterConn = new Connection(getURL(masterIp), 100);
-                Session.loginWithPassword(masterConn, username, password,
-                        APIVersion.latest().toString());
-                return masterConn;
-            } catch (Exception e) {
-                s_logger.debug("Failed to log on as master to ");
-                if( masterConn != null ) {
-                    try {
-                        Session.logout(masterConn);
-                    } catch (Exception e1) {
-                    }
-                    masterConn.dispose();
-                    masterConn = null;
-                }
-            }
+            Pool.Record pr = getPoolRecord(slaveConn);
+            Host master = pr.master;
+            masterIp = master.getAddress(slaveConn);
+            return masterIp;
         }catch ( Exception e){
-            s_logger.debug("Failed to slave local login to " + ip);
+            s_logger.debug("Failed to slave local login to " + ip + " due to " + e.toString());
         } finally {
             if( slaveConn != null ) {
                 try {
@@ -295,22 +329,10 @@ public class XenServerConnectionPool {
                 slaveConn.dispose();
                 slaveConn = null;
             }
-            
         }
-        return null;
+        throw new RuntimeException("can not get master ip");
     }
-    
-    static public Connection slaveConnect(String ip, String username, String password) {
-        Connection conn = null;
-        try{ 
-            conn = new Connection(getURL(ip), 100);
-            Session.slaveLocalLoginWithPassword(conn, username, password);
-            return conn;
-        }catch ( Exception e){
-            s_logger.debug("Failed to slave local login to " + ip);
-        } 
-        return null;
-    }
+
 
     static void PoolSyncDB(Connection conn) {
         try {
@@ -338,7 +360,7 @@ public class XenServerConnectionPool {
         Connection c = null;
         try{
             s_logger.debug("Trying to transition master to " + slaveIp);
-            slaveConn = new Connection(getURL(slaveIp), 100);
+            slaveConn = new Connection(getURL(slaveIp));
             Session.slaveLocalLoginWithPassword(slaveConn, username, password);
             Pool.emergencyTransitionToMaster(slaveConn);
             try {
@@ -349,7 +371,7 @@ public class XenServerConnectionPool {
             // restart xapi in 10 sec
             forceSleep(10);
             // check if the master of this host is set correctly.
-            c = new Connection(getURL(slaveIp), 100);
+            c = new Connection(getURL(slaveIp));
             for (int i = 0; i < 30; i++) {
                 try {
                     Session.loginWithPassword(c, username, password, APIVersion.latest().toString());
@@ -383,13 +405,13 @@ public class XenServerConnectionPool {
         
     }
 
-    static void PoolEmergencyResetMaster(String slaveIp, String masterIp,
+    private void PoolEmergencyResetMaster(String slaveIp, String masterIp,
             String username, String password) {
         Connection slaveConn = null;
         try {
             s_logger.debug("Trying to reset master of slave " + slaveIp
                     + " to " + masterIp);
-            slaveConn = new Connection(getURL(slaveIp), 10);
+            slaveConn = new Connection(getURL(slaveIp));
             Session.slaveLocalLoginWithPassword(slaveConn, username, password);
             Pool.emergencyResetMaster(slaveConn, masterIp);
             if (slaveConn != null) {
@@ -449,7 +471,7 @@ public class XenServerConnectionPool {
                         
                         String slaveIp = slave.getAddress(conn);
                         s_logger.debug("Logging on as the slave to " + slaveIp);
-                        slaveConn = new Connection(getURL(slaveIp), 10);
+                        slaveConn = new Connection(getURL(slaveIp));
                         Session.slaveLocalLoginWithPassword(slaveConn, username, password);
                         Pool.Record pr = getPoolRecord(slaveConn);
                         String mIp = pr.master.getAddress(slaveConn);
@@ -476,7 +498,7 @@ public class XenServerConnectionPool {
                 try {
                     s_logger.debug("Logging on as the slave to " + slaveIp);
     
-                    slaveConn = new Connection(getURL(slaveIp), 10);
+                    slaveConn = new Connection(getURL(slaveIp));
                     Session.slaveLocalLoginWithPassword(slaveConn, username,
                             password);
                     Pool.Record slavePoolr = getPoolRecord(slaveConn);
@@ -505,9 +527,9 @@ public class XenServerConnectionPool {
         }
     }
     
-    static private URL getURL(String ip){
+    private URL getURL(String ip){
         try {
-            return new URL("http://" + ip);
+            return new URL("https://" + ip);
         } catch (Exception e) { 
             String msg = "Unable to convert IP " + ip + " to URL due to " + e.toString();
             if (s_logger.isDebugEnabled()) {
@@ -566,7 +588,7 @@ public class XenServerConnectionPool {
                 s_logger.debug("Logging on as the slave to " + ipAddress);
             }
             try {
-                sConn = new Connection(getURL(ipAddress), 100);
+                sConn = new Connection(getURL(ipAddress));
                 Session.slaveLocalLoginWithPassword(sConn,
                         username, password);
             } catch (Exception e){
@@ -652,6 +674,7 @@ public class XenServerConnectionPool {
     public class XenServerConnection extends Connection {
         long _interval;
         int _retries;
+        int _wait;
         String _ip;
         String _username;
         String _password;
@@ -659,7 +682,8 @@ public class XenServerConnectionPool {
 
         public XenServerConnection(URL url, String ip, String username, String password,
                 int retries, int interval, int wait) {
-            super(url, wait);
+            super(url);
+            _wait = wait;
             _ip = ip;
             _retries = retries;
             _username = username;
@@ -670,6 +694,19 @@ public class XenServerConnectionPool {
         public int getWaitTimeout() {
             return _wait;
         }
+        
+        @Override
+        protected XmlRpcClient getClientFromURL(URL url)
+        {
+            XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
+            config.setServerURL(url);
+            config.setReplyTimeout(_wait * 1000);
+            config.setConnectionTimeout(10000);
+            XmlRpcClient client = new XmlRpcClient();
+            client.setConfig(config);
+            return client;
+        }
+
         
         public String getPoolUuid() {
             return _poolUuid;
@@ -767,4 +804,29 @@ public class XenServerConnectionPool {
 
 
     }
+    
+    public static class TrustAllManager implements javax.net.ssl.TrustManager, javax.net.ssl.X509TrustManager {
+        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+            return null;
+        }
+        
+        public boolean isServerTrusted(java.security.cert.X509Certificate[] certs) {
+            return true;
+        }
+        
+        public boolean isClientTrusted(java.security.cert.X509Certificate[] certs) {
+            return true;
+        }
+        
+        public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType)
+            throws java.security.cert.CertificateException {
+            return;
+        }
+        
+        public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType)
+            throws java.security.cert.CertificateException {
+            return;
+        }
+    }
+    
 }

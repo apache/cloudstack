@@ -64,6 +64,7 @@ public class Db21to22MigrationUtil {
     
     /* add guid in cluster table */
     private void setupClusterGuid() {
+        XenServerConnectionPool _connPool = XenServerConnectionPool.getInstance();
         List<ClusterVO> clusters = _clusterDao.listByHyTypeWithoutGuid(HypervisorType.XenServer.toString());
         for (ClusterVO cluster : clusters) {
             List<HostVO> hosts = _hostDao.listByCluster(cluster.getId());
@@ -75,7 +76,7 @@ public class Db21to22MigrationUtil {
                         || password.isEmpty()) {
                     continue;
                 }
-                Connection conn = XenServerConnectionPool.slaveConnect(ip, username, password);
+                Connection conn = _connPool.slaveConnect(ip, username, password);
                 if (conn == null)
                     continue;
                 Pool.Record pr = null;

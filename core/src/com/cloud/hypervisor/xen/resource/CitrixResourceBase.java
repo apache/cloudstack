@@ -170,7 +170,6 @@ import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.VolumeType;
@@ -181,7 +180,6 @@ import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DiskProfile;
@@ -325,26 +323,18 @@ public abstract class CitrixResourceBase implements ServerResource {
     }
 
     protected boolean pingxenserver() {
-        Session slaveSession = null;
-        Connection slaveConn = null;
-        try {
-            URL slaveUrl = null;
-            slaveUrl = new URL("http://" + _host.ip);
-            slaveConn = new Connection(slaveUrl, 100);
-            slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, _username, _password);
-            return true;
-        } catch (Exception e) {
+        Connection conn = _connPool.slaveConnect(_host.ip, _username, _password);
+        if ( conn == null ) {
             return false;
-        } finally {
-            if( slaveSession != null ){
-                try{
-                    Session.localLogout(slaveConn);
-                } catch (Exception e) {
-                    
-                }
-                slaveConn.dispose();
+        } else {
+            try {
+                Session.localLogout(conn);
+            } catch (Exception e) {
+
             }
+            conn.dispose();
         }
+        return true;
     }
 
     protected String logX(XenAPIObject obj, String msg) {
@@ -4117,6 +4107,7 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     public CitrixResourceBase() {
     }
+  
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -4169,6 +4160,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             throw new ConfigurationException("Unable to get the uuid");
         }
         return true;
+
     }
 
     void destroyVDI(Connection conn, VDI vdi) {

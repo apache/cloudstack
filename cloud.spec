@@ -488,7 +488,7 @@ fi
 %{_javadir}/%{name}-trilead-ssh2-build213.jar
 %{_javadir}/%{name}-cglib.jar
 %{_javadir}/%{name}-mysql-connector-java-5.1.7-bin.jar
-%{_javadir}/%{name}-xenserver-5.6.0-1.jar
+%{_javadir}/%{name}-xenserver-5.6.100-1.jar
 %{_javadir}/%{name}-xmlrpc-common-3.*.jar
 %{_javadir}/%{name}-xmlrpc-client-3.*.jar
 %{_javadir}/%{name}-jstl-1.2.jar

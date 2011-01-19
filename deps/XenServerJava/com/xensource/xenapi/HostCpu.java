@@ -137,7 +137,7 @@ public class HostCpu extends XenAPIObject {
         }
 
         /**
-         * unique identifier/object reference
+         * Unique identifier/object reference
          */
         public String uuid;
         /**
@@ -192,10 +192,11 @@ public class HostCpu extends XenAPIObject {
 
     /**
      * Get a record containing the current state of the given host_cpu.
+     * @deprecated
      *
      * @return all fields from the object
      */
-    public HostCpu.Record getRecord(Connection c) throws
+   @Deprecated public HostCpu.Record getRecord(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
@@ -209,11 +210,12 @@ public class HostCpu extends XenAPIObject {
 
     /**
      * Get a reference to the host_cpu instance with the specified UUID.
+     * @deprecated
      *
      * @param uuid UUID of object to return
      * @return reference to the object
      */
-    public static HostCpu getByUuid(Connection c, String uuid) throws
+   @Deprecated public static HostCpu getByUuid(Connection c, String uuid) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
@@ -497,10 +499,11 @@ public class HostCpu extends XenAPIObject {
 
     /**
      * Return a list of all the host_cpus known to the system.
+     * @deprecated
      *
      * @return references to all objects
      */
-    public static Set<HostCpu> getAll(Connection c) throws
+   @Deprecated public static Set<HostCpu> getAll(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {

@@ -116,6 +116,7 @@ public class SR extends XenAPIObject {
             print.printf("%1$20s: %2$s\n", "tags", this.tags);
             print.printf("%1$20s: %2$s\n", "smConfig", this.smConfig);
             print.printf("%1$20s: %2$s\n", "blobs", this.blobs);
+            print.printf("%1$20s: %2$s\n", "localCacheEnabled", this.localCacheEnabled);
             return writer.toString();
         }
 
@@ -141,11 +142,12 @@ public class SR extends XenAPIObject {
             map.put("tags", this.tags == null ? new LinkedHashSet<String>() : this.tags);
             map.put("sm_config", this.smConfig == null ? new HashMap<String, String>() : this.smConfig);
             map.put("blobs", this.blobs == null ? new HashMap<String, Blob>() : this.blobs);
+            map.put("local_cache_enabled", this.localCacheEnabled == null ? false : this.localCacheEnabled);
             return map;
         }
 
         /**
-         * unique identifier/object reference
+         * Unique identifier/object reference
          */
         public String uuid;
         /**
@@ -212,6 +214,10 @@ public class SR extends XenAPIObject {
          * Binary blobs associated with this SR
          */
         public Map<String, Blob> blobs;
+        /**
+         * True if this SR is assigned to be the local cache for its host
+         */
+        public Boolean localCacheEnabled;
     }
 
     /**
@@ -554,6 +560,23 @@ public class SR extends XenAPIObject {
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
             return Types.toMapOfStringBlob(result);
+    }
+
+    /**
+     * Get the local_cache_enabled field of the given SR.
+     *
+     * @return value of the field
+     */
+    public Boolean getLocalCacheEnabled(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "SR.get_local_cache_enabled";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toBoolean(result);
     }
 
     /**

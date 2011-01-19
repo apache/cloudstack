@@ -229,6 +229,11 @@ public class Types
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.VmHvmRequired(p1);
             }
+            if (ErrorDescription[0].equals("PIF_TUNNEL_STILL_EXISTS"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.PifTunnelStillExists(p1);
+            }
             if (ErrorDescription[0].equals("PIF_BOND_NEEDS_MORE_MEMBERS"))
             {
                 throw new Types.PifBondNeedsMoreMembers();
@@ -253,9 +258,19 @@ public class Types
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.SrHasMultiplePbds(p1);
             }
+            if (ErrorDescription[0].equals("POOL_AUTH_ENABLE_FAILED_INVALID_OU"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
+                throw new Types.PoolAuthEnableFailedInvalidOu(p1, p2);
+            }
             if (ErrorDescription[0].equals("IMPORT_ERROR_SOME_CHECKSUMS_FAILED"))
             {
                 throw new Types.ImportErrorSomeChecksumsFailed();
+            }
+            if (ErrorDescription[0].equals("OPENVSWITCH_NOT_ACTIVE"))
+            {
+                throw new Types.OpenvswitchNotActive();
             }
             if (ErrorDescription[0].equals("CANNOT_FIND_OEM_BACKUP_PARTITION"))
             {
@@ -425,15 +440,15 @@ public class Types
                 String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
                 throw new Types.BootloaderFailed(p1, p2);
             }
+            if (ErrorDescription[0].equals("WLB_XENSERVER_MALFORMED_RESPONSE"))
+            {
+                throw new Types.WlbXenserverMalformedResponse();
+            }
             if (ErrorDescription[0].equals("POOL_AUTH_ENABLE_FAILED_DUPLICATE_HOSTNAME"))
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
                 throw new Types.PoolAuthEnableFailedDuplicateHostname(p1, p2);
-            }
-            if (ErrorDescription[0].equals("WLB_XENSERVER_MALFORMED_RESPONSE"))
-            {
-                throw new Types.WlbXenserverMalformedResponse();
             }
             if (ErrorDescription[0].equals("SYSTEM_STATUS_RETRIEVAL_FAILED"))
             {
@@ -640,6 +655,11 @@ public class Types
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.HaNotInstalled(p1);
+            }
+            if (ErrorDescription[0].equals("DUPLICATE_PIF_DEVICE_NAME"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.DuplicatePifDeviceName(p1);
             }
             if (ErrorDescription[0].equals("VM_BAD_POWER_STATE"))
             {
@@ -993,6 +1013,10 @@ public class Types
             {
                 throw new Types.SrDeviceInUse();
             }
+            if (ErrorDescription[0].equals("HOST_CD_DRIVE_EMPTY"))
+            {
+                throw new Types.HostCdDriveEmpty();
+            }
             if (ErrorDescription[0].equals("HA_HOST_IS_ARMED"))
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
@@ -1010,6 +1034,10 @@ public class Types
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.PifIsVlan(p1);
+            }
+            if (ErrorDescription[0].equals("VMPP_ARCHIVE_MORE_FREQUENT_THAN_BACKUP"))
+            {
+                throw new Types.VmppArchiveMoreFrequentThanBackup();
             }
             if (ErrorDescription[0].equals("JOINING_HOST_CANNOT_BE_MASTER_OF_OTHER_HOSTS"))
             {
@@ -1234,6 +1262,10 @@ public class Types
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.VmMemorySizeTooLow(p1);
             }
+            if (ErrorDescription[0].equals("VMPP_HAS_VM"))
+            {
+                throw new Types.VmppHasVm();
+            }
             if (ErrorDescription[0].equals("HOST_NOT_DISABLED"))
             {
                 throw new Types.HostNotDisabled();
@@ -1320,6 +1352,10 @@ public class Types
                 String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
                 throw new Types.PatchPrecheckFailedPrerequisiteMissing(p1, p2);
             }
+            if (ErrorDescription[0].equals("WLB_XENSERVER_TIMEOUT"))
+            {
+                throw new Types.WlbXenserverTimeout();
+            }
             if (ErrorDescription[0].equals("VM_SNAPSHOT_WITH_QUIESCE_FAILED"))
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
@@ -1330,10 +1366,6 @@ public class Types
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
                 throw new Types.PoolAuthDisableFailedWrongCredentials(p1, p2);
-            }
-            if (ErrorDescription[0].equals("WLB_XENSERVER_TIMEOUT"))
-            {
-                throw new Types.WlbXenserverTimeout();
             }
             if (ErrorDescription[0].equals("CERTIFICATE_CORRUPT"))
             {
@@ -1359,6 +1391,10 @@ public class Types
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
                 throw new Types.XenVssReqErrorNoVolumesSupported(p1, p2);
+            }
+            if (ErrorDescription[0].equals("HOST_ITS_OWN_SLAVE"))
+            {
+                throw new Types.HostItsOwnSlave();
             }
             if (ErrorDescription[0].equals("REDO_LOG_IS_ENABLED"))
             {
@@ -1418,6 +1454,11 @@ public class Types
             if (ErrorDescription[0].equals("RESTORE_TARGET_MGMT_IF_NOT_IN_BACKUP"))
             {
                 throw new Types.RestoreTargetMgmtIfNotInBackup();
+            }
+            if (ErrorDescription[0].equals("IS_TUNNEL_ACCESS_PIF"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.IsTunnelAccessPif(p1);
             }
             if (ErrorDescription[0].equals("JOINING_HOST_CONNECTION_FAILED"))
             {
@@ -1607,12 +1648,6 @@ public class Types
                 String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
                 throw new Types.VmNotResidentHere(p1, p2);
             }
-            if (ErrorDescription[0].equals("POOL_AUTH_ENABLE_FAILED_UNAVAILABLE"))
-            {
-                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
-                String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
-                throw new Types.PoolAuthEnableFailedUnavailable(p1, p2);
-            }
             if (ErrorDescription[0].equals("HOST_OFFLINE"))
             {
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
@@ -1627,6 +1662,11 @@ public class Types
             if (ErrorDescription[0].equals("HOST_HAS_NO_MANAGEMENT_IP"))
             {
                 throw new Types.HostHasNoManagementIp();
+            }
+            if (ErrorDescription[0].equals("TRANSPORT_PIF_NOT_CONFIGURED"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.TransportPifNotConfigured(p1);
             }
             if (ErrorDescription[0].equals("HA_IS_ENABLED"))
             {
@@ -1749,6 +1789,33 @@ public class Types
         BLOCKED
     };
 
+    public enum Cls {
+        /**
+         * The value does not belong to this enumeration
+         */
+        UNRECOGNIZED,
+        /**
+         * VM
+         */
+        VM,
+        /**
+         * Host
+         */
+        HOST,
+        /**
+         * SR
+         */
+        SR,
+        /**
+         * Pool
+         */
+        POOL,
+        /**
+         * VMPP
+         */
+        VMPP
+    };
+
     public enum VdiType {
         /**
          * The value does not belong to this enumeration
@@ -1786,29 +1853,6 @@ public class Types
          * a disk used for a general metadata redo-log
          */
         REDO_LOG
-    };
-
-    public enum Cls {
-        /**
-         * The value does not belong to this enumeration
-         */
-        UNRECOGNIZED,
-        /**
-         * VM
-         */
-        VM,
-        /**
-         * Host
-         */
-        HOST,
-        /**
-         * SR
-         */
-        SR,
-        /**
-         * Pool
-         */
-        POOL
     };
 
     public enum AfterApplyGuidance {
@@ -1902,6 +1946,25 @@ public class Types
         ATTACHING
     };
 
+    public enum ConsoleProtocol {
+        /**
+         * The value does not belong to this enumeration
+         */
+        UNRECOGNIZED,
+        /**
+         * VT100 terminal
+         */
+        VT100,
+        /**
+         * Remote FrameBuffer protocol (as used in VNC)
+         */
+        RFB,
+        /**
+         * Remote Desktop Protocol
+         */
+        RDP
+    };
+
     public enum OnCrashBehaviour {
         /**
          * The value does not belong to this enumeration
@@ -1933,23 +1996,19 @@ public class Types
         RENAME_RESTART
     };
 
-    public enum ConsoleProtocol {
+    public enum VmppBackupType {
         /**
          * The value does not belong to this enumeration
          */
         UNRECOGNIZED,
         /**
-         * VT100 terminal
+         * The backup is a snapshot
          */
-        VT100,
+        SNAPSHOT,
         /**
-         * Remote FrameBuffer protocol (as used in VNC)
+         * The backup is a checkpoint
          */
-        RFB,
-        /**
-         * Remote Desktop Protocol
-         */
-        RDP
+        CHECKPOINT
     };
 
     public enum OnNormalExit {
@@ -2035,6 +2094,10 @@ public class Types
          * The metrics reported by the guest (as opposed to inferred from outside)
          */
         VM_GUEST_METRICS,
+        /**
+         * VM Protection Policy
+         */
+        VMPP,
         /**
          * A physical host
          */
@@ -2138,7 +2201,11 @@ public class Types
         /**
          * A secret
          */
-        SECRET
+        SECRET,
+        /**
+         * A tunnel for network traffic
+         */
+        TUNNEL
     };
 
     public enum HostAllowedOperations {
@@ -2180,6 +2247,48 @@ public class Types
         VM_MIGRATE
     };
 
+    public enum VmppArchiveFrequency {
+        /**
+         * The value does not belong to this enumeration
+         */
+        UNRECOGNIZED,
+        /**
+         * Never archive
+         */
+        NEVER,
+        /**
+         * Archive after backup
+         */
+        ALWAYS_AFTER_BACKUP,
+        /**
+         * Daily archives
+         */
+        DAILY,
+        /**
+         * Weekly backups
+         */
+        WEEKLY
+    };
+
+    public enum VmppArchiveTargetType {
+        /**
+         * The value does not belong to this enumeration
+         */
+        UNRECOGNIZED,
+        /**
+         * No target config
+         */
+        NONE,
+        /**
+         * CIFS target config
+         */
+        CIFS,
+        /**
+         * NFS target config
+         */
+        NFS
+    };
+
     public enum VbdMode {
         /**
          * The value does not belong to this enumeration
@@ -2208,6 +2317,21 @@ public class Types
          * VBD will appear to guest as disk
          */
         DISK
+    };
+
+    public enum OnBoot {
+        /**
+         * The value does not belong to this enumeration
+         */
+        UNRECOGNIZED,
+        /**
+         * The VDI will be reset to the state it was in at the last clone
+         */
+        RESET,
+        /**
+         * The VDIs contents are persistent
+         */
+        PERSIST
     };
 
     public enum VbdOperations {
@@ -2247,6 +2371,25 @@ public class Types
          * Attempting to unpause a block device backend
          */
         UNPAUSE
+    };
+
+    public enum VmppBackupFrequency {
+        /**
+         * The value does not belong to this enumeration
+         */
+        UNRECOGNIZED,
+        /**
+         * Hourly backups
+         */
+        HOURLY,
+        /**
+         * Daily backups
+         */
+        DAILY,
+        /**
+         * Weekly backups
+         */
+        WEEKLY
     };
 
     public enum VmPowerState {
@@ -2289,6 +2432,10 @@ public class Types
          * refers to the operation "copy"
          */
         COPY,
+        /**
+         * refers to the operation "create_template"
+         */
+        CREATE_TEMPLATE,
         /**
          * refers to the operation "revert"
          */
@@ -2674,6 +2821,24 @@ public class Types
     }
 
     /**
+     * Operation cannot proceed while a tunnel exists on this interface.
+     */
+    public static class PifTunnelStillExists extends XenAPIException {
+        public final String PIF;
+
+        /**
+         * Create a new PifTunnelStillExists
+         *
+         * @param PIF
+         */
+        public PifTunnelStillExists(String PIF) {
+            super("Operation cannot proceed while a tunnel exists on this interface.");
+            this.PIF = PIF;
+        }
+
+    }
+
+    /**
      * A bond must consist of at least two member interfaces
      */
     public static class PifBondNeedsMoreMembers extends XenAPIException {
@@ -2760,6 +2925,27 @@ public class Types
     }
 
     /**
+     * The pool failed to enable external authentication.
+     */
+    public static class PoolAuthEnableFailedInvalidOu extends XenAPIException {
+        public final String host;
+        public final String message;
+
+        /**
+         * Create a new PoolAuthEnableFailedInvalidOu
+         *
+         * @param host
+         * @param message
+         */
+        public PoolAuthEnableFailedInvalidOu(String host, String message) {
+            super("The pool failed to enable external authentication.");
+            this.host = host;
+            this.message = message;
+        }
+
+    }
+
+    /**
      * Some data checksums were incorrect; the VM may be corrupt.
      */
     public static class ImportErrorSomeChecksumsFailed extends XenAPIException {
@@ -2769,6 +2955,20 @@ public class Types
          */
         public ImportErrorSomeChecksumsFailed() {
             super("Some data checksums were incorrect; the VM may be corrupt.");
+        }
+
+    }
+
+    /**
+     * This operation needs the OpenVSwitch networking backend to be enabled on all hosts in the pool.
+     */
+    public static class OpenvswitchNotActive extends XenAPIException {
+
+        /**
+         * Create a new OpenvswitchNotActive
+         */
+        public OpenvswitchNotActive() {
+            super("This operation needs the OpenVSwitch networking backend to be enabled on all hosts in the pool.");
         }
 
     }
@@ -3365,6 +3565,20 @@ public class Types
     }
 
     /**
+     * The WLB server reported that XenServer said something to it that WLB wasn't expecting or didn't understand.
+     */
+    public static class WlbXenserverMalformedResponse extends XenAPIException {
+
+        /**
+         * Create a new WlbXenserverMalformedResponse
+         */
+        public WlbXenserverMalformedResponse() {
+            super("The WLB server reported that XenServer said something to it that WLB wasn't expecting or didn't understand.");
+        }
+
+    }
+
+    /**
      * The pool failed to enable external authentication.
      */
     public static class PoolAuthEnableFailedDuplicateHostname extends XenAPIException {
@@ -3381,20 +3595,6 @@ public class Types
             super("The pool failed to enable external authentication.");
             this.host = host;
             this.message = message;
-        }
-
-    }
-
-    /**
-     * The WLB server reported that XenServer said something to it that WLB wasn't expecting or didn't understand.
-     */
-    public static class WlbXenserverMalformedResponse extends XenAPIException {
-
-        /**
-         * Create a new WlbXenserverMalformedResponse
-         */
-        public WlbXenserverMalformedResponse() {
-            super("The WLB server reported that XenServer said something to it that WLB wasn't expecting or didn't understand.");
         }
 
     }
@@ -4125,6 +4325,24 @@ public class Types
         public HaNotInstalled(String host) {
             super("The operation could not be performed because the HA software is not installed on this host.");
             this.host = host;
+        }
+
+    }
+
+    /**
+     * A PIF with this specified device name already exists.
+     */
+    public static class DuplicatePifDeviceName extends XenAPIException {
+        public final String device;
+
+        /**
+         * Create a new DuplicatePifDeviceName
+         *
+         * @param device
+         */
+        public DuplicatePifDeviceName(String device) {
+            super("A PIF with this specified device name already exists.");
+            this.device = device;
         }
 
     }
@@ -5375,6 +5593,20 @@ public class Types
     }
 
     /**
+     * The host CDROM drive does not contain a valid CD
+     */
+    public static class HostCdDriveEmpty extends XenAPIException {
+
+        /**
+         * Create a new HostCdDriveEmpty
+         */
+        public HostCdDriveEmpty() {
+            super("The host CDROM drive does not contain a valid CD");
+        }
+
+    }
+
+    /**
      * The operation could not be performed while the host is still armed; it must be disarmed first
      */
     public static class HaHostIsArmed extends XenAPIException {
@@ -5434,6 +5666,20 @@ public class Types
         public PifIsVlan(String PIF) {
             super("You tried to create a VLAN on top of another VLAN - use the underlying physical PIF/bond instead");
             this.PIF = PIF;
+        }
+
+    }
+
+    /**
+     * Archive more frequent than backup.
+     */
+    public static class VmppArchiveMoreFrequentThanBackup extends XenAPIException {
+
+        /**
+         * Create a new VmppArchiveMoreFrequentThanBackup
+         */
+        public VmppArchiveMoreFrequentThanBackup() {
+            super("Archive more frequent than backup.");
         }
 
     }
@@ -6229,6 +6475,20 @@ public class Types
     }
 
     /**
+     * There is at least on VM assigned to this protection policy.
+     */
+    public static class VmppHasVm extends XenAPIException {
+
+        /**
+         * Create a new VmppHasVm
+         */
+        public VmppHasVm() {
+            super("There is at least on VM assigned to this protection policy.");
+        }
+
+    }
+
+    /**
      * This operation cannot be performed because the host is not disabled. Please disable the host and then try again.
      */
     public static class HostNotDisabled extends XenAPIException {
@@ -6531,6 +6791,20 @@ public class Types
     }
 
     /**
+     * The WLB server reported that communication with XenServer timed out.
+     */
+    public static class WlbXenserverTimeout extends XenAPIException {
+
+        /**
+         * Create a new WlbXenserverTimeout
+         */
+        public WlbXenserverTimeout() {
+            super("The WLB server reported that communication with XenServer timed out.");
+        }
+
+    }
+
+    /**
      * The quiesced-snapshot operation failed for an unexpected reason
      */
     public static class VmSnapshotWithQuiesceFailed extends XenAPIException {
@@ -6565,20 +6839,6 @@ public class Types
             super("The pool failed to disable the external authentication of at least one host.");
             this.host = host;
             this.message = message;
-        }
-
-    }
-
-    /**
-     * The WLB server reported that communication with XenServer timed out.
-     */
-    public static class WlbXenserverTimeout extends XenAPIException {
-
-        /**
-         * Create a new WlbXenserverTimeout
-         */
-        public WlbXenserverTimeout() {
-            super("The WLB server reported that communication with XenServer timed out.");
         }
 
     }
@@ -6668,6 +6928,20 @@ public class Types
             super("Could not find any volumes supported by the Citrix XenServer Vss Provider");
             this.vm = vm;
             this.errorCode = errorCode;
+        }
+
+    }
+
+    /**
+     * The host is its own slave. Please use pool-emergency-transition-to-master or pool-emergency-reset-master.
+     */
+    public static class HostItsOwnSlave extends XenAPIException {
+
+        /**
+         * Create a new HostItsOwnSlave
+         */
+        public HostItsOwnSlave() {
+            super("The host is its own slave. Please use pool-emergency-transition-to-master or pool-emergency-reset-master.");
         }
 
     }
@@ -6878,6 +7152,24 @@ public class Types
          */
         public RestoreTargetMgmtIfNotInBackup() {
             super("The restore could not be performed because the host's current management interface is not in the backup. The interfaces mentioned in the backup are:");
+        }
+
+    }
+
+    /**
+     * You tried to create a VLAN or tunnel on top of a tunnel access PIF - use the underlying transport PIF instead.
+     */
+    public static class IsTunnelAccessPif extends XenAPIException {
+        public final String PIF;
+
+        /**
+         * Create a new IsTunnelAccessPif
+         *
+         * @param PIF
+         */
+        public IsTunnelAccessPif(String PIF) {
+            super("You tried to create a VLAN or tunnel on top of a tunnel access PIF - use the underlying transport PIF instead.");
+            this.PIF = PIF;
         }
 
     }
@@ -7548,27 +7840,6 @@ public class Types
     }
 
     /**
-     * The pool failed to enable external authentication.
-     */
-    public static class PoolAuthEnableFailedUnavailable extends XenAPIException {
-        public final String host;
-        public final String message;
-
-        /**
-         * Create a new PoolAuthEnableFailedUnavailable
-         *
-         * @param host
-         * @param message
-         */
-        public PoolAuthEnableFailedUnavailable(String host, String message) {
-            super("The pool failed to enable external authentication.");
-            this.host = host;
-            this.message = message;
-        }
-
-    }
-
-    /**
      * You attempted an operation which involves a host which could not be contacted.
      */
     public static class HostOffline extends XenAPIException {
@@ -7617,6 +7888,24 @@ public class Types
          */
         public HostHasNoManagementIp() {
             super("The host failed to acquire an IP address on its management interface and therefore cannot contact the master.");
+        }
+
+    }
+
+    /**
+     * The tunnel transport PIF has no IP configuration set.
+     */
+    public static class TransportPifNotConfigured extends XenAPIException {
+        public final String PIF;
+
+        /**
+         * Create a new TransportPifNotConfigured
+         *
+         * @param PIF
+         */
+        public TransportPifNotConfigured(String PIF) {
+            super("The tunnel transport PIF has no IP configuration set.");
+            this.PIF = PIF;
         }
 
     }
@@ -7956,6 +8245,17 @@ public class Types
         }
     }
 
+    public static Types.OnBoot toOnBoot(Object object) {
+        if (object == null) {
+            return null;
+        }
+        try {
+            return OnBoot.valueOf(((String) object).toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return OnBoot.UNRECOGNIZED;
+        }
+    }
+
     public static Types.OnCrashBehaviour toOnCrashBehaviour(Object object) {
         if (object == null) {
             return null;
@@ -8096,6 +8396,50 @@ public class Types
             return VmPowerState.valueOf(((String) object).toUpperCase());
         } catch (IllegalArgumentException ex) {
             return VmPowerState.UNRECOGNIZED;
+        }
+    }
+
+    public static Types.VmppArchiveFrequency toVmppArchiveFrequency(Object object) {
+        if (object == null) {
+            return null;
+        }
+        try {
+            return VmppArchiveFrequency.valueOf(((String) object).toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return VmppArchiveFrequency.UNRECOGNIZED;
+        }
+    }
+
+    public static Types.VmppArchiveTargetType toVmppArchiveTargetType(Object object) {
+        if (object == null) {
+            return null;
+        }
+        try {
+            return VmppArchiveTargetType.valueOf(((String) object).toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return VmppArchiveTargetType.UNRECOGNIZED;
+        }
+    }
+
+    public static Types.VmppBackupFrequency toVmppBackupFrequency(Object object) {
+        if (object == null) {
+            return null;
+        }
+        try {
+            return VmppBackupFrequency.valueOf(((String) object).toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return VmppBackupFrequency.UNRECOGNIZED;
+        }
+    }
+
+    public static Types.VmppBackupType toVmppBackupType(Object object) {
+        if (object == null) {
+            return null;
+        }
+        try {
+            return VmppBackupType.valueOf(((String) object).toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            return VmppBackupType.UNRECOGNIZED;
         }
     }
 
@@ -8398,6 +8742,19 @@ public class Types
         return result;
     }
 
+    public static Set<VMPP> toSetOfVMPP(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Object[] items = (Object[]) object;
+        Set<VMPP> result = new LinkedHashSet<VMPP>();
+        for(Object item: items) {
+            VMPP typed = toVMPP(item);
+            result.add(typed);
+        }
+        return result;
+    }
+
     public static Set<VMGuestMetrics> toSetOfVMGuestMetrics(Object object) {
         if (object == null) {
             return null;
@@ -8640,6 +8997,19 @@ public class Types
         Set<Task> result = new LinkedHashSet<Task>();
         for(Object item: items) {
             Task typed = toTask(item);
+            result.add(typed);
+        }
+        return result;
+    }
+
+    public static Set<Tunnel> toSetOfTunnel(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Object[] items = (Object[]) object;
+        Set<Tunnel> result = new LinkedHashSet<Tunnel>();
+        for(Object item: items) {
+            Tunnel typed = toTunnel(item);
             result.add(typed);
         }
         return result;
@@ -9121,6 +9491,21 @@ public class Types
         return result;
     }
 
+    public static Map<VMPP, VMPP.Record> toMapOfVMPPVMPPRecord(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map map = (Map) object;
+        Map<VMPP,VMPP.Record> result = new HashMap<VMPP,VMPP.Record>();
+        Set<Map.Entry> entries = map.entrySet();
+        for(Map.Entry entry: entries) {
+            VMPP key = toVMPP(entry.getKey());
+            VMPP.Record value = toVMPPRecord(entry.getValue());
+            result.put(key, value);
+        }
+        return result;
+    }
+
     public static Map<VMGuestMetrics, VMGuestMetrics.Record> toMapOfVMGuestMetricsVMGuestMetricsRecord(Object object) {
         if (object == null) {
             return null;
@@ -9406,6 +9791,21 @@ public class Types
         return result;
     }
 
+    public static Map<Tunnel, Tunnel.Record> toMapOfTunnelTunnelRecord(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map map = (Map) object;
+        Map<Tunnel,Tunnel.Record> result = new HashMap<Tunnel,Tunnel.Record>();
+        Set<Map.Entry> entries = map.entrySet();
+        for(Map.Entry entry: entries) {
+            Tunnel key = toTunnel(entry.getKey());
+            Tunnel.Record value = toTunnelRecord(entry.getValue());
+            result.put(key, value);
+        }
+        return result;
+    }
+
     public static Bond toBond(Object object) {
         if (object == null) {
             return null;
@@ -9495,6 +9895,13 @@ public class Types
             return null;
         }
         return new VM((String) object);
+    }
+
+    public static VMPP toVMPP(Object object) {
+        if (object == null) {
+            return null;
+        }
+        return new VMPP((String) object);
     }
 
     public static VMGuestMetrics toVMGuestMetrics(Object object) {
@@ -9637,6 +10044,13 @@ public class Types
         return new Task((String) object);
     }
 
+    public static Tunnel toTunnel(Object object) {
+        if (object == null) {
+            return null;
+        }
+        return new Tunnel((String) object);
+    }
+
     public static User toUser(Object object) {
         if (object == null) {
             return null;
@@ -9700,6 +10114,8 @@ public class Types
             record.management = toBoolean(map.get("management"));
             record.otherConfig = toMapOfStringString(map.get("other_config"));
             record.disallowUnplug = toBoolean(map.get("disallow_unplug"));
+            record.tunnelAccessPIFOf = toSetOfTunnel(map.get("tunnel_access_PIF_of"));
+            record.tunnelTransportPIFOf = toSetOfTunnel(map.get("tunnel_transport_PIF_of"));
         return record;
     }
 
@@ -9769,6 +10185,7 @@ public class Types
             record.tags = toSetOfString(map.get("tags"));
             record.smConfig = toMapOfStringString(map.get("sm_config"));
             record.blobs = toMapOfStringBlob(map.get("blobs"));
+            record.localCacheEnabled = toBoolean(map.get("local_cache_enabled"));
         return record;
     }
 
@@ -9849,6 +10266,8 @@ public class Types
             record.snapshots = toSetOfVDI(map.get("snapshots"));
             record.snapshotTime = toDate(map.get("snapshot_time"));
             record.tags = toSetOfString(map.get("tags"));
+            record.allowCaching = toBoolean(map.get("allow_caching"));
+            record.onBoot = toOnBoot(map.get("on_boot"));
         return record;
     }
 
@@ -9977,6 +10396,37 @@ public class Types
             record.parent = toVM(map.get("parent"));
             record.children = toSetOfVM(map.get("children"));
             record.biosStrings = toMapOfStringString(map.get("bios_strings"));
+            record.protectionPolicy = toVMPP(map.get("protection_policy"));
+            record.isSnapshotFromVmpp = toBoolean(map.get("is_snapshot_from_vmpp"));
+        return record;
+    }
+
+    public static VMPP.Record toVMPPRecord(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map<String,Object> map = (Map<String,Object>) object;
+        VMPP.Record record = new VMPP.Record();
+            record.uuid = toString(map.get("uuid"));
+            record.nameLabel = toString(map.get("name_label"));
+            record.nameDescription = toString(map.get("name_description"));
+            record.isPolicyEnabled = toBoolean(map.get("is_policy_enabled"));
+            record.backupType = toVmppBackupType(map.get("backup_type"));
+            record.backupRetentionValue = toLong(map.get("backup_retention_value"));
+            record.backupFrequency = toVmppBackupFrequency(map.get("backup_frequency"));
+            record.backupSchedule = toMapOfStringString(map.get("backup_schedule"));
+            record.isBackupRunning = toBoolean(map.get("is_backup_running"));
+            record.backupLastRunTime = toDate(map.get("backup_last_run_time"));
+            record.archiveTargetType = toVmppArchiveTargetType(map.get("archive_target_type"));
+            record.archiveTargetConfig = toMapOfStringString(map.get("archive_target_config"));
+            record.archiveFrequency = toVmppArchiveFrequency(map.get("archive_frequency"));
+            record.archiveSchedule = toMapOfStringString(map.get("archive_schedule"));
+            record.isArchiveRunning = toBoolean(map.get("is_archive_running"));
+            record.archiveLastRunTime = toDate(map.get("archive_last_run_time"));
+            record.VMs = toSetOfVM(map.get("VMs"));
+            record.isAlarmEnabled = toBoolean(map.get("is_alarm_enabled"));
+            record.alarmConfig = toMapOfStringString(map.get("alarm_config"));
+            record.recentAlerts = toSetOfString(map.get("recent_alerts"));
         return record;
     }
 
@@ -10120,6 +10570,7 @@ public class Types
                 case                VM: b =                toVMRecord(a); break;
                 case        VM_METRICS: b =         toVMMetricsRecord(a); break;
                 case  VM_GUEST_METRICS: b =    toVMGuestMetricsRecord(a); break;
+                case              VMPP: b =              toVMPPRecord(a); break;
                 case              HOST: b =              toHostRecord(a); break;
                 case    HOST_CRASHDUMP: b =     toHostCrashdumpRecord(a); break;
                 case        HOST_PATCH: b =         toHostPatchRecord(a); break;
@@ -10146,6 +10597,7 @@ public class Types
                 case              BLOB: b =              toBlobRecord(a); break;
                 case           MESSAGE: b =           toMessageRecord(a); break;
                 case            SECRET: b =            toSecretRecord(a); break;
+                case            TUNNEL: b =            toTunnelRecord(a); break;
                 default: throw new RuntimeException("Internal error in auto-generated code whilst unmarshalling event snapshot");
         }
         record.snapshot = b;
@@ -10201,6 +10653,7 @@ public class Types
             record.biosStrings = toMapOfStringString(map.get("bios_strings"));
             record.powerOnMode = toString(map.get("power_on_mode"));
             record.powerOnConfig = toMapOfStringString(map.get("power_on_config"));
+            record.localCacheSr = toSR(map.get("local_cache_sr"));
         return record;
     }
 
@@ -10406,6 +10859,8 @@ public class Types
             record.authUserSid = toString(map.get("auth_user_sid"));
             record.authUserName = toString(map.get("auth_user_name"));
             record.rbacPermissions = toSetOfString(map.get("rbac_permissions"));
+            record.tasks = toSetOfTask(map.get("tasks"));
+            record.parent = toSession(map.get("parent"));
         return record;
     }
 
@@ -10444,6 +10899,20 @@ public class Types
             record.otherConfig = toMapOfStringString(map.get("other_config"));
             record.subtaskOf = toTask(map.get("subtask_of"));
             record.subtasks = toSetOfTask(map.get("subtasks"));
+        return record;
+    }
+
+    public static Tunnel.Record toTunnelRecord(Object object) {
+        if (object == null) {
+            return null;
+        }
+        Map<String,Object> map = (Map<String,Object>) object;
+        Tunnel.Record record = new Tunnel.Record();
+            record.uuid = toString(map.get("uuid"));
+            record.accessPIF = toPIF(map.get("access_PIF"));
+            record.transportPIF = toPIF(map.get("transport_PIF"));
+            record.status = toMapOfStringString(map.get("status"));
+            record.otherConfig = toMapOfStringString(map.get("other_config"));
         return record;
     }
 
@@ -10511,6 +10980,10 @@ public class Types
 
    public static VM toVM(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
                return Types.toVM(parseResult(task.getResult(connection)));
+    }
+
+   public static VMPP toVMPP(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
+               return Types.toVMPP(parseResult(task.getResult(connection)));
     }
 
    public static VMGuestMetrics toVMGuestMetrics(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
@@ -10591,6 +11064,10 @@ public class Types
 
    public static Task toTask(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
                return Types.toTask(parseResult(task.getResult(connection)));
+    }
+
+   public static Tunnel toTunnel(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{
+               return Types.toTunnel(parseResult(task.getResult(connection)));
     }
 
    public static User toUser(Task task, Connection connection) throws XenAPIException, BadServerResponse, XmlRpcException, BadAsyncResult{

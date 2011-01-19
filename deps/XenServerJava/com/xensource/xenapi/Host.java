@@ -142,6 +142,7 @@ public class Host extends XenAPIObject {
             print.printf("%1$20s: %2$s\n", "biosStrings", this.biosStrings);
             print.printf("%1$20s: %2$s\n", "powerOnMode", this.powerOnMode);
             print.printf("%1$20s: %2$s\n", "powerOnConfig", this.powerOnConfig);
+            print.printf("%1$20s: %2$s\n", "localCacheSr", this.localCacheSr);
             return writer.toString();
         }
 
@@ -193,11 +194,12 @@ public class Host extends XenAPIObject {
             map.put("bios_strings", this.biosStrings == null ? new HashMap<String, String>() : this.biosStrings);
             map.put("power_on_mode", this.powerOnMode == null ? "" : this.powerOnMode);
             map.put("power_on_config", this.powerOnConfig == null ? new HashMap<String, String>() : this.powerOnConfig);
+            map.put("local_cache_sr", this.localCacheSr == null ? new SR("OpaqueRef:NULL") : this.localCacheSr);
             return map;
         }
 
         /**
-         * unique identifier/object reference
+         * Unique identifier/object reference
          */
         public String uuid;
         /**
@@ -368,6 +370,10 @@ public class Host extends XenAPIObject {
          * The power on config
          */
         public Map<String, String> powerOnConfig;
+        /**
+         * The SR that is used as a local cache
+         */
+        public SR localCacheSr;
     }
 
     /**
@@ -1152,6 +1158,23 @@ public class Host extends XenAPIObject {
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
             return Types.toMapOfStringString(result);
+    }
+
+    /**
+     * Get the local_cache_sr field of the given host.
+     *
+     * @return value of the field
+     */
+    public SR getLocalCacheSr(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "host.get_local_cache_sr";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toSR(result);
     }
 
     /**
@@ -2449,6 +2472,23 @@ public class Host extends XenAPIObject {
     }
 
     /**
+     * This call queries the host's clock for the current time in the host's local timezone
+     *
+     * @return The current local time
+     */
+    public Date getServerLocaltime(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "host.get_server_localtime";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toDate(result);
+    }
+
+    /**
      * This call enables external authentication on a host
      *
      * @param config A list of key-values containing the configuration data
@@ -2659,6 +2699,37 @@ public class Host extends XenAPIObject {
        XenAPIException,
        XmlRpcException {
         String method_call = "host.reset_cpu_features";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Enable the use of a local SR for caching purposes
+     *
+     * @param sr The SR to use as a local cache
+     */
+    public void enableLocalStorageCaching(Connection c, SR sr) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "host.enable_local_storage_caching";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(sr)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Disable the use of a local SR for caching purposes
+     *
+     */
+    public void disableLocalStorageCaching(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "host.disable_local_storage_caching";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);

@@ -48,11 +48,11 @@ import java.util.Set;
 import org.apache.xmlrpc.XmlRpcException;
 
 /**
- * The metrics associated with a virtual block device
+ * A tunnel for network traffic
  *
  * @author Citrix Systems, Inc.
  */
-public class VBDMetrics extends XenAPIObject {
+public class Tunnel extends XenAPIObject {
 
     /**
      * The XenAPI reference to this object.
@@ -62,7 +62,7 @@ public class VBDMetrics extends XenAPIObject {
     /**
      * For internal use only.
      */
-    VBDMetrics(String ref) {
+    Tunnel(String ref) {
        this.ref = ref;
     }
 
@@ -71,14 +71,14 @@ public class VBDMetrics extends XenAPIObject {
     }
 
     /**
-     * If obj is a VBDMetrics, compares XenAPI references for equality.
+     * If obj is a Tunnel, compares XenAPI references for equality.
      */
     @Override
     public boolean equals(Object obj)
     {
-        if (obj != null && obj instanceof VBDMetrics)
+        if (obj != null && obj instanceof Tunnel)
         {
-            VBDMetrics other = (VBDMetrics) obj;
+            Tunnel other = (Tunnel) obj;
             return other.ref.equals(this.ref);
         } else
         {
@@ -93,29 +93,29 @@ public class VBDMetrics extends XenAPIObject {
     }
 
     /**
-     * Represents all the fields in a VBDMetrics
+     * Represents all the fields in a Tunnel
      */
     public static class Record implements Types.Record {
         public String toString() {
             StringWriter writer = new StringWriter();
             PrintWriter print = new PrintWriter(writer);
             print.printf("%1$20s: %2$s\n", "uuid", this.uuid);
-            print.printf("%1$20s: %2$s\n", "ioReadKbs", this.ioReadKbs);
-            print.printf("%1$20s: %2$s\n", "ioWriteKbs", this.ioWriteKbs);
-            print.printf("%1$20s: %2$s\n", "lastUpdated", this.lastUpdated);
+            print.printf("%1$20s: %2$s\n", "accessPIF", this.accessPIF);
+            print.printf("%1$20s: %2$s\n", "transportPIF", this.transportPIF);
+            print.printf("%1$20s: %2$s\n", "status", this.status);
             print.printf("%1$20s: %2$s\n", "otherConfig", this.otherConfig);
             return writer.toString();
         }
 
         /**
-         * Convert a VBD_metrics.Record to a Map
+         * Convert a tunnel.Record to a Map
          */
         public Map<String,Object> toMap() {
             Map<String,Object> map = new HashMap<String,Object>();
             map.put("uuid", this.uuid == null ? "" : this.uuid);
-            map.put("io_read_kbs", this.ioReadKbs == null ? 0.0 : this.ioReadKbs);
-            map.put("io_write_kbs", this.ioWriteKbs == null ? 0.0 : this.ioWriteKbs);
-            map.put("last_updated", this.lastUpdated == null ? new Date(0) : this.lastUpdated);
+            map.put("access_PIF", this.accessPIF == null ? new PIF("OpaqueRef:NULL") : this.accessPIF);
+            map.put("transport_PIF", this.transportPIF == null ? new PIF("OpaqueRef:NULL") : this.transportPIF);
+            map.put("status", this.status == null ? new HashMap<String, String>() : this.status);
             map.put("other_config", this.otherConfig == null ? new HashMap<String, String>() : this.otherConfig);
             return map;
         }
@@ -125,60 +125,60 @@ public class VBDMetrics extends XenAPIObject {
          */
         public String uuid;
         /**
-         * Read bandwidth (KiB/s)
+         * The interface through which the tunnel is accessed
          */
-        public Double ioReadKbs;
+        public PIF accessPIF;
         /**
-         * Write bandwidth (KiB/s)
+         * The interface used by the tunnel
          */
-        public Double ioWriteKbs;
+        public PIF transportPIF;
         /**
-         * Time at which this information was last updated
+         * Status information about the tunnel
          */
-        public Date lastUpdated;
+        public Map<String, String> status;
         /**
-         * additional configuration
+         * Additional configuration
          */
         public Map<String, String> otherConfig;
     }
 
     /**
-     * Get a record containing the current state of the given VBD_metrics.
+     * Get a record containing the current state of the given tunnel.
      *
      * @return all fields from the object
      */
-    public VBDMetrics.Record getRecord(Connection c) throws
+    public Tunnel.Record getRecord(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VBD_metrics.get_record";
+        String method_call = "tunnel.get_record";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVBDMetricsRecord(result);
+            return Types.toTunnelRecord(result);
     }
 
     /**
-     * Get a reference to the VBD_metrics instance with the specified UUID.
+     * Get a reference to the tunnel instance with the specified UUID.
      *
      * @param uuid UUID of object to return
      * @return reference to the object
      */
-    public static VBDMetrics getByUuid(Connection c, String uuid) throws
+    public static Tunnel getByUuid(Connection c, String uuid) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VBD_metrics.get_by_uuid";
+        String method_call = "tunnel.get_by_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVBDMetrics(result);
+            return Types.toTunnel(result);
     }
 
     /**
-     * Get the uuid field of the given VBD_metrics.
+     * Get the uuid field of the given tunnel.
      *
      * @return value of the field
      */
@@ -186,7 +186,7 @@ public class VBDMetrics extends XenAPIObject {
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VBD_metrics.get_uuid";
+        String method_call = "tunnel.get_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
@@ -195,66 +195,49 @@ public class VBDMetrics extends XenAPIObject {
     }
 
     /**
-     * Get the io/read_kbs field of the given VBD_metrics.
+     * Get the access_PIF field of the given tunnel.
      *
      * @return value of the field
      */
-    public Double getIoReadKbs(Connection c) throws
+    public PIF getAccessPIF(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VBD_metrics.get_io_read_kbs";
+        String method_call = "tunnel.get_access_PIF";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toDouble(result);
+            return Types.toPIF(result);
     }
 
     /**
-     * Get the io/write_kbs field of the given VBD_metrics.
+     * Get the transport_PIF field of the given tunnel.
      *
      * @return value of the field
      */
-    public Double getIoWriteKbs(Connection c) throws
+    public PIF getTransportPIF(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VBD_metrics.get_io_write_kbs";
+        String method_call = "tunnel.get_transport_PIF";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toDouble(result);
+            return Types.toPIF(result);
     }
 
     /**
-     * Get the last_updated field of the given VBD_metrics.
+     * Get the status field of the given tunnel.
      *
      * @return value of the field
      */
-    public Date getLastUpdated(Connection c) throws
+    public Map<String, String> getStatus(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VBD_metrics.get_last_updated";
-        String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
-        Map response = c.dispatch(method_call, method_params);
-        Object result = response.get("Value");
-            return Types.toDate(result);
-    }
-
-    /**
-     * Get the other_config field of the given VBD_metrics.
-     *
-     * @return value of the field
-     */
-    public Map<String, String> getOtherConfig(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
-        String method_call = "VBD_metrics.get_other_config";
+        String method_call = "tunnel.get_status";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
@@ -263,7 +246,73 @@ public class VBDMetrics extends XenAPIObject {
     }
 
     /**
-     * Set the other_config field of the given VBD_metrics.
+     * Get the other_config field of the given tunnel.
+     *
+     * @return value of the field
+     */
+    public Map<String, String> getOtherConfig(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "tunnel.get_other_config";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toMapOfStringString(result);
+    }
+
+    /**
+     * Set the status field of the given tunnel.
+     *
+     * @param status New value to set
+     */
+    public void setStatus(Connection c, Map<String, String> status) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "tunnel.set_status";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(status)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Add the given key-value pair to the status field of the given tunnel.
+     *
+     * @param key Key to add
+     * @param value Value to add
+     */
+    public void addToStatus(Connection c, String key, String value) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "tunnel.add_to_status";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Remove the given key and its corresponding value from the status field of the given tunnel.  If the key is not in that Map, then do nothing.
+     *
+     * @param key Key to remove
+     */
+    public void removeFromStatus(Connection c, String key) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "tunnel.remove_from_status";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Set the other_config field of the given tunnel.
      *
      * @param otherConfig New value to set
      */
@@ -271,7 +320,7 @@ public class VBDMetrics extends XenAPIObject {
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VBD_metrics.set_other_config";
+        String method_call = "tunnel.set_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(otherConfig)};
         Map response = c.dispatch(method_call, method_params);
@@ -279,7 +328,7 @@ public class VBDMetrics extends XenAPIObject {
     }
 
     /**
-     * Add the given key-value pair to the other_config field of the given VBD_metrics.
+     * Add the given key-value pair to the other_config field of the given tunnel.
      *
      * @param key Key to add
      * @param value Value to add
@@ -288,7 +337,7 @@ public class VBDMetrics extends XenAPIObject {
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VBD_metrics.add_to_other_config";
+        String method_call = "tunnel.add_to_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
         Map response = c.dispatch(method_call, method_params);
@@ -296,7 +345,7 @@ public class VBDMetrics extends XenAPIObject {
     }
 
     /**
-     * Remove the given key and its corresponding value from the other_config field of the given VBD_metrics.  If the key is not in that Map, then do nothing.
+     * Remove the given key and its corresponding value from the other_config field of the given tunnel.  If the key is not in that Map, then do nothing.
      *
      * @param key Key to remove
      */
@@ -304,7 +353,7 @@ public class VBDMetrics extends XenAPIObject {
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VBD_metrics.remove_from_other_config";
+        String method_call = "tunnel.remove_from_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
         Map response = c.dispatch(method_call, method_params);
@@ -312,37 +361,113 @@ public class VBDMetrics extends XenAPIObject {
     }
 
     /**
-     * Return a list of all the VBD_metrics instances known to the system.
+     * Create a tunnel
      *
-     * @return references to all objects
+     * @param transportPIF PIF which receives the tagged traffic
+     * @param network Network to receive the tunnelled traffic
+     * @return Task
      */
-    public static Set<VBDMetrics> getAll(Connection c) throws
+    public static Task createAsync(Connection c, PIF transportPIF, Network network) throws
        BadServerResponse,
        XenAPIException,
-       XmlRpcException {
-        String method_call = "VBD_metrics.get_all";
+       XmlRpcException,
+       Types.OpenvswitchNotActive,
+       Types.TransportPifNotConfigured,
+       Types.IsTunnelAccessPif {
+        String method_call = "Async.tunnel.create";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(transportPIF), Marshalling.toXMLRPC(network)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfVBDMetrics(result);
+        return Types.toTask(result);
     }
 
     /**
-     * Return a map of VBD_metrics references to VBD_metrics records for all VBD_metrics instances known to the system.
+     * Create a tunnel
      *
-     * @return records of all objects
+     * @param transportPIF PIF which receives the tagged traffic
+     * @param network Network to receive the tunnelled traffic
+     * @return The reference of the created tunnel object
      */
-    public static Map<VBDMetrics, VBDMetrics.Record> getAllRecords(Connection c) throws
+    public static Tunnel create(Connection c, PIF transportPIF, Network network) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException,
+       Types.OpenvswitchNotActive,
+       Types.TransportPifNotConfigured,
+       Types.IsTunnelAccessPif {
+        String method_call = "tunnel.create";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(transportPIF), Marshalling.toXMLRPC(network)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toTunnel(result);
+    }
+
+    /**
+     * Destroy a tunnel
+     *
+     * @return Task
+     */
+    public Task destroyAsync(Connection c) throws
        BadServerResponse,
        XenAPIException,
        XmlRpcException {
-        String method_call = "VBD_metrics.get_all_records";
+        String method_call = "Async.tunnel.destroy";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
+     * Destroy a tunnel
+     *
+     */
+    public void destroy(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "tunnel.destroy";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
+        Map response = c.dispatch(method_call, method_params);
+        return;
+    }
+
+    /**
+     * Return a list of all the tunnels known to the system.
+     *
+     * @return references to all objects
+     */
+    public static Set<Tunnel> getAll(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "tunnel.get_all";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfVBDMetricsVBDMetricsRecord(result);
+            return Types.toSetOfTunnel(result);
+    }
+
+    /**
+     * Return a map of tunnel references to tunnel records for all tunnels known to the system.
+     *
+     * @return records of all objects
+     */
+    public static Map<Tunnel, Tunnel.Record> getAllRecords(Connection c) throws
+       BadServerResponse,
+       XenAPIException,
+       XmlRpcException {
+        String method_call = "tunnel.get_all_records";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+            return Types.toMapOfTunnelTunnelRecord(result);
     }
 
 }

@@ -117,7 +117,7 @@ public class VTPM extends XenAPIObject {
         }
 
         /**
-         * unique identifier/object reference
+         * Unique identifier/object reference
          */
         public String uuid;
         /**

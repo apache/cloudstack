@@ -121,7 +121,7 @@ public class VLAN extends XenAPIObject {
         }
 
         /**
-         * unique identifier/object reference
+         * Unique identifier/object reference
          */
         public String uuid;
         /**
