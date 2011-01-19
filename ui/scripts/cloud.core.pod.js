@@ -242,21 +242,27 @@ function getIpRange(startip, endip) {
 	return ipRange;
 }	
 
-function refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId, hypervisorType) {   
+var clustersUnderOnePod = {};
+//function refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId, hypervisorType) {
+function refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId) {   
 	var arrayParams = [];
 	arrayParams.push("&podid=" + podId);
+	/*
 	arrayParams.push("&hypervisor=" + hypervisorType);
 	if(hypervisorType == "VmWare")
 		arrayParams.push("&clustertype=CloudManaged");
+	*/
 	
     $.ajax({
         data: createURL("command=listClusters"+arrayParams.join("")),
         dataType: "json",
+        async: false,
         success: function(json) {			            
             var items = json.listclustersresponse.cluster;
             var clusterSelect = dialogAddHost.find("#cluster_select").empty();		
             if(items != null && items.length > 0) {		                                        
                 for(var i=0; i<items.length; i++) {	
+                    clustersUnderOnePod[fromdb(items[i].id)] = items[i];
                     if(clusterId != null && items[i].id == clusterId)
                         clusterSelect.append("<option value='" + fromdb(items[i].id) + "' selected>" + fromdb(items[i].name) + "</option>");	
                     else               
@@ -403,8 +409,23 @@ function bindAddClusterButton($leftmenuItem1) {
 
 function bindAddHostButton($leftmenuItem1) {     
     var $button = $("#add_host_button");   
-    $button.unbind("click").bind("click", function(event) {     
-        dialogAddHost = $("#dialog_add_host");      
+    
+    var dialogAddHost = $("#dialog_add_host");   
+    dialogAddHost.find("#cluster_select").change(function() {        
+        var clusterId = $(this).val();
+        if(clusterId == null)
+            return;        
+        var clusterObj = clustersUnderOnePod[clusterId];                    
+    	if(clusterObj.hypervisortype == "VmWare") {
+    		$('li[input_group="vmware"]', dialogAddHost).show();
+    		$('li[input_group="general"]', dialogAddHost).hide();
+    	} else {
+    		$('li[input_group="vmware"]', dialogAddHost).hide();
+    		$('li[input_group="general"]', dialogAddHost).show();
+    	}   
+    });
+    
+    $button.unbind("click").bind("click", function(event) {             
         dialogAddHost.find("#info_container").hide();    
         dialogAddHost.find("#new_cluster_name").val("");
        
@@ -432,7 +453,8 @@ function bindAddHostButton($leftmenuItem1) {
             dialogAddHost.find("#zone_name").text(fromdb(clusterObj.zonename));  
             dialogAddHost.find("#pod_name").text(fromdb(clusterObj.podname)); 
         }       
-                  
+        
+        /*          
         dialogAddHost.find("#host_hypervisor").change(function() {
         	if($(this).val() == "VmWare") {
         		$('li[input_group="vmware"]', dialogAddHost).show();
@@ -444,42 +466,51 @@ function bindAddHostButton($leftmenuItem1) {
         	
             refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId, $(this).val());        
         }).change();
-                
+        */
+        
+        refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId); 
+        
+        dialogAddHost.find("#cluster_select").change();
+                        
         dialogAddHost
         .dialog('option', 'buttons', { 				
 	        "Add": function() { 
 	            var $thisDialog = $(this);		            
 	            			   
-			    var hypervisor = $thisDialog.find("#host_hypervisor").val();
+			    //var hypervisor = $thisDialog.find("#host_hypervisor").val();
 		     	
 		        // validate values
 		        var isValid = true;		
 			    isValid &= validateDropDownBox("Cluster", $thisDialog.find("#cluster_select"), $thisDialog.find("#cluster_select_errormsg"), false);  //required, reset error text					    			
-				if(hypervisor == "VmWare") {
-			        isValid &= validateString("vCenter Address", $thisDialog.find("#host_vcenter_address"), $thisDialog.find("#host_vcenter_address_errormsg"));
-			        isValid &= validateString("vCenter User", $thisDialog.find("#host_vcenter_username"), $thisDialog.find("#host_vcenter_username_errormsg"));
-			        isValid &= validateString("vCenter Password", $thisDialog.find("#host_vcenter_password"), $thisDialog.find("#host_vcenter_password_errormsg"));	
-			        isValid &= validateString("vCenter Datacenter", $thisDialog.find("#host_vcenter_dc"), $thisDialog.find("#host_vcenter_dc_errormsg"));	
-			        isValid &= validateString("vCenter Host", $thisDialog.find("#host_vcenter_host"), $thisDialog.find("#host_vcenter_host_errormsg"));	
-		        } else {
-			        isValid &= validateString("Host name", $thisDialog.find("#host_hostname"), $thisDialog.find("#host_hostname_errormsg"));
-			        isValid &= validateString("User name", $thisDialog.find("#host_username"), $thisDialog.find("#host_username_errormsg"));
-			        isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));	
-		        }				
+				var clusterId = $thisDialog.find("#cluster_select").val();	
+				var clusterObj, hypervisor;
+				if(clusterId != null) {
+				    clusterObj = clustersUnderOnePod[clusterId];    
+                    hypervisor = clusterObj.hypervisortype;                     
+				    if(hypervisor == "VmWare") {
+			            isValid &= validateString("vCenter Address", $thisDialog.find("#host_vcenter_address"), $thisDialog.find("#host_vcenter_address_errormsg"));
+			            isValid &= validateString("vCenter User", $thisDialog.find("#host_vcenter_username"), $thisDialog.find("#host_vcenter_username_errormsg"));
+			            isValid &= validateString("vCenter Password", $thisDialog.find("#host_vcenter_password"), $thisDialog.find("#host_vcenter_password_errormsg"));	
+			            isValid &= validateString("vCenter Datacenter", $thisDialog.find("#host_vcenter_dc"), $thisDialog.find("#host_vcenter_dc_errormsg"));	
+			            isValid &= validateString("vCenter Host", $thisDialog.find("#host_vcenter_host"), $thisDialog.find("#host_vcenter_host_errormsg"));	
+		            } else {
+			            isValid &= validateString("Host name", $thisDialog.find("#host_hostname"), $thisDialog.find("#host_hostname_errormsg"));
+			            isValid &= validateString("User name", $thisDialog.find("#host_username"), $thisDialog.find("#host_username_errormsg"));
+			            isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));	
+		            }			
+		        }    	
 		        if (!isValid) 
 		            return;
 		            				
 				$thisDialog.find("#spinning_wheel").show(); 				
 				
-		        var array1 = [];
-			    var hypervisor = $thisDialog.find("#host_hypervisor").val();
-			    array1.push("&hypervisor="+hypervisor);
-			    array1.push("&clustertype=CloudManaged");
+		        var array1 = [];			    
 		        array1.push("&zoneId="+zoneId);
-		        array1.push("&podId="+podId);
-						    			    		            
-		        var clusterId = $thisDialog.find("#cluster_select").val();			    
-			    array1.push("&clusterid="+clusterId);			    
+		        array1.push("&podId="+podId);	
+			    array1.push("&clusterid="+clusterId);	
+                array1.push("&hypervisor=" + hypervisor);   
+                var clustertype = clusterObj.clustertype;
+                array1.push("&clustertype=" + clustertype);	
 		        	
 			    if(hypervisor == "VmWare") {
 			        var username = trim($thisDialog.find("#host_vcenter_username").val());
@@ -537,7 +568,7 @@ function bindAddHostButton($leftmenuItem1) {
 			        },			
                     error: function(XMLHttpResponse) {	
 						handleError(XMLHttpResponse, function() {							
-							refreshClsuterFieldInAddHostDialog($thisDialog, podId, clusterId, dialogAddHost.find("#host_hypervisor").val());                                
+							//refreshClsuterFieldInAddHostDialog($thisDialog, podId, clusterId, dialogAddHost.find("#host_hypervisor").val());                                
 							handleErrorInDialog(XMLHttpResponse, $thisDialog);								
 						});
                     }				
