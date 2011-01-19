@@ -2132,10 +2132,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	    
 	    try {
 			vm = _itMgr.start(vm, null, caller, owner);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	    finally {
+		} finally {
 			updateVmStateForFailedVmCreation(vm.getId());
 		}
 		vm.setPassword(password);
