@@ -112,7 +112,7 @@ function afterLoadVolumeJSP() {
     
     $("#dialog_add_volume").find("#volume_diskoffering").unbind("change").bind("change", function(event) {        
         var jsonObj = $(this).find("option:selected").data("jsonObj");
-        if(jsonObj.isCustomized == true) {
+        if(jsonObj.iscustomized == true) {
             $("#dialog_add_volume").find("#size_container").show();
         }
         else {
