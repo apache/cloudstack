@@ -41,6 +41,7 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 	List<HostVO> listByHostPod(long podId);
 	List<HostVO> listByStatus(Status... status);
 	List<HostVO> listBy(Host.Type type, long dcId);
+	List<HostVO> listAllBy(Host.Type type, long dcId);
 	HostVO findSecondaryStorageHost(long dcId);
 	List<HostVO> listByCluster(long clusterId);
 	/**

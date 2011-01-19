@@ -1089,7 +1089,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     public Pair<String, String> getAbsoluteIsoPath(long templateId, long dataCenterId) {
         String isoPath = null;
 
-        List<HostVO> storageHosts = _hostDao.listBy(Host.Type.SecondaryStorage, dataCenterId);
+        List<HostVO> storageHosts = _hostDao.listAllBy(Host.Type.SecondaryStorage, dataCenterId);
         if (storageHosts != null) {
             for (HostVO storageHost : storageHosts) {
                 VMTemplateHostVO templateHostVO = _vmTemplateHostDao.findByHostTemplate(storageHost.getId(), templateId);
@@ -1099,7 +1099,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 }
             }
         }
-
+        s_logger.warn("Unable to find secondary storage in zone id=" + dataCenterId);
         return null;
     }
 

@@ -314,6 +314,15 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
     
     @Override
+    public List<HostVO> listAllBy(Host.Type type, long dcId) {
+        SearchCriteria<HostVO> sc = TypeDcStatusSearch.create();
+        sc.setParameters("type", type.toString());
+        sc.setParameters("dc", dcId);
+
+        return listBy(sc);
+    }
+    
+    @Override
     public HostVO findByPrivateIpAddressInDataCenter(long dcId, String privateIpAddress) {
         SearchCriteria<HostVO> sc = DcPrivateIpAddressSearch.create();
         sc.setParameters("dc", dcId);
