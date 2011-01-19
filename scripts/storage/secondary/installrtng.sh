@@ -158,7 +158,7 @@ then
 fi
 
 
-installrslt=$($(dirname $0)/createtmplt.sh -s 2 -d 'SystemVM Template' -n $localfile -t $destdir/ -f $tmpfile -u)
+installrslt=$($(dirname $0)/createtmplt.sh -s 2 -d 'SystemVM Template' -n $localfile -t $destdir/ -f $tmpfile -u -v)
 
 if [ $? -ne 0 ]
 then

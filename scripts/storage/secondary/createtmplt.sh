@@ -3,7 +3,7 @@
 # createtmplt.sh -- install a template
 
 usage() {
-  printf "Usage: %s: -t <template-fs> -n <templatename> -f <root disk file> -c <md5 cksum> -d <descr> -h  [-u] \n" $(basename $0) >&2
+  printf "Usage: %s: -t <template-fs> -n <templatename> -f <root disk file> -c <md5 cksum> -d <descr> -h  [-u] [-v]\n" $(basename $0) >&2
 }
 
 
@@ -97,7 +97,7 @@ create_from_file() {
   local tmpltimg=$2
   local tmpltname=$3
 
-  echo "Moving to /$tmpltfs/$tmpltname...could take a while" >&2
+  [ -n "$verbose" ] && echo "Moving to /$tmpltfs/$tmpltname...could take a while" >&2
   mv $tmpltimg /$tmpltfs/$tmpltname
 
 }
@@ -112,7 +112,7 @@ cleanup=false
 dflag=
 cflag=
 
-while getopts 'uht:n:f:s:c:d:S:' OPTION
+while getopts 'vuht:n:f:s:c:d:S:' OPTION
 do
   case $OPTION in
   t)	tflag=1
@@ -142,6 +142,8 @@ do
 		;;
   u)	cleanup="true"
 		;;
+  v)	verbose="true"
+		;;
   ?)	usage
 		exit 2
 		;;
@@ -166,7 +168,7 @@ if [ -n "$cksum" ]
 then
   verify_cksum $cksum $tmpltimg
 fi
-is_compressed $tmpltimg
+[ -n "$verbose" ] && is_compressed $tmpltimg
 tmpltimg2=$(uncompress $tmpltimg)
 rollback_if_needed $tmpltfs $? "failed to uncompress $tmpltimg\n"
 
