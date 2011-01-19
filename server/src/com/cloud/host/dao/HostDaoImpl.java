@@ -315,7 +315,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     
     @Override
     public List<HostVO> listAllBy(Host.Type type, long dcId) {
-        SearchCriteria<HostVO> sc = TypeDcStatusSearch.create();
+        SearchCriteria<HostVO> sc = TypeDcSearch.create();
         sc.setParameters("type", type.toString());
         sc.setParameters("dc", dcId);
 
