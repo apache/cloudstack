@@ -3,7 +3,7 @@
 # createtmplt.sh -- install a template
 
 usage() {
-  printf "Usage: %s: -t <template-fs> -n <templatename> -f <root disk file> -c <md5 cksum> -d <descr> -h  [-u]\n" $(basename $0) >&2
+  printf "Usage: %s: -t <template-fs> -n <templatename> -f <root disk file> -c <md5 cksum> -d <descr> -h  [-u] \n" $(basename $0) >&2
 }
 
 
@@ -45,6 +45,25 @@ untar() {
 
 }
 
+is_compressed() {
+  local ft=$(file $1| awk -F" " '{print $2}')
+  local tmpfile=${1}.tmp
+
+  case $ft in
+  gzip)  ctype="gzip"
+         ;;
+  bzip2)  ctype="bz2"
+         ;;
+  ZIP)  ctype="zip"
+        ;;
+    *) echo "File $1 does not appear to be compressed" >&2
+        return 1
+	;;
+  esac
+  echo "Uncompressing to $tmpfile (type $ctype)...could take a long time" >&2
+  return 0
+}
+
 uncompress() {
   local ft=$(file $1| awk -F" " '{print $2}')
   local tmpfile=${1}.tmp
@@ -56,8 +75,8 @@ uncompress() {
          ;;
   ZIP)  unzip -q -p $1 | cat > $tmpfile
         ;;
-  *)	printf "$1"
-        return 0
+    *) printf "$1"
+       return 0
 	;;
   esac
 
@@ -78,7 +97,7 @@ create_from_file() {
   local tmpltimg=$2
   local tmpltname=$3
 
-  #copy the file to the disk
+  echo "Moving to /$tmpltfs/$tmpltname...could take a while" >&2
   mv $tmpltimg /$tmpltfs/$tmpltname
 
 }
@@ -147,6 +166,7 @@ if [ -n "$cksum" ]
 then
   verify_cksum $cksum $tmpltimg
 fi
+is_compressed $tmpltimg
 tmpltimg2=$(uncompress $tmpltimg)
 rollback_if_needed $tmpltfs $? "failed to uncompress $tmpltimg\n"
 
