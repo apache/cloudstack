@@ -90,7 +90,7 @@ function afterLoadTemplateJSP() {
         $("#dialog_add_template #add_template_featured_container, #dialog_edit_template #edit_template_featured_container").show();
     }
     else {  
-		if (g_userPublicTemplateEnabled == "true") {
+		if (getUserPublicTemplateEnabled() == "true") {
 			$readonlyFields = $detailsTab.find("#name, #displaytext, #passwordenabled, #ispublic, #ostypename");
 			$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #ostypename_edit"); 
 		} else {
@@ -105,7 +105,7 @@ function afterLoadTemplateJSP() {
     $("#add_template_button").unbind("click").bind("click", function(event) {     
         $("#dialog_add_template #add_template_hypervisor").change();	   
 
-		if (g_userPublicTemplateEnabled == "true" || isAdmin()) {
+		if (getUserPublicTemplateEnabled() == "true" || isAdmin()) {
 			$("#dialog_add_template #add_template_public_container").show();
 		}
        

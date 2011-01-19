@@ -688,8 +688,6 @@ $(document).ready(function() {
 					g_hypervisorType = json.loginresponse.hypervisortype;				
 				if (json.loginresponse.directattachsecuritygroupsenabled != null) 
 					g_directAttachSecurityGroupsEnabled = json.loginresponse.directattachsecuritygroupsenabled;
-				if (json.loginresponse.directattacheduntaggedenabled != null) 
-					g_directAttachedUntaggedEnabled = json.loginresponse.directattacheduntaggedenabled;
                 if (json.loginresponse.systemvmuselocalstorage != null) 
 					g_systemVmUseLocalStorage = json.loginresponse.systemvmuselocalstorage;
 					
@@ -702,7 +700,6 @@ $(document).ready(function() {
 				$.cookie('timezoneoffset', g_timezoneoffset, { expires: 1});  
 				$.cookie('timezone', g_timezone, { expires: 1});  
 				$.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1}); 
-				$.cookie('directattacheduntaggedenabled', g_directAttachedUntaggedEnabled, { expires: 1}); 
 				$.cookie('systemvmuselocalstorage', g_systemVmUseLocalStorage, { expires: 1}); 
 				
 				
@@ -775,7 +772,6 @@ $(document).ready(function() {
 	g_hypervisorType = $.cookie("hypervisortype");
 	g_timezone = $.cookie("timezone");
 	g_directAttachSecurityGroupsEnabled = $.cookie("directattachsecuritygroupsenabled");
-	g_directAttachedUntaggedEnabled = $.cookie("directattacheduntaggedenabled");
 	g_systemVmUseLocalStorage = $.cookie("systemvmuselocalstorage");
 	g_userPublicTemplateEnabled = $.cookie("userpublictemplateenabled");
 	
@@ -790,9 +786,6 @@ $(document).ready(function() {
 	if (!g_directAttachSecurityGroupsEnabled || g_directAttachSecurityGroupsEnabled.length == 0) 		
 		g_directAttachSecurityGroupsEnabled = "false";	
 		
-	if (!g_directAttachedUntaggedEnabled || g_directAttachedUntaggedEnabled.length == 0) 		
-		g_directAttachedUntaggedEnabled = "false";		
-	
 	if (!g_systemVmUseLocalStorage || g_systemVmUseLocalStorage.length == 0) 		
 		g_systemVmUseLocalStorage = "false";
 		

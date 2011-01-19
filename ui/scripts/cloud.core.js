@@ -1215,11 +1215,11 @@ function getHypervisorType() { return g_hypervisorType; }
 var g_directAttachSecurityGroupsEnabled = "false";
 function getDirectAttachSecurityGroupsEnabled() { return g_directAttachSecurityGroupsEnabled; }
 
-var g_directAttachedUntaggedEnabled = "false";
-function getDirectAttachUntaggedEnabled() { return g_directAttachedUntaggedEnabled; }
-
 var g_systemVmUseLocalStorage = "false";
 function getSystemVmUseLocalStorage() { return g_systemVmUseLocalStorage; }
+
+g_userPublicTemplateEnabled = "true"
+function getUserPublicTemplateEnabled() { return g_userPublicTemplateEnabled; }
 
 //keyboard keycode
 var keycode_Enter = 13;

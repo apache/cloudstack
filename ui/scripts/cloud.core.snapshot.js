@@ -50,7 +50,7 @@ function afterLoadSnapshotJSP() {
 }
 
 function initCreateTemplateFromSnapshotDialog() {
-	if (g_userPublicTemplateEnabled == "true" || isAdmin()) {
+	if (getUserPublicTemplateEnabled() == "true" || isAdmin()) {
 		$("#dialog_create_template_from_snapshot #create_template_public_container").show();
 	}
 	

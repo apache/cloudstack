@@ -67,7 +67,7 @@ function afterLoadIsoJSP() {
 		$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ispublic_edit, #ostypename_edit, #isfeatured_edit"); 
     }
     else {  
-		if (g_userPublicTemplateEnabled == "true") {
+		if (getUserPublicTemplateEnabled() == "true") {
 			$readonlyFields  = $detailsTab.find("#name, #displaytext, #ispublic, #ostypename");
 			$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ispublic_edit, #ostypename_edit"); 
 		} else {
@@ -126,7 +126,7 @@ function initAddIsoDialog() {
     
     //add button ***     
     $("#add_iso_button").unbind("click").bind("click", function(event) {  
-		if (g_userPublicTemplateEnabled == "true" || isAdmin()) {
+		if (getUserPublicTemplateEnabled() == "true" || isAdmin()) {
 			$("#dialog_add_iso #add_iso_public_container").show();
 		}
 	

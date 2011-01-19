@@ -67,7 +67,6 @@ $(document).ready(function() {
 			$.cookie('domainid', '1'); //e.g. domainid of ROOT domain is 1 
 			$.cookie('account', json.loginresponse.account);
 			$.cookie('directattachnetworkgroupsenabled', json.loginresponse.directattachnetworkgroupsenabled); 
-			$.cookie('directattacheduntaggedenabled', json.loginresponse.directattacheduntaggedenabled); 
 			
 			$.cookie('timezoneoffset', null);   //comment this line and uncomment the next line if you want to set a specific timezone offset. Otherwise, default timezone from browser will be used.
 			//$.cookie('timezoneoffset', '5.75'); //e.g. Timezone "Kathmandu" is 'UTC+05:45'. Thus, its timezoneoffset is '5.75'

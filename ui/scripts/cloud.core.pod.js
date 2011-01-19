@@ -230,9 +230,6 @@ function podJsonClearDetailsTab(jsonObj) {
     
     $thisTab.find("#gateway").text(""); 
     $thisTab.find("#gateway_edit").val(""); 
-    
-    //if (getDirectAttachUntaggedEnabled() == "true") 
-	//	$("#submenu_content_zones #action_add_directip_vlan").data("type", "pod").data("id", obj.id).data("name", obj.name).data("zoneid", obj.zoneid).show();		
 }
 	
 function getIpRange(startip, endip) {
