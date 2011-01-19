@@ -220,11 +220,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Filter filter = new Filter(IPAddressVO.class, "vlanId", true, 0l, 1l);
         
         List<IPAddressVO> addrs = _ipAddressDao.lockRows(sc, filter, true);
-        assert (addrs.size() == 1) : "Return size is incorrect: " + addrs.size();
         
         if (addrs.size() == 0) {
             throw new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, dcId);
         }
+        
+        assert (addrs.size() == 1) : "Return size is incorrect: " + addrs.size();
         
         IPAddressVO addr = addrs.get(0);
         addr.setSourceNat(sourceNat);
