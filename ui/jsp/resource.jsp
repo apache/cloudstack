@@ -830,6 +830,7 @@
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>            
+            <!--  
             <li>
             	<label for="host_hypervisor">Hypervisor:</label>
                 <select class="select" id="host_hypervisor">
@@ -839,6 +840,7 @@
                     <option value="">Auto</option>									
                 </select>
             </li>
+            -->
             <li>
                 <label>
                     Zone:</label>
@@ -863,27 +865,62 @@
                 <div id="cluster_select_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>                    
-            <li>
+            <li input_group="general">
                 <label for="host_hostname">
                     Host name:</label>
                 <input class="text" type="text" name="host_hostname" id="host_hostname" />
                 <div id="host_hostname_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li>
+            <li input_group="general">
                 <label for="user_name">
                     User name:</label>
                 <input class="text" type="text" name="host_username" id="host_username" />
                 <div id="host_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li>
-                <label for="user_name">
+            <li input_group="general">
+                <label for="host_password">
                     Password:</label>
                 <input class="text" type="password" name="host_password" id="host_password" autocomplete="off" />
                 <div id="host_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
-            </li>            
+            </li>
+            <li input_group="vmware" style="display: none;">
+                <label for="host_vcenter_address">
+                    vCenter Address:</label>
+                <input class="text" type="text" name="host_vcenter_address" id="host_vcenter_address" />
+                <div id="host_vcenter_address_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware" style="display: none;">
+                <label for="host_vcenter_username">
+                    vCenter User:</label>
+                <input class="text" type="text" name="host_vcenter_username" id="host_vcenter_username" />
+                <div id="host_vcenter_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware" style="display: none;">
+                <label for="host_vcenter_password">
+                    vCenter Password:</label>
+                <input class="text" type="password" name="host_vcenter_password" id="host_vcenter_password" autocomplete="off" />
+                <div id="host_vcenter_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware" style="display: none;">
+                <label for="host_vcenter_dc">
+                    vCenter Datacenter:</label>
+                <input class="text" type="text" name="host_vcenter_dc" id="host_vcenter_dc" />
+                <div id="host_vcenter_dc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>
+            <li input_group="vmware" style="display: none;">
+                <label for="host_vcenter_host">
+                    vCenter Host:</label>
+                <input class="text" type="text" name="host_vcenter_host" id="host_vcenter_host" />
+                <div id="host_vcenter_host_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>  
         </ol>
         </form>
     </div>

@@ -811,6 +811,7 @@ function initAddHostShortcut() {
     var $dialogAddHost = $("#dialog_add_host_in_resource_page");    
     var $podSelect = $dialogAddHost.find("#pod_dropdown");
     
+    /*
     $dialogAddHost.find("#host_hypervisor").change(function() {
         if($(this).val() == "VmWare") {
     		$('li[input_group="general"]', $dialogAddHost).hide();
@@ -822,6 +823,7 @@ function initAddHostShortcut() {
     	
         refreshClsuterFieldInAddHostDialog($dialogAddHost, $podSelect.val(), null, $(this).val());        
     }); 
+    */
         
     $dialogAddHost.find("#zone_dropdown").bind("change", function(event) {
 	    var zoneId = $(this).val();
@@ -844,12 +846,27 @@ function initAddHostShortcut() {
 	    });
     });
 	    
-    $dialogAddHost.find("#pod_dropdown").bind("change", function(event) {    	   
-        $dialogAddHost.find("#host_hypervisor").change();       
+    $dialogAddHost.find("#pod_dropdown").unbind("change").bind("change", function(event) {    	   
+        refreshClsuterFieldInAddHostDialog($dialogAddHost, $dialogAddHost.find("#pod_dropdown").val(), null);
+        $dialogAddHost.find("#cluster_select").change();       
     });  
+    
+    $dialogAddHost.find("#cluster_select").unbind("change").bind("change", function(event) {        
+        var clusterId = $(this).val();            
+        if(clusterId == null)
+            return;        
+        var clusterObj = clustersUnderOnePod[clusterId];                        
+    	if(clusterObj.hypervisortype == "VmWare") {
+    		$('li[input_group="vmware"]', $dialogAddHost).show();
+    		$('li[input_group="general"]', $dialogAddHost).hide();
+    	} else {
+    		$('li[input_group="vmware"]', $dialogAddHost).hide();
+    		$('li[input_group="general"]', $dialogAddHost).show();
+    	}   
+    });
         
     $("#add_host_shortcut").unbind("click").bind("click", function(event) {               
-        $dialogAddHost.find("#info_container").hide();    
+        $dialogAddHost.find("#info_container").hide();         
         $dialogAddHost.find("#zone_dropdown").change(); 
        
         $dialogAddHost
@@ -857,16 +874,31 @@ function initAddHostShortcut() {
 	        "Add": function() { 
 	            var $thisDialog = $(this);		            
 	            			   
-		        var clusterRadio = $thisDialog.find("input[name=cluster]:checked").val();				
+		        //var clusterRadio = $thisDialog.find("input[name=cluster]:checked").val();				
 			
 		        // validate values
 		        var isValid = true;	
 		        isValid &= validateDropDownBox("Zone", $thisDialog.find("#zone_dropdown"), $thisDialog.find("#zone_dropdown_errormsg"));	
-		        isValid &= validateDropDownBox("Pod", $thisDialog.find("#pod_dropdown"), $thisDialog.find("#pod_dropdown_errormsg"));		        
-		        isValid &= validateDropDownBox("Cluster", $thisDialog.find("#cluster_select"), $thisDialog.find("#cluster_select_errormsg"));			        								
-		        isValid &= validateString("Host name", $thisDialog.find("#host_hostname"), $thisDialog.find("#host_hostname_errormsg"));
-		        isValid &= validateString("User name", $thisDialog.find("#host_username"), $thisDialog.find("#host_username_errormsg"));
-		        isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));					
+		        isValid &= validateDropDownBox("Pod", $thisDialog.find("#pod_dropdown"), $thisDialog.find("#pod_dropdown_errormsg"));	
+		        isValid &= validateDropDownBox("Cluster", $thisDialog.find("#cluster_select"), $thisDialog.find("#cluster_select_errormsg"), false);  //required, reset error text					    				
+		        
+		        var clusterId = $thisDialog.find("#cluster_select").val();	
+				var clusterObj, hypervisor;
+				if(clusterId != null) {
+				    clusterObj = clustersUnderOnePod[clusterId];    
+                    hypervisor = clusterObj.hypervisortype;  		        
+		            if(hypervisor == "VmWare") {
+			            isValid &= validateString("vCenter Address", $thisDialog.find("#host_vcenter_address"), $thisDialog.find("#host_vcenter_address_errormsg"));
+			            isValid &= validateString("vCenter User", $thisDialog.find("#host_vcenter_username"), $thisDialog.find("#host_vcenter_username_errormsg"));
+			            isValid &= validateString("vCenter Password", $thisDialog.find("#host_vcenter_password"), $thisDialog.find("#host_vcenter_password_errormsg"));	
+			            isValid &= validateString("vCenter Datacenter", $thisDialog.find("#host_vcenter_dc"), $thisDialog.find("#host_vcenter_dc_errormsg"));	
+			            isValid &= validateString("vCenter Host", $thisDialog.find("#host_vcenter_host"), $thisDialog.find("#host_vcenter_host_errormsg"));	
+		            } else {
+			            isValid &= validateString("Host name", $thisDialog.find("#host_hostname"), $thisDialog.find("#host_hostname_errormsg"));
+			            isValid &= validateString("User name", $thisDialog.find("#host_username"), $thisDialog.find("#host_username_errormsg"));
+			            isValid &= validateString("Password", $thisDialog.find("#host_password"), $thisDialog.find("#host_password_errormsg"));	
+		            }	
+		        }        
 		        if (!isValid) 
 		            return;		            			
 					
@@ -874,9 +906,11 @@ function initAddHostShortcut() {
 				
 		        var array1 = [];
 				
+				/*
 			    var hypervisor = $thisDialog.find("#host_hypervisor").val();
 			    if(hypervisor.length > 0)
 				    array1.push("&hypervisor="+hypervisor);
+		        */
 		        
 		        var zoneId = $thisDialog.find("#zone_dropdown").val();
 		        array1.push("&zoneid="+zoneId);
@@ -885,27 +919,51 @@ function initAddHostShortcut() {
 				var $zoneNode = $("#leftmenu_zone_tree").find("#tree_container").find("#zone_" + zoneId);							
 				if($zoneNode.find("#zone_arrow").hasClass("expanded_close"))
 				    $zoneNode.find("#zone_arrow").click();
-										             
+								        
 		        var podId = $thisDialog.find("#pod_dropdown").val();
 		        array1.push("&podid="+podId);
 						      
-		        var username = trim($thisDialog.find("#host_username").val());
-		        array1.push("&username="+todb(username));
-				
-		        var password = trim($thisDialog.find("#host_password").val());
-		        array1.push("&password="+todb(password));
-									            
-		        var clusterId = $thisDialog.find("#cluster_select").val();			    
-			    array1.push("&clusterid="+clusterId);			    		        				
-				
-		        var hostname = trim($thisDialog.find("#host_hostname").val());
-		        var url;					
-		        if(hostname.indexOf("http://")==-1)
-		            url = "http://" + todb(hostname);
-		        else
-		            url = hostname;
-		        array1.push("&url="+todb(url));
-					      
+	            var clusterId = $thisDialog.find("#cluster_select").val();			    
+			    array1.push("&clusterid="+clusterId);			    		        			
+                 
+			    array1.push("&hypervisor="+hypervisor);			    
+			    var clustertype = clusterObj.clustertype;
+                array1.push("&clustertype=" + clustertype);				    
+
+			    if(hypervisor == "VmWare") {
+			        var username = trim($thisDialog.find("#host_vcenter_username").val());
+			        array1.push("&username="+todb(username));
+					
+			        var password = trim($thisDialog.find("#host_vcenter_password").val());
+			        array1.push("&password="+todb(password));
+				    
+			        var hostname = trim($thisDialog.find("#host_vcenter_address").val());
+			        hostname += "/" + trim($thisDialog.find("#host_vcenter_dc").val());
+			        hostname += "/" + trim($thisDialog.find("#host_vcenter_host").val());
+			        
+			        var url;					
+			        if(hostname.indexOf("http://")==-1)
+			            url = "http://" + todb(hostname);
+			        else
+			            url = hostname;
+			        array1.push("&url="+todb(url));
+			    	
+			    } else {
+			        var username = trim($thisDialog.find("#host_username").val());
+			        array1.push("&username="+todb(username));
+					
+			        var password = trim($thisDialog.find("#host_password").val());
+			        array1.push("&password="+todb(password));
+				    
+			        var hostname = trim($thisDialog.find("#host_hostname").val());
+			        var url;					
+			        if(hostname.indexOf("http://")==-1)
+			            url = "http://" + todb(hostname);
+			        else
+			            url = hostname;
+			        array1.push("&url="+todb(url));
+			    }
+				      
 		        $.ajax({
 			       data: createURL("command=addHost" + array1.join("")),
 			        dataType: "json",
