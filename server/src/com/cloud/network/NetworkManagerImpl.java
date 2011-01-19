@@ -104,12 +104,10 @@ import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
@@ -134,7 +132,6 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
@@ -943,8 +940,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (profile.getIp4Address() != null) {
             vo.setIp4Address(profile.getIp4Address());
-            vo.setReservationStrategy(ReservationStrategy.Create);
-            vo.setState(Nic.State.Allocated);
             vo.setAddressFormat(AddressFormat.Ip4);
         }
 
@@ -964,6 +959,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             vo.setIsolationUri(profile.getIsolationUri());
         }
 
+        vo.setState(Nic.State.Allocated);
         return deviceId;
     }
 
