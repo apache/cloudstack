@@ -298,8 +298,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     int _routerCleanupInterval = 3600;
     int _routerStatsInterval = 300;
     private ServiceOfferingVO _offering;
-    private int _networkRate;
-    private int _multicastRate;
     String _networkDomain;
 
     private VMTemplateVO _template;
@@ -632,10 +630,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         _itMgr.registerGuru(VirtualMachine.Type.DomainRouter, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        String networkRateStr = _configDao.getValue("network.throttling.rate");
-        String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
-        _networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
-        _multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
         _offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, 0, 0, 0, true, null,
                 Network.GuestIpType.Virtual, useLocalStorage, true, null, true);
         _offering.setUniqueName("Cloud.Com-SoftwareRouter");
@@ -1107,19 +1101,22 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             	
                 // DOMR control command is sent over management server in VMware
                 if (dest.getHost().getHypervisorType() == HypervisorType.VmWare) {
-                	if(s_logger.isInfoEnabled())
-                		s_logger.info("Check if we need to add management server explicit route to DomR. pod cidr: " + dest.getPod().getCidrAddress() + "/" + dest.getPod().getCidrSize()
+                	if(s_logger.isInfoEnabled()) {
+                        s_logger.info("Check if we need to add management server explicit route to DomR. pod cidr: " + dest.getPod().getCidrAddress() + "/" + dest.getPod().getCidrSize()
                 			+ ", pod gateway: " + dest.getPod().getGateway() + ", management host: " + _mgmt_host);
+                    }
                 	
                 	if(!NetUtils.sameSubnetCIDR(_mgmt_host, dest.getPod().getGateway(), dest.getPod().getCidrSize())) {
-                    	if(s_logger.isInfoEnabled())
-                    		s_logger.info("Add management server explicit route to DomR.");
+                    	if(s_logger.isInfoEnabled()) {
+                            s_logger.info("Add management server explicit route to DomR.");
+                        }
 
                 		buf.append(" mgmtcidr=").append(_mgmt_host);
 	                    buf.append(" localgw=").append(dest.getPod().getGateway());
                 	} else {
-                    	if(s_logger.isInfoEnabled())
-                    		s_logger.info("Management server host is at same subnet at pod private network, don't add explict route to DomR");
+                    	if(s_logger.isInfoEnabled()) {
+                            s_logger.info("Management server host is at same subnet at pod private network, don't add explict route to DomR");
+                        }
                 	}
                 }
 

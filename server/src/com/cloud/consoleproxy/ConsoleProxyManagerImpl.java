@@ -112,14 +112,12 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
@@ -130,12 +128,10 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -624,7 +620,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         }
 
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId); 
-        allocProxyStorage(dataCenterId, proxyVmId);
         if (proxy != null) {
             SubscriptionMgr.getInstance().notifySubscribers(ConsoleProxyManager.ALERT_SUBJECT, this,
                     new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_CREATED, dataCenterId, proxy.getId(), proxy, null));
@@ -639,8 +634,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                     this,
                     new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_CREATE_FAILURE, dataCenterId, proxyVmId, null,
                             "Unable to allocate storage"));
-
-            destroyProxyDBOnly(proxyVmId);
         }
         return null;
     }
@@ -681,7 +674,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                     new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_CREATE_FAILURE, dataCenterId, proxyVmId, null,
                             "Unable to allocate storage"));
             EventUtils.saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_ERROR, EventTypes.EVENT_PROXY_CREATE, "console proxy creation failed", startEventId);
-            destroyProxyDBOnly(proxyVmId);
         }
         return null;
     }
@@ -727,43 +719,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         return context;
     }
     
-    @DB
-    protected ConsoleProxyVO allocProxyStorage(long dataCenterId, long proxyVmId) {
-        ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId);
-        assert (proxy != null);
-
-        DataCenterVO dc = _dcDao.findById(dataCenterId);
-        HostPodVO pod = _podDao.findById(proxy.getPodId());
-        final AccountVO account = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
-
-        try {
-            List<VolumeVO> vols = _storageMgr.create(account, proxy, _template, dc, pod, _serviceOffering, null, 0);
-            if (vols == null) {
-                s_logger.error("Unable to alloc storage for console proxy");
-                return null;
-            }
-
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
-
-            // update pool id
-            ConsoleProxyVO vo = _consoleProxyDao.findById(proxy.getId());
-            _consoleProxyDao.update(proxy.getId(), vo);
-
-            // kick the state machine
-            _itMgr.stateTransitTo(proxy, VirtualMachine.Event.OperationSucceeded, null);
-
-            txn.commit();
-            return proxy;
-        } catch (StorageUnavailableException e) {
-            s_logger.error("Unable to alloc storage for console proxy: ", e);
-            return null;
-        } catch (ExecutionException e) {
-            s_logger.error("Unable to alloc storage for console proxy: ", e);
-            return null;
-        }
-    }
-
     private ConsoleProxyAllocator getCurrentAllocator() {
         // for now, only one adapter is supported
         Enumeration<ConsoleProxyAllocator> it = _consoleProxyAllocators.enumeration();
@@ -1046,57 +1001,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             }
         }
     }
-
-//    private void checkPendingProxyVMs() {
-//        // drive state to change away from transient states
-//        List<ConsoleProxyVO> l = _consoleProxyDao.getProxyListInStates(State.Creating);
-//        if (l != null && l.size() > 0) {
-//            for (ConsoleProxyVO proxy : l) {
-//                if (proxy.getLastUpdateTime() == null
-//                        || (proxy.getLastUpdateTime() != null && System.currentTimeMillis() - proxy.getLastUpdateTime().getTime() > 60000)) {
-//                    try {
-//                        ConsoleProxyVO readyProxy = null;
-//                        if (_allocProxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
-//                            try {
-//                                readyProxy = allocProxyStorage(proxy.getDataCenterId(), proxy.getId());
-//                            } finally {
-//                                _allocProxyLock.unlock();
-//                            }
-//
-//                            if (readyProxy != null) {
-//                                GlobalLock proxyLock = GlobalLock.getInternLock(getProxyLockName(readyProxy.getId()));
-//                                try {
-//                                    if (proxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
-//                                        try {
-//                                            readyProxy = start(readyProxy.getId());
-//                                        } finally {
-//                                            proxyLock.unlock();
-//                                        }
-//                                    } else {
-//                                        if (s_logger.isInfoEnabled()) {
-//                                            s_logger.info("Unable to acquire synchronization lock to start console proxy : " + readyProxy.getName());
-//                                        }
-//                                    }
-//                                } finally {
-//                                    proxyLock.releaseRef();
-//                                }
-//                            }
-//                        } else {
-//                            if (s_logger.isInfoEnabled()) {
-//                                s_logger.info("Unable to acquire synchronization lock to allocate proxy storage, wait for next turn");
-//                            }
-//                        }
-//                    } catch (StorageUnavailableException e) {
-//                        s_logger.warn("Storage unavailable", e);
-//                    } catch (InsufficientCapacityException e) {
-//                        s_logger.warn("insuffiient capacity", e);
-//                    } catch (ResourceUnavailableException e) {
-//                        s_logger.debug("Concurrent operation: " + e.getMessage());
-//                    }
-//                }
-//            }
-//        }
-//    }
 
     private Runnable getCapacityScanTask() {
         return new Runnable() {
@@ -1417,58 +1321,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         }
     }
 
-    @DB
-    protected void completeStopCommand(ConsoleProxyVO proxy, VirtualMachine.Event ev) {
-        
-      Transaction txn = Transaction.currentTxn();
-      try {
-          txn.start();
-          SubscriptionMgr.getInstance().notifySubscribers(
-                ConsoleProxyManager.ALERT_SUBJECT,
-                this,
-                new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_DOWN, proxy.getDataCenterId(), proxy.getId(), proxy,
-                        null));
-        
-          if (!_itMgr.stateTransitTo(proxy, ev, null)) {
-              s_logger.debug("Unable to update the console proxy");
-              return;
-          }
-          txn.commit();
-        } catch (Exception e) {
-            s_logger.error("Unable to complete stop command due to ", e);
-        }
-        
-          if (_storageMgr.unshare(proxy, null) == null) {
-              s_logger.warn("Unable to set share to false for " + proxy.getId());
-          }
-//        Transaction txn = Transaction.currentTxn();
-//        try {
-//            txn.start();
-//            String privateIpAddress = proxy.getPrivateIpAddress();
-//            if (privateIpAddress != null) {
-//                proxy.setPrivateIpAddress(null);
-////                freePrivateIpAddress(privateIpAddress, proxy.getDataCenterId(), proxy.getId());
-//            }
-//            String guestIpAddress = proxy.getGuestIpAddress();
-//            if (guestIpAddress != null) {
-//                proxy.setGuestIpAddress(null);
-//                _dcDao.releaseLinkLocalIpAddress(guestIpAddress, proxy.getDataCenterId(), proxy.getId());
-//            }
-//
-//            if (!_itMgr.stateTransitTo(proxy, ev, null)) {
-//                s_logger.debug("Unable to update the console proxy");
-//                return;
-//            }
-//            txn.commit();
-//        } catch (Exception e) {
-//            s_logger.error("Unable to complete stop command due to ", e);
-//        }
-//
-//        if (_storageMgr.unshare(proxy, null) == null) {
-//            s_logger.warn("Unable to set share to false for " + proxy.getId());
-//        }
-    }
-
     @Override
     public Long convertToId(String vmName) {
         if (!VirtualMachineName.isValidConsoleProxyName(vmName, _instance)) {
@@ -1568,34 +1420,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         }
     }
 
-    @DB
-    public boolean destroyProxyDBOnly(long vmId) {
-        Transaction txn = Transaction.currentTxn();
-        try {
-            txn.start();
-            _volsDao.deleteVolumesByInstance(vmId);
-
-            ConsoleProxyVO proxy = _consoleProxyDao.findById(vmId);
-            if (proxy != null) {
-                if (proxy.getPublicIpAddress() != null) {
-//                    freePublicIpAddress(proxy.getPublicIpAddress(), proxy.getDataCenterId(), proxy.getPodId());
-                }
-
-                _consoleProxyDao.remove(vmId);
-
-            }
-
-            txn.commit();
-            return true;
-        } catch (Exception e) {
-            s_logger.error("Caught this error: ", e);
-            txn.rollback();
-            return false;
-        } finally {
-            s_logger.debug("console proxy vm is destroyed from DB : " + vmId);
-        }
-    }
-
     @Override
     public boolean stop(ConsoleProxyVO proxy) throws ResourceUnavailableException {
         GlobalLock proxyLock = GlobalLock.getInternLock(getProxyLockName(proxy.getId()));
@@ -1603,9 +1427,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             if (proxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                 try {
                     boolean result = _itMgr.stop(proxy, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());    
-                    if (result) {
-                        completeStopCommand(proxy, VirtualMachine.Event.OperationSucceeded);
-                    }
                     return result;
                 } finally {
                     proxyLock.unlock();
