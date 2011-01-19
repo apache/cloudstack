@@ -1130,6 +1130,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         for (NicVO nic : nics) {
             NetworkVO network = _networksDao.findById(nic.getNetworkId());
             if (nic.getState() == Nic.State.Reserved || nic.getState() == Nic.State.Reserving) {
+                Nic.State originalState = nic.getState();
                 if (nic.getReservationStrategy() == ReservationStrategy.Start) {
                     NetworkGuru concierge = _networkGurus.get(network.getGuruName());
                     nic.setState(Resource.State.Releasing);
@@ -1137,7 +1138,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     NicProfile profile = new NicProfile(nic, network, null, null);
                     if (concierge.release(profile, vmProfile, nic.getReservationId())) {
                         nic.setState(Resource.State.Allocated);
-                        if (nic.getState() == Nic.State.Reserved) {
+                        if (originalState == Nic.State.Reserved) {
                             updateNic(nic, network.getId(), -1);
                         } else {
                             _nicDao.update(nic.getId(), nic);
