@@ -658,14 +658,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
                 } finally {
                     if (startedVm == null) {
                         _workDao.updateStep(work, Step.Release);
-                        _networkMgr.release(vmProfile, false);
-                        _storageMgr.release(vmProfile);
+                        cleanup(vmGuru, vmProfile, work, false, caller, account);
                     }
                 }
             } 
         } finally {
             if (startedVm == null) {
-                // FIXME: Cleanup.
                 changeState(vm, Event.OperationFailed, null, work, Step.Done);
             }
         }
