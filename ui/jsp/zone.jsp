@@ -578,7 +578,8 @@
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
-        <ol>        
+        <ol>    
+            <!--    
             <li>
             	<label for="host_hypervisor">Hypervisor:</label>
                 <select class="select" id="host_hypervisor">
@@ -587,6 +588,7 @@
                     <option value="VmWare">VMware</option>										
                 </select>
             </li>
+            -->  
             <li>
                 <label>
                     Pod:</label>
