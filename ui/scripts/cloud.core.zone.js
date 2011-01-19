@@ -35,11 +35,15 @@
     var tabContentArray = [$("#tab_content_details"), $("#tab_content_secondarystorage"), $("#tab_content_network")];      
     var afterSwitchFnArray = [zoneJsonToDetailsTab, zoneJsonToSecondaryStorageTab, zoneJsonToNetworkTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray); 
-      
+     
+    $readonlyFields  = $("#tab_content_details").find("#name, #dns1, #dns2, #internaldns1, #internaldns2, #vlan, #guestcidraddress");
+    $editFields = $("#tab_content_details").find("#name_edit, #dns1_edit, #dns2_edit, #internaldns1_edit, #internaldns2_edit, #startvlan_edit, #endvlan_edit, #guestcidraddress_edit");
+           
     zoneRefreshDataBinding();    	
 }
 
-function zoneRefreshDataBinding() {         
+function zoneRefreshDataBinding() {    
+    cancelEditMode($("#tab_content_details"));      
     var $zoneNode = $selectedSubMenu.parent();     
     zoneJsonToRightPanel($zoneNode);		  
 }
@@ -922,17 +926,12 @@ var zoneActionMap = {
 }
 
 function doEditZone($actionLink, $detailsTab, $leftmenuItem1) {       
-    var $readonlyFields  = $detailsTab.find("#name, #dns1, #dns2, #internaldns1, #internaldns2, #vlan, #guestcidraddress");
-    var $editFields = $detailsTab.find("#name_edit, #dns1_edit, #dns2_edit, #internaldns1_edit, #internaldns2_edit, #startvlan_edit, #endvlan_edit, #guestcidraddress_edit");
-           
     $readonlyFields.hide();
     $editFields.show();  
     $detailsTab.find("#cancel_button, #save_button").show();
     
     $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
-        $editFields.hide();
-        $readonlyFields.show();   
-        $("#save_button, #cancel_button").hide();       
+        cancelEditMode($detailsTab);        
         return false;
     });
     $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        

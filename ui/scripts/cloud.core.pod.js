@@ -36,6 +36,9 @@
     var afterSwitchFnArray = [podJsonToDetailsTab, podJsonToNetworkTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
    
+    $readonlyFields  = $("#tab_content_details").find("#name, #netmask, #ipRange, #gateway");
+    $editFields = $("#tab_content_details").find("#name_edit, #netmask_edit, #startIpRange_edit, #endIpRange_edit, #gateway_edit");
+        
 	podJsonToRightPanel($leftmenuItem1);     	
 }
 
@@ -44,7 +47,8 @@ function podJsonToRightPanel($leftmenuItem1) {
     bindAddHostButton($leftmenuItem1); 
     bindAddPrimaryStorageButton($leftmenuItem1);  
            
-    $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1);  
+    $("#right_panel_content").data("$leftmenuItem1", $leftmenuItem1); 
+    cancelEditMode($("#tab_content_details"));  
     $("#tab_details").click();   
 }
 
@@ -920,17 +924,12 @@ var podActionMap = {
 }
 
 function doEditPod($actionLink, $detailsTab, $midmenuItem1) {       
-    var $readonlyFields  = $detailsTab.find("#name, #netmask, #ipRange, #gateway");
-    var $editFields = $detailsTab.find("#name_edit, #netmask_edit, #startIpRange_edit, #endIpRange_edit, #gateway_edit");
-           
     $readonlyFields.hide();
     $editFields.show();  
     $detailsTab.find("#cancel_button, #save_button").show();
     
     $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
-        $editFields.hide();
-        $readonlyFields.show();   
-        $("#save_button, #cancel_button").hide();       
+        cancelEditMode($detailsTab);     
         return false;
     });
     $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
