@@ -99,7 +99,7 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
     }
     
  
-    public boolean transitTO(V vo, E e, Long id, StateDao<S,E,V> dao) {
+    public boolean transitTo(V vo, E e, Long id, StateDao<S,E,V> dao) {
     	S currentState = vo.getState();
     	S nextState = getNextState(currentState, e);
 

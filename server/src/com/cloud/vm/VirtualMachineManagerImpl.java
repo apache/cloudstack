@@ -435,20 +435,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
         }
     }
 
-    private Answer getStartAnswer(Answer[] answers) {
-    	for (Answer ans : answers) {
-    		if (ans instanceof StartAnswer) {
-    			return ans;
-    		}
-    	}
-    	
-    	assert false : "Why there is no Start Answer???";
-    	return null;
-    }
-    
     protected boolean checkWorkItems(VMInstanceVO vm, State state) throws ConcurrentOperationException {
         while (true) {
-            ItWorkVO vo = _workDao.findByInstance(vm.getId(), state);
+            ItWorkVO vo = _workDao.findByOutstandingWork(vm.getId(), state);
             if (vo == null) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Unable to find work for " + vm);
@@ -456,7 +445,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
                 return true;
             }
             
-            if (vo.getStep() == Step.Done || vo.getStep() == Step.Cancelled) {
+            if (vo.getStep() == Step.Done) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Work for " + vm + " is " + vo.getStep());
                 }
@@ -538,6 +527,18 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
         throw new ConcurrentOperationException("Unable to change the state of " + vm);
     }
     
+    @DB
+    protected <T extends VMInstanceVO> boolean changeState(T vm, Event event, Long hostId, ItWorkVO work, Step step) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        if (!stateTransitTo(vm, event, hostId)) {
+            return false;
+        }
+        _workDao.updateStep(work, step);
+        txn.commit();
+        return true;
+    }
+    
     @Override
     public <T extends VMInstanceVO> T advanceStart(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         long vmId = vm.getId();
@@ -566,9 +567,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
             ExcludeList avoids = new ExcludeList();
             int retry = _retry;
             while (retry-- != 0) { // It's != so that it can match -1.
-            	//Note: need to re-intialize vmProfile in every re-try, or you will got a lot of duplicate disks and nics.
-            	VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, null, params);
-            	
+                
+                VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, null, params);
                 DeployDestination dest = null;
                 for (DeploymentPlanner planner : _planners) {
                     dest = planner.plan(vmProfile, plan, avoids);
@@ -583,11 +583,55 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
                     throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId());
                 }
                 
-            	stateTransitTo(vm, Event.OperationRetry, dest.getHost().getId());
+                long destHostId = dest.getHost().getId();
+                
+                if (!changeState(vm, Event.OperationRetry, destHostId, work, Step.Prepare)) {
+                    throw new ConcurrentOperationException("Unable to update the state of the Virtual Machine");
+                }
                 
                 try {
+                    
                     _storageMgr.prepare(vmProfile, dest);
                     _networkMgr.prepare(vmProfile, dest, ctx);
+                    
+                    vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, ctx);
+                    
+                    VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
+                    
+                    Commands cmds = new Commands(OnError.Revert);
+                    cmds.addCommand(new StartCommand(vmTO));
+                    
+                    vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
+                    vm.setPodId(dest.getPod().getId());
+                    work = _workDao.findById(work.getId());
+                    if (work == null || work.getStep() != Step.Prepare) {
+                        throw new ConcurrentOperationException("Work steps have been changed: " + work);
+                    }
+                    _workDao.updateStep(work, Step.Start);
+                
+                    _agentMgr.send(destHostId, cmds);
+                    _workDao.updateStep(work, Step.Started);
+                    Answer startAnswer = cmds.getAnswer(StartAnswer.class);
+                    if (startAnswer != null && startAnswer.getResult()) {
+                        if (vmGuru.finalizeStart(vmProfile, destHostId, cmds, ctx)) {
+                            if (!changeState(vm, Event.OperationSucceeded, destHostId, work, Step.Done)) {
+                                throw new ConcurrentOperationException("Unable to transition to a new state.");
+                            }
+                            startedVm = vm;
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Creation complete for VM " + vm);
+                            }
+                            return startedVm;
+                        }
+                    }
+                    s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + (startAnswer == null ? " no start answer" : startAnswer.getDetails()));
+                } catch (OperationTimedoutException e) {
+                    s_logger.debug("Unable to send the start command to host " + dest.getHost());
+                    if (e.isActive()) {
+                        //TODO: This one is different as we're not sure if the VM is actually started. 
+                    }
+                    avoids.addHost(destHostId);
+                    continue;
                 } catch (ResourceUnavailableException e) {
                     if (!avoids.add(e)) {
                         if (e.getScope() == Volume.class || e.getScope() == Nic.class) {
@@ -611,45 +655,19 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
                 } catch (RuntimeException e) {
                     s_logger.warn("Failed to start instance " + vm, e);
                     throw new CloudRuntimeException("Failed to start " + vm, e);
-                }
-                
-                vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, ctx);
-                
-                VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
-                
-                Commands cmds = new Commands(OnError.Revert);
-                cmds.addCommand(new StartCommand(vmTO));
-                
-                vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
-                vm.setPodId(dest.getPod().getId());
-                try {
-                    Answer[] answers = _agentMgr.send(dest.getHost().getId(), cmds);
-                    if (getStartAnswer(answers).getResult() && vmGuru.finalizeStart(cmds, vmProfile, dest, ctx)) {
-                        if (!stateTransitTo(vm, Event.OperationSucceeded, dest.getHost().getId())) {
-                            throw new CloudRuntimeException("Unable to transition to a new state.");
-                        }
-                        startedVm = vm;
-                        break;
+                } finally {
+                    if (startedVm == null) {
+                        _workDao.updateStep(work, Step.Release);
+                        _networkMgr.release(vmProfile, false);
+                        _storageMgr.release(vmProfile);
                     }
-                    s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + answers[0].getDetails());
-                } catch (AgentUnavailableException e) {
-                    s_logger.debug("Unable to send the start command to host " + dest.getHost());
-                    continue;
-                } catch (OperationTimedoutException e) {
-                    s_logger.debug("Unable to send the start command to host " + dest.getHost());
-                    continue;
                 }
-            }
-            
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Creation complete for VM " + vm);
-            }
+            } 
         } finally {
             if (startedVm == null) {
-                stateTransitTo(vm, Event.OperationFailed, null);
+                // FIXME: Cleanup.
+                changeState(vm, Event.OperationFailed, null, work, Step.Done);
             }
-            work.setStep(Step.Done);
-            _workDao.update(work.getId(), work);
         }
         
         return startedVm;
@@ -665,9 +683,83 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
             throw new CloudRuntimeException("Unable to stop vm because of a concurrent operation", e);
         }
     }
+    
+    protected <T extends VMInstanceVO> boolean sendStop(VirtualMachineGuru<T> guru, VirtualMachineProfile<T> profile, boolean force) {
+        VMInstanceVO vm = profile.getVirtualMachine();
+        StopCommand stop = new StopCommand(vm, vm.getInstanceName(), null);
+        try {
+            StopAnswer answer = (StopAnswer)_agentMgr.send(vm.getHostId(), stop);
+            if (!answer.getResult()) {
+                s_logger.debug("Unable to stop VM due to " + answer.getDetails());
+                return false;
+            }
+            
+            guru.finalizeStop(profile, answer);
+        } catch (AgentUnavailableException e) {
+            if (!force) {
+                return false;
+            }
+        } catch (OperationTimedoutException e) {
+            if (!force) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    protected <T extends VMInstanceVO> boolean cleanup(VirtualMachineGuru<T> guru, VirtualMachineProfile<T> profile, ItWorkVO work, boolean force, User user, Account account) {
+        T vm = profile.getVirtualMachine();
+        State state = vm.getState();
+        if (state == State.Starting) {
+            Step step = work.getStep();
+            if (step == Step.Start && !force) {
+                return false;
+            }
+            
+            
+            if (step == Step.Started || step == Step.Start) {
+                if (vm.getHostId() != null) {
+                    if (!sendStop(guru, profile, force)) {
+                        return false;
+                    }
+                }
+            }
+            
+            if (step != Step.Release && step != Step.Prepare && step != Step.Started && step != Step.Start) {
+                return true;
+            }
+        } else if (state == State.Stopping) {
+            if (vm.getHostId() != null) {
+                if (!sendStop(guru, profile, force)) {
+                    return false;
+                }
+            }
+        } else if (state == State.Migrating) {
+            if (vm.getHostId() != null) {
+                if (!sendStop(guru, profile, force)) {
+                    return false;
+                }
+            } 
+            if (vm.getLastHostId() != null) {
+                if (!sendStop(guru, profile, force)) {
+                    return false;
+                }
+            }
+        } else if (state == State.Running) {
+            if (!sendStop(guru, profile, force)) {
+                return false;
+            }
+        }
+        
+        _networkMgr.release(profile, force);
+        _storageMgr.release(profile);
+        return true;
+    }
 
     @Override
     public <T extends VMInstanceVO> boolean advanceStop(T vm, boolean forced, User user, Account account) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+        long vmId = vm.getId();
         State state = vm.getState();
         if (state == State.Stopped) {
             if (s_logger.isDebugEnabled()) {
@@ -677,40 +769,63 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
         }
         
         if (state == State.Destroyed || state == State.Expunging || state == State.Error) {
-            s_logger.debug("Stopped called on " + vm + " but the state is " + state);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Stopped called on " + vm + " but the state is " + state);
+            }
             return true;
         }
         
+        VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
+        
         if (!stateTransitTo(vm, Event.StopRequested, vm.getHostId())) {
-            throw new ConcurrentOperationException("VM is being operated on by someone else.");
-        }
-        
-        if (vm.getHostId() == null) {
-            s_logger.debug("Host id is null so we can't stop it.  How did we get into here?");
-            return false;
-        }
-        
-        String reservationId = vm.getReservationId();
-
-        StopCommand stop = new StopCommand(vm, vm.getInstanceName(), null);
-
-        boolean stopped = false;
-        StopAnswer answer = null;
-        try {
-            answer = (StopAnswer)_agentMgr.send(vm.getHostId(), stop);
-            stopped = answer.getResult();
-            if (!stopped) {
-                throw new CloudRuntimeException("Unable to stop the virtual machine due to " + answer.getDetails());
-            } else {
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
-                _usageEventDao.persist(usageEvent);
+            if (!forced) {
+                throw new ConcurrentOperationException("VM is being operated on by someone else.");
             }
-        } finally {
-            if (!stopped) {
-                if (!forced) {
-                    stateTransitTo(vm, Event.OperationFailed, vm.getHostId());
+            
+            vm = vmGuru.findById(vmId);
+            if (vm == null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Unable to find VM " + vmId);
+                }
+                return true;
+            }
+        }
+        
+        if ((vm.getState() == State.Starting || vm.getState() == State.Stopping || vm.getState() == State.Migrating) && forced) {
+            ItWorkVO work = _workDao.findByOutstandingWork(vm.getId(), vm.getState());
+            if (work != null) {
+                if (cleanup(vmGuru, new VirtualMachineProfileImpl<T>(vm), work, forced, user, account)) {
+                    return stateTransitTo(vm, Event.AgentReportStopped, null);
+                }
+            }
+        }
+        
+        VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
+        if (vm.getHostId() != null) {
+            StopCommand stop = new StopCommand(vm, vm.getInstanceName(), null);
+    
+            boolean stopped = false;
+            StopAnswer answer = null;
+            try {
+                answer = (StopAnswer)_agentMgr.send(vm.getHostId(), stop);
+                stopped = answer.getResult();
+                if (!stopped) {
+                    throw new CloudRuntimeException("Unable to stop the virtual machine due to " + answer.getDetails());
                 } else {
-                    s_logger.warn("Unable to actually stop " + vm + " but continue with release because it's a force stop");
+                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
+                    _usageEventDao.persist(usageEvent);
+                }
+                vmGuru.finalizeStop(profile, answer);
+                    
+            } catch (AgentUnavailableException e) {
+            } catch (OperationTimedoutException e) {
+            } finally {
+                if (!stopped) {
+                    if (!forced) {
+                        stateTransitTo(vm, Event.OperationFailed, vm.getHostId());
+                    } else {
+                        s_logger.warn("Unable to actually stop " + vm + " but continue with release because it's a force stop");
+                    }
                 }
             }
         }
@@ -719,15 +834,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
             s_logger.debug(vm + " is stopped on the host.  Proceeding to release resource held.");
         }
         
-        boolean cleanup = false;
-        
-        VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
         try {
             _networkMgr.release(profile, forced);
             s_logger.debug("Successfully released network resources for the vm " + vm);
         } catch (Exception e) {
             s_logger.warn("Unable to release some network resources.", e);
-            cleanup = true;
         }
         
         try {
@@ -735,28 +846,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
             s_logger.debug("Successfully released storage resources for the vm " + vm);
         } catch (Exception e) {
             s_logger.warn("Unable to release storage resources.", e);
-            cleanup = true;
         }
          
-        @SuppressWarnings("unchecked")
-        VirtualMachineGuru<T> guru = (VirtualMachineGuru<T>)_vmGurus.get(vm.getType());
-        try {
-            guru.finalizeStop(profile, vm.getHostId(), vm.getReservationId(), answer);
-        } catch (Exception e) {
-            s_logger.warn("Guru " + guru.getClass() + " has trouble processing stop ");
-            cleanup = true;
-        }
-            
         vm.setReservationId(null);
         
-        stateTransitTo(vm, Event.OperationSucceeded, null);
-
-        if (cleanup) {
-            ItWorkVO work = new ItWorkVO(reservationId, _nodeId, State.Stopping, vm.getId());
-            _workDao.persist(work);
-        }
-        
-        return stopped;
+        return stateTransitTo(vm, Event.OperationSucceeded, null);
     }
     
     private void setStateMachine() {
@@ -807,31 +901,21 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
     protected boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId, String reservationId) {
         vm.setReservationId(reservationId);
 		if (vm instanceof UserVmVO) {
-			return _stateMachine.transitTO(vm, e, hostId, _userVmDao);
+			return _stateMachine.transitTo(vm, e, hostId, _userVmDao);
 		} else if (vm instanceof ConsoleProxyVO) {
-			return _stateMachine.transitTO(vm, e, hostId, _consoleDao);
+			return _stateMachine.transitTo(vm, e, hostId, _consoleDao);
 		} else if (vm instanceof SecondaryStorageVmVO) {
-			return _stateMachine.transitTO(vm, e, hostId, _secondaryDao);
+			return _stateMachine.transitTo(vm, e, hostId, _secondaryDao);
 		} else if (vm instanceof DomainRouterVO) {
-			return _stateMachine.transitTO(vm, e, hostId, _routerDao);
+			return _stateMachine.transitTo(vm, e, hostId, _routerDao);
 		} else {
-			return _stateMachine.transitTO(vm, e, hostId, _vmDao);
+			return _stateMachine.transitTo(vm, e, hostId, _vmDao);
 		}
     }
     
     @Override
     public boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId) {
-        if (vm instanceof UserVmVO) {
-            return _stateMachine.transitTO(vm, e, hostId, _userVmDao);
-        } else if (vm instanceof ConsoleProxyVO) {
-            return _stateMachine.transitTO(vm, e, hostId, _consoleDao);
-        } else if (vm instanceof SecondaryStorageVmVO) {
-            return _stateMachine.transitTO(vm, e, hostId, _secondaryDao);
-        } else if (vm instanceof DomainRouterVO) {
-            return _stateMachine.transitTO(vm, e, hostId, _routerDao);
-        } else {
-            return _stateMachine.transitTO(vm, e, hostId, _vmDao);
-        }
+        return _stateMachine.transitTo(vm, e, hostId, _vmDao);
     }
     
     @Override

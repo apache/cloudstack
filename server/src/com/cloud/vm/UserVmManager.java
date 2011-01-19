@@ -28,7 +28,6 @@ import com.cloud.server.Criteria;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
-import com.cloud.vm.VirtualMachine.Event;
 
 /**
  *
@@ -66,8 +65,6 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>{
      * @return true if stopped; false if problems.
      */
     boolean stopVirtualMachine(long userId, long vmId);
-    void completeStopCommand(long userId, UserVmVO vm, Event e);
-    
 
     /**
      * Obtains statistics for a list of host or VMs; CPU and network utilization
@@ -78,12 +75,6 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>{
      */
     HashMap<Long, VmStatsEntry> getVirtualMachineStatistics(long hostId, String hostName, List<Long> vmIds);
     
-    /**
-     * Releases a guest IP address for a VM. If the VM is on a direct attached network, will also unassign the IP address.
-     * @param userVm
-     */
-    void releaseGuestIpAddress(UserVmVO userVm);
-
     boolean deleteVmGroup(long groupId);
 
     boolean addInstanceToGroup(long userVmId, String group);

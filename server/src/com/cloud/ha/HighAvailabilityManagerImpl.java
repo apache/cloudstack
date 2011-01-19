@@ -36,6 +36,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.StopAnswer;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
@@ -72,6 +73,7 @@ import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.VMInstanceDao;
 
 /**
@@ -270,6 +272,10 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     @Override
     public void scheduleRestart(VMInstanceVO vm, final boolean investigate) {
     	Long hostId = vm.getHostId();
+    	if (hostId == null) {
+    	    _itMgr.stateTransitTo(vm, Event.OperationFailed, null);
+    	    return;
+    	}
     	VirtualMachineGuru<VMInstanceVO> mgr = findManager(vm.getType());
     	vm = mgr.findById(vm.getId());
         if (!investigate) {
@@ -297,7 +303,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
                 }
             }
 
-        	mgr.completeStopCommand(vm);
+        	mgr.finalizeStop(new VirtualMachineProfileImpl<VMInstanceVO>(vm), null);
         }
 
         final List<HaWorkVO> items = _haDao.findPreviousHA(vm.getId());
@@ -409,7 +415,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             	return (System.currentTimeMillis() >> 10) + _restartRetryInterval;
             }
 
-            mgr.completeStopCommand(vm);
+            mgr.finalizeStop(new VirtualMachineProfileImpl<VMInstanceVO>(vm), null);
             
             work.setStep(Step.Scheduled);
             _haDao.update(work.getId(), work);
@@ -546,7 +552,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
                 if (fullSync) {
                     s_logger.debug("VM is in stopping state on full sync.  Updating the status to stopped");
                     vm = info.mgr.findById(vm.getId());
-                    info.mgr.completeStopCommand(vm);
+                    info.mgr.finalizeStop(new VirtualMachineProfileImpl<VMInstanceVO>(vm), null);
                     command = info.mgr.cleanup(vm, agentName);
                 } else {
                     s_logger.debug("Ignoring VM in stopping mode: " + vm.getName());
@@ -563,13 +569,13 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
                 if (fullSync) {
                     s_logger.debug("VM state is starting on full sync so updating it to running");
                     vm = info.mgr.findById(vm.getId());
-                    info.mgr.completeStartCommand(vm);
+                    info.mgr.finalizeStart(new VirtualMachineProfileImpl<VMInstanceVO>(vm), vm.getHostId(), null, null);
                 }
             } else if (serverState == State.Stopping) {
                 if (fullSync) {
                     s_logger.debug("VM state is in stopping on fullsync so resend stop.");
                     vm = info.mgr.findById(vm.getId());
-                    info.mgr.completeStopCommand(vm);
+                    info.mgr.finalizeStop(new VirtualMachineProfileImpl<VMInstanceVO>(vm), null);
                     command = info.mgr.cleanup(vm, agentName);
                 } else {
                     s_logger.debug("VM is in stopping state so no action.");
@@ -906,7 +912,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         			Command cmd = mgr.cleanup(vm, null);
         			Answer ans = _agentMgr.send(work.getHostId(), cmd);
         			if (ans.getResult()) {
-        				mgr.completeStopCommand(vm);
+        				mgr.finalizeStop(new VirtualMachineProfileImpl<VMInstanceVO>(vm), (StopAnswer)ans);
         				s_logger.info("Successfully stopped " + vm.toString());
         				return null;
         			}

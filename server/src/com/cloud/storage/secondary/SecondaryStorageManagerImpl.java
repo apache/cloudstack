@@ -39,6 +39,7 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -62,10 +63,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
@@ -971,16 +970,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		}
 	}
 
-	@Override
-	public void completeStartCommand(SecondaryStorageVmVO vm) {
-		 _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
-	}
-
-	@Override
-    public void completeStopCommand(SecondaryStorageVmVO vm) {
-		completeStopCommand(vm, VirtualMachine.Event.AgentReportStopped);
-	}
-
 	@DB
 	protected void completeStopCommand(SecondaryStorageVmVO secStorageVm, VirtualMachine.Event ev) {
 		Transaction txn = Transaction.currentTxn();
@@ -1440,9 +1429,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	}
 
 	@Override
-	public boolean finalizeStart(Commands cmds,
-			VirtualMachineProfile<SecondaryStorageVmVO> profile,
-			DeployDestination dest, ReservationContext context) {
+	public boolean finalizeStart(VirtualMachineProfile<SecondaryStorageVmVO> profile,
+			long hostId, Commands cmds,ReservationContext context) {
 		CheckSshAnswer answer = (CheckSshAnswer)cmds.getAnswer("checkSsh");
 		if (!answer.getResult()) {
 			s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
@@ -1453,8 +1441,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 	}
 
 	@Override
-	public void finalizeStop(
-			VirtualMachineProfile<SecondaryStorageVmVO> profile, long hostId,
-			String reservationId, Answer... answer) {
+	public void finalizeStop(VirtualMachineProfile<SecondaryStorageVmVO> profile, StopAnswer answer) {
 	}
 }

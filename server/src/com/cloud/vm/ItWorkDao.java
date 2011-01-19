@@ -18,6 +18,7 @@
 package com.cloud.vm;
 
 import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.ItWorkVO.Step;
 import com.cloud.vm.VirtualMachine.State;
 
 public interface ItWorkDao extends GenericDao<ItWorkVO, String> {
@@ -28,11 +29,13 @@ public interface ItWorkDao extends GenericDao<ItWorkVO, String> {
      * @param state state
      * @return ItWorkVO if found; null if not.
      */
-    ItWorkVO findByInstance(long instanceId, State state);
+    ItWorkVO findByOutstandingWork(long instanceId, State state);
     
     /**
      * cleanup rows that are either Done or Cancelled and been that way 
      * for at least wait time.
      */
     void cleanup(long wait);
+    
+    boolean updateStep(ItWorkVO work, Step step);
 }

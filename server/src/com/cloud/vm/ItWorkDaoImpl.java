@@ -31,6 +31,7 @@ import com.cloud.vm.VirtualMachine.State;
 public class ItWorkDaoImpl extends GenericDaoBase<ItWorkVO, String> implements ItWorkDao {
     protected final SearchBuilder<ItWorkVO> AllFieldsSearch;
     protected final SearchBuilder<ItWorkVO> CleanupSearch;
+    protected final SearchBuilder<ItWorkVO> OutstandingWorkSearch;
     
     protected ItWorkDaoImpl() {
         super();
@@ -45,13 +46,20 @@ public class ItWorkDaoImpl extends GenericDaoBase<ItWorkVO, String> implements I
         CleanupSearch.and("step", CleanupSearch.entity().getType(), Op.IN);
         CleanupSearch.and("time", CleanupSearch.entity().getUpdatedAt(), Op.LT);
         CleanupSearch.done();
+        
+        OutstandingWorkSearch = createSearchBuilder();
+        OutstandingWorkSearch.and("instance", OutstandingWorkSearch.entity().getInstanceId(), Op.EQ);
+        OutstandingWorkSearch.and("op", OutstandingWorkSearch.entity().getType(), Op.EQ);
+        OutstandingWorkSearch.and("step", OutstandingWorkSearch.entity().getStep(), Op.NEQ);
+        OutstandingWorkSearch.done();
     }
     
     @Override
-    public ItWorkVO findByInstance(long instanceId, State state) {
+    public ItWorkVO findByOutstandingWork(long instanceId, State state) {
         SearchCriteria<ItWorkVO> sc = AllFieldsSearch.create();
         sc.setParameters("instance", instanceId);
         sc.setParameters("op", state);
+        sc.setParameters("step", Step.Done);
         
         return findOneBy(sc);
     }
@@ -59,7 +67,7 @@ public class ItWorkDaoImpl extends GenericDaoBase<ItWorkVO, String> implements I
     @Override
     public void cleanup(long wait) {
         SearchCriteria<ItWorkVO> sc = CleanupSearch.create();
-        sc.setParameters("step", Step.Done, Step.Cancelled);
+        sc.setParameters("step", Step.Done);
         sc.setParameters("time", InaccurateClock.getTimeInSeconds() - wait);
         
         remove(sc);
@@ -70,5 +78,11 @@ public class ItWorkDaoImpl extends GenericDaoBase<ItWorkVO, String> implements I
         work.setUpdatedAt(InaccurateClock.getTimeInSeconds());
         
         return super.update(id, work);
+    }
+    
+    @Override
+    public boolean updateStep(ItWorkVO work, Step step) {
+        work.setStep(step);
+        return update(work.getId(), work);
     }
 }

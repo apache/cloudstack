@@ -27,7 +27,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.AgentControlAnswer;
-import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ConsoleAccessAuthenticationAnswer;
 import com.cloud.agent.api.ConsoleAccessAuthenticationCommand;
@@ -36,6 +35,7 @@ import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
+import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -283,14 +283,6 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     }
 
     @Override
-    public void completeStartCommand(ConsoleProxyVO vm) {
-    }
-
-    @Override
-    public void completeStopCommand(ConsoleProxyVO vm) {
-    }
-
-    @Override
     public Long convertToId(String vmName) {
         if (!VirtualMachineName.isValidConsoleProxyName(vmName, _instance)) {
             return null;
@@ -346,13 +338,13 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     }
 
     @Override
-    public boolean finalizeStart(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
+    public boolean finalizeStart(VirtualMachineProfile<ConsoleProxyVO> profile, long hostId, Commands cmds, ReservationContext context) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, long hostId, String reservationId, Answer... answer) {
+    public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, StopAnswer answer) {
         // TODO Auto-generated method stub
         
     }

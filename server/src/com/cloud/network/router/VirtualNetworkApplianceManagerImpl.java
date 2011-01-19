@@ -40,6 +40,7 @@ import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.RebootAnswer;
+import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -89,7 +90,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
@@ -687,49 +687,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public void completeStopCommand(final DomainRouterVO router) {
-        completeStopCommand(router, VirtualMachine.Event.AgentReportStopped);
-    }
-
-    @DB
-    public void completeStopCommand(final DomainRouterVO router, final VirtualMachine.Event ev) {
-        final long routerId = router.getId();
-
-        final Transaction txn = Transaction.currentTxn();
-        try {
-            txn.start();
-            if (_vmDao.listBy(routerId, State.Starting, State.Running).size() == 0) {
-                _dcDao.releaseVnet(router.getVnet(), router.getDataCenterId(), router.getAccountId(), null);
-            }
-
-            router.setVnet(null);
-
-            String privateIpAddress = router.getPrivateIpAddress();
-
-            if (privateIpAddress != null) {
-                if (_defaultHypervisorType == null || !_defaultHypervisorType.equalsIgnoreCase(Hypervisor.HypervisorType.VmWare.toString())) {
-                    _dcDao.releaseLinkLocalIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
-                } else {
-                    _dcDao.releasePrivateIpAddress(privateIpAddress, router.getDataCenterId(), router.getId());
-                }
-            }
-            router.setPrivateIpAddress(null);
-
-            if (!_itMgr.stateTransitTo(router, ev, null)) {
-                s_logger.debug("Router is not updated");
-                return;
-            }
-            txn.commit();
-        } catch (final Exception e) {
-            throw new CloudRuntimeException("Unable to complete stop", e);
-        }
-
-        if (_storageMgr.unshare(router, null) == null) {
-            s_logger.warn("Unable to set share to false for " + router.getId() + " on host ");
-        }
-    }
-
-    @Override
     public Long convertToId(final String vmName) {
         if (!VirtualMachineName.isValidRouterName(vmName, _instance)) {
             return null;
@@ -1293,9 +1250,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public boolean finalizeStart(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
+    public boolean finalizeStart(VirtualMachineProfile<DomainRouterVO> profile, long hostId, Commands cmds, ReservationContext context) {
         CheckSshAnswer answer = (CheckSshAnswer) cmds.getAnswer("checkSsh");
-        if (!answer.getResult()) {
+        if (answer == null || !answer.getResult()) {
             s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
             return false;
         }
@@ -1306,9 +1263,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public void finalizeStop(VirtualMachineProfile<DomainRouterVO> profile, long hostId, String reservationId, Answer... answer) {
-        if (answer != null && answer.length > 0) {
-            processStopOrRebootAnswer(profile.getVirtualMachine(), answer[0]);
+    public void finalizeStop(VirtualMachineProfile<DomainRouterVO> profile, StopAnswer answer) {
+        if (answer != null) {
+            processStopOrRebootAnswer(profile.getVirtualMachine(), answer);
         }
 
     	DomainRouterVO router = profile.getVirtualMachine();
@@ -1818,9 +1775,4 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         return routersToStop;
     }
-    
-	@Override
-	public void completeStartCommand(DomainRouterVO router) {
-		_itMgr.stateTransitTo(router, VirtualMachine.Event.AgentReportRunning, router.getHostId());
-	}
 }

@@ -34,11 +34,10 @@ public class ItWorkVO {
     }
     
     enum Step {
-        Reserve,
         Prepare,
         Start,
         Started,
-        Cancelled,
+        Release,
         Done
     }
     

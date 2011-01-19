@@ -48,6 +48,7 @@ import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
+import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
@@ -1416,16 +1417,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         }
     }
 
-    @Override
-    public void completeStartCommand(ConsoleProxyVO vm) {
-        _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
-    }
-
-    @Override
-    public void completeStopCommand(ConsoleProxyVO vm) {
-        completeStopCommand(vm, VirtualMachine.Event.AgentReportStopped);
-    }
-
     @DB
     protected void completeStopCommand(ConsoleProxyVO proxy, VirtualMachine.Event ev) {
         
@@ -1607,11 +1598,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     @Override
     public boolean stop(ConsoleProxyVO proxy) throws ResourceUnavailableException {
-        if (!_itMgr.stateTransitTo(proxy, VirtualMachine.Event.StopRequested, proxy.getHostId())) {
-            s_logger.debug("Unable to stop console proxy: " + proxy.toString());
-            return false;
-        }
-
         GlobalLock proxyLock = GlobalLock.getInternLock(getProxyLockName(proxy.getId()));
         try {
             if (proxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
@@ -1632,101 +1618,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             proxyLock.releaseRef();
         }
     }
-
-//    @Override
-//    public boolean migrate(ConsoleProxyVO proxy, HostVO host) {
-//        HostVO fromHost = _hostDao.findById(proxy.getId());
-//
-//        if (! _itMgr.stateTransitTo(proxy, VirtualMachine.Event.MigrationRequested, proxy.getHostId())) {
-//            s_logger.debug("State for " + proxy.toString() + " has changed so migration can not take place.");
-//            return false;
-//        }
-//
-//        MigrateCommand cmd = new MigrateCommand(proxy.getInstanceName(), host.getPrivateIpAddress(), false);
-//        Answer answer = _agentMgr.easySend(fromHost.getId(), cmd);
-//        if (answer == null || !answer.getResult()) {
-//            return false;
-//        }
-//
-//        _storageMgr.unshare(proxy, fromHost);
-//
-//        return true;
-//    }
-//
-//    @Override
-//    public boolean completeMigration(ConsoleProxyVO proxy, HostVO host) throws AgentUnavailableException, OperationTimedoutException {
-//
-//        CheckVirtualMachineCommand cvm = new CheckVirtualMachineCommand(proxy.getInstanceName());
-//        CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) _agentMgr.send(host.getId(), cvm);
-//        if (!answer.getResult()) {
-//            s_logger.debug("Unable to complete migration for " + proxy.getId());
-//            _itMgr.stateTransitTo(proxy, VirtualMachine.Event.AgentReportStopped, null);
-//            return false;
-//        }
-//
-//        State state = answer.getState();
-//        if (state == State.Stopped) {
-//            s_logger.warn("Unable to complete migration as we can not detect it on " + host.getId());
-//            _itMgr.stateTransitTo(proxy, VirtualMachine.Event.AgentReportStopped, null);
-//            return false;
-//        }
-//
-//        _itMgr.stateTransitTo(proxy, VirtualMachine.Event.OperationSucceeded, host.getId());
-//        return true;
-//    }
-//
-//    @Override
-//    public HostVO prepareForMigration(ConsoleProxyVO proxy) throws StorageUnavailableException {
-//
-//        VMTemplateVO template = _templateDao.findById(proxy.getTemplateId());
-//        long routerId = proxy.getId();
-//        boolean mirroredVols = proxy.isMirroredVols();
-//        DataCenterVO dc = _dcDao.findById(proxy.getDataCenterId());
-//        HostPodVO pod = _podDao.findById(proxy.getPodId());
-//        StoragePoolVO sp = _storageMgr.getStoragePoolForVm(proxy.getId());
-//
-//        List<VolumeVO> vols = _volsDao.findCreatedByInstance(routerId);
-//
-//        String[] storageIps = new String[2];
-//        VolumeVO vol = vols.get(0);
-//        storageIps[0] = vol.getHostIp();
-//        if (mirroredVols && (vols.size() == 2)) {
-//            storageIps[1] = vols.get(1).getHostIp();
-//        }
-//
-//        PrepareForMigrationCommand cmd = new PrepareForMigrationCommand(proxy.getName(), null, storageIps, vols, mirroredVols);
-//
-//        HostVO routingHost = null;
-//        HashSet<Host> avoid = new HashSet<Host>();
-//
-//        HostVO fromHost = _hostDao.findById(proxy.getHostId());
-//        if (fromHost.getClusterId() == null) {
-//            s_logger.debug("The host is not in a cluster");
-//            return null;
-//        }
-//        avoid.add(fromHost);
-//
-//        while ((routingHost = (HostVO) _agentMgr.findHost(Host.Type.Routing, dc, pod, sp, _serviceOffering, template, proxy, fromHost, avoid)) != null) {
-//            avoid.add(routingHost);
-//
-//            if (s_logger.isDebugEnabled()) {
-//                s_logger.debug("Trying to migrate router to host " + routingHost.getName());
-//            }
-//
-//            if (!_storageMgr.share(proxy, vols, routingHost, false)) {
-//                s_logger.warn("Can not share " + proxy.getName());
-//                throw new StorageUnavailableException("Can not share " + proxy.getName(), vol.getPoolId());
-//            }
-//
-//            Answer answer = _agentMgr.easySend(routingHost.getId(), cmd);
-//            if (answer != null && answer.getResult()) {
-//                return routingHost;
-//            }
-//            _storageMgr.unshare(proxy, vols, routingHost);
-//        }
-//
-//        return null;
-//    }
 
     private String getCapacityScanLockName() {
         // to improve security, it may be better to return a unique mashed
@@ -1985,7 +1876,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     }
     
     @Override
-    public boolean finalizeStart(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
+    public boolean finalizeStart(VirtualMachineProfile<ConsoleProxyVO> profile, long hostId, Commands cmds, ReservationContext context) {
         CheckSshAnswer answer = (CheckSshAnswer)cmds.getAnswer("checkSsh");
         if (!answer.getResult()) {
             s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
@@ -2053,6 +1944,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     }
     
     @Override
-    public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, long hostId, String reservationId, Answer... answer) {
+    public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, StopAnswer answer) {
     }
 }

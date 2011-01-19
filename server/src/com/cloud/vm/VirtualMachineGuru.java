@@ -17,11 +17,10 @@
  */
 package com.cloud.vm;
 
-import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.manager.Commands;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -62,9 +61,10 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      * @param dest destination it was sent to.
      * @return true if deployment was fine; false if it didn't go well.
      */
-    boolean finalizeStart(Commands cmds, VirtualMachineProfile<T> profile, DeployDestination dest, ReservationContext context);
+    boolean finalizeStart(VirtualMachineProfile<T> profile, long hostId, Commands cmds, ReservationContext context);
     
-    void finalizeStop(VirtualMachineProfile<T> profile, long hostId, String reservationId, Answer... answer);
+    void finalizeStop(VirtualMachineProfile<T> profile, StopAnswer answer);
+    
     /**
      * Returns the id parsed from the name.  If it cannot parse the name,
      * then return null.  This method is used to determine if this is
@@ -74,22 +74,6 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      * @return id if the handler works for this vm and can parse id.  null if not.
      */
     Long convertToId(String vmName);
-    
-    /**
-     * Complete the start command.  HA calls this when it determines that
-     * a vm was starting but the state was not complete.
-     * 
-     * @param vm vm to execute this on.
-     */
-    void completeStartCommand(T vm);
-    
-    /**
-     * Complete the stop command.  HA calls this when it determines that
-     * a vm was being stopped but it didn't complete.
-     * 
-     * @param vm vm to stop.
-     */
-    void completeStopCommand(T vm);
     
     /**
      * start the vm
@@ -122,18 +106,4 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      */
     Command cleanup(T vm, String vmName);
     
-    /**
-     * Prepare for migration.
-     * 
-     * @param vm vm to migrate.
-     * @return HostVO if a host is found.
-     */
-//    HostVO prepareForMigration(T vm) throws InsufficientCapacityException, StorageUnavailableException;
-    
-//    /**
-//     * Migrate the vm.
-//     */
-//    boolean migrate(T vm, HostVO host) throws AgentUnavailableException, OperationTimedoutException;
-//    
-//    boolean completeMigration(T vm, HostVO host) throws AgentUnavailableException, OperationTimedoutException;
 }
