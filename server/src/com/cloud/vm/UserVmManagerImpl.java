@@ -1135,26 +1135,28 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     public boolean expunge(UserVmVO vm, long callerUserId, Account caller) {
 	    try {
-	        if (!_itMgr.advanceExpunge(vm, _accountMgr.getSystemUser(), caller)) {
-	            s_logger.info("Did not expunge " + vm);
-	            return false;
-	        }
 	        
+	        //Cleanup LB/PF rules before expunging the vm
 	        long vmId = vm.getId();
-	        
-            //cleanup port forwarding rules
+	        //cleanup port forwarding rules
             if (_rulesMgr.revokePortForwardingRule(vmId)) {
                 s_logger.debug("Port forwarding rules are removed successfully as a part of vm id=" + vmId + " expunge");
             } else {
                 s_logger.warn("Fail to remove port forwarding rules as a part of vm id=" + vmId + " expunge");
             }
-	        
+            
             //cleanup load balancer rules
             if (_lbMgr.removeVmFromLoadBalancers(vmId)) {
                 s_logger.debug("LB rules are removed successfully as a part of vm id=" + vmId + " expunge");
             } else {
                 s_logger.warn("Fail to remove lb rules as a part of vm id=" + vmId + " expunge");
             }
+            
+            
+	        if (!_itMgr.advanceExpunge(vm, _accountMgr.getSystemUser(), caller)) {
+	            s_logger.info("Did not expunge " + vm);
+	            return false;
+	        }
             
             _networkGroupMgr.removeInstanceFromGroups(vm.getId());
             removeInstanceFromGroup(vm.getId());
