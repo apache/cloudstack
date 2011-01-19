@@ -562,6 +562,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
                 }
             } else if (serverState == State.Starting) {
                 s_logger.debug("Ignoring VM in starting mode: " + vm.getName());
+                _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
             } else {
                 s_logger.debug("Sending cleanup to a stopped vm: " + agentName);            
                 _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);

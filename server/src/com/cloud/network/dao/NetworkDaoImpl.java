@@ -190,7 +190,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         SequenceFetcher fetch = SequenceFetcher.getInstance();
         
         long seq = fetch.getNextSequence(Long.class, _tgMacAddress, networkConfigId);
-        seq = seq | _prefix | ((_rand.nextInt(Short.MAX_VALUE) << 16) & 0x00000000ffff0000l);
+        seq = seq | _prefix << 40| ((_rand.nextInt(Short.MAX_VALUE) << 16) & 0x00000000ffff0000l);
         return NetUtils.long2Mac(seq);
     }
     

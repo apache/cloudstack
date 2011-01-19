@@ -91,7 +91,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         
         nic.setIp4Address(ip.first());
-        nic.setMacAddress(NetUtils.long2Mac(ip.second()));
+        nic.setMacAddress(NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ip.second())));
         nic.setGateway(pod.getGateway());
         nic.setFormat(AddressFormat.Ip4);
         String netmask = NetUtils.getCidrNetmask(pod.getCidrSize());
