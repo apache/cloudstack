@@ -4148,15 +4148,14 @@ public class ManagementServerImpl implements ManagementServer {
 	}
 
     @Override
-    public Map<String, String> listCapabilities(ListCapabilitiesCmd cmd) {
-        Map<String, String> capabilities = new HashMap<String, String>();
+    public Map<String, Object> listCapabilities(ListCapabilitiesCmd cmd) {
+        Map<String, Object> capabilities = new HashMap<String, Object>();
         
-        String securityGroupsEnabled = _configs.get("direct.attach.security.groups.enabled");
-        if(securityGroupsEnabled == null) {
-            securityGroupsEnabled = "false";
-        }             
+        String securityGroupsEnabled = _configs.get(Config.DirectAttachSecurityGroupsEnabled.key());
+        String userPublicTemplateEnabled = _configs.get(Config.AllowPublicUserTemplates.key());
 
-        capabilities.put("securityGroupsEnabled", securityGroupsEnabled);        
+        capabilities.put("securityGroupsEnabled", (securityGroupsEnabled == null || securityGroupsEnabled.equals("false") ? false : true)); 
+        capabilities.put("userPublicTemplateEnabled", (userPublicTemplateEnabled == null || userPublicTemplateEnabled.equals("false") ? false : true));
         capabilities.put("cloudStackVersion", getVersion());
         return capabilities;
     }

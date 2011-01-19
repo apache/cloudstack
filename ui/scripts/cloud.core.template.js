@@ -90,7 +90,11 @@ function afterLoadTemplateJSP() {
 	
 	//add button ***	   
     $("#add_template_button").unbind("click").bind("click", function(event) {     
-        $("#dialog_add_template #add_template_hypervisor").change();	    
+        $("#dialog_add_template #add_template_hypervisor").change();	   
+
+		if (g_userPublicTemplateEnabled == "true" || isAdmin()) {
+			$("#dialog_add_template #add_template_public_container").show();
+		}
        
         $("#dialog_add_template")
 		.dialog('option', 'buttons', { 				
@@ -467,9 +471,21 @@ var templateActionMap = {
 }   
 
 function doEditTemplate($actionLink, $detailsTab, $midmenuItem1) {   
-    //var $detailsTab = $("#right_panel_content #tab_content_details");  
-    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #passwordenabled, #ispublic, #isfeatured, #ostypename");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #isfeatured_edit, #ostypename_edit");    
+	var $readonlyFields, $editFields;
+  
+    if(isAdmin()) {
+		$readonlyFields = $detailsTab.find("#name, #displaytext, #passwordenabled, #ispublic, #isfeatured, #ostypename");
+		$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #isfeatured_edit, #ostypename_edit"); 
+    }
+    else {  
+		if (g_userPublicTemplateEnabled == "true") {
+			$readonlyFields = $detailsTab.find("#name, #displaytext, #passwordenabled, #ispublic, #ostypename");
+			$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #ostypename_edit"); 
+		} else {
+			$readonlyFields = $detailsTab.find("#name, #displaytext, #passwordenabled, #ostypename");
+			$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ostypename_edit");
+		}
+    }
         
     $readonlyFields.hide();
     $editFields.show();  

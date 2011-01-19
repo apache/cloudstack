@@ -352,7 +352,7 @@ public interface ManagementService {
 
     List<? extends InstanceGroup> searchForVmGroups(ListVMGroupsCmd cmd);
 
-    Map<String, String> listCapabilities(ListCapabilitiesCmd cmd);
+    Map<String, Object> listCapabilities(ListCapabilitiesCmd cmd);
 
     /**
      * Extracts the volume to a particular location.

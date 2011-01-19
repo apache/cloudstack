@@ -629,7 +629,11 @@ function doDownloadVolume($actionLink, $detailsTab, $midmenuItem1) {
     });  	
 }
 
-function doCreateTemplateFromVolume($actionLink, $detailsTab, $midmenuItem1) {       
+function doCreateTemplateFromVolume($actionLink, $detailsTab, $midmenuItem1) {  
+	if (g_userPublicTemplateEnabled == "true" || isAdmin()) {
+		$("#dialog_create_template #create_template_public_container").show();
+	}
+   
     var jsonObj = $midmenuItem1.data("jsonObj");
     $("#dialog_create_template").find("#volume_name").text(jsonObj.name);
     
@@ -1023,6 +1027,10 @@ function doCreateVolumeFromSnapshotInVolumePage($actionLink, $subgridItem) {
 }
 
 function doCreateTemplateFromSnapshotInVolumePage($actionLink, $subgridItem) { 
+	if (g_userPublicTemplateEnabled == "true" || isAdmin()) {
+		$("#dialog_create_template_from_snapshot #create_template_public_container").show();
+	}
+	
     var jsonObj = $subgridItem.data("jsonObj");
        
     $("#dialog_create_template_from_snapshot")

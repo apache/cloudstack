@@ -158,7 +158,7 @@
 	                </div>
 	            </div>
 	            
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("crossZones")%>:</div>
@@ -168,7 +168,7 @@
 	                    </div>
 	                </div>
 	            </div>
-				<div class="grid_rows even">
+				<div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("OS.Type")%>:</div>
@@ -180,7 +180,7 @@
 	                    </select>
 	                </div>
 	            </div>
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Account")%>:</div>
@@ -190,7 +190,7 @@
 	                    </div>
 	                </div>
 	            </div>
-				<div class="grid_rows even">
+				<div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Domain")%>:</div>
@@ -200,7 +200,7 @@
 	                    </div>
 	                </div>
 	            </div>
-	            <div class="grid_rows odd">
+	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
 	                        <%=t.t("Created")%>:</div>
@@ -271,7 +271,7 @@
 						<option value="false">No</option>
 					</select>
 				</li>				
-				<li>
+				<li id="add_iso_public_container" style="display:none">
 					<label>Public?:</label>
 					<select class="select" id="add_iso_public">
 						<option value="false">No</option>

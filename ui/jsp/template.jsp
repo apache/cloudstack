@@ -368,7 +368,7 @@
 						<option value="true">Yes</option>
 					</select>
 				</li>
-				<li>
+				<li id="add_template_public_container" style="display:none">
 					<label>Public?:</label>
 					<select class="select" id="add_template_public">
 						<option value="false">No</option>

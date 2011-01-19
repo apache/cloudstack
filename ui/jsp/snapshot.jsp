@@ -170,7 +170,7 @@
 					<select class="select" id="os_type">
 					</select>
 				</li>				
-				<li>
+				<li id="create_template_public_container" style="display:none">
 	                <label for="create_template_public">
 	                    Public:</label>
 	                <select class="select" id="ispublic">

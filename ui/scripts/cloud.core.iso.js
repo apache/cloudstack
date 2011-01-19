@@ -110,7 +110,11 @@ function initAddIsoDialog() {
 	});
     
     //add button ***     
-    $("#add_iso_button").unbind("click").bind("click", function(event) {     
+    $("#add_iso_button").unbind("click").bind("click", function(event) {  
+		if (g_userPublicTemplateEnabled == "true" || isAdmin()) {
+			$("#dialog_add_iso #add_iso_public_container").show();
+		}
+	
         $dialogAddIso
 	    .dialog('option', 'buttons', { 				
 		    "Create": function() { 	
@@ -444,12 +448,17 @@ function doEditISO($actionLink, $detailsTab, $midmenuItem1) {
     var $readonlyFields, $editFields;
   
     if(isAdmin()) {
-        $readonlyFields  = $detailsTab.find("#name, #displaytext, #ispublic, #ostypename, #isfeatured");
-        $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ispublic_edit, #ostypename_edit, #isfeatured_edit"); 
+		$readonlyFields  = $detailsTab.find("#name, #displaytext, #ispublic, #ostypename, #isfeatured");
+		$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ispublic_edit, #ostypename_edit, #isfeatured_edit"); 
     }
     else {  
-        $readonlyFields  = $detailsTab.find("#name, #displaytext, #ispublic, #ostypename");
-        $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ispublic_edit, #ostypename_edit"); 
+		if (g_userPublicTemplateEnabled == "true") {
+			$readonlyFields  = $detailsTab.find("#name, #displaytext, #ispublic, #ostypename");
+			$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ispublic_edit, #ostypename_edit"); 
+		} else {
+			$readonlyFields  = $detailsTab.find("#name, #displaytext, #ostypename");
+			$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ostypename_edit"); 
+		}
     }
            
     $readonlyFields.hide();

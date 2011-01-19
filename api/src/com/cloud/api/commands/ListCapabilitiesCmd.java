@@ -38,10 +38,11 @@ public class ListCapabilitiesCmd extends BaseCmd {
     
     @Override
     public void execute(){
-        Map<String, String> capabilities = _mgr.listCapabilities(this);
+        Map<String, Object> capabilities = _mgr.listCapabilities(this);
         CapabilitiesResponse response = new CapabilitiesResponse();
-        response.setSecurityGroupsEnabled(capabilities.get("securityGroupsEnabled"));
-        response.setCloudStackVersion(capabilities.get("cloudStackVersion"));
+        response.setSecurityGroupsEnabled((Boolean)capabilities.get("securityGroupsEnabled"));
+        response.setCloudStackVersion((String)capabilities.get("cloudStackVersion"));
+        response.setUserPublicTemplateEnabled((Boolean)capabilities.get("userPublicTemplateEnabled"));
         response.setObjectName("capability");
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

@@ -705,13 +705,31 @@ $(document).ready(function() {
 				$.cookie('directattacheduntaggedenabled', g_directAttachedUntaggedEnabled, { expires: 1}); 
 				$.cookie('systemvmuselocalstorage', g_systemVmUseLocalStorage, { expires: 1}); 
 				
-				buildSecondLevelNavigation();
 				
-				$("#main_username").text(g_username);
-				$("#login_wrapper").hide();				
-				showLeftNavigationBasedOnRole();
-				initUI();
-				$("#main").show();	
+				$.ajax({
+					data: createURL("command=listCapabilities"),
+					dataType: "json",
+					async: false,
+					success: function(json) {
+						if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
+							g_userPublicTemplateEnabled = ""+json.listcapabilitiesresponse.capability.userpublictemplateenabled;
+							$.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});
+						}
+						
+						buildSecondLevelNavigation();
+						$("#main_username").text(g_username);
+						$("#login_wrapper").hide();	
+						showLeftNavigationBasedOnRole();
+						initUI();
+						$("#main").show();
+					},
+					error: function(xmlHTTP) {
+						logout(false);
+					},
+					beforeSend: function(xmlHTTP) {
+						return true;
+					}
+				});
 			},
 			error: function() {
 				$("#account_password").val("");
@@ -759,6 +777,7 @@ $(document).ready(function() {
 	g_directAttachSecurityGroupsEnabled = $.cookie("directattachsecuritygroupsenabled");
 	g_directAttachedUntaggedEnabled = $.cookie("directattacheduntaggedenabled");
 	g_systemVmUseLocalStorage = $.cookie("systemvmuselocalstorage");
+	g_userPublicTemplateEnabled = $.cookie("userpublictemplateenabled");
 	
 	if($.cookie("timezoneoffset") != null)
 	    g_timezoneoffset = isNaN($.cookie("timezoneoffset"))?null: parseFloat($.cookie("timezoneoffset"));
@@ -777,8 +796,11 @@ $(document).ready(function() {
 	if (!g_systemVmUseLocalStorage || g_systemVmUseLocalStorage.length == 0) 		
 		g_systemVmUseLocalStorage = "false";
 		
+	if (!g_userPublicTemplateEnabled || g_userPublicTemplateEnabled.length == 0) 		
+		g_userPublicTemplateEnabled = "true";
+		
 	$.ajax({
-	    data: createURL("command=listZones&available=true&response=json"),
+	    data: createURL("command=listCapabilities"),
 		dataType: "json",
 		async: false,
 		success: function(json) {

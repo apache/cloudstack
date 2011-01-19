@@ -239,7 +239,7 @@
                 <select class="select" name="create_template_os_type" id="create_template_os_type">
                 </select>
             </li>
-            <li>
+            <li id="create_template_public_container" style="display:none">
                 <label for="create_template_public">
                     Public:</label>
                 <select class="select" name="create_template_public" id="create_template_public">
@@ -739,7 +739,7 @@
 					<select class="select" id="os_type">
 					</select>
 				</li>				
-				<li>
+				<li id="create_template_public_container" style="display:none">
 	                <label for="ispublic">
 	                    Public:</label>
 	                <select class="select" name="ispublic" id="ispublic">
