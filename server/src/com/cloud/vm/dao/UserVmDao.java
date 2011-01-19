@@ -22,13 +22,10 @@ import java.util.List;
 
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.fsm.StateDao;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
-public interface UserVmDao extends GenericDao<UserVmVO, Long>, StateDao<State, VirtualMachine.Event, VMInstanceVO> {
+public interface UserVmDao extends GenericDao<UserVmVO, Long> {
     List<UserVmVO> listByAccountId(long id);
 
     List<UserVmVO> listByAccountAndPod(long accountId, long podId);
@@ -46,21 +43,6 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long>, StateDao<State, V
     List<UserVmVO> listBy(long routerId, State... state);
 
     UserVmVO findByName(String name);
-    
-    /**
-     * This method is of supreme importance in the management of VMs.  It updates a uservm if and only if
-     * the following condition are true.  If the update is complete, all changes to the uservm entity
-     * are persisted.  The state is also changed to the new state.
-     * 
-     * 1. There's a transition from the current state via the event to a new state.
-     * 2. The db has not changed on the current state, update time, and host id sent.
-     * 
-     * @param vm vm object to persist.
-     * @param event
-     * @param hostId
-     * @return true if updated, false if not.
-     */
-    boolean updateIf(UserVmVO vm, VirtualMachine.Event event, Long hostId);
     
     /**
      * Updates display name and group for vm; enables/disables ha

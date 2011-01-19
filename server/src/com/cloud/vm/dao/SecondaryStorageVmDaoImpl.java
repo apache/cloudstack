@@ -21,7 +21,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -35,9 +34,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 
 @Local(value={SecondaryStorageVmDao.class})
@@ -93,56 +89,6 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
     }
     
-    @Override
-    public boolean updateIf(SecondaryStorageVmVO vm, VirtualMachine.Event event, Long hostId) {
-    	State oldState = vm.getState();
-    	State newState = oldState.getNextState(event);
-    	
-    	Long oldHostId = vm.getHostId();
-    	long oldDate = vm.getUpdated();
-    	
-    	if (newState == null) {
-    		if (s_logger.isDebugEnabled()) {
-    	    	s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
-    		}
-    		return false;
-    	}
-    		
-    	SearchCriteria<SecondaryStorageVmVO> sc = StateChangeSearch.create();
-    	sc.setParameters("id", vm.getId());
-    	sc.setParameters("states", oldState);
-    	sc.setParameters("host", vm.getHostId());
-    	sc.setParameters("update", vm.getUpdated());
-    	
-    	vm.incrUpdated();
-        UpdateBuilder ub = getUpdateBuilder(vm);
-    	if(newState == State.Running) {
-        	// save current running host id
-        	ub.set(vm, "lastHostId", vm.getHostId());
-    	}
-    	
-        ub.set(vm, _updateTimeAttr, new Date());
-        ub.set(vm, "state", newState);
-        ub.set(vm, "hostId", hostId);
-        if (newState == State.Stopped) {
-        	ub.set(vm, "hostId", null);
-        }
-        
-        int result = update(vm, sc);
-        
-        if (result == 0 && s_logger.isDebugEnabled()) {
-        	SecondaryStorageVmVO vo = findById(vm.getId());
-        	StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-        	str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated());
-        	str.append("} New Data: {Host=").append(vm.getHostId()).append("; State=").append(vm.getState().toString()).append("; updated=").append(vm.getUpdated());
-        	str.append("} Stale Data: {Host=").append(oldHostId).append("; State=").append(oldState.toString()).append("; updated=").append(oldDate).append("}");
-        	s_logger.debug(str.toString());
-        }
-        
-        return result > 0;
-    }
-    
-
     @Override
     public boolean remove(Long id) {
         Transaction txn = Transaction.currentTxn();
@@ -217,41 +163,6 @@ public class SecondaryStorageVmDaoImpl extends GenericDaoBase<SecondaryStorageVm
 		SearchCriteria<SecondaryStorageVmVO> sc = ZoneSearch.create();
         sc.setParameters("zone", zoneId);
         return listBy(sc);
-	}
-
-	@Override
-	public boolean updateState(State oldState, Event event,
-			State newState, VMInstanceVO vm, Long hostId) {
-		if (newState == null) {
-			if (s_logger.isDebugEnabled()) {
-				s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
-			}
-			return false;
-		}
-		
-		SecondaryStorageVmVO secondaryVM = (SecondaryStorageVmVO)vm;
-
-		SearchCriteria<SecondaryStorageVmVO> sc = StateChangeSearch.create();
-		sc.setParameters("id", secondaryVM.getId());
-		sc.setParameters("states", oldState);
-		sc.setParameters("host", secondaryVM.getHostId());
-		sc.setParameters("update", secondaryVM.getUpdated());
-
-		vm.incrUpdated();
-		UpdateBuilder ub = getUpdateBuilder(secondaryVM);
-		ub.set(secondaryVM, "state", newState);
-		ub.set(secondaryVM, "hostId", hostId);
-		ub.set(secondaryVM, _updateTimeAttr, new Date());
-
-		int result = update(secondaryVM, sc);
-		if (result == 0 && s_logger.isDebugEnabled()) {
-			SecondaryStorageVmVO vo = findById(secondaryVM.getId());
-			StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-			str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated());
-			str.append("} Stale Data: {Host=").append(secondaryVM.getHostId()).append("; State=").append(secondaryVM.getState().toString()).append("; updated=").append(secondaryVM.getUpdated()).append("}");
-			s_logger.debug(str.toString());
-		}
-		return result > 0;
 	}
 
 	@Override

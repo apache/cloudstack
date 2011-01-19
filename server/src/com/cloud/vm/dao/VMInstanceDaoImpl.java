@@ -154,44 +154,6 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public boolean updateIf(VMInstanceVO vm, VirtualMachine.Event event, Long hostId, String reservationId) {
-
-        State oldState = vm.getState();
-        State newState = oldState.getNextState(event);
-
-        if (newState == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
-            }
-            return false;
-        }
-
-        SearchCriteria<VMInstanceVO> sc = StateChangeSearch.create();
-        sc.setParameters("id", vm.getId());
-        sc.setParameters("states", oldState);
-        sc.setParameters("host", vm.getHostId());
-        sc.setParameters("update", vm.getUpdated());
-
-        vm.incrUpdated();
-        vm.setReservationId(reservationId);
-        UpdateBuilder ub = getUpdateBuilder(vm);
-        ub.set(vm, "state", newState);
-        ub.set(vm, "hostId", hostId);
-        ub.set(vm, _updateTimeAttr, new Date());
-        
-
-        int result = update(vm, sc);
-        if (result == 0 && s_logger.isDebugEnabled()) {
-            VMInstanceVO vo = findById(vm.getId());
-            StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-            str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated());
-            str.append("} Stale Data: {Host=").append(vm.getHostId()).append("; State=").append(vm.getState().toString()).append("; updated=").append(vm.getUpdated()).append("}");
-            s_logger.debug(str.toString());
-        }
-        return result > 0;
-    }
-
-    @Override
     public List<VMInstanceVO> listByHostId(long hostid) {
         SearchCriteria<VMInstanceVO> sc = HostSearch.create();
         sc.setParameters("host", hostid);

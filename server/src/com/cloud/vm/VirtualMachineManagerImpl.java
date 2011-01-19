@@ -478,49 +478,50 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
         while (retry-- != 0) {
             Transaction txn = Transaction.currentTxn();
             txn.start();
-            if (stateTransitTo(vm, Event.StartRequested, null, work.getId())) {
-                
-                Journal journal = new Journal.LogJournal("Creating " + vm, s_logger);
-                work = _workDao.persist(work);
-                ReservationContextImpl context = new ReservationContextImpl(work.getId(), journal, caller, account);
+            try {
+                if (stateTransitTo(vm, Event.StartRequested, null, work.getId())) {
+                    
+                    Journal journal = new Journal.LogJournal("Creating " + vm, s_logger);
+                    work = _workDao.persist(work);
+                    ReservationContextImpl context = new ReservationContextImpl(work.getId(), journal, caller, account);
+                    
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Successfully transitioned to start state for " + vm + " reservation id = " + work.getId());
+                    }
+                    return new Ternary<T, ReservationContext, ItWorkVO>(vmGuru.findById(vmId), context, work);
+                }
                 
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Successfully transitioned to start state for " + vm + " reservation id = " + work.getId());
+                    s_logger.debug("Determining why we're unable to update the state to Starting for " + vm);
+                } 
+                
+                VMInstanceVO instance = _vmDao.lockRow(vmId, true);
+                if (instance == null) {
+                    throw new ConcurrentOperationException("Unable to acquire lock on " + vm);
                 }
-                txn.commit();
-                return new Ternary<T, ReservationContext, ItWorkVO>(vmGuru.findById(vmId), context, work);
-            }
-            
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Determining why we're unable to update the state to Starting for " + vm);
-            } 
-            
-            VMInstanceVO instance = _vmDao.lockRow(vmId, true);
-            if (instance == null) {
-                throw new ConcurrentOperationException("Unable to acquire lock on " + vm);
-            }
-            
-            State state = instance.getState();
-            if (state == State.Running) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("VM is already started: " + vm);
+                
+                State state = instance.getState();
+                if (state == State.Running) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("VM is already started: " + vm);
+                    }
+                    return null;
                 }
-                txn.commit();
-                return null;
-            }
-            
-            if (state.isTransitional()) {
-                if (!checkWorkItems(vm, state)) {
-                    throw new ConcurrentOperationException("There are concurrent operations on the VM " + vm);
-                } else {
-                    continue;
+                
+                if (state.isTransitional()) {
+                    if (!checkWorkItems(vm, state)) {
+                        throw new ConcurrentOperationException("There are concurrent operations on the VM " + vm);
+                    } else {
+                        continue;
+                    }
                 }
-            }
-            
-            if (state != State.Stopped) {
-                s_logger.debug("VM " + vm + " is not in a state to be started: " + state);
+                
+                if (state != State.Stopped) {
+                    s_logger.debug("VM " + vm + " is not in a state to be started: " + state);
+                    return null;
+                }
+            } finally {
                 txn.commit();
-                return null;
             }
         }
         
@@ -898,17 +899,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
     
     protected boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId, String reservationId) {
         vm.setReservationId(reservationId);
-		if (vm instanceof UserVmVO) {
-			return _stateMachine.transitTo(vm, e, hostId, _userVmDao);
-		} else if (vm instanceof ConsoleProxyVO) {
-			return _stateMachine.transitTo(vm, e, hostId, _consoleDao);
-		} else if (vm instanceof SecondaryStorageVmVO) {
-			return _stateMachine.transitTo(vm, e, hostId, _secondaryDao);
-		} else if (vm instanceof DomainRouterVO) {
-			return _stateMachine.transitTo(vm, e, hostId, _routerDao);
-		} else {
-			return _stateMachine.transitTo(vm, e, hostId, _vmDao);
-		}
+        return _stateMachine.transitTo(vm, e, hostId, _vmDao);
     }
     
     @Override

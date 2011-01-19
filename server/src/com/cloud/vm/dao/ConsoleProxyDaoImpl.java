@@ -38,9 +38,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 
 @Local(value={ConsoleProxyDao.class})
@@ -153,59 +150,6 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
         assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
     }
     
-    @Override
-    public boolean updateIf(ConsoleProxyVO vm, VirtualMachine.Event event, Long hostId) {
-    	State oldState = vm.getState();
-    	State newState = oldState.getNextState(event);
-    	
-    	Long oldHostId = vm.getHostId();
-    	long oldDate = vm.getUpdated();
-    	
-    	if (newState == null) {
-    		if (s_logger.isDebugEnabled()) {
-    	    	s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
-    		}
-    		return false;
-    	}
-    		
-    	SearchCriteria<ConsoleProxyVO> sc = StateChangeSearch.create();
-    	sc.setParameters("id", vm.getId());
-    	sc.setParameters("states", oldState);
-    	sc.setParameters("host", vm.getHostId());
-    	sc.setParameters("update", vm.getUpdated());
-    	
-    	vm.incrUpdated();
-        UpdateBuilder ub = getUpdateBuilder(vm);
-        
-        if(newState == State.Running) {
-        	// save current running host id
-        	ub.set(vm, "lastHostId", vm.getHostId());
-        }
-        
-        ub.set(vm, _updateTimeAttr, new Date());
-        ub.set(vm, "state", newState);
-        ub.set(vm, "hostId", hostId);
-        
-        if (newState == State.Stopped) {
-        	vm.setActiveSession(0);
-        	ub.set(vm, "hostId", null);
-        }
-        
-        int result = update(vm, sc);
-        
-        if (result == 0 && s_logger.isDebugEnabled()) {
-        	ConsoleProxyVO vo = findById(vm.getId());
-        	StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-        	str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated());
-        	str.append("} New Data: {Host=").append(vm.getHostId()).append("; State=").append(vm.getState().toString()).append("; updated=").append(vm.getUpdated());
-        	str.append("} Stale Data: {Host=").append(oldHostId).append("; State=").append(oldState.toString()).append("; updated=").append(oldDate).append("}");
-        	s_logger.debug(str.toString());
-        }
-        
-        return result > 0;
-    }
-    
-
     @Override
     public void update(long id, int activeSession, Date updateTime, byte[] sessionDetails) {
         ConsoleProxyVO ub = createForUpdate();
@@ -398,41 +342,6 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
         }
         return l;
     }
-
-	@Override
-	public boolean updateState(State oldState, Event event,
-			State newState, VMInstanceVO vm, Long hostId) {
-		if (newState == null) {
-			if (s_logger.isDebugEnabled()) {
-				s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
-			}
-			return false;
-		}
-		
-		ConsoleProxyVO consoleVM = (ConsoleProxyVO)vm;
-
-		SearchCriteria<ConsoleProxyVO> sc = StateChangeSearch.create();
-		sc.setParameters("id", consoleVM.getId());
-		sc.setParameters("states", oldState);
-		sc.setParameters("host", consoleVM.getHostId());
-		sc.setParameters("update", consoleVM.getUpdated());
-
-		vm.incrUpdated();
-		UpdateBuilder ub = getUpdateBuilder(consoleVM);
-		ub.set(consoleVM, "state", newState);
-		ub.set(consoleVM, "hostId", hostId);
-		ub.set(consoleVM, _updateTimeAttr, new Date());
-
-		int result = update(consoleVM, sc);
-		if (result == 0 && s_logger.isDebugEnabled()) {
-			ConsoleProxyVO vo = findById(consoleVM.getId());
-			StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-			str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated());
-			str.append("} Stale Data: {Host=").append(consoleVM.getHostId()).append("; State=").append(consoleVM.getState().toString()).append("; updated=").append(consoleVM.getUpdated()).append("}");
-			s_logger.debug(str.toString());
-		}
-		return result > 0;
-	}
 
 	@Override
 	public List<ConsoleProxyVO> listByLastHostId(long hostId) {

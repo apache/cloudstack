@@ -20,13 +20,10 @@ package com.cloud.vm.dao;
 import java.util.List;
 
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.fsm.StateDao;
 import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
-public interface SecondaryStorageVmDao extends GenericDao<SecondaryStorageVmVO, Long>, StateDao<State, VirtualMachine.Event, VMInstanceVO> {
+public interface SecondaryStorageVmDao extends GenericDao<SecondaryStorageVmVO, Long> {
 	
     public List<SecondaryStorageVmVO> getSecStorageVmListInStates(long dataCenterId, State... states);
     public List<SecondaryStorageVmVO> getSecStorageVmListInStates(State... states);
@@ -40,6 +37,4 @@ public interface SecondaryStorageVmDao extends GenericDao<SecondaryStorageVmVO, 
     
 
     public List<Long> getRunningSecStorageVmListByMsid(long msid);
-    
-    public boolean updateIf(SecondaryStorageVmVO vm, VirtualMachine.Event event, Long hostId);
 }

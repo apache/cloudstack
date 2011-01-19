@@ -32,17 +32,13 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 
 @Local(value={UserVmDao.class})
 public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements UserVmDao {
-    public static final Logger s_logger = Logger.getLogger(UserVmDaoImpl.class.getName());
+    public static final Logger s_logger = Logger.getLogger(UserVmDaoImpl.class);
     
     protected final SearchBuilder<UserVmVO> RouterStateSearch;
     protected final SearchBuilder<UserVmVO> RouterIdSearch;
@@ -200,57 +196,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         return listIncludingRemovedBy(sc);
     }
 
-   @Override
-    public boolean updateIf(UserVmVO vm, VirtualMachine.Event event, Long hostId) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("UpdateIf called " + vm.toString() + " event " + event.toString() + " host " + hostId);
-        }
-    	
-    	State oldState = vm.getState();
-    	State newState = oldState.getNextState(event);
-    	Long oldHostId = vm.getHostId();
-    	long oldDate = vm.getUpdated();
-    	
-    	
-    	if (newState == null) {
-    		if (s_logger.isDebugEnabled()) {
-    	    	s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
-    		}
-    		return false;
-    	}
-    		
-    	SearchCriteria<UserVmVO> sc = StateChangeSearch.create();
-    	sc.setParameters("id", vm.getId());
-    	sc.setParameters("states", oldState);
-    	sc.setParameters("host", vm.getHostId());
-    	sc.setParameters("update", vm.getUpdated());
-    	
-    	vm.incrUpdated();
-        UpdateBuilder ub = getUpdateBuilder(vm);
-        if(newState == State.Running) {
-        	// save current running host id to last_host_id field
-        	ub.set(vm, "lastHostId", vm.getHostId());
-        } else if(newState == State.Expunging) {
-        	ub.set(vm, "lastHostId", null);
-        }
-        
-        ub.set(vm, "state", newState);
-        ub.set(vm, "hostId", hostId);
-        ub.set(vm, _updateTimeAttr, new Date());
-        
-        int result = update(vm, sc);
-        if (result == 0 && s_logger.isDebugEnabled()) {
-        	UserVmVO vo = findById(vm.getId());
-        	StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-        	str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated());
-        	str.append("} New Data: {Host=").append(vm.getHostId()).append("; State=").append(vm.getState().toString()).append("; updated=").append(vm.getUpdated());
-        	str.append("} Stale Data: {Host=").append(oldHostId).append("; State=").append(oldState.toString()).append("; updated=").append(oldDate).append("}");
-        	s_logger.debug(str.toString());
-        }
-        
-        return result > 0;
-    }
-    
     @Override
     public List<UserVmVO> findDestroyedVms(Date date) {
     	SearchCriteria<UserVmVO> sc = DestroySearch.create();
@@ -359,41 +304,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         sc.setParameters("guestIpAddress", ipAddress);
 
         return findOneBy(sc);
-	}
-
-	@Override
-	public boolean updateState(State oldState, Event event,
-			State newState, VMInstanceVO vm, Long hostId) {
-		if (newState == null) {
-			if (s_logger.isDebugEnabled()) {
-				s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
-			}
-			return false;
-		}
-		
-		UserVmVO userVM = (UserVmVO)vm;
-
-		SearchCriteria<UserVmVO> sc = StateChangeSearch.create();
-		sc.setParameters("id", userVM.getId());
-		sc.setParameters("states", oldState);
-		sc.setParameters("host", userVM.getHostId());
-		sc.setParameters("update", userVM.getUpdated());
-
-		vm.incrUpdated();
-		UpdateBuilder ub = getUpdateBuilder(userVM);
-		ub.set(userVM, "state", newState);
-		ub.set(userVM, "hostId", hostId);
-		ub.set(userVM, _updateTimeAttr, new Date());
-
-		int result = update(userVM, sc);
-		if (result == 0 && s_logger.isDebugEnabled()) {
-			UserVmVO vo = findById(userVM.getId());
-			StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-			str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated());
-			str.append("} Stale Data: {Host=").append(userVM.getHostId()).append("; State=").append(userVM.getState().toString()).append("; updated=").append(userVM.getUpdated()).append("}");
-			s_logger.debug(str.toString());
-		}
-		return result > 0;
 	}
 
 	@Override
