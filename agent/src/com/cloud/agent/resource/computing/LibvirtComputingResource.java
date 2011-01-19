@@ -53,6 +53,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
@@ -113,6 +114,7 @@ import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
@@ -1813,26 +1815,44 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 
 	private synchronized Answer execute(PrepareForMigrationCommand cmd) {
-//		final String vmName = cmd.getVmName();
-//		String result = null;
-//		
-//		if (cmd.getVnet() != null && !isDirectAttachedNetwork(cmd.getVnet())) {
-//			final String vnet = getVnetId(cmd.getVnet());
-//			if (vnet != null) {
-//				try {
-//					createVnet(vnet, _pifs.first()); /*TODO: Need to add public network for domR*/
-//				} catch (InternalErrorException e) {
-//					return new PrepareForMigrationAnswer(cmd, false, result);
-//				}
-//			}
-//		}
-//
-//		synchronized(_vms) {
-//			_vms.put(vmName, State.Migrating);
-//		}
-//
-//		return new PrepareForMigrationAnswer(cmd, result == null, result);
-	    return null;
+		
+		VirtualMachineTO vm = cmd.getVirtualMachine();
+		if (s_logger.isDebugEnabled()) {
+			s_logger.debug("Preparing host for migrating " + vm);
+		}
+
+		NicTO[] nics = vm.getNics();
+		try {
+			Connect conn = LibvirtConnection.getConnection();
+			for (NicTO nic : nics) {
+				String vlanId = null;
+				if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
+					URI broadcastUri = nic.getBroadcastUri();
+					vlanId = broadcastUri.getHost();
+				}
+				if (nic.getType() == TrafficType.Guest) {
+					if (nic.getBroadcastType() == BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")){
+						createVlanBr(vlanId, _pifs.first());
+					}
+				} else if (nic.getType() == TrafficType.Control) {
+					/*Make sure the network is still there*/
+					createControlNetwork(conn);
+				} else if (nic.getType() == TrafficType.Public) {
+					if (nic.getBroadcastType() == BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")) {
+						createVlanBr(vlanId, _pifs.second());
+					} 
+				}
+			}
+			synchronized (_vms) {
+				_vms.put(vm.getName(), State.Migrating);
+			}
+
+			return new PrepareForMigrationAnswer(cmd);
+		} catch (LibvirtException e) {
+			return new PrepareForMigrationAnswer(cmd, e.toString()); 
+		} catch (InternalErrorException e) {
+			return new PrepareForMigrationAnswer(cmd, e.toString()); 
+		}
 	}
 	
     public void createVnet(String vnetId, String pif) throws InternalErrorException {
