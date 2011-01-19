@@ -1703,16 +1703,17 @@ function vmJsonToDetailsTab(){
 	//actions ***
 	var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
 	$actionMenu.find("#action_list").empty();              
-	  
-	buildActionLinkForTab("Edit Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab); 
-			   
+	var noAvailableActions = true;
+		   
 	// Show State of the VM
 	if (jsonObj.state == 'Destroyed') {
-	    if(isAdmin() || isDomainAdmin())
-		    buildActionLinkForTab("Restore Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);		
+	    if(isAdmin() || isDomainAdmin()) {
+		    buildActionLinkForTab("Restore Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		    noAvailableActions = false;		
+		}	
 	} 
-	else if (jsonObj.state == 'Running') {
-		//instanceTemplate.find("#vm_action_start, #vm_action_reset_password, #vm_action_change_service").removeClass().addClass("vmaction_links_off");
+	else if (jsonObj.state == 'Running') {		      
+	    buildActionLinkForTab("Edit Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab); 			
 		buildActionLinkForTab("Stop Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		buildActionLinkForTab("Reboot Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		buildActionLinkForTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
@@ -1723,29 +1724,27 @@ function vmJsonToDetailsTab(){
 			buildActionLinkForTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);	
 			
 		buildActionLinkForTab("Reset Password", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		noAvailableActions = false;	
 	} 
-	else {	    
-		if (jsonObj.state == 'Stopped') {
-			//instanceTemplate.find("#vm_action_stop, #vm_action_reboot").removeClass().addClass("vmaction_links_off");
-			buildActionLinkForTab("Start Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);		    
-			buildActionLinkForTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+	else if (jsonObj.state == 'Stopped') {	    
+	    buildActionLinkForTab("Edit Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+		buildActionLinkForTab("Start Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);		    
+		buildActionLinkForTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		
+		if (jsonObj.isoid == null)	
+			buildActionLinkForTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		else 		
+		   buildActionLinkForTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);				    
+		
+		buildActionLinkForTab("Reset Password", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		buildActionLinkForTab("Change Service", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+		noAvailableActions = false;			    					
+	}
 			
-			if (jsonObj.isoid == null)	
-				buildActionLinkForTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
-			else 		
-			   buildActionLinkForTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);				    
-			
-			buildActionLinkForTab("Reset Password", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
-			buildActionLinkForTab("Change Service", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);			    					
-		} 
-		else { //jsonObj.state == "Starting", "Creating", ~~~ 	
-			if(jsonObj.state != 'Creating')
-				buildActionLinkForTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
-				
-			//instanceTemplate.find("#vm_action_start, #vm_action_stop, #vm_action_reboot, #vm_action_attach_iso, #vm_action_detach_iso, #vm_action_reset_password, #vm_action_change_service").removeClass().addClass("vmaction_links_off");
-		}
-		//to hide view console in details tab....(to-do)
-	}   
+	// no available actions 
+	if(noAvailableActions == true) {
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	 
 	
 	$thisTab.find("#tab_spinning_wheel").hide();    
 	$thisTab.find("#tab_container").show();  
