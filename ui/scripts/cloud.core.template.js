@@ -83,11 +83,24 @@ function afterLoadTemplateJSP() {
 	    return false;
 	});		
 	
-	if(isAdmin())
-	    $("#dialog_add_template #add_template_featured_container, #dialog_edit_template #edit_template_featured_container").show();
-	else
-	    $("#dialog_add_template #add_template_featured_container, #dialog_edit_template #edit_template_featured_container").hide();		
-	
+	if(isAdmin()) {
+		$readonlyFields = $detailsTab.find("#name, #displaytext, #passwordenabled, #ispublic, #isfeatured, #ostypename");
+		$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #isfeatured_edit, #ostypename_edit"); 
+    
+        $("#dialog_add_template #add_template_featured_container, #dialog_edit_template #edit_template_featured_container").show();
+    }
+    else {  
+		if (g_userPublicTemplateEnabled == "true") {
+			$readonlyFields = $detailsTab.find("#name, #displaytext, #passwordenabled, #ispublic, #ostypename");
+			$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #ostypename_edit"); 
+		} else {
+			$readonlyFields = $detailsTab.find("#name, #displaytext, #passwordenabled, #ostypename");
+			$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ostypename_edit");
+		}
+		
+		$("#dialog_add_template #add_template_featured_container, #dialog_edit_template #edit_template_featured_container").hide();		
+    }
+      
 	//add button ***	   
     $("#add_template_button").unbind("click").bind("click", function(event) {     
         $("#dialog_add_template #add_template_hypervisor").change();	   
@@ -470,31 +483,13 @@ var templateActionMap = {
     }   
 }   
 
-function doEditTemplate($actionLink, $detailsTab, $midmenuItem1) {   
-	var $readonlyFields, $editFields;
-  
-    if(isAdmin()) {
-		$readonlyFields = $detailsTab.find("#name, #displaytext, #passwordenabled, #ispublic, #isfeatured, #ostypename");
-		$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #isfeatured_edit, #ostypename_edit"); 
-    }
-    else {  
-		if (g_userPublicTemplateEnabled == "true") {
-			$readonlyFields = $detailsTab.find("#name, #displaytext, #passwordenabled, #ispublic, #ostypename");
-			$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ispublic_edit, #ostypename_edit"); 
-		} else {
-			$readonlyFields = $detailsTab.find("#name, #displaytext, #passwordenabled, #ostypename");
-			$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #passwordenabled_edit, #ostypename_edit");
-		}
-    }
-        
+function doEditTemplate($actionLink, $detailsTab, $midmenuItem1) {      
     $readonlyFields.hide();
     $editFields.show();  
     $detailsTab.find("#cancel_button, #save_button").show();
     
     $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
-        $editFields.hide();
-        $readonlyFields.show();   
-        $("#save_button, #cancel_button").hide();       
+        cancelEditMode($detailsTab);         
         return false;
     });
     $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        

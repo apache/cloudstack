@@ -37,7 +37,10 @@ function diskOfferingGetSearchParams() {
 }
 
 function afterLoadDiskOfferingJSP() {    
-    initAddDiskOfferingDialog();     
+    initAddDiskOfferingDialog();   
+    
+    $readonlyFields  = $("#tab_content_details").find("#name, #displaytext, #tags, #domain");
+    $editFields = $("#tab_content_details").find("#name_edit, #displaytext_edit, #domain_edit");       
 }
 
 function initAddDiskOfferingDialog() { 
@@ -158,17 +161,12 @@ function initAddDiskOfferingDialog() {
 }
 
 function doEditDiskOffering($actionLink, $detailsTab, $midmenuItem1) {       
-    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #tags, #domain");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #domain_edit"); 
-             
     $readonlyFields.hide();
     $editFields.show();  
     $detailsTab.find("#cancel_button, #save_button").show();
     
     $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
-        $editFields.hide();
-        $readonlyFields.show();   
-        $("#save_button, #cancel_button").hide();       
+        cancelEditMode($detailsTab);       
         return false;
     });
     $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        

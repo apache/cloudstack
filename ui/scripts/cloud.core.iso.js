@@ -60,6 +60,21 @@ function afterLoadIsoJSP() {
     
     initAddIsoDialog();
     initCreateVmFromIsoDialog();
+    
+    var $detailsTab = $("#tab_content_details");
+    if(isAdmin()) {
+		$readonlyFields  = $detailsTab.find("#name, #displaytext, #ispublic, #ostypename, #isfeatured");
+		$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ispublic_edit, #ostypename_edit, #isfeatured_edit"); 
+    }
+    else {  
+		if (g_userPublicTemplateEnabled == "true") {
+			$readonlyFields  = $detailsTab.find("#name, #displaytext, #ispublic, #ostypename");
+			$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ispublic_edit, #ostypename_edit"); 
+		} else {
+			$readonlyFields  = $detailsTab.find("#name, #displaytext, #ostypename");
+			$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ostypename_edit"); 
+		}
+    }           
 }
 
 function initAddIsoDialog() {
@@ -444,31 +459,13 @@ var isoActionMap = {
     }     
 }   
 
-function doEditISO($actionLink, $detailsTab, $midmenuItem1) {     
-    var $readonlyFields, $editFields;
-  
-    if(isAdmin()) {
-		$readonlyFields  = $detailsTab.find("#name, #displaytext, #ispublic, #ostypename, #isfeatured");
-		$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ispublic_edit, #ostypename_edit, #isfeatured_edit"); 
-    }
-    else {  
-		if (g_userPublicTemplateEnabled == "true") {
-			$readonlyFields  = $detailsTab.find("#name, #displaytext, #ispublic, #ostypename");
-			$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ispublic_edit, #ostypename_edit"); 
-		} else {
-			$readonlyFields  = $detailsTab.find("#name, #displaytext, #ostypename");
-			$editFields = $detailsTab.find("#name_edit, #displaytext_edit, #ostypename_edit"); 
-		}
-    }
-           
+function doEditISO($actionLink, $detailsTab, $midmenuItem1) {       
     $readonlyFields.hide();
     $editFields.show();  
     $detailsTab.find("#cancel_button, #save_button").show();
     
     $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
-        $editFields.hide();
-        $readonlyFields.show();   
-        $("#save_button, #cancel_button").hide();       
+        cancelEditMode($detailsTab);    
         return false;
     });
     $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        

@@ -120,6 +120,9 @@ function afterLoadDomainJSP() {
     var tabContentArray = [$("#tab_content_details"), $("#tab_content_admin_account"), $("#tab_content_resource_limits")];
     var afterSwitchFnArray = [domainJsonToDetailsTab, domainJsonToAdminAccountTab ,domainJsonToResourceLimitsTab ];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);   
+    
+    $readonlyFields  = $("#tab_content_details").find("#name");
+    $editFields = $("#tab_content_details").find("#name_edit");               
 }
 
 function initAddDomainDialog() {
@@ -209,7 +212,8 @@ function domainToRightPanel($midmenuItem1) {
 }
 
 function domainToRightPanel2($midmenuItem1) {
-    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);   
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);  
+    cancelEditMode($("#tab_content_details")); 
     $("#tab_details").click();   
 }
 
@@ -565,17 +569,12 @@ function doEditResourceLimits2($actionLink, $detailsTab, $midmenuItem1, $readonl
 
 
 function doEditDomain($actionLink, $detailsTab, $midmenuItem1) {     
-    var $readonlyFields  = $detailsTab.find("#name");
-    var $editFields = $detailsTab.find("#name_edit");     
-           
     $readonlyFields.hide();
     $editFields.show();  
     $detailsTab.find("#cancel_button, #save_button").show();
     
     $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
-        $editFields.hide();
-        $readonlyFields.show();   
-        $("#save_button, #cancel_button").hide();       
+        cancelEditMode($detailsTab);     
         return false;
     });
     $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
