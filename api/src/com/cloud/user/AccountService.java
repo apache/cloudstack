@@ -148,5 +148,7 @@ public interface AccountService {
 	Account getActiveAccount(Long accountId);
 	
 	Account getAccount(Long accountId);
+	
+	User getActiveUser(long userId);
 
 }

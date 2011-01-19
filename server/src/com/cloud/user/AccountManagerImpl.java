@@ -49,17 +49,11 @@ import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
-import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
-import com.cloud.dc.dao.PodVlanMapDao;
-import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -71,10 +65,8 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupManager;
@@ -126,11 +118,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	@Inject private UserAccountDao _userAccountDao;
 	@Inject private VolumeDao _volumeDao;
 	@Inject private UserVmDao _userVmDao;
-    @Inject private IPAddressDao _publicIpAddressDao;
-    @Inject private VlanDao _vlanDao;
     @Inject private DomainRouterDao _routerDao;
     @Inject private VMTemplateDao _templateDao;
-    @Inject private PodVlanMapDao _podVlanMapDao;
     @Inject private NetworkDao _networkDao;
     @Inject private SecurityGroupDao _securityGroupDao;
 	
@@ -141,7 +130,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	@Inject private UserVmManager _vmMgr;
 	@Inject private StorageManager _storageMgr;
 	@Inject private TemplateManager _tmpltMgr;
-	@Inject private ConfigurationManager _configMgr;
 	@Inject private VirtualNetworkApplianceManager _routerMgr;
 	
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
@@ -828,6 +816,23 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
             // else, there are no snapshots, hence no directory to delete.
             
+            
+            // clean up templates
+            List<VMTemplateVO> userTemplates = _templateDao.listByAccountId(accountId);
+            boolean allTemplatesDeleted = true;
+            for (VMTemplateVO template : userTemplates) {
+                try {
+                    allTemplatesDeleted = _tmpltMgr.delete(callerUserId, template.getId(), null);
+                } catch (Exception e) {
+                    s_logger.warn("Failed to delete template while removing account: " + template.getName() + " due to: " + e.getMessage());
+                    allTemplatesDeleted = false;
+                }
+            }
+            
+            if (!allTemplatesDeleted) {
+                accountCleanupNeeded = true;
+            }
+            
             // Destroy the account's VMs
             List<UserVmVO> vms = _userVmDao.listByAccountId(accountId);
             if (s_logger.isDebugEnabled()) {
@@ -848,100 +853,25 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             // Mark the account's volumes as destroyed
             List<VolumeVO> volumes = _volumeDao.findDetachedByAccount(accountId);
             for (VolumeVO volume : volumes) {
-//                if(volume.getPoolId()==null){
-//                    accountCleanupNeeded = true;
-//                }
                 _storageMgr.destroyVolume(volume);
             }
-
-            // Destroy the account's routers
-            List<DomainRouterVO> routers = _routerDao.listBy(accountId);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Destroying # of routers (accountId=" + accountId + "): " + routers.size());
-            }
-
-            boolean routersCleanedUp = true;
-            for (DomainRouterVO router : routers) {
-                long startEventId = EventUtils.saveStartedEvent(callerUserId, router.getAccountId(), EventTypes.EVENT_ROUTER_DESTROY, "Starting to destroy router : " + router.getName());
-                if (!_routerMgr.destroyRouterInternal(router.getId())) {
-                    s_logger.error("Unable to destroy router: " + router.getId());
-                    routersCleanedUp = false;
-                    EventUtils.saveEvent(callerUserId, router.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_DESTROY, "Unable to destroy router: " + router.getName(), startEventId);
-                } else {
-                    EventUtils.saveEvent(callerUserId, router.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_DESTROY, "successfully destroyed router : " + router.getName(), startEventId);
-                }
-            }
-
-            if (routersCleanedUp) {
-                List<IPAddressVO> ips = _publicIpAddressDao.listByAccount(accountId);
-                
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Found " + ips.size() + " public IP addresses for account with ID " + accountId);
-                }
-                
-                for (IPAddressVO ip : ips) {
-                    List<PodVlanMapVO> podVlanMaps = _podVlanMapDao.listPodVlanMapsByVlan(ip.getVlanId());
-                    if (podVlanMaps != null && podVlanMaps.size() != 0) {
-                        Long podId = podVlanMaps.get(0).getPodId();
-                        if (podId != null) {
-                            continue;//bug 5561 do not release direct attach pod ips until vm is destroyed
-                        }
-                    }
-                    
-                    if (!_networkMgr.releasePublicIpAddress(ip.getAddress(), account.getId(), User.UID_SYSTEM)) {
-                        s_logger.error("Unable to release IP: " + ip.getAddress());
-                        accountCleanupNeeded = true;
-                    } else {
-                        decrementResourceCount(accountId, ResourceType.public_ip);
-                    }
-                }
-
-            } else {
-                accountCleanupNeeded = true;
-            }
             
+            //Cleanup security groups
             int numRemoved = _securityGroupDao.removeByAccountId(accountId);
             s_logger.info("deleteAccount: Deleted " + numRemoved + " network groups for account " + accountId);
             
-            // Delete the account's VLANs
-            List<VlanVO> accountVlans = _vlanDao.listVlansForAccountByType(null, accountId, VlanType.DirectAttached);
-            boolean allVlansDeleted = true;
-            for (VlanVO vlan : accountVlans) {
-                try {
-                    allVlansDeleted = _configMgr.deleteVlanAndPublicIpRange(User.UID_SYSTEM, vlan.getId());
-                } catch (InvalidParameterValueException e) {
-                    allVlansDeleted = false;
-                }
-            }
-            
-            //delete networks
+            //Delete all the networks
             s_logger.debug("Deleting networks for account " + account.getId());
             List<NetworkVO> networks = _networkDao.listByOwner(accountId);
-            for (NetworkVO network : networks) {
-                _networkMgr.deleteNetwork(network.getId());
-                s_logger.debug("Network " + network.getId() + " successfully deleted.");
-            }
-
-            if (!allVlansDeleted) {
-                accountCleanupNeeded = true;
-            }
-            
-            // clean up templates
-            List<VMTemplateVO> userTemplates = _templateDao.listByAccountId(accountId);
-            boolean allTemplatesDeleted = true;
-            for (VMTemplateVO template : userTemplates) {
-                try {
-                    allTemplatesDeleted = _tmpltMgr.delete(callerUserId, template.getId(), null);
-                } catch (Exception e) {
-                    s_logger.warn("Failed to delete template while removing account: " + template.getName() + " due to: " + e.getMessage());
-                    allTemplatesDeleted = false;
+            if (networks != null) {
+                for (NetworkVO network : networks) {
+                    if (!_networkMgr.deleteNetwork(network.getId())) {
+                        s_logger.warn("Unable to destroy network " + network + " as a part of account cleanup");
+                        accountCleanupNeeded = true;
+                    }  
+                    s_logger.debug("Network " + network.getId() + " successfully deleted.");
                 }
             }
-            
-            if (!allTemplatesDeleted) {
-                accountCleanupNeeded = true;
-            }
-
             return true;
         } finally {
             s_logger.info("Cleanup for account " + account.getId() + (accountCleanupNeeded ? " is needed." : " is not needed."));
@@ -989,7 +919,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         List<DomainRouterVO> routers = _routerDao.listBy(accountId);
         for (DomainRouterVO router : routers) {
-            success = (success && _routerMgr.stopRouterInternal(router.getId()));
+            success = (success && (_routerMgr.stopRouter(router.getId()) != null));
         }
 
         return success;
@@ -1634,5 +1564,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
        } else {
           return  _accountDao.findByIdIncludingRemoved(accountId);
        } 
+    }
+    
+    @Override
+    public User getActiveUser(long userId) {
+        return _userDao.findById(userId);
     }
 }

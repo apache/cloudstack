@@ -146,6 +146,8 @@ public interface NetworkManager extends NetworkService {
 
     <T extends VMInstanceVO> void prepareNicForMigration(VirtualMachineProfile<T> vm, DeployDestination dest);
     
-    void resetBroadcastUri(long networkId);
+    void shutdownNetwork(long networkId);
+    
+    boolean destroyNetwork(long networkId, long callerUserId);
 
 }

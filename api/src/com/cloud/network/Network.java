@@ -119,7 +119,9 @@ public interface Network extends ControlledEntity {
         Setup("Indicates the network configuration is setup"),
         Implementing("Indicates the network configuration is being implemented"),
         Implemented("Indicates the network configuration is in use"),
-        Destroying("Indicates the network configuration is being destroyed");
+        Shutdown("Indicates the network configuration is being destroyed"),
+        Destroy("Indicates that the network is destroyed");
+        
 
         @Override
         public StateMachine<State, Event> getStateMachine() {
@@ -156,10 +158,10 @@ public interface Network extends ControlledEntity {
         static {
             s_fsm.addTransition(State.Allocated, Event.ImplementNetwork, State.Implementing);
             s_fsm.addTransition(State.Implementing, Event.OperationSucceeded, State.Implemented);
-            s_fsm.addTransition(State.Implementing, Event.OperationFailed, State.Destroying);
-            s_fsm.addTransition(State.Implemented, Event.DestroyNetwork, State.Destroying);
-            s_fsm.addTransition(State.Destroying, Event.OperationSucceeded, State.Allocated);
-            s_fsm.addTransition(State.Destroying, Event.OperationFailed, State.Implemented);
+            s_fsm.addTransition(State.Implementing, Event.OperationFailed, State.Shutdown);
+            s_fsm.addTransition(State.Implemented, Event.DestroyNetwork, State.Shutdown);
+            s_fsm.addTransition(State.Shutdown, Event.OperationSucceeded, State.Allocated);
+            s_fsm.addTransition(State.Shutdown, Event.OperationFailed, State.Implemented);
         }
     }
     

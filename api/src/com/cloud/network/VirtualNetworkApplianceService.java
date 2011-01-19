@@ -25,7 +25,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 
-public interface VirtualNetworkApplianceService {
+public interface VirtualNetworkApplianceService{
     /**
      * Starts domain router
      * @param cmd the command specifying router's id

@@ -55,6 +55,7 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
@@ -86,6 +87,7 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement,
     @Inject DomainRouterDao _routerDao;
     @Inject DataCenterDao _dataCenterDao;
     @Inject LoadBalancerDao _lbDao;
+    @Inject AccountManager _accountMgr;
     
     private boolean canHandle(GuestIpType ipType, DataCenter dc) {
         String provider = dc.getGatewayProvider();
@@ -154,7 +156,20 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement,
         if (router == null) {
             return true;
         }
-        return _routerMgr.stopRouterInternal(router.getId());
+        if (_routerMgr.stopRouter(router.getId()) != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+      
+    @Override
+    public boolean destroy(Network config) throws ConcurrentOperationException, ResourceUnavailableException{
+        DomainRouterVO router = _routerDao.findByNetworkConfiguration(config.getId());
+        if (router == null) {
+            return true;
+        }
+        return _routerMgr.destroyRouter(router.getId());
     }
 
     @Override

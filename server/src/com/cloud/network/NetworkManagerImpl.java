@@ -104,6 +104,7 @@ import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.AccountDao;
@@ -1009,7 +1010,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         try {
             NetworkGuru guru = _networkGurus.get(network.getGuruName());
             Network.State state = network.getState();
-            if (state == Network.State.Implemented || state == Network.State.Setup) {
+            if (state == Network.State.Implemented || state == Network.State.Setup || state == Network.State.Implementing) {
                 implemented.set(guru, network);
                 return implemented;
             }
@@ -1019,6 +1020,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+            network.setReservationId(context.getReservationId());
             network.setState(Network.State.Implementing);
             
             _networksDao.update(networkId, network);
@@ -1038,8 +1040,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
                 element.implement(network, offering, dest, context);
             }
-
-            network.setReservationId(context.getReservationId());
+            
             network.setState(Network.State.Implemented);
             _networksDao.update(network.getId(), network);
             implemented.set(guru, network);
@@ -1599,10 +1600,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("unable to find network " + networkId);
         } 
         
-        Long ownerId = network.getAccountId();
-        Long zoneId = network.getDataCenterId();
-        String name = network.getName();
-        
         //Perform permission check
         if (!_accountMgr.isAdmin(caller.getType())) {
             if (network.getAccountId() != caller.getId()) {
@@ -1613,50 +1610,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             _accountMgr.checkAccess(caller, owner);
         }
         
-        //Don't allow to remove network if there are non-destroyed vms using it
-        List<NicVO> nics = _nicDao.listByNetworkId(networkId);
-        for (NicVO nic : nics) {
-            UserVm vm = _vmDao.findById(nic.getId());
-            if (vm != null && (vm.getState() != State.Destroyed || vm.getState() != State.Expunging || vm.getState() != State.Error)) {
-                throw new CloudRuntimeException("Can't delete a network; make sure that all vms using the network are destroyed");
-            }
-        }
-        
-        //remove all the vlans associated with the network
-        Transaction txn = Transaction.currentTxn();
-        try {
-            txn.start();
-            //remove corresponding vlans
-            List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
-            for (VlanVO vlan : vlans) {
-                boolean result = _configMgr.deleteVlanAndPublicIpRange(userId, vlan.getId());
-                if (result == false) {
-                    txn.rollback();
-                    throw new CloudRuntimeException("Unable to delete a network: failed to delete corresponding vlan with id " + vlan.getId());
-                }
-            }
-            
-            //remove networks
-            _networksDao.remove(networkId);
-            
-            txn.commit();
-            
-            String eventMsg = "Successfully deleted network " + name + " (id=" + networkId + ")";
-            _configMgr.saveConfigurationEvent(userId, ownerId, EventTypes.EVENT_NETWORK_DELETE, eventMsg, "id=" + networkId, "dcId=" + zoneId, "accountId=" + ownerId);
-         
-            
-            return true;
-        } catch (Exception ex) {
-            txn.rollback();
-            s_logger.warn("Unexpected exception during deleting a network ", ex);
-            return false;
-        } finally {
-            txn.close();
-        }
-        
+       return this.destroyNetwork(networkId, userId);
     }
     
-    @DB 
+    @Override @DB 
     public void shutdownNetwork(long networkId) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -1665,11 +1622,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.debug("Unable to find network with id: " + networkId);
             return;
         }
-        if (network.getState() != Network.State.Implemented && network.getState() != Network.State.Destroying) {
+        if (network.getState() != Network.State.Implemented && network.getState() != Network.State.Shutdown) {
             s_logger.debug("Network is not implemented: " + network);
             return;
         }
-        network.setState(Network.State.Destroying);
+        network.setState(Network.State.Shutdown);
         _networksDao.update(network.getId(), network);
         txn.commit();
         
@@ -1697,8 +1654,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Network id=" + networkId + " is shutdown successfully, cleaning up corresponding resources now.");
             }
-            NetworkGuru guru = _networkGurus.get(network.getGuruName());
+            NetworkGuru guru = _networkGurus.get(network.getGuruName());    
             guru.destroy(network, _networkOfferingDao.findById(network.getNetworkOfferingId()));
+            network.setBroadcastUri(null);
             network.setState(Network.State.Allocated);
             _networksDao.update(network.getId(), network);
             _networksDao.clearCheckForGc(networkId);
@@ -1707,8 +1665,84 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             _networksDao.update(network.getId(), network);
         }
         txn.commit();
+    }
+    
+    
+    @DB @Override
+    public boolean destroyNetwork(long networkId, long callerUserId) {
+        NetworkVO network = _networksDao.findById(networkId);
+        if (network == null) {
+            s_logger.debug("Unable to find network with id: " + networkId);
+            return false;
+        }
         
+        //Shutdown network first
+        shutdownNetwork(networkId);
         
+        //get updated state for the network
+        network = _networksDao.findById(networkId);
+        if (network.getState() != Network.State.Allocated && network.getState() != Network.State.Setup) {
+            s_logger.debug("Network is not not in the correct state to be destroyed: " + network.getState());
+            return false;
+        }
+
+        boolean success = true;
+        for (NetworkElement element : _networkElements) {
+            try {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Sending destroy to " + element);
+                }
+                element.destroy(network);
+            } catch (ResourceUnavailableException e) {
+                s_logger.warn("Unable to complete destroy of the network due to element: " + element.getName(), e);
+                success = false;
+            } catch (ConcurrentOperationException e) {
+                s_logger.warn("Unable to complete destroy of the network due to element: " + element.getName(), e);
+                success = false;
+            } catch (Exception e) {
+                s_logger.warn("Unable to complete destroy of the network due to element: " + element.getName(), e);
+                success = false;
+            }
+        }
+        
+        if (success) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Network id=" + networkId + " is destroyed successfully, cleaning up corresponding resources now.");
+            }
+            NetworkGuru guru = _networkGurus.get(network.getGuruName());    
+            Account owner = _accountMgr.getAccount(network.getAccountId());
+            
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            guru.trash(network, _networkOfferingDao.findById(network.getNetworkOfferingId()), owner);
+            if (!deleteVlansInNetwork(network.getId(), callerUserId)) {
+                success = false;
+                s_logger.warn("Failed to delete network " + network + "; was unable to cleanup corresponding ip ranges");
+            } else {
+                //commit transaction only when ips and vlans for the network are released successfully
+                network.setState(Network.State.Destroy);
+                _networksDao.update(network.getId(), network);
+                _networksDao.remove(network.getId());
+                txn.commit();
+                String eventMsg = "Successfully deleted network " + network.getName() + " (id=" + networkId + ")";
+                _configMgr.saveConfigurationEvent(callerUserId, network.getAccountId(), EventTypes.EVENT_NETWORK_DELETE, eventMsg, "id=" + networkId, "dcId=" + network.getDataCenterId(), "accountId=" + network.getAccountId());  
+            }
+        } 
+        
+        return success;
+    }
+    
+    
+    private boolean deleteVlansInNetwork(long networkId, long userId) {
+        List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
+        boolean result = true;
+        for (VlanVO vlan : vlans) {
+            if (!_configMgr.deleteVlanAndPublicIpRange(_accountMgr.getSystemUser().getId(), vlan.getId())) {
+                s_logger.warn("Failed to delete vlan " + vlan.getId() + ");");
+                result = false;
+            } 
+        }
+        return result;
     }
     
     @Override
@@ -1940,13 +1974,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         return networks;
-    }
-    
-    @Override
-    public void resetBroadcastUri(long networkId) {
-        NetworkVO network = _networksDao.findById(networkId);
-        network.setBroadcastUri(null);
-        _networksDao.update(networkId, network);
     }
 
 }

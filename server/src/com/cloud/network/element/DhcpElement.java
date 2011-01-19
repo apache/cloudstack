@@ -121,7 +121,16 @@ public class DhcpElement extends AdapterBase implements NetworkElement{
         if (router == null) {
             return true;
         }
-        return _routerMgr.stopRouterInternal(router.getId());
+        return (_routerMgr.stopRouter(router.getId()) != null);
+    }
+    
+    @Override
+    public boolean destroy(Network config) throws ConcurrentOperationException, ResourceUnavailableException{
+        DomainRouterVO router = _routerDao.findByNetworkConfiguration(config.getId());
+        if (router == null) {
+            return true;
+        }
+        return _routerMgr.destroyRouter(router.getId());
     }
 
     @Override

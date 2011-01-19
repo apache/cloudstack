@@ -77,7 +77,16 @@ public interface NetworkElement extends Adapter {
      * @throws ResourceUnavailableException
      */
     boolean shutdown(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
-
+    
+    
+    /**
+     * The network is being destroyed.
+     * @param network
+     * @return
+     * @throws ConcurrentOperationException
+     */
+    boolean destroy(Network network) throws ConcurrentOperationException, ResourceUnavailableException;
+    
     
     /**
      * Apply ip addresses to this network

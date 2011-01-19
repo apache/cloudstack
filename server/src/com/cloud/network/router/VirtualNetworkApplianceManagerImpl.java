@@ -58,10 +58,7 @@ import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.UpgradeRouterCmd;
-import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
-import com.cloud.async.AsyncJobVO;
-import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -157,6 +154,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -329,7 +327,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public boolean destroyRouterInternal(final long routerId) throws ResourceUnavailableException, ConcurrentOperationException{
+    public boolean destroyRouter(final long routerId) throws ResourceUnavailableException, ConcurrentOperationException{
+        UserContext context = UserContext.current();
+        User user = _accountMgr.getActiveUser(context.getCallerUserId());
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Attempting to destroy router " + routerId);
@@ -339,7 +339,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (router == null) {
             return true;
         }
-        return _itMgr.expunge(router, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+        boolean result = _itMgr.expunge(router, user, _accountMgr.getAccount(router.getAccountId()));
+        
+        return result;
     }
 
     @Override
@@ -441,44 +443,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         UserVO user = _userDao.findById(UserContext.current().getCallerUserId());
         
         return this.stop(router, user, account);
-    }
-    
-    
-    @Override
-    public boolean stopRouterInternal(long routerId) throws ResourceUnavailableException, ConcurrentOperationException {
-        
-        DomainRouterVO router = _routerDao.findById(routerId);
-        if (router == null) {
-            throw new InvalidParameterValueException("Unable to find router by id " + routerId + ".");
-        }
-         
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-        if (asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Stop router " + routerId + ", update async job-" + job.getId());
-            }
-            _asyncMgr.updateAsyncJobAttachment(job.getId(), "domain_router", routerId);
-        }
-        
-        long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, router.getAccountId(), EventTypes.EVENT_ROUTER_STOP, "Starting to stop router : " + router.getName());
-        
-        Account account = _accountDao.findById(router.getAccountId());
-        
-        //If domR is stopped, not need to stop it again
-        if (router.getState() == State.Stopped) {
-            s_logger.debug("domR is already stopped: " + router);
-            return true;
-        } else {
-            if (this.stop(router, _accountService.getSystemUser(), account) == null) {
-                EventUtils.saveEvent(User.UID_SYSTEM, router.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_STOP, "Unable to stop router: " + router.getName(), startEventId);
-                return false;
-            } else {
-                EventUtils.saveEvent(User.UID_SYSTEM, router.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_STOP, "successfully stopped router : " + router.getName(), startEventId);
-                return true;
-            }
-        }
     }
     
     @DB
@@ -809,7 +773,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 
                 if (ids != null) {
                     for (final Long id : ids) {
-                        stopRouterInternal(id);
+                        stopRouter(id);
                     } 
                 }
                 

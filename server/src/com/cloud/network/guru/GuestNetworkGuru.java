@@ -243,7 +243,6 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     public void destroy(Network network, NetworkOffering offering) {
         s_logger.debug("Releasing vnet for the network id=" + network.getId());
         _dcDao.releaseVnet(network.getBroadcastUri().getHost(), network.getDataCenterId(), network.getAccountId(), network.getReservationId());
-        _networkMgr.resetBroadcastUri(network.getId());
     }
 
     @Override

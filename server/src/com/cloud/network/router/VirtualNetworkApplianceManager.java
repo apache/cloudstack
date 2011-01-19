@@ -31,6 +31,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.rules.PortForwardingRule;
@@ -46,7 +47,7 @@ import com.cloud.vm.VirtualMachineProfile;
  * NetworkManager manages the network for the different end users.
  *
  */
-public interface VirtualNetworkApplianceManager extends Manager {
+public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkApplianceService{
     public static final int DEFAULT_ROUTER_VM_RAMSIZE = 128;            // 128M
     public static final boolean USE_POD_VLAN = false;
     /**
@@ -67,9 +68,7 @@ public interface VirtualNetworkApplianceManager extends Manager {
      */
     boolean savePasswordToRouter(long routerId, String vmIpAddress, String password);
     
-    boolean destroyRouterInternal(long routerId) throws ResourceUnavailableException, ConcurrentOperationException;
-    
-    boolean stopRouterInternal(long routerId) throws ResourceUnavailableException, ConcurrentOperationException;
+    boolean destroyRouter(long routerId) throws ResourceUnavailableException, ConcurrentOperationException;
     
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
     
