@@ -42,7 +42,7 @@ public class ListIpForwardingRulesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     
-    @Parameter(name=ApiConstants.IP_ADDRESS, required=true, type=CommandType.STRING, description="list the rule belonging to this public ip address")
+    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="list the rule belonging to this public ip address")
     private String publicIpAddress;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the ip forwarding rule. Must be used with the domainId parameter.")
@@ -50,6 +50,12 @@ public class ListIpForwardingRulesCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Lists all rules for this id. If used with the account parameter, returns all rules for an account in the specified domain ID.")
     private Long domainId;
+    
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Lists rule with the specified ID.")
+    private Long id;
+    
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="Lists all rules applied to the specified Vm.")
+    private Long vmId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -80,9 +86,21 @@ public class ListIpForwardingRulesCmd extends BaseListCmd {
 		return domainId;
 	}
 
-	@Override
+	public Long getId() {
+        return id;
+    }
+
+    public Long getVmId() {
+        return vmId;
+    }
+
+    @Override
     public void execute(){
-        List<? extends PortForwardingRule> result = _rulesService.searchForIpForwardingRules(new Ip(publicIpAddress), this.getStartIndex(), this.getPageSizeVal());
+        Ip ip = null;
+        if(publicIpAddress != null){
+            ip = new Ip(publicIpAddress);
+        }
+        List<? extends PortForwardingRule> result = _rulesService.searchForIpForwardingRules(ip, id, vmId, this.getStartIndex(), this.getPageSizeVal());
         ListResponse<IpForwardingRuleResponse> response = new ListResponse<IpForwardingRuleResponse>();
         List<IpForwardingRuleResponse> ipForwardingResponses = new ArrayList<IpForwardingRuleResponse>();
         for (PortForwardingRule rule : result) {

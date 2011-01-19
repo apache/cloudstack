@@ -404,8 +404,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
     
     @Override
-    public List<PortForwardingRuleVO> searchForIpForwardingRules(Ip ip, Long start, Long size) {
-        return _forwardingDao.searchNatRules(ip, start, size);
+    public List<PortForwardingRuleVO> searchForIpForwardingRules(Ip ip, Long id, Long vmId, Long start, Long size) {
+        return _forwardingDao.searchNatRules(ip, id, vmId, start, size);
     }
     
     @Override

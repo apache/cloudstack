@@ -48,6 +48,7 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         AllFieldsSearch.and("ip", AllFieldsSearch.entity().getSourceIpAddress(), Op.EQ);
         AllFieldsSearch.and("protocol", AllFieldsSearch.entity().getProtocol(), Op.EQ);
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
+        AllFieldsSearch.and("vmId", AllFieldsSearch.entity().getVirtualMachineId(), Op.EQ);
         AllFieldsSearch.done();
         
         ApplicationSearch = createSearchBuilder();
@@ -103,12 +104,20 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
     }
     
     @Override
-    public List<PortForwardingRuleVO> searchNatRules(Ip ip, Long startIndex, Long pageSize) {
+    public List<PortForwardingRuleVO> searchNatRules(Ip ip, Long id, Long vmId, Long startIndex, Long pageSize) {
         Filter searchFilter = new Filter(PortForwardingRuleVO.class, "id", true, startIndex, pageSize);
         SearchCriteria<PortForwardingRuleVO> sc = AllFieldsSearch.create();
 
         if (ip != null) {
             sc.setParameters("ip", ip);
+        }
+        
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+        
+        if (vmId != null) {
+            sc.setParameters("vmId", vmId);
         }
         
         //search for rules with protocol = nat

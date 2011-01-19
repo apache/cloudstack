@@ -26,7 +26,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.net.Ip;
 
 public interface RulesService {
-    List<? extends PortForwardingRule> searchForIpForwardingRules(Ip ip, Long start, Long size);
+    List<? extends PortForwardingRule> searchForIpForwardingRules(Ip ip,  Long id, Long vmId, Long start, Long size);
 
     /**
      * Creates a port forwarding rule between two ip addresses or between
