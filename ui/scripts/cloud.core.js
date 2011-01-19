@@ -614,6 +614,8 @@ function clearRightPanel() {
      
     $("#right_panel_content #tab_content_details #spinning_wheel").hide();
     $("#right_panel_content #after_action_info_container").hide(); 
+    
+    cancelEditMode($("#tab_content_details")); 
 }
     
 
@@ -751,6 +753,20 @@ function bindClickToMidMenu($midmenuItem1, toRightPanelFn, getMidmenuIdFn) {
         return false;
     }); 
 }
+function clickItemInMultipleSelectionMidmenu($midmenuItem1) {
+    $midmenuItem1.find("#content").addClass("selected");  //css of vmops
+    $midmenuItem1.addClass("ui-selected");                //css of JQuery selectable widget   
+    
+    clearRightPanel();
+    var toRightPanelFn = $midmenuItem1.data("toRightPanelFn");
+    toRightPanelFn($midmenuItem1);	
+    
+    var jsonObj = $midmenuItem1.data("jsonObj");    	
+    selectedItemsInMidMenu[jsonObj.id] = $midmenuItem1;  
+    
+    selected_midmenu_id = $midmenuItem1.attr("id");
+    $currentMidmenuItem = $midmenuItem1;
+}
 
 function switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray) {        
     for(var tabIndex=0; tabIndex<tabArray.length; tabIndex++) {  
@@ -771,6 +787,8 @@ function switchToTab(tabIndex, tabArray, tabContentArray, afterSwitchFnArray) {
             if(k != tabIndex)
                 tabContentArray[k].hide();   //other tab content hide
         }   
+        if(tabIndex != 0)   //when switching to a tab that is not details tab
+            cancelEditMode(tabContentArray[0]);  //cancel edit mode in details tab
         
         if(afterSwitchFnArray != null) {
             if(afterSwitchFnArray[tabIndex] != null)
@@ -1017,20 +1035,6 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
     return count;
 }
 
-function clickItemInMultipleSelectionMidmenu($midmenuItem1) {
-    $midmenuItem1.find("#content").addClass("selected");  //css of vmops
-    $midmenuItem1.addClass("ui-selected");                //css of JQuery selectable widget   
-    
-    var toRightPanelFn = $midmenuItem1.data("toRightPanelFn");
-    toRightPanelFn($midmenuItem1);	
-    
-    var jsonObj = $midmenuItem1.data("jsonObj");    	
-    selectedItemsInMidMenu[jsonObj.id] = $midmenuItem1;  
-    
-    selected_midmenu_id = $midmenuItem1.attr("id");
-    $currentMidmenuItem = $midmenuItem1;
-}
-
 var currentLeftMenuId;
 var currentRightPanelJSP = null;
 function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, leftmenuId, refreshDataBindingFn) { 
@@ -1162,7 +1166,12 @@ function getMidmenuItemFirstRow(text) {
     return text3;
 }
 
-
+var $readonlyFields, $editFields;
+function cancelEditMode($tab) {
+    $editFields.hide();
+    $readonlyFields.show();   
+    $tab.find("#save_button, #cancel_button").hide();     
+}
 
 
 
