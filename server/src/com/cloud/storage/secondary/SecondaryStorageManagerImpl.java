@@ -233,8 +233,13 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             s_logger.warn("Exception while trying to start secondary storage vm", e);
             return null;
         } catch (ResourceUnavailableException e) {
+            s_logger.warn("Exception while trying to start secondary storage vm", e);
             return null;
-        } finally {
+        } catch (Exception e) {
+            s_logger.warn("Exception while trying to start secondary storage vm", e);
+            return null;
+        }
+        finally {
             if (started) {
                 EventUtils.saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_INFO, EventTypes.EVENT_SSVM_START,
                         "Started secondary storage Vm with Id: " + secStorageVmId, startEventId);
