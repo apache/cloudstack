@@ -131,8 +131,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         
         for (Long instanceId : instanceIds) {
             if (mappedInstanceIds.contains(instanceId)) {
-                s_logger.debug("VM " + instanceId + " is already mapped to load balancer.");
-                continue;
+                throw new InvalidParameterValueException("VM " + instanceId + " is already mapped to load balancer.");
             }
             
             UserVm vm = _vmDao.findById(instanceId);
