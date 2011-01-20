@@ -1045,6 +1045,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } finally {
             if (implemented.first() == null) {
                 s_logger.debug("Cleaning up because we're unable to implement network " + network);
+                network.setState(Network.State.Shutdown);
+                _networksDao.update(networkId, network);
+                shutdownNetwork(networkId);
             }
             _networksDao.releaseFromLockTable(networkId);
         }
