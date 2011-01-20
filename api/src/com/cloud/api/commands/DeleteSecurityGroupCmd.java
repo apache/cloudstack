@@ -7,6 +7,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.ResourceInUseException;
 
@@ -25,8 +26,8 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID of account owning the security group")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the security group name")
-    private String securityGroupName;
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the security group")
+    private Long id;
 
 
     /////////////////////////////////////////////////////
@@ -41,9 +42,10 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
         return domainId;
     }
 
-    public String getSecurityGroupName() {
-        return securityGroupName;
+    public Long getId() {
+        return id;
     }
+
 
 
     /////////////////////////////////////////////////////

@@ -434,7 +434,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	
 	@Override @DB @SuppressWarnings("rawtypes")
 	public List<IngressRuleVO> authorizeSecurityGroupIngress(AuthorizeSecurityGroupIngressCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
-		String groupName = cmd.getSecurityGroupName();
+		Long groupId = cmd.getSecurityGroupId();
 		String protocol = cmd.getProtocol();
 		Integer startPort = cmd.getStartPort();
 		Integer endPort = cmd.getEndPort();
@@ -510,9 +510,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                 // if it's an admin account, do a quick permission check
                 if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Unable to find rules for security group id = " + groupName + ", permission denied.");
+                        s_logger.debug("Unable to find rules for security group id = " + groupId + ", permission denied.");
                     }
-                    throw new PermissionDeniedException("Unable to find rules for security group id = " + groupName + ", permission denied.");
+                    throw new PermissionDeniedException("Unable to find rules for security group id = " + groupId + ", permission denied.");
                 }
 
                 Account groupOwner = _accountDao.findActiveAccount(accountName, domainId);
@@ -534,7 +534,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
 
         if (accountId == null) {
-            throw new InvalidParameterValueException("Unable to find account for security group " + groupName + "; failed to authorize ingress.");
+            throw new InvalidParameterValueException("Unable to find account for security group " + groupId + "; failed to authorize ingress.");
         }
       
 
@@ -560,9 +560,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         		Account authorizedAccount = _accountDao.findActiveAccount(authorizedAccountName, domainId);
         		if (authorizedAccount == null) {
         		    if (s_logger.isDebugEnabled()) {
-        		        s_logger.debug("Nonexistent account: " + authorizedAccountName + ", domainid: " + domainId + " when trying to authorize ingress for " + groupName + ":" + protocol + ":" + startPortOrType + ":" + endPortOrCode);
+        		        s_logger.debug("Nonexistent account: " + authorizedAccountName + ", domainid: " + domainId + " when trying to authorize ingress for " + groupId + ":" + protocol + ":" + startPortOrType + ":" + endPortOrCode);
         		    }
-        		    throw new InvalidParameterValueException("Nonexistent account: " + authorizedAccountName + " when trying to authorize ingress for " + groupName + ":" + protocol + ":" + startPortOrType + ":" + endPortOrCode);
+        		    throw new InvalidParameterValueException("Nonexistent account: " + authorizedAccountName + " when trying to authorize ingress for " + groupId + ":" + protocol + ":" + startPortOrType + ":" + endPortOrCode);
         		}
 
         		SecurityGroupVO groupVO = _securityGroupDao.findByAccountAndName(authorizedAccount.getId(), group);
@@ -581,15 +581,15 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
 		authorizedGroups2.addAll(authorizedGroups); //Ensure we don't re-lock the same row
 		txn.start();
-		SecurityGroupVO securityGroup = _securityGroupDao.findByAccountAndName(accountId, groupName);
+		SecurityGroupVO securityGroup = _securityGroupDao.findById(groupId);
 		if (securityGroup == null) {
-			s_logger.warn("Security group not found: name= " + groupName);
+			s_logger.warn("Security group not found: id= " + groupId);
 			return null;
 		}
 		//Prevents other threads/management servers from creating duplicate ingress rules
 		SecurityGroupVO securityGroupLock = _securityGroupDao.acquireInLockTable(securityGroup.getId());
 		if (securityGroupLock == null)  {
-			s_logger.warn("Could not acquire lock on network security group: name= " + groupName);
+			s_logger.warn("Could not acquire lock on network security group: name= " + securityGroup.getName());
 			return null;
 		}
 		List<IngressRuleVO> newRules = new ArrayList<IngressRuleVO>();
@@ -597,7 +597,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 			//Don't delete the group from under us.
 			securityGroup = _securityGroupDao.lockRow(securityGroup.getId(), false);
 			if (securityGroup == null) {
-				s_logger.warn("Could not acquire lock on network group " + groupName);
+				s_logger.warn("Could not acquire lock on network group " + securityGroup.getName());
 				return null;
 			}
 
@@ -632,7 +632,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 				}
 			}
 			if (s_logger.isDebugEnabled()) {
-	            s_logger.debug("Added " + newRules.size() + " rules to security group " + groupName);
+	            s_logger.debug("Added " + newRules.size() + " rules to security group " + securityGroup.getName());
 			}
 			txn.commit();
 			final Set<Long> affectedVms = new HashSet<Long>();
@@ -663,7 +663,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         Integer icmpType = cmd.getIcmpType();
         Integer icmpCode = cmd.getIcmpCode();
         String protocol = cmd.getProtocol();
-        String securityGroup = cmd.getSecurityGroupName();
+        Long securityGroupId = cmd.getSecurityGroupId();
         String cidrList = cmd.getCidrList();
         Map groupList = cmd.getUserSecurityGroupList();
         String [] cidrs = null;
@@ -724,9 +724,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                 // if it's an admin account, do a quick permission check
                 if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Unable to find rules for network security group id = " + securityGroup + ", permission denied.");
+                        s_logger.debug("Unable to find rules for security group id = " + securityGroupId + ", permission denied.");
                     }
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find rules for network security group id = " + securityGroup + ", permission denied.");
+                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find rules for security group id = " + securityGroupId + ", permission denied.");
                 }
                 Account groupOwner =  _accountDao.findActiveAccount(accountName, domainId);
                 if (groupOwner == null) {
@@ -747,13 +747,13 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
 
         if (accountId == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account for network security group " + securityGroup + "; failed to revoke ingress.");
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account for security group " + securityGroupId + "; failed to revoke ingress.");
         }
 
-        SecurityGroupVO sg = _securityGroupDao.findByAccountAndName(accountId, securityGroup);
+        SecurityGroupVO sg = _securityGroupDao.findById(securityGroupId);
         if (sg == null) {
-            s_logger.debug("Unable to find network security group with id " + securityGroup);
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find network security group with id " + securityGroup);
+            s_logger.debug("Unable to find security group with id " + securityGroupId);
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find security group with id " + securityGroupId);
         }
 
         if (cidrList == null && groupList == null) {
@@ -790,9 +790,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         		Account authorizedAccount = _accountDao.findActiveAccount(authorizedAccountName, domainId);
                 if (authorizedAccount == null) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Nonexistent account: " + authorizedAccountName + ", domainid: " + domainId + " when trying to revoke ingress for " + securityGroup + ":" + protocol + ":" + startPortOrType + ":" + endPortOrCode);
+                        s_logger.debug("Nonexistent account: " + authorizedAccountName + ", domainid: " + domainId + " when trying to revoke ingress for " + securityGroupId + ":" + protocol + ":" + startPortOrType + ":" + endPortOrCode);
                     }
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Nonexistent account: " + authorizedAccountName + " when trying to revoke ingress for " + securityGroup + ":" + protocol + ":" + startPortOrType + ":" + endPortOrCode);
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Nonexistent account: " + authorizedAccountName + " when trying to revoke ingress for " + securityGroupId + ":" + protocol + ":" + startPortOrType + ":" + endPortOrCode);
                 }
 
                 SecurityGroupVO groupVO = _securityGroupDao.findByAccountAndName(authorizedAccount.getId(), group);
@@ -818,9 +818,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 		final int numToDelete = cidrList.length() + authorizedGroups.size();
         final Transaction txn = Transaction.currentTxn();
 
-		SecurityGroupVO securityGroupHandle = _securityGroupDao.findByAccountAndName(accountId, securityGroup);
+		SecurityGroupVO securityGroupHandle = _securityGroupDao.findById(securityGroupId);
 		if (securityGroupHandle == null) {
-			s_logger.warn("Network security group not found: name= " + securityGroup);
+			s_logger.warn("Security group not found: name= " + securityGroupId);
 			return false;
 		}
 		try {
@@ -828,7 +828,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 			
 			securityGroupHandle = _securityGroupDao.acquireInLockTable(securityGroupHandle.getId());
 			if (securityGroupHandle == null)  {
-				s_logger.warn("Could not acquire lock on network security group: name= " + securityGroup);
+				s_logger.warn("Could not acquire lock on network security group: name= " + securityGroupId);
 				return false;
 			}
 			for (final SecurityGroupVO ngVO: authorizedGroups) {
@@ -837,7 +837,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 			for (final String cidr: cidrs) {
 				numDeleted += _ingressRuleDao.deleteByPortProtoAndCidr(securityGroupHandle.getId(), protocol, startPort, endPort, cidr);
 			}
-			s_logger.debug("revokeSecurityGroupIngress for group: " + securityGroup + ", numToDelete=" + numToDelete + ", numDeleted=" + numDeleted);
+			s_logger.debug("revokeSecurityGroupIngress for group: " + securityGroupId + ", numToDelete=" + numToDelete + ", numDeleted=" + numDeleted);
 			
 			final Set<Long> affectedVms = new HashSet<Long>();
 			affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(securityGroupHandle.getId()));
@@ -848,7 +848,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 			s_logger.warn("Exception caught when deleting ingress rules ", e);
 			throw new CloudRuntimeException("Exception caught when deleting ingress rules", e);
 		} finally {
-			if (securityGroup != null) {
+			if (securityGroupId != null) {
 				_securityGroupDao.releaseFromLockTable(securityGroupHandle.getId());
 			}
 			txn.commit();
@@ -1129,7 +1129,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	@DB
 	@Override
 	public boolean deleteSecurityGroup(DeleteSecurityGroupCmd cmd) throws ResourceInUseException, PermissionDeniedException, InvalidParameterValueException{
-		String name = cmd.getSecurityGroupName();
+		Long id = cmd.getId();
 		String accountName = cmd.getAccountName();
 		Long domainId = cmd.getDomainId();
 		Account account = UserContext.current().getCaller();
@@ -1145,9 +1145,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                 // if it's an admin account, do a quick permission check
                 if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Unable to find rules network group " + name + ", permission denied.");
+                        s_logger.debug("Unable to find rules network group: " + id + ", permission denied.");
                     }
-                    throw new PermissionDeniedException("Unable to network group " + name + ", permission denied.");
+                    throw new PermissionDeniedException("Unable to network group: " + id + ", permission denied.");
                 }
 
                 Account groupOwner = _accountDao.findActiveAccount(accountName, domainId);
@@ -1169,12 +1169,12 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
 
         if (accountId == null) {
-            throw new InvalidParameterValueException("Unable to find account for network group " + name + "; failed to delete group.");
+            throw new InvalidParameterValueException("Unable to find account for network group: " + id + "; failed to delete group.");
         }
 
-        SecurityGroupVO sg = _securityGroupDao.findByAccountAndName(accountId, name);
+        SecurityGroupVO sg = _securityGroupDao.findById(id);
         if (sg == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find network group " + name + "; failed to delete group.");
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find network group: " + id + "; failed to delete group.");
         }
         
         Long groupId = sg.getId();
@@ -1216,7 +1216,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         String accountName = cmd.getAccountName();
         Long accountId = null;
         Long instanceId = cmd.getVirtualMachineId();
-        String networkGroup = cmd.getSecurityGroupName();
+        String securityGroup = cmd.getSecurityGroupName();
         Boolean recursive = Boolean.FALSE;
         Long id = cmd.getId();
 
@@ -1244,7 +1244,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                 }
             } else if (account != null) {
                 // either an admin is searching for their own group, or admin is listing all groups and the search needs to be restricted to domain admin's domain
-                if (networkGroup != null) {
+                if (securityGroup != null) {
                     accountId = account.getId();
                 } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                     domainId = account.getDomainId();
@@ -1297,8 +1297,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         SearchCriteria<SecurityGroupVO> sc = sb.create();
         if (accountId != null) {
             sc.setParameters("accountId", accountId);
-            if (networkGroup != null) {
-                sc.setParameters("name", networkGroup);
+            if (securityGroup != null) {
+                sc.setParameters("name", securityGroup);
             } else if (keyword != null) {
                 SearchCriteria<SecurityGroupRulesVO> ssc = _securityGroupRulesDao.createSearchCriteria();
                 ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
