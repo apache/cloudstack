@@ -1168,8 +1168,10 @@ function getMidmenuItemFirstRow(text) {
 
 var $readonlyFields, $editFields;
 function cancelEditMode($tab) {
-    $editFields.hide();
-    $readonlyFields.show();   
+    if($editFields != null)
+        $editFields.hide();
+    if($readonlyFields != null)
+        $readonlyFields.show();   
     $tab.find("#save_button, #cancel_button").hide();     
 }
 
