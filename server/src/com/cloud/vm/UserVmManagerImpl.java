@@ -2145,7 +2145,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		if (vo.getIsoId() != null) {
 			template = _templateDao.findById(vo.getIsoId());
 		}
-		if (template != null && template.getFormat() == ImageFormat.ISO  && template.isBootable()) {
+		if (template != null && template.getFormat() == ImageFormat.ISO) {
 			String isoPath = null;
 			Pair<String, String> isoPathPair = _storageMgr.getAbsoluteIsoPath(template.getId(), vo.getDataCenterId()); 	
 			if (isoPathPair == null) {
@@ -2154,10 +2154,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 			} else {
 				isoPath = isoPathPair.first();
 			}
-			profile.setBootLoaderType(BootloaderType.CD);
+			if (template.isBootable())
+				profile.setBootLoaderType(BootloaderType.CD);
 			GuestOSVO guestOS = _guestOSDao.findById(template.getGuestOSId());
+			String displayName = null;
+			if (guestOS != null) {
+				displayName = guestOS.getDisplayName();
+			}
 			VolumeTO iso = new VolumeTO(profile.getId(), Volume.VolumeType.ISO, StorageResourceType.STORAGE_POOL, StoragePoolType.ISO, null, template.getName(), null, isoPath,
-										0, null, guestOS.getDisplayName());
+										0, null, displayName);
 			
 			iso.setDeviceId(3);
 			profile.addDisk(iso);
