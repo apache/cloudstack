@@ -934,7 +934,7 @@ function initDialogWithOK(elementId, width1, addToActive) {
 
 function createMultipleSelectionSubContainer() {      
     var $multipleSelectionSubContainer = $("<div id='multiple_selection_sub_container'></div>"); 
-    $("#midmenu_container").append($multipleSelectionSubContainer);    
+    $("#midmenu_container").empty().append($multipleSelectionSubContainer);    
   
     $multipleSelectionSubContainer.selectable({
         selecting: function(event, ui) {	 	                               
