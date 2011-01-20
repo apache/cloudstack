@@ -688,8 +688,6 @@ $(document).ready(function() {
 					g_hypervisorType = json.loginresponse.hypervisortype;				
 				if (json.loginresponse.directattachsecuritygroupsenabled != null) 
 					g_directAttachSecurityGroupsEnabled = json.loginresponse.directattachsecuritygroupsenabled;
-                if (json.loginresponse.systemvmuselocalstorage != null) 
-					g_systemVmUseLocalStorage = json.loginresponse.systemvmuselocalstorage;
 					
 				$.cookie('sessionKey', g_sessionKey, { expires: 1});
 				$.cookie('hypervisortype', g_hypervisorType, { expires: 1});
@@ -700,8 +698,6 @@ $(document).ready(function() {
 				$.cookie('timezoneoffset', g_timezoneoffset, { expires: 1});  
 				$.cookie('timezone', g_timezone, { expires: 1});  
 				$.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1}); 
-				$.cookie('systemvmuselocalstorage', g_systemVmUseLocalStorage, { expires: 1}); 
-				
 				
 				$.ajax({
 					data: createURL("command=listCapabilities"),
@@ -772,7 +768,6 @@ $(document).ready(function() {
 	g_hypervisorType = $.cookie("hypervisortype");
 	g_timezone = $.cookie("timezone");
 	g_directAttachSecurityGroupsEnabled = $.cookie("directattachsecuritygroupsenabled");
-	g_systemVmUseLocalStorage = $.cookie("systemvmuselocalstorage");
 	g_userPublicTemplateEnabled = $.cookie("userpublictemplateenabled");
 	
 	if($.cookie("timezoneoffset") != null)
@@ -785,9 +780,6 @@ $(document).ready(function() {
 	
 	if (!g_directAttachSecurityGroupsEnabled || g_directAttachSecurityGroupsEnabled.length == 0) 		
 		g_directAttachSecurityGroupsEnabled = "false";	
-		
-	if (!g_systemVmUseLocalStorage || g_systemVmUseLocalStorage.length == 0) 		
-		g_systemVmUseLocalStorage = "false";
 		
 	if (!g_userPublicTemplateEnabled || g_userPublicTemplateEnabled.length == 0) 		
 		g_userPublicTemplateEnabled = "true";

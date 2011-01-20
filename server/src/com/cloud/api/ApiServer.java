@@ -664,11 +664,6 @@ public class ApiServer implements HttpRequestHandler {
                 directAttachSecurityGroupsEnabled = "false";
             }     
             
-            String systemVmUseLocalStorage = _ms.getConfigurationValue("system.vm.use.local.storage");
-            if (systemVmUseLocalStorage == null) {
-                systemVmUseLocalStorage = "false";
-            }            
-
             // set the userId and account object for everyone
             session.setAttribute("userid", userAcct.getId());
             session.setAttribute("username", userAcct.getUsername());
@@ -680,7 +675,6 @@ public class ApiServer implements HttpRequestHandler {
             session.setAttribute("type", Short.valueOf(account.getType()).toString());
             session.setAttribute("hypervisortype", hypervisorType);
             session.setAttribute("directattachsecuritygroupsenabled", directAttachSecurityGroupsEnabled);
-            session.setAttribute("systemvmuselocalstorage", systemVmUseLocalStorage);
 
             if (timezone != null) {
                 session.setAttribute("timezone", timezone);
