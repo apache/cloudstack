@@ -1848,7 +1848,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
         List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
         
-        for (Pair<Long,Long> isoZonePair : isoZonePairSet) {
+        for (Pair<Long,Long> isoZonePair : isoZonePairSet) {  
         	VMTemplateVO iso = ApiDBUtils.findTemplateById(isoZonePair.first());
             if ( (isBootable == null || !isBootable) && iso.getTemplateType() == TemplateType.PERHOST ) {
                 TemplateResponse isoResponse = new TemplateResponse();
@@ -1862,8 +1862,14 @@ public class ApiResponseHelper implements ResponseGenerator {
                 isoResponse.setFeatured(iso.isFeatured());
                 isoResponse.setCrossZones(iso.isCrossZones());
                 isoResponse.setPublic(iso.isPublicTemplate());
+                isoResponse.setCreated(iso.getCreated());
                 isoResponse.setPasswordEnabled(false);
-                isoResponse.setDomainId(iso.getDomainId());
+                Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
+                if (owner != null) {
+                    isoResponse.setAccount(owner.getAccountName());
+                    isoResponse.setDomainId(owner.getDomainId());                 
+                    isoResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
+                }
                 isoResponse.setObjectName("iso");
                 isoResponses.add(isoResponse);
                 response.setResponses(isoResponses);
