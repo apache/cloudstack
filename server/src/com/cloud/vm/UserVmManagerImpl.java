@@ -2064,6 +2064,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (sshPublicKey != null) {
             vm.setDetail("SSH.PublicKey", sshPublicKey);
         }
+        
+        if (isIso) {
+            vm.setIsoId(template.getId());
+        }
 
         if (_itMgr.allocate(vm, template, offering, rootDiskOffering, dataDiskOfferings, networks, null, plan, cmd.getHypervisor(), owner) == null) {
             return null;
@@ -2148,7 +2152,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		if (vo.getIsoId() != null) {
 			template = _templateDao.findById(vo.getIsoId());
 		}
-		if (template != null && template.getFormat() == ImageFormat.ISO) {
+		if (template != null && template.getFormat() == ImageFormat.ISO && vo.getIsoId() != null) {
 			String isoPath = null;
 			Pair<String, String> isoPathPair = _storageMgr.getAbsoluteIsoPath(template.getId(), vo.getDataCenterId()); 	
 			if (isoPathPair == null) {
@@ -2169,7 +2173,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 			
 			iso.setDeviceId(3);
 			profile.addDisk(iso);
-			vo.setIsoId(template.getId());
 		} else {
 			/*create a iso placeholder*/
 			VolumeTO iso = new VolumeTO(profile.getId(), Volume.VolumeType.ISO, StorageResourceType.STORAGE_POOL, StoragePoolType.ISO, null, template.getName(), null, null,

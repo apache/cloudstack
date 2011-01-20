@@ -1071,7 +1071,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 		if (!_enabled) {
 			return true;
 		}
-		if (groups != null || !groups.isEmpty()) {
+		if (groups != null && !groups.isEmpty()) {
 	
 			final Transaction txn = Transaction.currentTxn();
 			txn.start();
