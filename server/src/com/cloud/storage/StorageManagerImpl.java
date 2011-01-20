@@ -73,6 +73,7 @@ import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobManager;
+import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
@@ -1413,6 +1414,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             sPool.setUuid(null);
             _storagePoolDao.update(id, sPool);
             _storagePoolDao.remove(id);
+            deleteHostorPoolStats(id);
             return true;
         } else {
             // 1. Check if the pool has associated volumes in the volumes table
@@ -1462,12 +1464,27 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                     sPool.setStatus(Status.Removed);
                     _storagePoolDao.update(id, sPool);
                     _storagePoolDao.remove(id);
+                    deleteHostorPoolStats(id);
                     return true;
                 }
             }
         }
         return false;
 
+    }
+    
+    @DB
+    private boolean deleteHostorPoolStats(Long hostorPoolId){
+    	
+    	List<CapacityVO> capacities = _capacityDao.findByHostorPoolId(hostorPoolId);
+    	Transaction txn = Transaction.currentTxn();
+    	txn.start();
+    	for (CapacityVO capacity : capacities){
+    		_capacityDao.remove(capacity.getId());
+    	}
+    	txn.commit();
+    	return true;
+    	
     }
     
     @Override
