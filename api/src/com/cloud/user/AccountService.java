@@ -33,10 +33,12 @@ import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.configuration.ResourceLimit;
+import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.utils.Pair;
 
 public interface AccountService {
     
@@ -143,6 +145,8 @@ public interface AccountService {
 	
 	Account finalizeOwner(Account caller, String accountName, Long domainId);
 	
+	Pair<String, Long> finalizeAccountDomainForList(Account caller, String accountName, Long domainId);
+	
 	Account getActiveAccount(String accountName, Long domainId);
 	
 	Account getActiveAccount(Long accountId);
@@ -150,5 +154,7 @@ public interface AccountService {
 	Account getAccount(Long accountId);
 	
 	User getActiveUser(long userId);
+	
+	Domain getDomain(long id);
 
 }

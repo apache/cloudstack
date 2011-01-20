@@ -1488,28 +1488,30 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
     
     public Account finalizeOwner(Account caller, String accountName, Long domainId) {
-        if (isAdmin(caller.getType())) {
-            if (domainId != null) {             
-                DomainVO domain = _domainDao.findById(domainId);
-                if (domain == null) {
-                    throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
-                }
+        if (isAdmin(caller.getType()) && accountName != null && domainId != null) {          
+            DomainVO domain = _domainDao.findById(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
+            }
 
-                if (accountName != null) {
-                    Account owner = _accountDao.findActiveAccount(accountName, domainId);
-                    if (owner == null) {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                    checkAccess(caller, domain);
-                    return owner;
-                } else {
-                    throw new InvalidParameterValueException("Account have to be specified along with domainId");
-                }  
+            Account owner = _accountDao.findActiveAccount(accountName, domainId);
+            if (owner == null) {
+                throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+            }
+            checkAccess(caller, domain);
+            
+            return owner;
+        } else if (!isAdmin(caller.getType()) && accountName != null && domainId != null) {
+            if (!accountName.equals(caller.getAccountName()) || domainId.longValue() != caller.getDomainId()) {
+                throw new PermissionDeniedException("Can't create/list resources for account " + accountName + " in domain " + domainId + ", permission denied");
             } else {
                 return caller;
             }
         } else {
-            //regular user can't create resources for other people 
+            if (accountName == null || domainId == null) {
+                throw new InvalidParameterValueException("AccountName and domainId must be specified together");
+            }
+            //regular user can't create/list resources for other people 
             return caller;
         }
     }
@@ -1545,5 +1547,42 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Override
     public User getActiveUser(long userId) {
         return _userDao.findById(userId);
+    }
+    
+    @Override
+    public Domain getDomain(long domainId) {
+        return _domainDao.findById(domainId);
+    }
+    
+    @Override
+    public Pair<String, Long> finalizeAccountDomainForList(Account caller, String accountName, Long domainId) {
+        if (isAdmin(caller.getType())) { 
+            if (domainId == null && accountName != null) {
+                throw new InvalidParameterValueException("accountName and domainId might be specified together");
+            } else if (domainId != null){
+                Domain domain = getDomain(domainId);
+                if (domain == null) {
+                    throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
+                }
+                
+                checkAccess(caller, domain);
+                
+                if (accountName != null) {
+                    Account owner = getActiveAccount(accountName, domainId);
+                    if (owner == null) {
+                        throw new InvalidParameterValueException("Unable to find account with name " + accountName + " in domain id=" + domainId);
+                    }
+                }
+            }
+         } else if (accountName != null && domainId != null) {
+             if (!accountName.equals(caller.getAccountName()) || domainId.longValue() != caller.getDomainId()) {
+                 throw new PermissionDeniedException("Can't list port forwarding rules for account " + accountName + " in domain " + domainId + ", permission denied");
+             }
+         } else {
+             accountName = caller.getAccountName();
+             domainId = caller.getDomainId();
+         }
+        
+        return new Pair<String, Long>(accountName, domainId);
     }
 }

@@ -42,6 +42,12 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="the IP address of the port forwarding services")
     private String ipAddress;
+    
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account. Must be used with the domainId parameter.")
+    private String accountName;
+
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists port forwarding rules for the specified account in this domain.")
+    private Long domainId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -49,6 +55,14 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
 
     public String getIpAddress() {
         return ipAddress;
+    }
+    
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     /////////////////////////////////////////////////////
