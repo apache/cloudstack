@@ -218,11 +218,11 @@ function initAddIngressRuleDialog() {
 				
 				$thisDialog.find("#spinning_wheel").show();    
 							
-		    	var securitygroupObj = $currentMidmenuItem.data("jsonObj");	
-		    	var securityGroupId = securitygroupObj.id;
-		    	var domainId = securitygroupObj.domainid;
-		    	var account = securitygroupObj.account;    	
-		    	var securityGroupName = securitygroupObj.name;	
+		    	var securityGroupObj = $currentMidmenuItem.data("jsonObj");	
+		    	var securityGroupId = securityGroupObj.id;
+		    	var domainId = securityGroupObj.domainid;
+		    	var account = securityGroupObj.account;    	
+		    	var securityGroupName = securityGroupObj.name;	
 		    	
 		    	var moreCriteria = [];			    	    	
 		    	moreCriteria.push("&domainid=" + domainId);
@@ -294,7 +294,8 @@ function initAddIngressRuleDialog() {
 									            var items = result.jobresult.securitygroup.ingressrule;	
 									                                					
 					                            var $subgridItem = $("#ingressrule_tab_template").clone(true);	 
-					                            securityGroupIngressRuleJSONToTemplate(items[0], $subgridItem).data("parentSecurityGroupId", securityGroupId).data("parentSecurityGroupDomainId", domainId).data("parentSecurityGroupAccount", account).data("parentSecurityGroupName",securityGroupName);													            
+					                            //securityGroupIngressRuleJSONToTemplate(items[0], $subgridItem).data("parentSecurityGroupId", securityGroupId).data("parentSecurityGroupDomainId", domainId).data("parentSecurityGroupAccount", account).data("parentSecurityGroupName",securityGroupName);													            
+									            securityGroupIngressRuleJSONToTemplate(items[0], $subgridItem).data("parentObj", securityGroupObj); 
 									            $subgridItem.find("#after_action_info").text("Ingress rule was added successfully.");
                                                 $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
                                                 $("#right_panel_content").find("#tab_content_ingressrule").find("#tab_container").prepend($subgridItem.show());  
@@ -302,7 +303,8 @@ function initAddIngressRuleDialog() {
 									            if(items.length > 1) {                               
                                                     for(var i=1; i<items.length; i++) {                                                                                           
                                                         var $subgridItem = $("#ingressrule_tab_template").clone(true);	 
-					                                    securityGroupIngressRuleJSONToTemplate(items[i], $subgridItem).data("parentSecurityGroupId", securityGroupId).data("parentSecurityGroupDomainId", domainId).data("parentSecurityGroupAccount", account).data("parentSecurityGroupName",securityGroupName);													            
+					                                    //securityGroupIngressRuleJSONToTemplate(items[i], $subgridItem).data("parentSecurityGroupId", securityGroupId).data("parentSecurityGroupDomainId", domainId).data("parentSecurityGroupAccount", account).data("parentSecurityGroupName",securityGroupName);		
+					                                    securityGroupIngressRuleJSONToTemplate(items[i], $subgridItem).data("parentObj", securityGroupObj);													            											            
 									                    $subgridItem.find("#after_action_info").text("Ingress rule was added successfully.");
                                                         $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
                                                         $("#right_panel_content").find("#tab_content_ingressrule").find("#tab_container").prepend($subgridItem.show());                                                                                                                       
