@@ -11,8 +11,6 @@ ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__pool_id`(`pool_id`);
 ALTER TABLE `cloud`.`volumes` ADD CONSTRAINT `fk_volumes__instance_id` FOREIGN KEY `fk_volumes__instance_id` (`instance_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__instance_id`(`instance_id`);
 
-ALTER TABLE `cloud`.`template_spool_ref` ADD UNIQUE `i_template_spool_ref__template_id__pool_id`(`template_id`, `pool_id`); 
-
 #ALTER TABLE `cloud`.`op_ha_work` ADD CONSTRAINT `fk_op_ha_work__instance_id` FOREIGN KEY `fk_op_ha_work__instance_id` (`instance_id`) REFERENCES `vm_instance` (`id`);
 ALTER TABLE `cloud`.`op_ha_work` ADD INDEX `i_op_ha_work__instance_id`(`instance_id`);
 
@@ -124,19 +122,9 @@ ALTER TABLE `cloud`.`op_host_capacity` ADD INDEX `i_op_host_capacity__pod_id`(`p
 ALTER TABLE `cloud`.`op_host_capacity` ADD CONSTRAINT `fk_op_host_capacity__data_center_id` FOREIGN KEY `fk_op_host_capacity__data_center_id` (`data_center_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`op_host_capacity` ADD INDEX `i_op_host_capacity__data_center_id`(`data_center_id`);
 
-ALTER TABLE `cloud`.`template_host_ref` ADD CONSTRAINT `fk_template_host_ref__host_id` FOREIGN KEY `fk_template_host_ref__host_id` (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`template_host_ref` ADD INDEX `i_template_host_ref__host_id`(`host_id`);
-ALTER TABLE `cloud`.`template_host_ref` ADD CONSTRAINT `fk_template_host_ref__template_id` FOREIGN KEY `fk_template_host_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`template_host_ref` ADD INDEX `i_template_host_ref__template_id`(`template_id`);
-
 ALTER TABLE `cloud`.`upload` ADD CONSTRAINT `fk_upload__host_id` FOREIGN KEY `fk_upload__host_id` (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`upload` ADD INDEX `i_upload__host_id`(`host_id`);
 ALTER TABLE `cloud`.`upload` ADD INDEX `i_upload__type_id`(`type_id`);
-
-ALTER TABLE `cloud`.`template_zone_ref` ADD CONSTRAINT `fk_template_zone_ref__zone_id` FOREIGN KEY `fk_template_zone_ref__zone_id` (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`template_zone_ref` ADD INDEX `i_template_zone_ref__zone_id`(`zone_id`);
-ALTER TABLE `cloud`.`template_zone_ref` ADD CONSTRAINT `fk_template_zone_ref__template_id` FOREIGN KEY `fk_template_zone_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`template_zone_ref` ADD INDEX `i_template_zone_ref__template_id`(`template_id`);
 
 ALTER TABLE `cloud`.`pod_vlan_map` ADD CONSTRAINT `fk_pod_vlan_map__pod_id` FOREIGN KEY `fk_pod_vlan_map__pod_id` (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`pod_vlan_map` ADD INDEX `i_pod_vlan_map__pod_id`(`pod_id`);

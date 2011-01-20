@@ -850,7 +850,11 @@ CREATE TABLE  `cloud`.`template_host_ref` (
   `url` varchar(255),
   `destroyed` tinyint(1) COMMENT 'indicates whether the template_host entry was destroyed by the user or not',
   `is_copy` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'indicates whether this was copied ',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_template_host_ref__host_id` FOREIGN KEY `fk_template_host_ref__host_id` (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE,
+  INDEX `i_template_host_ref__host_id`(`host_id`),
+  CONSTRAINT `fk_template_host_ref__template_id` FOREIGN KEY `fk_template_host_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`),
+  INDEX `i_template_host_ref__template_id`(`template_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`template_zone_ref` (
@@ -860,7 +864,11 @@ CREATE TABLE  `cloud`.`template_zone_ref` (
   `created` DATETIME NOT NULL,
   `last_updated` DATETIME,
   `removed` datetime COMMENT 'date removed if not null',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_template_zone_ref__zone_id` FOREIGN KEY `fk_template_zone_ref__zone_id` (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
+  INDEX `i_template_zone_ref__zone_id`(`zone_id`),
+  CONSTRAINT `fk_template_zone_ref__template_id` FOREIGN KEY `fk_template_zone_ref__template_id` (`template_id`) REFERENCES `vm_template` (`id`) ON DELETE CASCADE,
+  INDEX `i_template_zone_ref__template_id`(`template_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`console_proxy` (
@@ -1178,7 +1186,10 @@ CREATE TABLE  `cloud`.`template_spool_ref` (
   `install_path` varchar(255),
   `template_size` bigint unsigned NOT NULL COMMENT 'the size of the template on the pool',
   `marked_for_gc` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'if true, the garbage collector will evict the template from this pool.',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  UNIQUE `i_template_spool_ref__template_id__pool_id`(`template_id`, `pool_id`),
+  CONSTRAINT `fk_template_spool_ref__template_id` FOREIGN KEY (`template_id`) REFERENCES `vm_template`(`id`),
+  CONSTRAINT `fk_template_spool_ref__pool_id` FOREIGN KEY (`pool_id`) REFERENCES `storage_pool`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`guest_os` (
