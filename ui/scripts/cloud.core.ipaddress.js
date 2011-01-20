@@ -296,7 +296,8 @@ function ipToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function isIpManageable(domainid, account) {             
-    if((g_domainid == domainid && g_account == account) || (isAdmin() && account!="system")) 
+    if(((g_domainid == domainid && g_account == account) || (g_domainid == domainid && isDomainAdmin()) || (isAdmin())) 
+        && account!="system") 
         return true;
     else
         return false;
