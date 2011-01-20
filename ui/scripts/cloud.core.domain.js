@@ -107,11 +107,11 @@ function domainAccountJSONToTemplate(jsonObj, $template) {
 function afterLoadDomainJSP() {
     hideMiddleMenu();   
 	clearMiddleMenu();
-	
-	var $topButtonContainer = clearButtonsOnTop();			    	       
-	$("#top_buttons").appendTo($topButtonContainer); 
-		   
-    if(isAdmin()) {
+	   
+    if(isAdmin()) {        
+	    var $topButtonContainer = clearButtonsOnTop();			    	       
+	    $("#top_buttons").appendTo($topButtonContainer); 	
+	    $("#top_buttons").find("#add_domain_button").show();	
         initAddDomainDialog();
     }
     
@@ -295,7 +295,7 @@ function domainJsonToDetailsTab() {
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();   
     var noAvailableActions = true;
-    if(domainId != 1) { //"ROOT" domain is not allowed to edit or delete
+    if(domainId != 1 && isAdmin()) { //"ROOT" domain is not allowed to edit or delete
         buildActionLinkForTab("Edit Domain", domainActionMap, $actionMenu, $midmenuItem1, $thisTab);   
         buildActionLinkForTab("Delete Domain", domainActionMap, $actionMenu, $midmenuItem1, $thisTab);          
         noAvailableActions = false; 
