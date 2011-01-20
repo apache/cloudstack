@@ -1508,7 +1508,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 return caller;
             }
         } else {
-            if (accountName == null || domainId == null) {
+            if ((accountName == null && domainId != null) || (accountName != null && domainId == null)) {
                 throw new InvalidParameterValueException("AccountName and domainId must be specified together");
             }
             //regular user can't create/list resources for other people 
