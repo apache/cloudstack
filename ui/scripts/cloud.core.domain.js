@@ -435,7 +435,15 @@ function domainToResourceLimitsTab() {
     
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();
-    buildActionLinkForTab("Edit Resource Limits", domainResourceLimitsActionMap, $actionMenu, $midmenuItem1, $thisTab);		
+    var noAvailableActions = true;
+    if(isAdmin()) {
+        buildActionLinkForTab("Edit Resource Limits", domainResourceLimitsActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+        noAvailableActions = false;		
+    }    
+    // no available actions 
+	if(noAvailableActions == true) {
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	 	
 }
 
 function bindEventHandlerToDomainTreeNode() {
