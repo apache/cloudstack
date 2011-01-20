@@ -167,6 +167,7 @@ $(document).ready(function() {
 			});
 			
 			$("#right_panel").load("jsp/dashboard.jsp", function(){
+			    currentRightPanelJSP = "jsp/dashboard.jsp";
 				afterLoadDashboardJSP();        
 			});
 		});	    
