@@ -189,35 +189,35 @@
                 <div id="host_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li input_group="vmware">
+            <li input_group="vmware" style="display: none;">
                 <label for="host_vcenter_address">
                     vCenter Address:</label>
                 <input class="text" type="text" name="host_vcenter_address" id="host_vcenter_address" />
                 <div id="host_vcenter_address_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li input_group="vmware">
+            <li input_group="vmware" style="display: none;">
                 <label for="host_vcenter_username">
                     vCenter User:</label>
                 <input class="text" type="text" name="host_vcenter_username" id="host_vcenter_username" />
                 <div id="host_vcenter_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li input_group="vmware">
+            <li input_group="vmware" style="display: none;">
                 <label for="host_vcenter_password">
                     vCenter Password:</label>
                 <input class="text" type="password" name="host_vcenter_password" id="host_vcenter_password" autocomplete="off" />
                 <div id="host_vcenter_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li input_group="vmware">
+            <li input_group="vmware" style="display: none;">
                 <label for="host_vcenter_dc">
                     vCenter Datacenter:</label>
                 <input class="text" type="text" name="host_vcenter_dc" id="host_vcenter_dc" />
                 <div id="host_vcenter_dc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
-            <li input_group="vmware">
+            <li input_group="vmware" style="display: none;">
                 <label for="host_vcenter_host">
                     vCenter Host:</label>
                 <input class="text" type="text" name="host_vcenter_host" id="host_vcenter_host" />
