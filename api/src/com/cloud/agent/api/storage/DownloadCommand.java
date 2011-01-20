@@ -17,8 +17,8 @@
  */
 package com.cloud.agent.api.storage;
 
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.template.VirtualMachineTemplate;
 
 
 /**
@@ -64,9 +64,9 @@ public class DownloadCommand extends AbstractDownloadCommand {
 	    this.maxDownloadSizeInBytes = that.getMaxDownloadSizeInBytes();
 	}
 	
-	public DownloadCommand(VMTemplateVO template, Long maxDownloadSizeInBytes) {
+	public DownloadCommand(VirtualMachineTemplate template, Long maxDownloadSizeInBytes) {
 	    super(template.getUniqueName(), template.getUrl(), template.getFormat(), template.getAccountId());
-	    this.hvm = template.requiresHvm();
+	    this.hvm = template.isRequiresHvm();
 	    this.checksum = template.getChecksum();
 	    this.id = template.getId();
 	    this.description = template.getDisplayText();

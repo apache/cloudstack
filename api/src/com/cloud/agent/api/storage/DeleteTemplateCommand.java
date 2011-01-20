@@ -15,18 +15,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.network;
 
-/**
- * @author chiradeep
- *
- */
-public class NetworkEnums {
-    public enum RouterPrivateIpStrategy {
-    	None,
-    	DcGlobal, //global to data center
-    	HostLocal;
-    	
-    	public static String DummyPrivateIp = "169.254.1.1";
+package com.cloud.agent.api.storage;
+
+import com.cloud.agent.api.Command;
+
+public class DeleteTemplateCommand extends Command {
+	
+	String templatePath;
+
+	public DeleteTemplateCommand() {	
+	}
+	
+	public DeleteTemplateCommand(String templatePath) {
+    	this.templatePath = templatePath;
     }
+	
+	@Override
+    public boolean executeInSequence() {
+        return true;
+    }
+	
+	public String getTemplatePath() {
+		return templatePath;
+	}
+	
 }

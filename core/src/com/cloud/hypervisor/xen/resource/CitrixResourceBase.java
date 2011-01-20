@@ -126,7 +126,6 @@ import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
-import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
@@ -143,8 +142,6 @@ import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
-import com.cloud.agent.api.storage.ShareAnswer;
-import com.cloud.agent.api.storage.ShareCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
@@ -170,7 +167,6 @@ import com.cloud.resource.ServerResource;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.VolumeVO;
@@ -349,8 +345,6 @@ public abstract class CitrixResourceBase implements ServerResource {
             return execute((CreateCommand) cmd);
         } else if (cmd instanceof SetPortForwardingRulesCommand) {
             return execute((SetPortForwardingRulesCommand) cmd);
-        } else if (cmd instanceof LoadBalancerCfgCommand) {
-            return execute((LoadBalancerCfgCommand) cmd);
         } else if (cmd instanceof LoadBalancerConfigCommand) {
             return execute((LoadBalancerConfigCommand) cmd);
         } else if (cmd instanceof IPAssocCommand) {
@@ -387,8 +381,6 @@ public abstract class CitrixResourceBase implements ServerResource {
             return execute((MigrateCommand) cmd);
         } else if (cmd instanceof DestroyCommand) {
             return execute((DestroyCommand) cmd);
-        } else if (cmd instanceof ShareCommand) {
-            return execute((ShareCommand) cmd);
         } else if (cmd instanceof ModifyStoragePoolCommand) {
             return execute((ModifyStoragePoolCommand) cmd);
         } else if (cmd instanceof DeleteStoragePoolCommand) {
@@ -1094,63 +1086,6 @@ public abstract class CitrixResourceBase implements ServerResource {
         return new SetPortForwardingRulesAnswer(cmd, results);
     }
 
-    protected Answer execute(final LoadBalancerCfgCommand cmd) {
-        Connection conn = getConnection();
-        String routerIp = cmd.getRouterIp();
-
-        if (routerIp == null) {
-            return new Answer(cmd);
-        }
-
-        String tmpCfgFilePath = "/tmp/" + cmd.getRouterIp().replace('.', '_') + ".cfg";
-        String tmpCfgFileContents = "";
-        for (int i = 0; i < cmd.getConfig().length; i++) {
-            tmpCfgFileContents += cmd.getConfig()[i];
-            tmpCfgFileContents += "\n";
-        }
-
-        String result = callHostPlugin(conn, "vmops", "createFile", "filepath", tmpCfgFilePath, "filecontents", tmpCfgFileContents);
-
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "LoadBalancerCfgCommand failed to create HA proxy cfg file.");
-        }
-
-        String[] addRules = cmd.getAddFwRules();
-        String[] removeRules = cmd.getRemoveFwRules();
-
-        String args = "";
-        args += "-i " + routerIp;
-        args += " -f " + tmpCfgFilePath;
-
-        StringBuilder sb = new StringBuilder();
-        if (addRules.length > 0) {
-            for (int i = 0; i < addRules.length; i++) {
-                sb.append(addRules[i]).append(',');
-            }
-
-            args += " -a " + sb.toString();
-        }
-
-        sb = new StringBuilder();
-        if (removeRules.length > 0) {
-            for (int i = 0; i < removeRules.length; i++) {
-                sb.append(removeRules[i]).append(',');
-            }
-
-            args += " -d " + sb.toString();
-        }
-
-        result = callHostPlugin(conn, "vmops", "setLoadBalancerRule", "args", args);
-
-        if (result == null || result.isEmpty()) {
-            return new Answer(cmd, false, "LoadBalancerCfgCommand failed");
-        }
-
-        callHostPlugin(conn, "vmops", "deleteFile", "filepath", tmpCfgFilePath);
-
-        return new Answer(cmd);
-    }
-    
     protected Answer execute(final LoadBalancerConfigCommand cmd) {
         Connection conn = getConnection();
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
@@ -3983,15 +3918,14 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     protected Answer execute(DeleteStoragePoolCommand cmd) {
         Connection conn = getConnection();
-        StoragePoolVO pool = cmd.getPool();
-        StorageFilerTO poolTO = new StorageFilerTO(pool);
+        StorageFilerTO poolTO = cmd.getPool();
         try {
             SR sr = getStorageRepository(conn, poolTO);
             removeSR(conn, sr);
             Answer answer = new Answer(cmd, true, "success");
             return answer;
         } catch (Exception e) {
-            String msg = "DeleteStoragePoolCommand XenAPIException:" + e.getMessage() + " host:" + _host.uuid + " pool: " + pool.getName() + pool.getHostAddress() + pool.getPath();
+            String msg = "DeleteStoragePoolCommand XenAPIException:" + e.getMessage() + " host:" + _host.uuid + " pool: " + poolTO.getHost() + poolTO.getPath();
             s_logger.warn(msg, e);
             return new Answer(cmd, false, msg);
         }
@@ -4553,30 +4487,10 @@ public abstract class CitrixResourceBase implements ServerResource {
         return new Answer(cmd, true, "Success");
     }
 
-    public ShareAnswer execute(final ShareCommand cmd) {
-        Connection conn = getConnection();
-        if (!cmd.isShare()) {
-            SR sr = getISOSRbyVmName(conn, cmd.getVmName());
-            try {
-                if (sr != null) {
-                    Set<VM> vms = VM.getByNameLabel(conn, cmd.getVmName());
-                    if (vms.size() == 0) {
-                        removeSR(conn, sr);
-                    }
-                }
-            } catch (Exception e) {
-                String msg = "SR.getNameLabel failed due to  " + e.getMessage() + e.toString();
-                s_logger.warn(msg);
-            }
-        }
-        return new ShareAnswer(cmd, new HashMap<String, Integer>());
-    }
-
     public CopyVolumeAnswer execute(final CopyVolumeCommand cmd) {
         Connection conn = getConnection();
         String volumeUUID = cmd.getVolumePath();
-        StoragePoolVO pool = cmd.getPool();
-        StorageFilerTO poolTO = new StorageFilerTO(pool);
+        StorageFilerTO poolTO = cmd.getPool();
         String secondaryStorageURL = cmd.getSecondaryStorageURL();
 
         URI uri = null;

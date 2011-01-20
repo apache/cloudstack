@@ -17,8 +17,8 @@
  */
 package com.cloud.agent.api;
 
-import com.cloud.host.HostVO;
-import com.cloud.vm.VMInstanceVO;
+import com.cloud.host.Host;
+import com.cloud.vm.VirtualMachine;
 
 public class FenceCommand extends Command {
     
@@ -30,7 +30,7 @@ public class FenceCommand extends Command {
     String hostGuid;
     String hostIp;
     
-    public FenceCommand(VMInstanceVO vm, HostVO host) {
+    public FenceCommand(VirtualMachine vm, Host host) {
         super();
         vmName = vm.getInstanceName();
         hostGuid = host.getGuid();

@@ -17,25 +17,26 @@
  */
 package com.cloud.agent.api;
 
-import com.cloud.host.HostVO;
-import com.cloud.vm.VMInstanceVO;
+import com.cloud.agent.api.to.HostTO;
+import com.cloud.host.Host;
 
-/**
- * @author ahuang
- *
- */
-public class CheckOnVmCommand extends Command {
+public class CheckOnHostCommand extends Command {
+    HostTO host;
 
-    protected CheckOnVmCommand() {
+    protected CheckOnHostCommand() {
     }
     
-    public CheckOnVmCommand(VMInstanceVO vm, HostVO host) {
-        
+    
+    public CheckOnHostCommand(Host host) {
+        this.host = new HostTO(host);
+    }
+    
+    public HostTO getHost() {
+        return host;
     }
     
     @Override
     public boolean executeInSequence() {
         return false;
     }
-
 }

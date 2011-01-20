@@ -1,15 +1,14 @@
 package com.cloud.agent.api.storage;
 
-import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.Upload.Type;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.agent.api.storage.AbstractUploadCommand;
 import com.cloud.agent.api.storage.DownloadCommand.PasswordAuth;
+import com.cloud.agent.api.to.TemplateTO;
+import com.cloud.storage.Upload.Type;
+import com.cloud.template.VirtualMachineTemplate;
 
 
 public class UploadCommand extends AbstractUploadCommand {
 
-	private VMTemplateVO template;
+	private TemplateTO template;
 	private String url;
 	private String installPath;	
 	private boolean hvm;
@@ -20,14 +19,14 @@ public class UploadCommand extends AbstractUploadCommand {
 	private long id;
 	private Type type;
 
-	public UploadCommand(VMTemplateVO template, String url, VMTemplateHostVO vmTemplateHost) {
+	public UploadCommand(VirtualMachineTemplate template, String url, String installPath, long sizeInBytes) {
 		
-		this.template = template;
+		this.template = new TemplateTO(template);
 		this.url = url;
-		this.installPath = vmTemplateHost.getInstallPath();
+		this.installPath = installPath;
 		this.checksum = template.getChecksum();
 		this.id = template.getId();
-		this.templateSizeInBytes = vmTemplateHost.getSize();
+		this.templateSizeInBytes = sizeInBytes;
 		
 	}
 	
@@ -56,19 +55,21 @@ public class UploadCommand extends AbstractUploadCommand {
 	}
 
 
-	public VMTemplateVO getTemplate() {
+	public TemplateTO getTemplate() {
 		return template;
 	}
 
-	public void setTemplate(VMTemplateVO template) {
+	public void setTemplate(TemplateTO template) {
 		this.template = template;
 	}
 
-	public String getUrl() {
+	@Override
+    public String getUrl() {
 		return url;
 	}
 
-	public void setUrl(String url) {
+	@Override
+    public void setUrl(String url) {
 		this.url = url;
 	}
 

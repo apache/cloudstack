@@ -17,9 +17,8 @@
  */
 package com.cloud.agent.api.to;
 
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.template.VirtualMachineTemplate;
 
 public class TemplateTO {
     private long id;
@@ -29,7 +28,7 @@ public class TemplateTO {
     protected TemplateTO() {
     }
     
-    public TemplateTO(VMTemplateVO template, VMTemplateStoragePoolVO storedAt) {
+    public TemplateTO(VirtualMachineTemplate template) {
         this.id = template.getId();
         this.uniqueName = template.getUniqueName();
         this.format = template.getFormat();

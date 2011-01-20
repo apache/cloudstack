@@ -19,13 +19,14 @@
 package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Command;
-import com.cloud.storage.StoragePoolVO;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.storage.StoragePool;
 
 public class CopyVolumeCommand extends Command {
 
 	long volumeId;
 	String volumePath;	
-	StoragePoolVO pool;
+	StorageFilerTO pool;
 	String secondaryStorageURL;
 	boolean toSecondaryStorage;
 	String vmName;
@@ -33,10 +34,10 @@ public class CopyVolumeCommand extends Command {
 	public CopyVolumeCommand() {		
 	}
 	
-	public CopyVolumeCommand(long volumeId, String volumePath, StoragePoolVO pool, String secondaryStorageURL, boolean toSecondaryStorage) {
+	public CopyVolumeCommand(long volumeId, String volumePath, StoragePool pool, String secondaryStorageURL, boolean toSecondaryStorage) {
 		this.volumeId = volumeId;
 		this.volumePath = volumePath;				
-		this.pool = pool;
+		this.pool = new StorageFilerTO(pool);
 		this.secondaryStorageURL = secondaryStorageURL;
 		this.toSecondaryStorage = toSecondaryStorage;
 	}
@@ -54,7 +55,7 @@ public class CopyVolumeCommand extends Command {
 		return volumeId;
 	}
 	
-	public StoragePoolVO getPool() {
+	public StorageFilerTO getPool() {
 		return pool;
 	}
 	

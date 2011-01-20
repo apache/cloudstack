@@ -21,14 +21,14 @@ import java.io.File;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.storage.VMTemplateHostVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 
 public class DownloadAnswer extends Answer  {
 	private String jobId;
 	private int downloadPct;
 	private String errorString;
-	private VMTemplateHostVO.Status downloadStatus;
+	private VMTemplateStorageResourceAssoc.Status downloadStatus;
 	private String downloadPath;
 	private String installPath;
 	private long templateSize = 0L;
@@ -45,7 +45,7 @@ public class DownloadAnswer extends Answer  {
 		return downloadStatus.toString();
 	}
 	
-	public VMTemplateHostVO.Status getDownloadStatus() {
+	public VMTemplateStorageResourceAssoc.Status getDownloadStatus() {
 		return downloadStatus;
 	}
 	
@@ -94,8 +94,9 @@ public class DownloadAnswer extends Answer  {
     }
 		
 	private static String fixPath(String path){
-		if (path == null)
-			return path;
+		if (path == null) {
+            return path;
+        }
 		if (path.startsWith(File.separator)) {
 			path=path.substring(File.separator.length());
 		}
@@ -105,7 +106,7 @@ public class DownloadAnswer extends Answer  {
 		return path;
 	}
 	
-	public void setDownloadStatus(VMTemplateHostVO.Status downloadStatus) {
+	public void setDownloadStatus(VMTemplateStorageResourceAssoc.Status downloadStatus) {
 		this.downloadStatus = downloadStatus;
 	}
 	

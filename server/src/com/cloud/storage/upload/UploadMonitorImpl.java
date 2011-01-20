@@ -154,7 +154,7 @@ public class UploadMonitorImpl implements UploadMonitor {
         		
 		if(vmTemplateHost != null) {
 		    start();
-			UploadCommand ucmd = new UploadCommand(template, url, vmTemplateHost);	
+			UploadCommand ucmd = new UploadCommand(template, url, vmTemplateHost.getInstallPath(), vmTemplateHost.getSize());	
 			UploadListener ul = new UploadListener(sserver, _timer, _uploadDao, uploadTemplateObj, this, ucmd, template.getAccountId(), template.getName(), type, eventId, asyncJobId, asyncMgr);			
 			_listenerMap.put(uploadTemplateObj, ul);
 

@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.NetworkEnums.RouterPrivateIpStrategy;
+import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.vm.VirtualMachine.State;
 
 public class StartupRoutingCommand extends StartupCommand {

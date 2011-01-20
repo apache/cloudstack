@@ -17,7 +17,7 @@
  */
 package com.cloud.agent.api.to;
 
-import com.cloud.host.HostVO;
+import com.cloud.host.Host;
 
 public class HostTO {
     private String guid;
@@ -29,7 +29,7 @@ public class HostTO {
     protected HostTO() {
     }
     
-    public HostTO(HostVO vo) {
+    public HostTO(Host vo) {
         guid = vo.getGuid();
         privateNetwork = new NetworkTO(vo.getPrivateIpAddress(), vo.getPrivateNetmask(), vo.getPrivateMacAddress());
         if (vo.getPublicIpAddress() != null) {

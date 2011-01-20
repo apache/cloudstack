@@ -77,4 +77,10 @@ public interface VirtualMachineTemplate extends ControlledEntity {
     HypervisorType getHypervisorType();
     
     int getBits();
+    
+    String getUniqueName();
+    
+    String getUrl();
+
+    String getChecksum();
 }

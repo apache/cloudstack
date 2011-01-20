@@ -18,74 +18,17 @@
 
 package com.cloud.agent.api;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.transport.Request;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
 import com.google.gson.annotations.Expose;
-import com.google.gson.reflect.TypeToken;
 
 public class SecStorageFirewallCfgCommand extends Command {
 	private static final Logger s_logger = Logger.getLogger(SecStorageFirewallCfgCommand.class);
 
 
-	public static class PortConfigListTypeAdaptor implements JsonDeserializer<List<PortConfig>>, JsonSerializer<List<PortConfig>> {
-		static final GsonBuilder s_gBuilder;
-	    static {
-	        s_gBuilder = Request.initBuilder();
-	    }
-
-	    static final Type listType = new TypeToken<List<PortConfig>>() {}.getType();
-
-	    public PortConfigListTypeAdaptor() {
-	    }
-
-	    public JsonElement serialize(List<PortConfig> src, Type typeOfSrc, JsonSerializationContext context) {
-	        if (src.size() == 0) {
-	            s_logger.info("Returning JsonNull");
-	            return new JsonNull();
-	        }
-	        Gson json = s_gBuilder.create();
-	        s_logger.debug("Returning gson tree");
-	        JsonArray array = new JsonArray();
-	        for (PortConfig pc : src) {
-	            array.add(json.toJsonTree(pc));
-	        }
-
-	        return array;
-	    }
-
-	    public List<PortConfig> deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-	            throws JsonParseException {
-	        if (json.isJsonNull()) {
-	            return new ArrayList<PortConfig>();
-	        }
-	        Gson jsonp = s_gBuilder.create();
-            List<PortConfig> pcs = new ArrayList<PortConfig>();
-	        JsonArray array = json.getAsJsonArray();
-	        Iterator<JsonElement> it = array.iterator();
-	        while (it.hasNext()) {
-	            JsonElement element = it.next();
-	            pcs.add(jsonp.fromJson(element, PortConfig.class));
-	        }
-	        return pcs;
-	    }
-
-	}
 	public static class PortConfig {
 		@Expose boolean add;
 		@Expose String sourceIp;

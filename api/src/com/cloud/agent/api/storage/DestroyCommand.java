@@ -19,9 +19,9 @@ package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.storage.Storage;
-import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VolumeVO;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.Volume;
 
 public class DestroyCommand extends StorageCommand {
 	// in VMware, things are designed around VM instead of volume, we need it the volume VM context if the volume is attached
@@ -31,12 +31,12 @@ public class DestroyCommand extends StorageCommand {
     protected DestroyCommand() {
     }
     
-    public DestroyCommand(StoragePoolVO pool, VolumeVO volume, String vmName) {
+    public DestroyCommand(StoragePool pool, Volume volume, String vmName) {
          this.volume = new VolumeTO(volume, pool);
          this.vmName = vmName;
     }
     
-    public DestroyCommand(StoragePoolVO pool, VMTemplateStoragePoolVO templatePoolRef) {
+    public DestroyCommand(StoragePool pool, VMTemplateStorageResourceAssoc templatePoolRef) {
         volume = new VolumeTO(templatePoolRef.getId(), null, Storage.StorageResourceType.STORAGE_POOL, pool.getPoolType(), 
         		pool.getUuid(), null, pool.getPath(), 
         		templatePoolRef.getInstallPath(), templatePoolRef.getTemplateSize(), null);

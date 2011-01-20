@@ -15,28 +15,49 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
+
 package com.cloud.agent.api;
 
-import com.cloud.agent.api.to.HostTO;
-import com.cloud.host.HostVO;
+import java.io.File;
+import java.util.UUID;
 
-public class CheckOnHostCommand extends Command {
-    HostTO host;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.storage.StoragePool;
 
-    protected CheckOnHostCommand() {
+public class DeleteStoragePoolCommand extends Command {
+	
+	StorageFilerTO pool;
+	public static final String LOCAL_PATH_PREFIX="/mnt/";
+	String localPath;
+	
+	public DeleteStoragePoolCommand() {
+		
+	}
+    
+    public DeleteStoragePoolCommand(StoragePool pool, String localPath) {
+    	this.pool = new StorageFilerTO(pool);
+    	this.localPath = localPath;
     }
     
-    
-    public CheckOnHostCommand(HostVO host) {
-        this.host = new HostTO(host);
+    public DeleteStoragePoolCommand(StoragePool pool) {
+		this(pool, LOCAL_PATH_PREFIX + File.separator + UUID.nameUUIDFromBytes((pool.getHostAddress() + pool.getPath()).getBytes()));
+	}
+
+    public StorageFilerTO getPool() {
+        return pool;
+    }
+
+    public void setPool(StoragePool pool) {
+        this.pool = new StorageFilerTO(pool);
     }
     
-    public HostTO getHost() {
-        return host;
-    }
-    
-    @Override
+	@Override
     public boolean executeInSequence() {
         return false;
     }
+
+	public String getLocalPath() {
+		return localPath;
+	}
+	
 }

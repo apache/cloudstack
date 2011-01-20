@@ -15,30 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.agent.api.storage;
+package com.cloud.agent.api;
 
-import java.util.Map;
+import com.cloud.agent.api.to.VirtualMachineTO;
 
-import com.cloud.agent.api.Answer;
-
-public class ShareAnswer extends Answer {
+public class PrepareForMigrationCommand extends StartCommand {
     
-    protected ShareAnswer() {
+    protected PrepareForMigrationCommand() {
     }
     
-    Map<String, Integer> mapping;
-    
-    public ShareAnswer(ShareCommand cmd, Map<String, Integer> mapping) {
-    	super(cmd, true, null);
-    	this.mapping = mapping;
+    public PrepareForMigrationCommand(VirtualMachineTO vm) {
+        super(vm);
     }
     
-    public ShareAnswer(ShareCommand cmd, String details) {
-    	super(cmd, false, details);
+    @Override
+    public boolean executeInSequence() {
+        return true;
     }
-    
-    public Map<String, Integer> getMappings() {
-        return mapping;
-    }
-   
 }

@@ -4,7 +4,7 @@ import java.io.File;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.storage.UploadVO;
+import com.cloud.storage.Upload;
 
 public class UploadAnswer extends Answer {
 
@@ -12,7 +12,7 @@ public class UploadAnswer extends Answer {
 	private String jobId;
 	private int uploadPct;
 	private String errorString;
-	private UploadVO.Status uploadStatus;
+	private Upload.Status uploadStatus;
 	private String uploadPath;
 	private String installPath;
 	public Long templateSize = 0L;
@@ -28,7 +28,7 @@ public class UploadAnswer extends Answer {
 		return uploadStatus.toString();
 	}
 	
-	public UploadVO.Status getUploadStatus() {
+	public Upload.Status getUploadStatus() {
 		return uploadStatus;
 	}
 	
@@ -50,7 +50,7 @@ public class UploadAnswer extends Answer {
 	}
 	
 	public UploadAnswer(String jobId, int uploadPct, String errorString,
-			UploadVO.Status uploadStatus, String fileSystemPath, String installPath, long templateSize) {
+			Upload.Status uploadStatus, String fileSystemPath, String installPath, long templateSize) {
 		super();
 		this.jobId = jobId;
 		this.uploadPct = uploadPct;
@@ -62,7 +62,7 @@ public class UploadAnswer extends Answer {
 	}
 
    public UploadAnswer(String jobId, int uploadPct, Command command,
-		   UploadVO.Status uploadStatus, String fileSystemPath, String installPath) {
+		   Upload.Status uploadStatus, String fileSystemPath, String installPath) {
 	    super(command);
         this.jobId = jobId;
         this.uploadPct = uploadPct;
@@ -72,8 +72,9 @@ public class UploadAnswer extends Answer {
     }
 		
 	private static String fixPath(String path){
-		if (path == null)
-			return path;
+		if (path == null) {
+            return path;
+        }
 		if (path.startsWith(File.separator)) {
 			path=path.substring(File.separator.length());
 		}
@@ -83,7 +84,7 @@ public class UploadAnswer extends Answer {
 		return path;
 	}
 	
-	public void setUploadStatus(UploadVO.Status uploadStatus) {
+	public void setUploadStatus(Upload.Status uploadStatus) {
 		this.uploadStatus = uploadStatus;
 	}
 	

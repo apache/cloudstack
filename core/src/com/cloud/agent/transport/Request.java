@@ -19,14 +19,14 @@ package com.cloud.agent.transport;
 
 import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
-import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.storage.VolumeVO;
@@ -35,6 +35,14 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
 
 /**
@@ -64,8 +72,9 @@ public class Request {
 
         public static Version get(final byte ver) throws UnsupportedVersionException {
             for (final Version version : Version.values()) {
-                if (ver == version.ordinal())
+                if (ver == version.ordinal()) {
                     return version;
+                }
             }
             throw new UnsupportedVersionException("Can't lookup version: " + ver, UnsupportedVersionException.UnknownVersion);
         }
@@ -86,8 +95,8 @@ public class Request {
         s_gBuilder.registerTypeAdapter(Answer[].class, new ArrayTypeAdaptor<Answer>());
         final Type listType = new TypeToken<List<VolumeVO>>() {}.getType();
         s_gBuilder.registerTypeAdapter(listType, new VolListTypeAdaptor());
-        s_gBuilder.registerTypeAdapter(new TypeToken<List<PortConfig>>() {}.getType(), new SecStorageFirewallCfgCommand.PortConfigListTypeAdaptor());
-        s_gBuilder.registerTypeAdapter(new TypeToken<Pair<Long, Long>>() {}.getType(), new PingRoutingWithNwGroupsCommand.NwGroupsCommandTypeAdaptor());
+        s_gBuilder.registerTypeAdapter(new TypeToken<List<PortConfig>>() {}.getType(), new PortConfigListTypeAdaptor());
+        s_gBuilder.registerTypeAdapter(new TypeToken<Pair<Long, Long>>() {}.getType(), new NwGroupsCommandTypeAdaptor());
         s_logger.info("Builder inited.");
     }
 
@@ -367,5 +376,104 @@ public class Request {
     
     public static boolean isControl(final byte[] bytes) {
         return (bytes[3] & FLAG_CONTROL) > 0;
+    }
+    
+    public static class NwGroupsCommandTypeAdaptor implements JsonDeserializer<Pair<Long, Long>>, JsonSerializer<Pair<Long,Long>> {
+        static final GsonBuilder s_gBuilder;
+        static {
+            s_gBuilder = Request.initBuilder();
+        }
+
+        public NwGroupsCommandTypeAdaptor() {
+        }
+        
+        @Override
+        public JsonElement serialize(Pair<Long, Long> src,
+                java.lang.reflect.Type typeOfSrc, JsonSerializationContext context) {
+            JsonArray array = new JsonArray();
+            Gson json = s_gBuilder.create();
+            if(src.first() != null) {
+                array.add(json.toJsonTree(src.first()));
+            } else {
+                array.add(new JsonNull());
+            }
+            
+            if (src.second() != null) {
+                array.add(json.toJsonTree(src.second()));
+            } else {
+                array.add(new JsonNull());
+            }
+            
+            return array;
+        }
+
+        @Override
+        public Pair<Long, Long> deserialize(JsonElement json,
+                java.lang.reflect.Type type, JsonDeserializationContext context)
+                throws JsonParseException {
+            Pair<Long, Long> pairs = new Pair<Long, Long>(null, null);
+            JsonArray array = json.getAsJsonArray();
+            if (array.size() != 2) {
+                return pairs;
+            }
+            JsonElement element = array.get(0);
+            if (!element.isJsonNull()) {
+                pairs.first(element.getAsLong());
+            }
+
+            element = array.get(1);
+            if (!element.isJsonNull()) {
+                pairs.second(element.getAsLong());
+            }
+
+            return pairs;
+        }
+        
+    }
+    
+    public static class PortConfigListTypeAdaptor implements JsonDeserializer<List<PortConfig>>, JsonSerializer<List<PortConfig>> {
+        static final GsonBuilder s_gBuilder;
+        static {
+            s_gBuilder = Request.initBuilder();
+        }
+
+        static final Type listType = new TypeToken<List<PortConfig>>() {}.getType();
+
+        public PortConfigListTypeAdaptor() {
+        }
+
+        @Override
+        public JsonElement serialize(List<PortConfig> src, Type typeOfSrc, JsonSerializationContext context) {
+            if (src.size() == 0) {
+                s_logger.info("Returning JsonNull");
+                return new JsonNull();
+            }
+            Gson json = s_gBuilder.create();
+            s_logger.debug("Returning gson tree");
+            JsonArray array = new JsonArray();
+            for (PortConfig pc : src) {
+                array.add(json.toJsonTree(pc));
+            }
+
+            return array;
+        }
+
+        @Override
+        public List<PortConfig> deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+                throws JsonParseException {
+            if (json.isJsonNull()) {
+                return new ArrayList<PortConfig>();
+            }
+            Gson jsonp = s_gBuilder.create();
+            List<PortConfig> pcs = new ArrayList<PortConfig>();
+            JsonArray array = json.getAsJsonArray();
+            Iterator<JsonElement> it = array.iterator();
+            while (it.hasNext()) {
+                JsonElement element = it.next();
+                pcs.add(jsonp.fromJson(element, PortConfig.class));
+            }
+            return pcs;
+        }
+
     }
 }

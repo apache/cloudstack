@@ -38,6 +38,7 @@ import javax.persistence.Transient;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -48,7 +49,7 @@ public class HostVO implements Host {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
-	private Long id;
+	private long id;
 
     @Column(name="disconnected")
     @Temporal(value=TemporalType.TIMESTAMP)
@@ -144,7 +145,8 @@ public class HostVO implements Host {
 		return storageNetmaskDeux;
 	}
 
-	public Long getClusterId() {
+	@Override
+    public Long getClusterId() {
 	    return clusterId;
 	}
 	
@@ -331,7 +333,7 @@ public class HostVO implements Host {
     protected HostVO() {
     }
     
-	public HostVO(Long id,
+	public HostVO(long id,
 	              String name,
 	              Type type,
 	              String privateIpAddress,
@@ -364,7 +366,7 @@ public class HostVO implements Host {
 	    this.fsType = fsType;
 	}
 	
-    public HostVO(Long id,
+    public HostVO(long id,
                   String name,
                   Type type,
                   String privateIpAddress,
@@ -486,6 +488,7 @@ public class HostVO implements Host {
         this.managementServerId = managementServerId;
     }
 
+    @Override
     public long getLastPinged() {
         return lastPinged;
     }
@@ -495,10 +498,12 @@ public class HostVO implements Host {
         return parent;
     }
     
+    @Override
     public long getTotalSize() {
         return totalSize;
     }
     
+    @Override
     public String getCapabilities() {
         return caps;
     }
@@ -508,10 +513,12 @@ public class HostVO implements Host {
         return created;
     }
     
+    @Override
     public Date getRemoved() {
         return removed;
     }
     
+    @Override
     public String getVersion() {
         return version;
     }
@@ -520,7 +527,8 @@ public class HostVO implements Host {
         this.type = type;
     }
     
-	public Long getId() {
+	@Override
+    public long getId() {
 		return id;
 	}
 	
@@ -544,10 +552,12 @@ public class HostVO implements Host {
 		return podId;
 	}
     
+    @Override
     public Long getManagementServerId() {
         return managementServerId;
     }
     
+    @Override
     public Date getDisconnectedOn() {
         return disconnectedOn;
     }
@@ -566,6 +576,7 @@ public class HostVO implements Host {
 		this.guid = guid;
 	}
     
+    @Override
     public Integer getCpus() {
         return cpus;
     }
@@ -600,7 +611,7 @@ public class HostVO implements Host {
 
     @Override
     public int hashCode() {
-        return id != null ? id.hashCode() : -1;
+        return NumbersUtil.hash(id);
     }
     
     @Override
@@ -614,7 +625,7 @@ public class HostVO implements Host {
 
     @Override
     public String toString() {
-    	return new StringBuilder(type.toString()).append("-").append(Long.toString(id)).append("-").append(name).toString();
+    	return new StringBuilder(type.toString()).append("-").append(id).append("-").append(name).toString();
     }
 
 	public void setHypervisorType(HypervisorType hypervisorType) {

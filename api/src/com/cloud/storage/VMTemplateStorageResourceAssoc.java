@@ -26,40 +26,42 @@ import java.util.Date;
 public interface VMTemplateStorageResourceAssoc {
 	public static enum Status  {UNKNOWN, DOWNLOAD_ERROR, NOT_DOWNLOADED, DOWNLOAD_IN_PROGRESS, DOWNLOADED, ABANDONED, UPLOADED, NOT_UPLOADED, UPLOAD_ERROR, UPLOAD_IN_PROGRESS}
 
-	public String getInstallPath();
+	String getInstallPath();
 
-	public long getTemplateId();
+	long getTemplateId();
 
-	public void setTemplateId(long templateId);
+	void setTemplateId(long templateId);
 
-	public int getDownloadPercent();
+	int getDownloadPercent();
 
-	public void setDownloadPercent(int downloadPercent);
+	void setDownloadPercent(int downloadPercent);
 
-	public void setDownloadState(Status downloadState);
+	void setDownloadState(Status downloadState);
 
-	public Long getId();
+	long getId();
 
-	public Date getCreated();
+	Date getCreated();
 
-	public Date getLastUpdated();
+	Date getLastUpdated();
 
-	public void setLastUpdated(Date date);
+	void setLastUpdated(Date date);
 
-	public void setInstallPath(String installPath);
+	void setInstallPath(String installPath);
 
-	public Status getDownloadState();
+	Status getDownloadState();
 
-	public void setLocalDownloadPath(String localPath);
+	void setLocalDownloadPath(String localPath);
 
-	public String getLocalDownloadPath();
+	String getLocalDownloadPath();
 
-	public void setErrorString(String errorString);
+	void setErrorString(String errorString);
 
-	public String getErrorString();
+	String getErrorString();
 
-	public void setJobId(String jobId);
+	void setJobId(String jobId);
 
-	public String getJobId();;
+	String getJobId();;
+	
+	long getTemplateSize();
 
 }

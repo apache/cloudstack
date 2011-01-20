@@ -104,7 +104,6 @@ import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.api.MirrorCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
@@ -165,8 +164,8 @@ import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.NetworkEnums.RouterPrivateIpStrategy;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
@@ -798,8 +797,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((GetHostStatsCommand)cmd);
             } else if (cmd instanceof CheckStateCommand) {
                 return executeRequest(cmd);
-            } else if (cmd instanceof MirrorCommand) {
-                return executeRequest(cmd);
             } else if (cmd instanceof CheckHealthCommand) {
                 return execute((CheckHealthCommand)cmd);
             } else if (cmd instanceof PrepareForMigrationCommand) {
@@ -887,7 +884,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			}
 			
 			KVMHABase.NfsStoragePool sp = new KVMHABase.NfsStoragePool(cmd.getPool().getUuid(),
-					cmd.getPool().getHostAddress(),
+					cmd.getPool().getHost(),
 					cmd.getPool().getPath(),
 					_mountPoint + File.separator + cmd.getPool().getUuid(),
 					PoolType.PrimaryStorage);
@@ -2220,8 +2217,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			return new StartAnswer(cmd);
 		} catch (Exception e) {
 			s_logger.warn("Exception ", e);
-			if (conn != null)
-				handleVmStartFailure(conn, vmName, vm);
+			if (conn != null) {
+                handleVmStartFailure(conn, vmName, vm);
+            }
 			return new StartAnswer(cmd, e.getMessage());
 		} finally {
 			synchronized (_vms) {
