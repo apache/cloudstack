@@ -68,16 +68,18 @@ public class Command {
 	
 	public Argument getReqArgByName(String name){
 		for (Argument a : this.getRequest()) {
-			if (a.getName().equals(name))
-				return a;
+			if (a.getName().equals(name)) {
+                return a;
+            }
 		}
 		return null;
 	}
 	
 	public Argument getResArgByName(String name){
 		for (Argument a : this.getResponse()) {
-			if (a.getName().equals(name))
-				return a;
+			if (a.getName().equals(name)) {
+                return a;
+            }
 		}
 		return null;
 	}

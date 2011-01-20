@@ -36,75 +36,12 @@ import com.cloud.storage.Volume.VolumeType;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
-import com.cloud.utils.exception.ExecutionException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface StorageManager extends Manager {
-    
-    
-    VolumeVO allocateIsoInstalledVm(VMInstanceVO vm, VMTemplateVO template, DiskOfferingVO rootOffering, Long size, DataCenterVO dc, Account account);
-    
-	/**
-	 * Calls the storage agent and makes the volumes sharable with this host.
-	 * 
-	 * @param vm vm that owns the volumes
-	 * @param vols volumes to share
-	 * @param host host to share the volumes to.
-	 * @param cancelPrevious cancel the previous shares?
-	 * @return true if works.
-	 * 
-	 * @throws StorageUnavailableException if the storage server is unavailable.
-	 */
-	boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPrevious) throws StorageUnavailableException;
-
-    List<VolumeVO> prepare(VMInstanceVO vm, HostVO host);
-    
-	/**
-	 * Calls the storage server to unshare volumes to the host.
-	 * 
-	 * @param vm vm that owns the volumes.
-	 * @param vols volumes to remove from share.
-	 * @param host host to unshare the volumes to.
-	 * @return true if it worked; false if not.
-	 */
-	boolean unshare(VMInstanceVO vm, List<VolumeVO> vols, HostVO host);
-	
-	/**
-	 * unshares the storage volumes of a certain vm to the host.
-	 * 
-	 * @param vm vm to unshare.
-	 * @param host host.
-	 * @return List<VolumeVO> if succeeded. null if not.
-	 */
-	List<VolumeVO> unshare(VMInstanceVO vm, HostVO host);
-	
-    /**
-     * Creates volumes for a particular VM.
-     * @param account account to create volumes for.
-     * @param vm vm to create the volumes for.
-     * @param template template the root volume is based on.
-     * @param dc datacenter to put this.
-     * @param pod pod to put this.
-     * @param offering service offering of the vm.
-     * @param diskOffering disk offering of the vm.
-     * @param avoids storage pools to avoid.
-     * @param size : size of the volume if defined
-     * @return List of VolumeVO
-     */
-	List<VolumeVO> create(Account account, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, ServiceOfferingVO offering, DiskOfferingVO diskOffering, long size) throws StorageUnavailableException, ExecutionException;
-	
-    /**
-     * Get the storage ip address to connect to.
-     * @param vm vm to run.
-     * @param host host to run it on.
-     * @param storage storage that contains the vm.
-     * @return ip address if it can be determined.  null if not.
-     */
-    String chooseStorageIp(VMInstanceVO vm, Host host, Host storage);
-
     boolean canVmRestartOnAnotherServer(long vmId);
 
     /** Returns the absolute path of the specified ISO
@@ -134,16 +71,6 @@ public interface StorageManager extends Manager {
 	 * @return secondary storage host
 	 */
 	public HostVO getSecondaryStorageHost(long zoneId);
-
-	/**
-	 * Create the volumes for a user VM based on service offering in a particular data center
-	 * 
-	 * @return true if successful
-	 */
-	public long createUserVM(Account account, VMInstanceVO vm,
-			VMTemplateVO template, DataCenterVO dc, HostPodVO pod,
-			ServiceOfferingVO offering, DiskOfferingVO diskOffering,
-			List<StoragePoolVO> avoids, long size);
 
 	/**
 	 * This method sends the given command on all the hosts in the primary storage pool given until is succeeds on any one.
@@ -240,14 +167,6 @@ public interface StorageManager extends Manager {
 	 */
 	void cleanupStorage(boolean recurring);
 	
-	/**
-	 * Find all of the storage pools needed for this vm.
-	 * 
-	 * @param vmId id of the vm.
-	 * @return List of StoragePoolVO
-	 */
-	StoragePoolVO getStoragePoolForVm(long vmId);
-	
     String getPrimaryStorageNameLabel(VolumeVO volume);
 
     /**
@@ -270,7 +189,6 @@ public interface StorageManager extends Manager {
 
     
     void prepare(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException, ConcurrentOperationException;
-    //void release(VirtualMachineProfile<? extends VirtualMachine> vm);
 
 	void release(VirtualMachineProfile<? extends VMInstanceVO> profile);
 
