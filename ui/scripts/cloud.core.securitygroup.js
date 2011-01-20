@@ -395,31 +395,6 @@ function doEditSecurityGroup2($actionLink, $detailsTab, $midmenuItem1, $readonly
 	});
 }
 
-function doDeleteSecurityGroup($actionLink, $thisTab, $midmenuItem1) {
-	$("#dialog_info")	
-	.text("Are you sure you want to delete this security group?")
-    .dialog('option', 'buttons', { 						
-	    "Confirm": function() { 
-		    $(this).dialog("close"); 	
-		    	
-		    var jsonObj = $midmenuItem1.data("jsonObj");	
-		    		    
-		    var array1 = [];
-            array1.push("&domainid="+jsonObj.domainid);
-            array1.push("&account="+jsonObj.account);
-            array1.push("&name="+jsonObj.name);    
-		    
-			var id = jsonObj.id;
-			var apiCommand = "command=deleteSecurityGroup" + array1.join(""); 	                 
-            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab); 
-	    }, 
-	    "Cancel": function() { 
-		    $(this).dialog("close"); 
-			
-	    } 
-    }).dialog("open");
-}
-
 function securityGroupToMidmenu(jsonObj, $midmenuItem1) {  
     $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj); 
@@ -659,8 +634,8 @@ var securityGroupActionMap = {
         dialogBeforeActionFn: doEditSecurityGroup
     },   
     "Delete Security Group": {               
-        isAsyncJob: false,      
-        dialogBeforeActionFn: doDeleteSecurityGroup,     
+        api: "deleteSecurityGroup",     
+        isAsyncJob: false,              
         inProcessText: "Deleting Security Group....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {  
             $midmenuItem1.slideUp("slow", function() {
