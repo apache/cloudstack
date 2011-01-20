@@ -79,6 +79,7 @@ import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckStateCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
@@ -869,6 +870,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             	return execute((NetworkUsageCommand) cmd);
             } else if (cmd instanceof NetworkRulesSystemVmCommand) {
                return execute((NetworkRulesSystemVmCommand)cmd);
+            } else if (cmd instanceof CleanupNetworkRulesCmd) {
+               return execute((CleanupNetworkRulesCmd)cmd);
             } else {
         		s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -1572,6 +1575,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ", numrules=" + cmd.getRuleSet().length);
     		return new SecurityIngressRuleAnswer(cmd);
     	}
+    }
+    
+    private Answer execute(CleanupNetworkRulesCmd cmd) {
+        boolean result = cleanup_rules();
+        return new Answer(cmd, result, "");
     }
     
 	protected GetVncPortAnswer execute(GetVncPortCommand cmd) {
@@ -3498,6 +3506,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		return false;
     	}
     	return true;
+    }
+    
+    private boolean cleanup_rules() {
+        if (!_can_bridge_firewall) {
+            return false;
+        }
+        Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
+        cmd.add("cleanup_rules");
+        String result = cmd.execute();
+        if (result != null) {
+            return false;
+        }
+        return true;
     }
     
     private String get_rule_logs_for_vms() {

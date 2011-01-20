@@ -128,6 +128,7 @@ import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.SecurityGroupManager;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
@@ -2134,7 +2135,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		} finally {
 			updateVmStateForFailedVmCreation(vm.getId());
 		}
-		vm.setPassword(password);
+		
+		_networkGroupMgr.addInstanceToGroups(vm.getId(), cmd.getSecurityGroupList());
+		
 	    return vm;
 	}
 	

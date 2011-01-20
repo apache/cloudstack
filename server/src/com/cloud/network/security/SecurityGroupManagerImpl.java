@@ -1044,7 +1044,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 				agentId = vm.getHostId();
 				if (agentId != null ) {
 					_rulesetLogDao.findByVmId(work.getInstanceId());
-					SecurityIngressRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), vm.getGuestIpAddress(), vm.getGuestMacAddress(), vm.getId(), generateRulesetSignature(rules), seqnum, rules);
+					SecurityIngressRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), vm.getPrivateIpAddress(), vm.getPrivateMacAddress(), vm.getId(), generateRulesetSignature(rules), seqnum, rules);
 					Commands cmds = new Commands(cmd);
 					try {
 						_agentMgr.send(agentId, cmds, _answerListener);
@@ -1067,16 +1067,21 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
 	@Override
 	@DB
-	public boolean addInstanceToGroups(final Long userVmId, final List<SecurityGroupVO> groups) {
+	public boolean addInstanceToGroups(final Long userVmId, final List<String> groups) {
 		if (!_enabled) {
 			return true;
 		}
-		if (groups != null) {
-			final Set<SecurityGroupVO> uniqueGroups = new TreeSet<SecurityGroupVO>(new SecurityGroupVOComparator());
-			uniqueGroups.addAll(groups);
+		if (groups != null || !groups.isEmpty()) {
+	
 			final Transaction txn = Transaction.currentTxn();
 			txn.start();
 			UserVm userVm = _userVMDao.acquireInLockTable(userVmId); //ensures that duplicate entries are not created.
+			List<SecurityGroupVO> sgs = new ArrayList<SecurityGroupVO>();
+			for (String sg : groups) {
+			    sgs.add(_securityGroupDao.findByAccountAndName(userVm.getAccountId(), sg));
+			}
+			final Set<SecurityGroupVO> uniqueGroups = new TreeSet<SecurityGroupVO>(new SecurityGroupVOComparator());
+			uniqueGroups.addAll(sgs);
 			if (userVm == null) {
 				s_logger.warn("Failed to acquire lock on user vm id=" + userVmId);
 			}
