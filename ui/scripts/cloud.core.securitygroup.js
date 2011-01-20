@@ -227,7 +227,8 @@ function initAddIngressRuleDialog() {
 		    	var moreCriteria = [];			    	    	
 		    	moreCriteria.push("&domainid=" + domainId);
                 moreCriteria.push("&account=" + account);
-                moreCriteria.push("&securitygroupname=" + securityGroupName);   
+                //moreCriteria.push("&securitygroupname=" + securityGroupName);   
+                moreCriteria.push("&securitygroupid=" + securityGroupId);   
                   	    	
 	            if (protocol!=null && protocol.length > 0) 
 		            moreCriteria.push("&protocol="+encodeURIComponent(protocol));	
@@ -564,7 +565,8 @@ function doDeleteIngressRule($actionLink, $subgridItem) {
             var moreCriteria = [];		 
 	        moreCriteria.push("&domainid="+securityGroupObj.domainid);    	    	        
 	        moreCriteria.push("&account="+securityGroupObj.account);    	    		    	        
-	        moreCriteria.push("&securitygroupname="+securityGroupObj.name);    
+	        //moreCriteria.push("&securitygroupname="+securityGroupObj.name);    
+    	    moreCriteria.push("&securitygroupid="+securityGroupObj.id);    
     	    	
     	    var protocol = ingressRuleObj.protocol;      
 	        moreCriteria.push("&protocol="+protocol);		    	
