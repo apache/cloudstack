@@ -2405,7 +2405,22 @@ public class ManagementServerImpl implements ManagementServer {
         	}
         	else
         	{
-        		returnableVolumes.add(v);
+        	    //do not add to returnable list if vol belongs to a user vm that is destoyed and cmd called by user
+        	    if(v.getInstanceId() == null) {
+        	        returnableVolumes.add(v);
+        	    }else {
+        	        if (account.getType() == Account.ACCOUNT_TYPE_NORMAL){
+            	        VMInstanceVO owningVm = _vmInstanceDao.findById(v.getInstanceId());
+            	        if(owningVm != null && owningVm.getType().equals(VirtualMachine.Type.User) && owningVm.getState().equals(VirtualMachine.State.Destroyed)){
+            	            // do not show volumes
+            	            // do nothing
+            	        }else {
+            	            returnableVolumes.add(v);
+            	        }
+        	        }else {
+        	            returnableVolumes.add(v);
+        	        }
+        	    }       	        
         	}
         }
         
