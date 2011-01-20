@@ -2473,6 +2473,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         long userId = UserContext.current().getCallerUserId();
         if (size == null) {
             size = offering.getDiskSizeInBytes();
+        }else {
+            size = (size * 1024 * 1024 * 1024);
         }
         VolumeVO vol = new VolumeVO(type, name, vm.getDataCenterId(), owner.getDomainId(), owner.getId(), offering.getId(), size);
         if (vm != null) {
