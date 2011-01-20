@@ -687,8 +687,6 @@ $(document).ready(function() {
 				g_timezoneoffset = json.loginresponse.timezoneoffset;					
 				if (json.loginresponse.hypervisortype != null) 
 					g_hypervisorType = json.loginresponse.hypervisortype;				
-				if (json.loginresponse.directattachsecuritygroupsenabled != null) 
-					g_directAttachSecurityGroupsEnabled = json.loginresponse.directattachsecuritygroupsenabled;
 					
 				$.cookie('sessionKey', g_sessionKey, { expires: 1});
 				$.cookie('hypervisortype', g_hypervisorType, { expires: 1});
@@ -698,7 +696,6 @@ $(document).ready(function() {
 				$.cookie('role', g_role, { expires: 1});
 				$.cookie('timezoneoffset', g_timezoneoffset, { expires: 1});  
 				$.cookie('timezone', g_timezone, { expires: 1});  
-				$.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1}); 
 				
 				$.ajax({
 					data: createURL("command=listCapabilities"),
@@ -708,6 +705,11 @@ $(document).ready(function() {
 						if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
 							g_userPublicTemplateEnabled = ""+json.listcapabilitiesresponse.capability.userpublictemplateenabled;
 							$.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});
+						}
+						
+						if (json.listcapabilitiesresponse.capability.securitygroupsenabled != null) {
+							g_directAttachSecurityGroupsEnabled = ""+json.listcapabilitiesresponse.capability.securitygroupsenabled;
+							$.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1});
 						}
 						
 						buildSecondLevelNavigation();

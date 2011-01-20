@@ -668,11 +668,6 @@ public class ApiServer implements HttpRequestHandler {
                 hypervisorType = "kvm";
             }
             
-            String directAttachSecurityGroupsEnabled = _ms.getConfigurationValue("direct.attach.security.groups.enabled");
-            if(directAttachSecurityGroupsEnabled == null) {
-                directAttachSecurityGroupsEnabled = "false";
-            }     
-            
             // set the userId and account object for everyone
             session.setAttribute("userid", userAcct.getId());
             session.setAttribute("username", userAcct.getUsername());
@@ -683,7 +678,6 @@ public class ApiServer implements HttpRequestHandler {
             session.setAttribute("domainid", account.getDomainId());
             session.setAttribute("type", Short.valueOf(account.getType()).toString());
             session.setAttribute("hypervisortype", hypervisorType);
-            session.setAttribute("directattachsecuritygroupsenabled", directAttachSecurityGroupsEnabled);
 
             if (timezone != null) {
                 session.setAttribute("timezone", timezone);
