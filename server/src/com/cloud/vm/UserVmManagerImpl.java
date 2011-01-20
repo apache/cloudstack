@@ -1015,8 +1015,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             Long diskOfferingId = volume.getDiskOfferingId();
             long sizeMB = volume.getSize()/(1024*1024);
             StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
-            
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, templateId , sizeMB);
+            Long offeringId = null;
+            if(diskOfferingId != null){
+                DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
+                if(offering!=null && (offering.getType() == DiskOfferingVO.Type.Disk)){
+                    offeringId = offering.getId();
+                }
+            }
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), offeringId, templateId , sizeMB);
             _usageEventDao.persist(usageEvent);
         }
         

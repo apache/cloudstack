@@ -670,7 +670,15 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         long sizeMB = createdVolume.getSize()/(1024*1024);
 
         if (createdVolume.getPath() != null) {
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, templateId , sizeMB);
+            Long offeringId = null;
+            if(diskOfferingId != null){
+                DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
+                if(offering!=null && (offering.getType() == DiskOfferingVO.Type.Disk)){
+                    offeringId = offering.getId();
+                }
+            }
+            
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), offeringId, templateId , sizeMB);
             _usageEventDao.persist(usageEvent);
         }
         txn.commit();
@@ -2541,7 +2549,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             
             EventUtils.saveEvent(userId, vol.getAccountId(), EventTypes.EVENT_VOLUME_CREATE, "Created volume: "+ vol.getName() +" with size: " + sizeMB + " MB");
             
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), template.getId() , sizeMB);
+            Long offeringId = null;
+            
+            if(offering.getType() == DiskOfferingVO.Type.Disk){
+                offeringId = offering.getId();
+            }
+            
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offeringId, template.getId() , sizeMB);
             _usageEventDao.persist(usageEvent);
             
             _accountMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
