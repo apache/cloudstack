@@ -942,7 +942,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         String timezone = cmd.getTimezone();
         String accountName = cmd.getAccountName();
         short userType = cmd.getAccountType().shortValue();
-        String networkDomain = cmd.getNetworkdomain();
         Long userId = UserContext.current().getCallerUserId();
         
         try {
@@ -982,7 +981,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 newAccount.setDomainId(domainId);
                 newAccount.setType(userType);
                 newAccount.setState(State.enabled);
-                newAccount.setNetworkDomain(networkDomain);
                 newAccount = _accountDao.persist(newAccount);
                 accountId = newAccount.getId();
             }

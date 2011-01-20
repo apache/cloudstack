@@ -935,7 +935,7 @@ CREATE TABLE  `cloud`.`account` (
   `state` varchar(10) NOT NULL default 'enabled',
   `removed` datetime COMMENT 'date removed',
   `cleanup_needed` tinyint(1) NOT NULL default '0',
-  `network_domain` varchar(100) COMMENT 'Network domain name of the Vms of the account',
+--  `network_domain` varchar(100) COMMENT 'Network domain name of the Vms of the account',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

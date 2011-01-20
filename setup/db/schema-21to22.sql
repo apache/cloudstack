@@ -19,3 +19,5 @@ ALTER TABLE `cloud`.`cluster` ADD COLUMN `cluster_type` varchar(64) DEFAULT 'Clo
 -- network_group_vm_map table --> security_group_vm_map table
 DROP TABLE `cloud`.`security_group`;
 DROP TABLE `cloud`.`security_group_vm_map`;
+
+ALTER TABLE `cloud`.`account` DROP COLUMN `network_domain`;
