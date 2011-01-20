@@ -57,9 +57,6 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
-import com.cloud.event.EventVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -216,12 +213,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
     @Override
     public SecondaryStorageVmVO startSecStorageVm(long secStorageVmId) {
-        boolean started = false;
-        long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_START,
-                "Starting secondary storage Vm with Id: " + secStorageVmId);
         try {
             SecondaryStorageVmVO ssvm = start(secStorageVmId);
-            started = true;
             return ssvm;
         } catch (StorageUnavailableException e) {
             s_logger.warn("Exception while trying to start secondary storage vm", e);
@@ -238,15 +231,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         } catch (Exception e) {
             s_logger.warn("Exception while trying to start secondary storage vm", e);
             return null;
-        }
-        finally {
-            if (started) {
-                EventUtils.saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_INFO, EventTypes.EVENT_SSVM_START,
-                        "Started secondary storage Vm with Id: " + secStorageVmId, startEventId);
-            } else {
-                EventUtils.saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_ERROR, EventTypes.EVENT_SSVM_START,
-                        "Failed to start secondary storage Vm with Id: " + secStorageVmId, startEventId);
-            }
         }
     }
 
@@ -375,8 +359,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             s_logger.debug("Assign secondary storage vm from a newly started instance for request from data center : " + dataCenterId);
         }
 
-        long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_SSVM_CREATE,
-                "Creating secondary storage Vm in zone : " + dataCenterId);
         Map<String, Object> context = createSecStorageVmInstance(dataCenterId);
 
         long secStorageVmId = (Long) context.get("secStorageVmId");
@@ -385,8 +367,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 s_logger.trace("Creating secondary storage vm instance failed, data center id : " + dataCenterId);
             }
 
-            EventUtils.saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_ERROR, EventTypes.EVENT_SSVM_CREATE,
-                    "Failed to create secondary storage Vm in zone : " + dataCenterId, startEventId);
             return null;
         }
 
@@ -396,8 +376,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         if (secStorageVm != null) {
             SubscriptionMgr.getInstance().notifySubscribers(ALERT_SUBJECT, this,
                     new SecStorageVmAlertEventArgs(SecStorageVmAlertEventArgs.SSVM_CREATED, dataCenterId, secStorageVmId, secStorageVm, null));
-            EventUtils.saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_INFO, EventTypes.EVENT_SSVM_CREATE,
-                    "Successfully created secondary storage Vm " + secStorageVm.getName() + " in zone : " + dataCenterId, startEventId);
             return secStorageVm;
         } else {
             if (s_logger.isDebugEnabled()) {
@@ -410,8 +388,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                     this,
                     new SecStorageVmAlertEventArgs(SecStorageVmAlertEventArgs.SSVM_CREATE_FAILURE, dataCenterId, secStorageVmId, null,
                             "Unable to allocate storage"));
-            EventUtils.saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_ERROR, EventTypes.EVENT_SSVM_CREATE,
-                    "Failed to create secondary storage Vm in zone : " + dataCenterId, startEventId);
         }
         return null;
     }

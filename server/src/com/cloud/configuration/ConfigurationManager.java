@@ -184,7 +184,5 @@ public interface ConfigurationManager extends Manager {
     
     void createDefaultNetworks(long zoneId) throws ConcurrentOperationException;
     
-    Long saveConfigurationEvent(long userId, Long accountId, String type, String description, String... paramsList);
-	
     DataCenterVO getZone(long id);
 }

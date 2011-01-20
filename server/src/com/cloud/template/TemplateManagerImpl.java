@@ -549,9 +549,6 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
         }
         
-        long userId = UserContext.current().getCallerUserId();
-        long accountId = template.getAccountId();
-        String event = isISO ? EventTypes.EVENT_ISO_EXTRACT : EventTypes.EVENT_TEMPLATE_EXTRACT;
         if (extractMode == Upload.Mode.FTP_UPLOAD){
             URI uri = null;
             try {
@@ -580,23 +577,13 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                 throw new IllegalArgumentException(template.getName() + " upload is in progress. Please wait for some time to schedule another upload for the same"); 
             }
         
-            //long eventId = EventUtils.saveScheduledEvent(userId, accountId, event, "Extraction job");
-      
-    // FIXME:  scheduled event should've already been saved, we should be saving this started event here...
-    //        String event = template.getFormat() == ImageFormat.ISO ? EventTypes.EVENT_ISO_UPLOAD : EventTypes.EVENT_TEMPLATE_UPLOAD;
-    //        EventUtils.saveStartedEvent(template.getAccountId(), template.getAccountId(), event, "Starting upload of " +template.getName()+ " to " +url, cmd.getStartEventId());
-           
-            EventUtils.saveStartedEvent(userId, accountId, event, "Starting extraction of " +template.getName()+ " mode:" +extractMode.toString(), eventId);            
             return _uploadMonitor.extractTemplate(template, url, tmpltHostRef, zoneId, eventId, job.getId(), mgr);            
         }
         
-        EventUtils.saveStartedEvent(userId, accountId, event, "Starting extraction of " +template.getName()+ " in mode:" +extractMode.toString(), eventId);
         UploadVO vo = _uploadMonitor.createEntityDownloadURL(template, tmpltHostRef, zoneId, eventId);
         if (vo!=null){                                  
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, event, "Completed extraction of "+template.getName()+ " in mode:" +mode, null, eventId);
             return vo.getId();
         }else{
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, event, "Failed extraction of "+template.getName()+ " in mode:" +mode, null, eventId);
             return null;
         }
     }    
@@ -755,25 +742,17 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	      }
         
         // Event details
-        String params = "id=" + templateId + "\ndcId="+destZoneId+"\nsize="+srcTmpltHost.getSize();
         Account account = _accountDao.findById(vmTemplate.getAccountId());
         String copyEventType;
-        String copyEventDescription;
         String createEventType;
-        String createEventDescription;
-        String templateType;
         if (vmTemplate.getFormat().equals(ImageFormat.ISO)){
             copyEventType = EventTypes.EVENT_ISO_COPY;
             createEventType = EventTypes.EVENT_ISO_CREATE;
-            templateType = "ISO ";
         } else {
             copyEventType = EventTypes.EVENT_TEMPLATE_COPY;
             createEventType = EventTypes.EVENT_TEMPLATE_CREATE;
-            templateType = "Template ";
         }
         
-        copyEventDescription = templateType + vmTemplate.getName() + " started copying to zone: " + destZone.getName() + ".";
-        createEventDescription = templateType + vmTemplate.getName() + " succesfully created in zone: " + destZone.getName() + ".";
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -790,8 +769,6 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         				dstTmpltHost.setDestroyed(false);
         				_tmpltHostDao.update(dstTmpltHost.getId(), dstTmpltHost);
         				
-        				saveEvent(userId, account.getId(), account.getDomainId(), copyEventType, copyEventDescription, EventVO.LEVEL_INFO, params);
-        				saveEvent(userId, account.getId(), account.getDomainId(), createEventType, createEventDescription, EventVO.LEVEL_INFO, params);
         				return true;
         			}
         		} else if (dstTmpltHost != null && dstTmpltHost.getDownloadState() == Status.DOWNLOAD_ERROR){
@@ -815,7 +792,6 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	
         UsageEventVO usageEvent = new UsageEventVO(copyEventType, account.getId(), destZoneId, templateId, null, null, null, srcTmpltHost.getSize());
         _usageEventDao.persist(usageEvent);
-        saveEvent(userId, account.getId(), account.getDomainId(), copyEventType, copyEventDescription, EventVO.LEVEL_INFO, params);
     	return true;
     }
       
@@ -921,17 +897,13 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 			}
 		}
 		
-		String params = "id=" + template.getId();
 		Account account = _accountDao.findById(template.getAccountId());
 		String eventType = "";
-		String description = "";
 		
 		if (template.getFormat().equals(ImageFormat.ISO)){
 			eventType = EventTypes.EVENT_ISO_DELETE;
-			description = "ISO ";
 		} else {
 			eventType = EventTypes.EVENT_TEMPLATE_DELETE;
-			description = "Template ";
 		}
 		
 		// Iterate through all necessary secondary storage hosts and mark the template on each host as destroyed
@@ -957,8 +929,6 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 						_tmpltZoneDao.remove(templateZone.getId());
 					}
 					
-					String zoneParams = params + "\ndcId=" + sZoneId;
-					saveEvent(userId, account.getId(), account.getDomainId(), eventType, description + template.getName() + " succesfully deleted.", EventVO.LEVEL_INFO, zoneParams, 0);
 					UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), sZoneId, templateId, null, null, null, null);
 					_usageEventDao.persist(usageEvent);
 				} finally {
@@ -1052,33 +1022,6 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	}
 	}
     
-    private Long saveEvent(long userId, Long accountId, Long domainId, String type, String description, String level, String params, long startEventId) {
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(accountId);
-        event.setType(type);
-        event.setDescription(description);
-        event.setStartId(startEventId);
-        
-        if (domainId != null) {
-        	event.setDomainId(domainId);
-        }
-        
-        if (level != null) {
-        	event.setLevel(level);
-        }
-        
-        if (params != null) {
-        	event.setParameters(params);
-        }
-        
-        return _eventDao.persist(event).getId();
-    }
-    
-    private Long saveEvent(long userId, Long accountId, Long domainId, String type, String description, String level, String params) {
-        return saveEvent(userId, accountId, domainId, type, description, level, params,0); 
-    }
-    
     @Override
     public String getName() {
         return _name;
@@ -1139,8 +1082,6 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
 		Long templateId = _tmpltDao.addTemplateToZone(template, zoneId);
 		UserAccount userAccount = _userAccountDao.findById(userId);
-		saveEvent(userId, userAccount.getAccountId(), userAccount.getDomainId(), EventTypes.EVENT_TEMPLATE_DOWNLOAD_START,
-				"Started download of template:  " + template.getName(), null, null);
 
 		_downloadMonitor.downloadTemplateToStorage(id, zoneId);
 
@@ -1250,12 +1191,6 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     private boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach) {
     	UserVmVO vm = _userVmDao.findById(vmId);
     	VMTemplateVO iso = _tmpltDao.findById(isoId);
-    	long startEventId = 0;
-    	if(attach){
-    		startEventId = EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_ISO_ATTACH, "Attaching ISO: "+isoId+" to Vm: "+vmId, startEventId);
-    	} else {
-    		startEventId = EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_ISO_DETACH, "Detaching ISO: "+isoId+" from Vm: "+vmId, startEventId);
-    	}
 
         boolean success = _vmMgr.attachISOToVM(vmId, isoId, attach);
         
@@ -1266,21 +1201,6 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         }
         _userVmDao.update(vmId, vm);
         
-        if (success) {
-            if (attach) {
-            	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ISO_ATTACH, "Successfully attached ISO: " + iso.getName() + " to VM with ID: " + vmId,
-                        null, startEventId);
-            } else {
-            	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ISO_DETACH, "Successfully detached ISO from VM with ID: " + vmId, null, startEventId);
-            }
-        } else {
-            if (attach) {
-            	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ISO_ATTACH, "Failed to attach ISO: " + iso.getName() + " to VM with ID: " + vmId, null, startEventId);
-            } else {
-            	EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ISO_DETACH, "Failed to detach ISO from VM with ID: " + vmId, null, startEventId);
-            }
-        }
-
         return success;
     }
 

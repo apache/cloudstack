@@ -24,36 +24,14 @@ import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
-import com.cloud.user.Account;
-import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.utils.component.AnnotationInterceptor;
 
 public class ActionEventCallback implements MethodInterceptor, AnnotationInterceptor<EventVO> {
-    boolean create = false;
-    private String eventType = null;
-    private long accountId = Account.ACCOUNT_ID_SYSTEM;
-    private long userId = User.UID_SYSTEM;
-    private String description = null;
-    private long startEventId = 0;
 
     @Override
     public Object intercept(Object object, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
-        ActionEvent actionEvent = method.getAnnotation(ActionEvent.class);
-        EventVO event = null;
-        if (actionEvent != null) {
-            create = actionEvent.create();
-            UserContext ctx = UserContext.current();
-            Long userID = ctx.getCallerUserId();
-            userId = (userID == null) ? User.UID_SYSTEM : userID;
-            eventType = actionEvent.eventType();
-            description = actionEvent.eventDescription();
-            startEventId = ctx.getStartEventId();
-
-            if(!create){
-                event = interceptStart(method);
-            }
-        }
+        EventVO event = interceptStart(method);;
         try {
             return methodProxy.invokeSuper(object, args);
         } finally {
@@ -70,18 +48,8 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
         Method method = (Method)element;
         ActionEvent actionEvent = method.getAnnotation(ActionEvent.class);
         if (actionEvent != null) {
-            create = actionEvent.create();
             return true;
         }
-        
-        Class<?> clazz = method.getDeclaringClass();
-        do {
-            actionEvent = clazz.getAnnotation(ActionEvent.class);
-            if (actionEvent != null) {
-                return true;
-            }
-            clazz = clazz.getSuperclass();
-        } while (clazz != Object.class && clazz != null);
         
         return false;
     }
@@ -89,11 +57,16 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
     @Override
     public EventVO interceptStart(AnnotatedElement element) {
         EventVO event = null;
-        if(eventType != null){            
-            long eventId = EventUtils.saveStartedEvent(userId, accountId, eventType, description, startEventId);
-            if(startEventId == 0){
-                // There was no scheduled event. so Started event Id
-                startEventId = eventId;
+        Method method = (Method)element;
+        ActionEvent actionEvent = method.getAnnotation(ActionEvent.class);
+        if (actionEvent != null) {
+            boolean async = actionEvent.async();
+            if(async){
+                UserContext ctx = UserContext.current();
+                long userId = ctx.getCallerUserId();
+                long accountId = ctx.getAccountId();
+                long startEventId = ctx.getStartEventId();
+                EventUtils.saveStartedEvent(userId, accountId, actionEvent.eventType(), actionEvent.eventDescription(), startEventId);
             }
         }
         return event;
@@ -101,25 +74,37 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
 
     @Override
     public void interceptComplete(AnnotatedElement element, EventVO event) {
-        if(eventType != null){
-            if(create){
+        Method method = (Method)element;
+        ActionEvent actionEvent = method.getAnnotation(ActionEvent.class);
+        if (actionEvent != null) {
+            UserContext ctx = UserContext.current();
+            long userId = ctx.getCallerUserId();
+            long accountId = ctx.getAccountId();
+            long startEventId = ctx.getStartEventId();
+            if(actionEvent.create()){
                 //This start event has to be used for subsequent events of this action
-                startEventId = EventUtils.saveCreatedEvent(userId, accountId, EventVO.LEVEL_INFO, eventType, "Successfully created entity for "+description);
-                UserContext ctx = UserContext.current();
+                startEventId = EventUtils.saveCreatedEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully created entity for "+actionEvent.eventDescription());
                 ctx.setStartEventId(startEventId);
             } else {
-                EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, eventType, "Successfully completed "+description, startEventId);
+                EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully completed "+actionEvent.eventDescription(), startEventId);
             }
         }
     }
 
     @Override
     public void interceptException(AnnotatedElement element, EventVO event) {
-        if(eventType != null){
-            if(create){
-                EventUtils.saveCreatedEvent(userId, accountId, EventVO.LEVEL_ERROR, eventType, "Error while creating entity for "+description);
+        Method method = (Method)element;
+        ActionEvent actionEvent = method.getAnnotation(ActionEvent.class);
+        if (actionEvent != null) {
+            UserContext ctx = UserContext.current();
+            long userId = ctx.getCallerUserId();
+            long accountId = ctx.getAccountId();
+            long startEventId = ctx.getStartEventId();
+            if(actionEvent.create()){
+                long eventId = EventUtils.saveCreatedEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while creating entity for "+actionEvent.eventDescription());
+                ctx.setStartEventId(eventId);
             } else {
-                EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, eventType, "Error while "+description, startEventId);
+                EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while "+actionEvent.eventDescription(), startEventId);
             }
         }
     }

@@ -2629,7 +2629,6 @@ public class ManagementServerImpl implements ManagementServer {
         	if (s_logger.isDebugEnabled()) {
                 s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
             }
-        	EventUtils.saveEvent(user.getId(), user.getAccountId(), EventTypes.EVENT_USER_LOGIN, "user has logged in");
             return user;
         } else {
         	if (s_logger.isDebugEnabled()) {
@@ -2901,19 +2900,12 @@ public class ManagementServerImpl implements ManagementServer {
         if ((domains == null) || domains.isEmpty()) {
             DomainVO domain = new DomainVO(name, ownerId, parentId);
             try {
-                DomainVO dbDomain = _domainDao.create(domain);
-                EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_CREATE, "Domain, " + name + " created with owner id = " + ownerId
-                        + " and parentId " + parentId);
-                return dbDomain;
+                return _domainDao.create(domain);
             } catch (IllegalArgumentException ex) {
                 s_logger.warn("Failed to create domain ", ex);
-            	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_CREATE, "Domain, " + name + " was not created with owner id = " + ownerId
-                        + " and parentId " + parentId);
                 throw ex;
             }
         } else {
-            EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_CREATE, "Domain, " + name + " was not created with owner id = " + ownerId
-                    + " and parentId " + parentId);
             throw new InvalidParameterValueException("Domain with name " + name + " already exists for the parent id=" + parentId);
         }
     }
@@ -2976,23 +2968,11 @@ public class ManagementServerImpl implements ManagementServer {
             List<AccountVO> accounts = _accountDao.search(sc, null);
             for (AccountVO account : accounts) {
                 success = (success && _accountMgr.cleanupAccount(account, UserContext.current().getCallerUserId(), UserContext.current().getCaller()));
-                String description = "Account:" + account.getAccountId();
-                if(success){
-                    EventUtils.saveEvent(User.UID_SYSTEM, account.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ACCOUNT_DELETE, "Successfully deleted " +description);
-                }else{
-                    EventUtils.saveEvent(User.UID_SYSTEM, account.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ACCOUNT_DELETE, "Error deleting " +description);
-                }
-
             }
         }
 
         // delete the domain itself
         boolean deleteDomainSuccess = _domainDao.remove(domainId);
-        if (!deleteDomainSuccess) {
-        	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_DELETE, "Domain with id " + domainId + " was not deleted");
-        } else {
-        	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_DELETE, "Domain with id " + domainId + " was deleted");
-        }
 
         return success && deleteDomainSuccess;
     }
@@ -3030,11 +3010,9 @@ public class ManagementServerImpl implements ManagementServer {
             String updatedDomainPath = getUpdatedDomainPath(domain.getPath(),domainName);
             updateDomainChildren(domain,updatedDomainPath);
             _domainDao.update(domainId, domainName, updatedDomainPath);
-            EventUtils.saveEvent(new Long(1), domain.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_UPDATE, "Domain, " + domainName + " was updated");
             return _domainDao.findById(domainId);
         } else {
             domain = _domainDao.findById(domainId);
-            EventUtils.saveEvent(new Long(1), domain.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_UPDATE, "Failed to update domain " + domain.getName() + " with name " + domainName + ", name in use.");
             s_logger.error("Domain with name " + domainName + " already exists in the system");
             throw new CloudRuntimeException("Failed to update domain " + domainId);
         }
@@ -4285,7 +4263,6 @@ public class ManagementServerImpl implements ManagementServer {
         List<HostVO> storageServers = _hostDao.listByTypeDataCenter(Host.Type.SecondaryStorage, zoneId);
         HostVO sserver = storageServers.get(0);
 
-        EventUtils.saveStartedEvent(userId, accountId, cmd.getEventType(), "Starting extraction of " +volume.getName()+ " mode:"+mode, cmd.getStartEventId());
         List<UploadVO> extractURLList = _uploadDao.listByTypeUploadStatus(volumeId, Upload.Type.VOLUME, UploadVO.Status.DOWNLOAD_URL_CREATED);
         
         if (extractMode == Upload.Mode.HTTP_DOWNLOAD && extractURLList.size() > 0){   
@@ -4326,7 +4303,6 @@ public class ManagementServerImpl implements ManagementServer {
                 uploadJob.setLastUpdated(new Date());
                 _uploadDao.update(uploadJob.getId(), uploadJob);
                 
-                EventUtils.saveEvent(userId, accountId, EventTypes.EVENT_VOLUME_UPLOAD, errorString);                
                 throw new CloudRuntimeException(errorString);            
             }
             
@@ -4342,7 +4318,6 @@ public class ManagementServerImpl implements ManagementServer {
                 return uploadJob.getId();
             }else{ // Volume is copied now make it visible under apache and create a URL.
                 _uploadMonitor.createVolumeDownloadURL(volumeId, volumeLocalPath, Upload.Type.VOLUME, zoneId, uploadJob.getId());                
-                EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, cmd.getEventType(), "Completed extraction of "+volume.getName()+ " in mode:" +mode, null, cmd.getStartEventId() == null ? 0:cmd.getStartEventId());
                 return uploadJob.getId();
             }
         }
@@ -4576,7 +4551,6 @@ public class ManagementServerImpl implements ManagementServer {
 							if(updateCertAns.getResult() == true)
 							{
 								//we have the cert copied over on cpvm
-								long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy with Id: "+cp.getId());    				
 								_consoleProxyMgr.rebootProxy(cp.getId());
 								//when cp reboots, the context will be reinit with the new cert
 								if(s_logger.isDebugEnabled()) {

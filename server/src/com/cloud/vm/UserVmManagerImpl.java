@@ -92,6 +92,7 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
@@ -325,15 +326,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
 	        if (_routerMgr.savePasswordToRouter(vmInstance.getDomainRouterId(), vmInstance.getPrivateIpAddress(), password)) {
 	            // Need to reboot the virtual machine so that the password gets redownloaded from the DomR, and reset on the VM
-	            long startId = EventUtils.saveStartedEvent(userId, vmInstance.getAccountId(), EventTypes.EVENT_VM_REBOOT, "Reboot vm with id:"+vmId);
 	        	if (!rebootVirtualMachine(userId, vmId)) {
-	        	    EventUtils.saveEvent(userId, vmInstance.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_REBOOT, "Failed to reboot vm with id:"+vmId, startId);
 	        		if (vmInstance.getState() == State.Stopped) {
 	        			return true;
 	        		}
 	        		return false;
 	        	} else {
-	                EventUtils.saveEvent(userId, vmInstance.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_REBOOT, "Successfully rebooted vm with id:"+vmId, startId);
 	        		return true;
 	        	}
 	        } else {
@@ -361,7 +359,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             return true;
         }
 
-        long startEventId = EventUtils.saveStartedEvent(userId, vm.getAccountId(), EventTypes.EVENT_VM_STOP, "stopping Vm with Id: "+vmId);
         User user = _userDao.findById(userId);
         Account account = _accountDao.findById(user.getAccountId());
         
@@ -373,11 +370,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
        
         if(status){
-            EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_STOP, "Successfully stopped VM instance : " + vmId, startEventId);
             return status;
             }
         else {
-            EventUtils.saveEvent(userId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_STOP, "Error stopping VM instance : " + vmId, startEventId);
             return status;
         }
     }
@@ -1603,8 +1598,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         _vmDao.updateVM(id, displayName, ha, osTypeId);
 
-         // create a event for the change in HA Enabled flag
-        EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_VM_UPDATE, "Successfully updated virtual machine: "+vm.getName()+". "+description);
         return _vmDao.findById(id);
     }
 
@@ -1852,7 +1845,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return true;
     }
     
-	@Override @DB
+	@Override @DB @ActionEvent (eventType=EventTypes.EVENT_VM_CREATE, eventDescription="creating Vm", create=true)
     public UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException {
         Account caller = UserContext.current().getCaller();
         
@@ -2100,7 +2093,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return vm;
 	}
 	
-	@Override
+	@Override @ActionEvent (eventType=EventTypes.EVENT_VM_CREATE, eventDescription="starting Vm", async=true)
 	public UserVm startVirtualMachine(DeployVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
 	    long vmId = cmd.getEntityId();
 	    UserVmVO vm = _vmDao.findById(vmId);

@@ -237,20 +237,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             }
             
             throw new CloudRuntimeException("Unable to add rule for " + newRule.getSourceIpAddress(), e);
-        } finally {
-            // Save and create the event
-            String description;
-            String ruleName = "ip forwarding";
-            String level = EventVO.LEVEL_INFO;
-
-            if (success == true) {
-                description = "created new " + ruleName + " rule [" + newRule.getSourceIpAddress() + ":" + newRule.getSourcePortStart() + "]->["
-                + newRule.getDestinationIpAddress() + ":" + newRule.getDestinationPortStart() + "]" + " " + newRule.getProtocol();
-            } else {
-                level = EventVO.LEVEL_ERROR;
-                description = "failed to create new " + ruleName + " rule [" + newRule.getSourceIpAddress() + ":" + newRule.getSourcePortStart() + "]->["
-                + newRule.getDestinationIpAddress() + ":" + newRule.getDestinationPortStart() + "]" + " " + newRule.getProtocol();
-            }
         }
     }
     

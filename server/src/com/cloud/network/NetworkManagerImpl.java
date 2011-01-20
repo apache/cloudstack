@@ -65,8 +65,6 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
-import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
@@ -259,11 +257,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         long dcId = network.getDataCenterId();
         long ownerId = owner.getId();
 
-        final EventVO event = new EventVO();
-        event.setUserId(callerId); // system user performed the action...
-        event.setAccountId(ownerId);
-        event.setType(EventTypes.EVENT_NET_IP_ASSIGN);
-
         PublicIp ip = null;
         
         Transaction txn = Transaction.currentTxn();
@@ -297,8 +290,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                 // Increment the number of public IPs for this accountId in the database
                 _accountMgr.incrementResourceCount(ownerId, ResourceType.public_ip);
-                event.setDescription("Acquired a public ip: " + ip.getAddress());
-                _eventDao.persist(event);
             } else {
                 // Account already has ip addresses
                 
@@ -333,9 +324,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
             if (ip == null) {
                 txn.rollback();
-                event.setLevel(EventVO.LEVEL_ERROR);
-                event.setDescription("Failed to acquire a public ip.");
-                _eventDao.persist(event);
                 s_logger.error("Unable to get source nat ip address for account " + ownerId);
             }
         }
@@ -524,11 +512,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(ownerId);
-        event.setType(EventTypes.EVENT_NET_IP_ASSIGN);
-
         PublicIp ip = null;
         boolean success = false;
         
@@ -566,9 +549,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             _accountMgr.incrementResourceCount(ownerId, ResourceType.public_ip);
 
             Ip ipAddress = ip.getAddress();
-            event.setParameters("address=" + ipAddress + "\nsourceNat=" + false + "\ndcId=" + zoneId);
-            event.setDescription("Assigned a public IP address: " + ipAddress);
-            _eventDao.persist(event);
             
             s_logger.debug("Got " + ipAddress + " to assign for account " + owner.getId() + " in zone " + network.getDataCenterId());
 
@@ -604,9 +584,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     _ipAddressDao.unassignIpAddress(ip.getAddress());
                     _accountMgr.decrementResourceCount(ownerId, ResourceType.public_ip);
 
-                    event.setLevel(EventVO.LEVEL_ERROR);
-                    event.setDescription("");
-                    _eventDao.persist(event);
                     txn.commit();
                 }
             }
@@ -661,9 +638,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 _usageEventDao.persist(usageEvent);
             }
         }
-        
-
-        EventUtils.saveEvent(userId, ip.getAllocatedToAccountId(), EventTypes.EVENT_NET_IP_RELEASE, "released a public ip: " + addr);
         
         return success;
     }
@@ -1455,21 +1429,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
            }  
            txn.commit(); 
            
-           String eventMsg = "Successfully created network " + name + " (networkOfferingId=" + networkOfferingId + ", isShared=" + isShared + ", ownerId=" + ownerId + ", netmask=" + netmask + ", startIP=" + startIP + ", endIP=" + endIP + ", gateway=" + gateway + ", vlan=" + vlanId + ")";
-           if (networks != null && !networks.isEmpty()) {
-               _configMgr.saveConfigurationEvent(userId, ownerId, EventTypes.EVENT_NETWORK_CREATE, eventMsg, 
-                       "dcId=" + zoneId,
-                       "networkOfferingId=" + networkOfferingId,
-                       "name=" + name,
-                       "isShared=" + isShared,
-                       "ownerId=" + ownerId,
-                       "networkGateway=" + gateway,
-                       "networkNetmask=" + netmask, 
-                       "startIP=" + startIP,
-                       "endIP=" + endIP,
-                       "vlan=" + vlanId);
-           }
-           
            return networks.get(0);
        } catch (Exception ex) {
            s_logger.warn("Unexpected exception while creating network ", ex);
@@ -1725,8 +1684,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 _networksDao.update(network.getId(), network);
                 _networksDao.remove(network.getId());
                 txn.commit();
-                String eventMsg = "Successfully deleted network " + network.getName() + " (id=" + networkId + ")";
-                _configMgr.saveConfigurationEvent(callerUserId, network.getAccountId(), EventTypes.EVENT_NETWORK_DELETE, eventMsg, "id=" + networkId, "dcId=" + network.getDataCenterId(), "accountId=" + network.getAccountId());  
             }
         } 
         

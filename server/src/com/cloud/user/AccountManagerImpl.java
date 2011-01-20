@@ -840,13 +840,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
 
             for (UserVmVO vm : vms) {
-                long startEventId = EventUtils.saveStartedEvent(callerUserId, vm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Destroyed VM instance : " + vm.getName());
                 if (!_vmMgr.expunge(vm, callerUserId, caller)) {
                     s_logger.error("Unable to destroy vm: " + vm.getId());
                     accountCleanupNeeded = true;
-                    EventUtils.saveEvent(callerUserId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_DESTROY, "Unable to destroy vm: " + vm.getId(), startEventId);
-                } else {
-                    EventUtils.saveEvent(callerUserId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_DESTROY, "Successfully destroyed VM instance : " + vm.getName(), startEventId);
                 }
             }
             
@@ -1010,12 +1006,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 throw new CloudRuntimeException("The user " + username + " being creating is using a password that is different than what's in the db");
             }
 
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_USER_CREATE, "User, " + username + " for accountId = " + accountId
-                    + " and domainId = " + domainId + " was created.");
             return _userAccountDao.findById(dbUser.getId());
         } catch (Exception e) {
-            EventUtils.saveEvent(new Long(1), new Long(1), EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_CREATE, "Error creating user, " + username + " for accountId = " + accountId
-                    + " and domainId = " + domainId);
             if (e instanceof CloudRuntimeException) {
                 s_logger.info("unable to create user: " + e);
             } else {
@@ -1069,8 +1061,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new CloudRuntimeException("The user " + userName + " being creating is using a password that is different than what's in the db");
         }
         
-        EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_USER_CREATE, "User, " + userName + " for accountId = " + accountId
-                + " and domainId = " + domainId + " was created.");
         return dbUser;
     }
     
@@ -1152,12 +1142,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
 
             _userDao.update(id, userName, password, firstName, lastName, email, accountId, timeZone, apiKey, secretKey);
-            EventUtils.saveEvent(new Long(1), Long.valueOf(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_UPDATE, "User, " + userName + " for accountId = "
-                    + accountId + " domainId = " + userAccount.getDomainId() + " and timezone = "+timeZone + " was updated.");
         } catch (Throwable th) {
             s_logger.error("error updating user", th);
-            EventUtils.saveEvent(Long.valueOf(1), Long.valueOf(1), EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_UPDATE, "Error updating user, " + userName
-                    + " for accountId = " + accountId + " and domainId = " + userAccount.getDomainId());
             throw new CloudRuntimeException("Unable to update user " + id);
         } 
         return _userAccountDao.findById(id);
@@ -1454,15 +1440,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new InvalidParameterValueException("Account id : " + user.getAccountId() + " is a system account, delete for user associated with this account is not allowed");
         }
         
-        long accountId = user.getAccountId();
-        long userId = UserContext.current().getCallerUserId();
-        boolean success = _userDao.remove(id);
-        if(success){
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_USER_DELETE, "Deleted User, " + user.getUsername() + " for accountId = " + user.getAccountId());
-        } else {
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_DELETE, "Failed to delete User, " + user.getUsername() + " for accountId = " + user.getAccountId());
-        }
-        return success;
+        return _userDao.remove(id);
 	}
 	
     protected class AccountCleanupTask implements Runnable {

@@ -90,6 +90,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEvent;
 import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
@@ -1597,7 +1598,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     
     
     /*Just allocate a volume in the database, don't send the createvolume cmd to hypervisor. The volume will be finally created only when it's attached to a VM.*/
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_VOLUME_CREATE, eventDescription="creating volume", create=true)
     public VolumeVO allocVolume(CreateVolumeCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceAllocationException {
         // FIXME:  some of the scheduled event stuff might be missing here...
         Account account = UserContext.current().getCaller();
@@ -1755,7 +1756,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         return volume;
     }
 
-    @Override @DB
+    @Override @DB @ActionEvent (eventType=EventTypes.EVENT_VOLUME_CREATE, eventDescription="creating volume", async=true)
     public VolumeVO createVolume(CreateVolumeCmd cmd) {
         VolumeVO volume = _volsDao.findById(cmd.getEntityId());
 //        VolumeVO createdVolume = null;
@@ -2263,18 +2264,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         _storagePoolDao.persist(primaryStorage);
     }
 
-    private Long saveScheduledEvent(Long userId, Long accountId, String type, String description) 
-    {
-        EventVO event = new EventVO();
-        event.setUserId(userId);
-        event.setAccountId(accountId);
-        event.setType(type);
-        event.setState(Event.State.Scheduled);
-        event.setDescription("Scheduled async job for "+description);
-        event = _eventDao.persist(event);
-        return event.getId();
-    }
-
 	@Override
 	@DB
 	public synchronized StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ServerApiException{
@@ -2519,7 +2508,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         if(vm instanceof UserVm){
             long sizeMB = size / (1024 * 1024);
             
-            EventUtils.saveEvent(userId, vol.getAccountId(), EventTypes.EVENT_VOLUME_CREATE, "Created volume: "+ vol.getName() +" with size: " + sizeMB + " MB");
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(), null , sizeMB);
             _usageEventDao.persist(usageEvent);
             
@@ -2563,8 +2551,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         //Create event and update resource count for volumes if vm is a user vm
         if(vm instanceof UserVm){
             long sizeMB = vol.getSize() / (1024 * 1024);
-            
-            EventUtils.saveEvent(userId, vol.getAccountId(), EventTypes.EVENT_VOLUME_CREATE, "Created volume: "+ vol.getName() +" with size: " + sizeMB + " MB");
             
             Long offeringId = null;
             

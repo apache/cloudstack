@@ -370,6 +370,7 @@ public class ApiServer implements HttpRequestHandler {
             Long objectId = null;
             if (cmdObj instanceof BaseAsyncCreateCmd) {
                 BaseAsyncCreateCmd createCmd = (BaseAsyncCreateCmd)cmdObj;
+                ctx.setAccountId(createCmd.getEntityOwnerId());
                 _dispatcher.dispatchCreateCmd(createCmd, params);
                 objectId = createCmd.getEntityId();
                 params.put("id", objectId.toString());
@@ -386,13 +387,21 @@ public class ApiServer implements HttpRequestHandler {
                 params.put("ctxAccountId", String.valueOf(account.getId()));
             }
 
+            long startEventId = ctx.getStartEventId();
+            asyncCmd.setStartEventId(startEventId);
+            
             // save the scheduled event
             Long eventId = EventUtils.saveScheduledEvent((userId == null) ? User.UID_SYSTEM : userId, asyncCmd.getEntityOwnerId(),
-                    asyncCmd.getEventType(), asyncCmd.getEventDescription());
-
-            if (eventId != null) {
-                params.put("starteventid", eventId.toString());
+                    asyncCmd.getEventType(), asyncCmd.getEventDescription(), startEventId);
+            if(startEventId == 0){
+                //There was no create event before, set current event id as start eventId
+                startEventId = eventId;
             }
+            
+            params.put("ctxStartEventId", String.valueOf(startEventId));
+            
+            ctx.setAccountId(asyncCmd.getEntityOwnerId());
+       
 
             AsyncJobVO job = new AsyncJobVO();
             job.setInstanceId((objectId == null) ? asyncCmd.getInstanceId() : objectId);

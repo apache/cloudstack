@@ -346,14 +346,14 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
         newRule = _lbDao.persist(newRule);
 
-        boolean success = false;
         try {
             _rulesMgr.detectRulesConflict(newRule, ipAddr);
             if (!_rulesDao.setStateToAdd(newRule)) {
                 throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
             }
             s_logger.debug("Load balancer " + newRule.getId() + " for Ip address " +  srcIp + ", public port " + srcPortStart + ", private port " + defPortStart+ " is added successfully.");
-            success = true;
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_LOAD_BALANCER_CREATE, ipAddr.getAllocatedToAccountId(), ipAddr.getDataCenterId(), newRule.getId(), null);
+            _usageEventDao.persist(usageEvent);
             return newRule;
         } catch (Exception e) {
             _lbDao.remove(newRule.getId());
@@ -361,26 +361,6 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
                 throw (NetworkRuleConflictException) e;
             }
             throw new CloudRuntimeException("Unable to add rule for " + newRule.getSourceIpAddress(), e);
-        } finally {
-            long userId = caller.getCallerUserId();
-
-            EventVO event = new EventVO();
-            event.setUserId(userId);
-            event.setAccountId(ipAddr.getAllocatedToAccountId());
-            event.setType(EventTypes.EVENT_LOAD_BALANCER_CREATE);
-
-            if (!success) {
-                event.setDescription("Failed to create load balancer " + lb.getName() + " on ip address " + srcIp + "[" + srcPortStart + "->"
-                        + defPortStart + "]");
-                event.setLevel(EventVO.LEVEL_ERROR);
-            } else {
-                event.setDescription("Successfully created load balancer " + lb.getName() + " on ip address " + srcIp + "[" + srcPortStart + "->"
-                        + defPortStart + "]");
-                event.setLevel(EventVO.LEVEL_INFO);
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_LOAD_BALANCER_CREATE, ipAddr.getAllocatedToAccountId(), ipAddr.getDataCenterId(), newRule.getId(), null);
-                _usageEventDao.persist(usageEvent);
-            }
-            _eventDao.persist(event);
         }
     }
 
