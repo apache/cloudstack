@@ -52,6 +52,7 @@ function afterLoadAccountJSP() {
         initDialog("dialog_change_password", 450);    
         initDialog("dialog_add_user", 450);
         
+        $("#top_buttons").find("#add_account_button").show();        
         bindAddAccountButton();
         bindAddUserButton();   
     }
