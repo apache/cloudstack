@@ -1738,7 +1738,11 @@ public class ManagementServerImpl implements ManagementServer {
         Long domainId = cmd.getDomainId();
         Long accountId = cmd.getId();
         String accountName = null;
-
+        Boolean isRecursive = cmd.isRecursive();
+        
+        if(isRecursive == null)
+            isRecursive = false;
+        
         if(accountId != null && accountId == 1){
         	//system account should NOT be searchable
         	List<AccountVO> emptyList = new ArrayList<AccountVO>();
@@ -1750,6 +1754,7 @@ public class ManagementServerImpl implements ManagementServer {
             if (domainId == null) {
                 // default domainId to the admin's domain
                 domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+                isRecursive = true;
             } else if (account != null) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
                     throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid domain id (" + domainId + ") given, unable to list accounts");
@@ -1775,13 +1780,21 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("needsCleanup", sb.entity().getNeedsCleanup(), SearchCriteria.Op.EQ);
 
-        if ((accountId == null) && (domainId != null)) {
-            // if accountId isn't specified, we can do a domain match for the admin case
+        if ((accountId == null) && (domainId != null) && isRecursive) {
+            // if accountId isn't specified, we can do a domain LIKE match for the admin case if isRecursive is true
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
+        } else if ((accountId == null) && (domainId != null) && !isRecursive) {
+            // if accountId isn't specified, we can do a domain EXACT match for the admin case if isRecursive is true
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.EQ);
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        } 
 
+        
+        
+        
         SearchCriteria<AccountVO> sc = sb.create();
         if (keyword != null) {
             SearchCriteria<AccountVO> ssc = _accountDao.createSearchCriteria();
@@ -1801,7 +1814,11 @@ public class ManagementServerImpl implements ManagementServer {
             DomainVO domain = _domainDao.findById(domainId);
 
             // I want to join on user_vm.domain_id = domain.id where domain.path like 'foo%'
-            sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            if(isRecursive)
+                sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            else
+                sc.setJoinParameters("domainSearch", "path", domain.getPath());
+            
             sc.setParameters("nid", 1L);
         } else {
         	sc.setParameters("nid", 1L);
@@ -2276,6 +2293,11 @@ public class ManagementServerImpl implements ManagementServer {
         String accountName = cmd.getAccountName();
         Long accountId = null;
         boolean isAdmin = false;
+        Boolean isRecursive = cmd.isRecursive();
+        
+        if(isRecursive == null)
+            isRecursive = false;
+        
         if ((account == null) || isAdmin(account.getType())) {
             isAdmin = true;
             if (domainId != null) {
@@ -2292,6 +2314,7 @@ public class ManagementServerImpl implements ManagementServer {
                 }
             } else {
                 domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+                isRecursive = true;
             }
         } else {
             accountId = account.getId();
@@ -2339,12 +2362,16 @@ public class ManagementServerImpl implements ManagementServer {
         // Only return volumes that are not destroyed
         sb.and("destroyed", sb.entity().getDestroyed(), SearchCriteria.Op.EQ);
 
-        if ((accountId == null) && (domainId != null)) {
-            // if accountId isn't specified, we can do a domain match for the admin case
+        if (((accountId == null) && (domainId != null) && isRecursive)) {
+            // if accountId isn't specified, we can do a domain match for the admin case if isRecursive is true
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
+        } else if((accountId == null) && (domainId != null) && !isRecursive) {
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.EQ);
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }  
 
         // now set the SC criteria...
         SearchCriteria<VolumeVO> sc = sb.create();
@@ -2368,7 +2395,10 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("accountIdEQ", accountId);
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById(domainId);
-            sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            if(isRecursive)
+                sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            else
+                sc.setJoinParameters("domainSearch", "path", domain.getPath());
         }
         if (type != null) {
             sc.setParameters("volumeType", "%" + type + "%");

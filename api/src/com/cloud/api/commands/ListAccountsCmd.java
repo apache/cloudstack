@@ -26,6 +26,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.user.Account;
@@ -57,7 +58,9 @@ public class ListAccountsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list accounts by state. Valid states are enabled, disabled, and locked.")
     private String state;
 
-
+    @Parameter(name=ApiConstants.IS_RECURSIVE, type=CommandType.BOOLEAN, description="defaults to false, but if true, lists all accounts from the parent specified by the domain id till leaves.")
+    private Boolean recursive;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -84,6 +87,10 @@ public class ListAccountsCmd extends BaseListCmd {
 
     public String getState() {
         return state;
+    }
+    
+    public Boolean isRecursive() {
+        return recursive;
     }
 
     /////////////////////////////////////////////////////

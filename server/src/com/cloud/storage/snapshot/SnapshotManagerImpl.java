@@ -777,7 +777,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     @Override
     public List<SnapshotVO> listSnapshots(ListSnapshotsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Long volumeId = cmd.getVolumeId();
-
+        Boolean isRecursive = cmd.isRecursive();
+        
         // Verify parameters
         if(volumeId != null){
             VolumeVO volume = _volsDao.findById(volumeId);
@@ -798,7 +799,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 }
             } else if ((account != null) && (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)) {
                 domainId = account.getDomainId();
-            }
+            } 
 
             if (domainId != null && accountName != null) {
                 Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
@@ -810,6 +811,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             accountId = account.getId();
         }
 
+        if(isRecursive == null)
+            isRecursive = false;
+        
         Object name = cmd.getSnapshotName();
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
@@ -831,7 +835,10 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinType.INNER);
 
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+            if(isRecursive)
+                domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+            else
+                domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.EQ);
             accountSearch.join("domainSearch", domainSearch, accountSearch.entity().getDomainId(), domainSearch.entity().getId(), JoinType.INNER);
         }
 
@@ -863,7 +870,10 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById(domainId);
             SearchCriteria<?> joinSearch = sc.getJoin("accountSearch");
-            joinSearch.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            if(isRecursive)
+                joinSearch.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            else
+                joinSearch.setJoinParameters("domainSearch", "path", domain.getPath());
         }
 
         if (snapshotTypeStr != null) {

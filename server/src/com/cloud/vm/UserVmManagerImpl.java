@@ -2347,6 +2347,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
+        Boolean isRecursive = cmd.isRecursive();
+        List<DomainVO> domainsToSearchForVms = new ArrayList<DomainVO>();
         boolean isAdmin = false;
         String path = null;
         if ((account == null) || isAdmin(account.getType())) {
@@ -2374,6 +2376,23 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             accountId = account.getId();
         }
 
+        if(isRecursive == null)
+            isRecursive = false;
+        
+        if(isRecursive && domainId != null) {
+            DomainVO parentDomain = _domainDao.findById(domainId);
+            if(parentDomain.getName().equals("ROOT")) {
+                domainsToSearchForVms.addAll(_domainDao.listAll());
+                return recursivelySearchForVms(cmd, path, isAdmin, domainsToSearchForVms, accountId);
+            }else {
+                domainsToSearchForVms.add(parentDomain);
+                domainsToSearchForVms.addAll(_domainDao.findAllChildren(parentDomain.getPath(), parentDomain.getId()));
+                return recursivelySearchForVms(cmd, path, isAdmin, domainsToSearchForVms, accountId);
+            }
+        } else if(isRecursive && domainId == null){
+            throw new ServerApiException(BaseCmd.MALFORMED_PARAMETER_ERROR, "Please enter a parent domain id for listing vms recursively");
+        }
+               
         Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
         c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
         c.addCriteria(Criteria.ID, cmd.getId());
@@ -2403,6 +2422,42 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return searchForUserVMs(c);
     }
 
+    private List<UserVmVO> recursivelySearchForVms(ListVMsCmd cmd, String path, boolean isAdmin, List<DomainVO> domainToSearchWithin, Long accountId) {
+    
+        List<UserVmVO> result = new ArrayList<UserVmVO>();
+        for(DomainVO domain : domainToSearchWithin) {
+            
+            Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
+            c.addCriteria(Criteria.KEYWORD, cmd.getKeyword());
+            c.addCriteria(Criteria.ID, cmd.getId());
+            c.addCriteria(Criteria.NAME, cmd.getInstanceName());
+            c.addCriteria(Criteria.STATE, cmd.getState());
+            c.addCriteria(Criteria.DATACENTERID, cmd.getZoneId());
+            c.addCriteria(Criteria.GROUPID, cmd.getGroupId());
+            c.addCriteria(Criteria.FOR_VIRTUAL_NETWORK, cmd.getForVirtualNetwork());
+            c.addCriteria(Criteria.NETWORKID, cmd.getNetworkId());
+            
+            if (path != null) {
+                c.addCriteria(Criteria.PATH, path);
+            }
+    
+            // ignore these search requests if it's not an admin
+            if (isAdmin == true) {
+                c.addCriteria(Criteria.DOMAINID, domain.getId());
+                c.addCriteria(Criteria.PODID, cmd.getPodId());
+                c.addCriteria(Criteria.HOSTID, cmd.getHostId());
+            }
+            
+            if (accountId != null) {
+                c.addCriteria(Criteria.ACCOUNTID, new Object[] {accountId});
+            }
+            c.addCriteria(Criteria.ISADMIN, isAdmin); 
+            
+            result.addAll(searchForUserVMs(c));
+        }
+        return result;
+    }
+    
     @Override
     public List<UserVmVO> searchForUserVMs(Criteria c) {
         Filter searchFilter = new Filter(UserVmVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
