@@ -1464,7 +1464,11 @@ function validateDropDownBox(label, field, errMsgField, appendErrMsg) {
 	return isValid;
 }
 
-function validateNumber(label, field, errMsgField, min, max, isOptional) {
+function validateInteger(label, field, errMsgField, min, max, isOptional) {
+    validateNumber(label, field, errMsgField, min, max, isOptional, "integer");    
+}
+
+function validateNumber(label, field, errMsgField, min, max, isOptional, type) {
     var isValid = true;
     var errMsg = "";
     var value = field.val();       
@@ -1472,7 +1476,13 @@ function validateNumber(label, field, errMsgField, min, max, isOptional) {
 		if(isNaN(value)) {
 			errMsg = label + " must be a number";
 			isValid = false;
-		} else {
+		} 
+		else {
+		    if(type == "integer" && (value % 1) != 0) {
+		        errMsg = label + " must be an integer";
+				isValid = false;
+		    }
+		
 			if (min != null && value < min) {
 				errMsg = label + " must be a value greater than or equal to " + min;
 				isValid = false;
@@ -1482,7 +1492,8 @@ function validateNumber(label, field, errMsgField, min, max, isOptional) {
 				isValid = false;
 			}
 		}
-	} else if(isOptional!=true){  //required field
+	}
+	else if(isOptional!=true){  //required field
 		errMsg = label + " is a required value. ";
 		isValid = false;
 	}
