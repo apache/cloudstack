@@ -1649,7 +1649,8 @@ function vmJsonToDetailsTab(){
 	var $thisTab = $("#right_panel_content").find("#tab_content_details");     
 	$thisTab.find("#tab_container").hide(); 
 	$thisTab.find("#tab_spinning_wheel").show();    
-	 	
+	
+	/* 	
 	var id = jsonObj.id;		  
 	$.ajax({
 		data: createURL("command=listVirtualMachines&id="+id),
@@ -1664,6 +1665,7 @@ function vmJsonToDetailsTab(){
 	        }   
 		}
 	});  	  
+    */
        
 	resetViewConsoleAction(jsonObj, $thisTab);      
 	setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));		
