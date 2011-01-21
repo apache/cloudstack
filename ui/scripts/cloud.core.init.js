@@ -692,11 +692,8 @@ $(document).ready(function() {
 				g_domainid = json.loginresponse.domainid;	
 				g_timezone = json.loginresponse.timezone;								
 				g_timezoneoffset = json.loginresponse.timezoneoffset;					
-				if (json.loginresponse.hypervisortype != null) 
-					g_hypervisorType = json.loginresponse.hypervisortype;				
 					
 				$.cookie('sessionKey', g_sessionKey, { expires: 1});
-				$.cookie('hypervisortype', g_hypervisorType, { expires: 1});
 				$.cookie('username', g_username, { expires: 1});	
 				$.cookie('account', g_account, { expires: 1});	
 				$.cookie('domainid', g_domainid, { expires: 1});				
@@ -775,7 +772,6 @@ $(document).ready(function() {
 	g_username = $.cookie("username");
 	g_account = $.cookie("account");
 	g_domainid = $.cookie("domainid");
-	g_hypervisorType = $.cookie("hypervisortype");
 	g_timezone = $.cookie("timezone");
 	g_directAttachSecurityGroupsEnabled = $.cookie("directattachsecuritygroupsenabled");
 	g_userPublicTemplateEnabled = $.cookie("userpublictemplateenabled");
@@ -785,9 +781,6 @@ $(document).ready(function() {
 	else
 	    g_timezoneoffset = null;
 	    
-	if (!g_hypervisorType || g_hypervisorType.length == 0) 		
-		g_hypervisorType = "kvm";
-	
 	if (!g_directAttachSecurityGroupsEnabled || g_directAttachSecurityGroupsEnabled.length == 0) 		
 		g_directAttachSecurityGroupsEnabled = "false";	
 		

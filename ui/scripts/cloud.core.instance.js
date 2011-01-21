@@ -1961,11 +1961,9 @@ function vmVolumeJSONToTemplate(json, $template) {
     buildActionLinkForSubgridItem("Take Snapshot", vmVolumeActionMap, $actionMenu, $template);	 
     noAvailableActions = false;		
      
-    var hasCreateTemplate = false;        
 	if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
 		if (json.vmstate == "Stopped") {
 		    buildActionLinkForSubgridItem("Create Template", vmVolumeActionMap, $actionMenu, $template);	
-		    hasCreateTemplate = true;
 		    noAvailableActions = false;		
 		}
 	} 
@@ -1973,11 +1971,6 @@ function vmVolumeJSONToTemplate(json, $template) {
 		buildActionLinkForSubgridItem("Detach Disk", vmVolumeActionMap, $actionMenu, $template);		
 		noAvailableActions = false;				
 	}	
-	
-	if (getHypervisorType() == "kvm" && hasCreateTemplate == false) {
-	    buildActionLinkForSubgridItem("Create Template", vmVolumeActionMap, $actionMenu, $template);	
-	    noAvailableActions = false;	
-	}
 	
 	// no available actions 
 	if(noAvailableActions == true) {	    

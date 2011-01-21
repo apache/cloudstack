@@ -82,8 +82,6 @@ function initAddServiceOfferingDialog() {
 		$dialogAddService.find("#add_service_memory").val("");
 		$dialogAddService.find("#add_service_offerha").val("false");
 			
-		//(g_hypervisorType == "kvm")? $dialogAddService.find("#add_service_offerha_container").hide():$dialogAddService.find("#add_service_offerha_container").show();            
-				
 		$dialogAddService
 		.dialog('option', 'buttons', { 				
 			"Add": function() { 	

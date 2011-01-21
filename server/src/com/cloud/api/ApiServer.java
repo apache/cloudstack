@@ -663,11 +663,6 @@ public class ApiServer implements HttpRequestHandler {
         	
         	Account account = _ms.findAccountById(userAcct.getAccountId());
             
-            String hypervisorType = _ms.getConfigurationValue("hypervisor.type");
-            if (hypervisorType == null) {
-                hypervisorType = "kvm";
-            }
-            
             // set the userId and account object for everyone
             session.setAttribute("userid", userAcct.getId());
             session.setAttribute("username", userAcct.getUsername());
@@ -677,7 +672,6 @@ public class ApiServer implements HttpRequestHandler {
             session.setAttribute("account", account.getAccountName());
             session.setAttribute("domainid", account.getDomainId());
             session.setAttribute("type", Short.valueOf(account.getType()).toString());
-            session.setAttribute("hypervisortype", hypervisorType);
 
             if (timezone != null) {
                 session.setAttribute("timezone", timezone);

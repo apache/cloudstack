@@ -1629,8 +1629,9 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 	var $dialogAddPool = $("#dialog_add_pool_in_resource_page");    
 	
     // if hypervisor is KVM, limit the server option to NFS for now
-    if (getHypervisorType() == 'kvm') 
-	    $dialogAddPool.find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
+	// TODO: Fix this to use the hypervisor from the cluster
+    //if (getHypervisorType() == 'kvm') 
+	//    $dialogAddPool.find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
     bindEventHandlerToDialogAddPool($dialogAddPool);	
     
     $dialogAddPool.find("#zone_dropdown").bind("change", function(event) {

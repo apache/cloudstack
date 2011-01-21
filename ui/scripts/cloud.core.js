@@ -1217,9 +1217,6 @@ var g_timezoneoffset = null;
 var g_timezone = null;
 
 // capabilities
-var g_hypervisorType = "kvm";
-function getHypervisorType() { return g_hypervisorType; }
-
 var g_directAttachSecurityGroupsEnabled = "false";
 function getDirectAttachSecurityGroupsEnabled() { return g_directAttachSecurityGroupsEnabled; }
 
