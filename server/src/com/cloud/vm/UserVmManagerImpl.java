@@ -299,6 +299,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     	    throw new InvalidParameterValueException("Fail to reset password for the virtual machine, the template is not password enabled");
     	}
     	
+        if (userVm.getState() == State.Error || userVm.getState() == State.Expunging) {
+            s_logger.error("vm is not in the right state: " + vmId);
+            throw new InvalidParameterValueException("Vm with id " + vmId + " is not in the right state");
+        }
+    	
     	userId = accountAndUserValidation(vmId, account, userId, userVm);
         
     	boolean result = resetVMPasswordInternal(cmd, password);
@@ -1570,6 +1575,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UserVmVO vm = _vmDao.findById(id);
         if (vm == null) {
             throw new CloudRuntimeException("Unable to find virual machine with id " + id);
+        }
+        
+        if (vm.getState() == State.Error || vm.getState() == State.Expunging) {
+            s_logger.error("vm is not in the right state: " + id);
+            throw new InvalidParameterValueException("Vm with id " + id + " is not in the right state");
         }
 
         String description = "";
