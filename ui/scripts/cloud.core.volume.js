@@ -132,7 +132,7 @@ function afterLoadVolumeJSP() {
 			    var isValid = true;									
 			    isValid &= validateString("Name", thisDialog.find("#add_volume_name"), thisDialog.find("#add_volume_name_errormsg"));					    
 			    if(thisDialog.find("#size_container").css("display") != "none")
-			        isValid &= validateNumber("Size", thisDialog.find("#size"), thisDialog.find("#size_errormsg"));				    			
+			        isValid &= validateInteger("Size", thisDialog.find("#size"), thisDialog.find("#size_errormsg"));				    			
 			    if (!isValid) return;
 			    
 			    thisDialog.dialog("close");		
@@ -783,7 +783,7 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 							return false;
 						 case "0":
 							 var isValid = true;	 
-							 isValid &= validateNumber("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
+							 isValid &= validateInteger("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
 							 if (!isValid) return;
 							 intervalType = "hourly";
 							 minute = bottomPanel.find("#edit_minute").val();		                     
@@ -794,7 +794,7 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 							 
 						 case "1":
 							 var isValid = true;	 
-							 isValid &= validateNumber("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
+							 isValid &= validateInteger("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
 							 if (!isValid) return;
 							 intervalType = "daily";
 							 minute = bottomPanel.find("#edit_minute").val();		
@@ -811,7 +811,7 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 							 
 						 case "2":
 							 var isValid = true;	 
-							 isValid &= validateNumber("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
+							 isValid &= validateInteger("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
 							 if (!isValid) return;
 							 intervalType = "weekly";
 							 minute = bottomPanel.find("#edit_minute").val();		
@@ -830,7 +830,7 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 							 
 						 case "3":
 							 var isValid = true;	 
-							 isValid &= validateNumber("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
+							 isValid &= validateInteger("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
 							 if (!isValid) return;
 							 intervalType = "monthly";
 							 minute = bottomPanel.find("#edit_minute").val();		

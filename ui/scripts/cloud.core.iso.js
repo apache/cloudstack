@@ -644,7 +644,7 @@ function doCreateVMFromIso($actionLink, $detailsTab, $midmenuItem1) {
 		    isValid &= validateString("Name", thisDialog.find("#name"), thisDialog.find("#name_errormsg"), true);
 		    isValid &= validateString("Group", thisDialog.find("#group"), thisDialog.find("#group_errormsg"), true);	
 		     if(thisDialog.find("#size_container").css("display") != "none")
-			    isValid &= validateNumber("Size", thisDialog.find("#size"), thisDialog.find("#size_errormsg"));				
+			    isValid &= validateInteger("Size", thisDialog.find("#size"), thisDialog.find("#size_errormsg"));				
 		    if (!isValid) 
 		        return;	       
 	           

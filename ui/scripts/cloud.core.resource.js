@@ -1316,7 +1316,7 @@ function addZoneWizardValidatePublicIPRange($thisWizard) {
 	isValid &= validateString("Account", $thisWizard.find("#step4").find("#add_publicip_vlan_account"), $thisWizard.find("#step4").find("#add_publicip_vlan_account_errormsg"), true); //optional
 	
 	if (isTagged) {
-		isValid &= validateNumber("VLAN", $thisWizard.find("#step4").find("#add_publicip_vlan_vlan"), $thisWizard.find("#step4").find("#add_publicip_vlan_vlan_errormsg"), 2, 4095);
+		isValid &= validateInteger("VLAN", $thisWizard.find("#step4").find("#add_publicip_vlan_vlan"), $thisWizard.find("#step4").find("#add_publicip_vlan_vlan_errormsg"), 2, 4095);
 	}
 	
 	isValid &= validateIp("Gateway", $thisWizard.find("#step4").find("#add_publicip_vlan_gateway"), $thisWizard.find("#step4").find("#add_publicip_vlan_gateway_errormsg"), false); //required

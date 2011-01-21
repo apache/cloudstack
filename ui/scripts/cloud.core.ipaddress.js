@@ -122,8 +122,8 @@ function afterLoadIpJSP() {
     $createPortForwardingRow.find("#add_link").bind("click", function(event){	        
 		var isValid = true;		
 		isValid &= validateDropDownBox("Instance", $createPortForwardingRow.find("#vm"), $createPortForwardingRow.find("#vm_errormsg"));				
-		isValid &= validateNumber("Public Port", $createPortForwardingRow.find("#public_port"), $createPortForwardingRow.find("#public_port_errormsg"), 1, 65535);
-		isValid &= validateNumber("Private Port", $createPortForwardingRow.find("#private_port"), $createPortForwardingRow.find("#private_port_errormsg"), 1, 65535);				
+		isValid &= validateInteger("Public Port", $createPortForwardingRow.find("#public_port"), $createPortForwardingRow.find("#public_port_errormsg"), 1, 65535);
+		isValid &= validateInteger("Private Port", $createPortForwardingRow.find("#private_port"), $createPortForwardingRow.find("#private_port_errormsg"), 1, 65535);				
 		if (!isValid) 
 		    return;			
 	    
@@ -220,8 +220,8 @@ function afterLoadIpJSP() {
 	    // validate values		    
 		var isValid = true;					
 		isValid &= validateString("Name", createLoadBalancerRow.find("#name"), createLoadBalancerRow.find("#name_errormsg"));
-		isValid &= validateNumber("Public Port", createLoadBalancerRow.find("#public_port"), createLoadBalancerRow.find("#public_port_errormsg"), 1, 65535);
-		isValid &= validateNumber("Private Port", createLoadBalancerRow.find("#private_port"), createLoadBalancerRow.find("#private_port_errormsg"), 1, 65535);				
+		isValid &= validateInteger("Public Port", createLoadBalancerRow.find("#public_port"), createLoadBalancerRow.find("#public_port_errormsg"), 1, 65535);
+		isValid &= validateInteger("Private Port", createLoadBalancerRow.find("#private_port"), createLoadBalancerRow.find("#private_port_errormsg"), 1, 65535);				
 		if (!isValid) return;
 		 
 		var $template = $("#load_balancer_template").clone();	
@@ -1306,7 +1306,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     $template.find("#save_link").unbind("click").bind("click", function(event){          		       
         // validate values		    
 	    var isValid = true;					    
-	    isValid &= validateNumber("Private Port", $rowContainerEdit.find("#private_port"), $rowContainerEdit.find("#private_port_errormsg"), 1, 65535);				
+	    isValid &= validateInteger("Private Port", $rowContainerEdit.find("#private_port"), $rowContainerEdit.find("#private_port_errormsg"), 1, 65535);				
 	    if (!isValid) return;		    		        
 	    
         var $spinningWheel = $rowContainerEdit.find("#spinning_wheel");	                     

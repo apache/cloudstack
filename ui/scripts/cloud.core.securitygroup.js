@@ -192,12 +192,12 @@ function initAddIngressRuleDialog() {
 	            var isValid = true;		
 	            		
 	            if(protocol == "ICMP") {					
-	                isValid &= validateNumber("Type", $thisDialog.find("#icmp_type"), $thisDialog.find("#icmp_type_errormsg"), -1, 40, false);	//required	
-	                isValid &= validateNumber("Code", $thisDialog.find("#icmp_code"), $thisDialog.find("#icmp_code_errormsg"), -1 , 15, false);	//required
+	                isValid &= validateInteger("Type", $thisDialog.find("#icmp_type"), $thisDialog.find("#icmp_type_errormsg"), -1, 40, false);	//required	
+	                isValid &= validateInteger("Code", $thisDialog.find("#icmp_code"), $thisDialog.find("#icmp_code_errormsg"), -1 , 15, false);	//required
 	            }	
 	            else {  //TCP, UDP
-	                isValid &= validateNumber("Start Port", $thisDialog.find("#start_port"), $thisDialog.find("#start_port_errormsg"), 1, 65535, false);	//required	
-	                isValid &= validateNumber("End Port", $thisDialog.find("#end_port"), $thisDialog.find("#end_port_errormsg"), 1, 65535, false);	//required
+	                isValid &= validateInteger("Start Port", $thisDialog.find("#start_port"), $thisDialog.find("#start_port_errormsg"), 1, 65535, false);	//required	
+	                isValid &= validateInteger("End Port", $thisDialog.find("#end_port"), $thisDialog.find("#end_port_errormsg"), 1, 65535, false);	//required
 	            }
 	            				          	
 	            if($thisDialog.find("input[name='ingress_rule_type']:checked").val() == "cidr") {					                
