@@ -1465,13 +1465,14 @@ function validateDropDownBox(label, field, errMsgField, appendErrMsg) {
 }
 
 function validateInteger(label, field, errMsgField, min, max, isOptional) {
-    validateNumber(label, field, errMsgField, min, max, isOptional, "integer");    
+    return validateNumber(label, field, errMsgField, min, max, isOptional, "integer");    
 }
 
 function validateNumber(label, field, errMsgField, min, max, isOptional, type) {
     var isValid = true;
     var errMsg = "";
-    var value = field.val();       
+    var value = field.val();  
+         
 	if (value != null && value.length != 0) {
 		if(isNaN(value)) {
 			errMsg = label + " must be a number";
