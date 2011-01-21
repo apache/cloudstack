@@ -44,8 +44,7 @@ function snapshotGetSearchParams() {
 }
 
 function afterLoadSnapshotJSP() {    
-    initDialog("dialog_add_volume_from_snapshot");          
-	initDialog("dialog_confirmation_delete_snapshot");		
+    initDialog("dialog_add_volume_from_snapshot");  
     initCreateTemplateFromSnapshotDialog();
 }
 
@@ -195,7 +194,8 @@ var snapshotActionMap = {
 }   
 
 function doSnapshotDelete($actionLink, $thisTab, $midmenuItem1) {
-	$("#dialog_confirmation_delete_snapshot")	
+	$("#dialog_confirmation")	
+	.text("Please confirm you want to delete the snapshot")
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 	

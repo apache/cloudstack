@@ -54,8 +54,7 @@ function afterLoadVolumeJSP() {
     initDialog("dialog_add_volume");	
     initDialog("dialog_attach_volume");	
     initDialog("dialog_add_volume_from_snapshot");	
-    initDialog("dialog_create_template_from_snapshot", 450);    
-	initDialog("dialog_confirmation_delete_snapshot");
+    initDialog("dialog_create_template_from_snapshot", 450);    	
 	initDialog("dialog_download_volume");
 	
 	if(isAdmin())
@@ -985,7 +984,8 @@ var volumeSnapshotActionMap = {
 }  
 
 function doSnapshotDelete($actionLink, $subgridItem) {
-	$("#dialog_confirmation_delete_snapshot")	
+	$("#dialog_confirmation")	
+	.text("Please confirm you want to delete the snapshot")
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 	

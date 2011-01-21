@@ -58,7 +58,6 @@ function afterLoadIpJSP() {
         
     //dialogs
     initDialog("dialog_acquire_public_ip", 325);
-    initDialog("dialog_confirmation_release_ip");
 	initDialog("dialog_enable_vpn");
 	initDialog("dialog_disable_vpn");
 	initDialog("dialog_add_vpnuser");
@@ -1117,7 +1116,8 @@ function doReleaseIp($actionLink, $detailsTab, $midmenuItem1) {
     var jsonObj = $midmenuItem1.data("jsonObj");
     var ipaddress = jsonObj.ipaddress;
     
-    $("#dialog_confirmation_release_ip")	
+    $("#dialog_confirmation")
+    .text("Please confirm you want to release this IP address")	
 	.dialog('option', 'buttons', { 						
 		"Confirm": function() { 
 		    $(this).dialog("close");			

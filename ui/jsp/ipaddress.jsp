@@ -603,12 +603,6 @@
 <!-- VPN Template (end) -->
 
 <!--  dialogs (begin) -->
-<div id="dialog_confirmation_release_ip" title="Confirmation" style="display:none">
-    <p>
-        <%=t.t("please.confirm.you.want.to.release.this.IP.address")%>
-    </p>
-</div>
-
 <div id="dialog_confirmation_remove_vpnuser" title="Confirmation" style="display:none">
     <p>
 		Please confirm you want to remove VPN access from the following user: <span id="username"></span>
