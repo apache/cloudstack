@@ -160,7 +160,6 @@ public enum Config {
 	DirectAttachNetworkEnabled("Advanced", ManagementServer.class, Boolean.class, "direct.attach.network.externalIpAllocator.enabled", "false", "Direct-attach VMs using external DHCP server", "true,false"),
 	DirectAttachNetworkExternalAPIURL("Advanced", ManagementServer.class, String.class, "direct.attach.network.externalIpAllocator.url", null, "Direct-attach VMs using external DHCP server (API url)", null),
 	CheckPodCIDRs("Advanced", ManagementServer.class, String.class, "check.pod.cidrs", "true", "If true, different pods must belong to different CIDR subnets.", "true,false"),
-	MD5Hashed("Advanced", ManagementServer.class, Boolean.class, "security.password.md5hashed", "true", "If set to false password is sent in clear text or else md5hashed", null),
 	NetworkGcWait("Advanced", ManagementServer.class, Integer.class, "network.gc.wait", "600", "Seconds to wait before shutting down a network that's not in used", null),
 	NetworkGcInterval("Advanced", ManagementServer.class, Integer.class, "network.gc.interval", "600", "Seconds to wait before checking for networks to shutdown", null),
 	HostCapacityCheckerWait("Advanced", ManagementServer.class, Integer.class, "host.capacity.checker.wait", "3600", "Seconds to wait before starting host capacity background checker", null),
