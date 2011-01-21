@@ -334,7 +334,7 @@ function isoJsonToDetailsTab() {
     // "Edit ISO", "Copy ISO"
 	if ((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) 
 	    || (jsonObj.isready == false)
-	    || (jsonObj.domainid ==	-1)
+	    || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
 	    ) {		
 		//do nothing
     }
@@ -352,7 +352,7 @@ function isoJsonToDetailsTab() {
 	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) 
 	    || jsonObj.isready == false) 
 	    || (jsonObj.bootable == false)
-	    || (jsonObj.domainid ==	-1)
+	    || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
 	    ) {
 	    //do nothing
 	}
@@ -365,7 +365,7 @@ function isoJsonToDetailsTab() {
 	// "Download ISO"
 	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
 	    || (jsonObj.isready == false)
-	    || (jsonObj.domainid ==	-1)
+	    || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
 	    ) {
 	    //do nothing
 	}
@@ -377,7 +377,7 @@ function isoJsonToDetailsTab() {
 	// "Delete ISO"
 	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
 	    || (jsonObj.isready == false && jsonObj.status != null && jsonObj.status.indexOf("Downloaded") != -1)
-	    || (jsonObj.domainid ==	-1)
+	    || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
 	    ) {
 	    //do nothing
 	}
