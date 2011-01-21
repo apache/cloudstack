@@ -189,7 +189,7 @@
                                 <li>
                                     <div id="basic_search" class="search_textbg">
                                         <input class="text" type="text" id="search_input" />
-                                        <div class="search_closebutton" style="display: none;">
+                                        <div id="search_closebutton" class="search_closebutton" style="display: none;">
                                         </div>
                                     </div>
                                 </li>

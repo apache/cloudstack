@@ -988,10 +988,16 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
 	
 	(page > 1)? $("#midmenu_prevbutton").show(): $("#midmenu_prevbutton").hide();
 	
+	var searchParams = getSearchParamsFn();
+	if(searchParams.length > 0)
+	    $("#search_closebutton").show();
+	else
+	    $("#search_closebutton").hide();
+	
     var count = 0;    
     $.ajax({
         cache: false,
-        data: createURL("command="+commandString+getSearchParamsFn()+"&pagesize="+midmenuItemCount+"&page="+page),
+        data: createURL("command="+commandString+searchParams+"&pagesize="+midmenuItemCount+"&page="+page),
         dataType: "json",
         async: false,
         success: function(json) {  
