@@ -158,7 +158,7 @@ function networkOfferingJsonToDetailsTab() {
     setBooleanReadField(jsonObj.isdefault, $thisTab.find("#isdefault"));
     setBooleanReadField(jsonObj.specifyvlan, $thisTab.find("#specifyvlan"));
       
-    $thisTab.find("#type").text(fromdb(jsonObj.type));
+    $thisTab.find("#rate").text(fromdb(jsonObj.networkrate));
     $thisTab.find("#traffictype").text(fromdb(jsonObj.traffictype));
    
     //actions ***
