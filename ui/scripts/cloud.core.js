@@ -1160,6 +1160,12 @@ function showLeftNavigationBasedOnRole() {
 }
    
 function drawBarChart($capacity, percentused) { //percentused == "0.01%" (having % inside)    
+    if(percentused == null) {
+        $capacity.find("#percentused").text("");
+        $capacity.find("#bar_chart").removeClass().addClass("db_barbox low").css("width", 0); 
+        return;
+    }
+
     $capacity.find("#percentused").text(percentused);
     
     var percentusedFloat; 

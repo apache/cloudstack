@@ -1778,6 +1778,11 @@ function vmJsonToNicTab() {
 	}
 }
 
+function vmJsonClearNicTab() { 
+    var $thisTab = $("#right_panel_content").find("#tab_content_nic");  
+    $thisTab.find("#tab_container").empty();		
+}
+
 function vmJsonToVolumeTab() {  
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
 	if ($midmenuItem1 == null) 
@@ -1813,6 +1818,11 @@ function vmJsonToVolumeTab() {
 	
 }
  
+function vmJsonClearVolumeTab() {  
+    var $thisTab = $("#right_panel_content").find("#tab_content_volume");  	
+    $thisTab.find("#tab_container").empty();	
+} 
+ 
 function vmJsonToStatisticsTab() {    
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
 	if ($midmenuItem1 == null) 
@@ -1841,6 +1851,18 @@ function vmJsonToStatisticsTab() {
 	
 	var networkKbsWrite = ((jsonObj.networkkbswrite==null)? "":convertBytes(jsonObj.networkkbswrite * 1024));
 	$thisTab.find("#networkkbswrite").text(networkKbsWrite);	
+}
+
+function vmJsonClearStatisticsTab() {       
+    var $thisTab = $("#right_panel_content #tab_content_statistics");  	
+	var $barChartContainer = $thisTab.find("#cpu_barchart");
+	$barChartContainer.find("#cpunumber").text("");	
+	$barChartContainer.find("#cpuspeed").text("");	
+	$barChartContainer.find("#bar_chart").removeClass().addClass("db_barbox").css("width", "0%");    
+	$barChartContainer.find("#percentused").text("");   
+	drawBarChart($barChartContainer, null);			
+	$thisTab.find("#networkkbsread").text("");	
+	$thisTab.find("#networkkbswrite").text("");	
 }
 
 function vmJsonToRouterTab() {       
@@ -1876,9 +1898,18 @@ function vmJsonToRouterTab() {
 		}
 	});     
 }    
+ 
+function vmJsonClearRouterTab() { 
+    var $thisTab = $("#right_panel_content").find("#tab_content_router");  
+    $thisTab.find("#tab_container").empty();
+} 
     
 function vmClearRightPanel(jsonObj) {      
-    vmJsonClearDetailsTab();
+    vmJsonClearDetailsTab();   
+    vmJsonClearNicTab();
+    vmJsonClearVolumeTab();
+    vmJsonClearStatisticsTab();
+    vmJsonClearRouterTab();    
     $("#tab_details").click();  
 }  
 
