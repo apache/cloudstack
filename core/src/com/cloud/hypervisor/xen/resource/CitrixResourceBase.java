@@ -5013,10 +5013,12 @@ public abstract class CitrixResourceBase implements ServerResource {
         String secondaryStoragePoolURL = cmd.getSecondaryStoragePoolURL();
         String snapshotUuid = cmd.getSnapshotUuid(); // not null: Precondition.
         String prevBackupUuid = cmd.getPrevBackupUuid();
+        String prevSnapshotUuid = cmd.getPrevSnapshotUuid();
         // By default assume failure
         String details = null;
         boolean success = false;
         String snapshotBackupUuid = null;
+        boolean fullbackup = true;
         try {
             SR primaryStorageSR = getSRByNameLabelandHost(conn, primaryStorageNameLabel);
             if (primaryStorageSR == null) {
@@ -5025,22 +5027,30 @@ public abstract class CitrixResourceBase implements ServerResource {
 
             URI uri = new URI(secondaryStoragePoolURL);
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
-            
+            VDI snapshotVdi = getVDIbyUuid(conn, snapshotUuid);
 
-            if (prevBackupUuid == null) {
+            if ( prevBackupUuid != null ) {
+                try {
+                    VDI preSnapshotVdi = getVDIbyUuid(conn, prevSnapshotUuid);
+                    if ( snapshotVdi.getParent(conn).getParent(conn) == preSnapshotVdi.getParent(conn) ) {
+                        fullbackup = false;
+                    }                   
+                } catch (Exception e) {                   
+                }
+            }
+
+            if (fullbackup) {
                 // the first snapshot is always a full snapshot
                 String folder = "snapshots/" + accountId + "/" + volumeId;
                 if( !createSecondaryStorageFolder(conn, secondaryStorageMountPath, folder)) {
                     details = " Filed to create folder " + folder + " in secondary storage";
                     s_logger.warn(details);
-                    return new BackupSnapshotAnswer(cmd, success, details, snapshotBackupUuid);
+                    return new BackupSnapshotAnswer(cmd, false, details, null, false);
                 }
-
                 String snapshotMountpoint = secondaryStoragePoolURL + "/" + folder;
                 SR snapshotSr = null;
                 try {
                     snapshotSr = createNfsSRbyURI(conn, new URI(snapshotMountpoint), false);
-                    VDI snapshotVdi = getVDIbyUuid(conn, snapshotUuid);
                     VDI backedVdi = cloudVDIcopy(conn, snapshotVdi, snapshotSr);
                     snapshotBackupUuid = backedVdi.getUuid(conn);
                     success = true;
@@ -5050,21 +5060,16 @@ public abstract class CitrixResourceBase implements ServerResource {
                     }
                 }
             } else {
-                    String primaryStorageSRUuid = primaryStorageSR.getUuid(conn);
-                    Boolean isISCSI = IsISCSI(primaryStorageSR.getType(conn));
-                    snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, dcId, accountId, volumeId, secondaryStorageMountPath, 
-                            snapshotUuid, prevBackupUuid, isISCSI);
-                    success = (snapshotBackupUuid != null);
+                String primaryStorageSRUuid = primaryStorageSR.getUuid(conn);
+                Boolean isISCSI = IsISCSI(primaryStorageSR.getType(conn));
+                snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, dcId, accountId, volumeId, secondaryStorageMountPath, snapshotUuid, prevBackupUuid, isISCSI);
+                success = (snapshotBackupUuid != null);
             }
-
             if (success) {
                 details = "Successfully backedUp the snapshotUuid: " + snapshotUuid + " to secondary storage.";
-                
                 String volumeUuid = cmd.getVolumePath();
                 destroySnapshotOnPrimaryStorageExceptThis(conn, volumeUuid, snapshotUuid);
-
             }
-
         } catch (XenAPIException e) {
             details = "BackupSnapshot Failed due to " + e.toString();
             s_logger.warn(details, e);
@@ -5073,7 +5078,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             s_logger.warn(details, e);
         }
 
-        return new BackupSnapshotAnswer(cmd, success, details, snapshotBackupUuid);
+        return new BackupSnapshotAnswer(cmd, success, details, snapshotBackupUuid, fullbackup);
     }
 
     protected CreateVolumeFromSnapshotAnswer execute(final CreateVolumeFromSnapshotCommand cmd) {
@@ -5168,7 +5173,7 @@ public abstract class CitrixResourceBase implements ServerResource {
                 }
             }
         }
-        return new DeleteSnapshotBackupAnswer(cmd, success, details);
+        return new DeleteSnapshotBackupAnswer(cmd, true, details);
     }
 
     protected Answer execute(DeleteSnapshotsDirCommand cmd) {

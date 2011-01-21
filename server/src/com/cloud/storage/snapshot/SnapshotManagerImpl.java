@@ -209,9 +209,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         if (storagePoolVO == null) {
             throw new InvalidParameterValueException("VolumeId: " + volumeId + " does not have a valid storage pool. Is it destroyed?");
         }
-        if (!isVolumeDirty(volumeId, policyId)) {
-            throw new CloudRuntimeException("There is no change for volume " + volumeId + " since last snapshot, please use the last snapshot instead.");           
-        }
 
         Long id = null;
 
@@ -242,11 +239,10 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         long  preId = _snapshotDao.getLastSnapshot(volumeId, id);
 
         String preSnapshotPath = null;
-
         SnapshotVO preSnapshotVO = null;
         if( preId != 0) {
             preSnapshotVO = _snapshotDao.findByIdIncludingRemoved(preId);
-            if (preSnapshotVO != null) {
+            if (preSnapshotVO != null && preSnapshotVO.getBackupSnapshotId() != null ) {
                 preSnapshotPath = preSnapshotVO.getPath();
             }
         }
@@ -262,10 +258,11 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 //empty snapshot
                 s_logger.debug("CreateSnapshot: this is empty snapshot, remove it ");
                 createdSnapshot =  _snapshotDao.findByIdIncludingRemoved(id);
-                // delete from the snapshots table
-                _snapshotDao.expunge(id);
-                throw new CloudRuntimeException("There is no change for volume " + volumeId + " since last snapshot, please use last snapshot instead.");
-
+                createdSnapshot.setPath(preSnapshotPath);
+                createdSnapshot.setBackupSnapshotId(preSnapshotVO.getBackupSnapshotId());
+                createdSnapshot.setStatus(Snapshot.Status.BackedUp);
+                createdSnapshot.setPrevSnapshotId(preId);
+                _snapshotDao.update(id, createdSnapshot);
             } else {
                 long preSnapshotId = 0;
                 if( preSnapshotVO != null && preSnapshotVO.getBackupSnapshotId() != null) {
@@ -292,16 +289,17 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                     }
                 }
                 createdSnapshot = updateDBOnCreate(id, answer.getSnapshotPath(), preSnapshotId);
-                // Get the snapshot_schedule table entry for this snapshot and
-                // policy id.
-                // Set the snapshotId to retrieve it back later.
-                if( policyId != Snapshot.MANUAL_POLICY_ID) {
-                    SnapshotScheduleVO snapshotSchedule = _snapshotScheduleDao.getCurrentSchedule(volumeId, policyId, true);
-                    assert snapshotSchedule != null;
-                    snapshotSchedule.setSnapshotId(id);
-                    _snapshotScheduleDao.update(snapshotSchedule.getId(), snapshotSchedule);
-                }
             }
+            // Get the snapshot_schedule table entry for this snapshot and
+            // policy id.
+            // Set the snapshotId to retrieve it back later.
+            if (policyId != Snapshot.MANUAL_POLICY_ID) {
+                SnapshotScheduleVO snapshotSchedule = _snapshotScheduleDao.getCurrentSchedule(volumeId, policyId, true);
+                assert snapshotSchedule != null;
+                snapshotSchedule.setSnapshotId(id);
+                _snapshotScheduleDao.update(snapshotSchedule.getId(), snapshotSchedule);
+            }
+
         } else {
             if (answer != null) {
                 s_logger.error(answer.getDetails());
@@ -430,7 +428,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
     @Override @DB
     public boolean backupSnapshotToSecondaryStorage(SnapshotVO ss) {
-        Long userId = getSnapshotUserId();
         long snapshotId = ss.getId();
         SnapshotVO snapshot = _snapshotDao.acquireInLockTable(snapshotId);
         if( snapshot == null) {
@@ -460,8 +457,10 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             long prevSnapshotId = snapshot.getPrevSnapshotId();
             if (prevSnapshotId > 0) {
                 prevSnapshot = _snapshotDao.findByIdIncludingRemoved(prevSnapshotId);
-                prevSnapshotUuid = prevSnapshot.getPath();
                 prevBackupUuid = prevSnapshot.getBackupSnapshotId();
+                if( prevBackupUuid != null ) {               
+                    prevSnapshotUuid = prevSnapshot.getPath();
+                }
             }
 
             boolean isVolumeInactive = _storageMgr.volumeInactive(volume);
@@ -505,6 +504,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                        
             if (backedUp) {
                 snapshot.setBackupSnapshotId(backedUpSnapshotUuid);
+                if( answer.isFull()) {
+                    snapshot.setPrevSnapshotId(0);
+                }
                 snapshot.setStatus(Snapshot.Status.BackedUp);
                 _snapshotDao.update(snapshotId, snapshot);
                 UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), volume.getDataCenterId(), snapshotId, snapshot.getName(), null, null, volume.getSize());
@@ -675,11 +677,17 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             while (lastSnapshot.getRemoved() != null) {
                 String BackupSnapshotId = lastSnapshot.getBackupSnapshotId();
                 if (BackupSnapshotId != null) {
-                    if (destroySnapshotBackUp(lastId, policyId)) {
-
+                    List<SnapshotVO> snaps = _snapshotDao.listByBackupUuid(lastSnapshot.getVolumeId(), BackupSnapshotId);
+                    if ( snaps.size() > 1 ) {
+                        lastSnapshot.setBackupSnapshotId(null);
+                        _snapshotDao.update(lastSnapshot.getId(), lastSnapshot);
                     } else {
-                        s_logger.debug("Destroying snapshot backup failed " + lastSnapshot);
-                        break;
+                        if (destroySnapshotBackUp(lastId, policyId)) {
+                            
+                        } else {
+                            s_logger.debug("Destroying snapshot backup failed " + lastSnapshot);
+                            break;
+                        }  
                     }
                 }
                 postDeleteSnapshot(lastId, policyId);
@@ -715,17 +723,20 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         Long volumeId = volume.getId();
 
         String backupOfSnapshot = snapshot.getBackupSnapshotId();
-
+        if ( backupOfSnapshot == null ) {
+            return true;
+        }
         DeleteSnapshotBackupCommand cmd = new DeleteSnapshotBackupCommand(primaryStoragePoolNameLabel,
                 secondaryStoragePoolUrl, dcId, accountId, volumeId, backupOfSnapshot, snapshot.getName());
 
+        snapshot.setBackupSnapshotId(null);
+        _snapshotDao.update(snapshotId, snapshot);
         details = "Failed to destroy snapshot id:" + snapshotId + " for volume: " + volume.getId();
         Answer answer = _storageMgr.sendToHostsOnStoragePool(volume.getPoolId(), cmd, details, _totalRetries,
                 _pauseInterval, _shouldBeSnapshotCapable, volume.getInstanceId());
 
         if ((answer != null) && answer.getResult()) {
-            snapshot.setBackupSnapshotId(null);
-            _snapshotDao.update(snapshotId, snapshot);
+
             // This is not the last snapshot.
             success = true;
             details = "Successfully deleted snapshot " + snapshotId + " for volumeId: " + volumeId + " and policyId "

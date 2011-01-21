@@ -41,12 +41,21 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private final SearchBuilder<SnapshotVO> VolumeIdSearch;
     private final SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
     private final SearchBuilder<SnapshotVO> ParentIdSearch;
+    private final SearchBuilder<SnapshotVO> backupUuidSearch;
+    
     
     @Override
     public SnapshotVO findNextSnapshot(long snapshotId) {
         SearchCriteria<SnapshotVO> sc = ParentIdSearch.create();
         sc.setParameters("prevSnapshotId", snapshotId);
         return findOneIncludingRemovedBy(sc);
+    }
+    
+    @Override
+     public List<SnapshotVO> listByBackupUuid(long volumeId, String backupUuid) {
+        SearchCriteria<SnapshotVO> sc = backupUuidSearch.create();
+        sc.setParameters("backupUuid", backupUuid);
+        return listBy(sc, null);
     }
     
     @Override
@@ -93,6 +102,10 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         ParentIdSearch = createSearchBuilder();
         ParentIdSearch.and("prevSnapshotId", ParentIdSearch.entity().getPrevSnapshotId(), SearchCriteria.Op.EQ);
         ParentIdSearch.done();
+        
+        backupUuidSearch = createSearchBuilder();
+        backupUuidSearch.and("backupUuid", backupUuidSearch.entity().getBackupSnapshotId(), SearchCriteria.Op.EQ);
+        backupUuidSearch.done();
        
     }
     

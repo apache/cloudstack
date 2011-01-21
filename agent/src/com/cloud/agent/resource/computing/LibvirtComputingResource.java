@@ -1080,7 +1080,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			String result = command.execute();
 			if (result != null) {
 				s_logger.debug("Failed to backup snaptshot: " + result);
-				return new BackupSnapshotAnswer(cmd, false, result, null);
+				return new BackupSnapshotAnswer(cmd, false, result, null, true);
 			}
 			/*Delete the snapshot on primary*/
 			
@@ -1116,15 +1116,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     			result = command.execute();
     			if (result != null) {
     				s_logger.debug("Failed to backup snapshot: " + result);
-    	    		return new BackupSnapshotAnswer(cmd, false, "Failed to backup snapshot: " + result, null);
+    	    		return new BackupSnapshotAnswer(cmd, false, "Failed to backup snapshot: " + result, null, true);
     			}
 			}
 		} catch (LibvirtException e) {
-			return new BackupSnapshotAnswer(cmd, false, e.toString(), null);
+			return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
 		} catch (URISyntaxException e) {
-			return new BackupSnapshotAnswer(cmd, false, e.toString(), null);
+			return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
 		}
-		return new BackupSnapshotAnswer(cmd, true, null, snapshotDestPath + File.separator + snapshotName);
+		return new BackupSnapshotAnswer(cmd, true, null, snapshotDestPath + File.separator + snapshotName, true);
     }
     
     protected DeleteSnapshotBackupAnswer execute(final DeleteSnapshotBackupCommand cmd) {
