@@ -71,8 +71,6 @@ public enum Config {
 	// Usage
 	
 	CapacityCheckPeriod("Usage", ManagementServer.class, Integer.class, "capacity.check.period", "300000", "The interval in milliseconds between capacity checks", null),
-	CapacitySkipCountingHours("Usage", ManagementServer.class, Integer.class, "capacity.skipcounting.hours", "24", "The interval in hours since VM has stopped to skip counting its allocated CPU/Memory capacity. Applies to vms in Stopped state", null),
-	CapacitySkipCountingDestroyedHours("Usage", ManagementServer.class, Integer.class, "capacity.skipcounting.destroyed.hours", "0", "The interval in hours since VM has stopped to skip counting its allocated CPU/Memory capacity. Applies to vms in Destroyed state", null),
 	StorageAllocatedCapacityThreshold("Usage", ManagementServer.class, Float.class, "storage.allocated.capacity.threshold", "0.85", "Percentage (as a value between 0 and 1) of allocated storage utilization above which alerts will be sent about low storage available.", null),
 	StorageCapacityThreshold("Usage", ManagementServer.class, Float.class, "storage.capacity.threshold", "0.85", "Percentage (as a value between 0 and 1) of storage utilization above which alerts will be sent about low storage available.", null),
 	CPUCapacityThreshold("Usage", ManagementServer.class, Float.class, "cpu.capacity.threshold", "0.85", "Percentage (as a value between 0 and 1) of cpu utilization above which alerts will be sent about low cpu available.", null),
