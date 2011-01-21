@@ -846,9 +846,9 @@ function initVMWizard() {
 	        
 	        var isValid = true;		
 	        if($diskOfferingElement.find("#custom_disk_size").length > 0) 	    
-	            isValid &= validateNumber("Disk Size", $diskOfferingElement.find("#custom_disk_size"), $diskOfferingElement.find("#custom_disk_size_errormsg"), null, null, false);	//required	
+	            isValid &= validateInteger("Disk Size", $diskOfferingElement.find("#custom_disk_size"), $diskOfferingElement.find("#custom_disk_size_errormsg"), null, null, false);	//required	
 	        else
-	            isValid &= validateNumber("Disk Size", $diskOfferingElement.find("#custom_disk_size"), $diskOfferingElement.find("#custom_disk_size_errormsg"), null, null, true);	//optional		    		
+	            isValid &= validateInteger("Disk Size", $diskOfferingElement.find("#custom_disk_size"), $diskOfferingElement.find("#custom_disk_size_errormsg"), null, null, true);	//optional		    		
 	        if (!isValid) 
 	            return;        
 	        
