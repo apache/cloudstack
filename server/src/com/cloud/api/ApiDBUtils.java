@@ -528,4 +528,8 @@ public class ApiDBUtils {
        return _configMgr.getNetworkRate(networkOfferingId);
     }
     
+    public static Account getVlanAccount(long vlanId) {
+       return _configMgr.getVlanAccount(vlanId);
+    }
+    
 }

@@ -31,6 +31,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.user.Account;
 
 public interface ConfigurationService {
     
@@ -188,5 +189,7 @@ public interface ConfigurationService {
     NetworkOffering getNetworkOffering(long id);
     
     Integer getNetworkRate(long networkOfferingId);
+    
+    Account getVlanAccount(long vlanId);
    
 }

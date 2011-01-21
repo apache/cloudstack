@@ -2782,4 +2782,28 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         
         return networkRate;
     }
+    
+    @Override
+    public Account getVlanAccount(long vlanId) {
+        Vlan vlan = _vlanDao.findById(vlanId);
+        Long accountId = null;
+        
+        //if vlan is Virtual Account specific, get vlan information from the accountVlanMap; otherwise get account information from the network
+        if (vlan.getVlanType() == VlanType.VirtualNetwork) {
+            List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByVlan(vlanId);
+            if (maps != null && !maps.isEmpty()) {
+                return _accountMgr.getAccount(maps.get(0).getAccountId());
+            }
+        }
+        
+        Long networkId = vlan.getNetworkId();
+        if (networkId != null) {
+            Network network = _networkMgr.getNetwork(networkId);
+            if (network != null) {
+              accountId = network.getAccountId();
+            }
+        }
+        
+        return _accountMgr.getAccount(accountId);
+    }
 }

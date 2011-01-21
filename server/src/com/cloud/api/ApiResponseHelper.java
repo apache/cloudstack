@@ -568,20 +568,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         vlanResponse.setStartIp(range[0]);
         vlanResponse.setEndIp(range[1]);
         
-        Long networkId = vlan.getNetworkId();
-        if (networkId != null) {
-            vlanResponse.setNetworkId(vlan.getNetworkId());
-            Network network = ApiDBUtils.findNetworkById(networkId);
-            if (network != null) {
-              Long accountId = network.getAccountId();
-              //Set account information
-                if (accountId != null) {
-                    Account account = ApiDBUtils.findAccountById(accountId);
-                    vlanResponse.setAccountName(account.getAccountName());
-                    vlanResponse.setDomainId(account.getDomainId());
-                    vlanResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
-                }
-            }
+        vlanResponse.setNetworkId(vlan.getNetworkId());
+        Account owner = ApiDBUtils.getVlanAccount(vlan.getId());
+        if (owner != null) {
+            vlanResponse.setAccountName(owner.getAccountName());
+            vlanResponse.setDomainId(owner.getDomainId());
+            vlanResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
         }
         
         vlanResponse.setObjectName("vlan");
