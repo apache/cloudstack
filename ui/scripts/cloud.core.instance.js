@@ -125,22 +125,8 @@ function afterLoadInstanceJSP() {
    	initDialog("dialog_attach_iso");  
     initDialog("dialog_change_name"); 
     initDialog("dialog_change_group"); 
-    initDialog("dialog_change_service_offering", 600); 
-    initDialog("dialog_confirmation_change_root_password");
-    initDialog("dialog_confirmation_enable_ha");  
-    initDialog("dialog_confirmation_disable_ha");            
-    initDialog("dialog_create_template", 400);  
-    initDialog("dialog_confirmation_start_vm");
-    initDialog("dialog_confirmation_stop_vm");
-    initDialog("dialog_confirmation_reboot_vm");
-    initDialog("dialog_confirmation_destroy_vm");
-    
-    if(isAdmin() || isDomainAdmin())
-        initDialog("dialog_confirmation_restore_vm");   
-     
-    initDialog("dialog_confirmation_start_router");
-    initDialog("dialog_confirmation_stop_router");
-    initDialog("dialog_confirmation_reboot_router");    
+    initDialog("dialog_change_service_offering", 600);                
+    initDialog("dialog_create_template", 400);             
        
     $.ajax({
 	    data: createURL("command=listOsTypes"),
@@ -194,7 +180,8 @@ function bindStartVMButton() {
             return false;
         }        
                 
-        $("#dialog_confirmation_start_vm")	
+        $("#dialog_confirmation")	
+        .text("Please confirm you want to start instance")
 	    .dialog('option', 'buttons', { 						
 		    "Confirm": function() { 
 			    $(this).dialog("close"); 			
@@ -240,7 +227,8 @@ function bindStopVMButton() {
             return false;
         }        
         
-        $("#dialog_confirmation_stop_vm")	
+        $("#dialog_confirmation")
+        .text("Please confirm you want to stop instance")	
 	    .dialog('option', 'buttons', { 						
 		    "Confirm": function() { 
 			    $(this).dialog("close"); 			
@@ -286,7 +274,8 @@ function bindRebootVMButton() {
             return false;
         }        
                
-        $("#dialog_confirmation_reboot_vm")	
+        $("#dialog_confirmation")	
+        .text("Please confirm you want to reboot instance")
 	    .dialog('option', 'buttons', { 						
 		    "Confirm": function() { 
 			    $(this).dialog("close"); 			
@@ -332,7 +321,8 @@ function bindDestroyVMButton() {
             return false;
         }        
                 
-        $("#dialog_confirmation_destroy_vm")	
+        $("#dialog_confirmation")
+        .text("Please confirm you want to destroy instance")	
 	    .dialog('option', 'buttons', { 						
 		    "Confirm": function() { 
 			    $(this).dialog("close"); 			
@@ -1342,7 +1332,8 @@ var vmActionMap = {
 }                      
      
 function doStartVM($actionLink, $detailsTab, $midmenuItem1) {       
-    $("#dialog_confirmation_start_vm")	
+    $("#dialog_confirmation")	
+    .text("Please confirm you want to start instance")
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
@@ -1360,7 +1351,8 @@ function doStartVM($actionLink, $detailsTab, $midmenuItem1) {
 }   
 
 function doStopVM($actionLink, $detailsTab, $midmenuItem1) {   
-    $("#dialog_confirmation_stop_vm")	
+    $("#dialog_confirmation")	
+    .text("Please confirm you want to stop instance")
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
@@ -1378,7 +1370,8 @@ function doStopVM($actionLink, $detailsTab, $midmenuItem1) {
 }   
    
 function doRebootVM($actionLink, $detailsTab, $midmenuItem1) {   
-    $("#dialog_confirmation_reboot_vm")	
+    $("#dialog_confirmation")	
+    .text("Please confirm you want to reboot instance")
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
@@ -1396,7 +1389,8 @@ function doRebootVM($actionLink, $detailsTab, $midmenuItem1) {
 }   
   
 function doDestroyVM($actionLink, $detailsTab, $midmenuItem1) {   
-    $("#dialog_confirmation_destroy_vm")	
+    $("#dialog_confirmation")	
+    .text("Please confirm you want to destroy instance")
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
@@ -1414,7 +1408,8 @@ function doDestroyVM($actionLink, $detailsTab, $midmenuItem1) {
 }   
   
 function doRestoreVM($actionLink, $detailsTab, $midmenuItem1) {   
-    $("#dialog_confirmation_restore_vm")	
+    $("#dialog_confirmation")	
+    .text("Please confirm you want to restore instance")
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
@@ -1545,7 +1540,8 @@ function doDetachISO($actionLink, $detailsTab, $midmenuItem1) {
 }
 
 function doResetPassword($actionLink, $detailsTab, $midmenuItem1) {   		
-	$("#dialog_confirmation_change_root_password")	
+	$("#dialog_confirmation")
+	.text("Please confirm you want to change the ROOT password for the virtual machine")	
 	.dialog('option', 'buttons', { 						
 		"Yes": function() { 
 			$(this).dialog("close"); 
@@ -2211,7 +2207,8 @@ var vmRouterActionMap = {
 }   
 
 function doStartVmRouter($actionLink, $subgridItem) {
-    $("#dialog_confirmation_start_router")	
+    $("#dialog_confirmation")	
+    .text("Please confirm you want to start router")
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
@@ -2229,7 +2226,8 @@ function doStartVmRouter($actionLink, $subgridItem) {
 }   
 
 function doStopVmRouter($actionLink, $subgridItem) {
-    $("#dialog_confirmation_stop_router")	
+    $("#dialog_confirmation")	
+    .text("Please confirm you want to stop router")
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
@@ -2247,7 +2245,8 @@ function doStopVmRouter($actionLink, $subgridItem) {
 }   
    
 function doRebootVmRouter($actionLink, $subgridItem) {
-    $("#dialog_confirmation_reboot_router")	
+    $("#dialog_confirmation")	
+    .text("Please confirm you want to reboot router")
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
