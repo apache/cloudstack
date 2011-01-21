@@ -216,7 +216,9 @@ function publicNetworkIprangeJsonToTemplate(jsonObj, $template) {
     $template.find("#vlan").text(jsonObj.vlan);    
     $template.find("#gateway").text(jsonObj.gateway);
     $template.find("#netmask").text(jsonObj.netmask);    
-    $template.find("#iprange").text(ipRange);   
+    $template.find("#iprange").text(ipRange);     
+    $template.find("#domain").text(jsonObj.domain);
+    $template.find("#account").text(jsonObj.account);
    
     var $actionLink = $template.find("#iprange_action_link");		
 	$actionLink.bind("mouseover", function(event) {
