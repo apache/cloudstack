@@ -1251,7 +1251,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     }
 
     protected void assignPublicIpAddress(Connection conn, final String vmName, final String privateIpAddress, final String publicIpAddress, final boolean add, final boolean firstIP,
-            final boolean sourceNat, final String vlanId, final String vlanGateway, final String vlanNetmask, final String vifMacAddress, String guestIp) throws InternalErrorException {
+            final boolean sourceNat, final String vlanId, final String vlanGateway, final String vlanNetmask, final String vifMacAddress, String guestIp, Integer networkRate) throws InternalErrorException {
 
         try {
             VM router = getVM(conn, vmName);
@@ -1290,7 +1290,7 @@ public abstract class CitrixResourceBase implements ServerResource {
                     nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlanId));
                 }
                 nic.setDeviceId(Integer.parseInt(vifDeviceNum));
-                nic.setNetworkRateMbps(200);
+                nic.setNetworkRateMbps(networkRate);
                 
                 correctVif = createVif(conn, vmName, router, nic);
                 correctVif.plug(conn);
@@ -1383,7 +1383,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             for (IpAddressTO ip : ips) {
                 
                 assignPublicIpAddress(conn, routerName, routerIp, ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(), ip.isSourceNat(), ip.getVlanId(),
-                        ip.getVlanGateway(), ip.getVlanNetmask(), ip.getVifMacAddress(), ip.getGuestIp());
+                        ip.getVlanGateway(), ip.getVlanNetmask(), ip.getVifMacAddress(), ip.getGuestIp(), ip.getNetworkRate());
                 results[i++] = ip.getPublicIp() + " - success";
             }
         } catch (InternalErrorException e) {

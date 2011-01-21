@@ -58,6 +58,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.AVAILABILITY, type=CommandType.STRING, description="the availability of network offering. Default value is Required")
     private String availability; 
+    
+    @Parameter(name=ApiConstants.NETWORKRATE, type=CommandType.INTEGER, description="data transfer rate in megabits per second allowed.")
+    private Integer networkRate;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -90,6 +93,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     public String getAvailability() {
         //Verify availability
         return availability == null ? Availability.Required.toString() : availability;
+    }
+    
+    public Integer getNetworkRate() {
+        return networkRate;
     }
 
     /////////////////////////////////////////////////////

@@ -34,6 +34,7 @@ public class NicProfile {
     Integer deviceId;
     String dns1;
     String dns2;
+    int networkRate;
     
     public String getDns1() {
         return dns1;
@@ -182,8 +183,12 @@ public class NicProfile {
     public void setIp4Address(String ip4Address) {
         this.ip4Address = ip4Address;
     }
+    
+    public int getNetworkRate() {
+        return networkRate;
+    }
 
-    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri) {
+    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri, Integer networkRate) {
         this.id = nic.getId();
         this.networkId = network.getId();
         this.gateway = nic.getGateway();
@@ -203,6 +208,9 @@ public class NicProfile {
         this.netmask = nic.getNetmask();
         this.dns1 = network.getDns1();
         this.dns2 = network.getDns2();
+        if (networkRate != null) {
+            this.networkRate = networkRate;
+        }
     }
 
     public NicProfile(long id, BroadcastDomainType type, Mode mode, long vmId) {

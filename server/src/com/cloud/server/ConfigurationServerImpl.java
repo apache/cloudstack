@@ -694,8 +694,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     }
     
     private void createDefaultNetworkOfferings() {
-        Integer rateMbps = getIntegerConfigValue(Config.NetworkThrottlingRate.key(), null);  
-        Integer multicastRateMbps = getIntegerConfigValue(Config.MulticastThrottlingRate.key(), null);
 
         NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, TrafficType.Public);
         publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
@@ -708,9 +706,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SysteGuestNetwork, TrafficType.Guest);
         guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
         
-        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, false, false, rateMbps, multicastRateMbps, null, true, Availability.Required, false, false, false, false, false, false, false);
+        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, false, false, null, null, null, true, Availability.Required, false, false, false, false, false, false, false);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
-        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Public, false, false, rateMbps, multicastRateMbps, null, true, Availability.Required, false, false, false, false, false, false, false);
+        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Public, false, false, null, null, null, true, Availability.Required, false, false, false, false, false, false, false);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
     }
     

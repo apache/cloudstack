@@ -124,6 +124,7 @@ import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
@@ -1497,7 +1498,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                  if(vmId!=0){
                      vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
                  }
-                 IpAddressTO ip = new IpAddressTO(ipAddr.getAddress().addr(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress);
+                 
+                 //Get network rate - required for IpAssoc
+                 Network network = _networkMgr.getNetwork(ipAddr.getNetworkId());
+                 NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+                 Integer networkRate = _configMgr.getNetworkRate(no.getId());
+                 
+                 IpAddressTO ip = new IpAddressTO(ipAddr.getAddress().addr(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress, networkRate);
                  ipsToSend[i++] = ip;
                  firstIP = false;
              }

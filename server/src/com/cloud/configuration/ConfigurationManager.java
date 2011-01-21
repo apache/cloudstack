@@ -43,7 +43,7 @@ import com.cloud.utils.component.Manager;
  * ConfigurationManager handles adding pods/zones, changing IP ranges, enabling external firewalls, and editing configuration values
  *
  */
-public interface ConfigurationManager extends Manager {
+public interface ConfigurationManager extends ConfigurationService, Manager {
 	
 	/**
 	 * Updates a configuration entry with a new value

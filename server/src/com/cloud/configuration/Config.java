@@ -56,7 +56,7 @@ public enum Config {
 	GuestIpNetwork("Network", AgentManager.class, String.class, "guest.ip.network", "10.1.1.1", "The network address of the guest virtual network. Virtual machines will be assigned an IP in this subnet.", "privateip"),
 	GuestNetmask("Network", AgentManager.class, String.class, "guest.netmask", "255.255.255.0", "The netmask of the guest virtual network.", "netmask"),
 	GuestVlanBits("Network", ManagementServer.class, Integer.class, "guest.vlan.bits", "12", "The number of bits to reserve for the VLAN identifier in the guest subnet.", null),
-	MulticastThrottlingRate("Network", ManagementServer.class, Integer.class, "multicast.throttling.rate", "10", "Default multicast rate in megabits per second allowed.", null),
+	//MulticastThrottlingRate("Network", ManagementServer.class, Integer.class, "multicast.throttling.rate", "10", "Default multicast rate in megabits per second allowed.", null),
 	NetworkThrottlingRate("Network", ManagementServer.class, Integer.class, "network.throttling.rate", "200", "Default data transfer rate in megabits per second allowed.", null),
 	GuestDomainSuffix("Network", AgentManager.class, String.class, "guest.domain.suffix", "cloud.internal", "Default domain name for vms inside virtualized networks fronted by router", null),
 	OvsNetwork("Network", ManagementServer.class, Boolean.class, "open.vswitch.network", "false", "enable/disable open vswitch network", null),

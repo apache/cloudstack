@@ -2761,4 +2761,25 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     public DataCenterVO getZone(long id){
         return _zoneDao.findById(id);
     }
+    
+    @Override
+    public NetworkOffering getNetworkOffering(long id) {
+        return _networkOfferingDao.findById(id);
+    }
+    
+    @Override
+    public Integer getNetworkRate(long networkOfferingId) {
+        NetworkOffering no = getNetworkOffering(networkOfferingId);
+        Integer networkRate = null;
+        if (no == null) {
+            throw new InvalidParameterValueException("Unable to find network offering by id=" + networkOfferingId);
+        }
+        if (no.getRateMbps() != null) {
+            networkRate = no.getRateMbps();
+        } else {
+            networkRate = Integer.parseInt(_configDao.getValue(Config.NetworkThrottlingRate.key()));
+        }
+        
+        return networkRate;
+    }
 }

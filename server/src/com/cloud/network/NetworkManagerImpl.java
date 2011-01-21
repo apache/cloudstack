@@ -655,8 +655,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         _name = name;
 
         _configs = _configDao.getConfiguration("AgentManager", params);
-        Integer rateMbps = getIntegerConfigValue(Config.NetworkThrottlingRate.key(), null);  
-        Integer multicastRateMbps = getIntegerConfigValue(Config.MulticastThrottlingRate.key(), null);
         _networkGcWait = NumbersUtil.parseInt(_configs.get(Config.NetworkGcWait.key()), 600);
         _networkGcInterval = NumbersUtil.parseInt(_configs.get(Config.NetworkGcInterval.key()), 600);
         
@@ -679,9 +677,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SysteGuestNetwork, guestNetworkOffering);
         
-        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, false, false, rateMbps, multicastRateMbps, null, true, Availability.Required, false, false, false, false, false, false, false);
+        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, false, false, null, null, null, true, Availability.Required, false, false, false, false, false, false, false);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
-        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Public, false, false, rateMbps, multicastRateMbps, null, true, Availability.Required, false, false, false, false, false, false, false);
+        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Public, false, false, null, null, null, true, Availability.Required, false, false, false, false, false, false, false);
         defaultGuestDirectNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
        
         AccountsUsingNetworkSearch = _accountDao.createSearchBuilder();
@@ -891,7 +889,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             deviceIds[devId] = true;
             nics.add(vo);
-            vm.addNic(new NicProfile(vo, network.first(), vo.getBroadcastUri(), vo.getIsolationUri()));
+            
+            NetworkOffering no = _configMgr.getNetworkOffering(config.getNetworkOfferingId());
+            Integer networkRate = _configMgr.getNetworkRate(no.getId());
+            vm.addNic(new NicProfile(vo, network.first(), vo.getBroadcastUri(), vo.getIsolationUri(), networkRate));
         }
 
         if (nics.size() == 1) {
@@ -963,6 +964,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             to.setDns1(profile.getDns1());
             to.setDns2(profile.getDns2());
         }
+        
+        Integer networkRate = _configMgr.getNetworkRate(config.getNetworkOfferingId());
+        to.setNetworkRateMbps(networkRate);
 
         return to;
     }
@@ -1043,6 +1047,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context);
             NetworkGuru concierge = implemented.first();
             NetworkVO network = implemented.second();
+            NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+            Integer networkRate = _configMgr.getNetworkRate(no.getId());
             NicProfile profile = null;
             if (nic.getReservationStrategy() == ReservationStrategy.Start) {
                 nic.setState(Resource.State.Reserving);
@@ -1055,7 +1061,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                 URI isolationUri = nic.getIsolationUri();
 
-                profile = new NicProfile(nic, network, broadcastUri, isolationUri);
+                profile = new NicProfile(nic, network, broadcastUri, isolationUri, networkRate);
                 concierge.reserve(profile, network, vmProfile, dest, context);
                 nic.setIp4Address(profile.getIp4Address());
                 nic.setIp6Address(profile.getIp6Address());
@@ -1069,7 +1075,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 nic.setAddressFormat(profile.getFormat());
                 updateNic(nic, network.getId(), 1);
             } else {
-                profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri());
+                profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate);
                 nic.setState(Nic.State.Reserved);
                 updateNic(nic, network.getId(), 1);
             }
@@ -1090,8 +1096,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<NicVO> nics = _nicDao.listBy(vm.getId());
         for (NicVO nic : nics) {
             Network network = _networksDao.findById(nic.getNetworkId());
+            NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+            Integer networkRate = _configMgr.getNetworkRate(no.getId());
             
-            NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri());
+            NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate);
             
             vm.addNic(profile);
         }
@@ -1109,7 +1117,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     NetworkGuru concierge = _networkGurus.get(network.getGuruName());
                     nic.setState(Resource.State.Releasing);
                     _nicDao.update(nic.getId(), nic);
-                    NicProfile profile = new NicProfile(nic, network, null, null);
+                    NicProfile profile = new NicProfile(nic, network, null, null, null);
                     if (concierge.release(profile, vmProfile, nic.getReservationId())) {
                         nic.setState(Resource.State.Allocated);
                         if (originalState == Nic.State.Reserved) {
@@ -1284,7 +1292,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             nic.setState(Nic.State.Deallocating);
             _nicDao.update(nic.getId(), nic);
             NetworkVO network = _networksDao.findById(nic.getNetworkId());
-            NicProfile profile = new NicProfile(nic, network, null, null);
+            NicProfile profile = new NicProfile(nic, network, null, null, null);
             NetworkGuru guru = _networkGurus.get(network.getGuruName());
             guru.deallocate(network, profile, vm);
             _nicDao.remove(nic.getId());

@@ -179,5 +179,6 @@ public class ApiConstants {
     public static final String IS_DEFAULT = "isdefault";
     public static final String IS_SYSTEM = "issystem";
     public static final String AVAILABILITY = "availability";
+    public static final String NETWORKRATE = "networkrate";
 }
  

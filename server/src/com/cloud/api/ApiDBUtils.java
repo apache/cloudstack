@@ -7,6 +7,7 @@ import java.util.Map;
 import com.cloud.agent.AgentManager;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
+import com.cloud.configuration.ConfigurationService;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
@@ -137,6 +138,7 @@ public class ApiDBUtils {
     private static DataCenterDao _zoneDao;
     private static NetworkOfferingDao _networkOfferingDao;
     private static NetworkDao _networkDao;
+    private static ConfigurationService _configMgr;
 
     static {
         _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
@@ -150,6 +152,7 @@ public class ApiDBUtils {
         _storageMgr = locator.getManager(StorageManager.class);
         _userVmMgr = locator.getManager(UserVmManager.class);
         _networkMgr = locator.getManager(NetworkManager.class);
+        _configMgr = locator.getManager(ConfigurationService.class);
 
         _accountDao = locator.getDao(AccountDao.class);
         _accountVlanMapDao = locator.getDao(AccountVlanMapDao.class);
@@ -519,6 +522,10 @@ public class ApiDBUtils {
         } else {
             return null;
         }
+    }
+    
+    public static Integer getNetworkRate(long networkOfferingId) {
+       return _configMgr.getNetworkRate(networkOfferingId);
     }
     
 }

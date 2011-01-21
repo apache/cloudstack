@@ -184,5 +184,9 @@ public interface ConfigurationService {
     List<? extends NetworkOffering> searchForNetworkOfferings(ListNetworkOfferingsCmd cmd);
     
     boolean deleteNetworkOffering(DeleteNetworkOfferingCmd cmd);
+    
+    NetworkOffering getNetworkOffering(long id);
+    
+    Integer getNetworkRate(long networkOfferingId);
    
 }

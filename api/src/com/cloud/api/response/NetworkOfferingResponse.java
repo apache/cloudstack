@@ -2,6 +2,7 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -35,6 +36,9 @@ public class NetworkOfferingResponse extends BaseResponse{
     
     @SerializedName("availability") @Param(description="availability of the network offering")
     private String availability;
+    
+    @SerializedName(ApiConstants.NETWORKRATE) @Param(description="data transfer rate in megabits per second allowed.")
+    private Integer networkRate;
 
     public Long getId() {
         return id;
@@ -122,5 +126,13 @@ public class NetworkOfferingResponse extends BaseResponse{
 
     public void setAvailability(String availability) {
         this.availability = availability;
+    }
+
+    public Integer getNetworkRate() {
+        return networkRate;
+    }
+
+    public void setNetworkRate(Integer networkRate) {
+        this.networkRate = networkRate;
     }
 }
