@@ -1,20 +1,15 @@
-<%@ page import="java.util.*" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
+<fmt:setBundle basename="resources/messages"/>
 
-<%@ page import="com.cloud.utils.*" %>
-
-<%
-    Locale browserLocale = request.getLocale();
-    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
-%>
 <!-- account detail panel (begin) -->
-<!-- Loading -->
-    
- 
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
         <img src="images/title_accountsicon.gif" /></div>
-    <h1>
-        Accounts</h1>
+    <h1><fmt:message key="label.menu.accounts"/></h1>
 </div>
 <div class="contentbox" id="right_panel_content">	
     <div class="info_detailbox errorbox" id="after_action_info_container_on_top" style="display: none">
@@ -23,25 +18,25 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div id="tab_details" class="content_tabs on">
-            <%=t.t("Details")%></div>
+            <fmt:message key="label.details"/></div>
         <div id="tab_user" class="content_tabs off">
-            <%=t.t("Users")%></div>
+            <fmt:message key="label.users"/></div>
     </div> 
     <!--Details tab (begin)-->
     <div id="tab_content_details">
         <div class="rightpanel_mainloader_panel" style="display:none;">
               <div class="rightpanel_mainloaderbox">
                    <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
+                   <p><fmt:message key="label.loading"/> &hellip;</p>    
               </div>               
         </div>
         <div class="grid_container">
         	<div class="grid_header">
             	<div id="grid_header_title" class="grid_header_title">(title)</div>
-                <div id="action_link" class="grid_actionbox"><p>Actions</p>
+                <div id="action_link" class="grid_actionbox"><p><fmt:message key="label.actions"/></p>
                     <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                         <ul class="actionsdropdown_boxlist" id="action_list">
-                        	<li><%=t.t("no.available.actions")%></li>
+                        	<li><fmt:message key="label.no.actions"/></li>
                         </ul>
                     </div>
                 </div>
@@ -50,13 +45,13 @@
                     <div class="gridheader_loader" id="icon">
                     </div>
                     <p id="description">
-                        Detaching Disk &hellip;</p>
+                        <fmt:message key="label.detaching.disk"/> &hellip;</p>
                 </div>
             </div>
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("ID")%>:</div>
+                        <fmt:message key="label.id"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="id">
@@ -66,7 +61,7 @@
             <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("Role")%>:</div>
+                        <fmt:message key="label.role"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="role">
@@ -76,7 +71,7 @@
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        Account Name:</div>
+                        <fmt:message key="label.account.name"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="name">
@@ -88,7 +83,7 @@
             <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("Domain")%>:</div>
+                        <fmt:message key="label.domain"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="domain">
@@ -98,7 +93,7 @@
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("VMs")%>:</div>
+                        <fmt:message key="label.vms"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="vm_total">
@@ -108,7 +103,7 @@
             <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("IPs")%>:</div>
+                        <fmt:message key="label.ips"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="ip_total">
@@ -118,7 +113,7 @@
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("Bytes.Received")%>:</div>
+                        <fmt:message key="label.bytes.received"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="bytes_received">
@@ -128,7 +123,7 @@
             <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("Bytes.Sent")%>:</div>
+                        <fmt:message key="label.bytes.sent"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="bytes_sent">
@@ -138,7 +133,7 @@
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("State")%>:</div>
+                        <fmt:message key="label.state"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="state">
@@ -147,8 +142,8 @@
             </div>
         </div>        
         <div class="grid_botactionpanel">
-	        <div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
-	        <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
+	        <div class="gridbot_buttons" id="save_button" style="display:none;"><fmt:message key="label.save"/></div>
+	        <div class="gridbot_buttons" id="cancel_button" style="display:none;"><fmt:message key="label.cancel"/></div>
 	    </div>         
     </div>
     <!--Details tab (end)-->
@@ -157,7 +152,7 @@
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
               <div class="rightpanel_mainloaderbox">
                    <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
+                   <p><fmt:message key="label.loading"/> &hellip;</p>    
               </div>               
         </div>
         <div id="tab_container">
@@ -172,18 +167,18 @@
     <div class="actionpanel_button_wrapper" id="add_account_button" style="display: none">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" alt="Add Account" /></div>
+                <img src="images/addvm_actionicon.png" /></div>
             <div class="actionpanel_button_links">
-                Add Account
+                <fmt:message key="label.add.account"/>s
             </div>
         </div>
     </div>
     <div class="actionpanel_button_wrapper" id="add_user_button" style="display: none">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" alt="Add User" /></div>
+                <img src="images/addvm_actionicon.png" /></div>
             <div class="actionpanel_button_links">
-                Add User
+                <fmt:message key="label.add.user"/>
             </div>
         </div>
     </div>
@@ -205,7 +200,7 @@
             <div class="gridheader_loader" id="icon">
             </div>
             <p id="description">
-                Waiting &hellip;
+                <fmt:message key="label.waiting"/> &hellip;
             </p>
         </div>       
     </div>
@@ -213,14 +208,14 @@
     <div class="grid_rows" id="after_action_info_container" style="display:none">
         <div class="grid_row_cell" style="width: 90%; border: none;">
             <div class="row_celltitles">
-                <strong id="after_action_info">Message will appear here</strong></div>
+                <strong id="after_action_info"></strong></div>
         </div>
     </div>
         
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                ID:</div>
+                <fmt:message key="label.id"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="id">
@@ -230,7 +225,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                User Name:</div>
+                <fmt:message key="label.username"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="username">
@@ -240,7 +235,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                State:</div>
+                <fmt:message key="label.state"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="state">
@@ -250,7 +245,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                API Key:</div>
+                <fmt:message key="label.api.key"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="apikey">
@@ -260,7 +255,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Secret Key:</div>
+                <fmt:message key="label.secret.key"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="secretkey">
@@ -270,7 +265,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Account Name:</div>
+                <fmt:message key="label.account.name"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="account">
@@ -280,7 +275,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Role:</div>
+                <fmt:message key="label.role"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="role">
@@ -290,7 +285,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Domain:</div>
+                <fmt:message key="label.domain"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="domain">
@@ -300,7 +295,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Email:</div>
+                <fmt:message key="label.email"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="email">
@@ -310,7 +305,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                First Name:</div>
+                <fmt:message key="label.first.name"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="firstname">
@@ -320,7 +315,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Last Name:</div>
+                <fmt:message key="label.last.name"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="lastname">
@@ -330,7 +325,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Timezone:</div>
+                <fmt:message key="label.timezone"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="timezone">
@@ -343,33 +338,33 @@
 <!-- dialogs (begin) -->
 <div id="dialog_resource_limits" title="Resource Limits" style="display:none">
 	<p>
-	    <%=t.t("please.specify.limits.to.the.various.resources.-1.means.the.resource.has.no.limits")%>	    
+		<fmt:message key="message.edit.limits"/>
 	</p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form_acquire">
 			<ol>
 				<li>
-					<label><%=t.t("instance.limit")%>:</label>
+					<label><fmt:message key="label.instance.limits"/>:</label>
 					<input class="text" type="text" name="limits_vm" id="limits_vm" value="-1" />
 					<div id="limits_vm_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div> 
 				</li>
 				<li>
-					<label><%=t.t("public.ip.limit")%>:</label>
+					<label><fmt:message key="label.ip.limits"/>:</label>
 					<input class="text" type="text" name="limits_ip" id="limits_ip" value="-1" />
 					<div id="limits_ip_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div> 
 				</li>
 				<li>
-					<label><%=t.t("disk.volume.limit")%>:</label>
+					<label><fmt:message key="label.volume.limits"/>:</label>
 					<input class="text" type="text" name="limits_volume" id="limits_volume" value="-1" />
 					<div id="limits_volume_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div> 
 				</li>
 				<li>
-					<label><%=t.t("snapshot.limit")%>:</label>
+					<label><fmt:message key="label.snapshot.limits"/>:</label>
 					<input class="text" type="text" name="limits_snapshot" id="limits_snapshot" value="-1" />
 					<div id="limits_snapshot_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div> 
 				</li>
 				<li>
-					<label><%=t.t("template.limit")%>:</label>
+					<label><fmt:message key="label.template.limits"/>:</label>
 					<input class="text" type="text" name="limits_template" id="limits_template" value="-1" />
 					<div id="limits_template_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div> 
 				</li>
@@ -380,19 +375,19 @@
 
 <div id="dialog_disable_account" title="Disable account" style="display:none">
     <p>
-        <%=t.t("please.confirm.you.want.to.disable.account.that.will.prevent.account.access.to.the.cloud.and.shut.down.all.existing.virtual.machines")%>        
+		<fmt:message key="message.disable.account"/>
     </p>
 </div>
 
 <div id="dialog_lock_account" title="Lock account" style="display:none">
     <p>
-        <%=t.t("please.confirm.you.want.to.lock.account.that.will.prevent.account.access.to.the.cloud")%>        
+		<fmt:message key="message.lock.account"/>
     </p>
 </div>
 
 <div id="dialog_enable_account" title="Enable account" style="display:none">
     <p>
-        <%=t.t("please.confirm.you.want.to.enable.account")%>        
+		<fmt:message key="message.enable.account"/>
     </p>
 </div>
 
@@ -403,14 +398,14 @@
         <ol>
             <li>
                 <label for="add_user_username">
-                    User name:</label>
+                    <fmt:message key="label.username"/>:</label>
                 <input class="text" type="text" id="add_user_username" />
                 <div id="add_user_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="add_user_password">
-                    Password:</label>
+                    <fmt:message key="label.password"/>:</label>
                 <input class="text" type="password" id="add_user_password"
                     autocomplete="off" />
                 <div id="add_user_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
@@ -418,49 +413,49 @@
             </li>
             <li>
                 <label for="add_user_email">
-                    Email:</label>
+                    <fmt:message key="label.email"/>:</label>
                 <input class="text" type="text" id="add_user_email" />
                 <div id="add_user_email_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="add_user_firstname">
-                    First name:</label>
+                    <fmt:message key="label.first.name"/>:</label>
                 <input class="text" type="text" id="add_user_firstname" />
                 <div id="add_user_firstname_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="add_user_lastname">
-                    Last name:</label>
+                    <fmt:message key="label.last.name"/>:</label>
                 <input class="text" type="text" id="add_user_lastname" />
                 <div id="add_user_lastname_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="add_user_account">
-                    Account:</label>
+                    <fmt:message key="label.account"/>:</label>
                 <input class="text" type="text" id="add_user_account" />
                 <div id="add_user_account_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="add_user_account_type">
-                    Role:</label>
+                    <fmt:message key="label.role"/>:</label>
                 <select class="select" id="add_user_account_type">
-                    <option value="0">User</option>
-                    <option value="1">Admin</option>
+                    <option value="0"><fmt:message key="label.user"/></option>
+                    <option value="1"><fmt:message key="label.admin"/></option>
                 </select>
             </li>
             <li>
                 <label for="add_user_domain">
-                    Domain:</label>
+                    <fmt:message key="label.domain"/>:</label>
                 <select class="select" id="domain_dropdown">
                 </select>
             </li>
             <li>
                 <label for="add_user_timezone">
-                    Time Zone:</label>
+                    <fmt:message key="label.timezone"/>:</label>
                 <select class="select" id="add_user_timezone" style="width: 240px">
                     <option value=""></option>
                     <option value='Etc/GMT+12'>[UTC-12:00] GMT-12:00</option>
@@ -533,21 +528,21 @@
 <!-- Add User Dialog (begin)-->
 <div id="dialog_add_user" title="Add New User" style="display: none">  
     <p>
-        Add a new user under account <b><span id="account_name"></span></b>
+        <fmt:message key="message.new.user"/> :<b><span id="account_name"></span></b>
     </p> 
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
             <li>
                 <label for="add_user_username">
-                    User name:</label>
+                    <fmt:message key="label.username"/>:</label>
                 <input class="text" type="text" id="add_user_username" />
                 <div id="add_user_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="add_user_password">
-                    Password:</label>
+                    <fmt:message key="label.password"/>:</label>
                 <input class="text" type="password" id="add_user_password"
                     autocomplete="off" />
                 <div id="add_user_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
@@ -555,28 +550,28 @@
             </li>
             <li>
                 <label for="add_user_email">
-                    Email:</label>
+                    <fmt:message key="label.email"/>:</label>
                 <input class="text" type="text" id="add_user_email" />
                 <div id="add_user_email_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="add_user_firstname">
-                    First name:</label>
+                    <fmt:message key="label.first.name"/>:</label>
                 <input class="text" type="text" id="add_user_firstname" />
                 <div id="add_user_firstname_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="add_user_lastname">
-                    Last name:</label>
+                    <fmt:message key="label.last.name"/>:</label>
                 <input class="text" type="text" id="add_user_lastname" />
                 <div id="add_user_lastname_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>            
             <li>
                 <label for="add_user_timezone">
-                    Time Zone:</label>
+                    <fmt:message key="label.timezone"/>:</label>
                 <select class="select" id="add_user_timezone" style="width: 240px">
                     <option value=""></option>
                     <option value='Etc/GMT+12'>[UTC-12:00] GMT-12:00</option>
@@ -648,7 +643,7 @@
         <div class="ui_dialog_loader">
         </div>
         <p>
-            Adding....</p>
+            <fmt:message key="label.adding"/>....</p>
     </div>
     <!--Confirmation msg box-->
     <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
@@ -663,32 +658,32 @@
 
 <!-- Edit User Dialog (begin)-->
 <div id="dialog_edit_user" title="Edit User" style="display:none">
-	<p>Please review your changes before clicking 'Save'</p>
+	<p><fmt:message key="message.edit.confirm"/></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form2">
 			<ol>		
 				<li>
-					<label for="edit_user_username">User name:</label>
+					<label for="edit_user_username"><fmt:message key="label.username"/>:</label>
 					<input class="text" type="text" name="edit_user_username" id="edit_user_username"/>
 					<div id="edit_user_username_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
 				<li>
-					<label for="edit_user_email">Email:</label>
+					<label for="edit_user_email"><fmt:message key="label.email"/>:</label>
 					<input class="text" type="text" name="edit_user_email" id="edit_user_email"/>
 					<div id="edit_user_email_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
 				<li>
-					<label for="edit_user_firstname">First name:</label>
+					<label for="edit_user_firstname"><fmt:message key="label.first.name"/>:</label>
 					<input class="text" type="text" name="edit_user_firstname" id="edit_user_firstname"/>
 					<div id="edit_user_firstname_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
 				<li>
-					<label for="edit_user_lastname">Last name:</label>
+					<label for="edit_user_lastname"><fmt:message key="label.last.name"/>:</label>
 					<input class="text" type="text" name="edit_user_lastname" id="edit_user_lastname"/>
 					<div id="edit_user_lastname_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>	
 				<li>
-				    <label for="edit_user_timezone">Time Zone:</label>
+				    <label for="edit_user_timezone"><fmt:message key="label.timezone"/>:</label>
 				    <select class="select" id="edit_user_timezone">
                         <option value=""></option>                      
                         <option value='Etc/GMT+11'>[UTC-11:00] GMT-11:00</option>
@@ -759,12 +754,12 @@
 
 <!-- Change Password Dialog (begin) -->
 <div id="dialog_change_password" title="Change Password" style="display:none">
-	<p>Please review your changes before clicking 'Save'</p>
+	<p><fmt:message key="message.edit.confirm"/></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form4">
 			<ol>					
 				<li>
-					<label for="change_password_password1">Password:</label>
+					<label for="change_password_password1"><fmt:message key="label.password"/>:</label>
 					<input class="text" type="password" name="change_password_password1" id="change_password_password1" AUTOCOMPLETE="off"/>
 					<div id="change_password_password1_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>							
@@ -784,10 +779,10 @@
             <ol>               
                 <li>
                     <select class="select" id="adv_search_role">
-                        <option value="">by role</option>
-                        <option value="0">User</option>
-                        <option value="2">Domain-Admin</option>
-                        <option value="1">Admin</option>
+                        <option value=""><fmt:message key="label.by.role"/></option>
+                        <option value="0"><fmt:message key="label.user"/></option>
+                        <option value="2"><fmt:message key="label.domain.admin"/></option>
+                        <option value="1"><fmt:message key="label.admin"/></option>
                     </select>
                 </li>
             </ol>
