@@ -970,9 +970,12 @@ function getMidmenuId(jsonObj) {
     return "midmenuItem_" + jsonObj.id; 
 }
 
-var lastSearchType;
+//var lastSearchType;
 var currentCommandString;
 function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, page) {                
+	$("#midmenu_container").hide();
+	$("#midmenu_spinning_wheel").show();
+	
 	var params = {
         "commandString": commandString,
         "getSearchParamsFn": getSearchParamsFn,
@@ -1046,12 +1049,14 @@ var currentRightPanelJSP = null;
 function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, leftmenuId, refreshDataBindingFn) { 
 	clearMiddleMenu();
 	showMiddleMenu();	
-	$("#midmenu_container").hide();
-	$("#midmenu_spinning_wheel").show();
 	
 	currentLeftMenuId = leftmenuId;
 	$("#right_panel").data("onRefreshFn", function() {
-	    $("#"+leftmenuId).click();
+	    //$("#"+leftmenuId).click();	    
+	    var params = $("#middle_menu_pagination").data("params");
+        if(params == null)
+            return;	 	         	    
+        listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);	    
 	});
 
 	if (currentRightPanelJSP != rightPanelJSP) {
