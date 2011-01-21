@@ -575,11 +575,11 @@ function doDeleteIngressRule($actionLink, $subgridItem) {
     	 
 	        if(protocol == "icmp") {
 	            var icmpType = ingressRuleObj.icmptype;
-	            if(icmpType != null && icmpType.length > 0)
+	            if(icmpType != null)
 	                moreCriteria.push("&icmptype="+encodeURIComponent(icmpType));
     		    
 	            var icmpCode = ingressRuleObj.icmpcode;
-	            if(icmpCode != null && icmpCode.length > 0)
+	            if(icmpCode != null)
 	                moreCriteria.push("&icmpcode="+encodeURIComponent(icmpCode));
 	        }
 	        else {  //TCP, UDP
