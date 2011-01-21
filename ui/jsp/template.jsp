@@ -408,18 +408,6 @@
 <!-- Download Template Dialog (end) -->
 <!-- Add Template Dialog (end) -->
 
-<div id="dialog_confirmation_delete_template_all_zones" title="Confirmation" style="display:none">
-    <p>
-        <%=t.t("the.template.is.used.by.all.zones.please.confirm.you.want.to.delete.it.from.all.zones")%>
-    </p>
-</div>
-
-<div id="dialog_confirmation_delete_template" title="Confirmation" style="display:none">
-    <p>
-        <%=t.t("please.confirm.you.want.to.delete.the.template")%>
-    </p>
-</div>
-
 <div id="hidden_container">
     <!-- advanced search popup (begin) -->
     <div class="adv_searchpopup_bg" id="advanced_search_popup" style="display: none;">

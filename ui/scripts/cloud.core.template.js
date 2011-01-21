@@ -256,9 +256,7 @@ function afterLoadTemplateJSP() {
         }      
     });
 	
-	//initialize dialog box ***
-	initDialog("dialog_confirmation_delete_template_all_zones");
-    initDialog("dialog_confirmation_delete_template");    
+	//initialize dialog box ***	
     initDialog("dialog_add_template", 450);	
 	initDialog("dialog_copy_template", 300);	
 	initDialog("dialog_create_vm_from_template", 300);	
@@ -596,9 +594,9 @@ function doDeleteTemplate($actionLink, $detailsTab, $midmenuItem1) {
 	
 	var $dialog1;
 	if(jsonObj.crossZones == true)
-	    $dialog1 = $("#dialog_confirmation_delete_template_all_zones");
+	    $dialog1 = $("#dialog_confirmation").text("The template is used by all zones. Please confirm you want to delete it from all zones.");
 	else
-	    $dialog1 = $("#dialog_confirmation_delete_template");	
+	    $dialog1 = $("#dialog_confirmation").text("Please confirm you want to delete the template");	
 	
 	$dialog1		
 	.dialog('option', 'buttons', { 					

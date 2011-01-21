@@ -52,9 +52,7 @@ function isoGetSearchParams() {
 	return moreCriteria.join("");          
 }
 
-function afterLoadIsoJSP() {    
-    initDialog("dialog_confirmation_delete_iso_all_zones");
-    initDialog("dialog_confirmation_delete_iso");
+function afterLoadIsoJSP() {   
     initDialog("dialog_copy_iso", 300);    
     initDialog("dialog_download_ISO");
     
@@ -572,9 +570,9 @@ function doDeleteIso($actionLink, $detailsTab, $midmenuItem1) {
 	
 	var $dialog1;
 	if(jsonObj.crossZones == true)
-	    $dialog1 = $("#dialog_confirmation_delete_iso_all_zones");
+	    $dialog1 = $("#dialog_confirmation").text("The ISO is used by all zones. Please confirm you want to delete it from all zones.");
 	else
-	    $dialog1 = $("#dialog_confirmation_delete_iso");	
+	    $dialog1 = $("#dialog_confirmation").text("Please confirm you want to delete the ISO");	
 	
 	$dialog1	
 	.dialog('option', 'buttons', { 					
