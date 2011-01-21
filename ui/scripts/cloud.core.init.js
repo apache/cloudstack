@@ -343,6 +343,13 @@ $(document).ready(function() {
 		return;
 	}
 	
+	//clear search
+	$("#clear_search").unbind("click").bind("click", function(event) {	    
+	    if($selectedSubMenu != null)
+	        $selectedSubMenu.click();
+	    return false;
+	});
+	
 	//basic search	
 	$("#basic_search").find("#search_input").unbind("keypress").bind("keypress", function(event) { 	 
 	    event.stopPropagation();   

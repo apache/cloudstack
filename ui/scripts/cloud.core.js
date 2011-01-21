@@ -990,9 +990,9 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
 	
 	var searchParams = getSearchParamsFn();
 	if(searchParams.length > 0)
-	    $("#search_closebutton").show();
+	    $("#clear_search").show();
 	else
-	    $("#search_closebutton").hide();
+	    $("#clear_search").hide();
 	
     var count = 0;    
     $.ajax({
