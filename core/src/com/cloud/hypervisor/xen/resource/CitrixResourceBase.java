@@ -740,7 +740,9 @@ public abstract class CitrixResourceBase implements ServerResource {
             if (vmSpec.getBootloader() == BootloaderType.CD) {
             	vm.setPVBootloader(conn, "eliloader");
             	Map<String, String> otherConfig = vm.getOtherConfig(conn);
-            	otherConfig.put( "install-repository", "cdrom");
+                if ( ! vm.getOtherConfig(conn).containsKey("install-repository") ) {
+                    otherConfig.put( "install-repository", "cdrom");
+                }
             	vm.setOtherConfig(conn, otherConfig);
             } else if (vmSpec.getBootloader() == BootloaderType.PyGrub ){
             	vm.setPVBootloader(conn, "pygrub");
@@ -2655,7 +2657,9 @@ public abstract class CitrixResourceBase implements ServerResource {
         try {
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
             // stop vm which is running on this host or is in halted state
-            for (VM vm : vms) {
+            Iterator<VM> iter = vms.iterator();
+            while ( iter.hasNext() ) {
+                VM vm = iter.next();
                 VM.Record vmr = vm.getRecord(conn);
                 if (vmr.powerState != VmPowerState.RUNNING) {
                     continue;
@@ -2666,7 +2670,7 @@ public abstract class CitrixResourceBase implements ServerResource {
                 if (vmr.residentOn.getUuid(conn).equals(_host.uuid)) {
                     continue;
                 }
-                vms.remove(vm);
+                iter.remove();
             }
 
             if (vms.size() == 0) {
