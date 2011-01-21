@@ -51,7 +51,7 @@
                             Public IP Addresses</h2>
                         <div class="dbgraph_title_usedbox">
                             <p>
-                                Used: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
+                                Allocated: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                             </p>
                         </div>
                     </div>
@@ -72,7 +72,7 @@
                             Private IP Addresses</h2>
                         <div class="dbgraph_title_usedbox">
                             <p>
-                                Used: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
+                                Allocated: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                             </p>
                         </div>
                     </div>
@@ -93,7 +93,7 @@
                             Memory Allocated</h2>
                         <div class="dbgraph_title_usedbox">
                             <p>
-                                Used: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
+                                Allocated: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                             </p>
                         </div>
                     </div>
@@ -111,10 +111,10 @@
                 <div class="dbrow_cell" style="width: 35%;">
                     <div class="dbgraph_titlebox">
                         <h2>
-                            CPU</h2>
+                            CPU Allocated</h2>
                         <div class="dbgraph_title_usedbox">
                             <p>
-                                Used: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
+                                Allocated: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                             </p>
                         </div>
                     </div>
@@ -135,7 +135,7 @@
                             Primary Storage Allocated</h2>
                         <div class="dbgraph_title_usedbox">
                             <p>
-                                Used: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
+                                Allocated: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                             </p>
                         </div>
                     </div>
