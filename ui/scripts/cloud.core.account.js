@@ -514,8 +514,10 @@ function accountUserJSONToTemplate(jsonObj, $template) {
         noAvailableActions = false;
         
         if(jsonObj.id != systemUserId && jsonObj.id != adminUserId) {
-            buildActionLinkForSubgridItem("Disable User", accountUserActionMap, $actionMenu, $template);	  
-            buildActionLinkForSubgridItem("Enable User", accountUserActionMap, $actionMenu, $template);	  
+            if(jsonObj.state == "enabled") 
+                buildActionLinkForSubgridItem("Disable User", accountUserActionMap, $actionMenu, $template);	  
+            if(jsonObj.state == "disabled")
+                buildActionLinkForSubgridItem("Enable User", accountUserActionMap, $actionMenu, $template);	  
             buildActionLinkForSubgridItem("Delete User", accountUserActionMap, $actionMenu, $template);	  
         }
 	} 	
