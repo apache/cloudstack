@@ -153,6 +153,7 @@ import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.xen.resource.XenServerConnectionPool.XenServerConnection;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.Networks;
@@ -196,6 +197,7 @@ import com.xensource.xenapi.PIF;
 import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Session;
+import com.xensource.xenapi.Task;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.IpConfigurationMode;
@@ -281,12 +283,7 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     @Override
     public void disconnected() {
-    }
-
-    protected VDI cloudVDIcopy(Connection conn, VDI vdi, SR sr) throws BadServerResponse, XenAPIException, XmlRpcException{
-        return vdi.copy(conn, sr);
-    }
-    
+    } 
 
     protected Pair<VM, VM.Record> getVmByNameLabel(Connection conn, Host host, String nameLabel, boolean getRecord) throws XmlRpcException, XenAPIException {
         Set<VM> vms = host.getResidentVMs(conn);
@@ -318,20 +315,19 @@ public abstract class CitrixResourceBase implements ServerResource {
         return true;
 
     }
-
+    
     protected boolean pingxenserver() {
-        Connection conn = _connPool.slaveConnect(_host.ip, _username, _password);
-        if ( conn == null ) {
-            return false;
-        } else {
-            try {
-                Session.localLogout(conn);
-            } catch (Exception e) {
-
-            }
-            conn.dispose();
+        XenServerConnection conn = (XenServerConnection) getConnection();
+        try {
+            Host host = Host.getByUuid(conn, _host.uuid);
+            host.enable(conn);
+            return true;
+        } catch (Exception e) {
+            String msg = "Catch Exception " + e.getClass().getName() + " : Enable host(" + _host.uuid + ") in pool(" + conn.getPoolUuid() + ") failed due to "
+                    + e.toString();
+            s_logger.warn(msg);
         }
-        return true;
+        return false;
     }
 
     protected String logX(XenAPIObject obj, String msg) {
@@ -2610,25 +2606,49 @@ public abstract class CitrixResourceBase implements ServerResource {
         vm.setMemoryDynamicMax(conn, memsize);
         vm.setMemoryStaticMax(conn, memsize);
     }
-
-    void shutdownVM(Connection conn, VM vm, String vmName) throws XmlRpcException {
-        try {      
-            vm.cleanShutdown(conn);
-        } catch (Types.XenAPIException e) {
-            s_logger.debug("Unable to cleanShutdown VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString() + ", try hard shutdown");
+    
+    private void waitForTask(Connection c, Task task, long pollInterval, long timeout) throws XenAPIException, XmlRpcException {
+        long beginTime = System.currentTimeMillis();
+        while (task.getStatus(c) == Types.TaskStatusType.PENDING) {
             try {
-                vm.hardShutdown(conn);
-            } catch (Exception e1) {
-                String msg = "Unable to hardShutdown VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString();
-                s_logger.warn(msg, e1);
-                throw new CloudRuntimeException(msg);
+                Thread.sleep(pollInterval);
+            } catch (InterruptedException e) {
+            }
+            if( System.currentTimeMillis() - beginTime > timeout){
+                String msg = "Async " + timeout/100 + " seconds timeout for task " + task.toString();
+                s_logger.warn(msg);
+                task.cancel(c);               
+                throw new Types.BadAsyncResult(msg);
             }
         }
     }
     
+    private void checkForSuccess(Connection c, Task task) throws XenAPIException, XmlRpcException {
+        if (task.getStatus(c) == Types.TaskStatusType.SUCCESS) {
+            return;
+        } else {
+            String msg = "Task failed! Task record:\n" + task.getRecord(c);
+            s_logger.warn(msg);
+            task.cancel(c);
+            throw new Types.BadAsyncResult(msg);
+        }
+    }
+
     void rebootVM(Connection conn, VM vm, String vmName) throws XmlRpcException {
+        Task task = null;
         try {
-            vm.cleanReboot(conn);
+            task = vm.cleanRebootAsync(conn);
+            try {
+                //poll every 1 seconds , timeout after 10 minutes
+                waitForTask(conn, task, 1000, 10 * 60 * 1000);
+                checkForSuccess(conn, task);
+            } catch (Types.HandleInvalid e) {
+                if (vm.getPowerState(conn) == Types.VmPowerState.RUNNING) {
+                    task = null;
+                    return;
+                }
+                throw new CloudRuntimeException("Reboot VM catch HandleInvalid and VM is not in RUNNING state");
+            }
         } catch (XenAPIException e) {
             s_logger.debug("Unable to Clean Reboot VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString() + ", try hard reboot");
             try {
@@ -2638,19 +2658,187 @@ public abstract class CitrixResourceBase implements ServerResource {
                 s_logger.warn(msg, e1);
                 throw new CloudRuntimeException(msg);
             }
+        }finally {
+            if( task != null) {
+                try {
+                    task.destroy(conn);
+                } catch (Exception e1) {
+                    s_logger.debug("unable to destroy task(" + task.toString() + ") on host(" + _host.uuid +") due to " + e1.toString());    
+                }
+            }
+        }
+    }
+    
+    void shutdownVM(Connection conn, VM vm, String vmName) throws XmlRpcException {
+        Task task = null;
+        try {
+            task = vm.cleanShutdownAsync(conn);
+            try {
+                //poll every 1 seconds , timeout after 10 minutes
+                waitForTask(conn, task, 1000, 10 * 60 * 1000);
+                checkForSuccess(conn, task);
+            } catch (Types.HandleInvalid e) {
+                if (vm.getPowerState(conn) == Types.VmPowerState.HALTED) {
+                    task = null;
+                    return;
+                }
+                throw new CloudRuntimeException("Shutdown VM catch HandleInvalid and VM is not in HALTED state");
+            }
+        } catch (XenAPIException e) {
+            s_logger.debug("Unable to cleanShutdown VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString());
+            try {
+                vm.hardShutdown(conn);
+                return;
+            } catch (Exception e1) {
+                String msg = "Unable to hardShutdown VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString();
+                s_logger.warn(msg, e1);
+                throw new CloudRuntimeException(msg);
+            }
+        }finally {
+            if( task != null) {
+                try {
+                    task.destroy(conn);
+                } catch (Exception e1) {
+                    s_logger.debug("unable to destroy task(" + task.toString() + ") on host(" + _host.uuid +") due to " + e1.toString());    
+                }
+            }
         }
     }
     
     void startVM(Connection conn, Host host, VM vm, String vmName) throws XmlRpcException {
+        Task task = null;
         try {
-            vm.startOn(conn, host, false, true);
-        } catch (Exception e) {
+            task = vm.startOnAsync(conn, host, false, true);
+            try {
+                //poll every 1 seconds , timeout after 10 minutes
+                waitForTask(conn, task, 1000, 10 * 60 * 1000);
+                checkForSuccess(conn, task);
+            } catch (Types.HandleInvalid e) {
+                if (vm.getPowerState(conn) == Types.VmPowerState.RUNNING) {
+                    task = null;
+                    return;
+                }
+                throw new CloudRuntimeException("Shutdown VM catch HandleInvalid and VM is not in RUNNING state");
+            }
+        } catch (XenAPIException e) {
             String msg = "Unable to start VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString();
             s_logger.warn(msg, e);
             throw new CloudRuntimeException(msg);
+        }finally {
+            if( task != null) {
+                try {
+                    task.destroy(conn);
+                } catch (Exception e1) {
+                    s_logger.debug("unable to destroy task(" + task.toString() + ") on host(" + _host.uuid +") due to " + e1.toString());    
+                }
+            }
         }
     }
-    
+
+    protected VDI cloudVDIcopy(Connection conn, VDI vdi, SR sr) throws XenAPIException, XmlRpcException {
+        Task task = null;
+        try {
+            task = vdi.copyAsync(conn, sr);
+            // poll every 5 seconds , timeout after 2 hours
+            waitForTask(conn, task, 5 * 1000, 2 * 60 * 60 * 1000);
+            checkForSuccess(conn, task);
+            VDI dvdi = Types.toVDI(task, conn);
+            return dvdi;
+        } finally {
+            if (task != null) {
+                try {
+                    task.destroy(conn);
+                } catch (Exception e1) {
+                    s_logger.warn("unable to destroy task(" + task.toString() + ") on host(" + _host.uuid + ") due to "
+                            + e1.toString());
+                }
+            }
+        }
+    }
+
+    protected String backupSnapshot(Connection conn, String primaryStorageSRUuid, Long dcId, Long accountId,
+            Long volumeId, String secondaryStorageMountPath, String snapshotUuid, String prevBackupUuid, Boolean isISCSI) {
+        String backupSnapshotUuid = null;
+
+        if (prevBackupUuid == null) {
+            prevBackupUuid = "";
+        }
+
+        // Each argument is put in a separate line for readability.
+        // Using more lines does not harm the environment.
+        String results = callHostPluginAsync(conn, "vmopsSnapshot", "backupSnapshot", 60 * 60 * 1000,
+                "primaryStorageSRUuid", primaryStorageSRUuid, "dcId", dcId.toString(), "accountId", accountId
+                        .toString(), "volumeId", volumeId.toString(), "secondaryStorageMountPath",
+                secondaryStorageMountPath, "snapshotUuid", snapshotUuid, "prevBackupUuid", prevBackupUuid, "isISCSI",
+                isISCSI.toString());
+
+        if (results == null || results.isEmpty()) {
+            // errString is already logged.
+            return null;
+        }
+
+        String[] tmp = results.split("#");
+        String status = tmp[0];
+        backupSnapshotUuid = tmp[1];
+
+        // status == "1" if and only if backupSnapshotUuid != null
+        // So we don't rely on status value but return backupSnapshotUuid as an
+        // indicator of success.
+        String failureString = "Could not copy backupUuid: " + backupSnapshotUuid + " of volumeId: " + volumeId
+                + " from primary storage " + primaryStorageSRUuid + " to secondary storage "
+                + secondaryStorageMountPath;
+        if (status != null && status.equalsIgnoreCase("1") && backupSnapshotUuid != null) {
+            s_logger.debug("Successfully copied backupUuid: " + backupSnapshotUuid + " of volumeId: " + volumeId
+                    + " to secondary storage");
+        } else {
+            s_logger.debug(failureString + ". Failed with status: " + status);
+            return null;
+        }
+        return backupSnapshotUuid;
+    }
+
+    protected String callHostPluginAsync(Connection conn, String plugin, String cmd, int timeout, String... params) {
+        Map<String, String> args = new HashMap<String, String>();
+        Task task = null;
+        try {
+            for (int i = 0; i < params.length; i += 2) {
+                args.put(params[i], params[i + 1]);
+            }
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("callHostPlugin executing for command " + cmd + " with " + getArgsString(args));
+            }
+            Host host = Host.getByUuid(conn, _host.uuid);
+            task = host.callPluginAsync(conn, plugin, cmd, args);
+            // poll every 60 seconds
+            waitForTask(conn, task, 20 * 1000, timeout);
+            checkForSuccess(conn, task);
+            String result = task.getResult(conn);
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace("callHostPlugin Result: " + result);
+            }
+            return result.replace("<value>", "").replace("</value>", "").replace("\n", "");
+        } catch (Types.HandleInvalid e) {
+            s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args)
+                    + " due to HandleInvalid clazz:" + e.clazz + ", handle:" + e.handle);
+        } catch (XenAPIException e) {
+            s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to "
+                    + e.toString(), e);
+        } catch (XmlRpcException e) {
+            s_logger.warn("callHostPlugin failed for cmd: " + cmd + " with args " + getArgsString(args) + " due to "
+                    + e.getMessage(), e);
+        } finally {
+            if (task != null) {
+                try {
+                    task.destroy(conn);
+                } catch (Exception e1) {
+                    s_logger.warn("unable to destroy task(" + task.toString() + ") on host(" + _host.uuid + ") due to "
+                            + e1.toString());
+                }
+            }
+        }
+        return null;
+    }
+  
     protected StopAnswer execute(final StopCommand cmd) {
         Connection conn = getConnection();
         String vmName = cmd.getVmName();
@@ -5431,48 +5619,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
 
         return success;
-    }
-
-    // Each argument is put in a separate line for readability.
-    // Using more lines does not harm the environment.
-    protected String backupSnapshot(Connection conn, String primaryStorageSRUuid, Long dcId, Long accountId, Long volumeId, String secondaryStorageMountPath,
-            String snapshotUuid, String prevBackupUuid, Boolean isISCSI) {
-        String backupSnapshotUuid = null;
-
-        if (prevBackupUuid == null) {
-            prevBackupUuid = "";
-        }
-
-        // Each argument is put in a separate line for readability.
-        // Using more lines does not harm the environment.
-        String results = callHostPluginWithTimeOut(conn, "vmopsSnapshot", "backupSnapshot", 110*60, "primaryStorageSRUuid", primaryStorageSRUuid, "dcId", 
-                dcId.toString(), "accountId", accountId.toString(), "volumeId", volumeId.toString(), "secondaryStorageMountPath", 
-                secondaryStorageMountPath, "snapshotUuid", snapshotUuid, "prevBackupUuid", prevBackupUuid, "isISCSI", isISCSI.toString());
-
-        if (results == null || results.isEmpty()) {
-            // errString is already logged.
-            return null;
-        }
-
-        String[] tmp = results.split("#");
-        String status = tmp[0];
-        backupSnapshotUuid = tmp[1];
-
-        // status == "1" if and only if backupSnapshotUuid != null
-        // So we don't rely on status value but return backupSnapshotUuid as an
-        // indicator of success.
-        String failureString = "Could not copy backupUuid: " + backupSnapshotUuid + " of volumeId: " + volumeId + " from primary storage " + primaryStorageSRUuid
-                + " to secondary storage " + secondaryStorageMountPath;
-        if (status != null && status.equalsIgnoreCase("1") && backupSnapshotUuid != null) {
-            s_logger.debug("Successfully copied backupUuid: " + backupSnapshotUuid + " of volumeId: " + volumeId + " to secondary storage");
-        } else {
-            s_logger.debug(failureString + ". Failed with status: " + status);
-            return null;
-        }
-
-        return backupSnapshotUuid;
-    }
-    
+    } 
     
     protected String getVhdParent(Connection conn, String primaryStorageSRUuid, String snapshotUuid, Boolean isISCSI) {
         String parentUuid = callHostPlugin(conn, "vmopsSnapshot", "getVhdParent", "primaryStorageSRUuid", primaryStorageSRUuid, 
