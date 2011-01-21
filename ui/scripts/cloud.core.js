@@ -847,6 +847,9 @@ function disableConsoleHover($viewConsoleContainer) {
   
 function resetViewConsoleAction(jsonObj, $detailsTab) {
     var $viewConsoleContainer = $detailsTab.find("#view_console_container").empty(); //reset view console panel
+    if(jsonObj == null)
+        return;
+    
     var $viewConsoleTemplate = $("#view_console_template").clone();
     $viewConsoleContainer.append($viewConsoleTemplate.show());       
 	if (jsonObj.state == 'Running') {	
@@ -867,7 +870,12 @@ function resetViewConsoleAction(jsonObj, $detailsTab) {
 	} 	
 }    
 
-function setVmStateInRightPanel(stateValue, $stateField) {    
+function setVmStateInRightPanel(stateValue, $stateField) {   
+    if(stateValue == null) {
+        $stateField.text("").removeClass("green red gray");  
+        return;
+    }          	
+     
     if(stateValue == "Running")
         $stateField.text(stateValue).removeClass("red gray").addClass("green");
     else if(stateValue == "Stopped" || stateValue == "Error")
@@ -1034,6 +1042,12 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
                 count = items.length;
             }  
             else {
+                clearRightPanel(); //general one
+                
+                var clearRightPanelFn = $("#right_panel_content").data("clearRightPanelFn"); //page-specific one. e.g. vmClearRightPanel()
+                if(clearRightPanelFn != null)
+                    clearRightPanelFn();  
+                    
                 $container.append($("#midmenu_container_no_items_available").clone().show());  
             }
             $("#midmenu_container").show();

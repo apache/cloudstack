@@ -90,6 +90,8 @@ var init = false;
 var $selectedVmWizardTemplate;	
 var osTypeMap = {};
 function afterLoadInstanceJSP() {
+	$("#right_panel_content").data("clearRightPanelFn", vmClearRightPanel);
+	
 	if (!init) {
 		//initialize VM Wizard  
 		$doTemplateNo = $("#vm_popup_disk_offering_template_no");
@@ -107,7 +109,7 @@ function afterLoadInstanceJSP() {
 	bindDestroyVMButton();
 		
 	if (isAdmin() || isDomainAdmin())
-			$("#right_panel_content").find("#tab_router,#tab_router").show();
+		$("#right_panel_content").find("#tab_router,#tab_router").show();
 	
 	// switch between different tabs 
 	var tabArray = [$("#tab_details"), $("#tab_nic"), $("#tab_volume"), $("#tab_statistics"), $("#tab_router")];
@@ -1875,22 +1877,40 @@ function vmJsonToRouterTab() {
 	});     
 }    
     
-function vmClearRightPanel(jsonObj) {       
-    $("#right_panel_header").find("#vm_name").text("");	
-    setVmStateInRightPanel("");	
-    
-    var $rightPanelContent = $("#right_panel_content"); 
-    $rightPanelContent.find("#ipAddress").text("");
-    $rightPanelContent.find("#zoneName").text("");
-    $rightPanelContent.find("#templateName").text("");
-    $rightPanelContent.find("#serviceOfferingName").text("");		
-    $rightPanelContent.find("#ha").hide();  
-    $rightPanelContent.find("#created").text("");
-    $rightPanelContent.find("#account").text("");
-    $rightPanelContent.find("#domain").text("");
-    $rightPanelContent.find("#hostName").text("");
-    $rightPanelContent.find("#group").text("");	
-    $rightPanelContent.find("#iso").hide();
+function vmClearRightPanel(jsonObj) {      
+    vmJsonClearDetailsTab();
+    $("#tab_details").click();  
+}  
+
+function vmJsonClearDetailsTab(){    
+	var $thisTab = $("#right_panel_content").find("#tab_content_details");       
+	resetViewConsoleAction(null, $thisTab);      
+	setVmStateInRightPanel(null, $thisTab.find("#state"));		
+	$thisTab.find("#ipAddress").text("");	
+	$thisTab.find("#id").text("");
+	$thisTab.find("#zoneName").text("");	       
+	$thisTab.find("#title").text("");	
+	$thisTab.find("#vmname").text("");
+	$thisTab.find("#vmname_edit").val("");	
+	$thisTab.find("#ipaddress").text("");	
+	$thisTab.find("#templateName").text("");
+	$thisTab.find("#ostypename").text("");
+    $thisTab.find("#ostypename_edit").val(""); 	
+	$thisTab.find("#serviceOfferingName").text("");	
+	$thisTab.find("#account").text("");
+	$thisTab.find("#domain").text("");
+	$thisTab.find("#hostName").text("");	
+	$thisTab.find("#group").text("");	
+	$thisTab.find("#group_edit").val("");		
+	$thisTab.find("#created").text("");		
+	$thisTab.find("#haenable").text("");	
+	$thisTab.find("#haenable_edit").text("");	
+	$thisTab.find("#iso").text("");	
+		  
+	//actions ***
+	var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
+	$actionMenu.find("#action_list").empty();              
+	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
 }
 
 //***** declaration for volume tab (begin) *********************************************************
