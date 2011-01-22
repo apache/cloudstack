@@ -137,7 +137,7 @@ var secondaryStorageActionMap = {
 function doDeleteSecondaryStorage($actionLink, $detailsTab, $midmenuItem1) {     
     var jsonObj = $midmenuItem1.data("jsonObj");    
        
-    $("#dialog_info")	
+    $("#dialog_confirmation")	
     .text("Please confirm you want to delete this secondary storage")
 	.dialog('option', 'buttons', { 						
 		"Confirm": function() { 

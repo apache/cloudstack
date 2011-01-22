@@ -63,9 +63,7 @@ function primarystorageToRightPanel($midmenuItem1) {
 function afterLoadPrimaryStorageJSP() {     
     //add pool dialog
     initDialog("dialog_add_pool");
-    bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	  
-       
-    initDialog("dialog_confirmation_delete_primarystorage");  
+    bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	         
     
     primaryStorageRefreshDataBinding();     
 }
@@ -324,7 +322,8 @@ function doCancelMaintenanceModeForPrimaryStorage($actionLink, $detailsTab, $mid
 function doDeletePrimaryStorage($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $midmenuItem1.data("jsonObj");
        
-    $("#dialog_confirmation_delete_primarystorage")
+    $("#dialog_confirmation")
+    .text("Please confirm you want to delete the primary storage")
     .dialog("option", "buttons", {	                    
          "OK": function() {
              $(this).dialog("close");      
