@@ -1495,9 +1495,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                  String vifMacAddress = ipAddr.getMacAddress();
                  
                  String vmGuestAddress = null;
-                 if(vmId!=0){
-                     vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
-                 }
                  
                  //Get network rate - required for IpAssoc
                  Network network = _networkMgr.getNetwork(ipAddr.getNetworkId());

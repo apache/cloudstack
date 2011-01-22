@@ -1330,11 +1330,6 @@ public abstract class CitrixResourceBase implements ServerResource {
             args += " -g ";
             args += vlanGateway;
 
-            if(guestIp!=null){
-            	args += " -G ";
-            	args += guestIp;
-            }
-            
             String result = callHostPlugin(conn, "vmops", "ipassoc", "args", args);
             if (result == null || result.isEmpty()) {
                 throw new InternalErrorException("Xen plugin \"ipassoc\" failed.");
