@@ -217,9 +217,11 @@ function domainToRightPanel2($midmenuItem1) {
     $("#tab_details").click();   
 }
 
-function domainJsonToDetailsTab() {
+function domainJsonToDetailsTab() {    
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
     var jsonObj = $midmenuItem1.data("jsonObj");  
+    if(jsonObj == null)
+        return;
     var domainId = jsonObj.id;   
            
     $("#right_panel").data("onRefreshFn", function() {	    
@@ -306,18 +308,22 @@ function domainJsonToDetailsTab() {
 	}	 
 }
 
-function domainJsonToAdminAccountTab() {    
+function domainJsonToAdminAccountTab() {     
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    var jsonObj = $midmenuItem1.data("jsonObj");  
+    var jsonObj = $midmenuItem1.data("jsonObj"); 
+    if(jsonObj == null)
+        return; 
     var domainId = jsonObj.id;
    
     listAdminAccounts(domainId);  
 }
 
-function domainJsonToResourceLimitsTab() {    
+function domainJsonToResourceLimitsTab() {       
 	if (isAdmin() || (isDomainAdmin() && (g_domainid != domainId))) {	
 	    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
         var jsonObj = $midmenuItem1.data("jsonObj");  
+        if(jsonObj == null)
+            return;
         var domainId = jsonObj.id;    
 				
 		var $resourceLimitsTab = $("#right_panel_content #tab_content_resource_limits");	
@@ -627,13 +633,31 @@ function doEditDomain2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields,
     $("#save_button, #cancel_button").hide();  		  
 }
 
+function doDeleteDomain($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text("Please confirm you want to delete this domain")
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=deleteDomain&id="+id;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
+
 var domainActionMap = {        
     "Edit Domain": {
         dialogBeforeActionFn: doEditDomain
     },
-    "Delete Domain": {              
-        api: "deleteDomain",     
-        isAsyncJob: true,    
+    "Delete Domain": {   
+        isAsyncJob: true,
+        dialogBeforeActionFn : doDeleteDomain,          
         asyncJobResponse: "deletedomainresponse",          
         inProcessText: "Deleting Domain....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {        
