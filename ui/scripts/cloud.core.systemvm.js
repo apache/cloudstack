@@ -42,15 +42,10 @@
 	} 	
 	
 	return moreCriteria.join("");          
- }
+}
  
- function afterLoadSystemVmJSP($midmenuItem1) {
-    //hideMiddleMenu();			
-    //systemvmToRightPanel($midmenuItem1);		
-    
-    initDialog("dialog_confirmation_start_systemVM");
-    initDialog("dialog_confirmation_stop_systemVM");
-    initDialog("dialog_confirmation_reboot_systemVM");
+function afterLoadSystemVmJSP($midmenuItem1) {  
+  
 }
 
 function systemvmToMidmenu(jsonObj, $midmenuItem1) {
@@ -184,7 +179,8 @@ var systemVmActionMap = {
 }   
 
 function doStartSystemVM($actionLink, $detailsTab, $midmenuItem1) {   
-    $("#dialog_confirmation_start_systemVM")	
+    $("#dialog_confirmation")
+    .text("Please confirm you want to start system VM")	
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
@@ -202,7 +198,8 @@ function doStartSystemVM($actionLink, $detailsTab, $midmenuItem1) {
 }   
 
 function doStopSystemVM($actionLink, $detailsTab, $midmenuItem1) {     
-    $("#dialog_confirmation_stop_systemVM")	
+    $("#dialog_confirmation")	
+    .text("Please confirm you want to stop system VM")
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
@@ -220,7 +217,8 @@ function doStopSystemVM($actionLink, $detailsTab, $midmenuItem1) {
 }   
    
 function doRebootSystemVM($actionLink, $detailsTab, $midmenuItem1) {   
-    $("#dialog_confirmation_reboot_systemVM")	
+    $("#dialog_confirmation")	
+    .text("Please confirm you want to reboot system VM")
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
