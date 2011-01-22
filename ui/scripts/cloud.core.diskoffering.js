@@ -214,6 +214,24 @@ function doEditDiskOffering2($actionLink, $detailsTab, $midmenuItem1, $readonlyF
 	});
 }
 
+function doDeleteDiskOffering($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text("Please confirm you want to delete this disk offering")
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=deleteDiskOffering&id="+id;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
+
 function diskOfferingToMidmenu(jsonObj, $midmenuItem1) {  
     $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj); 
@@ -324,7 +342,8 @@ var diskOfferingActionMap = {
     },   
     "Delete Disk Offering": {              
         api: "deleteDiskOffering",     
-        isAsyncJob: false,           
+        isAsyncJob: false,   
+        dialogBeforeActionFn : doDeleteDiskOffering,              
         inProcessText: "Deleting disk offering....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             $midmenuItem1.slideUp("slow", function() {
