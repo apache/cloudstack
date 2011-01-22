@@ -80,6 +80,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
@@ -190,7 +191,7 @@ public class ApiDBUtils {
     /////////////////////////////////////////////////////////////
     //               ManagementServer methods                  //
     /////////////////////////////////////////////////////////////
-
+    
     public static VMInstanceVO findVMInstanceById(long vmId) {
         return _ms.findVMInstanceById(vmId);
     }
@@ -429,6 +430,10 @@ public class ApiDBUtils {
 
     public static VolumeVO findVolumeById(Long volumeId) {
         return _volumeDao.findByIdIncludingRemoved(volumeId);
+    }
+    
+    public static List<UserVO> listUsersByAccount(long accountId) {
+        return _userDao.listByAccount(accountId);
     }
 
     public static DataCenterVO findZoneById(Long zoneId) {

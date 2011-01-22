@@ -142,6 +142,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.UserVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
@@ -309,6 +310,29 @@ public class ApiResponseHelper implements ResponseGenerator {
         accountResponse.setVmRunning(vmRunning);
         accountResponse.setObjectName("account");
 
+        List<UserVO> usersForAccount = ApiDBUtils.listUsersByAccount(account.getAccountId());
+        List<UserResponse> userResponseList = new ArrayList<UserResponse>();
+        for(UserVO user : usersForAccount) {
+            UserResponse userResponse = new UserResponse();
+            userResponse.setAccountName(account.getAccountName());
+            userResponse.setAccountType(account.getType());
+            userResponse.setApiKey(user.getApiKey());
+            userResponse.setCreated(user.getCreated());
+            userResponse.setDomainId(account.getDomainId());
+            userResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
+            userResponse.setEmail(user.getEmail());
+            userResponse.setFirstname(user.getFirstname());
+            userResponse.setId(user.getId());
+            userResponse.setSecretKey(user.getSecretKey());
+            userResponse.setLastname(user.getLastname());
+            userResponse.setState(user.getState().toString());
+            userResponse.setTimezone(user.getTimezone());
+            userResponse.setUsername(user.getUsername());
+            
+            userResponseList.add(userResponse);
+        }
+        
+        accountResponse.setUsers(userResponseList);
         return accountResponse;
     }
 
