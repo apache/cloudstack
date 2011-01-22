@@ -506,8 +506,7 @@ var volumeActionMap = {
         inProcessText: "Attaching disk....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {                
             var jsonObj = json.queryasyncjobresultresponse.jobresult.volume;  
-            volumeToMidmenu(jsonObj, $midmenuItem1);
-            //volumeJsonToDetailsTab($midmenuItem1);   
+            volumeToMidmenu(jsonObj, $midmenuItem1);            
         }
     },
     "Detach Disk": {
@@ -517,8 +516,7 @@ var volumeActionMap = {
         inProcessText: "Detaching disk....",
         afterActionSeccessFn: function(json, $midmenuItem1, id){   
             var jsonObj = json.queryasyncjobresultresponse.jobresult.volume;     
-            volumeToMidmenu(jsonObj,  $midmenuItem1);
-            //volumeJsonToDetailsTab($midmenuItem1);   
+            volumeToMidmenu(jsonObj,  $midmenuItem1);            
         }
     },
     "Create Template": {
@@ -530,7 +528,8 @@ var volumeActionMap = {
     },
     "Delete Volume": {
         api: "deleteVolume",            
-        isAsyncJob: false,        
+        isAsyncJob: false,  
+        dialogBeforeActionFn : doDeleteVolume,      
         inProcessText: "Deleting volume....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {  
             $midmenuItem1.slideUp("slow", function() {
@@ -663,6 +662,24 @@ function doCreateTemplateFromVolume($actionLink, $detailsTab, $midmenuItem1) {
 		} 
 	}).dialog("open");
 }   
+
+function doDeleteVolume($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text("Please confirm you want to delete this volume")
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=deleteVolume&id="+id;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
 
 function doTakeSnapshot($actionLink, $detailsTab, $midmenuItem1) {   
     $("#dialog_create_snapshot")					
