@@ -21,11 +21,7 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
-            <%=t.t("details")%></div>  
-        <!--  
-        <div class="content_tabs off" id="tab_primarystorage">
-            Primary Storage</div>   
-        -->    
+            <%=t.t("details")%></div>         
         <div class="content_tabs off" id="tab_instance">
             Instances</div>
         <div class="content_tabs off" id="tab_router">
@@ -180,20 +176,7 @@
 	    </div>        
     </div>
     <!-- Details tab (end)-->
-      
-    <!--Primary Storage tab (start)-->
-    <div style="display: none;" id="tab_content_primarystorage">
-    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
-              <div class="rightpanel_mainloaderbox">
-                   <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
-              </div>               
-        </div>
-        <div id="tab_container">
-        </div>
-    </div> 
-    <!--Primary Storage tab (end)-->  
-           
+         
     <!--Instance tab (start)-->
     <div style="display: none;" id="tab_content_instance">
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
@@ -359,157 +342,6 @@
     </div>    
 </div>
 <!--  top buttons (end) -->
-
-<!--  Primary Storage tab template (begin) -->
-<div class="grid_container" id="primarystorage_tab_template" style="display: none">
-    <div class="grid_header">
-        <div class="grid_header_title" id="grid_header_title">
-        </div>
-        <div class="grid_actionbox" id="primarystorage_action_link"><p>Actions</p>
-            <div class="grid_actionsdropdown_box" id="primarystorage_action_menu" style="display: none;">
-                <ul class="actionsdropdown_boxlist" id="action_list">
-                </ul>
-            </div>
-        </div>
-        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; height: 18px;">
-            <div class="gridheader_loader" id="icon">
-            </div>
-            <p id="description">
-                Waiting &hellip;
-            </p>
-        </div>       
-    </div>
-    
-    <div class="grid_rows" id="after_action_info_container" style="display:none">
-        <div class="grid_row_cell" style="width: 90%; border: none;">
-            <div class="row_celltitles">
-                <strong id="after_action_info">Message will appear here</strong></div>
-        </div>
-    </div>
-        
-    <div class="grid_rows odd">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("ID")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="id">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("name")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="name">
-            </div>
-        </div>
-    </div>
-   
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("state")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="state">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("zone")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="zonename">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("pod")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="podname">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("cluster")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="clustername">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("type")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="type">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("IP.or.FQDN")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="ipaddress">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("path")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="path">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("disk.total")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="disksizetotal">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("disk.allocated")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="disksizeallocated">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("tags")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="tags">
-            </div>
-        </div>
-    </div>
-</div>
-<!--  Primary Storage tab template (end) -->
 
 <!--  instance tab template (begin) -->
 <div class="grid_container" id="instance_tab_template" style="display: none">
