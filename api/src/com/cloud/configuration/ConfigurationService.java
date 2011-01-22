@@ -28,6 +28,8 @@ import com.cloud.dc.Vlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -174,7 +176,7 @@ public interface ConfigurationService {
      * @throws 
      * @return The new Vlan object
      */
-    Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
+    Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException, ResourceUnavailableException;
 
     boolean deleteVlanIpRange(DeleteVlanIpRangeCmd cmd);
     
@@ -191,5 +193,7 @@ public interface ConfigurationService {
     Integer getNetworkRate(long networkOfferingId);
     
     Account getVlanAccount(long vlanId);
+    
+    List<? extends NetworkOffering> listNetworkOfferings(TrafficType trafficType, boolean systemOnly);
    
 }

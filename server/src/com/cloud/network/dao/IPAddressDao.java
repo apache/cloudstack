@@ -34,15 +34,13 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Ip> {
 	
 	List<IPAddressVO> listByDcIdIpAddress(long dcId, String ipAddress);
 	
-	List<IPAddressVO> listByNetwork(long networkId);
+	List<IPAddressVO> listByAssociatedNetwork(long networkId);
 	
 	int countIPs(long dcId, long vlanDbId, boolean onlyCountAllocated);
 	
 	int countIPs(long dcId, Long accountId, String vlanId, String vlanGateway, String vlanNetmask);
 	
 	boolean mark(long dcId, Ip ip);
-	
-	List<String> assignAcccountSpecificIps(long accountId, long longValue, Long vlanDbId, boolean sourceNat);
 
 	int countIPsForDashboard(long dcId, boolean onlyCountAllocated);
 }

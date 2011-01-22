@@ -21,13 +21,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Vector;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -82,12 +80,11 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.NetworkManager;
@@ -123,14 +120,12 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -1583,7 +1578,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
     
     @Override
-    public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException {
+    public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException, ResourceUnavailableException {
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
         String startIP = cmd.getStartIp();
@@ -1687,7 +1682,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     
 
     @Override
-    public Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException{
+    public Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException, ResourceUnavailableException{
 
         // Check that the pod ID is valid
         if (podId != null && ((_podDao.findById(podId)) == null)) {
@@ -1773,7 +1768,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         			throw new InvalidParameterValueException("Direct Attached IP ranges for a pod must be untagged.");
         		}
 
-        		
         		// Make sure there aren't any account VLANs in this zone
         		List<AccountVlanMapVO> accountVlanMaps = _accountVlanMapDao.listAllIncludingRemoved();
         		for (AccountVlanMapVO accountVlanMap : accountVlanMaps) {
@@ -1880,14 +1874,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 		VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId);
 		vlan = _vlanDao.persist(vlan);
 		
-		// Persist the IP range
-		if (account != null && vlanType.equals(VlanType.VirtualNetwork)){
-			if(!savePublicIPRangeForAccount(startIP, endIP, zoneId, vlan.getId(), account.getId(), account.getDomainId())) {
-				deletePublicIPRange(vlan.getId());
-				_vlanDao.expunge(vlan.getId());
-				throw new CloudRuntimeException("Failed to save IP range. Please contact Cloud Support."); //It can be Direct IP or Public IP.
-			}				
-		}else if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId())) {
+		if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId())) {
 			deletePublicIPRange(vlan.getId());
 			_vlanDao.expunge(vlan.getId());
 			throw new CloudRuntimeException("Failed to save IP range. Please contact Cloud Support."); //It can be Direct IP or Public IP.
@@ -1910,80 +1897,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 		eventMsg += ".";
 		if (associateIpRangeToAccount) {
 	        // if this is an account VLAN, now associate the IP Addresses to the account
-	        associateIpAddressListToAccount(userId, account.getId(), zoneId, vlan.getId());
+		    long ipCount = _publicIpAddressDao.countIPs(zoneId, vlan.getId(), false);
+            _accountMgr.incrementResourceCount(account.getId(), ResourceType.public_ip, ipCount);
+            s_logger.trace("Updated " + ResourceType.public_ip + " resource count on " + ipCount + " for account " + account);
+	        _networkMgr.associateIpAddressListToAccount(userId, account.getId(), zoneId, vlan.getId());
 		}
 		return vlan;
-    }
-
-    @Override @DB
-    public void associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId) throws InsufficientAddressCapacityException,
-            ConcurrentOperationException {
-        
-        Transaction txn = Transaction.currentTxn();
-        AccountVO account = null;
-        
-        try {
-            //Acquire Lock                    
-            account = _accountDao.acquireInLockTable(accountId);
-            if (account == null) {
-                s_logger.warn("Unable to lock account: " + accountId);
-                throw new ConcurrentOperationException("Unable to acquire account lock");
-            }            
-            s_logger.debug("Associate IP address lock acquired");
-            
-            //Get Router
-            DomainRouterVO router = _domrDao.findBy(accountId, zoneId);
-            if (router == null) {
-                s_logger.debug("No router found for account: " + account.getAccountName() + ".");
-                return;
-            }
-            
-            if (router.getState() == State.Running) {
-                //Get Vlans associated with the account
-                List<VlanVO> vlansForAccount = new ArrayList<VlanVO>();
-                if (vlanId == null){
-                    vlansForAccount.addAll(_vlanDao.listVlansForAccountByType(zoneId, account.getId(), VlanType.VirtualNetwork));
-                    s_logger.debug("vlansForAccount "+ vlansForAccount);
-                }else{
-                    vlansForAccount.add(_vlanDao.findById(vlanId));
-                }
-                 
-                // Creating a list of all the ips that can be assigned to this account
-                txn.start();
-                List<String> ipAddrsList = new ArrayList<String>();
-                for (VlanVO vlan : vlansForAccount){
-                    ipAddrsList.addAll(_publicIpAddressDao.assignAcccountSpecificIps(accountId, account.getDomainId(), vlan.getId(), false));
-
-                    long size = ipAddrsList.size();
-                    _accountMgr.incrementResourceCount(accountId, ResourceType.public_ip, size);
-                    s_logger.debug("Assigning new ip addresses " +ipAddrsList);                 
-                }
-                if(ipAddrsList.isEmpty()) {
-                    return;
-                }
-
-                // Associate the IP's to DomR
-                boolean success = _networkMgr.associateIP(router,ipAddrsList, true, 0);
-                String errorMsg = "Unable to assign public IP address pool";
-                if (!success) {
-                    s_logger.debug(errorMsg);
-                    throw new CloudRuntimeException(errorMsg);
-                }
-                txn.commit();
-            }
-            } catch (CloudRuntimeException iee) {
-                s_logger.error("Associate IP threw an CloudRuntimeException.", iee);
-                throw iee;
-            } catch (Throwable t) {
-                s_logger.error("Associate IP address threw an exception.", t);
-                throw new CloudRuntimeException("Associate IP address exception");
-            } finally {
-                if (account != null) {
-                    _accountDao.releaseFromLockTable(accountId);
-                    s_logger.debug("Associate IP address lock released");
-                }
-            }
-    
     }
     
     @Override
@@ -1993,16 +1912,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     		throw new InvalidParameterValueException("Please specify a valid IP range id.");
     	}
     	
-    	// Check if the VLAN has any allocated public IPs
-    	if (_publicIpAddressDao.countIPs(vlan.getDataCenterId(), vlanDbId, true) > 0) {
-    		throw new InvalidParameterValueException("The IP range can't be deleted because it has allocated public IP addresses.");
-    	}
-    	
-    	// Check if the VLAN is being used by any domain router
-    	if (_domrDao.listByVlanDbId(vlanDbId).size() > 0) {
-    		throw new InvalidParameterValueException("The IP range can't be deleted because it is being used by a domain router.");
-    	}
-    	
+	    // Check if the VLAN has any allocated public IPs
+        if (_publicIpAddressDao.countIPs(vlan.getDataCenterId(), vlanDbId, true) > 0) {
+            throw new InvalidParameterValueException("The IP range can't be deleted because it has allocated public IP addresses.");
+        }
+
     	// Delete all public IPs in the VLAN
     	if (!deletePublicIPRange(vlanDbId)) {
     		return false;
@@ -2141,33 +2055,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	    config.savePublicIPRange(txn, startIPLong, endIPLong, zoneId, vlanDbId);
 	    txn.commit();
 	    return true;
-	}
-	
-	@DB
-    protected boolean savePublicIPRangeForAccount(String startIP, String endIP, long zoneId, long vlanDbId, long accountId, long domainId) {
-	    IPRangeConfig config = new IPRangeConfig();
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        long startIPLong = NetUtils.ip2Long(startIP);
-        long endIPLong = NetUtils.ip2Long(endIP);
-	    Vector<String> ips = config.savePublicIPRange(txn, startIPLong, endIPLong, zoneId, vlanDbId);
-	    List<Long> skip = new ArrayList<Long>(ips.size());
-	    for (String ip : ips) {
-	        skip.add(NetUtils.ip2Long(ip));
-	    }
-	    for (long ip = startIPLong; ip <= endIPLong; ip++) {
-	        if (skip.contains(ip)) {
-	            continue;
-	        }
-	        
-	        IPAddressVO addr = _publicIpAddressDao.findById(new Ip(ip));
-	        addr.setAllocatedInDomainId(domainId);
-	        addr.setAllocatedTime(new Date());
-	        addr.setAllocatedToAccountId(accountId);
-	        _publicIpAddressDao.update(addr.getAddress(), addr);
-	    }
-	    txn.commit();
-        return true;
 	}
 	
 	@DB
@@ -2474,10 +2361,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (vlan == null) {
             throw new InvalidParameterValueException("Please specify a valid IP range id.");
         }
-    	
-//    	if (vlan.getNetworkId() != null) {
-//            throw new InvalidParameterValueException("Fail to delete a vlan range as there are networks associated with it");
-//        }
 
     	return deleteVlanAndPublicIpRange(userId, vlanDbId);
 		
@@ -2788,5 +2671,40 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
         
         return _accountMgr.getAccount(accountId);
+    }
+    
+    @Override
+    public List<? extends NetworkOffering> listNetworkOfferings(TrafficType trafficType, boolean systemOnly) {
+        Filter searchFilter = new Filter(NetworkOfferingVO.class, "created", false, null, null);
+        SearchCriteria<NetworkOfferingVO> sc = _networkOfferingDao.createSearchCriteria();
+        if (trafficType != null) {
+            sc.addAnd("trafficType", SearchCriteria.Op.EQ, trafficType);
+        }
+        sc.addAnd("systemOnly", SearchCriteria.Op.EQ, systemOnly);
+        
+        return _networkOfferingDao.search(sc, searchFilter);
+    }
+    
+    @Override @DB
+    public boolean deleteAccountSpecificVirtualRanges(long accountId) {
+        List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(accountId);
+        boolean result = true;
+        if (maps != null && !maps.isEmpty()) {
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            for (AccountVlanMapVO map : maps) {
+                if (!deleteVlanAndPublicIpRange(_accountMgr.getSystemUser().getId(), map.getVlanDbId())) {
+                    result = false;
+                }
+            }     
+            if (result) {
+                txn.commit();
+            } else {
+                s_logger.error("Failed to delete account specific virtual ip ranges for account id=" + accountId);
+            }
+        } else {
+            s_logger.trace("Account id=" + accountId + " has no account specific virtual ip ranges, nothing to delete");
+        }
+        return result;
     }
 }

@@ -20,6 +20,7 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DeployDestination;
@@ -27,6 +28,8 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
@@ -40,7 +43,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.Ip;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -88,16 +90,6 @@ public interface NetworkManager extends NetworkService {
      * @return true if it did; false if it didn't
      */
     public boolean releasePublicIpAddress(Ip ipAddress, long ownerId, long userId);
-    
-    /**
-     * Associates or disassociates a list of public IP address for a router.
-     * @param router router object to send the association to
-     * @param ipAddrList list of public IP addresses
-     * @param add true if associate, false if disassociate
-     * @param vmId
-     * @return
-     */
-    boolean associateIP(DomainRouterVO router, List<String> ipAddrList, boolean add, long vmId) throws ConcurrentOperationException;
     
     /**
      * Lists IP addresses that belong to VirtualNetwork VLANs
@@ -149,5 +141,18 @@ public interface NetworkManager extends NetworkService {
     void shutdownNetwork(long networkId);
     
     boolean destroyNetwork(long networkId, long callerUserId);
-
+   
+    Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String startIP, String endIP, String netmask, String vlanId, String networkDomain, Account owner) throws InvalidParameterValueException, PermissionDeniedException;
+    
+    /**
+     * Associates an ip address list to an account.  The list of ip addresses are all addresses associated with the given vlan id.
+     * @param userId
+     * @param accountId
+     * @param zoneId
+     * @param vlanId
+     * @throws InsufficientAddressCapacityException
+     * @throws 
+     */
+    boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId) throws InsufficientAddressCapacityException,
+            ConcurrentOperationException, ResourceUnavailableException;
 }

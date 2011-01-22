@@ -29,6 +29,7 @@ import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
 
 @Implementation(description="Creates a VLAN IP range.", responseObject=VlanIpRangeResponse.class)
 public class CreateVlanIpRangeCmd extends BaseCmd {
@@ -132,7 +133,7 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     }
     
     @Override
-    public void execute(){
+    public void execute() throws ResourceUnavailableException{
         try {
             Vlan result = _configService.createVlanAndPublicIpRange(this);
             if (result != null) {
@@ -148,6 +149,6 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
         } catch (InsufficientCapacityException ex) {
             s_logger.info(ex);
             throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
-        }
+        } 
     }
 }

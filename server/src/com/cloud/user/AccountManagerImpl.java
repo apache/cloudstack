@@ -49,6 +49,7 @@ import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -131,6 +132,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	@Inject private StorageManager _storageMgr;
 	@Inject private TemplateManager _tmpltMgr;
 	@Inject private VirtualNetworkApplianceManager _routerMgr;
+	@Inject private ConfigurationManager _configMgr;
 	
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 	
@@ -857,21 +859,32 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             s_logger.info("deleteAccount: Deleted " + numRemoved + " network groups for account " + accountId);
             
             //Delete all the networks
+            boolean networksDeleted = true;
             s_logger.debug("Deleting networks for account " + account.getId());
             List<NetworkVO> networks = _networkDao.listByOwner(accountId);
             if (networks != null) {
                 for (NetworkVO network : networks) {
                     if (!_networkMgr.deleteNetwork(network.getId())) {
-                        s_logger.warn("Unable to destroy network " + network + " as a part of account cleanup");
+                        s_logger.warn("Unable to destroy network " + network + " as a part of account id=" + accountId +" cleanup.");
                         accountCleanupNeeded = true;
-                    }  
-                    s_logger.debug("Network " + network.getId() + " successfully deleted.");
+                        networksDeleted = false;
+                    }  else {
+                        s_logger.debug("Network " + network.getId() + " successfully deleted as a part of account id=" + accountId + " cleanup.");
+                    }
+                }
+            }
+            
+            //delete account specific vlans - only when networks are cleaned up successfully
+            if (networksDeleted) {
+                if (!_configMgr.deleteAccountSpecificVirtualRanges(accountId)){
+                    accountCleanupNeeded = true;
+                } else {
+                    s_logger.debug("Account specific Virtual IP ranges " + " are successfully deleted as a part of account id=" + accountId + " cleanup.");
                 }
             }
             return true;
         } finally {
             s_logger.info("Cleanup for account " + account.getId() + (accountCleanupNeeded ? " is needed." : " is not needed."));
-            
             if (accountCleanupNeeded) {
                 _accountDao.markForCleanup(accountId);
             }
