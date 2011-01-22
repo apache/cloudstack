@@ -107,14 +107,11 @@ function afterLoadInstanceJSP() {
 	bindStopVMButton(); 
 	bindRebootVMButton();    
 	bindDestroyVMButton();
-		
-	if (isAdmin() || isDomainAdmin())
-		$("#right_panel_content").find("#tab_router,#tab_router").show();
-	
+			
 	// switch between different tabs 
-	var tabArray = [$("#tab_details"), $("#tab_nic"), $("#tab_volume"), $("#tab_statistics"), $("#tab_router")];
-	var tabContentArray = [$("#tab_content_details"), $("#tab_content_nic"), $("#tab_content_volume"), $("#tab_content_statistics"), $("#tab_content_router")];
-	var afterSwitchFnArray = [vmJsonToDetailsTab, vmJsonToNicTab, vmJsonToVolumeTab, vmJsonToStatisticsTab, vmJsonToRouterTab];
+	var tabArray = [$("#tab_details"), $("#tab_nic"), $("#tab_volume"), $("#tab_statistics")];
+	var tabContentArray = [$("#tab_content_details"), $("#tab_content_nic"), $("#tab_content_volume"), $("#tab_content_statistics")];
+	var afterSwitchFnArray = [vmJsonToDetailsTab, vmJsonToNicTab, vmJsonToVolumeTab, vmJsonToStatisticsTab];
 	switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);   
 	
 	$readonlyFields  = $("#tab_content_details").find("#vmname, #group, #haenable, #ostypename");
@@ -1861,51 +1858,11 @@ function vmJsonClearStatisticsTab() {
 	$thisTab.find("#networkkbswrite").text("");	
 }
 
-function vmJsonToRouterTab() {       
-    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-	if ($midmenuItem1 == null) 
-	    return;
-		
-	var vmObj = $midmenuItem1.data("jsonObj");
-	if(vmObj == null)
-	    return;
-	
-	var $thisTab = $("#right_panel_content").find("#tab_content_router");  
-	$thisTab.find("#tab_container").hide(); 
-	$thisTab.find("#tab_spinning_wheel").show();  	
-
-	$.ajax({
-		cache: false,
-		data: createURL("command=listRouters&domainid="+vmObj.domainid+"&account="+vmObj.account),
-		dataType: "json",
-		success: function(json) {				      
-			var items = json.listroutersresponse.router;
-			var $container = $thisTab.find("#tab_container").empty();
-			if (items != null && items.length > 0) {				
-				var template = $("#router_tab_template");				
-				for (var i = 0; i < items.length; i++) {
-					var newTemplate = template.clone(true);
-					vmRouterJSONToTemplate(items[i], newTemplate); 
-					$container.append(newTemplate.show());	
-				}
-			}
-			$thisTab.find("#tab_spinning_wheel").hide();    
-			$thisTab.find("#tab_container").show();    				
-		}
-	});     
-}    
- 
-function vmJsonClearRouterTab() { 
-    var $thisTab = $("#right_panel_content").find("#tab_content_router");  
-    $thisTab.find("#tab_container").empty();
-} 
-    
 function vmClearRightPanel(jsonObj) {      
     vmJsonClearDetailsTab();   
     vmJsonClearNicTab();
     vmJsonClearVolumeTab();
-    vmJsonClearStatisticsTab();
-    vmJsonClearRouterTab();    
+    vmJsonClearStatisticsTab();     
     $("#tab_details").click();  
 }  
 
@@ -2028,59 +1985,6 @@ function vmVolumeJSONToTemplate(json, $template) {
 	//***** actions (end) *****		
 }
 	
-function vmRouterJSONToTemplate(jsonObj, $template) {	
-    $template.data("jsonObj", jsonObj);            
-    $template.find("#title").text(fromdb(jsonObj.name));    
-     
-    resetViewConsoleAction(jsonObj, $template);   
-    setVmStateInRightPanel(fromdb(jsonObj.state), $template.find("#state"));
-    $template.find("#ipAddress").text(fromdb(jsonObj.publicip));
-    
-    $template.find("#zonename").text(fromdb(jsonObj.zonename));
-    $template.find("#name").text(fromdb(jsonObj.name));
-    $template.find("#publicip").text(fromdb(jsonObj.publicip));
-    $template.find("#privateip").text(fromdb(jsonObj.privateip));
-    $template.find("#guestipaddress").text(fromdb(jsonObj.guestipaddress));
-    $template.find("#hostname").text(fromdb(jsonObj.hostname));
-    $template.find("#networkdomain").text(fromdb(jsonObj.networkdomain));
-    $template.find("#account").text(fromdb(jsonObj.account));  
-	$template.find("#domain").text(fromdb(jsonObj.domain));
-    setDateField(jsonObj.created, $template.find("#created"));	
-    
-    //***** actions (begin) *****
-	var $actionLink = $template.find("#router_action_link");	
-	$actionLink.unbind("mouseover").bind("mouseover", function(event) {
-        $(this).find("#router_action_menu").show();    
-        return false;
-    });       
-    $actionLink.unbind("mouseout").bind("mouseout", function(event) {
-        $(this).find("#router_action_menu").hide();    
-        return false;
-    });		
-	
-	var $actionMenu = $actionLink.find("#router_action_menu");
-    $actionMenu.find("#action_list").empty();
-    var noAvailableActions = true;
-    
-	 if (jsonObj.state == 'Running') {
-	    buildActionLinkForSubgridItem("Stop Router", vmRouterActionMap, $actionMenu, $template);
-	    buildActionLinkForSubgridItem("Reboot Router", vmRouterActionMap, $actionMenu, $template);
-	    noAvailableActions = false;		
-    }
-    else if (jsonObj.state == 'Stopped') {     
-        buildActionLinkForSubgridItem("Start Router", vmRouterActionMap, $actionMenu, $template);  
-        noAvailableActions = false;		 
-    }          
-    
-    // no available actions 
-	if(noAvailableActions == true) {
-	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
-	}	        
-	//***** actions (end) *****		
-}	
-
-
-
 //***** declaration for volume tab (end) *********************************************************
 
 function appendInstanceGroup(groupId, groupName) {
@@ -2171,95 +2075,3 @@ function doTakeSnapshotFromVmVolume($actionLink, $subgridItem) {
 	    } 
     }).dialog("open");	  
 }		
-
-//***** Routers tab (begin) ***************************************************************************************
-var vmRouterActionMap = {      
-    "Start Router": {                
-        isAsyncJob: true,
-        asyncJobResponse: "startrouterresponse",
-        inProcessText: "Starting Router....",
-        dialogBeforeActionFn : doStartVmRouter,
-        afterActionSeccessFn: function(json, id, $subgridItem) {  
-            var jsonObj = json.queryasyncjobresultresponse.jobresult.domainrouter;
-            vmRouterJSONToTemplate(jsonObj, $subgridItem);
-        }     
-    },
-    "Stop Router": {        
-        isAsyncJob: true,
-        asyncJobResponse: "stoprouterresponse",
-        inProcessText: "Stopping Router....",
-        dialogBeforeActionFn : doStopVmRouter,
-        afterActionSeccessFn: function(json, id, $subgridItem) {  
-            var jsonObj = json.queryasyncjobresultresponse.jobresult.domainrouter;
-            vmRouterJSONToTemplate(jsonObj, $subgridItem);
-        }     
-    },
-    "Reboot Router": {        
-        isAsyncJob: true,
-        asyncJobResponse: "rebootrouterresponse",
-        inProcessText: "Rebooting Router....",
-        dialogBeforeActionFn : doRebootVmRouter,
-        afterActionSeccessFn: function(json, id, $subgridItem) {  
-            var jsonObj = json.queryasyncjobresultresponse.jobresult.domainrouter;
-            vmRouterJSONToTemplate(jsonObj, $subgridItem);
-        }     
-    }
-}   
-
-function doStartVmRouter($actionLink, $subgridItem) {
-    $("#dialog_confirmation")	
-    .text("Please confirm you want to start router")
-    .dialog('option', 'buttons', { 						
-	    "Confirm": function() { 
-		    $(this).dialog("close"); 			
-		    
-		    var jsonObj = $subgridItem.data("jsonObj");
-		    var id = jsonObj.id;
-		    var apiCommand = "command=startRouter&id="+id;  
-            doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem); 			   			   	                         					    
-	    }, 
-	    "Cancel": function() { 
-		    $(this).dialog("close"); 
-			
-	    } 
-    }).dialog("open");
-}   
-
-function doStopVmRouter($actionLink, $subgridItem) {
-    $("#dialog_confirmation")	
-    .text("Please confirm you want to stop router")
-    .dialog('option', 'buttons', { 						
-	    "Confirm": function() { 
-		    $(this).dialog("close"); 			
-		    
-		    var jsonObj = $subgridItem.data("jsonObj");
-		    var id = jsonObj.id;
-		    var apiCommand = "command=stopRouter&id="+id;              
-            doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem); 			   	                         					    
-	    }, 
-	    "Cancel": function() { 
-		    $(this).dialog("close"); 
-			
-	    } 
-    }).dialog("open");
-}   
-   
-function doRebootVmRouter($actionLink, $subgridItem) {
-    $("#dialog_confirmation")	
-    .text("Please confirm you want to reboot router")
-    .dialog('option', 'buttons', { 						
-	    "Confirm": function() { 
-		    $(this).dialog("close"); 			
-		    
-		    var jsonObj = $subgridItem.data("jsonObj");
-		    var id = jsonObj.id;
-		    var apiCommand = "command=rebootRouter&id="+id;  
-            doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem); 			   			   	                         					    
-	    }, 
-	    "Cancel": function() { 
-		    $(this).dialog("close"); 
-			
-	    } 
-    }).dialog("open");
-}   
-//***** Routers tab (end) ***************************************************************************************
