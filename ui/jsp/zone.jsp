@@ -563,12 +563,6 @@
     </div>
 </div>
 <!-- Add VLAN IP Range Dialog for zone (end) -->
-<div id="dialog_confirmation_delete_secondarystorage" title="Confirmation" style="display: none">
-    <p>
-        <%=t.t("please.confirm.you.want.to.delete.the.secondary.storage")%>
-    </p>
-</div>
-
 
 <!-- Add Host Dialog in zone page (begin) -->
 <div id="dialog_add_host_in_zone_page" title="Add Host" style="display: none">   

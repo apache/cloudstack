@@ -918,27 +918,6 @@
     </div>
 </div>
 
-<!-- dialogs -->
-<div id="dialog_confirmation_enable_maintenance" title="Confirmation" style="display: none">
-    <p>
-        <%=t.t("enabling.maintenance.mode.will.cause.a.live.migration.of.all.running.instances.on.this.host.to.any.available.host")%>
-    </p>
-</div>
-<div id="dialog_confirmation_cancel_maintenance" title="Confirmation" style="display: none">
-    <p>
-        <%=t.t("please.confirm.you.want.to.cancel.maintenance.for.the.host")%>
-    </p>
-</div>
-<div id="dialog_confirmation_force_reconnect" title="Confirmation" style="display: none">
-    <p>
-        <%=t.t("please.confirm.you.want.to.force.a.reconnection.for.the.host")%>
-    </p>
-</div>
-<div id="dialog_confirmation_remove_host" title="Confirmation" style="display: none">
-    <p>
-        <%=t.t("please.confirm.you.want.to.remove.the.host.from.the.management.server")%>
-    </p>
-</div>
 <!-- Update OS Preference Dialog -->
 <div id="dialog_update_os" title="Update OS Preference" style="display: none">
     <p>

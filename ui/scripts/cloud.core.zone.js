@@ -25,8 +25,7 @@
     initDialog("dialog_add_external_cluster_in_zone_page", 320);
     initDialog("dialog_add_pod", 370); 
     initDialog("dialog_add_vlan_for_zone");
-    initDialog("dialog_add_secondarystorage"); 
-    initDialog("dialog_confirmation_delete_secondarystorage");     
+    initDialog("dialog_add_secondarystorage");   
     initDialog("dialog_add_host_in_zone_page"); 
 	initDialog("dialog_add_pool_in_zone_page");
         
@@ -886,7 +885,8 @@ var secondarystorageActionMap = {
 function doDeleteSecondaryStorage($actionLink, $subgridItem) { 
     var jsonObj = $subgridItem.data("jsonObj");
        
-    $("#dialog_confirmation_delete_secondarystorage")	
+    $("#dialog_confirmation")
+    .text("Please confirm you want to delete the secondary storage")	
 	.dialog('option', 'buttons', { 						
 		"Confirm": function() { 
 		    var $thisDialog = $(this);	
