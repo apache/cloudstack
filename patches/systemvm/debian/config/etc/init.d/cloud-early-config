@@ -85,6 +85,7 @@ patch() {
     if [ "$shouldpatch" == "true" ] 
     then
       log_it "Rebooting system since we patched init scripts"
+      sync
       sleep 2
       reboot
     fi
@@ -157,8 +158,11 @@ setup_common() {
   init_interfaces $1 $2 $3
   setup_interface "0" $ETH0_IP $ETH0_MASK $GW
   setup_interface "1" $ETH1_IP $ETH1_MASK $GW
-  setup_interface "2" $ETH2_IP $ETH2_MASK $GW
-  
+  if [ -n "$ETH2_IP" ]
+  then
+  	setup_interface "2" $ETH2_IP $ETH2_MASK $GW
+  fi
+   
   echo $NAME > /etc/hostname
   echo 'AVAHI_DAEMON_DETECT_LOCAL=0' > /etc/default/avahi-daemon
   hostname $NAME
@@ -224,7 +228,13 @@ setup_apache2() {
 
 setup_router() {
   log_action_begin_msg "Setting up virtual router system vm"
-  setup_common eth0 eth1 eth2
+  if [ -n "$ETH2_IP" ]
+  then
+  	setup_common eth0 eth1 eth2
+  else
+  	setup_common eth0 eth1
+  fi
+  
   setup_dnsmasq
   setup_apache2 $ETH0_IP
 
