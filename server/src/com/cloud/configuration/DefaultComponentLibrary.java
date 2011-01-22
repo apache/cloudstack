@@ -73,7 +73,11 @@ import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
 import com.cloud.network.lb.LoadBalancingRulesManagerImpl;
 import com.cloud.network.ovs.OvsNetworkManagerImpl;
+import com.cloud.network.ovs.OvsTunnelManagerImpl;
 import com.cloud.network.ovs.dao.GreTunnelDaoImpl;
+import com.cloud.network.ovs.dao.OvsTunnelAccountDao;
+import com.cloud.network.ovs.dao.OvsTunnelAccountDaoImpl;
+import com.cloud.network.ovs.dao.OvsTunnelDaoImpl;
 import com.cloud.network.ovs.dao.OvsWorkDaoImpl;
 import com.cloud.network.ovs.dao.VlanMappingDaoImpl;
 import com.cloud.network.ovs.dao.VlanMappingDirtyDaoImpl;
@@ -251,6 +255,8 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addDao("OvsWorkDao", OvsWorkDaoImpl.class);
         addDao("VmFlowLogDao", VmFlowLogDaoImpl.class);
         addDao("GreTunnelDao", GreTunnelDaoImpl.class);
+        addDao("OvsTunnelDao", OvsTunnelDaoImpl.class);
+        addDao("OvsTunnelAccountDao", OvsTunnelAccountDaoImpl.class);
     }
 
     Map<String, ComponentInfo<Manager>> _managers = new HashMap<String, ComponentInfo<Manager>>();
@@ -306,6 +312,7 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addManager("RulesManager", RulesManagerImpl.class);
         addManager("RemoteAccessVpnManager", RemoteAccessVpnManagerImpl.class);
         addManager("OvsNetworkManager", OvsNetworkManagerImpl.class);
+        addManager("OvsTunnelManager", OvsTunnelManagerImpl.class);
     }
 
     protected <T> List<ComponentInfo<Adapter>> addAdapterChain(Class<T> interphace, List<Pair<String, Class<? extends T>>> adapters) {

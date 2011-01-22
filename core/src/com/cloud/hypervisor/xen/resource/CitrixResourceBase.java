@@ -162,7 +162,10 @@ import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.ovs.OvsCreateGreTunnelAnswer;
 import com.cloud.network.ovs.OvsCreateGreTunnelCommand;
+import com.cloud.network.ovs.OvsCreateTunnelAnswer;
+import com.cloud.network.ovs.OvsCreateTunnelCommand;
 import com.cloud.network.ovs.OvsDeleteFlowCommand;
+import com.cloud.network.ovs.OvsDestroyTunnelCommand;
 import com.cloud.network.ovs.OvsSetTagAndFlowAnswer;
 import com.cloud.network.ovs.OvsSetTagAndFlowCommand;
 import com.cloud.resource.ServerResource;
@@ -440,6 +443,10 @@ public abstract class CitrixResourceBase implements ServerResource {
             return execute((CleanupNetworkRulesCmd)cmd);
         } else if (cmd instanceof NetworkRulesSystemVmCommand) {
             return execute((NetworkRulesSystemVmCommand)cmd);
+        } else if (cmd instanceof OvsCreateTunnelCommand) {
+            return execute((OvsCreateTunnelCommand)cmd);
+        } else if (cmd instanceof OvsDestroyTunnelCommand) {
+            return execute((OvsDestroyTunnelCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -544,6 +551,29 @@ public abstract class CitrixResourceBase implements ServerResource {
 		return null;
     }
     
+    private synchronized Network createTunnelNetwork(Connection conn, long account) {
+        try {
+            String nwName = "OVSTunnel" + account;
+            Network nw = null;
+            Network.Record rec = new Network.Record();
+            Set<Network> networks = Network.getByNameLabel(conn, nwName);
+
+            if (networks.size() == 0) {
+                rec.nameDescription = "tunnel network for account " + account;
+                rec.nameLabel = nwName;
+                nw = Network.create(conn, rec);
+            } else {
+                nw = networks.iterator().next();
+            }
+            
+            enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + account);
+            return nw;
+        } catch (Exception e) {
+            s_logger.warn("create tunnel network failed", e);
+            return null;
+        }
+    }
+    
     protected Network getNetwork(Connection conn, NicTO nic) throws XenAPIException, XmlRpcException {
         Pair<Network, String> network = getNativeNetworkForTraffic(conn, nic.getType());
         if (nic.getBroadcastUri() != null && nic.getBroadcastUri().toString().contains("untagged")) {
@@ -556,7 +586,13 @@ public abstract class CitrixResourceBase implements ServerResource {
         } else if (nic.getBroadcastType() == BroadcastDomainType.Native || nic.getBroadcastType() == BroadcastDomainType.LinkLocal) {
             return network.first();
         } else if (nic.getBroadcastType() == BroadcastDomainType.Vswitch) {
-        	return setupvSwitchNetwork(conn);
+            URI broadcastUri = nic.getBroadcastUri();
+            if (broadcastUri.getHost().equalsIgnoreCase("vlan")) {
+                return setupvSwitchNetwork(conn);
+            } else {
+                long account = Long.parseLong(broadcastUri.getHost());
+                return createTunnelNetwork(conn, account);
+            }
         }
         
         throw new CloudRuntimeException("Unable to support this type of network broadcast domain: " + nic.getBroadcastUri());
@@ -3969,6 +4005,51 @@ public abstract class CitrixResourceBase implements ServerResource {
     
     protected boolean can_bridge_firewall(Connection conn) {   
         return Boolean.valueOf(callHostPlugin(conn, "vmops", "can_bridge_firewall", "host_uuid", _host.uuid));
+    }
+    
+    private Answer execute(OvsDestroyTunnelCommand cmd) {
+        Connection conn = getConnection();
+        try {
+            Network nw = createTunnelNetwork(conn, cmd.getAccount());
+            if (nw == null) {
+                return new Answer(cmd, false, "No network found");
+            }
+            
+            String bridge = nw.getBridge(conn);
+            String result = callHostPlugin(conn, "ovstunnel", "destroy_tunnel", "bridge", bridge, "in_port", cmd.getInPortName());
+            if (result.equalsIgnoreCase("SUCCESS")) {
+                return new Answer(cmd, true, result);
+            } else {
+                return new Answer(cmd, false, result);
+            }
+        } catch (Exception e) {
+            s_logger.warn("caught execption when destroy ovs tunnel", e);
+            return new Answer(cmd, false, e.getMessage());
+        }
+    }
+    
+    private OvsCreateTunnelAnswer execute(OvsCreateTunnelCommand cmd) {
+        Connection conn = getConnection();
+        try {
+            Network nw = createTunnelNetwork(conn, cmd.getAccount());
+            if (nw == null) {
+                return new OvsCreateTunnelAnswer(cmd, false, "Cannot create network");
+            }
+            
+            String bridge = nw.getBridge(conn);
+            String result = callHostPlugin(conn, "ovstunnel", "create_tunnel", "bridge", bridge, "remote_ip", cmd.getRemoteIp(), "key", cmd.getKey(), "from", cmd.getFrom().toString(), "to", cmd
+                    .getTo().toString());
+            
+            String[] res = result.split(":");
+            if (res.length == 2 && res[0].equalsIgnoreCase("SUCCESS")) {
+                return new OvsCreateTunnelAnswer(cmd, true, result, res[1]);
+            } else {
+                return new OvsCreateTunnelAnswer(cmd, false, result);
+            }
+        } catch (Exception e) {
+            s_logger.warn("caught execption when creating ovs tunnel", e);
+            return new OvsCreateTunnelAnswer(cmd, false, e.getMessage());
+        }
     }
     
     private Answer execute(OvsDeleteFlowCommand cmd) {

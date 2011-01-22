@@ -13,6 +13,7 @@ NFSSR.py=/opt/xensource/sm
 nfs.py=/opt/xensource/sm
 vmops=..,0755,/etc/xapi.d/plugins
 ovsgre=..,0755,/etc/xapi.d/plugins
+ovstunnel=..,0755,/etc/xapi.d/plugins
 vmopsSnapshot=..,0755,/etc/xapi.d/plugins
 hostvmstats.py=..,0755,/opt/xensource/sm
 systemvm.iso=../../../../../vms,0644,/opt/xensource/packages/iso

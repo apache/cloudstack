@@ -118,6 +118,7 @@ import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.ovs.GreTunnelException;
 import com.cloud.network.ovs.OvsNetworkManager;
+import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
@@ -285,6 +286,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     VMInstanceDao _instanceDao;
     @Inject
     OvsNetworkManager _ovsNetworkMgr;
+    @Inject
+    OvsTunnelManager _ovsTunnelMgr;
 
     long _routerTemplateId = -1;
     int _routerRamSize;
@@ -1103,6 +1106,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         try {
 			_ovsNetworkMgr.RouterCheckAndCreateTunnel(cmds, profile, dest);
 			_ovsNetworkMgr.applyDefaultFlowToRouter(cmds, profile, dest);
+			_ovsTunnelMgr.RouterCheckAndCreateTunnel(cmds, profile, dest);
 		} catch (GreTunnelException e) {
 			e.printStackTrace();
 		}
@@ -1227,6 +1231,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     	DomainRouterVO router = profile.getVirtualMachine();
     	_ovsNetworkMgr.handleVmStateTransition(router, State.Stopped);
+    	_ovsTunnelMgr.CheckAndDestroyTunnel(router);
     }
 
     @Override

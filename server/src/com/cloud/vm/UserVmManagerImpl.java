@@ -125,6 +125,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.ovs.GreTunnelException;
 import com.cloud.network.ovs.OvsNetworkManager;
+import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.SecurityGroupManager;
@@ -259,6 +260,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject SSHKeyPairDao _sshKeyPairDao;
     @Inject UserVmDetailsDao _vmDetailsDao;
     @Inject OvsNetworkManager _ovsNetworkMgr;
+    @Inject OvsTunnelManager _ovsTunnelMgr;
     
     private IpAddrAllocator _IpAllocator;
     ScheduledExecutorService _executor = null;
@@ -2212,6 +2214,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		try {
 			_ovsNetworkMgr.UserVmCheckAndCreateTunnel(cmds, profile, dest);
 			_ovsNetworkMgr.applyDefaultFlowToUserVm(cmds, profile, dest);
+			_ovsTunnelMgr.UserVmCheckAndCreateTunnel(cmds, profile, dest);
 		} catch (GreTunnelException e) {
 			e.printStackTrace();
 		}
@@ -2282,6 +2285,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		UserVmVO vm = profile.getVirtualMachine();
 		_networkGroupMgr.handleVmStateTransition(vm, State.Stopped);
 		_ovsNetworkMgr.handleVmStateTransition(vm, State.Stopped);
+		_ovsTunnelMgr.CheckAndDestroyTunnel(vm);
     }
     
     public String generateRandomPassword() {
