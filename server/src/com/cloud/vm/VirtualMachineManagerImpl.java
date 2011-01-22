@@ -39,6 +39,7 @@ import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.StartAnswer;
@@ -91,6 +92,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -997,9 +999,17 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
             if (!ma.getResult()) {
                 return null;
             }
-            
+            Commands cmds = new Commands(OnError.Revert);
             CheckVirtualMachineCommand cvm = new CheckVirtualMachineCommand(vm.getInstanceName());
-            CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer)_agentMgr.send(dstHostId, cvm);
+            cmds.addCommand(cvm);
+           
+            if (vm.getType() != VirtualMachine.Type.User) {
+                NetworkRulesSystemVmCommand nrc = new NetworkRulesSystemVmCommand(vm.getInstanceName(), vm.getType());
+                cmds.addCommand(nrc);
+            }
+            
+             _agentMgr.send(dstHostId, cmds);
+             CheckVirtualMachineAnswer answer = cmds.getAnswer(CheckVirtualMachineAnswer.class);
             if (!answer.getResult()) {
                 s_logger.debug("Unable to complete migration for " + vm.toString());
                 stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);

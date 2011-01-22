@@ -92,6 +92,7 @@ import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
@@ -441,6 +442,8 @@ public abstract class CitrixResourceBase implements ServerResource {
         	return execute((OvsDeleteFlowCommand)cmd);
         } else if (cmd instanceof CleanupNetworkRulesCmd){
             return execute((CleanupNetworkRulesCmd)cmd);
+        } else if (cmd instanceof NetworkRulesSystemVmCommand) {
+            return execute((NetworkRulesSystemVmCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -5663,5 +5666,18 @@ public abstract class CitrixResourceBase implements ServerResource {
     /*Override by subclass*/
 	protected String getGuestOsType(String stdType, boolean bootFromCD) {
 		return stdType;
+	}
+
+	private Answer execute(NetworkRulesSystemVmCommand cmd) {
+	    boolean success = true;
+	    Connection conn = getConnection();
+	    if (cmd.getType() != VirtualMachine.Type.User) {
+	        String result = callHostPlugin(conn, "vmops", "default_network_rules_systemvm", "vmName", cmd.getVmName());
+	        if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+	            success = false;
+	        }
+	    }
+
+	    return new Answer(cmd, success, "");
 	}
 }
