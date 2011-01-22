@@ -1,17 +1,15 @@
-<%@ page import="java.util.*" %>
-
-<%@ page import="com.cloud.utils.*" %>
-
-<%
-    Locale browserLocale = request.getLocale();
-    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
-%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
+<fmt:setBundle basename="resources/messages"/>
 
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
         <img src="images/title_dashboardicon.gif"/></div>
     <h1>
-        Dashboard
+        <fmt:message key="label.menu.dashboard"/>
     </h1>
 </div>
 
@@ -22,23 +20,23 @@
             <div class="rightpanel_mainloader_animatedicon">
             </div>
             <p>
-                Loading &hellip;
+                <fmt:message key="label.loading"/> &hellip;
             </p>
         </div>
         <div class="grid_container" id="system_wide_capacity_container">
             <div class="grid_header">
                 <div class="grid_header_cell" style="width: 40%; border: none;">
                     <div class="grid_header_title">
-                        System Wide Capacity</div>
+                        <fmt:message key="label.system.capacity"/></div>
                 </div>
                 <div class="grid_header_cell" style="width: 60%; border: none;">
                     <div class="grid_header_formbox">
                         <label for="zone" class="label">
-                            Zone:</label>
+                            <fmt:message key="label.zone"/>:</label>
                         <select id="capacity_zone_select" class="select" style="width: 110px;">
                         </select>
                         <label for="pod" class="label">
-                            Pod:</label>
+                            <fmt:message key="label.pod"/>:</label>
                         <select id="capacity_pod_select" class="select" style="width: 110px;">
                         </select>
                     </div>
@@ -48,10 +46,10 @@
                 <div class="dbrow_cell" style="width: 35%;">
                     <div class="dbgraph_titlebox">
                         <h2>
-                            Public IP Addresses</h2>
+                            <fmt:message key="label.public.ips"/></h2>
                         <div class="dbgraph_title_usedbox">
                             <p>
-                                Allocated: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
+                                <fmt:message key="label.allocated"/>: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                             </p>
                         </div>
                     </div>
@@ -69,10 +67,10 @@
                 <div class="dbrow_cell" style="width: 35%;">
                     <div class="dbgraph_titlebox">
                         <h2>
-                            Private IP Addresses</h2>
+                            <fmt:message key="label.private.ips"/></h2>
                         <div class="dbgraph_title_usedbox">
                             <p>
-                                Allocated: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
+                                <fmt:message key="label.allocated"/>: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                             </p>
                         </div>
                     </div>
@@ -90,10 +88,10 @@
                 <div class="dbrow_cell" style="width: 35%;">
                     <div class="dbgraph_titlebox">
                         <h2>
-                            Memory Allocated</h2>
+                            <fmt:message key="label.memory.allocated"/></h2>
                         <div class="dbgraph_title_usedbox">
                             <p>
-                                Allocated: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
+                                <fmt:message key="label.allocated"/>: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                             </p>
                         </div>
                     </div>
@@ -111,10 +109,10 @@
                 <div class="dbrow_cell" style="width: 35%;">
                     <div class="dbgraph_titlebox">
                         <h2>
-                            CPU Allocated</h2>
+                            <fmt:message key="label.cpu.allocated"/></h2>
                         <div class="dbgraph_title_usedbox">
                             <p>
-                                Allocated: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
+                                <fmt:message key="label.allocated"/>: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                             </p>
                         </div>
                     </div>
@@ -132,10 +130,10 @@
                 <div class="dbrow_cell" style="width: 35%;">
                     <div class="dbgraph_titlebox">
                         <h2>
-                            Primary Storage Allocated</h2>
+                            <fmt:message key="label.primary.allocated"/></h2>
                         <div class="dbgraph_title_usedbox">
                             <p>
-                                Allocated: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
+                                <fmt:message key="label.allocated"/>: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                             </p>
                         </div>
                     </div>
@@ -153,10 +151,10 @@
                 <div class="dbrow_cell" style="width: 35%;">
                     <div class="dbgraph_titlebox">
                         <h2>
-                            Primary Storage Used</h2>
+                            <fmt:message key="label.primary.used"/></h2>
                         <div class="dbgraph_title_usedbox">
                             <p>
-                                Used: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
+                                <fmt:message key="label.used"/>: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                             </p>
                         </div>
                     </div>
@@ -174,10 +172,10 @@
                 <div class="dbrow_cell" style="width: 35%;">
                     <div class="dbgraph_titlebox">
                         <h2>
-                            Secondary Storage Used</h2>
+                            <fmt:message key="label.secondary.used"/></h2>
                         <div class="dbgraph_title_usedbox">
                             <p>
-                                Used: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
+                                <fmt:message key="label.used"/>: <span id="capacityused">N</span>/<span id="capacitytotal">A</span>
                             </p>
                         </div>
                     </div>
@@ -197,7 +195,7 @@
             <div class="grid_header">
                 <div class="grid_header_cell" style="width: 60%; border: none;">
                     <div class="grid_header_title">
-                        General Alerts</div>
+                        <fmt:message key="label.general.alerts"/></div>
                 </div>
                 <div class="grid_header_cell" style="width: 40%; border: none;">
                     <div class="grid_header_formbox">
@@ -208,7 +206,7 @@
             </div>
             <div id="alert_grid_content">
                 <div style="height: 310px; text-align: center;">
-                    <i>No Recent Alerts</i>
+                    <i><fmt:message key="label.no.alerts"/></i>
                 </div>
             </div>
         </div>
@@ -217,7 +215,7 @@
             <div class="grid_header">
                 <div class="grid_header_cell" style="width: 60%; border: none;">
                     <div class="grid_header_title">
-                        Hosts Alerts</div>
+                        <fmt:message key="label.host.alerts"/></div>
                 </div>
                 <div class="grid_header_cell" style="width: 40%; border: none;">
                     <div class="grid_header_formbox">
@@ -230,7 +228,7 @@
             </div>
             <div id="host_alert_grid_content">
                 <div style="height: 310px; text-align: center;">
-                    <i>No Recent Alerts</i>
+                    <i><fmt:message key="label.no.alerts"/></i>
                 </div>
             </div>
         </div>
@@ -244,7 +242,7 @@
             <div class="rightpanel_mainloader_animatedicon">
             </div>
             <p>
-                Loading &hellip;
+                <fmt:message key="label.loading"/> &hellip;
             </p>
         </div>
         <div class="grid_container" style="width: 49%; border: none;">
@@ -254,7 +252,7 @@
                         <div class="domain_dbicons">
                             <img src="images/instance_dbdomain.png" /></div>
                         <h2>
-                            Instance</h2>
+                            <fmt:message key="label.instance"/></h2>
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 25%; border: none; background: #cacaca repeat top left;">
@@ -270,7 +268,7 @@
                         <div class="domain_dbicons">
                             <img src="images/diskvolume_dbdomain.png" /></div>
                         <h2>
-                            Disk Volume</h2>
+                            <fmt:message key="label.disk.volume"/></h2>
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 25%; border: none; background: #cacaca repeat top left;">
@@ -286,7 +284,7 @@
                         <div class="domain_dbicons">
                             <img src="images/snapshots_dbdomain.png" /></div>
                         <h2>
-                            Snapshots</h2>
+                            <fmt:message key="label.snapshots"/></h2>
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 25%; border: none; background: #cacaca repeat top left;">
@@ -302,7 +300,7 @@
                         <div class="domain_dbicons">
                             <img src="images/users_dbdomain.png" /></div>
                         <h2>
-                            Accounts</h2>
+                            <fmt:message key="label.accounts"/></h2>
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 25%; border: none; background: #cacaca repeat top left;">
@@ -319,14 +317,14 @@
 	        <div class="grid_header">
 	            <div class="grid_header_cell" style="width: 60%; border: none;">
 	                <div class="grid_header_title">
-	                    Recent Errors</div>
+	                    <fmt:message key="label.recent.errors"/></div>
 	            </div>
 	            <div class="grid_header_cell" style="width: 40%; border: none;">
 	            </div>
 	        </div>
 	        <div id="alert_grid_content">
 	            <div style="height: 310px; text-align: center;">
-	                <i>No Recent Alerts</i>
+	                <i><fmt:message key="label.no.errors"/></i>
 	            </div>
 	        </div>
 	    </div>    
@@ -341,7 +339,7 @@
         <div class="grid_header">
             <div class="grid_header_cell" style="width: 60%; border: none;">
                 <div class="grid_header_title">
-                    Resources</div>
+                    <fmt:message key="label.resources"/></div>
             </div>
         </div>
         <div class="grid_rows" style="padding: 0; border: none;">
@@ -355,7 +353,7 @@
                         </div>
                         <div class="db_resourcebox_textbox">
                             <p>
-                            Running VMs:</div>
+                            <fmt:message key="label.running.vms"/>:</div>
                     </div>
                     <div class="db_resourcebox_bot">
                         <div class="db_resourcebox_VMnumber running">
@@ -373,7 +371,7 @@
                         </div>
                         <div class="db_resourcebox_textbox">
                             <p>
-                            Stopped VMs:</div>
+                            <fmt:message key="label.stopped.vms"/>:</div>
                     </div>
                     <div class="db_resourcebox_bot">
                         <div class="db_resourcebox_VMnumber stopped">
@@ -391,7 +389,7 @@
                         </div>
                         <div class="db_resourcebox_textbox">
                             <p>
-                            Total VMs:</div>
+                            <fmt:message key="label.total.vms"/>:</div>
                     </div>
                     <div class="db_resourcebox_bot">
                         <div class="db_resourcebox_VMnumber total">
@@ -406,13 +404,13 @@
         <div class="grid_header">
             <div class="grid_header_cell" style="width: 60%; border: none;">
                 <div class="grid_header_title">
-                    Public IPs</div>
+                    <fmt:message key="label.public.ips"/></div>
             </div>
         </div>
         <div class="grid_rows even" style="width: 50%;">
             <div class="grid_row_cell" style="width: 40%; border: none;">
                 <div class="row_celltitles">
-                    Available Public IPs:
+                    <fmt:message key="label.available.public.ips"/>:
                 </div>
             </div>
             <div class="grid_row_cell" style="width: 59%; border: none;">
@@ -424,7 +422,7 @@
         <div class="grid_rows odd" style="width: 50%;">
             <div class="grid_row_cell" style="width: 40%; border: none;">
                 <div class="row_celltitles">
-                    Owned Public IPs:
+                    <fmt:message key="label.owned.public.ips"/>:
                 </div>
             </div>
             <div class="grid_row_cell" style="width: 59%; border: none;">
@@ -439,14 +437,14 @@
         <div class="grid_header">
             <div class="grid_header_cell" style="width: 60%; border: none;">
                 <div class="grid_header_title">
-                    Recent Errors</div>
+                    <fmt:message key="label.recent.errors"/></div>
             </div>
             <div class="grid_header_cell" style="width: 40%; border: none;">
             </div>
         </div>
         <div id="alert_grid_content">
             <div style="height: 310px; text-align: center;">
-                <i>No Recent Alerts</i>
+                <i><fmt:message key="label.no.errors"/></i>
             </div>
         </div>
     </div>
@@ -459,13 +457,13 @@
             </div>
             <div class="grid_header_cell" style="width: 60%; border: none;">
                 <div class="grid_header_title" style="color: #FFF;">
-                    My Account</div>
+                    <fmt:message key="label.my.account"/></div>
             </div>
         </div>
         <div class="dbaccounts_rows">
             <div class="grid_row_cell" style="width: 30%;">
                 <div class="row_celltitles">
-                    Account ID</div>
+                    <fmt:message key="label.account.id"/></div>
             </div>
             <div class="grid_row_cell" style="width: 60%; border: none;">
                 <div class="row_celltitles">
@@ -476,7 +474,7 @@
         <div class="dbaccounts_rows">
             <div class="grid_row_cell" style="width: 30%;">
                 <div class="row_celltitles">
-                    Account</div>
+                    <fmt:message key="label.account"/></div>
             </div>
             <div class="grid_row_cell" style="width: 60%; border: none;">
                 <div class="row_celltitles">
@@ -487,7 +485,7 @@
         <div class="dbaccounts_rows">
             <div class="grid_row_cell" style="width: 30%;">
                 <div class="row_celltitles">
-                    Type</div>
+                    <fmt:message key="label.type"/></div>
             </div>
             <div class="grid_row_cell" style="width: 60%; border: none;">
                 <div class="row_celltitles">
@@ -498,7 +496,7 @@
         <div class="dbaccounts_rows">
             <div class="grid_row_cell" style="width: 30%;">
                 <div class="row_celltitles">
-                    Domain</div>
+                    <fmt:message key="label.domain"/></div>
             </div>
             <div class="grid_row_cell" style="width: 60%; border: none;">
                 <div class="row_celltitles">

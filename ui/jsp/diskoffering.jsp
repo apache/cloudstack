@@ -1,13 +1,9 @@
-<%@ page import="java.util.*" %>
-
-<%@ page import="com.cloud.utils.*" %>
-
-<%
-    Locale browserLocale = request.getLocale();
-    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
-%>
-
-
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
+<fmt:setBundle basename="resources/messages"/>
 
 <div class="main_title" id="right_panel_header">
     
@@ -15,7 +11,7 @@
         <img src="images/title_diskofferingicon.gif" /></div>
     
     <h1>
-        Disk Offering
+       <fmt:message key="label.menu.disk.offerings"/>
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -25,7 +21,7 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on">
-            <%=t.t("details")%></div>
+            <fmt:message key="label.details"/></div>
     </div>
     <div id="tab_content_details">
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
@@ -33,7 +29,7 @@
                 <div class="rightpanel_mainloader_animatedicon">
                 </div>
                 <p>
-                    Loading &hellip;</p>
+                    <fmt:message key="label.loading"/> &hellip;</p>
             </div>
         </div>
         <div id="tab_container"> 
@@ -43,7 +39,7 @@
 	                <div id="action_link" class="grid_actionbox"><p>Actions</p>
 	                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                        <ul class="actionsdropdown_boxlist" id="action_list">
-	                        	<li><%=t.t("no.available.actions")%></li>
+	                        	<li><fmt:message key="label.no.actions"/></li>
 	                        </ul>
 	                    </div>
 	                </div>
@@ -52,13 +48,13 @@
 	                    <div class="gridheader_loader" id="Div1">
 	                    </div>
 	                    <p id="description">
-	                        Waiting &hellip;</p>
+	                        <fmt:message key="label.waiting"/> &hellip;</p>
 	                </div>
 	            </div>
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("ID")%>:</div>
+	                        <fmt:message key="label.id"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="id">
@@ -68,7 +64,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("name")%>:</div>
+	                        <fmt:message key="label.name"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="name">
@@ -80,7 +76,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("display.text")%>:</div>
+	                        <fmt:message key="label.display.text"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="displaytext">
@@ -92,7 +88,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("disk.size")%>:</div>
+	                        <fmt:message key="label.disk.size"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="disksize">
@@ -102,7 +98,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("tags")%>:</div>
+	                        <fmt:message key="label.tags"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="tags">
@@ -114,7 +110,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("domain")%>:</div>
+	                        <fmt:message key="label.domain"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="domain">
@@ -123,18 +119,6 @@
 	                    </select>	
 	                </div>
 	            </div>      
-	            <!-- 	            
-	            <div class="grid_rows odd">
-	                <div class="grid_row_cell" style="width: 20%;">
-	                    <div class="row_celltitles">
-	                        <%=t.t("customizable.during.VM.creation")%>:</div>
-	                </div>
-	                <div class="grid_row_cell" style="width: 79%;">
-	                    <div class="row_celltitles" id="isCustomized">
-	                    </div>
-	                </div>
-	            </div>  
-	             -->   
 	        </div>        
 	        <div class="grid_botactionpanel">
 	        	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
@@ -151,7 +135,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt="Add Disk Offering" /></div>
             <div class="actionpanel_button_links">
-                Add Disk Offering
+                <fmt:message key="label.add.disk.offering"/>:</div>
             </div>
         </div>
     </div>
@@ -160,7 +144,7 @@
 
 <!-- Add Disk Offering Dialog -->
 <div id="dialog_add_disk" title="Add Disk Offering" style="display:none">
-	<p>Please fill in the following data to add a new disk Offering.</p>
+	<p><fmt:message key="message.add.disk.offering"/></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form1">
 			<ol>
@@ -175,10 +159,10 @@
 					<div id="add_disk_description_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>	
 				<li>
-					<label>Custom disk size?:</label>
+					<label><fmt:message key="label.custom.disk.size"/>?:</label>
 					<select class="select" id="customized">						
-						<option value="false">No</option>
-						<option value="true">Yes</option>
+						<option value="false"><fmt:message key="label.no"/></option>
+						<option value="true"><fmt:message key="label.yes"/></option>
 					</select>
 				</li>				
 				<li id="add_disk_disksize_container">
@@ -188,22 +172,22 @@
 				</li>				
 				<li id="add_disk_tags_container">
                     <label for="add_disk_tags">
-                        Tags:</label>
+                        <fmt:message key="label.tags"/>:</label>
                     <input class="text" type="text" id="add_disk_tags" />
                     <div id="add_disk_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                     </div>
                 </li>	
                 <li>
 				    <label>
-				        Public?:</label>
+				        <fmt:message key="label.public"/>?:</label>
 				    <select class="select" id="public_dropdown">
-				        <option value="true">Yes</option>
-				        <option value="false">No</option>
+				        <option value="true"><fmt:message key="label.yes"/></option>
+				        <option value="false"><fmt:message key="label.no"/></option>
 				    </select>
 				</li>
 				<li id="domain_dropdown_container" style="display: none">
 				    <label>
-				        Domain:</label>
+				        <fmt:message key="label.domain"/>:</label>
 				    <select class="select" id="domain_dropdown">
 				    </select>
 				</li>    	

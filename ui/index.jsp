@@ -532,7 +532,7 @@
 				                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
 				                    </div>
 				                    <span id="label">
-				                        <fmt:message key="label.menu.my.accounts"/>
+				                        <fmt:message key="label.menu.all.accounts"/>
 				                    </span>
 				                </div>
 				            </div>
