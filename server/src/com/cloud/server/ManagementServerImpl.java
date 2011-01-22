@@ -977,7 +977,7 @@ public class ManagementServerImpl implements ManagementServer {
         
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
         sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-        sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.LIKE);
+        sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
 
         if ((accountName == null) && (domainId != null)) {
@@ -1017,7 +1017,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         if (accountName != null) {
-            sc.setParameters("accountName", "%" + accountName + "%");
+            sc.setParameters("accountName", accountName);
             if (domainId != null) {
                 sc.setParameters("domainId", domainId);
             }
