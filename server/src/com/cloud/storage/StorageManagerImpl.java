@@ -2449,9 +2449,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         for (VolumeVO vol : recreateVols) {
             VolumeVO newVol;
             if (vol.getState() == Volume.State.Allocated) {
+                vol.setRecreatable(true);
                 newVol = vol;
             } else {
                 newVol = switchVolume(vol);
+                newVol.setRecreatable(true);
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Created new volume " + newVol + " for old volume " + vol);
                 }
