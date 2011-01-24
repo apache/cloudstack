@@ -358,18 +358,22 @@ function accountToRightPanel($midmenuItem1) {
 }
 
 function accountClearRightPanel() { 
-    accountJsonClearDetailsTab();
-    accountJsonClearUserTab();
+    accountClearDetailsTab();
+    accountClearUserTab();
 }
 
 function accountJsonToDetailsTab() {  
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        accountClearDetailsTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        accountClearDetailsTab();
         return;
+    }
    
     var $detailsTab = $("#right_panel_content").find("#tab_content_details");           
     $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
@@ -416,7 +420,7 @@ function accountJsonToDetailsTab() {
 	}	  
 }
 
-function accountJsonClearDetailsTab() {      
+function accountClearDetailsTab() {      
     var $detailsTab = $("#right_panel_content").find("#tab_content_details");           
     $detailsTab.find("#grid_header_title").text("");
     $detailsTab.find("#id").text("");
@@ -437,12 +441,16 @@ function accountJsonClearDetailsTab() {
 
 function accountJsonToUserTab() {       	
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
-	if($midmenuItem1 == null)
+	if($midmenuItem1 == null) {
+	    accountClearUserTab();
 	    return;
+	}
 	
 	var jsonObj = $midmenuItem1.data("jsonObj");	
-	if(jsonObj == null)
-	    return;            
+	if(jsonObj == null) {
+	    accountClearUserTab();
+	    return;     
+	}       
 	
 	var $thisTab = $("#right_panel_content").find("#tab_content_user");	    
 	$thisTab.find("#tab_container").hide(); 
@@ -469,7 +477,7 @@ function accountJsonToUserTab() {
 	});
 } 
 
-function accountJsonClearUserTab() {     
+function accountClearUserTab() {     
 	var $thisTab = $("#right_panel_content").find("#tab_content_user");	    
 	$thisTab.find("#tab_container").empty();
 } 
