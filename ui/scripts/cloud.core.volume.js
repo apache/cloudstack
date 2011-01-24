@@ -415,8 +415,7 @@ function volumeJsonToDetailsTab(){
 } 
 
 function volumeJsonToSnapshotTab() {       		
-	var $thisTab = $("#right_panel_content").find("#tab_content_snapshot");	    
-	var $container = $thisTab.find("#tab_container").empty();	
+	volumeClearSnapshotTab();
 	
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
 	if($midmenuItem1 == null)
@@ -425,7 +424,8 @@ function volumeJsonToSnapshotTab() {
 	var jsonObj = $midmenuItem1.data("jsonObj");	
 	if(jsonObj == null)
 	    return;
-		
+	
+	var $thisTab = $("#right_panel_content").find("#tab_content_snapshot");	  	
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
     
@@ -433,7 +433,8 @@ function volumeJsonToSnapshotTab() {
 		cache: false,
 		data: createURL("command=listSnapshots&volumeid="+fromdb(jsonObj.id)),
 		dataType: "json",
-		success: function(json) {							    
+		success: function(json) {	
+		    var $container = $thisTab.find("#tab_container").empty();							    
 			var items = json.listsnapshotsresponse.snapshot;																								
 			if (items != null && items.length > 0) {			    
 				var template = $("#snapshot_tab_template");				
@@ -447,6 +448,11 @@ function volumeJsonToSnapshotTab() {
             $thisTab.find("#tab_container").show();    			
 		}
 	});
+} 
+ 
+function volumeClearSnapshotTab() {
+    var $thisTab = $("#right_panel_content").find("#tab_content_snapshot");	  	
+    $thisTab.find("#tab_container").empty();
 } 
  
 function volumeSnapshotJSONToTemplate(jsonObj, template) {
