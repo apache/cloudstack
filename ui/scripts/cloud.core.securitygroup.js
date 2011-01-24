@@ -437,12 +437,16 @@ function securityGroupToRightPanel($midmenuItem1) {
 
 function securityGroupJsonToDetailsTab() {     
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        securityGroupClearDetailsTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        securityGroupClearDetailsTab();
         return;
+    }
      
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
@@ -483,12 +487,16 @@ function securityGroupJsonToDetailsTab() {
 
 function securityGroupJsonToIngressRuleTab() {       		
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
-	if($midmenuItem1 == null)
+	if($midmenuItem1 == null) {
+	    securityGroupClearIngressRuleTab();
 	    return;
+	}
 	
 	var securityGroupObj = $midmenuItem1.data("jsonObj");	
-	if(securityGroupObj == null)
+	if(securityGroupObj == null) {
+	    securityGroupClearIngressRuleTab();
 	    return;
+	}
 	
 	var $thisTab = $("#right_panel_content").find("#tab_content_ingressrule");	    
 	$thisTab.find("#tab_container").hide(); 
@@ -514,6 +522,11 @@ function securityGroupJsonToIngressRuleTab() {
             $thisTab.find("#tab_container").show();    			
 		}
 	});
+} 
+
+function securityGroupClearIngressRuleTab() {   	
+	var $thisTab = $("#right_panel_content").find("#tab_content_ingressrule");	    
+	$thisTab.find("#tab_container").empty();  
 } 
 
 function securityGroupIngressRuleJSONToTemplate(jsonObj, $template) {
