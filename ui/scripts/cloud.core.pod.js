@@ -904,9 +904,9 @@ var podActionMap = {
     "Edit Pod": {
         dialogBeforeActionFn: doEditPod  
     },
-    "Delete Pod": {  
-        api: "deletePod",            
-        isAsyncJob: false,        
+    "Delete Pod": {                   
+        isAsyncJob: false, 
+        dialogBeforeActionFn : doDeletePod,        
         inProcessText: "Deleting Pod....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {       
             $midmenuItem1.slideUp("slow", function() {
@@ -1000,3 +1000,22 @@ function doEditPod2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
         $("#save_button, #cancel_button").hide();   
 	}
 }
+
+function doDeletePod($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text("Please confirm you want to delete this pod")
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=deletePod&id="+id;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
+
