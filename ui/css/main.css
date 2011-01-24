@@ -3463,7 +3463,7 @@ a:hover.search_button {
 	float:right;
 	position:absolute;
 	background:#99b2c3 url(../images/gridheader_loadingbg.gif) repeat-x top left;
-	border-left:1px solid #999;
+	border: 1px solid #999;
 	padding:0 5px 0 0;
 	z-index:1001;
 	right:0;
