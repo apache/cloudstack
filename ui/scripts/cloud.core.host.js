@@ -584,7 +584,7 @@ function doRemoveHost($actionLink, $detailsTab, $midmenuItem1){
     var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_confirmation")
-    .text("Please confirm you want to remove the host from the management server")
+    .text("Removing last/only host in cluster and reinstalling the host will destroy working environment/database on the host and render the VM Guests unuseable.")
     .dialog("option", "buttons", {	                    
          "OK": function() {
              $(this).dialog("close");      
