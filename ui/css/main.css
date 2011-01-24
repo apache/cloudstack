@@ -1056,7 +1056,7 @@ a:hover {
 
 .rev_wiztemplistbox {
 	width:508px;
-	height:auto;
+	height:35px;
 	float:left;
 	border-bottom:1px solid #999;
 	margin:0;
@@ -1064,6 +1064,7 @@ a:hover {
 	background:#FFF repeat top left;
 	cursor:pointer;
 	cursor:hand;
+	overflow:hidden;
 }
 
 .rev_wiztemplistbox:hover {
@@ -1072,7 +1073,7 @@ a:hover {
 
 .rev_wiztemplistbox_selected {
 	width:508px;
-	height:auto;
+	height:35px;
 	float:left;
 	border-bottom:1px solid #999;
 	margin:0;
@@ -1080,6 +1081,7 @@ a:hover {
 	background:#8fe0f4 repeat top left;
 	cursor:pointer;
 	cursor:hand;
+	overflow:hidden;
 }
 
 
@@ -1113,7 +1115,7 @@ a:hover {
 
 .rev_wiztemp_listtext {
 	width:460px;
-	height:auto;
+	height:15px;
 	float:left;
 	color:#021a28;
 	font-size:11px;
@@ -1121,11 +1123,12 @@ a:hover {
 	text-align:left;
 	margin:5px 0 0 0;
 	padding:0;
+	overflow:hidden;
 }
 
 .rev_wiztemp_hypervisortext {
 	width:318px;
-	height:auto;
+	height:14px;
 	float:left;
 	color:#525252;
 	font-size:10px;
@@ -1134,11 +1137,12 @@ a:hover {
 	margin:2px 0 0 33px;
 	display:inline;
 	padding:0;
+	overflow:hidden;
 }
 
 .rev_wiztemp_ownertext {
-	width:110px;
-	height:auto;
+	width:130px;
+	height:14px;
 	float:left;
 	color:#666;
 	font-size:10px;
@@ -1146,6 +1150,7 @@ a:hover {
 	text-align:left;
 	margin:0px 0 0 0;
 	padding:0;
+	overflow:hidden;
 }
 .rev_wiztemp_ownertext span {
 	color:#666;
