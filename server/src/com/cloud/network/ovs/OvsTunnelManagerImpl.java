@@ -78,7 +78,13 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 		try {
 			key = _tunnelDao.askKey(from, to);
 			ta = new OvsTunnelAccountVO(from, to, key, account);
+			OvsTunnelAccountVO lock = _tunnelAccountDao.acquireInLockTable(Long.valueOf(1));
+			if (lock == null) {
+			    s_logger.warn("Cannot lock table ovs_tunnel_account");
+			    return -1;
+			}
 			_tunnelAccountDao.persist(ta);
+			_tunnelAccountDao.releaseFromLockTable(lock.getId());
 		} catch (EntityExistsException e) {
 			ta = _tunnelAccountDao.getByFromToAccount(from, to, account);
 			if (ta == null) {
@@ -93,12 +99,9 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 
 	private void handleCreateTunnelAnswer(Answer[] answers){
 		OvsCreateTunnelAnswer r = (OvsCreateTunnelAnswer) answers[0];
-		/*
 		String s = String.format(
-				"(hostIP:%1$s, remoteIP:%2$s, bridge:%3$s, greKey:%4$s)",
-				r.getHostIp(), r.getRemoteIp(), r.getBridge(), r.getKey());
-        */
-		String s = "hi";
+				"(hostIP:%1$s, remoteIP:%2$s, bridge:%3$s, greKey:%4$s, portName:%5$s)",
+				r.getFromIp(), r.getToIp(), r.getBridge(), r.getKey(), r.getInPortName());
 		Long from = r.getFrom();
 		Long to = r.getTo();
 		long account = r.getAccount();
@@ -109,13 +112,11 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 		
 		if (!r.getResult()) {
 		    ta.setState("FAILED");
-			s_logger.warn("Create GRE tunnel failed due to " + r.getDetails()
-					+ s);
+			s_logger.warn("Create GRE tunnel failed due to " + r.getDetails() + s);
 		} else {
 		    ta.setState("SUCCESS");
 		    ta.setPortName(r.getInPortName());
-		    s_logger.warn("Create GRE tunnel Success " + r.getDetails()
-                    + s);
+		    s_logger.warn("Create GRE tunnel " + r.getDetails() + s);
 		}
 		_tunnelAccountDao.update(ta.getId(), ta);
 	}
@@ -182,15 +183,16 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 			for (Pair<Long, Integer> i : toHosts) {
 				HostVO rHost = _hostDao.findById(i.first());
 				Commands cmds = new Commands(
-						new OvsCreateTunnelCommand(rHost.getPrivateIpAddress(), i.second().toString(), Long.valueOf(hostId), i.first(), accountId));
+						new OvsCreateTunnelCommand(rHost.getPrivateIpAddress(), i.second().toString(), Long.valueOf(hostId), i.first(), accountId, myIp));
 				s_logger.debug("Ask host " + hostId + " to create gre tunnel to " + i.first());
 				Answer[] answers = _agentMgr.send(hostId, cmds);
 				handleCreateTunnelAnswer(answers);
 			}
 			
 			for (Pair<Long, Integer> i : fromHosts) {
+			    HostVO rHost = _hostDao.findById(i.first());
 				Commands cmd2s = new Commands(
-				        new OvsCreateTunnelCommand(myIp, i.second().toString(), i.first(), Long.valueOf(hostId), accountId));
+				        new OvsCreateTunnelCommand(myIp, i.second().toString(), i.first(), Long.valueOf(hostId), accountId, rHost.getPrivateIpAddress()));
 				s_logger.debug("Ask host " + i.first() + " to create gre tunnel to " + hostId);
 				Answer[] answers = _agentMgr.send(i.first(), cmd2s);
 				handleCreateTunnelAnswer(answers);
@@ -234,11 +236,18 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
         String toStr = (to == 0 ? "all peers" : Long.toString(to));
         
         if (ans.getResult()) {
+            OvsTunnelAccountVO lock = _tunnelAccountDao.acquireInLockTable(Long.valueOf(1));
+            if (lock == null) {
+                s_logger.warn(String.format("failed to lock ovs_tunnel_account, remove record of tunnel(from=%1$s, to=%2$s account=%3$s) failed", from, to, account));
+                return;
+            }
+
             if (to == 0) {
                 _tunnelAccountDao.removeByFromAccount(from, account);
             } else {
                 _tunnelAccountDao.removeByFromToAccount(from, to, account);
             }
+            _tunnelAccountDao.releaseFromLockTable(lock.getId());
             
             s_logger.debug(String.format("Destroy tunnel(account:%1$s, from:%2$s, to:%3$s) successful", account, from, toStr)); 
         } else {

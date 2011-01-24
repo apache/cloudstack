@@ -4020,25 +4020,26 @@ public abstract class CitrixResourceBase implements ServerResource {
     
     private OvsCreateTunnelAnswer execute(OvsCreateTunnelCommand cmd) {
         Connection conn = getConnection();
+        String bridge = "unknown";
         try {
             Network nw = createTunnelNetwork(conn, cmd.getAccount());
             if (nw == null) {
-                return new OvsCreateTunnelAnswer(cmd, false, "Cannot create network");
+                return new OvsCreateTunnelAnswer(cmd, false, "Cannot create network", bridge);
             }
             
-            String bridge = nw.getBridge(conn);
+            bridge = nw.getBridge(conn);
             String result = callHostPlugin(conn, "ovstunnel", "create_tunnel", "bridge", bridge, "remote_ip", cmd.getRemoteIp(), "key", cmd.getKey(), "from", cmd.getFrom().toString(), "to", cmd
                     .getTo().toString());
             
             String[] res = result.split(":");
             if (res.length == 2 && res[0].equalsIgnoreCase("SUCCESS")) {
-                return new OvsCreateTunnelAnswer(cmd, true, result, res[1]);
+                return new OvsCreateTunnelAnswer(cmd, true, result, res[1], bridge);
             } else {
-                return new OvsCreateTunnelAnswer(cmd, false, result);
+                return new OvsCreateTunnelAnswer(cmd, false, result, bridge);
             }
         } catch (Exception e) {
             s_logger.warn("caught execption when creating ovs tunnel", e);
-            return new OvsCreateTunnelAnswer(cmd, false, e.getMessage());
+            return new OvsCreateTunnelAnswer(cmd, false, e.getMessage(), bridge);
         }
     }
     

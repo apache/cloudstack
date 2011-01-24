@@ -9,17 +9,21 @@ public class OvsCreateTunnelCommand extends Command {
 	Long to;
 	long account;
 	
+	//for debug info
+	String fromIp;
+	
 	@Override
 	public boolean executeInSequence() {
 		return true;
 	}
 	
-	public OvsCreateTunnelCommand(String remoteIp, String key, Long from, Long to, long account) {
+	public OvsCreateTunnelCommand(String remoteIp, String key, Long from, Long to, long account, String fromIp) {
 	    this.remoteIp = remoteIp;
 	    this.key = key;
 	    this.from = from;
 	    this.to = to;
 	    this.account = account;
+	    this.fromIp = fromIp;
 	}
 	
 	public String getKey() {
@@ -40,6 +44,10 @@ public class OvsCreateTunnelCommand extends Command {
 	
 	public long getAccount() {
 	    return account;
+	}
+	
+	public String getFromIp() {
+	    return fromIp;
 	}
 
 }

@@ -1395,6 +1395,8 @@ CREATE TABLE `cloud`.`ovs_tunnel_account`(
   PRIMARY KEY(`from`, `to`, `account`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+INSERT INTO `cloud`.`ovs_tunnel_account` (`from`, `to`, `account`, `key`, `port_name`, `state`) VALUES (0, 0, 0, 0, 'lock', 'SUCCESS');
+
 CREATE TABLE `cloud`.`ovs_vlan_mapping_dirty`(
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `account_id` bigint unsigned COMMENT 'account id',
