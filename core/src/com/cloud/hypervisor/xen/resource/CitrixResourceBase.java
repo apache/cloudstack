@@ -515,10 +515,12 @@ public abstract class CitrixResourceBase implements ServerResource {
         	vifr.network = nw;
         	dom0vif = VIF.create(conn, vifr);
         	dom0vif.plug(conn);
+        	dom0vif.unplug(conn);
         } else {
         	s_logger.debug("already have a vif on dom0 for " + networkDesc);
         	if (!dom0vif.getCurrentlyAttached(conn)) {
         		dom0vif.plug(conn);
+        		dom0vif.unplug(conn);
         	}
         }
     }
@@ -566,7 +568,7 @@ public abstract class CitrixResourceBase implements ServerResource {
                 nw = networks.iterator().next();
             }
             
-            enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + account);
+            enableXenServerNetwork(conn, nw, "OVSTunnel", "tunnel network for account " + account);
             return nw;
         } catch (Exception e) {
             s_logger.warn("create tunnel network failed", e);
