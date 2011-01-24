@@ -249,12 +249,16 @@ function serviceOfferingToRightPanel($midmenuItem1) {
 
 function serviceOfferingJsonToDetailsTab() { 
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        serviceOfferingClearDetailsTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
-        return;     
+    if(jsonObj == null) {
+        serviceOfferingClearDetailsTab();
+        return;   
+    }  
     
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 

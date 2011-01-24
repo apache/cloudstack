@@ -251,12 +251,16 @@ function diskOfferingToRightPanel($midmenuItem1) {
 
 function diskOfferingJsonToDetailsTab() { 
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        diskOfferingClearDetailsTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        diskOfferingClearDetailsTab();
         return;
+    }
      
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
