@@ -2098,7 +2098,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 			//3. If the volume is not removed AND not destroyed, start the vm corresponding to it
 			for(VolumeVO volume: allVolumes)
 			{
-				if((!volume.destroyed) && (volume.removed == null))
+				if((!volume.getDestroyed()) && (volume.getRemoved() == null))
 				{
 					VMInstanceVO vmInstance = _vmInstanceDao.findById(volume.getInstanceId());
 				
