@@ -415,6 +415,9 @@ function volumeJsonToDetailsTab(){
 } 
 
 function volumeJsonToSnapshotTab() {       		
+	var $thisTab = $("#right_panel_content").find("#tab_content_snapshot");	    
+	var $container = $thisTab.find("#tab_container").empty();	
+	
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
 	if($midmenuItem1 == null)
 	    return;
@@ -422,8 +425,7 @@ function volumeJsonToSnapshotTab() {
 	var jsonObj = $midmenuItem1.data("jsonObj");	
 	if(jsonObj == null)
 	    return;
-	
-	var $thisTab = $("#right_panel_content").find("#tab_content_snapshot");	    
+		
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
     
@@ -432,8 +434,7 @@ function volumeJsonToSnapshotTab() {
 		data: createURL("command=listSnapshots&volumeid="+fromdb(jsonObj.id)),
 		dataType: "json",
 		success: function(json) {							    
-			var items = json.listsnapshotsresponse.snapshot;	
-			var $container = $thisTab.find("#tab_container").empty();																					
+			var items = json.listsnapshotsresponse.snapshot;																								
 			if (items != null && items.length > 0) {			    
 				var template = $("#snapshot_tab_template");				
 				for (var i = 0; i < items.length; i++) {
