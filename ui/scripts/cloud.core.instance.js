@@ -1750,12 +1750,16 @@ function vmJsonToDetailsTab(){
 
 function vmJsonToNicTab() {  
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
-	if ($midmenuItem1 == null) 
+	if ($midmenuItem1 == null)  {
+	    vmJsonClearNicTab();
 	    return;
+	}
 		
 	var jsonObj = $midmenuItem1.data("jsonObj");	
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        vmJsonClearNicTab();
         return;	
+    }
 	
 	var $thisTab = $("#right_panel_content").find("#tab_content_nic");  		
 	
@@ -1778,12 +1782,16 @@ function vmJsonClearNicTab() {
 
 function vmJsonToVolumeTab() {  
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
-	if ($midmenuItem1 == null) 
+	if ($midmenuItem1 == null) {
+	    vmJsonClearVolumeTab();
 	    return;
+	}
 		
 	var jsonObj = $midmenuItem1.data("jsonObj");	
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        vmJsonClearVolumeTab();
         return;	
+    }
 	
 	var $thisTab = $("#right_panel_content").find("#tab_content_volume");  		
 	$thisTab.find("#tab_container").hide(); 
@@ -1818,12 +1826,16 @@ function vmJsonClearVolumeTab() {
  
 function vmJsonToStatisticsTab() {    
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-	if ($midmenuItem1 == null) 
+	if ($midmenuItem1 == null) {
+	    vmJsonClearStatisticsTab();
 	    return;	
+	}
 	
 	var jsonObj = $midmenuItem1.data("jsonObj");
-	if(jsonObj == null)
+	if(jsonObj == null) {
+	    vmJsonClearStatisticsTab();
 	    return;
+	}
 
     var $thisTab = $("#right_panel_content #tab_content_statistics");  	
 	var $barChartContainer = $thisTab.find("#cpu_barchart");
