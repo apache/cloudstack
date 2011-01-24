@@ -21,6 +21,7 @@ package com.cloud.agent.api;
 public class NetworkUsageCommand extends Command {
     private String privateIP;
     private String domRName;
+    private String option;
     
     protected NetworkUsageCommand() {
         
@@ -31,6 +32,13 @@ public class NetworkUsageCommand extends Command {
         this.privateIP = privateIP;
         this.domRName = domRName; 
     }
+    
+    public NetworkUsageCommand(String privateIP, String domRName, String option)
+    {
+        this.privateIP = privateIP;
+        this.domRName = domRName; 
+        this.option = option;
+    }
 
     public String getPrivateIP() {
         return privateIP;
@@ -38,6 +46,10 @@ public class NetworkUsageCommand extends Command {
     
     public String getDomRName() {
         return domRName;
+    }
+    
+    public String getOption() {
+        return option;
     }
     
     /**

@@ -1206,6 +1206,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         //Resend user data
         s_logger.debug("Reapplying user data entries as a part of domR " + router + " start...");
         createUserDataCommands(router, cmds);
+        // Network usage command to create iptables rules
+        cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIp4Address(), router.getName(), "create"));
         
         return true;
     }
