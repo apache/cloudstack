@@ -866,52 +866,13 @@ function bindEventHandlerToDialogAddVlanForZone() {
 	});
 }
 
-/*
-var secondarystorageActionMap = {
-    "Delete Secondary Storage": {   
-        isAsyncJob: false,   
-        dialogBeforeActionFn: doDeleteSecondaryStorage,       
-        inProcessText: "Deleting Secondary Storaget....",
-        afterActionSeccessFn: function(json, id, $subgridItem) {                        
-            $subgridItem.slideUp("slow", function() {
-                $(this).remove();
-            });
-        }
-    } 
-}
-*/
-
-/*
-function doDeleteSecondaryStorage($actionLink, $subgridItem) { 
-    var jsonObj = $subgridItem.data("jsonObj");
-       
-    $("#dialog_confirmation")
-    .text("Please confirm you want to delete the secondary storage")	
-	.dialog('option', 'buttons', { 						
-		"Confirm": function() { 
-		    var $thisDialog = $(this);	
-			$thisDialog.dialog("close");       	                                             
-         
-            var name = $thisDialog.find("#name").val();	                
-             
-            var id = jsonObj.id;
-            var apiCommand = "command=deleteHost&id="+id;    	
-    	    doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem);				
-		}, 
-		"Cancel": function() { 
-			$(this).dialog("close"); 
-		} 
-	}).dialog("open");
-}
-*/
-
 var zoneActionMap = {
     "Edit Zone": {
         dialogBeforeActionFn: doEditZone  
     },
-    "Delete Zone": {  
-        api: "deleteZone",            
-        isAsyncJob: false,        
+    "Delete Zone": {                  
+        isAsyncJob: false,       
+        dialogBeforeActionFn : doDeleteZone,  
         inProcessText: "Deleting Zone....",
         afterActionSeccessFn: function(json, $leftmenuItem1, id) {   
             $leftmenuItem1.slideUp(function() {
@@ -1035,6 +996,23 @@ function doEditZone2($actionLink, $detailsTab, $leftmenuItem1, $readonlyFields, 
 	}
 }
 
+function doDeleteZone($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text("Please confirm you want to delete this zone")
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=deleteZone&id="+id;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
 
 function bindAddClusterButtonOnZonePage($button, zoneId, zoneName) {
     $button.show();
