@@ -167,6 +167,20 @@ function publicNetworkJsonToDetailsTab() {
 	$thisTab.find("#dns2").text(fromdb(jsonObj.dns2));	
 	$thisTab.find("#domainid").text(fromdb(jsonObj.domainid));	
 	$thisTab.find("#account").text(fromdb(jsonObj.account));	
+	
+	//actions ***   
+    var $actionLink = $thisTab.find("#action_link"); 
+    $actionLink.bind("mouseover", function(event) {	    
+        $(this).find("#action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {       
+        $(this).find("#action_menu").hide();    
+        return false;
+    });	      
+    var $actionMenu = $thisTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();   
+	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());	   
 			        
     $thisTab.find("#tab_container").show(); 
     $thisTab.find("#tab_spinning_wheel").hide();   
@@ -936,7 +950,11 @@ function directNetworkJsonClearDetailsTab() {
     $thisTab.find("#netmask").text("");        
     $thisTab.find("#domain").text("");      
     $thisTab.find("#account").text("");       
-    $thisTab.find("#action_link #action_menu #action_list").empty(); //empty action menu
+       
+    //actions ***  
+    var $actionMenu = $thisTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();   
+	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());	   
 }
 
 function directNetworkJsonToIpAllocationTab() {	    
@@ -1239,8 +1257,8 @@ function bindAddIpRangeToDirectNetworkButton($button, $midmenuItem1) {
 
 var directNetworkActionMap = {       
     "Delete Network": {              
-        api: "deleteNetwork",     
-        isAsyncJob: false,           
+        isAsyncJob: false,    
+        dialogBeforeActionFn : doDeleteNetwork,        
         inProcessText: "Deleting Network....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             $midmenuItem1.slideUp("slow", function() {
@@ -1254,5 +1272,22 @@ var directNetworkActionMap = {
     }    
 }  
 
+function doDeleteNetwork($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text("Please confirm you want to delete this network")
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=deleteNetwork&id="+id;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
 //***** Direct Network (end) ******************************************************************************************************
 
