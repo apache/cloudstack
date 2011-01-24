@@ -78,12 +78,16 @@ function routerToRightPanel($midmenuItem1) {
 
 function routerJsonToDetailsTab() {   
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        routerClearDetailsTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        routerClearDetailsTab();
         return;       
+    }
     
     var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
@@ -129,6 +133,27 @@ function routerJsonToDetailsTab() {
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();     		    
 }        
+
+function routerClearDetailsTab() {     
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");           
+    $thisTab.find("#grid_header_title").text("");            
+    setVmStateInRightPanel(null, $thisTab.find("#state"));  
+    $thisTab.find("#ipAddress").text("");
+    $thisTab.find("#zonename").text("");
+    $thisTab.find("#name").text("");
+    $thisTab.find("#publicip").text("");
+    $thisTab.find("#privateip").text("");
+    $thisTab.find("#guestipaddress").text("");
+    $thisTab.find("#hostname").text("");
+    $thisTab.find("#networkdomain").text("");
+    $thisTab.find("#account").text("");  
+    $thisTab.find("#created").text("");   
+    resetViewConsoleAction(null, $thisTab);       
+    
+    var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
+    $actionMenu.find("#action_list").empty();
+    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());   		    
+}       
   
 function doStopRouter($actionLink, $detailsTab, $midmenuItem1) {     
     $("#dialog_confirmation")
