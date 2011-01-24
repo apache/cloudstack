@@ -2211,13 +2211,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		_vmDao.update(userVm.getId(), userVm);
 	
 		
-		try {
-			_ovsNetworkMgr.UserVmCheckAndCreateTunnel(cmds, profile, dest);
-			_ovsNetworkMgr.applyDefaultFlowToUserVm(cmds, profile, dest);
-			_ovsTunnelMgr.UserVmCheckAndCreateTunnel(cmds, profile, dest);
-		} catch (GreTunnelException e) {
-			e.printStackTrace();
-		}
+		
+		_ovsNetworkMgr.UserVmCheckAndCreateTunnel(cmds, profile, dest);
+		_ovsNetworkMgr.applyDefaultFlowToUserVm(cmds, profile, dest);
+		_ovsTunnelMgr.UserVmCheckAndCreateTunnel(cmds, profile, dest);
+		
 		
 		return true;
 	}

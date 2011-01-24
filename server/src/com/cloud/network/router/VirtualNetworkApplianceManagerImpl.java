@@ -1099,14 +1099,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException{
         NicProfile controlNic = (NicProfile) profile.getParameter("control.nic");
-        try {
-			_ovsNetworkMgr.RouterCheckAndCreateTunnel(cmds, profile, dest);
-			_ovsNetworkMgr.applyDefaultFlowToRouter(cmds, profile, dest);
-			_ovsTunnelMgr.RouterCheckAndCreateTunnel(cmds, profile, dest);
-		} catch (GreTunnelException e) {
-			e.printStackTrace();
-		}
-		
+
+        _ovsNetworkMgr.RouterCheckAndCreateTunnel(cmds, profile, dest);
+        _ovsNetworkMgr.applyDefaultFlowToRouter(cmds, profile, dest);
+        _ovsTunnelMgr.RouterCheckAndCreateTunnel(cmds, profile, dest);
 		
         cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20));
 

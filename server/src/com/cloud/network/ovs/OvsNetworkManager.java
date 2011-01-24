@@ -17,7 +17,7 @@ public interface OvsNetworkManager extends Manager {
 	public boolean isOvsNetworkEnabled();
 
 	public void UserVmCheckAndCreateTunnel(Commands cmds,
-			VirtualMachineProfile<UserVmVO> profile, DeployDestination dest) throws GreTunnelException;
+			VirtualMachineProfile<UserVmVO> profile, DeployDestination dest);
 
 	public void applyDefaultFlowToUserVm(Commands cmds,
 			VirtualMachineProfile<UserVmVO> profile, DeployDestination dest);
@@ -30,7 +30,7 @@ public interface OvsNetworkManager extends Manager {
 
 	public void RouterCheckAndCreateTunnel(Commands cmds,
 			VirtualMachineProfile<DomainRouterVO> profile,
-			DeployDestination dest) throws GreTunnelException;
+			DeployDestination dest);
 	
 	public void fullSync(List<Pair<String, Long>> states);
 	

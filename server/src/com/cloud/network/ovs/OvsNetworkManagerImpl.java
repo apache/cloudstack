@@ -399,7 +399,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 				handleCreateTunnelAnswer(answers);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+		    s_logger.warn("Ovs vlan remap network creates tunnel failed", e);
 		}	
 	}
 	
@@ -448,7 +448,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 					tag, vlans, Long.toString(log.getLogsequence()), instance
 							.getId()));
 		} catch (OvsVlanExhaustedException e) {
-			e.printStackTrace();
+			s_logger.warn("vlan exhaused on host " + instance.getHostId(), e);
 		}
 	}
 	
@@ -484,7 +484,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 					router.getName(), tag, vlans, Long.toString(log.getLogsequence()), instance.getId()));
 			_agentMgr.send(router.getHostId(), cmds, _ovsListener);
 		} catch (Exception e) {
-			e.printStackTrace();
+			s_logger.warn("apply flow to router failed", e);
 		}
 	}
 	
@@ -608,7 +608,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 			Commands cmds = new Commands(new OvsDeleteFlowCommand(instance.getName()));
 			_agentMgr.send(hostId, cmds, _ovsListener);
 		} catch (Exception e) {
-			e.printStackTrace();
+		    s_logger.warn("remove flow failed", e);
 		}
 	}
 	
@@ -640,15 +640,23 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 
 	@Override
 	public void UserVmCheckAndCreateTunnel(Commands cmds,
-			VirtualMachineProfile<UserVmVO> profile, DeployDestination dest) throws GreTunnelException {
-		CheckAndCreateTunnel(profile.getVirtualMachine(), dest);	
+			VirtualMachineProfile<UserVmVO> profile, DeployDestination dest) {
+		try {
+            CheckAndCreateTunnel(profile.getVirtualMachine(), dest);
+        } catch (Exception e) {
+           s_logger.warn("create gre tunnel failed", e);
+        }	
 	}
 
 	@Override
 	public void RouterCheckAndCreateTunnel(Commands cmds,
 			VirtualMachineProfile<DomainRouterVO> profile,
-			DeployDestination dest) throws GreTunnelException {
-		CheckAndCreateTunnel(profile.getVirtualMachine(), dest);	
+			DeployDestination dest) {
+		try {
+            CheckAndCreateTunnel(profile.getVirtualMachine(), dest);
+        } catch (Exception e) {
+            s_logger.warn("create gre tunnel failed", e);
+        }	
 	}
 
 	@Override

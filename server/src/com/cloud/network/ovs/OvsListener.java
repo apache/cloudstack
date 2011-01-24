@@ -68,7 +68,7 @@ public class OvsListener implements Listener {
 				// TODO: handle delete failure
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			s_logger.warn("process answer failed", e);
 		}
 		if (failedFlowVms.size() > 0) {
 			_ovsNetworkMgr.scheduleFlowUpdateToHosts(failedFlowVms, false, new Long(10*1000l));
@@ -141,7 +141,7 @@ public class OvsListener implements Listener {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			s_logger.warn("process connect failed", e);
 		}
 	}
 

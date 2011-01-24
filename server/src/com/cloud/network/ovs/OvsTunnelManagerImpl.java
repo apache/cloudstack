@@ -196,7 +196,7 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 				handleCreateTunnelAnswer(answers);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+		    s_logger.debug("Ovs Tunnel network created tunnel failed", e);
 		}	
 	}
 	
