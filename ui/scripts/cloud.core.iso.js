@@ -264,7 +264,7 @@ function isoToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.data("jsonObj", jsonObj); 
         
     var $iconContainer = $midmenuItem1.find("#icon_container").show();
-    setIconByOsType(jsonObj.ostypename, $iconContainer.find("#icon"));
+    $iconContainer.find("#icon").attr("src", "images/midmenuicon_iso.png");
     
     $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
     $midmenuItem1.find("#second_row").text(fromdb(jsonObj.zonename).substring(0,25));  
