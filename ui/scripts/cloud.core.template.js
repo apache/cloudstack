@@ -286,13 +286,17 @@ function templateToRightPanel($midmenuItem1) {
 }
 
 function templateJsonToDetailsTab() {   
-     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null) {
+        templateClearDetailsTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        templateClearDetailsTab();
         return;      
+    }
     
     var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
@@ -408,6 +412,8 @@ function templateClearRightPanel() {
 
 function templateClearDetailsTab() {
     var $thisTab = $("#right_panel_content").find("#tab_content_details");   
+    
+    $thisTab.find("#grid_header_title").text(""); 
    
     $thisTab.find("#id").text("");
     $thisTab.find("#zonename").text("");
@@ -417,6 +423,9 @@ function templateClearDetailsTab() {
     
     $thisTab.find("#displaytext").text("");
     $thisTab.find("#displaytext_edit").val("");
+            
+    $thisTab.find("#hypervisor").text("");    
+    $thisTab.find("#templatetype").text("");     
         
 	$thisTab.find("#status").text("");    
     
