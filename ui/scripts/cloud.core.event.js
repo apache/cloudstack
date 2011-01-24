@@ -101,6 +101,7 @@ function eventJsonToDetailsTab() {
     $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#username").text(fromdb(jsonObj.username));
     $thisTab.find("#account").text(fromdb(jsonObj.account));
+    $thisTab.find("#domain").text(fromdb(jsonObj.domain));
     $thisTab.find("#type").text(fromdb(jsonObj.type));
     $thisTab.find("#level").text(fromdb(jsonObj.level));   
     $thisTab.find("#description").text(fromdb(jsonObj.description));  

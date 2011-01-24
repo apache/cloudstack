@@ -63,8 +63,18 @@
 		                <div class="row_celltitles" id="account">
 		                    </div>
 		            </div>
-		        </div>
+		        </div>		        
 		        <div class="grid_rows even">
+		            <div class="grid_row_cell" style="width: 20%;">
+		                <div class="row_celltitles">
+		                    <fmt:message key="label.owner.domain"/>:</div>
+		            </div>
+		            <div class="grid_row_cell" style="width: 79%;">
+		                <div class="row_celltitles" id="domain">
+		                    </div>
+		            </div>
+		        </div>		        
+		        <div class="grid_rows odd">
 		            <div class="grid_row_cell" style="width: 20%;">
 		                <div class="row_celltitles">
 		                    <fmt:message key="label.type"/>:</div>
@@ -74,7 +84,7 @@
 		                </div>
 		            </div>
 		        </div>
-		        <div class="grid_rows odd">
+		        <div class="grid_rows even">
 		            <div class="grid_row_cell" style="width: 20%;">
 		                <div class="row_celltitles">
 		                    <fmt:message key="label.level"/>:</div>
@@ -84,7 +94,7 @@
 		                </div>
 		            </div>
 		        </div>
-		        <div class="grid_rows even">
+		        <div class="grid_rows odd">
 		            <div class="grid_row_cell" style="width: 20%;">
 		                <div class="row_celltitles">
 		                    <fmt:message key="label.description"/>:</div>
@@ -94,7 +104,7 @@
 		                </div>
 		            </div>
 		        </div>
-		        <div class="grid_rows odd">
+		        <div class="grid_rows even">
 		            <div class="grid_row_cell" style="width: 20%;">
 		                <div class="row_celltitles">
 		                    <fmt:message key="label.state"/>:</div>
@@ -104,7 +114,7 @@
 		                </div>
 		            </div>
 		        </div>
-		        <div class="grid_rows even">
+		        <div class="grid_rows odd">
 		            <div class="grid_row_cell" style="width: 20%;">
 		                <div class="row_celltitles">
 		                    <fmt:message key="label.date"/>:</div>
