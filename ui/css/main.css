@@ -226,7 +226,7 @@ a:hover {
 }
 
 .loginoptions_dropdownbutton {
-	width: 109px;
+	width: 139px;
 	height:21px;
 	float:left;
 	position:relative;
@@ -243,7 +243,7 @@ a:hover {
 }
 
 .loginoptions_dropdownbutton p{
-	width:78px;
+	width:105px;
 	height:auto;
 	float:left;
 	color:#2c8bbc;
@@ -267,7 +267,7 @@ a:hover {
 }
 
 .loginoptions_dropdown {
-	width:91px;
+	width:120px;
 	height:auto;
 	float:left;
 	position:absolute;
@@ -279,7 +279,7 @@ a:hover {
 }
 
 .loginoptions_dropdown ul{
-	width:73px;
+	width:110px;
 	height:auto;
 	float:left;
 	margin:3px 0 0 5px;
@@ -288,7 +288,7 @@ a:hover {
 }
 
 .loginoptions_dropdown li{
-	width:80px;
+	width:106px;
 	height:auto;
 	float:left;
 	color:#333;
