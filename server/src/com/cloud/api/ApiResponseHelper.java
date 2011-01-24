@@ -310,6 +310,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         accountResponse.setVmRunning(vmRunning);
         accountResponse.setObjectName("account");
 
+        //adding all the users for an account as part of the response obj
         List<UserVO> usersForAccount = ApiDBUtils.listUsersByAccount(account.getAccountId());
         List<UserResponse> userResponseList = new ArrayList<UserResponse>();
         for(UserVO user : usersForAccount) {
