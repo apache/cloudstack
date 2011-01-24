@@ -26,10 +26,14 @@ import com.cloud.agent.api.to.LoadBalancerTO;
 public class LoadBalancerConfigCommand extends NetworkElementCommand {
     LoadBalancerTO[] loadBalancers;
     
+    protected LoadBalancerConfigCommand() {
+        
+    }
+    
     public LoadBalancerConfigCommand( LoadBalancerTO[] loadBalancers) {
     	this.loadBalancers = loadBalancers;
     }
-
+    
    
 	public LoadBalancerTO[] getLoadBalancers() {
         return loadBalancers;
