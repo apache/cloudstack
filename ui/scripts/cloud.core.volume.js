@@ -414,16 +414,18 @@ function volumeJsonToDetailsTab(){
     $thisTab.find("#tab_container").show();     
 } 
 
-function volumeJsonToSnapshotTab() {       		
-	volumeClearSnapshotTab();
-	
+function volumeJsonToSnapshotTab() {    
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
-	if($midmenuItem1 == null)
+	if($midmenuItem1 == null) {
+	    volumeClearSnapshotTab();
 	    return;
+	}
 	
 	var jsonObj = $midmenuItem1.data("jsonObj");	
-	if(jsonObj == null)
+	if(jsonObj == null) {
+	    volumeClearSnapshotTab();
 	    return;
+	}
 	
 	var $thisTab = $("#right_panel_content").find("#tab_content_snapshot");	  	
 	$thisTab.find("#tab_container").hide(); 
