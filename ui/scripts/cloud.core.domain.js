@@ -219,9 +219,17 @@ function domainToRightPanel2($midmenuItem1) {
 
 function domainJsonToDetailsTab() {    
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    var jsonObj = $midmenuItem1.data("jsonObj");  
-    if(jsonObj == null)
+    if($midmenuItem1 == null) {
+        domainClearDetailsTab();
         return;
+    }
+    
+    var jsonObj = $midmenuItem1.data("jsonObj");  
+    if(jsonObj == null) {
+        domainClearDetailsTab();
+        return;
+    }
+    
     var domainId = jsonObj.id;   
            
     $("#right_panel").data("onRefreshFn", function() {	    
@@ -310,9 +318,17 @@ function domainJsonToDetailsTab() {
 
 function domainJsonToAdminAccountTab() {     
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null) {
+        domainClearAdminAccountTab();
+        return;
+    }
+    
     var jsonObj = $midmenuItem1.data("jsonObj"); 
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        domainClearAdminAccountTab();
         return; 
+    }
+    
     var domainId = jsonObj.id;
    
     listAdminAccounts(domainId);  
@@ -321,9 +337,17 @@ function domainJsonToAdminAccountTab() {
 function domainJsonToResourceLimitsTab() {       
 	if (isAdmin() || (isDomainAdmin() && (g_domainid != domainId))) {	
 	    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+	    if($midmenuItem1 == null) {
+	        domainClearResourceLimitsTab();    
+	        return;
+	    }
+	    
         var jsonObj = $midmenuItem1.data("jsonObj");  
-        if(jsonObj == null)
+        if(jsonObj == null) {
+            domainClearResourceLimitsTab();    
             return;
+        }
+        
         var domainId = jsonObj.id;    
 				
 		var $resourceLimitsTab = $("#right_panel_content #tab_content_resource_limits");	
@@ -378,12 +402,12 @@ function domainJsonToResourceLimitsTab() {
 }
 
 function domainJsonClearRightPanel() {
-    domainJsonClearDetailsTab();
-    domainJsonClearAdminAccountTab();
-    domainJsonClearResourceLimitsTab();    
+    domainClearDetailsTab();
+    domainClearAdminAccountTab();
+    domainClearResourceLimitsTab();    
 }
 
-function domainJsonClearDetailsTab() {
+function domainClearDetailsTab() {
     var $thisTab = $("#right_panel_content").find("#tab_content_details");
     $thisTab.find("#id").text("");
     $thisTab.find("#grid_header_title").text("");	
@@ -392,13 +416,18 @@ function domainJsonClearDetailsTab() {
     $thisTab.find("#redirect_to_account_page").text("");	
     $thisTab.find("#redirect_to_instance_page").text("");	
     $thisTab.find("#redirect_to_volume_page").text("");	
+    
+    var $actionMenu = $thisTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();    
+	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());		 
 }
 
-function domainJsonClearAdminAccountTab() {
-    $("#right_panel_content").find("#tab_content_admin_account").empty();	
+function domainClearAdminAccountTab() {
+    var $thisTab = $("#right_panel_content").find("#tab_content_admin_account");
+    $thisTab.empty();	
 }
 
-function domainJsonClearResourceLimitsTab() {
+function domainClearResourceLimitsTab() {
     var $thisTab = $("#right_panel_content").find("#tab_content_resource_limits");
 
     $thisTab.find("#limits_vm").text("");
@@ -415,6 +444,10 @@ function domainJsonClearResourceLimitsTab() {
 	
 	$thisTab.find("#limits_template").text("");
 	$thisTab.find("#limits_template_edit").val("");	
+		
+	var $actionMenu = $thisTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();    
+	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());		 	
 }
 
 function domainToResourceLimitsTab() {   
