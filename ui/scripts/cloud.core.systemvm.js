@@ -69,12 +69,16 @@ function systemvmToRightPanel($midmenuItem1) {
 
 function systemvmJsonToDetailsTab() {
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        systemvmClearDetailsTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        systemvmClearDetailsTab();
         return;
+    }
      
     var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
@@ -129,6 +133,29 @@ function systemvmJsonToDetailsTab() {
 	
 	$thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();      
+}
+
+function systemvmClearDetailsTab() {    
+    var $thisTab = $("#right_panel_content").find("#tab_content_details");        
+    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));       
+    resetViewConsoleAction(null, $thisTab);         
+    setVmStateInRightPanel(null, $thisTab.find("#state"));		
+    $thisTab.find("#ipAddress").text(fromdb(jsonObj.publicip));        
+    $thisTab.find("#state").text(fromdb(jsonObj.state));     
+    $thisTab.find("#systemvmtype").text(toSystemVMTypeText(jsonObj.systemvmtype));    
+    $thisTab.find("#zonename").text(fromdb(jsonObj.zonename)); 
+    $thisTab.find("#id").text(fromdb(jsonObj.id));  
+    $thisTab.find("#name").text(fromdb(jsonObj.name));     
+    $thisTab.find("#publicip").text(fromdb(jsonObj.publicip)); 
+    $thisTab.find("#privateip").text(fromdb(jsonObj.privateip)); 
+    $thisTab.find("#hostname").text(fromdb(jsonObj.hostname));
+    $thisTab.find("#gateway").text(fromdb(jsonObj.gateway)); 
+    $thisTab.find("#created").text(fromdb(jsonObj.created));   
+    $thisTab.find("#activeviewersessions").text(""); 
+    
+    var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
+    $actionMenu.find("#action_list").empty();
+    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());   		    
 }
 
 function toSystemVMTypeText(value) {
