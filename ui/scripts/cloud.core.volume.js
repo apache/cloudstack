@@ -337,12 +337,16 @@ function volumeToRightPanel($midmenuItem1) {
  
 function volumeJsonToDetailsTab(){  
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        volumeJsonClearDetailsTab();   
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        volumeJsonClearDetailsTab();   
         return;
+    }
      
     var $thisTab = $("#right_panel_content #tab_content_details");      
     $thisTab.find("#tab_container").hide(); 

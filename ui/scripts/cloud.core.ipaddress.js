@@ -391,12 +391,16 @@ function ipToRightPanel($midmenuItem1) {
 
 function ipJsonToPortForwardingTab() {   
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        ipClearPortForwardingTab();
         return;    
+    }
         
     var ipObj = $midmenuItem1.data("jsonObj");
-    if(ipObj == null)
+    if(ipObj == null) {
+        ipClearPortForwardingTab();
         return;   
+    }
         
     var networkObj = $midmenuItem1.data("networkObj");
       
@@ -446,12 +450,16 @@ function ipJsonToPortForwardingTab() {
 
 function ipJsonToLoadBalancerTab() {
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        ipClearLoadBalancerTab();
         return;
+    }
     
     var ipObj = $midmenuItem1.data("jsonObj");
-    if(ipObj == null)
+    if(ipObj == null) {
+        ipClearLoadBalancerTab();
         return;
+    }
    
     var networkObj = $midmenuItem1.data("networkObj");
    
@@ -574,19 +582,27 @@ function showEnableVPNDialog($thisTab) {
 
 function ipJsonToVPNTab() {
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        ipClearVPNTab();
         return;
+    }
     
     var ipObj = $midmenuItem1.data("jsonObj");
-    if(ipObj == null)
+    if(ipObj == null) {
+        ipClearVPNTab();
         return;
+    }
 	
 	var ipAddress = ipObj.ipaddress;
-	if(ipAddress == null || ipAddress.length == 0)
+	if(ipAddress == null || ipAddress.length == 0) {
+	    ipClearVPNTab();
 	    return;
+	}
 	
 	var $thisTab = $("#right_panel_content").find("#tab_content_vpn");  	
-	
+	$thisTab.find("#tab_spinning_wheel").show();    
+    $thisTab.find("#tab_container").hide();   
+		
 	$.ajax({
         data: createURL("command=listRemoteAccessVpns&publicip="+ipAddress),
         dataType: "json",
@@ -602,6 +618,12 @@ function ipJsonToVPNTab() {
 			$thisTab.find("#vpn_disabled_msg").hide();
         }
     });    
+}
+
+function ipClearVPNTab() {
+	var $thisTab = $("#right_panel_content").find("#tab_content_vpn");  	
+	showEnableVPNDialog($thisTab);	 	
+	$thisTab.find("#vpn_disabled_msg").hide();
 }
 
 function showVpnUsers(presharedkey, publicip) {
@@ -893,12 +915,16 @@ function ipClearRightPanel() {
 //***** Details tab (begin) ****************************************************************************************************************
 function ipJsonToDetailsTab() {  
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        ipClearDetailsTab()
         return;
+    }
     
     var ipObj = $midmenuItem1.data("jsonObj");
-    if(ipObj == null)
+    if(ipObj == null) {
+        ipClearDetailsTab()
         return;
+    }
     
     var networkObj = $midmenuItem1.data("networkObj");
     

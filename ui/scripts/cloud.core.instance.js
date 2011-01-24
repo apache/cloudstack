@@ -1634,12 +1634,16 @@ function vmToRightPanel($midmenuItem1) {
   
 function vmJsonToDetailsTab(){  
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-	if ($midmenuItem1 == null)
+	if ($midmenuItem1 == null) {
+	    vmJsonClearDetailsTab();   
 	    return;	 
+	}
 	    
 	var jsonObj = $midmenuItem1.data("jsonObj");    
-	if(jsonObj == null)
+	if(jsonObj == null) {
+	    vmJsonClearDetailsTab();   
 	    return;
+	}
 	
 	var $thisTab = $("#right_panel_content").find("#tab_content_details");     
 	$thisTab.find("#tab_container").hide(); 
