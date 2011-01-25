@@ -138,30 +138,7 @@ function afterLoadInstanceJSP() {
 				}
 			}					
 		}
-	});	
-	
-	$.ajax({
-       data: createURL("command=listHypervisors"),
-       dataType: "json",
-       success: function(json) {            
-           var items = json.listhypervisorsresponse.hypervisor;
-           var $hypervisorDropdown = $("#vmiso_in_vmwizard").find("#hypervisor_select");
-           var $hypervisorSpan = $("#vmiso_in_vmwizard").find("#hypervisor_span");
-           if(items != null && items.length > 0) {    
-               if(items.length == 1) {
-                   $hypervisorSpan.text(fromdb(items[0].name)).show();
-                   $hypervisorDropdown.hide();
-               }
-               else {   
-                   $hypervisorDropdown.show();
-                   $hypervisorSpan.text("").hide();
-                   for(var i=0; i<items.length; i++) {                    
-                       $hypervisorDropdown.append("<option value='"+fromdb(items[i].name)+"'>"+fromdb(items[i].name)+"</option>");
-                   }
-               }
-           }
-       }    
-    }); 	
+	});		
 }
 
 function bindStartVMButton() {    
@@ -704,8 +681,32 @@ function initVMWizard() {
 	             
     $vmPopup.find("#wizard_zone").bind("change", function(event) {       
         var selectedZone = $(this).val();   
-        if(selectedZone != null && selectedZone.length > 0)
-            listTemplatesInVmPopup();         
+        if(selectedZone != null && selectedZone.length > 0) {
+            listTemplatesInVmPopup();   
+            
+            $.ajax({
+               data: createURL("command=listHypervisors&zoneid="+selectedZone),
+               dataType: "json",
+               success: function(json) {            
+                   var items = json.listhypervisorsresponse.hypervisor;
+                   var $hypervisorDropdown = $("#vmiso_in_vmwizard").find("#hypervisor_select");
+                   var $hypervisorSpan = $("#vmiso_in_vmwizard").find("#hypervisor_span");
+                   if(items != null && items.length > 0) {    
+                       if(items.length == 1) {
+                           $hypervisorSpan.text(fromdb(items[0].name)).show();
+                           $hypervisorDropdown.hide();
+                       }
+                       else {   
+                           $hypervisorDropdown.show();
+                           $hypervisorSpan.text("").hide();
+                           for(var i=0; i<items.length; i++) {                    
+                               $hypervisorDropdown.append("<option value='"+fromdb(items[i].name)+"'>"+fromdb(items[i].name)+"</option>");
+                           }
+                       }
+                   }
+               }    
+            }); 	            
+        }     
         return false;
     });
             
