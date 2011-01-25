@@ -36,12 +36,16 @@ function secondaryStorageJsonToRightPanel($midmenuItem1) {
 
 function secondaryStorageJsonToDetailsTab() {	    
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        secondaryStorageClearDetailsTab();      
         return;
+    }
         
     var zoneObj = $midmenuItem1.data("zoneObj");    
-    if(zoneObj == null) 
+    if(zoneObj == null) {
+        secondaryStorageClearDetailsTab();      
 	    return;	
+	}
     
     var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
@@ -100,10 +104,10 @@ function secondaryStorageJsonToDetailsTab() {
 }	  
 
 function secondaryStorageJsonClearRightPanel() {
-    secondaryStorageJsonClearDetailsTab();      
+    secondaryStorageClearDetailsTab();      
 }
 
-function secondaryStorageJsonClearDetailsTab() {	    
+function secondaryStorageClearDetailsTab() {	    
     var $thisTab = $("#right_panel_content").find("#tab_content_details");          
     $thisTab.find("#id").text("");
     $thisTab.find("#grid_header_title").text("");    
