@@ -41,9 +41,9 @@ import com.cloud.utils.db.Transaction;
 public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements AsyncJobDao {
     private static final Logger s_logger = Logger.getLogger(AsyncJobDaoImpl.class.getName());
 	
-	private SearchBuilder<AsyncJobVO> pendingAsyncJobSearch;	
-	private SearchBuilder<AsyncJobVO> pendingAsyncJobsSearch;	
-	private SearchBuilder<AsyncJobVO> expiringAsyncJobSearch;		
+	private final SearchBuilder<AsyncJobVO> pendingAsyncJobSearch;	
+	private final SearchBuilder<AsyncJobVO> pendingAsyncJobsSearch;	
+	private final SearchBuilder<AsyncJobVO> expiringAsyncJobSearch;		
 	
 	public AsyncJobDaoImpl() {
 		pendingAsyncJobSearch = createSearchBuilder();
@@ -105,7 +105,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
 
 	@DB
 	public void resetJobProcess(long msid) {
-		String sql = "UPDATE async_job SET job_status=2, job_result='job cancelled because of management server restart' where job_complete_msid=? OR (job_complete_msid IS NULL AND job_init_msid=?)";
+		String sql = "UPDATE async_job SET job_status=2, job_result='job cancelled because of management server restart' where job_status=0 AND (job_complete_msid=? OR (job_complete_msid IS NULL AND job_init_msid=?))";
 		
         Transaction txn = Transaction.currentTxn();
         PreparedStatement pstmt = null;
