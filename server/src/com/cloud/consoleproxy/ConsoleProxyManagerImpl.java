@@ -1665,10 +1665,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         		proxy.setPublicIpAddress(nic.getIp4Address());
         		proxy.setPublicNetmask(nic.getNetmask());
         		proxy.setPublicMacAddress(nic.getMacAddress());
-        	} else if (network.getTrafficType() == TrafficType.Control) {
-        		proxy.setGuestIpAddress(nic.getIp4Address());
-        		proxy.setGuestNetmask(nic.getNetmask());
-        		proxy.setGuestMacAddress(nic.getMacAddress());
         	} else if (network.getTrafficType() == TrafficType.Management) {
         		proxy.setPrivateIpAddress(nic.getIp4Address());
         		proxy.setPrivateMacAddress(nic.getMacAddress());

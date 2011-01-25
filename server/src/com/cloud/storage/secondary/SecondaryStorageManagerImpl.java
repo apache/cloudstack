@@ -1137,10 +1137,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 secVm.setPublicIpAddress(nic.getIp4Address());
                 secVm.setPublicNetmask(nic.getNetmask());
                 secVm.setPublicMacAddress(nic.getMacAddress());
-            } else if (network.getTrafficType() == TrafficType.Control) {
-                secVm.setGuestIpAddress(nic.getIp4Address());
-                secVm.setGuestNetmask(nic.getNetmask());
-                secVm.setGuestMacAddress(nic.getMacAddress());
             } else if (network.getTrafficType() == TrafficType.Management) {
                 secVm.setPrivateIpAddress(nic.getIp4Address());
                 secVm.setPrivateMacAddress(nic.getMacAddress());
