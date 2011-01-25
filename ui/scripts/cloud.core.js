@@ -1157,6 +1157,13 @@ function showLeftNavigationBasedOnRole() {
 	else {
 	    $("#leftmenu_security_group_container").hide();
 	}
+	
+	if (getUserPublicTemplateEnabled() == "true") {
+	    $("#leftmenu_submenu_community_template_container, #leftmenu_submenu_community_iso_container").show();
+	}
+	else {
+	    $("#leftmenu_submenu_community_template_container, #leftmenu_submenu_community_iso_container").hide();
+	}
 }
    
 function drawBarChart($capacity, percentused) { //percentused == "0.01%" (having % inside)    
