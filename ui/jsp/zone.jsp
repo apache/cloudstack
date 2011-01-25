@@ -21,11 +21,7 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
-            <%=t.t("details")%></div>          
-        <!--    
-        <div class="content_tabs off" id="tab_network">
-            Network </div>  
-        -->         
+            <%=t.t("details")%></div>                     
     </div>
     
     <!-- Details tab (start)-->
@@ -184,51 +180,7 @@
             
         </div>
     </div>
-    <!-- Details tab (end)-->
-        
-    <!-- Network tab (start)-->
-    <div style="display: none;" id="tab_content_network">
-        <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
-            <div class="rightpanel_mainloaderbox">
-                <div class="rightpanel_mainloader_animatedicon">
-                </div>
-                <p>
-                    Loading &hellip;</p>
-            </div>
-        </div>
-        <div id="tab_container">
-	        <div class="text_container">
-	            <div class="network_dgbox">
-	                <div class="networkdg_zonepanel">
-	                    <div class="networkdg_zonebox">
-	                        <div class="networkdg_zonecloud" id="zone_cloud">
-	                            <p>
-	                                <%=t.t("zone")%>
-	                                <span id="zone_name"></span>
-	                            </p>
-	                        </div>
-	                        <div class="networkdg_zoneconnect">
-	                        </div>
-	                    </div>
-	                    <div class="networkswitchpanel">
-	                        <div class="networkswitch_titlebox">
-	                            <p>
-	                                <strong>Guest VLAN: <span id="zone_vlan"></span></strong>
-	                            </p>
-	                        </div>
-	                        <div class="networkswitch_top">
-	                        </div>
-	                        <div class="networkswitch_midpanel" id="vlan_container">
-	                        </div>
-	                        <div class="networkswitch_end">
-	                        </div>
-	                    </div>
-	                </div>
-	            </div>
-	        </div>
-	    </div>   
-    </div>
-    <!-- Network tab (end)-->       
+    <!-- Details tab (end)-->       
 </div>
 
 <!--  top buttons (begin) -->
@@ -268,18 +220,7 @@
                 Add Primary Storage
             </div>
         </div>
-    </div>   
-    <!--
-    <div class="actionpanel_button_wrapper" id="add_vlan_button" style="display: none;">
-        <div class="actionpanel_button">
-            <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" alt="Add VLAN" /></div>
-            <div class="actionpanel_button_links">
-                Add VLAN
-            </div>
-        </div>
-    </div>
-    -->
+    </div>    
 </div>
 <!--  top buttons (end) -->
 
@@ -371,129 +312,6 @@
     </div>
 </div>
 <!-- Add Pod Dialog (end) -->
-
-<!-- Add VLAN IP Range Dialog for zone (begin) -->
-<div id="dialog_add_vlan_for_zone" title="Add VLAN IP Range" style="display: none">
-    <p>
-        Add a new IP range for zone: <b><span id="zone_name"></span></b>
-    </p>
-    <div class="dialog_formcontent">
-        <form action="#" method="post" id="form_acquire">
-        <ol>
-            <li style="display: none" id="add_publicip_vlan_type_container">
-                <label for="add_publicip_vlan_type">
-                    Type:</label>
-                <select class="select" name="add_publicip_vlan_type" id="add_publicip_vlan_type">
-                    <option value="false">Direct</option>
-                    <option value="true">Virtual</option>
-                </select>
-            </li>
-			<li style="display: none" id="add_publicip_vlan_network_name_container">
-                <label for="user_name">
-                    Network Name:</label>
-                <input class="text" type="text" name="add_publicip_vlan_network_name" id="add_publicip_vlan_network_name" />
-                <div id="add_publicip_vlan_network_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                </div>
-            </li>
-			<li style="display: none" id="add_publicip_vlan_network_desc_container">
-                <label for="user_name">
-                    Network Desc:</label>
-                <input class="text" type="text" name="add_publicip_vlan_network_desc" id="add_publicip_vlan_network_desc" />
-                <div id="add_publicip_vlan_network_desc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                </div>
-            </li>
-            <li id="add_publicip_vlan_container">
-                <label for="add_publicip_vlan_tagged">
-                    VLAN:</label>
-                <select class="select" name="add_publicip_vlan_tagged" id="add_publicip_vlan_tagged">
-                </select>
-            </li>
-            <li style="display: none" id="add_publicip_vlan_vlan_container">
-                <label for="user_name">
-                    VLAN ID:</label>
-                <input class="text" type="text" name="add_publicip_vlan_vlan" id="add_publicip_vlan_vlan" />
-                <div id="add_publicip_vlan_vlan_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                </div>
-            </li>
-            <li id="add_publicip_vlan_scope_container">
-                <label for="add_publicip_vlan_scope">
-                    Scope:</label>
-                <select class="select" name="add_publicip_vlan_scope" id="add_publicip_vlan_scope">
-                    <!--  
-                    <option value="zone-wide">zone-wide</option>
-                    <option value="account-specific">account-specific</option>
-                    -->
-                </select>
-            </li>
-            <li style="display: none" id="add_publicip_vlan_pod_container">
-                <label for="user_name">
-                    Pod:</label>
-                <select class="select" name="add_publicip_vlan_pod" id="add_publicip_vlan_pod">
-                </select>
-            </li>
-            <li style="display: none" id="add_publicip_vlan_domain_container">
-                <label for="user_name">
-                    Domain:</label>
-                <select class="select" name="add_publicip_vlan_domain" id="add_publicip_vlan_domain">
-                </select>
-            </li>
-            <li style="display: none" id="add_publicip_vlan_account_container">
-                <label for="user_name">
-                    Account:</label>
-                <input class="text" type="text" name="add_publicip_vlan_account" id="add_publicip_vlan_account" />
-                <div id="add_publicip_vlan_account_errormsg" class="dialog_formcontent_errormsg"
-                    style="display: none;">
-                </div>
-            </li>
-            <li>
-                <label for="user_name">
-                    Gateway:</label>
-                <input class="text" type="text" name="add_publicip_vlan_gateway" id="add_publicip_vlan_gateway" />
-                <div id="add_publicip_vlan_gateway_errormsg" class="dialog_formcontent_errormsg"
-                    style="display: none;">
-                </div>
-            </li>
-            <li>
-                <label for="user_name">
-                    Netmask:</label>
-                <input class="text" type="text" name="add_publicip_vlan_netmask" id="add_publicip_vlan_netmask" />
-                <div id="add_publicip_vlan_netmask_errormsg" class="dialog_formcontent_errormsg"
-                    style="display: none;">
-                </div>
-            </li>
-            <li>
-                <label for="user_name">
-                    IP Range:</label>
-                <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_startip"
-                    id="add_publicip_vlan_startip" /><span>-</span>
-                <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_endip"
-                    id="add_publicip_vlan_endip" />
-                <div id="add_publicip_vlan_startip_errormsg" class="dialog_formcontent_errormsg"
-                    style="display: none;">
-                </div>
-                <div id="add_publicip_vlan_endip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                </div>
-            </li>
-        </ol>
-        </form>
-    </div>
-    <!--Loading box-->
-    <div id="spinning_wheel" class="ui_dialog_loaderbox" style="display: none;">
-        <div class="ui_dialog_loader">
-        </div>
-        <p>
-            Adding....</p>
-    </div>
-    <!--Confirmation msg box-->
-    <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
-    <div id="info_container" class="ui_dialog_messagebox error" style="display: none;">
-        <div id="icon" class="ui_dialog_msgicon error">
-        </div>
-        <div id="info" class="ui_dialog_messagebox_text error">
-            (info)</div>
-    </div>
-</div>
-<!-- Add VLAN IP Range Dialog for zone (end) -->
 
 <!-- Add Host Dialog in zone page (begin) -->
 <div id="dialog_add_host_in_zone_page" title="Add Host" style="display: none">   
@@ -810,74 +628,4 @@
 <!-- Add Primary Storage Dialog  in zone page (end) -->
 
 <!-- ***** dialogs ***** (end)-->
-<!-- VLAN Template (begin) -->
-<div class="networkswitch_vlanpanel" id="vlan_template" style="display: none;">
-    <div class="networkswitch_vlanconnect">
-        <div class="networkswitch_closeicon" id="delete_vlan">
-        </div>
-        <div id="info_icon" class="networkswitch_vlan_infoicon">
-        </div>
-        <div id="info_dropdown" class="networkswitch_infodropdown" style="display: none;">
-            <div class="networkswitch_infodropdown_actionbox">
-                <a id="close_link" href="#">Close</a>
-            </div>
-            <ul class="networkswitch_infodropdown_textbox">
-				<li id="network_name_container" style="display: none">
-                    <div class="networkswitch_infodropdown_textbox_label">
-                        Name:</div>
-                    <span id="network_name"></span></li>
-				<li id="network_desc_container" style="display: none">
-                    <div class="networkswitch_infodropdown_textbox_label">
-                        Desc:</div>
-                    <span id="network_desc"></span></li>
-                <li id="vlan_container">
-                    <div class="networkswitch_infodropdown_textbox_label">
-                        VLAN ID:</div>
-                    <span id="vlan"></span></li>
-                <li id="gateway_container">
-                    <div class="networkswitch_infodropdown_textbox_label">
-                        Gateway:</div>
-                    <span id="gateway"></span></li>
-                <li id="netmask_container">
-                    <div class="networkswitch_infodropdown_textbox_label">
-                        Netmask:</div>
-                    <span id="netmask"></span></li>
-                <li id="iprange_container">
-                    <div class="networkswitch_infodropdown_textbox_label">
-                        IP Range:</div>
-                    <span id="iprange"></span></li>
-                <li id="domainid_container" style="display: none">
-                    <div class="networkswitch_infodropdown_textbox_label">
-                        Domain ID:</div>
-                    <span id="domainid"></span></li>
-                <li id="domain_container" style="display: none">
-                    <div class="networkswitch_infodropdown_textbox_label">
-                        Domain:</div>
-                    <span id="domain"></span></li>
-                <li id="account_container" style="display: none">
-                    <div class="networkswitch_infodropdown_textbox_label">
-                        Account:</div>
-                    <span id="account"></span></li>
-                <li id="podname_container" style="display: none">
-                    <div class="networkswitch_infodropdown_textbox_label">
-                        Pod:</div>
-                    <span id="podname"></span></li>
-            </ul>
-        </div>
-        <div class="networkswitch_vlan_detailsbox">
-            <div class="networkswitch_vlan_detailsbox_textbox">
-                <div class="networkswitch_vlan_detailsbox_textbox_label">
-                    VLAN:</div>
-                <span id="vlan_id">n</span>
-            </div>
-            <div class="networkswitch_vlan_detailsbox_textbox">
-                <div class="networkswitch_vlan_detailsbox_textbox_label">
-                    <%=t.t("ip.address.range")%>:</div>
-                <span id="ip_range">n.n.n.n - m.m.m.m</span>
-            </div>
-        </div>
-        <div id="vlan_type_icon" class="networkswitch_typeicon">
-        </div>
-    </div>
-</div>
-<!-- VLAN Template (end) -->
+
