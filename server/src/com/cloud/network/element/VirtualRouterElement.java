@@ -26,7 +26,9 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -48,6 +50,7 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.PortForwardingRule;
@@ -81,16 +84,20 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement,
     @Inject LoadBalancingRulesManager _lbMgr;
     @Inject NetworkOfferingDao _networkOfferingDao;
     @Inject VirtualNetworkApplianceManager _routerMgr;
+    @Inject ConfigurationManager _configMgr;
     @Inject UserVmManager _userVmMgr;
     @Inject UserVmDao _userVmDao;
     @Inject DomainRouterDao _routerDao;
-    @Inject DataCenterDao _dataCenterDao;
     @Inject LoadBalancerDao _lbDao;
     @Inject AccountManager _accountMgr;
     
     private boolean canHandle(GuestIpType ipType, DataCenter dc) {
         String provider = dc.getGatewayProvider();
-        return (ipType == GuestIpType.Virtual && provider.equals(Provider.VirtualRouter.getName()));
+        boolean result = (ipType == GuestIpType.Virtual && provider.equals(Provider.VirtualRouter.getName()));
+        if (!result) {
+            s_logger.trace("Virtual router element only takes care of guest ip type " + GuestIpType.Virtual + " for provider " + Provider.VirtualRouter.getName());
+        }
+        return result;
     }
 
     @Override
@@ -150,7 +157,7 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement,
     @Override
     public boolean applyRules(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
     
-        DataCenter dc = _dataCenterDao.findById(config.getDataCenterId());
+        DataCenter dc = _configMgr.getZone(config.getDataCenterId());
         if (canHandle(config.getGuestType(),dc)) {
             
             long networkId = config.getId();
@@ -194,7 +201,7 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement,
     @Override
     public String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException{
         Network network = _networkConfigDao.findById(vpn.getNetworkId());
-        DataCenter dc = _dataCenterDao.findById(network.getDataCenterId());
+        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         if (canHandle(network.getGuestType(),dc)) {
             return _routerMgr.applyVpnUsers(network, users);
         } else {
@@ -205,7 +212,7 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement,
     
     @Override
     public boolean start(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
-        DataCenter dc = _dataCenterDao.findById(network.getDataCenterId());
+        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         if (canHandle(network.getGuestType(),dc)) {
             return _routerMgr.startRemoteAccessVpn(network, vpn);
         } else {
@@ -216,7 +223,7 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement,
     
     @Override
     public boolean stop(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
-        DataCenter dc = _dataCenterDao.findById(network.getDataCenterId());
+        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         if (canHandle(network.getGuestType(),dc)) {
             return _routerMgr.deleteRemoteAccessVpn(network, vpn);
         } else {
@@ -228,7 +235,7 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement,
 
     @Override
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-        DataCenter dc = _dataCenterDao.findById(network.getDataCenterId());
+        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         if (canHandle(network.getGuestType(),dc)) {
             return _routerMgr.associateIP(network, ipAddress);
         } else {
@@ -279,6 +286,32 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement,
         capabilities.put(Service.Gateway, null);
         
         return capabilities;
+    }
+    
+    @Override
+    public boolean restart(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
+        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
+        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
+        if (router == null) {
+            s_logger.trace("Can't find domain router in network " + network.getId());
+            return true;
+        }
+        
+        VirtualRouter result = null;
+        if (canHandle(network.getGuestType(), dc)) {
+            if (router.getState() == State.Stopped) {
+                result = _routerMgr.startRouter(router.getId());
+            } else {
+                result = _routerMgr.rebootRouter(router.getId());
+            }
+            if (result == null) {
+                s_logger.warn("Failed to restart domain router " + router + " as a part of netowrk " + network + " restart");
+                return false;
+            } else {
+                return true;
+            }
+        } 
+        return true;
     }
     
 }

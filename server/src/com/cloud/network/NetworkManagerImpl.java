@@ -88,10 +88,8 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.guru.NetworkGuru;
-import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
@@ -101,6 +99,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.AccountDao;
@@ -126,6 +125,7 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
@@ -1774,51 +1774,27 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException {
-        // This method reapplies Ip addresses, LoadBalancer and PortForwarding rules
-        Account caller = UserContext.current().getCaller();
+    public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        // This method restarts all network elements belonging to the network
         Long networkId = cmd.getNetworkId();
-        Network network = null;
-        if (networkId != null) {
-            network = _networksDao.findById(networkId);
-            if (network == null) {
-                throw new InvalidParameterValueException("Network id is invalid: " + networkId);
-            }
-        }
-
-        Account owner = _accountMgr.getActiveAccount(cmd.getEntityOwnerId());
-        if (!_accountMgr.isAdmin(caller.getType())) {
-            _accountMgr.checkAccess(caller, network);
-        } else {
-            Domain domain = _domainDao.findById(owner.getDomainId());
-            _accountMgr.checkAccess(caller, domain);
-        }
+        Network network = _networksDao.findById(networkId);
+        Account owner = _accountMgr.getAccount(network.getAccountId());
+        User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
+        Account callerAccount = _accountMgr.getActiveAccount(caller.getAccountId());
+        
+        ReservationContext context = new ReservationContextImpl(null, null, caller, owner);
+        
+        _accountMgr.checkAccess(callerAccount, network);
 
         s_logger.debug("Restarting network " + networkId + "...");
-
-        if (!applyIpAssociations(network, false)) {
-            s_logger.warn("Failed to apply ips as a part of network " + networkId + " restart");
-            return false;
-        } else {
-            s_logger.debug("Ip addresses are reapplied successfully as a part of network " + networkId + " restart");
-        }
-
-        List<LoadBalancingRule> lbRules = _lbMgr.listByNetworkId(networkId);
-
-        if (!applyRules(lbRules, true)) {
-            s_logger.warn("Failed to apply load balancing rules as a part of network " + network.getId() + " restart");
-            return false;
-        } else {
-            s_logger.debug("Load balancing rules are reapplied successfully as a part of network " + networkId + " restart");
-        }
-
-        // Reapply pf rules
-        List<? extends PortForwardingRule> pfRules = _rulesMgr.listByNetworkId(networkId);
-        if (!applyRules(pfRules, true)) {
-            s_logger.warn("Failed to apply port forwarding rules as a part of network " + network.getId() + " restart");
-            return false;
-        } else {
-            s_logger.debug("Port forwarding rules are reapplied successfully as a part of network " + networkId + " restart");
+        
+        boolean success = true;
+        for (NetworkElement element : _networkElements) {
+            success = element.restart(network, context);
+            if (!success) {
+                s_logger.warn("Failed to restart network element " + element + " as a part of network restart");
+                return success;
+            }
         }
 
         s_logger.debug("Network " + networkId + " is restarted successfully.");

@@ -78,6 +78,15 @@ public interface NetworkElement extends Adapter {
      */
     boolean shutdown(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
     
+    /**
+     * The network is being restarted.
+     * @param network
+     * @param context
+     * @return
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     */
+    boolean restart(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
     
     /**
      * The network is being destroyed.

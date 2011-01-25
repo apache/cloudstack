@@ -26,6 +26,7 @@ import com.cloud.api.commands.ListNetworksCmd;
 import com.cloud.api.commands.RestartNetworkCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -51,7 +52,7 @@ public interface NetworkService {
     List<? extends Network> searchForNetworks(ListNetworksCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     boolean deleteNetwork(long networkId) throws InvalidParameterValueException, PermissionDeniedException;
     
-    boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException;
+    boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
     
     int getActiveNicsInNetwork(long networkId);
     
