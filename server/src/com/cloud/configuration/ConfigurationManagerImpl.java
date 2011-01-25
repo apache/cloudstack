@@ -123,11 +123,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -1071,44 +1067,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	}
     	
     	if(dnsUpdate){
-    	    
-    	    //Update dns for domRs in zone
-    	    
-    	    List<DomainRouterVO> DomainRouters = _domrDao.listByDataCenter(zoneId);
-
-    	    for(DomainRouterVO domR : DomainRouters)
-    	    {
-    	        domR.setDns1(dns1);
-    	        domR.setDns2(dns2);
-    	        _domrDao.update(domR.getId(), domR);
-    	    }
-    	    
-    	  //Update dns for console proxies in zone
-            List<VMInstanceVO> ConsoleProxies = _vmInstanceDao.listByZoneIdAndType(zoneId, VirtualMachine.Type.ConsoleProxy);
-            
-            for(VMInstanceVO consoleVm : ConsoleProxies)
-            {
-                ConsoleProxyVO proxy = _consoleDao.findById(consoleVm.getId());
-                if( proxy!= null ){
-                    proxy.setDns1(dns1);
-                    proxy.setDns2(dns2);
-                    _consoleDao.update(proxy.getId(), proxy);
-                }
-            }    	    
-            
-          //Update dns for secondary storage Vms in zone
-            List<VMInstanceVO> storageVms = _vmInstanceDao.listByZoneIdAndType(zoneId, VirtualMachine.Type.SecondaryStorageVm);
-            
-            for(VMInstanceVO storageVm : storageVms)
-            {
-                SecondaryStorageVmVO secStorageVm = _secStorageDao.findById(storageVm.getId());
-                if( secStorageVm!= null ){
-                    secStorageVm.setDns1(dns1);
-                    secStorageVm.setDns2(dns2);
-                    _secStorageDao.update(secStorageVm.getId(), secStorageVm);
-                }
-            }           
-            
+    	    // FIXME: Need to update dns in network rather than in the vms.
     	}
     	
     	return zone;

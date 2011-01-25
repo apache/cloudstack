@@ -42,12 +42,6 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
     @Column(name="gateway", nullable=false)
     private String gateway;
     
-    @Column(name="dns1")
-    private String dns1;
-    
-    @Column(name="dns2")
-    private String dns2;
-
     @Column(name="public_ip_address", nullable=false)
     private String publicIpAddress;
     
@@ -89,14 +83,6 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
     	this.gateway = gateway;
     }
     
-    public void setDns1(String dns1) {
-    	this.dns1 = dns1;
-    }
-    
-    public void setDns2(String dns2) {
-    	this.dns2 = dns2;
-    }
-    
     public void setDomain(String domain) {
     	this.domain = domain;
     }
@@ -124,16 +110,6 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
     @Override
 	public String getGateway() {
 		return this.gateway;
-	}
-	
-    @Override
-	public String getDns1() {
-    	return this.dns1;
-	}
-	
-    @Override
-	public String getDns2() {
-    	return this.dns2;
 	}
 	
     @Override
