@@ -39,9 +39,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 @DiscriminatorValue(value="SecondaryStorageVm")
 public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStorageVm {
 
-    @Column(name="gateway", nullable=false)
-    private String gateway;
-    
     @Column(name="public_ip_address", nullable=false)
     private String publicIpAddress;
     
@@ -79,10 +76,6 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
         super();
     }
 
-    public void setGateway(String gateway) {
-    	this.gateway = gateway;
-    }
-    
     public void setDomain(String domain) {
     	this.domain = domain;
     }
@@ -107,11 +100,6 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
     	this.lastUpdateTime = time;
     }
   
-    @Override
-	public String getGateway() {
-		return this.gateway;
-	}
-	
     @Override
 	public String getPublicIpAddress() {
     	return this.publicIpAddress;

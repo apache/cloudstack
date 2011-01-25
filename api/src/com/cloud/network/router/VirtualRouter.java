@@ -42,11 +42,6 @@ public interface VirtualRouter extends VirtualMachine {
     public String getGuestZoneMacAddress();
     
     /**
-     * @return the gateway address for the router to use.
-     */
-    public String getGateway();
-    
-    /**
      * @return the ram size for this machine.
      */
     public int getRamSize();
@@ -59,18 +54,6 @@ public interface VirtualRouter extends VirtualMachine {
     String getPublicIpAddress();
     
     String getDomain();
-    
-    /**
-     * @return account id that the domain router belongs to.
-     */
-    @Override
-    long getAccountId();
-
-    /**
-     * @return domain id that the domain router belongs to.
-     */
-    @Override
-    long getDomainId();
     
     Role getRole();
     

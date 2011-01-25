@@ -41,9 +41,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Column(name="ram_size", nullable=false)
     private int ramSize;
     
-    @Column(name="gateway")
-    private String gateway;
-    
     @Column(name="public_ip_address")
     private String publicIpAddress;
     
@@ -89,10 +86,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
         super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.networkId = networkConfigurationId;
         this.domain = networkDomain;
-    }
-
-    public void setGateway(String gateway) {
-        this.gateway = gateway;
     }
 
     public void setPublicIpAddress(String publicIpAddress) {
@@ -165,11 +158,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Override
     public void setRamSize(int ramSize) {
         this.ramSize = ramSize;
-    }
-    
-    @Override
-    public String getGateway() {
-        return gateway;
     }
     
     @Override
