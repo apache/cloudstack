@@ -510,7 +510,7 @@
                     <div class="vmpop_prevbutton" id="prev_step">
                         <fmt:message key="label.back"/></div>
                     <div class="vmpop_nextbutton" id="next_step">
-                        <fmt:message key="label.go.to.step.3"/></div>
+                        <fmt:message key="label.go.step.3"/></div>
                 </div>
             </div>
         </div>
