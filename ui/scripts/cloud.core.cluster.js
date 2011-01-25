@@ -37,12 +37,16 @@ function clusterClearRightPanel() {
 
 function clusterJsonToDetailsTab() {	   
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        clusterClearDetailsTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");    
-    if(jsonObj == null) 
+    if(jsonObj == null) {
+        clusterClearDetailsTab();
 	    return;	
+	}
     
     bindAddHostButton($midmenuItem1); 
     bindAddPrimaryStorageButton($midmenuItem1);  
