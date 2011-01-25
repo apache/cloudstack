@@ -51,15 +51,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Column(name="iso_id", nullable=true, length=17)
     private Long isoId = null;
     
-    @Column(name="external_ip_address")
-	String externalIpAddress;
-
-    @Column(name="external_mac_address")
-	String externalMacAddress;
-
-    @Column(name="external_vlan_db_id")
-	private Long externalVlanDbId;
-    
     @Column(name="user_data", updatable=true, nullable=true, length=2048)
     private String userData;
     
@@ -154,34 +145,10 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
         super();
     }
 
-	public String getExternalIpAddress() {
-		return externalIpAddress;
-	}
-
 	public void setIsoId(Long id) {
 	    this.isoId = id;
 	}
 	
-	public void setExternalIpAddress(String externalIpAddress) {
-		this.externalIpAddress = externalIpAddress;
-	}
-
-	public String getExternalMacAddress() {
-		return externalMacAddress;
-	}
-
-	public void setExternalMacAddress(String externalMacAddress) {
-		this.externalMacAddress = externalMacAddress;
-	}
-
-	public void setExternalVlanDbId(Long vlanDbId) {
-		this.externalVlanDbId = vlanDbId;
-	}
-
-	public Long getExternalVlanDbId() {
-		return externalVlanDbId;
-	}
-
     @Override
 	public void setUserData(String userData) {
 		this.userData = userData;
