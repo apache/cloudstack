@@ -78,18 +78,22 @@ function zoneJsonToRightPanel($leftmenuItem1) {
 }
 
 function zoneJsonClearRightPanel() {
-    zoneJsonClearDetailsTab();   
-    zoneJsonClearNetworkTab(); 
+    zoneClearDetailsTab();   
+    zoneClearNetworkTab(); 
 }
 
 function zoneJsonToDetailsTab() {	 
     var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
-    if($leftmenuItem1 == null)
+    if($leftmenuItem1 == null) {
+        zoneClearDetailsTab();
         return;
+    }
     
     var jsonObj = $leftmenuItem1.data("jsonObj");    
-    if(jsonObj == null) 
+    if(jsonObj == null) { 
+        zoneClearDetailsTab();
 	    return;	
+	}
        
     $.ajax({
         data: createURL("command=listZones&available=true&id="+jsonObj.id),
@@ -172,7 +176,7 @@ function zoneJsonToDetailsTab() {
     $thisTab.find("#tab_container").show();      
 }	  
 
-function zoneJsonClearDetailsTab() {	    
+function zoneClearDetailsTab() {	    
     var $thisTab = $("#right_panel_content").find("#tab_content_details");    
     $thisTab.find("#grid_header_title").text("");         
     $thisTab.find("#id").text("");
@@ -212,12 +216,16 @@ function zoneJsonClearDetailsTab() {
 var $vlanContainer;
 function zoneJsonToNetworkTab(jsonObj) {	
     var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");	
-    if($leftmenuItem1 == null)
+    if($leftmenuItem1 == null) {
+        zoneClearNetworkTab(); 
         return;
+    }
         
 	var jsonObj = $leftmenuItem1.data("jsonObj");	    
-    if(jsonObj == null) 	    
+    if(jsonObj == null) {	   
+        zoneClearNetworkTab();  
 	    return;	
+	}
     
     var $thisTab = $("#right_panel_content").find("#tab_content_network");
 	$thisTab.find("#tab_container").hide(); 
@@ -268,7 +276,7 @@ function zoneJsonToNetworkTab(jsonObj) {
 	});
 }	 
 
-function zoneJsonClearNetworkTab() {	    
+function zoneClearNetworkTab() {	    
     var $thisTab = $("#right_panel_content").find("#tab_content_network");      
     $thisTab.find("#zone_cloud").find("#zone_name").text("");	 
     $thisTab.find("#zone_vlan").text("");   
