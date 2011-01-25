@@ -29,8 +29,11 @@ import org.apache.log4j.Logger;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
+import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
+import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
+import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
@@ -78,6 +81,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     @Inject AccountManager _accountMgr;
     @Inject NetworkManager _networkMgr;
     @Inject EventDao _eventDao;
+    @Inject UsageEventDao _usageEventDao;
 
     @Override
     public void detectRulesConflict(FirewallRule newRule, IpAddress ipAddress) throws NetworkRuleConflictException {
@@ -221,14 +225,14 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
         txn.commit();
 
-        boolean success = false;
         try {
             detectRulesConflict(newRule, ipAddress);
             if (!_firewallDao.setStateToAdd(newRule)) {
                 throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
             }
             
-            success = true;
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), 0, newRule.getId(), null);
+            _usageEventDao.persist(usageEvent);
             return newRule;
         } catch (Exception e) {
             txn.start();
@@ -311,11 +315,18 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         _accountMgr.checkAccess(caller, rule);
         revokeRule(rule, caller, ctx.getCallerUserId());
         
+        boolean success = false;
+        
         if (apply) {
-            return applyPortForwardingRules(rule.getSourceIpAddress(), true);
+            success = applyPortForwardingRules(rule.getSourceIpAddress(), true);
         } else {
-            return true;
+            success = true;
         }
+        if(success){
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_DELETE, rule.getAccountId(), 0, rule.getId(), null);
+            _usageEventDao.persist(usageEvent);
+        }
+        return success;
     }
     
     @Override
