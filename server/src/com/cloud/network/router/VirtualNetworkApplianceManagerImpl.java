@@ -643,7 +643,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return new StopCommand(vm, vmName, VirtualMachineName.getVnet(vmName));
         } else if (vm != null) {
             final DomainRouterVO vo = vm;
-            return new StopCommand(vo, vo.getVnet());
+            return new StopCommand(vo, null);
         } else {
             throw new CloudRuntimeException("Shouldn't even be here!");
         }

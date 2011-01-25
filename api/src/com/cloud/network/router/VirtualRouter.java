@@ -39,12 +39,6 @@ public interface VirtualRouter extends VirtualMachine {
     
     public String getPublicNetmask();
     
-    public String getVnet();
-    
-    public String getVlanId();
-    
-    public String getZoneVlan();
-    
     public String getGuestZoneMacAddress();
     
     /**
@@ -64,8 +58,6 @@ public interface VirtualRouter extends VirtualMachine {
      */
     String getPublicIpAddress();
     
-    String getDns1();
-    String getDns2();
     String getDomain();
     
     /**
