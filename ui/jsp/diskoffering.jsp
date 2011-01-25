@@ -135,7 +135,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt="Add Disk Offering" /></div>
             <div class="actionpanel_button_links">
-                <fmt:message key="label.add.disk.offering"/>:</div>
+                <fmt:message key="label.add.disk.offering"/>:
             </div>
         </div>
     </div>
