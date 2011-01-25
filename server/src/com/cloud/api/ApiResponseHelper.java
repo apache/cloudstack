@@ -1188,7 +1188,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             vmResponse.setSystemVmType(vm.getType().toString().toLowerCase());
             vmResponse.setZoneId(vm.getDataCenterId());
 
-            vmResponse.setNetworkDomain(vm.getDomain());
             vmResponse.setName(vm.getName());
             vmResponse.setPodId(vm.getPodId());
             vmResponse.setTemplateId(vm.getTemplateId());

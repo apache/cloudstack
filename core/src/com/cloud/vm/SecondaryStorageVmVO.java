@@ -48,9 +48,6 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
     @Column(name="public_netmask", nullable=false)
     private String publicNetmask;
     
-    @Column(name="domain", nullable=false)
-    private String domain;
-    
     @Column(name="guid", nullable=false)
     private String guid;
     
@@ -76,10 +73,6 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
         super();
     }
 
-    public void setDomain(String domain) {
-    	this.domain = domain;
-    }
-    
     public void setPublicIpAddress(String publicIpAddress) {
     	this.publicIpAddress = publicIpAddress;
     }
@@ -115,12 +108,6 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
 		return this.publicMacAddress;
 	}
     
-
-    @Override
-    public String getDomain() {
-    	return this.domain;
-    }
-	
     @Override
 	public int getRamSize() {
     	return this.ramSize;

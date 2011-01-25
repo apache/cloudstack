@@ -20,7 +20,6 @@ package com.cloud.vm;
 import java.util.Date;
 
 public interface SystemVm extends VirtualMachine {
-    public String getDomain();
     public String getPublicIpAddress();
     public String getPublicNetmask();
     public String getPublicMacAddress();

@@ -50,9 +50,6 @@ public class ConsoleProxyVO extends VMInstanceVO implements ConsoleProxy {
     @Column(name="public_netmask", nullable=false)
     private String publicNetmask;
     
-    @Column(name="domain", nullable=false)
-    private String domain;
-    
     @Column(name="ram_size", updatable=false, nullable=false)
     private int ramSize;
     
@@ -84,10 +81,6 @@ public class ConsoleProxyVO extends VMInstanceVO implements ConsoleProxy {
         super();
     }
 
-    public void setDomain(String domain) {
-    	this.domain = domain;
-    }
-    
     public void setPublicIpAddress(String publicIpAddress) {
     	this.publicIpAddress = publicIpAddress;
     }
@@ -131,11 +124,6 @@ public class ConsoleProxyVO extends VMInstanceVO implements ConsoleProxy {
 		return this.publicMacAddress;
 	}
     
-    @Override
-    public String getDomain() {
-    	return this.domain;
-    }
-	
     @Override
 	public int getRamSize() {
     	return this.ramSize;
