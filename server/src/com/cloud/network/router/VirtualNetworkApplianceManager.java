@@ -72,6 +72,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
     
+    @Override
     VirtualRouter upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
 	
 	DomainRouterVO getRouter(long accountId, long zoneId);

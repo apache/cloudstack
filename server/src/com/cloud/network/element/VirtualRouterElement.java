@@ -32,26 +32,25 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.host.Host;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkManager;
-import com.cloud.network.PublicIpAddress;
-import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.VpnUser;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.PublicIpAddress;
+import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.VpnUser;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
+import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
+import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -65,8 +64,8 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -114,30 +113,6 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement,
             
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
-            
-            DomainRouterVO router = _routerDao.findById(uservm.getVirtualMachine().getDomainRouterId());
-            if(router != null) {
-                State state = router.getState();
-                if ( state == State.Starting ) {
-                    // wait 300 seconds
-                    for ( int i = 0; i < 300; ) {
-                        try {
-                            Thread.sleep(2000);
-                        } catch (Exception e) {
-                        }
-                        i += 2;
-                        
-                        state = router.getState();
-                        if ( state != State.Starting ) {
-                            break;
-                        }
-                    }           
-                }
-                
-                // TODO: need to find a better exception to throw!
-                if(state != State.Running)
-                    throw new ResourceUnavailableException("Virtual router is not available", Host.class, router.getHostId());
-            }
             
             return _routerMgr.addVirtualMachineIntoNetwork(config, nic, uservm, dest, context, false) != null;
         } else {

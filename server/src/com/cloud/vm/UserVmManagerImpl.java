@@ -313,40 +313,41 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return userVm;
     }
 
-    private boolean resetVMPasswordInternal(ResetVMPasswordCmd cmd, String password) {    	
-        Long vmId = cmd.getId();
-        Long userId = UserContext.current().getCallerUserId();
-        UserVmVO vmInstance = _vmDao.findById(vmId);
-
-        if (password == null || password.equals("")) {
-            return false;
-        }
-
-        VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
-        if (template.getEnablePassword()) {
-        	if (vmInstance.getDomainRouterId() == null) {
-                /*TODO: add it for external dhcp mode*/
-        		return true;
-            }
-	        if (_routerMgr.savePasswordToRouter(vmInstance.getDomainRouterId(), vmInstance.getPrivateIpAddress(), password)) {
-	            // Need to reboot the virtual machine so that the password gets redownloaded from the DomR, and reset on the VM
-	        	if (!rebootVirtualMachine(userId, vmId)) {
-	        		if (vmInstance.getState() == State.Stopped) {
-	        			return true;
-	        		}
-	        		return false;
-	        	} else {
-	        		return true;
-	        	}
-	        } else {
-	        	return false;
-	        }
-        } else {
-        	if (s_logger.isDebugEnabled()) {
-        		s_logger.debug("Reset password called for a vm that is not using a password enabled template");
-        	}
-        	return false;
-        }
+    private boolean resetVMPasswordInternal(ResetVMPasswordCmd cmd, String password) {  
+        return true;
+//        Long vmId = cmd.getId();
+//        Long userId = UserContext.current().getCallerUserId();
+//        UserVmVO vmInstance = _vmDao.findById(vmId);
+//
+//        if (password == null || password.equals("")) {
+//            return false;
+//        }
+//
+//        VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
+//        if (template.getEnablePassword()) {
+//        	if (vmInstance.getDomainRouterId() == null) {
+//                /*TODO: add it for external dhcp mode*/
+//        		return true;
+//            }
+//	        if (_routerMgr.savePasswordToRouter(vmInstance.getDomainRouterId(), vmInstance.getPrivateIpAddress(), password)) {
+//	            // Need to reboot the virtual machine so that the password gets redownloaded from the DomR, and reset on the VM
+//	        	if (!rebootVirtualMachine(userId, vmId)) {
+//	        		if (vmInstance.getState() == State.Stopped) {
+//	        			return true;
+//	        		}
+//	        		return false;
+//	        	} else {
+//	        		return true;
+//	        	}
+//	        } else {
+//	        	return false;
+//	        }
+//        } else {
+//        	if (s_logger.isDebugEnabled()) {
+//        		s_logger.debug("Reset password called for a vm that is not using a password enabled template");
+//        	}
+//        	return false;
+//        }
     }
     
     @Override

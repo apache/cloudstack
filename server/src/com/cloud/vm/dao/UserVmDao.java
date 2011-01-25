@@ -23,7 +23,6 @@ import java.util.List;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VirtualMachine.State;
 
 public interface UserVmDao extends GenericDao<UserVmVO, Long> {
     List<UserVmVO> listByAccountId(long id);
@@ -33,14 +32,6 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
     List<UserVmVO> listByHostId(Long hostId);
     List<UserVmVO> listByLastHostId(Long hostId);
     List<UserVmVO> listUpByHostId(Long hostId);
-
-    /**
-     * Find vms under the same router in the state.
-     * @param routerId id of the router.
-     * @param state state that it's in.
-     * @return list of userVmVO
-     */
-    List<UserVmVO> listBy(long routerId, State... state);
 
     UserVmVO findByName(String name);
     
@@ -53,13 +44,6 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
     
     List<UserVmVO> findDestroyedVms(Date date);
 
-	/**
-	 * Find all vms that use a domain router
-	 * @param routerId
-	 * @return
-	 */
-	List<UserVmVO> listByRouterId(long routerId);
-	
 	/**
 	 * List running VMs on the specified host
 	 * @param id

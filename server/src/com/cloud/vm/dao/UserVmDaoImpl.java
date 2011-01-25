@@ -40,8 +40,6 @@ import com.cloud.vm.VirtualMachine.State;
 public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements UserVmDao {
     public static final Logger s_logger = Logger.getLogger(UserVmDaoImpl.class);
     
-    protected final SearchBuilder<UserVmVO> RouterStateSearch;
-    protected final SearchBuilder<UserVmVO> RouterIdSearch;
     protected final SearchBuilder<UserVmVO> AccountPodSearch;
     protected final SearchBuilder<UserVmVO> AccountDataCenterSearch;
     protected final SearchBuilder<UserVmVO> AccountSearch;
@@ -88,14 +86,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         NameSearch = createSearchBuilder();
         NameSearch.and("name", NameSearch.entity().getName(), SearchCriteria.Op.EQ);
         NameSearch.done();
-        
-        RouterStateSearch = createSearchBuilder();
-        RouterStateSearch.and("router", RouterStateSearch.entity().getDomainRouterId(), SearchCriteria.Op.EQ);
-        RouterStateSearch.done();
-        
-        RouterIdSearch = createSearchBuilder();
-        RouterIdSearch.and("router", RouterIdSearch.entity().getDomainRouterId(), SearchCriteria.Op.EQ);
-        RouterIdSearch.done();
         
         AccountPodSearch = createSearchBuilder();
         AccountPodSearch.and("account", AccountPodSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -152,19 +142,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     }
     
     @Override
-    public List<UserVmVO> listBy(long routerId, State... states) {
-        SearchCriteria<UserVmVO> sc = RouterStateSearch.create();
-        SearchCriteria<UserVmVO> ssc = createSearchCriteria();
-        
-        sc.setParameters("router", routerId);
-        for (State state: states) {
-            ssc.addOr("state", SearchCriteria.Op.EQ, state.toString());
-        }
-        sc.addAnd("state", SearchCriteria.Op.SC, ssc);
-        return listIncludingRemovedBy(sc);
-    }
-    
-    @Override
     public void updateVM(long id, String displayName, boolean enable, Long osTypeId) {
         UserVmVO vo = createForUpdate();
         vo.setDisplayName(displayName);
@@ -173,15 +150,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         update(id, vo);
     }
     
-    @Override
-    public List<UserVmVO> listByRouterId(long routerId) {
-        SearchCriteria<UserVmVO> sc = RouterIdSearch.create();
-        
-        sc.setParameters("router", routerId);
-        
-        return listIncludingRemovedBy(sc);
-    }
-
     @Override
     public List<UserVmVO> findDestroyedVms(Date date) {
     	SearchCriteria<UserVmVO> sc = DestroySearch.create();
