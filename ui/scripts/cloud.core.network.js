@@ -285,10 +285,43 @@ function publicNetworkJsonToFirewallTab() {
 
 function publicNetworkFirewallJsonToTemplate(jsonObj, $template) {    
     $template.data("jsonObj", jsonObj);
-    $template.attr("id", "publicNetworkFirewall_" + jsonObj.id);
-        
-    $template.find("#grid_header_title").text(fromdb(jsonObj.url));    
-    $template.find("#id").text(fromdb(jsonObj.id));    
+    $template.attr("id", "publicNetworkFirewall_" + jsonObj.id);  
+    $template.find("#id").text(fromdb(jsonObj.id));  
+    
+    if(jsonObj.url != null) {
+        var array1 = jsonObj.url.split("?");
+        if(array1.length >= 2) {
+            var $subTemplate = $("#externalfirewall_template_row_template");  
+                     
+            var ip = array1[0];    
+            $template.find("#grid_header_title").text(ip);            
+            var $newSubTemplate = $subTemplate.clone();              
+            $newSubTemplate.attr("id", ("externalfirewall_template_row_template_ip")).addClass("even");
+            $newSubTemplate.find("#label").text("IP: ");
+            $newSubTemplate.find("#value").text(ip);                        
+            $template.append($newSubTemplate.show());
+                       
+            var parameters = array1[1];
+            if(parameters != null) {
+                var array2 = parameters.split("&");                    
+                for(var i=0; i < array2.length; i++) {                
+                    var array3 = array2[i].split("=");     
+                    if(array3.length >= 2) {
+                        var $newSubTemplate = $subTemplate.clone();              
+                        $newSubTemplate.attr("id", ("externalfirewall_template_row_template_"+i));
+                        if(i%2 == 0)
+                            $newSubTemplate.addClass("odd");
+                        else
+                            $newSubTemplate.addClass("even");
+                        $newSubTemplate.find("#label").text(array3[0] + ": ");
+                        $newSubTemplate.find("#value").text(array3[1]);                        
+                        $template.append($newSubTemplate.show());
+                    }               
+                }                         
+            }
+        }
+    }
+    
     $template.find("#url").text(fromdb(jsonObj.url));   
    
     var $actionLink = $template.find("#firewall_action_link");		

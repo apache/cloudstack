@@ -484,7 +484,8 @@
             <div class="row_celltitles" id="id">
             </div>
         </div>
-    </div>   
+    </div>  
+    <!-- 
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
@@ -495,9 +496,21 @@
             </div>
         </div>
     </div>  
+     --> 
 </div>
 <!--  External Firewall template (end) -->
 
+<!--  External Firewall template - row template (begin) -->
+<div class="grid_rows" id="externalfirewall_template_row_template" style="display:none">  <!-- add class "odd" or "even" here from JavaScript file -->
+    <div class="grid_row_cell" style="width: 20%;">
+        <div class="row_celltitles" id="label"></div>
+    </div>
+    <div class="grid_row_cell" style="width: 79%;">
+        <div class="row_celltitles" id="value"></div>
+    </div>
+</div>
+
+<!--  External Firewall template - row template (end) -->
 
 <!--  Load Balancer template (begin) -->
 <div class="grid_container" id="loadbalancer_template" style="display: none">    
