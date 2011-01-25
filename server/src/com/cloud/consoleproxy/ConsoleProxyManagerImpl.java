@@ -596,6 +596,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         return null;
     }
 
+/*
     public ConsoleProxyVO startNewConsoleProxy(long dataCenterId) throws ConcurrentOperationException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
@@ -630,6 +631,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         }
         return null;
     }
+*/
 
     public ConsoleProxyVO startNew(long dataCenterId) throws ConcurrentOperationException {
 
@@ -678,7 +680,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         List<NetworkOfferingVO> defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork);
         if (dc.getNetworkType() == NetworkType.Basic) {
-            defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SysteGuestNetwork);
+            defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemGuestNetwork);
         }
         
         List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork, NetworkOfferingVO.SystemManagementNetwork);
@@ -718,6 +720,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         return null;
     }
 
+/*    
     protected String connect(String ipAddress, int port) {
         for (int i = 0; i <= _ssh_retry; i++) {
             SocketChannel sch = null;
@@ -754,7 +757,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         return "Unable to connect";
     }
-
+*/
     public void onLoadAnswer(ConsoleProxyLoadAnswer answer) {
         if (answer.getDetails() == null) {
             return;

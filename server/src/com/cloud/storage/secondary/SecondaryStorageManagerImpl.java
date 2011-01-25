@@ -411,7 +411,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
         List<NetworkOfferingVO> defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork);
         if (dc.getNetworkType() == NetworkType.Basic) {
-            defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SysteGuestNetwork);
+            defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemGuestNetwork);
         }
 
         List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork,

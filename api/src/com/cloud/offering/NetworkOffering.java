@@ -35,7 +35,7 @@ public interface NetworkOffering {
     public final static String SystemControlNetwork = "System-Control-Network";
     public final static String SystemManagementNetwork = "System-Management-Network";
     public final static String SystemStorageNetwork = "System-Storage-Network";
-    public final static String SysteGuestNetwork = "System-Guest-Network";
+    public final static String SystemGuestNetwork = "System-Guest-Network";
     
     public final static String DefaultVirtualizedNetworkOffering = "DefaultVirtualizedNetworkOffering";
     public final static String DefaultDirectNetworkOffering = "DefaultDirectNetworkOffering";
