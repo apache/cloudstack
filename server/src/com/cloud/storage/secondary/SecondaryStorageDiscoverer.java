@@ -104,9 +104,6 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
     
     protected Map<? extends ServerResource, Map<String, String>> createNfsSecondaryStorageResource(long dcId, Long podId, URI uri) {
         
-    	if (_useServiceVM) {
-    	    return createDummySecondaryStorageResource(dcId, podId, uri);
-    	}
         String mountStr = NfsUtils.uri2Mount(uri);
         
         Script script = new Script(true, "mount", _timeout, s_logger);
@@ -135,6 +132,10 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
         script.execute();
         
         file.delete();
+
+    	if (_useServiceVM) {
+    	    return createDummySecondaryStorageResource(dcId, podId, uri);
+    	}        
         
         Map<NfsSecondaryStorageResource, Map<String, String>> srs = new HashMap<NfsSecondaryStorageResource, Map<String, String>>();
         
