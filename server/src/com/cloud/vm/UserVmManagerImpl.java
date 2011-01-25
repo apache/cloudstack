@@ -1148,9 +1148,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             
             //cleanup load balancer rules
             if (_lbMgr.removeVmFromLoadBalancers(vmId)) {
-                s_logger.debug("LB rules are removed successfully as a part of vm id=" + vmId + " expunge");
+                s_logger.debug("Removed vm id=" + vmId + " from all load balancers as a part of expunge process");
             } else {
-                s_logger.warn("Fail to remove lb rules as a part of vm id=" + vmId + " expunge");
+                s_logger.warn("Fail to remove vm id=" + vmId + " from load balancers as a part of expunge process");
             }
  
             _itMgr.remove(vm, _accountMgr.getSystemUser(), caller);
