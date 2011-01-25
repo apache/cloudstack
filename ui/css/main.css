@@ -2246,16 +2246,16 @@ a:hover.search_button {
 	font-weight:normal;
 	text-decoration:none;
 	float:left;
-	margin:7px 11px 0 5px;
-	padding:0;
+	margin:7px 0 0 3px;
+	padding:0 5px 0 0;
 }
 
 
 .actionpanel_button_icons {
-	width:25px;
+	width:22px;
 	height:18px;
 	float:left;
-	margin:5px 0 0 7px;
+	margin:5px 0 0 5px;
 	padding:0;
 }
 
