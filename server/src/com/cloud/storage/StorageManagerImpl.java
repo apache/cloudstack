@@ -120,7 +120,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.StorageResourceType;
-import com.cloud.storage.Volume.MirrorState;
 import com.cloud.storage.Volume.SourceType;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.allocator.StoragePoolAllocator;
@@ -531,7 +530,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             createdVolume.setState(Volume.State.Ready);
         } else {
             createdVolume.setStatus(AsyncInstanceCreateStatus.Corrupted);
-            createdVolume.setDestroyed(true);
+            createdVolume.setState(Volume.State.Destroy);
         }
         
         _volsDao.update(volumeId, createdVolume);
@@ -682,7 +681,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 s_logger.debug("Unable to create a volume for " + volume);
             }
             volume.setStatus(AsyncInstanceCreateStatus.Failed);
-            volume.setDestroyed(true);
+            volume.setState(Volume.State.Destroy);
             _volsDao.persist(volume);
             _volsDao.remove(volume.getId());
             volume = null;
@@ -1566,7 +1565,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         volume.setPodId(null);
         volume.setAccountId(targetAccount.getId());
         volume.setDomainId(((account == null) ? Domain.ROOT_DOMAIN : account.getDomainId()));
-        volume.setMirrorState(MirrorState.NOT_MIRRORED);
         volume.setDiskOfferingId(diskOfferingId);
         volume.setSize(size);
         volume.setStorageResourceType(StorageResourceType.STORAGE_POOL);
@@ -2098,7 +2096,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 			//3. If the volume is not removed AND not destroyed, start the vm corresponding to it
 			for(VolumeVO volume: allVolumes)
 			{
-				if((!volume.getDestroyed()) && (volume.getRemoved() == null))
+				if((volume.getState() != Volume.State.Destroy) && (volume.getRemoved() == null))
 				{
 					VMInstanceVO vmInstance = _vmInstanceDao.findById(volume.getInstanceId());
 				

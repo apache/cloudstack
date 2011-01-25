@@ -11,11 +11,10 @@ import com.cloud.vm.NicVO;
 public interface NicDao extends GenericDao<NicVO, Long> {
     List<NicVO> listBy(long instanceId);
     
-    List<String> listIpAddressInNetworkConfiguration(long networkConfigId);
+    List<String> listIpAddressInNetwork(long networkConfigId);
     
     List<NicVO> listByNetworkId(long networkId);
     
-    List<Long> listNetworksWithNoActiveNics(); 
     NicVO findByInstanceIdAndNetworkId(long networkId, long instanceId);
 
     void removeNicsForInstance(long instanceId);

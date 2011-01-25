@@ -20,7 +20,6 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.api.commands.CreateNetworkCmd;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.deploy.DeployDestination;
@@ -55,8 +54,6 @@ import com.cloud.vm.VirtualMachineProfile;
  *
  */
 public interface NetworkManager extends NetworkService {
-    public static final boolean USE_POD_VLAN = false;
-
     /**
      * Assigns a new public ip address.
      * 
@@ -155,4 +152,8 @@ public interface NetworkManager extends NetworkService {
      */
     boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId) throws InsufficientAddressCapacityException,
             ConcurrentOperationException, ResourceUnavailableException;
+
+    Nic getNicInNetwork(long vmId, long networkId);
+    
+    Nic getNicForTraffic(long vmId, TrafficType type);
 }

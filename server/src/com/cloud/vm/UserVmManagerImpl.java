@@ -94,8 +94,6 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
-import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
@@ -129,7 +127,6 @@ import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.SecurityGroupManager;
-import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
@@ -416,7 +413,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         // Check that the volume is not destroyed
-        if (volume.getDestroyed()) {
+        if (volume.getState() == Volume.State.Destroy) {
             throw new InvalidParameterValueException("Please specify a volume that is not destroyed.");
         }
 
@@ -2173,8 +2170,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 			} else {
 				isoPath = isoPathPair.first();
 			}
-			if (template.isBootable())
-				profile.setBootLoaderType(BootloaderType.CD);
+			if (template.isBootable()) {
+                profile.setBootLoaderType(BootloaderType.CD);
+            }
 			GuestOSVO guestOS = _guestOSDao.findById(template.getGuestOSId());
 			String displayName = null;
 			if (guestOS != null) {
@@ -2204,7 +2202,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 			NetworkVO network = _networkDao.findById(nic.getNetworkId());
 			if (network.getTrafficType() == TrafficType.Guest) {
 				userVm.setPrivateIpAddress(nic.getIp4Address());
-				userVm.setPrivateNetmask(nic.getNetmask());
 				userVm.setPrivateMacAddress(nic.getMacAddress());
 			}
 		}

@@ -77,6 +77,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
@@ -178,7 +179,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 }
             }
         }
-        if (volume.getDestroyed() || volume.getRemoved() != null) {
+        if (volume.getState() == Volume.State.Destroy || volume.getRemoved() != null) {
             s_logger.debug("Volume: " + volumeId + " is destroyed/removed. Not taking snapshot");
             runSnap = false;
         }
@@ -352,8 +353,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         	List<HostVO> hosts = _hostDao.listByCluster(cluster.getId());
         	if (hosts != null && !hosts.isEmpty()) {
         		HostVO host = hosts.get(0);
-        		if (!hostSupportSnapsthot(host))
-        			throw new CloudRuntimeException("KVM Snapshot is not supported on cluster: " + host.getId());
+        		if (!hostSupportSnapsthot(host)) {
+                    throw new CloudRuntimeException("KVM Snapshot is not supported on cluster: " + host.getId());
+                }
         	}
         }
         

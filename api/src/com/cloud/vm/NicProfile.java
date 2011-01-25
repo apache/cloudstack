@@ -10,8 +10,7 @@ import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.resource.Resource;
-import com.cloud.resource.Resource.ReservationStrategy;
+import com.cloud.vm.Nic.ReservationStrategy;
 
 public class NicProfile {
     long id;
@@ -220,7 +219,7 @@ public class NicProfile {
         this.vmId = vmId;
     }
     
-    public NicProfile(Resource.ReservationStrategy strategy, String ip4Address, String macAddress, String gateway, String netmask) {
+    public NicProfile(ReservationStrategy strategy, String ip4Address, String macAddress, String gateway, String netmask) {
         this.format = AddressFormat.Ip4;
         this.ip4Address = ip4Address;
         this.macAddress = macAddress;

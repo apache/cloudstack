@@ -1120,7 +1120,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         		router.setGuestMacAddress(nic.getMacAddress());
         	} else if (network.getTrafficType() == TrafficType.Control) {
         		router.setPrivateIpAddress(nic.getIp4Address());
-        		router.setPrivateNetmask(nic.getNetmask());
         		router.setPrivateMacAddress(nic.getMacAddress());
         	}
         }

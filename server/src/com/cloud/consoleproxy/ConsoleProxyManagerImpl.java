@@ -75,9 +75,6 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
-import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -928,7 +925,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                         return;
                     }
                     console.setPrivateIpAddress(cmd.getPrivateIpAddress());
-                    console.setPrivateNetmask(cmd.getPrivateNetmask());
                     console.setPublicIpAddress(cmd.getPublicIpAddress());
                     console.setPublicNetmask(cmd.getPublicNetmask());
                     _consoleProxyDao.persist(console);
@@ -1675,7 +1671,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         		proxy.setGuestMacAddress(nic.getMacAddress());
         	} else if (network.getTrafficType() == TrafficType.Management) {
         		proxy.setPrivateIpAddress(nic.getIp4Address());
-        		proxy.setPrivateNetmask(nic.getNetmask());
         		proxy.setPrivateMacAddress(nic.getMacAddress());
         	}
         }

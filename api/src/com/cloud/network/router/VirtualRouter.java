@@ -39,8 +39,6 @@ public interface VirtualRouter extends VirtualMachine {
     
     public String getPublicNetmask();
     
-    public String getPrivateNetmask();
-    
     public String getVnet();
     
     public String getVlanId();
@@ -73,11 +71,13 @@ public interface VirtualRouter extends VirtualMachine {
     /**
      * @return account id that the domain router belongs to.
      */
+    @Override
     long getAccountId();
 
     /**
      * @return domain id that the domain router belongs to.
      */
+    @Override
     long getDomainId();
     
     Role getRole();

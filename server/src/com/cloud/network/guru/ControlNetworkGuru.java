@@ -40,12 +40,12 @@ import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -95,7 +95,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         }
 
         if(vm.getHypervisorType() == HypervisorType.VmWare && vm.getType() != VirtualMachine.Type.DomainRouter) {
-        	NicProfile nicProf = new NicProfile(ReservationStrategy.Create, null, null, null, null);
+        	NicProfile nicProf = new NicProfile(Nic.ReservationStrategy.Create, null, null, null, null);
             String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
             nicProf.setMacAddress(mac);
             return nicProf;
@@ -105,7 +105,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
             throw new CloudRuntimeException("Does not support nic specification at this time: " + nic);
         }
         
-        return new NicProfile(ReservationStrategy.Start, null, null, null, null);
+        return new NicProfile(Nic.ReservationStrategy.Start, null, null, null, null);
     }
     
     @Override

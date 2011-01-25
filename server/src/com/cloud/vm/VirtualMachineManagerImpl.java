@@ -92,7 +92,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -236,6 +235,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
         
         return vm;
     }
+    
+    
     
     protected void reserveNics(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
 //        List<NicVO> nics = _nicsDao.listBy(vmProfile.getId());

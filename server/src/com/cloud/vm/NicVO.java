@@ -180,6 +180,7 @@ public class NicVO implements Nic {
         this.netmask = netmask;
     }
 
+    @Override
     public URI getIsolationUri() {
         return isolationUri;
     }
@@ -188,6 +189,7 @@ public class NicVO implements Nic {
         this.isolationUri = isolationUri;
     }
 
+    @Override
     public URI getBroadcastUri() {
         return broadcastUri;
     }
@@ -200,8 +202,8 @@ public class NicVO implements Nic {
         this.instanceId = instanceId;
     }
 
-    public void setNetworkId(long networkConfigurationId) {
-        this.networkId = networkConfigurationId;
+    public void setNetworkId(long networkId) {
+        this.networkId = networkId;
     }
 
     public void setUpdateTime(Date updateTime) {
@@ -271,16 +273,6 @@ public class NicVO implements Nic {
     @Override
     public ReservationStrategy getReservationStrategy() {
         return strategy;
-    }
-
-    @Override
-    public int getExpectedReservationInterval() {
-        return -1;
-    }
-
-    @Override
-    public int getExpectedReleaseInterval() {
-        return -1;
     }
 
     @Override

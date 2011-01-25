@@ -98,8 +98,6 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.resource.Resource;
-import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -200,6 +198,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     SearchBuilder<IPAddressVO> AssignIpAddressSearch;
     SearchBuilder<IPAddressVO> AssignIpAddressFromPodVlanSearch;
     SearchBuilder<IPAddressVO> IpAddressSearch;
+    SearchBuilder<NicVO> NicForTrafficTypeSearch;
 
     int _networkGcWait;
     int _networkGcInterval;
@@ -674,6 +673,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         virtualNetworkVlanSB.and("vlanType", virtualNetworkVlanSB.entity().getVlanType(), Op.EQ);
         IpAddressSearch.join("virtualNetworkVlanSB", virtualNetworkVlanSB, IpAddressSearch.entity().getVlanId(), virtualNetworkVlanSB.entity().getId(), JoinBuilder.JoinType.INNER);
         IpAddressSearch.done();
+        
+        NicForTrafficTypeSearch = _nicDao.createSearchBuilder();
+        SearchBuilder<NetworkVO> networkSearch = _networksDao.createSearchBuilder();
+        NicForTrafficTypeSearch.join("network", networkSearch, networkSearch.entity().getId(), NicForTrafficTypeSearch.entity().getNetworkId(), JoinType.INNER);
+        NicForTrafficTypeSearch.and("instance", NicForTrafficTypeSearch.entity().getInstanceId(), Op.EQ);
+        networkSearch.and("traffictype", networkSearch.entity().getTrafficType(), Op.EQ);
+        NicForTrafficTypeSearch.done();
 
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Network-Scavenger"));
 
@@ -1009,8 +1015,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
             Integer networkRate = _configMgr.getNetworkRate(no.getId());
             NicProfile profile = null;
-            if (nic.getReservationStrategy() == ReservationStrategy.Start) {
-                nic.setState(Resource.State.Reserving);
+            if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start) {
+                nic.setState(Nic.State.Reserving);
                 nic.setReservationId(context.getReservationId());
                 _nicDao.update(nic.getId(), nic);
                 URI broadcastUri = nic.getBroadcastUri();
@@ -1028,7 +1034,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 nic.setIsolationUri(profile.getIsolationUri());
                 nic.setBroadcastUri(profile.getBroadCastUri());
                 nic.setReserver(concierge.getName());
-                nic.setState(Resource.State.Reserved);
+                nic.setState(Nic.State.Reserved);
                 nic.setNetmask(profile.getNetmask());
                 nic.setGateway(profile.getGateway());
                 nic.setAddressFormat(profile.getFormat());
@@ -1071,13 +1077,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             NetworkVO network = _networksDao.findById(nic.getNetworkId());
             if (nic.getState() == Nic.State.Reserved || nic.getState() == Nic.State.Reserving) {
                 Nic.State originalState = nic.getState();
-                if (nic.getReservationStrategy() == ReservationStrategy.Start) {
+                if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start) {
                     NetworkGuru concierge = _networkGurus.get(network.getGuruName());
-                    nic.setState(Resource.State.Releasing);
+                    nic.setState(Nic.State.Releasing);
                     _nicDao.update(nic.getId(), nic);
                     NicProfile profile = new NicProfile(nic, network, null, null, null);
                     if (concierge.release(profile, vmProfile, nic.getReservationId())) {
-                        nic.setState(Resource.State.Allocated);
+                        nic.setState(Nic.State.Allocated);
                         if (originalState == Nic.State.Reserved) {
                             updateNic(nic, network.getId(), -1);
                         } else {
@@ -1922,6 +1928,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         return networks;
     }
+    
+    @Override
+    public Nic getNicInNetwork(long vmId, long networkId) {
+        return _nicDao.findByInstanceIdAndNetworkId(networkId, vmId);
+    }
 
     @Override @DB
     public boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId) throws InsufficientAddressCapacityException,
@@ -1974,4 +1985,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
     
+    @Override
+    public Nic getNicForTraffic(long vmId, TrafficType type) {
+        SearchCriteria<NicVO> sc = NicForTrafficTypeSearch.create();
+        sc.setParameters("instance", vmId);
+        sc.setJoinParameters("network", "traffictype", type);
+        
+        List<NicVO> vos = _nicDao.search(sc, null);
+        assert vos.size() <= 1 : "If we have multiple networks of the same type, then this method should no longer be used.";
+        return vos.size() == 1 ? vos.get(0) : null;
+    }
 }

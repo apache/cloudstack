@@ -29,7 +29,6 @@ public interface SystemVm extends VirtualMachine {
     public String getPublicMacAddress();
     public Long getVlanDbId();
     public String getVlanId();
-    public String getPrivateNetmask();
     public int getRamSize();
     public Date getLastUpdateTime();
 }

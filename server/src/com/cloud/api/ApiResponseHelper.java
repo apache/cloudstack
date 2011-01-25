@@ -824,7 +824,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());
         volResponse.setAttached(volume.getAttached());
-        volResponse.setDestroyed(volume.getDestroyed());
+        volResponse.setDestroyed(volume.getState() == Volume.State.Destroy);
         VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());      
 		boolean isExtractable = template != null&&  template.isExtractable()&&  !(template.getTemplateType()== TemplateType.SYSTEM);
         volResponse.setExtractable(isExtractable);

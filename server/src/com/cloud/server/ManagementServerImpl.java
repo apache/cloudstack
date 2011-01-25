@@ -163,7 +163,6 @@ import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.ActionEvent;
 import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
@@ -263,7 +262,6 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -274,7 +272,6 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class ManagementServerImpl implements ManagementServer {	
@@ -2360,7 +2357,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
 
         // Only return volumes that are not destroyed
-        sb.and("destroyed", sb.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
 
         if (((accountId == null) && (domainId != null) && isRecursive)) {
             // if accountId isn't specified, we can do a domain match for the admin case if isRecursive is true
@@ -2421,7 +2418,7 @@ public class ManagementServerImpl implements ManagementServer {
 		*/
         
         // Only return volumes that are not destroyed
-        sc.setParameters("destroyed", false);
+        sc.setParameters("state", Volume.State.Destroy);
 
         List<VolumeVO> allVolumes = _volumeDao.search(sc, searchFilter);
         List<VolumeVO> returnableVolumes = new ArrayList<VolumeVO>(); //these are ones without domr and console proxy
@@ -2460,7 +2457,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public VolumeVO findVolumeByInstanceAndDeviceId(long instanceId, long deviceId) {
          VolumeVO volume = _volumeDao.findByInstanceAndDeviceId(instanceId, deviceId).get(0);
-         if (volume != null && !volume.getDestroyed() && volume.getRemoved() == null) {
+         if (volume != null && volume.getState() != Volume.State.Destroy && volume.getRemoved() == null) {
              return volume;
          } else {
              return null;
@@ -4686,8 +4683,9 @@ public class ManagementServerImpl implements ManagementServer {
     public SSHKeyPair createSSHKeyPair(CreateSSHKeyPairCmd cmd) {
             Account account = UserContext.current().getCaller();
             SSHKeyPairVO s = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getName());
-            if (s != null)
-                     throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
+            if (s != null) {
+                throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
+            }
 
             SSHKeysHelper keys = new SSHKeysHelper();
 
@@ -4703,8 +4701,9 @@ public class ManagementServerImpl implements ManagementServer {
     public boolean deleteSSHKeyPair(DeleteSSHKeyPairCmd cmd) {
             Account account = UserContext.current().getCaller();
             SSHKeyPairVO s = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getName());
-            if (s == null)
-                     throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' does not exist.");
+            if (s == null) {
+                throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' does not exist.");
+            }
 
             return _sshKeyPairDao.deleteByName(account.getAccountId(), account.getDomainId(), cmd.getName());
     }
@@ -4713,11 +4712,13 @@ public class ManagementServerImpl implements ManagementServer {
     public List<? extends SSHKeyPair> listSSHKeyPairs(ListSSHKeyPairsCmd cmd) {
             Account account = UserContext.current().getCaller();
 
-            if (cmd.getName() != null && cmd.getName().length() > 0)
-                    return _sshKeyPairDao.listKeyPairsByName(account.getAccountId(), account.getDomainId(), cmd.getName());
+            if (cmd.getName() != null && cmd.getName().length() > 0) {
+                return _sshKeyPairDao.listKeyPairsByName(account.getAccountId(), account.getDomainId(), cmd.getName());
+            }
 
-            if (cmd.getFingerprint() != null && cmd.getFingerprint().length() > 0)
-                    return _sshKeyPairDao.listKeyPairsByFingerprint(account.getAccountId(), account.getDomainId(), cmd.getFingerprint());
+            if (cmd.getFingerprint() != null && cmd.getFingerprint().length() > 0) {
+                return _sshKeyPairDao.listKeyPairsByFingerprint(account.getAccountId(), account.getDomainId(), cmd.getFingerprint());
+            }
 
             return _sshKeyPairDao.listKeyPairs(account.getAccountId(), account.getDomainId());
     }
@@ -4726,15 +4727,17 @@ public class ManagementServerImpl implements ManagementServer {
     public SSHKeyPair registerSSHKeyPair(RegisterSSHKeyPairCmd cmd) {
             Account account = UserContext.current().getCaller();
             SSHKeyPairVO s = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getName());
-            if (s != null)
-                     throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
+            if (s != null) {
+                throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
+            }
 
             String name = cmd.getName();
             String publicKey = SSHKeysHelper.getPublicKeyFromKeyMaterial(cmd.getPublicKey());
             String fingerprint = SSHKeysHelper.getPublicKeyFingerprint(publicKey);
 
-            if (publicKey == null)
-                     throw new InvalidParameterValueException("Public key is invalid");
+            if (publicKey == null) {
+                throw new InvalidParameterValueException("Public key is invalid");
+            }
 
             return createAndSaveSSHKeyPair(name, fingerprint, publicKey, null);
     }
@@ -4759,13 +4762,15 @@ public class ManagementServerImpl implements ManagementServer {
     public String getVMPassword(GetVMPasswordCmd cmd) {   	
         Account account = UserContext.current().getCaller();
         UserVmVO vm = _userVmDao.findById(cmd.getId());
-        if (vm == null || vm.getAccountId() != account.getAccountId()) 
-        	throw new InvalidParameterValueException("No VM with id '" + cmd.getId() + "' found.");
+        if (vm == null || vm.getAccountId() != account.getAccountId()) {
+            throw new InvalidParameterValueException("No VM with id '" + cmd.getId() + "' found.");
+        }
             	
         _userVmDao.loadDetails(vm);
         String password = vm.getDetail("Encrypted.Password");         
-        if (password == null || password.equals(""))
-        	throw new InvalidParameterValueException("No password for VM with id '" + cmd.getId() + "' found.");
+        if (password == null || password.equals("")) {
+            throw new InvalidParameterValueException("No password for VM with id '" + cmd.getId() + "' found.");
+        }
 
         return password;
     }

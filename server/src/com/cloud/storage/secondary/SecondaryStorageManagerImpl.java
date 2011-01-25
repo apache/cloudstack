@@ -100,6 +100,7 @@ import com.cloud.utils.events.SubscriptionMgr;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.net.NfsUtils;
+import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
@@ -283,7 +284,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                     allowedCidrs.add(cidr);
                 }
             }
-            String privateCidr = NetUtils.ipAndNetMaskToCidr(secStorageVm.getPrivateIpAddress(), secStorageVm.getPrivateNetmask());
+            Nic privateNic = _networkMgr.getNicForTraffic(secStorageVm.getId(), TrafficType.Management);
+            String privateCidr = NetUtils.ipAndNetMaskToCidr(privateNic.getIp4Address(), privateNic.getNetmask());
             String publicCidr = NetUtils.ipAndNetMaskToCidr(secStorageVm.getPublicIpAddress(), secStorageVm.getPublicNetmask());
             if (NetUtils.isNetworkAWithinNetworkB(privateCidr, publicCidr) || NetUtils.isNetworkAWithinNetworkB(publicCidr, privateCidr)) {
                 allowedCidrs.add("0.0.0.0/0");
@@ -989,7 +991,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                                                                           * secondary
                                                                           * storage
                                                                           */
-            secStorageVm.setPrivateNetmask(cmd.getStorageNetmask());
             secStorageVm.setPublicIpAddress(cmd.getPublicIpAddress());
             secStorageVm.setPublicNetmask(cmd.getPublicNetmask());
             _secStorageVmDao.persist(secStorageVm);
@@ -1142,7 +1143,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 secVm.setGuestMacAddress(nic.getMacAddress());
             } else if (network.getTrafficType() == TrafficType.Management) {
                 secVm.setPrivateIpAddress(nic.getIp4Address());
-                secVm.setPrivateNetmask(nic.getNetmask());
                 secVm.setPrivateMacAddress(nic.getMacAddress());
             }
         }

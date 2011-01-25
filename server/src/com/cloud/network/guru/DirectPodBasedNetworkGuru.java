@@ -26,9 +26,9 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
@@ -45,8 +45,8 @@ import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.utils.component.Inject;
+import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -63,6 +63,7 @@ private static final Logger s_logger = Logger.getLogger(DirectPodBasedNetworkGur
     @Inject NetworkOfferingDao _networkOfferingDao;
     
 
+    @Override
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
         //this guru handles system Direct pod based network
         if (dc.getNetworkType() == NetworkType.Basic && offering.getTrafficType() == TrafficType.Guest && offering.isSystemOnly()) {

@@ -53,9 +53,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected final SearchBuilder<VolumeVO> DetachedAccountIdSearch;
     protected final SearchBuilder<VolumeVO> TemplateZoneSearch;
     protected final GenericSearchBuilder<VolumeVO, SumCount> TotalSizeByPoolSearch;
-    protected final SearchBuilder<VolumeVO> DetachedDestroyedSearch;
     protected final GenericSearchBuilder<VolumeVO, Long> ActiveTemplateSearch;
-    protected final SearchBuilder<VolumeVO> RemovedButNotDestroyedSearch;
     protected final SearchBuilder<VolumeVO> InstanceStatesSearch;
     
     protected final SearchBuilder<VolumeVO> AllFieldsSearch;
@@ -66,14 +64,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     protected static final String SELECT_VM_ID_SQL = "SELECT DISTINCT instance_id from volumes v where v.host_id = ?";
     protected static final String SELECT_HYPERTYPE_FROM_VOLUME = "SELECT c.hypervisor_type from volumes v, storage_pool s, cluster c where v.pool_id = s.id and s.cluster_id = c.id and v.id = ?";
 
-    @Override
-    public List<VolumeVO> listRemovedButNotDestroyed() {
-        SearchCriteria<VolumeVO> sc = RemovedButNotDestroyedSearch.create();
-        sc.setParameters("destroyed", false);
-        
-        return searchIncludingRemoved(sc, null, null, false);
-    }
-    
     @Override @DB
     public List<Long> findVmsStoredOnHost(long hostId) {
         Transaction txn = Transaction.currentTxn();
@@ -100,7 +90,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public List<VolumeVO> findDetachedByAccount(long accountId) {
     	SearchCriteria<VolumeVO> sc = DetachedAccountIdSearch.create();
     	sc.setParameters("accountId", accountId);
-    	sc.setParameters("destroyed", false);
+    	sc.setParameters("destroyed", Volume.State.Destroy);
     	return listBy(sc);
     }
     
@@ -167,13 +157,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 		sc.setParameters("instanceId", vmId);
 		sc.setParameters("destroyed", true);
 		return listIncludingRemovedBy(sc);
-	}
-	
-	@Override
-	public List<VolumeVO> findByDetachedDestroyed() {
-		SearchCriteria<VolumeVO> sc = DetachedDestroyedSearch.create();
-		sc.setParameters("destroyed", true);
-		return listBy(sc);
 	}
 	
 	@Override
@@ -283,7 +266,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	protected VolumeDaoImpl() {
 	    AllFieldsSearch = createSearchBuilder();
 	    AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
-        AllFieldsSearch.and("destroyed", AllFieldsSearch.entity().getDestroyed(), Op.EQ);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), Op.EQ);
         AllFieldsSearch.and("pod", AllFieldsSearch.entity().getPodId(), Op.EQ);
         AllFieldsSearch.and("status", AllFieldsSearch.entity().getStatus(), Op.EQ);
@@ -296,7 +278,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         
         DetachedAccountIdSearch = createSearchBuilder();
         DetachedAccountIdSearch.and("accountId", DetachedAccountIdSearch.entity().getAccountId(), Op.EQ);
-        DetachedAccountIdSearch.and("destroyed", DetachedAccountIdSearch.entity().getDestroyed(), Op.EQ);
+        DetachedAccountIdSearch.and("destroyed", DetachedAccountIdSearch.entity().getState(), Op.NEQ);
         DetachedAccountIdSearch.and("instanceId", DetachedAccountIdSearch.entity().getInstanceId(), Op.NULL);
         DetachedAccountIdSearch.done();
         
@@ -312,22 +294,12 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         TotalSizeByPoolSearch.and("removed", TotalSizeByPoolSearch.entity().getRemoved(), Op.NULL);
         TotalSizeByPoolSearch.done();
       
-        DetachedDestroyedSearch = createSearchBuilder();
-        DetachedDestroyedSearch.and("instanceId", DetachedDestroyedSearch.entity().getInstanceId(), Op.NULL);
-        DetachedDestroyedSearch.and("destroyed", DetachedDestroyedSearch.entity().getDestroyed(), Op.EQ);
-        DetachedDestroyedSearch.done();
-               
         ActiveTemplateSearch = createSearchBuilder(Long.class);
         ActiveTemplateSearch.and("pool", ActiveTemplateSearch.entity().getPoolId(), Op.EQ);
         ActiveTemplateSearch.and("template", ActiveTemplateSearch.entity().getTemplateId(), Op.EQ);
         ActiveTemplateSearch.and("removed", ActiveTemplateSearch.entity().getRemoved(), Op.NULL);
         ActiveTemplateSearch.select(null, Func.COUNT, null);
         ActiveTemplateSearch.done();
-        
-        RemovedButNotDestroyedSearch = createSearchBuilder();
-        RemovedButNotDestroyedSearch.and("destroyed", RemovedButNotDestroyedSearch.entity().getDestroyed(), Op.EQ);
-        RemovedButNotDestroyedSearch.and("removed", RemovedButNotDestroyedSearch.entity().getRemoved(), Op.NNULL);
-        RemovedButNotDestroyedSearch.done();
         
         InstanceStatesSearch = createSearchBuilder();
         InstanceStatesSearch.and("instance", InstanceStatesSearch.entity().getInstanceId(), Op.EQ);

@@ -110,7 +110,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
 
 	public void setGuestNetmask(String guestNetmask) {
 		this.guestNetmask = guestNetmask;
-		setPrivateNetmask(guestNetmask);
 	}
 	
     @Override
