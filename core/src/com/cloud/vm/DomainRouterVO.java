@@ -28,7 +28,6 @@ import javax.persistence.Table;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.utils.net.NetUtils;
 
 /**
  * VirtualMachineRouterVO implements all the fields stored for a domain router.
@@ -62,9 +61,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Column(name="domain", nullable=false)
     private String domain;
 
-    @Column(name="guest_dc_mac_address")
-    private String guestZoneMacAddress;
-    
     @Column(name="network_id")
     long networkId;
     
@@ -179,24 +175,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
 		this.role = role;
 	}
 
-	@Override
-	public String[] getDhcpRange() {
-	   if (guestIpAddress != null && guestNetmask != null) {
-		   long cidrSize = NetUtils.getCidrSize(guestNetmask);
-		   return NetUtils.getIpRangeFromCidr(guestIpAddress, cidrSize);
-	   }
-	   return new String[2];
-	}
-
-    public void setGuestZoneMacAddress(String guestZoneMacAddress) {
-        this.guestZoneMacAddress = guestZoneMacAddress;
-    }
-
-    @Override
-    public String getGuestZoneMacAddress() {
-        return guestZoneMacAddress;
-    }
-    
     public void setServiceOfferingId(long serviceOfferingId) {
         this.serviceOfferingId = serviceOfferingId;
     }

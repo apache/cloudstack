@@ -39,8 +39,6 @@ public interface VirtualRouter extends VirtualMachine {
     
     public String getPublicNetmask();
     
-    public String getGuestZoneMacAddress();
-    
     /**
      * @return the ram size for this machine.
      */
@@ -56,11 +54,6 @@ public interface VirtualRouter extends VirtualMachine {
     String getDomain();
     
     Role getRole();
-    
-    /**
-     * @return the range of dhcp addresses served (start and end)
-     */
-    String[] getDhcpRange();
 
 	void setRamSize(int ramSize);
 }
