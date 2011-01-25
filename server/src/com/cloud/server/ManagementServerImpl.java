@@ -2981,6 +2981,7 @@ public class ManagementServerImpl implements ManagementServer {
             } else {
                 throw new InvalidParameterValueException("Failed to delete domain nable " + domainId + ", domain not found");
             }
+            cleanupDomainOfferings(domainId);
             return true;
         } catch (InvalidParameterValueException ex) {
             throw ex;
@@ -2990,6 +2991,19 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
+    private void cleanupDomainOfferings(Long domainId) {
+        //delete the service and disk offerings associated with this domain
+        List<DiskOfferingVO> diskOfferingsForThisDomain = _diskOfferingDao.listByDomainId(domainId);
+        for(DiskOfferingVO diskOffering : diskOfferingsForThisDomain) {
+            _diskOfferingDao.remove(diskOffering.getId());
+        }
+        
+        List<ServiceOfferingVO> serviceOfferingsForThisDomain = _offeringsDao.findServiceOfferingByDomainId(domainId);
+        for(ServiceOfferingVO serviceOffering : serviceOfferingsForThisDomain) {
+            _offeringsDao.remove(serviceOffering.getId());
+        }
+    }
+    
     private boolean cleanupDomain(Long domainId, Long ownerId) throws ConcurrentOperationException, ResourceUnavailableException{
         boolean success = true;
         {
@@ -3012,7 +3026,7 @@ public class ManagementServerImpl implements ManagementServer {
                 success = (success && _accountMgr.cleanupAccount(account, UserContext.current().getCallerUserId(), UserContext.current().getCaller()));
             }
         }
-
+        
         // delete the domain itself
         boolean deleteDomainSuccess = _domainDao.remove(domainId);
 

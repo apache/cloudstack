@@ -329,6 +329,10 @@ public class ApiDBUtils {
     public static DomainVO findDomainById(Long domainId) {
         return _domainDao.findById(domainId);
     }
+    
+    public static DomainVO findDomainByIdIncludingRemoved(Long domainId) {
+        return _domainDao.findByIdIncludingRemoved(domainId);
+    }
 
     public static DomainRouterVO findDomainRouterById(Long routerId) {
         return _domainRouterDao.findById(routerId);
