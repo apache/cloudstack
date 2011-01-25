@@ -60,7 +60,6 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
-import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
@@ -87,30 +86,30 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         List<FirewallRuleVO> rules = _firewallDao.listByIpAndNotRevoked(newRule.getSourceIpAddress());
         assert (rules.size() >= 1) : "For network rules, we now always first persist the rule and then check for network conflicts so we should at least have one rule at this point.";
         
-        if (ipAddress.isOneToOneNat() && rules.size() > 1) {
-            throw new NetworkRuleConflictException("There are already rules in existence for the " + newRule.getSourceIpAddress());
-        }
-        
         for (FirewallRuleVO rule : rules) {
             if (rule.getId() == newRule.getId()) {
                 continue;  // Skips my own rule.
             }
+            
+            if (rule.isOneToOneNat() && !newRule.isOneToOneNat()) {
+                throw new NetworkRuleConflictException("There is already port forwarding rule specified for the " + newRule.getSourceIpAddress());
+            } else if (!rule.isOneToOneNat() && newRule.isOneToOneNat()) {
+                throw new NetworkRuleConflictException("There is already 1 to 1 Nat rule specified for the " + newRule.getSourceIpAddress());
+            }
+            
             if (rule.getNetworkId() != newRule.getNetworkId() && rule.getState() != State.Revoke) {
                 throw new NetworkRuleConflictException("New rule is for a different network than what's specified in rule " + rule.getXid());
             }
-            if (rule.isOneToOneNat()) {
-                throw new NetworkRuleConflictException("There is already a one to one NAT specified for " + newRule.getSourceIpAddress());
-            }
+           
             if ((rule.getSourcePortStart() <= newRule.getSourcePortStart() && rule.getSourcePortEnd() >= newRule.getSourcePortStart()) || 
                 (rule.getSourcePortStart() <= newRule.getSourcePortEnd() && rule.getSourcePortEnd() >= newRule.getSourcePortEnd()) ||
                 (newRule.getSourcePortStart() <= rule.getSourcePortStart() && newRule.getSourcePortEnd() >= rule.getSourcePortStart()) ||
                 (newRule.getSourcePortStart() <= rule.getSourcePortEnd() && newRule.getSourcePortEnd() >= rule.getSourcePortEnd())) {
                 
                 //we allow port forwarding rules with the same parameters but different protocols
-                if (!(rule.getPurpose() == Purpose.PortForwarding && newRule.getPurpose() == Purpose.PortForwarding && newRule.getProtocol() != rule.getProtocol())) {
+                if (!(rule.getPurpose() == Purpose.PortForwarding && newRule.getPurpose() == Purpose.PortForwarding && !newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()))) {
                     throw new NetworkRuleConflictException("The range specified, " + newRule.getSourcePortStart() + "-" + newRule.getSourcePortEnd() + ", conflicts with rule " + rule.getId() + " which has " + rule.getSourcePortStart() + "-" + rule.getSourcePortEnd());
                 }
-                
             }
         }
         
@@ -195,7 +194,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         long domainId = network.getDomainId();
         
         checkIpAndUserVm(ipAddress, vm, caller);
-        if (isNat && (ipAddress.isSourceNat() || ipAddress.isOneToOneNat())) {
+        if (isNat && (ipAddress.isSourceNat())) {
             throw new NetworkRuleConflictException("Can't do one to one NAT on ip address: " + ipAddress.getAddress());
         }
         
@@ -215,7 +214,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                     domainId, vmId, isNat);
         newRule = _forwardingDao.persist(newRule);
         
-        if (isNat) {
+        if (isNat && !ipAddress.isOneToOneNat()) {
             ipAddress.setOneToOneNat(true);
             _ipAddressDao.update(ipAddress.getAddress(), ipAddress);
         }
