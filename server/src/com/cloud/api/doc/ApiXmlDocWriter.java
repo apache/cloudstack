@@ -41,6 +41,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.alert.AlertManager;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
@@ -199,6 +200,9 @@ public class ApiXmlDocWriter {
 			outDomainAdminSorted.close();
 			regularUser.close();
 			regularUserSorted.close();
+			
+			//write alerttypes to xml
+			writeAlertTypes(xmlDocDir);
 			
 			//gzip directory with xml doc
 			//zipDir(dirName + "xmldoc.zip", xmlDocDir);
@@ -399,6 +403,25 @@ public class ApiXmlDocWriter {
         }
         dir.delete();
 	 }
+	
+	
+	private static void writeAlertTypes(String dirName) {
+	    XStream xs = new XStream();
+	    xs.alias("alert", Alert.class);
+	    try {
+	        ObjectOutputStream out = xs.createObjectOutputStream(new FileWriter(dirName + "/alert_types.xml"), "alerts");
+	        for(Field f : AlertManager.class.getFields()){
+	            String name = f.getName().substring(11);
+	            Alert alert = new Alert(name, f.getInt(null));
+	            out.writeObject(alert);
+	        }
+	        out.close();
+	    } catch (IOException e) {
+	        s_logger.error("Failed to create output stream to write an alert types ", e);
+	    } catch (IllegalAccessException e) {
+	        s_logger.error("Failed to read alert fields ", e);
+	    } 
+	}
 	
 	
 	private static class LinkedProperties extends Properties {
