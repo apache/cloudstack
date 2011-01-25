@@ -1,21 +1,16 @@
-<%@ taglib uri="http://java.sun.com/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
 <fmt:setBundle basename="resources/messages"/>
-
-<%@ page import="java.util.*" %>
-
-<%@ page import="com.cloud.utils.*" %>
-
-<%
-    Locale browserLocale = request.getLocale();
-    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
-%>
 
 <!-- VM detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
         <img src="images/title_instanceicons.gif" /></div>
     <h1 id="vm_name">
-        Instance
+        <fmt:message key="label.instance"/>
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -27,28 +22,28 @@
         <div class="content_tabs on" id="tab_details">
             <fmt:message key="label.details" /></div>
 		<div class="content_tabs off" id="tab_nic">
-            <%=t.t("NICs")%></div>
+            <fmt:message key="label.nics"/></div>
         <div class="content_tabs off" id="tab_volume">
-            <%=t.t("Volumes")%></div>
+            <fmt:message key="label.volumes"/></div>
         <div class="content_tabs off" id="tab_statistics">
-            <%=t.t("Statistics")%></div>		
+            <fmt:message key="label.statistics"/></div>		
     </div>
     <!--Details tab (start)-->
     <div  id="tab_content_details">
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
               <div class="rightpanel_mainloaderbox">
                    <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
+                   <p><fmt:message key="label.loading"/> &hellip;</p>    
               </div>               
         </div>  
         <div id="tab_container"> 
 	        <div class="grid_container" style="display: block;">            
 	            <div class="grid_header">
 	            	<div id="title" class="grid_header_title">Title</div>
-	                    <div class="grid_actionbox" id="action_link"> <p> Actions</p>
+	                    <div class="grid_actionbox" id="action_link"> <p> <fmt:message key="label.actions"/></p>
 	                        <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                            <ul class="actionsdropdown_boxlist" id="action_list">
-	                                <li><%=t.t("no.available.actions")%></li>
+	                                <li><fmt:message key="label.no.actions"/></li>
 	                            </ul>
 	                        </div>
 	                    </div>
@@ -57,7 +52,7 @@
 	                    <div class="gridheader_loader" id="icon">
 	                    </div>
 	                    <p id="description">
-	                        Waiting &hellip;</p>
+	                        <fmt:message key="label.waiting"/> &hellip;</p>
 	                </div>
 	            </div>            
 	            <div class="grid_rows odd">
@@ -84,7 +79,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("ID")%>:</div>
+	                        <fmt:message key="label.id"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="id">
@@ -95,7 +90,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Zone")%>:</div>
+	                        <fmt:message key="label.zone"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="zoneName">
@@ -105,7 +100,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Name")%>:</div>
+	                        <fmt:message key="label.name"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="vmname">
@@ -114,22 +109,10 @@
 	                    <div id="vmname_edit_errormsg" style="display:none"></div>
 	                </div>
 	            </div>
-				<!--
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("IP")%>:</div>
-	                </div>
-	                <div class="grid_row_cell" style="width: 79%;">
-	                    <div class="row_celltitles" id="ipaddress">
-	                    </div>
-	                </div>
-	            </div>
-				-->
-	            <div class="grid_rows odd">
-	                <div class="grid_row_cell" style="width: 20%;">
-	                    <div class="row_celltitles">
-	                        <%=t.t("Template")%>:</div>
+	                        <fmt:message key="label.template"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="templateName">
@@ -139,7 +122,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("OS.Type")%>:</div>
+	                        <fmt:message key="label.os.type"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="ostypename">
@@ -151,7 +134,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Service")%>:</div>
+	                        <fmt:message key="label.service.offering"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="serviceOfferingName">
@@ -161,21 +144,21 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("HA.Enabled")%>:</div>
+	                        <fmt:message key="label.ha.enabled"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="haenable">                   
 	                    </div>
 	                    <select class="select" id="haenable_edit" style="width: 202px; display: none;">
-	                        <option value="false">No</option>
-							<option value="true">Yes</option>
+	                        <option value="false"><fmt:message key="label.no"/></option>
+							<option value="true"><fmt:message key="label.yes"/></option>
 	                    </select>
 	                </div>
 	            </div>
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Created")%>:</div>
+	                        <fmt:message key="label.created"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="created">
@@ -185,7 +168,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Account")%>:</div>
+	                        <fmt:message key="label.account"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="account">
@@ -195,7 +178,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Domain")%>:</div>
+	                        <fmt:message key="label.domain"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="domain">
@@ -205,7 +188,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Host")%>:</div>
+	                        <fmt:message key="label.host"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="hostName">
@@ -215,7 +198,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("ISO.attached")%>:</div>
+	                        <fmt:message key="label.attached.iso"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="iso">                    
@@ -225,7 +208,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Group")%>:</div>
+	                        <fmt:message key="label.group"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="group">
@@ -237,8 +220,8 @@
 	        </div>
 	        
             <div class="grid_botactionpanel">
-	        	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
-	            <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
+	        	<div class="gridbot_buttons" id="save_button" style="display:none;"><fmt:message key="label.save"/></div>
+	            <div class="gridbot_buttons" id="cancel_button" style="display:none;"><fmt:message key="label.cancel"/></div>
 	        </div>
 	        
 	    </div>
@@ -249,7 +232,7 @@
         <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
               <div class="rightpanel_mainloaderbox">
                    <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
+                   <p><fmt:message key="label.loading"/> &hellip;</p>    
               </div>               
         </div> 
         <div id="tab_container">        
@@ -261,7 +244,7 @@
         <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
               <div class="rightpanel_mainloaderbox">
                    <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
+                   <p><fmt:message key="label.loading"/> &hellip;</p>    
               </div>               
         </div> 
         <div id="tab_container">        
@@ -273,7 +256,7 @@
         <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
               <div class="rightpanel_mainloaderbox">
                    <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
+                   <p><fmt:message key="label.loading"/> &hellip;</p>    
               </div>               
         </div>
         <div id="tab_container"> 
@@ -287,7 +270,7 @@
                     <div class="dbrow_cell" style="width: 40%;">
                         <div class="dbgraph_titlebox">
                             <h2>
-                                CPU</h2>
+                                <fmt:message key="label.cpu"/></h2>
                             <div class="dbgraph_title_usedbox">
                                 <p>
                                     Total: <span id="capacityused">
@@ -314,7 +297,7 @@
                 <div class="grid_rows even">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
-                            Network Read:</div>
+                            <fmt:message key="label.network.read"/>:</div>
                     </div>
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="networkkbsread">
@@ -324,7 +307,7 @@
                 <div class="grid_rows odd">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
-                            Network Write:</div>
+                            <fmt:message key="label.network.write"/>:</div>
                     </div>
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="networkkbswrite">
@@ -348,7 +331,7 @@
 		</div>
 		<div class="vmpopup_offdescriptionbox_bot">
 			<p id="network_direct_desc">
-				A virtual private network that is fronted by a virtual router.  An optional guest CIDR can be specified.
+				<fmt:message key="message.virtual.network.desc"/>
 			</p>
 		</div>
 	</div>
@@ -364,7 +347,7 @@
 		</div>
 		<div class="vmpopup_offdescriptionbox_bot">
 			<p id="network_direct_desc">
-				A virtual private network that is fronted by a virtual router.  An optional guest CIDR can be specified.
+				<fmt:message key="message.virtual.network.desc"/>
 			</p>
 		</div>
 	</div>
@@ -385,15 +368,15 @@
     <div id="step1" style="display: block;">
         <div class="vmpopup_container_top">
             <div class="vmpopup_steps" style="color: #FFF; background: url(images/step1_bg.png) no-repeat top left">
-                Step 1</div>
+                <fmt:message key="label.step.1"/></div>
             <div class="vmpopup_steps" style="background: url(images/step2_bg.gif) no-repeat top left">
-                Step 2</div>
+                <fmt:message key="label.step.2"/></div>
             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
-                Step 3</div>
+                <fmt:message key="label.step.3"/></div>
             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
-                Step 4</div>
+                <fmt:message key="label.step.4"/></div>
             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
-                Step 5</div>
+                <fmt:message key="label.step.5"/></div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
             <div class="vmpopup_container_closebutton" id="close_button">
@@ -403,21 +386,17 @@
             <div class="vmpopup_maincontentarea">
                 <div class="vmpopup_titlebox">
                     <h2>
-                        Step 1: <strong>Select a Template</strong></h2>
+                        <fmt:message key="label.step.1.title"/></h2>
                     <p>
-                        Please select a template for your new virtual instance. You can also choose to select
-                        a blank template from which an ISO image can be installed onto.
+						<fmt:message key="message.step.1.desc"/>
                     </p>
                 </div>
                 <div class="vmpopup_contentpanel">
                     <div class="rev_tempsearchpanel">
                         <label for="wizard_zone">
-                            Availability Zone:</label>
+                            <fmt:message key="label.availability.zone"/>:</label>
                         <select class="select" id="wizard_zone" name="zone">
                         </select>
-                        
-                                        
-                        
                         <div class="rev_tempsearchbox">
                             <form method="post" action="#">
                             <ol>
@@ -426,14 +405,15 @@
                             </ol>
                             </form>
                             <div id="search_button" class="rev_searchbutton">
-                                Search</div>
+                                <fmt:message key="label.search"/></div>
                         </div>
                     </div>
                     <div class="rev_wizformarea">
                         <div class="revwiz_message_container" style="display: none;" id="wiz_message">
                             <div class="revwiz_message_top">
                                 <p id="wiz_message_text">
-                                    Please select a template or ISO to continue</p>
+									<fmt:message key="message.step.1.continue"/>
+                                </p>
                             </div>
                             <div class="revwiz_message_bottom">
                                 <div class="revwizcontinue_button" id="wiz_message_continue">
@@ -445,17 +425,17 @@
                                 <div class="loading_gridanimation">
                                 </div>
                                 <p>
-                                    Loading...</p>
+                                    <fmt:message key="label.loading"/>...</p>
                             </div>
                             <div class="rev_wizmid_tempbox_left" id="wiz_template_filter">
                                 <div class="rev_wizmid_selectedtempbut" id="wiz_featured">
-                                    Featured Template</div>
+                                    <fmt:message key="label.menu.featured.templates"/></div>
                                 <div class="rev_wizmid_nonselectedtempbut" id="wiz_my">
-                                    My Template</div>
+                                    <fmt:message key="label.menu.my.templates"/></div>
                                 <div class="rev_wizmid_nonselectedtempbut" id="wiz_community">
-                                    Community Template</div>
+                                    <fmt:message key="label.menu.community.templates"/></div>
                                 <div class="rev_wizmid_nonselectedtempbut" id="wiz_blank">
-                                    Blank Template</div>
+                                    <fmt:message key="label.iso.boot"/></div>
                             </div>
                             <div class="rev_wizmid_tempbox_right">
                                 <div class="rev_wiztemplistpanel" id="template_container">  
@@ -463,7 +443,7 @@
                                 </div>
                                 <div class="rev_wiztemplistactions">
                                     <div class="rev_wiztemplist_actionsbox">
-                                        <a href="#" id="prev_page">Prev</a> <a href="#" id="next_page">Next</a>
+                                        <a href="#" id="prev_page"><fmt:message key="label.prev"/></a> <a href="#" id="next_page"><fmt:message key="label.next"/></a>
                                     </div>
                                 </div>
                             </div>
@@ -474,7 +454,7 @@
                     <div class="vmpop_prevbutton" id="prev_step" style="display: none;">
                     </div>
                     <div class="vmpop_nextbutton" id="next_step">
-                        Go to Step 2</div>
+                        <fmt:message key="label.go.step.2"/></div>
                 </div>
             </div>
         </div>
@@ -484,15 +464,15 @@
     <div id="step2" style="display: none;">
         <div class="vmpopup_container_top">
             <div class="vmpopup_steps" style="background: url(images/step1_bg_unselected.png) no-repeat top left">
-                Step 1</div>
+                <fmt:message key="label.step.1"/></div>
             <div class="vmpopup_steps" style="color: #FFF; background: url(images/step2_selected.gif) no-repeat top left">
-                Step 2</div>
+                <fmt:message key="label.step.2"/></div>
             <div class="vmpopup_steps" style="background: url(images/step2_bg.gif) no-repeat top left">
-                Step 3</div>
+                <fmt:message key="label.step.3"/></div>
             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
-                Step 4</div>
+                <fmt:message key="label.step.4"/></div>
             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
-                Step 5</div>
+                <fmt:message key="label.step.5"/></div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
             <div class="vmpopup_container_closebutton" id="close_button">
@@ -501,12 +481,9 @@
         <div class="vmpopup_container_mid">
             <div class="vmpopup_maincontentarea">
                 <div class="vmpopup_titlebox">
-                    <h2>
-                        Step 2: <strong>Service Offering</strong></h2>
+                    <h2><fmt:message key="label.step.2.title"/>
+                        </h2>
                     <p>
-                        <!--  
-                        Please select the CPU, Memory and Storage requirement you need for your new Virtual
-                        Instance-->
                     </p>
                 </div>
                 <div class="vmpopup_contentpanel">
@@ -517,7 +494,7 @@
                     <div class="revwiz_message_container" style="display: none;" id="wiz_message">
                         <div class="revwiz_message_top">
                             <p id="wiz_message_text">
-                                Please select a service offering to continue</p>
+                                <fmt:message key="message.step.2.continue"/></p>
                         </div>
                         <div class="revwiz_message_bottom">
                             <div class="revwizcontinue_button" id="wiz_message_continue">
@@ -531,9 +508,9 @@
                 </div>
                 <div class="vmpopup_navigationpanel">
                     <div class="vmpop_prevbutton" id="prev_step">
-                        Back</div>
+                        <fmt:message key="label.back"/></div>
                     <div class="vmpop_nextbutton" id="next_step">
-                        Go to Step 3</div>
+                        <fmt:message key="label.go.to.step.3"/></div>
                 </div>
             </div>
         </div>
@@ -543,15 +520,15 @@
     <div id="step3" style="display: none;">
         <div class="vmpopup_container_top">
             <div class="vmpopup_steps" style="background: url(images/step1_bg_unselected.png) no-repeat top left">
-                Step 1</div>
+                <fmt:message key="label.step.1"/></div>
             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
-                Step 2</div>
+                <fmt:message key="label.step.2"/></div>
             <div class="vmpopup_steps" style="color: #FFF; background: url(images/step2_selected.gif) no-repeat top left">
-                Step 3</div>
+                <fmt:message key="label.step.3"/></div>
             <div class="vmpopup_steps" style="background: url(images/step2_bg.gif) no-repeat top left">
-                Step 4</div>
+                <fmt:message key="label.step.4"/></div>
             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
-                Step 5</div>
+                <fmt:message key="label.step.5"/></div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
             <div class="vmpopup_container_closebutton" id="close_button">
@@ -561,7 +538,8 @@
             <div class="vmpopup_maincontentarea">
                 <div class="vmpopup_titlebox">
                     <h2>
-                        Step 3: <strong id="step3_label">Select a Disk Offering</strong></h2>
+						<fmt:message key="label.step.3.title"/>
+                        </h2>
                     <p>
                     </p>
                 </div>
@@ -572,7 +550,8 @@
                     <div class="revwiz_message_container" style="display: none;" id="wiz_message">
                         <div class="revwiz_message_top">
                             <p id="wiz_message_text">
-                                Please select a disk offering to continue</p>
+								<fmt:message key="label.step.3.title"/>
+                                </p>
                         </div>
                         <div class="revwiz_message_bottom">
                             <div class="revwizcontinue_button" id="wiz_message_continue">
@@ -590,9 +569,9 @@
                 </div>
                 <div class="vmpopup_navigationpanel">
                     <div class="vmpop_prevbutton" id="prev_step">
-                        Back</div>
+                        <fmt:message key="label.back"/></div>
                     <div class="vmpop_nextbutton" id="next_step">
-                        Go to Step 4</div>
+                        <fmt:message key="label.go.step.4"/></div>
                 </div>
             </div>
         </div>
@@ -602,15 +581,15 @@
     <div id="step4" style="display: none;">
         <div class="vmpopup_container_top">
             <div class="vmpopup_steps" style="background: url(images/step1_bg_unselected.png) no-repeat top left">
-                Step 1</div>
+                <fmt:message key="label.step.1"/></div>
             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
-                Step 2</div>
+                <fmt:message key="label.step.2"/></div>
             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
-                Step 3</div>
+                <fmt:message key="label.step.3"/></div>
             <div class="vmpopup_steps" style="color: #FFF; background: url(images/step2_selected.gif) no-repeat top left">
-                Step 4</div>
+                <fmt:message key="label.step.4"/></div>
             <div class="vmpopup_steps" style="background: url(images/step2_bg.gif) no-repeat top left">
-                Step 5</div>
+                <fmt:message key="label.step.5"/></div>
             <div class="vmpopup_steps" style="background: url(images/laststep_bg.gif) no-repeat top left">
             </div>
             <div class="vmpopup_container_closebutton" id="close_button">
@@ -620,9 +599,9 @@
             <div class="vmpopup_maincontentarea">
                 <div class="vmpopup_titlebox">
                     <h2>
-                        Step 4: <strong>Network</strong></h2>
+						<fmt:message key="label.step.4.title"/></h2>
                     <p>
-						Please select the primary network that your virtual instance will be connected to.
+						<fmt:message key="message.step.4.desc"/>
                     </p>
                 </div>
                 <div class="vmpopup_contentpanel">
@@ -631,7 +610,7 @@
 					<div class="revwiz_message_container" style="display: none;" id="wiz_message">
                         <div class="revwiz_message_top">
                             <p id="wiz_message_text">
-                                Please select at least one network to continue</p>
+                                <fmt:message key="message.step.4.continue"/></p>
                         </div>
                         <div class="revwiz_message_bottom">
                             <div class="revwizcontinue_button" id="wiz_message_continue">
@@ -642,36 +621,36 @@
                         <div id="for_advanced_zone" style="display: none;">
 	                        <div class="vmpopup_offeringbox" id="network_virtual_container" style="display:none">
 	                            <input type="radio" id="network_virtual" name="primary_network" class="radio" checked="checked" />
-	                            <label class="label" id="network_virtual_name">Virtual Network</label>
+	                            <label class="label" id="network_virtual_name"><fmt:message key="label.virtual.network"/></label>
 	                            <div class="vmpopup_offdescriptionbox">
 	                                <div class="vmpopup_offdescriptionbox_top">
 	                                </div>
 	                                <div class="vmpopup_offdescriptionbox_bot">
 	                                    <p id="network_virtual_desc">
-	                                        A dedicated virtualized network for your account.  The broadcast domain is contained within a VLAN and all public network access is routed out by a virtual router.
+											<fmt:message key="message.virtual.network.desc"/>
 	                                    </p>
 	                                </div>
 	                            </div>
 	                        </div>
 							<div id="network_direct_container"></div>
 							<h3 id="secondary_network_title" style="display:none; margin-top:15px;">
-							Additional Networks:
+							<fmt:message key="label.additional.networks"/>:
 							</h3>
 							<p id="secondary_network_desc" style="display:none">
-								Please select additional network(s) that your virtual instance will be connected to.
+								<fmt:message key="message.additional.networks.desc"/>
 							</p>
 							<div id="network_direct_secondary_container"></div>
 						</div>
 						<div id="for_basic_zone" style="display:none">		
-						    <h3>Security Groups</h3>		
+						    <h3><fmt:message key="label.security.groups"/></h3>		
 						    <span id="not_available_message" style="display:none">security group is currently not available</span>				    
 						    <ol id="security_group_section" style="display:none">						        
 						        <li>
 						            <select id="security_group_dropdown" class="multiple" multiple="multiple" size="15">
 									</select>
 						        </li>
-						        <li>						            
-							        (Use <strong>Ctrl-click</strong> to select all applicable security groups)							        
+						        <li>		
+									<fmt:message key="message.security.group.usage"/>							        
 						        </li>
 						    </ol>						      
 						</div>
@@ -679,9 +658,9 @@
                 </div>
                 <div class="vmpopup_navigationpanel">
                     <div class="vmpop_prevbutton" id="prev_step">
-                        Back</div>
+                        <fmt:message key="label.back"/></div>
                     <div class="vmpop_nextbutton" id="next_step">
-                        Go to Step 5</div>
+                        <fmt:message key="label.go.step.5"/></div>
                 </div>
             </div>
         </div>
@@ -691,15 +670,15 @@
     <div id="step5" style="display: none;">
         <div class="vmpopup_container_top">
             <div class="vmpopup_steps" style="background: url(images/step1_bg_unselected.png) no-repeat top left">
-                Step 1</div>
+                <fmt:message key="label.step.1"/></div>
             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
-                Step 2</div>
+                <fmt:message key="label.step.2"/></div>
             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
-                Step 3</div>
+                <fmt:message key="label.step.3"/></div>
             <div class="vmpopup_steps" style="background: url(images/othersteps_bg.gif) no-repeat top left">
-                Step 4</div>
+                <fmt:message key="label.step.4"/></div>
             <div class="vmpopup_steps" style="color: #FFF; background: url(images/step2_selected.gif) no-repeat top left">
-                Step 5</div>
+                <fmt:message key="label.step.5"/></div>
             <div class="vmpopup_steps" style="background: url(images/laststep_slectedbg.gif) no-repeat top left">
             </div>
             <div class="vmpopup_container_closebutton" id="close_button">
@@ -709,7 +688,7 @@
             <div class="vmpopup_maincontentarea">
                 <div class="vmpopup_titlebox">
                     <h2>
-                        Step 5: <strong>Last Step</strong></h2>
+                        <fmt:message key="label.step.5.title"/></h2>
                     <p>
                     </p>
                 </div>
@@ -722,7 +701,7 @@
                                 <div class="vmpopup_reviewtick">
                                 </div>
                                 <div class="vmopopup_review_label">
-                                    Name (optional):
+									<fmt:message key="label.name.optional"/>:
                                 </div>
                                 <input class="text" type="text" id="wizard_vm_name" />
                                 <div id="wizard_vm_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
@@ -734,7 +713,7 @@
                                 <div class="vmpopup_reviewtick">
                                 </div>
                                 <div class="vmopopup_review_label">
-                                    Group (optional):</div>
+                                    <fmt:message key="label.group.optional"/>:</div>
                                 <input class="text" type="text" id="wizard_vm_group" />
                                 <div id="wizard_vm_group_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                                 </div>
@@ -745,7 +724,7 @@
                                 <div class="vmpopup_reviewtick">
                                 </div>
                                 <div class="vmopopup_review_label">
-                                    Zone:</div>
+                                    <fmt:message key="label.zone"/>:</div>
                                 <span id="wizard_review_zone"></span>
                             </div>
                         </div>                        
@@ -754,7 +733,7 @@
                                 <div class="vmpopup_reviewtick">
                                 </div>
                                 <div class="vmopopup_review_label">
-                                    Hypervisor:</div>
+                                    <fmt:message key="label.hypervisor"/>:</div>
                                 <span id="wizard_review_hypervisor"></span>
                             </div>
                         </div>                        
@@ -763,7 +742,7 @@
                                 <div class="vmpopup_reviewtick">
                                 </div>
                                 <div class="vmopopup_review_label">
-                                    Template:
+                                    <fmt:message key="label.template"/>:
                                 </div>
                                 <span id="wizard_review_template"></span>
                             </div>
@@ -773,7 +752,7 @@
                                 <div class="vmpopup_reviewtick">
                                 </div>
                                 <div class="vmopopup_review_label">
-                                    Service Offering:</div>
+                                    <fmt:message key="label.service.offering"/>:</div>
                                 <span id="wizard_review_service_offering"></span>
                             </div>
                         </div>
@@ -782,7 +761,7 @@
                                 <div class="vmpopup_reviewtick">
                                 </div>
                                 <div class="vmopopup_review_label" id="wizard_review_disk_offering_label">
-                                    Disk Offering:
+                                    <fmt:message key="label.disk.offering"/>:
                                 </div>
                                 <span id="wizard_review_disk_offering"></span>
                             </div>
@@ -792,7 +771,7 @@
                                 <div class="vmpopup_reviewtick">
                                 </div>
                                 <div class="vmopopup_review_label">
-                                    Primary Network:</div>
+                                    <fmt:message key="label.primary.network"/>:</div>
                                 <span id="wizard_review_network"></span>
                             </div>
                         </div>
@@ -801,9 +780,9 @@
                 </div>
                 <div class="vmpopup_navigationpanel">
                     <div class="vmpop_prevbutton" id="prev_step">
-                        Back</div>
+                        <fmt:message key="label.back"/></div>
                     <div class="vmpop_nextbutton" id="next_step">
-                        Submit</div>
+                        <fmt:message key="label.submit"/></div>
                 </div>
             </div>
         </div>
@@ -821,10 +800,10 @@
         <span id="name"></span>
     </div>
     <div class="rev_wiztemp_hypervisortext">
-            Hypervisor: <strong id="hypervisor_text"></strong>
+            <fmt:message key="label.hypervisor"/>: <strong id="hypervisor_text"></strong>
     </div>
     <div class="rev_wiztemp_ownertext">
-        [Submitted by: <span id="submitted_by"></span>]</div>
+		<fmt:message key="label.submitted.by"/></div>
 </div>
 <!-- VM Wizard - VM template (end) -->
 
@@ -847,7 +826,7 @@
         <span id="hypervisor_span" style="display:none"></span>
     </div>
     <div class="rev_wiztemp_ownertext">
-        [Submitted by: <span id="submitted_by"></span>]</div>
+        <fmt:message key="label.submitted.by"/></div>
 </div>
 <!-- VM Wizard - ISO template (end) -->
 
@@ -873,7 +852,7 @@
 	<div class="vmpopup_offeringbox">
 		<input type="radio" name="data_disk_offering_radio" class="radio" value="no" checked />
 		<label class="label">
-			No Thanks</label>
+			<fmt:message key="label.no.thanks"/></label>
 	</div>
 </div>
 <div id="vm_popup_disk_offering_template_custom" style="display: none">
@@ -883,7 +862,7 @@
 		</label>
 		<div class="vmpopup_offdescriptionbox_bot" style="background:none; border:none;">
 			<label class="label1" style="margin-left:33px; display:inline;">
-				Disk Size:</label>
+				<fmt:message key="label.disk.size"/>:</label>
 			<input type="text" id="custom_disk_size" class="text" />
 			<span>GB</span>
 		   
@@ -941,7 +920,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                IP:</div>
+                <fmt:message key="label.ip"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="ip">
@@ -951,7 +930,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Gateway:</div>
+                <fmt:message key="label.gateway"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="gateway">
@@ -961,7 +940,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Netmask:</div>
+                <fmt:message key="label.netmask"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="netmask">
@@ -971,7 +950,7 @@
 	<div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Type:</div>
+                <fmt:message key="label.type"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="type">
@@ -986,7 +965,7 @@
     <div class="grid_header">
         <div class="grid_header_title" id="title">
         </div>
-        <div class="grid_actionbox" id="volume_action_link"><p>Actions</p>
+        <div class="grid_actionbox" id="volume_action_link"><p><fmt:message key="label.actions"/></p>
             <div class="grid_actionsdropdown_box" id="volume_action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
@@ -996,7 +975,7 @@
             <div class="gridheader_loader" id="icon">
             </div>
             <p id="description">
-                Waiting &hellip;
+                <fmt:message key="label.waiting"/> &hellip;
             </p>
         </div>       
     </div>
@@ -1011,7 +990,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                ID:</div>
+                <fmt:message key="label.id"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="id">
@@ -1021,7 +1000,7 @@
      <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Name:</div>
+                <fmt:message key="label.name"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="name">
@@ -1031,7 +1010,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Type:</div>
+                <fmt:message key="label.type"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="type">
@@ -1041,7 +1020,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Size:</div>
+                <fmt:message key="label.size"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="size">
@@ -1051,7 +1030,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Created:</div>
+                <fmt:message key="label.created"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="created">
@@ -1077,7 +1056,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt="Add VM" /></div>
             <div class="actionpanel_button_links">
-                Add VM
+                <fmt:message key="label.vm.add"/>
             </div>
         </div>
     </div>
@@ -1124,22 +1103,22 @@
 <!--  ***** Dialogs (begin) ***** -->
 <!-- Detach ISO Dialog -->
 <div id="dialog_detach_iso_from_vm" title="Confirmation" style="display:none">
-    <p><%=t.t("please.confirm.you.want.to.detach.an.iso.from.the.virtual.machine")%></p>   
+    <p><fmt:message key="message.detach.iso.confirm" /></p>   
 </div>
 
 <!-- Attach ISO Dialog -->
 <div id="dialog_attach_iso" title="Attach ISO" style="display: none">
     <p> 
-        <%=t.t("please.specify.the.iso.you.wish.to.attach.to.virtual.machine")%>        
+        <fmt:message key="message.attach.iso.confirm" />     
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
             <li>
                 <label>
-                    <%=t.t("iso")%>:</label>
+                    <fmt:message key="label.iso" />:</label>
                 <select class="select" id="attach_iso_select">
-                    <option value="none"><%=t.t("no.available.iso")%></option>
+                    <option value="none"><fmt:message key="label.no.isos" /></option>
                 </select>
                 <div id="attach_iso_select_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
             </li>
@@ -1148,58 +1127,17 @@
     </div>
 </div>
 
-<!-- Change Name Dialog -->
-<div id="dialog_change_name" title="Change Name" style="display: none">
-    <p> 
-        <%=t.t("please.specify.the.new.name.you.want.to.change.for.the.virtual.machine")%>        
-    </p>
-    <div class="dialog_formcontent">
-        <form action="#" method="post" id="form_acquire">
-        <ol>
-            <li>
-                <label>
-                    <%=t.t("instance.name")%>:</label>
-                <input class="text" type="text" id="change_instance_name" />
-                <div id="change_instance_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                </div>
-            </li>
-        </ol>
-        </form>
-    </div>
-</div>
-
-<!-- Change Group Dialog -->
-<div id="dialog_change_group" title="Change Group" style="display: none">
-    <p>
-        <%=t.t("please.specify.the.new.group.you.want.to.assign.the.virtual.machine.to")%>        
-    </p>
-    <div class="dialog_formcontent">
-        <form action="#" method="post" id="form_acquire">
-        <ol>
-            <li>
-                <label>
-                    <%=t.t("group.name")%>:</label>
-                <input class="text" type="text" id="change_group_name" />
-                <div id="change_group_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                </div>
-            </li>
-        </ol>
-        </form>
-    </div>
-</div>
-
-
 <!-- Change Service Offering Dialog -->
 <div id="dialog_change_service_offering" title="Change Service Offering" style="display: none">
     <p> 
-        <%=t.t("after.changing.service.offering.you.must.restart.the.virtual.machine.for.new.service.offering.to.take.effect")%>
+		<fmt:message key="message.change.offering.confirm" />
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
             <li>
                 <label>
-                    <%=t.t("service.offering")%>:</label>
+                    <fmt:message key="label.service.offering" />:</label>
                 <select class="select" id="change_service_offerings">
                 </select>
                 <div id="change_service_offerings_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
@@ -1213,45 +1151,45 @@
 <!-- Create template of disk volume dialog (begin) -->
 <div id="dialog_create_template" title="Create template of disk volume" style="display: none">
     <p> 
-        <%=t.t("creating.a.template.of.disk.volume.could.take.up.to.several.hours.depending.on.the.size.of.the.disk.volume")%>
+		<fmt:message key="message.volume.create.template.confirm" />
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
             <li>
                 <label>
-                    <%=t.t("name")%>:</label>
+                    <fmt:message key="label.name" />:</label>
                 <input class="text" type="text" name="create_template_name" id="create_template_name" />
                 <div id="create_template_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label>
-                    <%=t.t("display.text")%>:</label>
+                    <fmt:message key="label.display.text" />:</label>
                 <input class="text" type="text" name="create_template_desc" id="create_template_desc" />
                 <div id="create_template_desc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="create_template_os_type">
-                    <%=t.t("os.type")%>:</label>
+                    <fmt:message key="label.os.type" />:</label>
                 <select class="select" name="create_template_os_type" id="create_template_os_type">
                 </select>
             </li>
             <li>
                 <label for="create_template_public">
-                    <%=t.t("public")%>:</label>
+                    <fmt:message key="label.public" />:</label>
                 <select class="select" name="create_template_public" id="create_template_public">
-                    <option value="false">No</option>
-                    <option value="true">Yes</option>
+                    <option value="false"><fmt:message key="label.no" /></option>
+                    <option value="true"><fmt:message key="label.yes" /></option>
                 </select>
             </li>
             <li>
                 <label>
-                    <%=t.t("password.enabled")%>?:</label>
+                    <fmt:message key="label.password.enabled" />?:</label>
                 <select class="select" name="create_template_password" id="create_template_password">
-                    <option value="false">No</option>
-                    <option value="true">Yes</option>
+                    <option value="false"><fmt:message key="label.no" /></option>
+                    <option value="true"><fmt:message key="label.yes" /></option>
                 </select>
             </li>
         </ol>
@@ -1269,7 +1207,7 @@
             <ol>               
                 <li>
                     <select class="select" id="adv_search_state">
-                        <option value="">by state</option>
+                        <option value=""><fmt:message key="label.by.state" /></option>
                         <option value="Creating">Creating</option>
                         <option value="Starting">Starting</option>
                         <option value="Running">Running</option>
@@ -1322,7 +1260,7 @@
             <ol>                
                 <li>
                     <select class="select" id="adv_search_state">
-                        <option value="">by state</option>
+                        <option value=""><fmt:message key="label.by.state" /></option>
                         <option value="Creating">Creating</option>
                         <option value="Starting">Starting</option>
                         <option value="Running">Running</option>

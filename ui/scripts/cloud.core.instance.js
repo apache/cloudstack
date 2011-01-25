@@ -120,8 +120,6 @@ function afterLoadInstanceJSP() {
     // dialogs
     initDialog("dialog_detach_iso_from_vm");       	
    	initDialog("dialog_attach_iso");  
-    initDialog("dialog_change_name"); 
-    initDialog("dialog_change_group"); 
     initDialog("dialog_change_service_offering", 600);                
     initDialog("dialog_create_template", 400);             
        
