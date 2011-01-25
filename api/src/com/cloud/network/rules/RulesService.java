@@ -33,10 +33,11 @@ public interface RulesService {
      * an ip address and a virtual machine.
      * @param rule rule to be created.
      * @param vmId vm to be linked to.  If specified the destination ip address is ignored.
+     * @param isNat TODO
      * @return PortForwardingRule if created.
      * @throws NetworkRuleConflictException if conflicts in the network rules are detected.
      */
-    PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId) throws NetworkRuleConflictException;
+    PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId, boolean isNat) throws NetworkRuleConflictException;
     
     /**
      * Revokes a port forwarding rule 

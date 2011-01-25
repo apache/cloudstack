@@ -972,6 +972,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (state.equals(FirewallRule.State.Revoke)) {
             stateToSet = "Deleting";
         }
+        
+        response.setStartPort(fwRule.getSourcePortStart());
+        response.setEndPort(fwRule.getSourcePortEnd());
+        response.setProtocol(fwRule.getProtocol());
         response.setState(stateToSet);
         response.setObjectName("ipforwardingrule");
         return response;

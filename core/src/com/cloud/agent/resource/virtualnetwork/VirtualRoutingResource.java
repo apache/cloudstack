@@ -127,7 +127,7 @@ public class VirtualRoutingResource implements Manager {
         int i = 0;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
             String result = null;
-            if (rule.getProtocol().toLowerCase().equalsIgnoreCase(NetUtils.NAT_PROTO)){
+            if (rule.isOneToOneNat()){
                 setStaticNat(!rule.revoked(), rule.getProtocol(), routerIp, rule.getSrcIp(), rule.getDstIp());
             } else {
 

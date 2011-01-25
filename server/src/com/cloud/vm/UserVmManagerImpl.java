@@ -1135,7 +1135,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
 	        
             _networkGroupMgr.removeInstanceFromGroups(vm.getId());
-            removeInstanceFromGroup(vm.getId());
+            
+            removeInstanceFromInstanceGroup(vm.getId());
             
             //Cleanup LB/PF rules before expunging the vm
             long vmId = vm.getId();
@@ -1811,7 +1812,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	}
 	
 	@Override
-	public void removeInstanceFromGroup(long vmId) {
+	public void removeInstanceFromInstanceGroup(long vmId) {
 		try {
 			List<InstanceGroupVMMapVO> groupVmMaps = _groupVMMapDao.listByInstanceId(vmId);
 	        for (InstanceGroupVMMapVO groupMap : groupVmMaps) {

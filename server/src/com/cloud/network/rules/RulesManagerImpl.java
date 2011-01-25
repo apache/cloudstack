@@ -27,10 +27,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
-import com.cloud.domain.Domain;
-import com.cloud.domain.DomainVO;
 import com.cloud.event.EventTypes;
-import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
@@ -101,7 +98,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             if (rule.getNetworkId() != newRule.getNetworkId() && rule.getState() != State.Revoke) {
                 throw new NetworkRuleConflictException("New rule is for a different network than what's specified in rule " + rule.getXid());
             }
-            if (rule.getProtocol().equals(NetUtils.NAT_PROTO)) {
+            if (rule.isOneToOneNat()) {
                 throw new NetworkRuleConflictException("There is already a one to one NAT specified for " + newRule.getSourceIpAddress());
             }
             if ((rule.getSourcePortStart() <= newRule.getSourcePortStart() && rule.getSourcePortEnd() >= newRule.getSourcePortStart()) || 
@@ -152,7 +149,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override @DB
-    public PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId) throws NetworkRuleConflictException {
+    public PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId, boolean isNat) throws NetworkRuleConflictException {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
         
@@ -198,7 +195,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         long domainId = network.getDomainId();
         
         checkIpAndUserVm(ipAddress, vm, caller);
-        boolean isNat = NetUtils.NAT_PROTO.equals(rule.getProtocol());
         if (isNat && (ipAddress.isSourceNat() || ipAddress.isOneToOneNat())) {
             throw new NetworkRuleConflictException("Can't do one to one NAT on ip address: " + ipAddress.getAddress());
         }
@@ -216,7 +212,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                     rule.getProtocol(), 
                     networkId,
                     accountId,
-                    domainId, vmId);
+                    domainId, vmId, isNat);
         newRule = _forwardingDao.persist(newRule);
         
         if (isNat) {
@@ -281,7 +277,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             rule.setState(State.Revoke);
             _firewallDao.update(rule.getId(), rule);
         }
-        if (NetUtils.NAT_PROTO.equals(rule.protocol) && rule.getSourcePortStart() == -1) {
+        if (rule.isOneToOneNat()) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Removing one to one nat so setting the ip back to one to one nat is false: "  + rule.getSourceIpAddress());
             }
@@ -291,7 +287,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
         
         // Save and create the event
-        String ruleName = rule.getPurpose() == Purpose.Firewall ? "Firewall" : (rule.getProtocol().equals(NetUtils.NAT_PROTO) ? "ip forwarding" : "port forwarding");
+        String ruleName = rule.getPurpose() == Purpose.Firewall ? "Firewall" : (rule.isOneToOneNat() ? "ip forwarding" : "port forwarding");
         StringBuilder description = new StringBuilder("deleted ").append(ruleName).append(" rule [").append(rule.getSourceIpAddress()).append(":").append(rule.getSourcePortStart()).append("-").append(rule.getSourcePortEnd()).append("]");
         if (rule.getPurpose() == Purpose.PortForwarding) {
             PortForwardingRuleVO pfRule = (PortForwardingRuleVO)rule;
@@ -375,6 +371,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         sb.and("ip", sb.entity().getSourceIpAddress(), Op.EQ);
         sb.and("accountId", sb.entity().getAccountId(), Op.EQ);
         sb.and("domainId", sb.entity().getDomainId(), Op.EQ);
+        sb.and("oneToOneNat", sb.entity().isOneToOneNat(), Op.EQ);
         
         SearchCriteria<PortForwardingRuleVO> sc = sb.create();
         
@@ -389,6 +386,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 sc.setParameters("accountId", account.getId());
             }
         }
+        
+        sc.setParameters("oneToOneNat", false);
        
         return _forwardingDao.search(sc, filter);
     }
@@ -510,7 +509,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                         ip.getAssociatedWithNetworkId(),
                         ip.getAllocatedToAccountId(),
                         ip.getAllocatedInDomainId(),
-                        purpose);
+                        purpose, ip.isOneToOneNat());
             rules[i] = _firewallDao.persist(rules[i]);
         }
         txn.commit();

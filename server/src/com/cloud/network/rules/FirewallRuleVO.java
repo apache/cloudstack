@@ -80,6 +80,9 @@ public class FirewallRuleVO implements FirewallRule {
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
     
+    @Column(name="is_static_nat", updatable=false)
+    boolean oneToOneNat;
+    
     @Column(name="network_id")
     long networkId;
 
@@ -149,7 +152,7 @@ public class FirewallRuleVO implements FirewallRule {
     protected FirewallRuleVO() {
     }
     
-    public FirewallRuleVO(String xId, Ip srcIp, int portStart, int portEnd, String protocol, long networkId, long accountId, long domainId, Purpose purpose) {
+    public FirewallRuleVO(String xId, Ip srcIp, int portStart, int portEnd, String protocol, long networkId, long accountId, long domainId, Purpose purpose, boolean isOneToOneNat) {
         this.xId = xId;
         if (xId == null) {
             this.xId = UUID.randomUUID().toString();
@@ -163,14 +166,20 @@ public class FirewallRuleVO implements FirewallRule {
         this.purpose = purpose;
         this.networkId = networkId;
         this.state = State.Staged;
+        this.oneToOneNat = isOneToOneNat;
     }
     
-    public FirewallRuleVO(String xId, Ip srcIp, int port, String protocol, long networkId, long accountId, long domainId, Purpose purpose) {
-        this(xId, srcIp, port, port, protocol, networkId, accountId, domainId, purpose);
+    public FirewallRuleVO(String xId, Ip srcIp, int port, String protocol, long networkId, long accountId, long domainId, Purpose purpose, boolean isOneToOneNat) {
+        this(xId, srcIp, port, port, protocol, networkId, accountId, domainId, purpose, isOneToOneNat);
     }
     
     @Override
     public String toString() {
         return new StringBuilder("Rule[").append(id).append("-").append(purpose).append("-").append(state).append("]").toString();
+    }
+    
+    @Override
+    public boolean isOneToOneNat() {
+        return oneToOneNat;
     }
 }

@@ -81,7 +81,7 @@ public interface UserVmManager extends VirtualMachineGuru<UserVmVO>{
 
     InstanceGroupVO getGroupForVm(long vmId);
     
-    void removeInstanceFromGroup(long vmId);
+    void removeInstanceFromInstanceGroup(long vmId);
 
 	UserVm startUserVm(long vmId) throws StorageUnavailableException,
 			ConcurrentOperationException, ExecutionException, ResourceUnavailableException, InsufficientCapacityException;

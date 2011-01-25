@@ -1077,7 +1077,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         String[] results = new String[cmd.getRules().length];
         int i = 0;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
-            if (rule.getProtocol().toLowerCase().equals(NetUtils.NAT_PROTO)){
+            if (rule.isOneToOneNat()){
             	//1:1 NAT needs instanceip;publicip;domrip;op
             	args = rule.revoked() ? "-D" : "-A";
             	

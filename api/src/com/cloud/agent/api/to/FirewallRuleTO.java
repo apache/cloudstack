@@ -47,21 +47,23 @@ public class FirewallRuleTO {
     int[] srcPortRange;
     boolean revoked;
     boolean alreadyAdded;
+    boolean isOneToOneNat;
     String vlanNetmask;    // FIXME: Get rid of this!
 
     protected FirewallRuleTO() {
     }
     
-    public FirewallRuleTO(long id, String srcIp, String protocol, int srcPortStart, int srcPortEnd, boolean revoked, boolean alreadyAdded) {
+    public FirewallRuleTO(long id, String srcIp, String protocol, int srcPortStart, int srcPortEnd, boolean revoked, boolean alreadyAdded, boolean isOneToOneNat) {
         this.srcIp = srcIp;
         this.protocol = protocol;
         this.srcPortRange = new int[] {srcPortStart, srcPortEnd};
         this.revoked = revoked;
         this.alreadyAdded = alreadyAdded;
+        this.isOneToOneNat = isOneToOneNat;
     }
     
     public FirewallRuleTO(FirewallRule rule) {
-        this(rule.getId(), rule.getSourceIpAddress().addr(), rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getState()==State.Revoke, rule.getState()==State.Active);
+        this(rule.getId(), rule.getSourceIpAddress().addr(), rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getState()==State.Revoke, rule.getState()==State.Active, rule.isOneToOneNat());
     }
     
     public long getId() {
@@ -90,5 +92,9 @@ public class FirewallRuleTO {
     
     public boolean isAlreadyAdded() {
         return alreadyAdded;
+    }
+    
+    public boolean isOneToOneNat() {
+        return isOneToOneNat;
     }
 }

@@ -29,7 +29,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.net.Ip;
-import com.cloud.utils.net.NetUtils;
 
 @Local(value=PortForwardingRulesDao.class)
 public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRuleVO, Long> implements PortForwardingRulesDao {
@@ -49,6 +48,7 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         AllFieldsSearch.and("protocol", AllFieldsSearch.entity().getProtocol(), Op.EQ);
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
         AllFieldsSearch.and("vmId", AllFieldsSearch.entity().getVirtualMachineId(), Op.EQ);
+        AllFieldsSearch.and("oneToOneNat", AllFieldsSearch.entity().isOneToOneNat(), Op.EQ);
         AllFieldsSearch.done();
         
         ApplicationSearch = createSearchBuilder();
@@ -120,8 +120,7 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
             sc.setParameters("vmId", vmId);
         }
         
-        //search for rules with protocol = nat
-        sc.setParameters("protocol", NetUtils.NAT_PROTO);
+        sc.setParameters("oneToOneNat", true);
 
         return listBy(sc, searchFilter);
     }

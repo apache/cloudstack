@@ -52,7 +52,6 @@ public class NetUtils {
     public final static String UDP_PROTO = "udp";
     public final static String TCP_PROTO = "tcp";
     public final static String ICMP_PROTO = "icmp";
-    public final static String NAT_PROTO = "nat"; //special value for one-to-one NAT
     
     private final static Random _rand = new Random(System.currentTimeMillis());
 

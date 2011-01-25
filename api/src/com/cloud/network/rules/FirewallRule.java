@@ -70,4 +70,6 @@ public interface FirewallRule extends ControlledEntity {
     State getState();
     
     long getNetworkId();
+    
+    boolean isOneToOneNat();
 }
