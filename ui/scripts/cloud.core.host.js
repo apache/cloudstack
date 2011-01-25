@@ -85,12 +85,16 @@ function hostRefreshDataBinding() {
 
 function hostJsonToDetailsTab() {  
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        hostClearDetailsTab();     
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        hostClearDetailsTab();     
         return;    
+    }
        
     $.ajax({
         data: createURL("command=listHosts&id="+jsonObj.id),
@@ -195,12 +199,16 @@ function hostJsonToDetailsTab() {
 
 function hostJsonToInstanceTab() {       	
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        hostClearInstanceTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        hostClearInstanceTab();
         return;
+    }
     
     var $thisTab = $("#right_panel_content #tab_content_instance");
 	$thisTab.find("#tab_container").hide(); 
@@ -227,7 +235,7 @@ function hostJsonToInstanceTab() {
 	});
 } 
 
-function hostJsonClearInstanceTab() {
+function hostClearInstanceTab() {
     var $thisTab = $("#right_panel_content").find("#tab_content_instance");
     $thisTab.find("#tab_container").empty();   
 }
@@ -247,12 +255,16 @@ function hostInstanceJSONToTemplate(jsonObj, template) {
 
 function hostJsonToRouterTab() {   
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        hostClearRouterTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        hostClearRouterTab();
         return;
+    }
     
     var $thisTab = $("#right_panel_content #tab_content_router");
 	$thisTab.find("#tab_container").hide(); 
@@ -279,19 +291,23 @@ function hostJsonToRouterTab() {
 	});
 } 
 
-function hostJsonClearRouterTab() {
+function hostClearRouterTab() {
     var $thisTab = $("#right_panel_content").find("#tab_content_router");
     $thisTab.find("#tab_container").empty(); 
 }
 
 function hostJsonToStatisticsTab() {    
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        hostClearStatisticsTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        hostClearStatisticsTab();
         return;
+    }
     
     var $thisTab = $("#right_panel_content").find("#tab_content_statistics");  
 	$thisTab.find("#tab_container").hide(); 
@@ -332,7 +348,7 @@ function hostJsonToStatisticsTab() {
     $thisTab.find("#tab_container").show();  
 }
 
-function hostJsonClearStatisticsTab() {        
+function hostClearStatisticsTab() {        
     var $thisTab = $("#right_panel_content").find("#tab_content_statistics");  	
     var $barChartContainer = $thisTab.find("#cpu_barchart");            
     $barChartContainer.find("#cpunumber").text("");        
@@ -363,12 +379,16 @@ function hostRouterJSONToTemplate(jsonObj, template) {
 
 function hostJsonToSystemvmTab() {   
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        hostClearSystemvmTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        hostClearSystemvmTab();
         return;
+    }
     
     var $thisTab = $("#right_panel_content #tab_content_systemvm");
 	$thisTab.find("#tab_container").hide(); 
@@ -395,7 +415,7 @@ function hostJsonToSystemvmTab() {
 	});
 } 
 
-function hostJsonClearSystemvmTab() {
+function hostClearSystemvmTab() {
     var $thisTab = $("#right_panel_content").find("#tab_content_systemvm");
     $thisTab.find("#tab_container").empty(); 
 }
@@ -414,10 +434,10 @@ function hostSystemvmJSONToTemplate(jsonObj, template) {
 
 function hostClearRightPanel() {
     hostClearDetailsTab();     
-    hostJsonClearInstanceTab();
-    hostJsonClearRouterTab();
-    hostJsonClearSystemvmTab();
-    hostJsonClearStatisticsTab();
+    hostClearInstanceTab();
+    hostClearRouterTab();
+    hostClearSystemvmTab();
+    hostClearStatisticsTab();
 }
 
 function hostClearDetailsTab() {
