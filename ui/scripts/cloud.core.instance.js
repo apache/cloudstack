@@ -376,6 +376,14 @@ var vmPopupTemplatePageSize = 6; //max number of templates in VM wizard
 var currentStepInVmPopup = 1;
 function initVMWizard() {
     $vmPopup = $("#vm_popup");  
+    
+    if (isAdmin() || (isDomainAdmin() && getUserPublicTemplateEnabled() == "true")) {
+        $vmPopup.find("#wiz_community").show();   
+    } 
+    else {
+        $vmPopup.find("#wiz_community").hide();   
+    } 
+    
     $("#add_vm_button").unbind("click").bind("click", function(event) {
         vmWizardOpen();			
 	    $.ajax({

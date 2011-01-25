@@ -1158,7 +1158,7 @@ function showLeftNavigationBasedOnRole() {
 	    $("#leftmenu_security_group_container").hide();
 	}
 	
-	if (getUserPublicTemplateEnabled() == "true") {
+	if (isAdmin() || (isDomainAdmin() && getUserPublicTemplateEnabled() == "true")) {
 	    $("#leftmenu_submenu_community_template_container, #leftmenu_submenu_community_iso_container").show();
 	}
 	else {
@@ -1252,7 +1252,7 @@ var g_timezone = null;
 var g_directAttachSecurityGroupsEnabled = "false";
 function getDirectAttachSecurityGroupsEnabled() { return g_directAttachSecurityGroupsEnabled; }
 
-g_userPublicTemplateEnabled = "true"
+var g_userPublicTemplateEnabled = "true"
 function getUserPublicTemplateEnabled() { return g_userPublicTemplateEnabled; }
 
 //keyboard keycode
