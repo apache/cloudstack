@@ -36,9 +36,6 @@ import com.cloud.uservm.UserVm;
 @PrimaryKeyJoinColumn(name="id")
 public class UserVmVO extends VMInstanceVO implements UserVm {
 
-    @Column(name="domain_router_id", updatable=true, nullable=true)
-    Long domainRouterId;
-
     @Column(name="iso_id", nullable=true, length=17)
     private Long isoId = null;
     
@@ -67,15 +64,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
         return isoId;
     }
     
-    @Override
-    public Long getDomainRouterId() {
-        return domainRouterId;
-    }
-    
-    public void setDomainRouterId(long domainRouterId) {
-        this.domainRouterId = domainRouterId;
-    }
-
     @Override
     public long getServiceOfferingId() {
         return serviceOfferingId;
