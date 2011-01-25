@@ -19,7 +19,6 @@ package com.cloud.vm;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.List;
@@ -109,7 +108,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.IpAddrAllocator;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
@@ -172,7 +170,6 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
-import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
@@ -258,7 +255,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject OvsNetworkManager _ovsNetworkMgr;
     @Inject OvsTunnelManager _ovsTunnelMgr;
     
-    private IpAddrAllocator _IpAllocator;
     ScheduledExecutorService _executor = null;
     int _expungeInterval;
     int _expungeDelay;
@@ -803,6 +799,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             return null;
         }
     }
+    
     @Override
     /*
      * TODO: cleanup eventually - Refactored API call
@@ -1011,7 +1008,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             Long templateId = volume.getTemplateId();
             Long diskOfferingId = volume.getDiskOfferingId();
             long sizeMB = volume.getSize()/(1024*1024);
-            StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
             Long offeringId = null;
             if(diskOfferingId != null){
                 DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
@@ -1073,12 +1069,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         
         s_logger.info("User VM Manager is configured.");
 
-        Adapters<IpAddrAllocator> ipAllocators = locator.getAdapters(IpAddrAllocator.class);
-        if (ipAllocators != null && ipAllocators.isSet()) {
-        	Enumeration<IpAddrAllocator> it = ipAllocators.enumeration();
-        	_IpAllocator = it.nextElement();
-        }
-                
         return true;
     }
 
@@ -1566,7 +1556,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     		ha = vmInstance.isHaEnabled();
     	}
     	
-    	long accountId = vmInstance.getAccountId();
         UserVmVO vm = _vmDao.findById(id);
         if (vm == null) {
             throw new CloudRuntimeException("Unable to find virual machine with id " + id);

@@ -66,12 +66,6 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
     @Column(name="guest_netmask")
     private String guestNetmask;
     
-    @Column(name="vlan_db_id")
-    private Long vlanDbId;
-    
-    @Column(name="vlan_id")
-    private String vlanId;
-    
     @Column(name="domain", nullable=false)
     private String domain;
     
@@ -192,16 +186,6 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
 	public String getGuestMacAddress() {
 		return this.guestMacAddress;
 	}
-    
-    @Override
-	public Long getVlanDbId() {
-    	return vlanDbId;
-    }
-    
-    @Override
-	public String getVlanId() {
-    	return vlanId;
-    }
     
     @Override
     public String getDomain() {

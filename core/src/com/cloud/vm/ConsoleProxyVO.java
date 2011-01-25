@@ -68,12 +68,6 @@ public class ConsoleProxyVO extends VMInstanceVO implements ConsoleProxy {
     @Column(name="public_netmask", nullable=false)
     private String publicNetmask;
     
-    @Column(name="vlan_db_id")
-    private Long vlanDbId;
-    
-    @Column(name="vlan_id")
-    private String vlanId;
-    
     @Column(name="domain", nullable=false)
     private String domain;
     
@@ -208,16 +202,6 @@ public class ConsoleProxyVO extends VMInstanceVO implements ConsoleProxy {
 	public String getGuestMacAddress() {
 		return this.guestMacAddress;
 	}
-    
-    @Override
-	public Long getVlanDbId() {
-    	return vlanDbId;
-    }
-    
-    @Override
-	public String getVlanId() {
-    	return vlanId;
-    }
     
     @Override
     public String getDomain() {
