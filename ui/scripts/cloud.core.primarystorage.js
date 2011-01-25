@@ -75,12 +75,16 @@ function primaryStorageRefreshDataBinding() {
 
 function primarystorageJsonToDetailsTab() {	
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        primarystorageClearDetailsTab(); 
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
-        return;               
+    if(jsonObj == null) {
+        primarystorageClearDetailsTab(); 
+        return;         
+    }      
     
     $.ajax({
         data: createURL("command=listStoragePools&id="+jsonObj.id),
@@ -168,10 +172,10 @@ function primarystorageJsonToDetailsTab() {
 }
        
 function primarystorageClearRightPanel() {  
-    primarystorageJsonClearDetailsTab();  
+    primarystorageClearDetailsTab();  
 }
 
-function primarystorageJsonClearDetailsTab() {	    
+function primarystorageClearDetailsTab() {	    
     var $thisTab = $("#right_panel_content").find("#tab_content_details");   
     $thisTab.find("#id").text("");
     $thisTab.find("#name").text("");
