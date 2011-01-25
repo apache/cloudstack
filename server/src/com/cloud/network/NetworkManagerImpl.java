@@ -1260,6 +1260,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
+    public void expungeNics(VirtualMachineProfile<? extends VMInstanceVO> vm) {
+        List<NicVO> nics = _nicDao.listIncludingRemovedBy(vm.getId());
+        for (NicVO nic : nics) { 
+            _nicDao.expunge(nic.getId());
+        }
+    }
+    
+    @Override
     public Network createNetwork(CreateNetworkCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {   
         Long networkOfferingId = cmd.getNetworkOfferingId();
         Long zoneId = cmd.getZoneId();

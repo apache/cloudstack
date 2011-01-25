@@ -19,6 +19,7 @@ package com.cloud.configuration;
 
 import java.util.List;
 
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -174,6 +175,10 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
     void createDefaultNetworks(long zoneId) throws ConcurrentOperationException;
     
     DataCenterVO getZone(long id);
+    
+    HostPodVO getPod(long id);
+    
+    ClusterVO getCluster(long id);
     
     boolean deleteAccountSpecificVirtualRanges(long accountId);
 }

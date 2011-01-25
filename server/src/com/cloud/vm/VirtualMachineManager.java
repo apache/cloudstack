@@ -95,4 +95,8 @@ public interface VirtualMachineManager extends Manager {
 	boolean migrateAway(VirtualMachine.Type type, long vmid, long hostId) throws InsufficientServerCapacityException;
 	
 	<T extends VMInstanceVO> T migrate(T vm, long srcHostId, DeployDestination dest) throws ResourceUnavailableException; 
+	
+	<T extends VMInstanceVO> T reboot(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException;
+	
+	<T extends VMInstanceVO> T advanceReboot(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
 }

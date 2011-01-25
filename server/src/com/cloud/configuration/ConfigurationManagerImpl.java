@@ -58,6 +58,7 @@ import com.cloud.api.commands.UpdateZoneCmd;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.AccountVlanMapVO;
+import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterIpAddressVO;
@@ -69,6 +70,7 @@ import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl;
@@ -158,6 +160,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	@Inject SecondaryStorageVmDao _secStorageDao;
     @Inject AccountManager _accountMgr;
     @Inject NetworkManager _networkMgr;
+    @Inject ClusterDao _clusterDao;
 	@Inject(adapter=SecurityChecker.class)
     Adapters<SecurityChecker> _secChecker;
 	
@@ -2706,5 +2709,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             s_logger.trace("Account id=" + accountId + " has no account specific virtual ip ranges, nothing to delete");
         }
         return result;
+    }
+    
+    @Override
+    public HostPodVO getPod(long id) {
+        return _podDao.findById(id);
+    }
+    
+    @Override
+    public ClusterVO getCluster(long id) {
+        return _clusterDao.findById(id);
     }
 }

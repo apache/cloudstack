@@ -109,6 +109,8 @@ public interface NetworkManager extends NetworkService {
     
     void cleanupNics(VirtualMachineProfile<? extends VMInstanceVO> vm);
     
+    void expungeNics(VirtualMachineProfile<? extends VMInstanceVO> vm);
+    
     List<? extends Nic> getNics(VirtualMachine vm);
 	
     List<AccountVO> getAccountsUsingNetwork(long configurationId);    

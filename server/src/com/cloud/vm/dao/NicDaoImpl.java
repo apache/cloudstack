@@ -49,6 +49,14 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         return listBy(sc);
     }
     
+    
+    @Override
+    public List<NicVO> listIncludingRemovedBy(long instanceId) {
+        SearchCriteria<NicVO> sc = InstanceSearch.create();
+        sc.setParameters("instance", instanceId);
+        return listIncludingRemovedBy(sc);
+    }
+    
     @Override
     public List<String> listIpAddressInNetwork(long networkId) {
         SearchCriteria<String> sc = IpSearch.create();
@@ -69,5 +77,13 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         sc.setParameters("network", networkId);
         sc.setParameters("instance", instanceId);
         return findOneBy(sc);
+    }
+    
+    @Override
+    public NicVO findByInstanceIdAndNetworkIdIncludingRemoved(long networkId, long instanceId) {
+        SearchCriteria<NicVO> sc = createSearchCriteria();
+        sc.addAnd("networkId", SearchCriteria.Op.EQ, networkId);
+        sc.addAnd("instanceId", SearchCriteria.Op.EQ, instanceId);
+        return findOneIncludingRemovedBy(sc);
     }
 }

@@ -44,8 +44,6 @@ import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
-import com.cloud.agent.api.RebootAnswer;
-import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.SnapshotCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
@@ -85,6 +83,7 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
@@ -237,6 +236,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject AccountService _accountService;
     @Inject AsyncJobManager _asyncMgr;
     @Inject VlanDao _vlanDao;
+    @Inject ClusterDao _clusterDao;
     @Inject AccountVlanMapDao _accountVlanMapDao;
     @Inject StoragePoolDao _storagePoolDao;
     @Inject VMTemplateHostDao _vmTemplateHostDao;
@@ -281,7 +281,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     @Override
-    public UserVm resetVMPassword(ResetVMPasswordCmd cmd, String password){
+    public UserVm resetVMPassword(ResetVMPasswordCmd cmd, String password) throws ResourceUnavailableException, InsufficientCapacityException{
         Account account = UserContext.current().getCaller();
     	Long userId = UserContext.current().getCallerUserId();
     	Long vmId = cmd.getId();
@@ -313,7 +313,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return userVm;
     }
 
-    private boolean resetVMPasswordInternal(ResetVMPasswordCmd cmd, String password) {  
+    private boolean resetVMPasswordInternal(ResetVMPasswordCmd cmd, String password) throws ResourceUnavailableException, InsufficientCapacityException{    	
+        
         return true;
 //        Long vmId = cmd.getId();
 //        Long userId = UserContext.current().getCallerUserId();
@@ -331,7 +332,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 //            }
 //	        if (_routerMgr.savePasswordToRouter(vmInstance.getDomainRouterId(), vmInstance.getPrivateIpAddress(), password)) {
 //	            // Need to reboot the virtual machine so that the password gets redownloaded from the DomR, and reset on the VM
-//	        	if (!rebootVirtualMachine(userId, vmId)) {
+//	        	if (rebootVirtualMachine(userId, vmId) == null) {
 //	        		if (vmInstance.getState() == State.Stopped) {
 //	        			return true;
 //	        		}
@@ -785,25 +786,21 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
  
-    private boolean rebootVirtualMachine(long userId, long vmId) {
+    private UserVm rebootVirtualMachine(long userId, long vmId) throws InsufficientCapacityException, ResourceUnavailableException{
         UserVmVO vm = _vmDao.findById(vmId);
+        User caller = _accountMgr.getActiveUser(userId);
+        Account owner = _accountMgr.getAccount(vm.getAccountId());
 
         if (vm == null || vm.getState() == State.Destroyed || vm.getState() == State.Expunging || vm.getRemoved() != null) {
-            return false;
+            s_logger.warn("Vm id=" + vmId + " doesn't exist");
+            return null;
         }
 
         if (vm.getState() == State.Running && vm.getHostId() != null) {
-            RebootCommand cmd = new RebootCommand(vm.getInstanceName());
-            RebootAnswer answer = (RebootAnswer)_agentMgr.easySend(vm.getHostId(), cmd);
-           
-            if (answer != null) {
-                return true;
-            } else {
-                return false;
-            }
+           return  _itMgr.reboot(vm, null, caller, owner);
         } else {
             s_logger.error("Vm id=" + vmId + " is not in Running state, failed to reboot");
-            return false;
+            return null;
         }
     }
     @Override
@@ -1142,9 +1139,17 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     public boolean expunge(UserVmVO vm, long callerUserId, Account caller) {
 	    try {
 	        
-	        //Cleanup LB/PF rules before expunging the vm
-	        long vmId = vm.getId();
-	        //cleanup port forwarding rules
+	        if (!_itMgr.advanceExpunge(vm, _accountMgr.getSystemUser(), caller)) {
+                s_logger.info("Did not expunge " + vm);
+                return false;
+            }
+	        
+            _networkGroupMgr.removeInstanceFromGroups(vm.getId());
+            removeInstanceFromGroup(vm.getId());
+            
+            //Cleanup LB/PF rules before expunging the vm
+            long vmId = vm.getId();
+            //cleanup port forwarding rules
             if (_rulesMgr.revokePortForwardingRule(vmId)) {
                 s_logger.debug("Port forwarding rules are removed successfully as a part of vm id=" + vmId + " expunge");
             } else {
@@ -1157,16 +1162,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             } else {
                 s_logger.warn("Fail to remove lb rules as a part of vm id=" + vmId + " expunge");
             }
-            
-            
-	        if (!_itMgr.advanceExpunge(vm, _accountMgr.getSystemUser(), caller)) {
-	            s_logger.info("Did not expunge " + vm);
-	            return false;
-	        }
-            
-            _networkGroupMgr.removeInstanceFromGroups(vm.getId());
-            removeInstanceFromGroup(vm.getId());
-            
+ 
             _itMgr.remove(vm, _accountMgr.getSystemUser(), caller);
             return true;
         } catch (ResourceUnavailableException e) {
@@ -1622,7 +1618,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	}
 
 	@Override
-	public UserVm rebootVirtualMachine(RebootVMCmd cmd) {
+	public UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException{
         Account account = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
         Long vmId = cmd.getId();
@@ -1635,14 +1631,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         userId = accountAndUserValidation(vmId, account, userId, vmInstance);
         
-        boolean status = rebootVirtualMachine(userId, vmId);
-        
-        if (status) {
-        	return _vmDao.findById(vmId);
-        } else {
-        	s_logger.warn("Failed to reboot vm with id: " + vmId);
-        	return null;
-        }
+        return rebootVirtualMachine(userId, vmId);
 	}
 
 	@Override

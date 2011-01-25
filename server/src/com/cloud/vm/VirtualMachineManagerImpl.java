@@ -42,6 +42,8 @@ import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.RebootAnswer;
+import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopAnswer;
@@ -51,9 +53,11 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.HostPodVO;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -75,6 +79,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.org.Cluster;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -144,6 +149,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
     @Inject protected GuestOSDao _guestOsDao;
     @Inject protected VolumeDao _volsDao;
     @Inject protected ConsoleProxyManager _consoleProxyMgr;
+    @Inject protected ConfigurationManager _configMgr;
     
     @Inject(adapter=DeploymentPlanner.class)
     protected Adapters<DeploymentPlanner> _planners;
@@ -912,6 +918,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
     
     @Override
     public <T extends VMInstanceVO> boolean remove(T vm, User user, Account caller) {
+        //expunge the corresponding nics
+        VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
+        _networkMgr.expungeNics(profile);
+        s_logger.trace("Nics of the vm " + vm + " are expunged successfully");
         return _vmDao.remove(vm.getId());
     }
     
@@ -1104,7 +1114,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
     }
     
     protected class CleanupTask implements Runnable {
-
         @Override
         public void run() {
             s_logger.trace("VM Operation Thread Running");
@@ -1115,4 +1124,51 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
             }
         }
     }
+    
+    @Override
+    public <T extends VMInstanceVO> T reboot(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException {
+        try {
+            return advanceReboot(vm, params, caller, account);
+        } catch (ConcurrentOperationException e) {
+            throw new CloudRuntimeException("Unable to reboot a VM due to concurrent operation", e);
+        }
+    }
+    
+    @Override
+    
+    public <T extends VMInstanceVO> T advanceReboot(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {  
+        T rebootedVm = null;
+        
+        DataCenter dc = _configMgr.getZone(vm.getDataCenterId());
+        HostPodVO pod = _configMgr.getPod(vm.getPodId());
+        Host host = _hostDao.findById(vm.getHostId());
+        Cluster cluster = null;
+        if (host != null) {
+            cluster = _configMgr.getCluster(host.getClusterId());
+        }
+        DeployDestination dest = new DeployDestination(dc, pod, cluster, host);
+        ReservationContext ctx = new ReservationContextImpl(null, null, caller, account);
+        VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+            
+        try {
+            //prepare all network elements (start domR/dhcp if needed)
+            _networkMgr.prepare(vmProfile, dest, ctx);
+            Commands cmds = new Commands(OnError.Revert);
+            cmds.addCommand(new RebootCommand(vm.getName()));
+            _agentMgr.send(host.getId(), cmds);
+           
+            Answer rebootAnswer = cmds.getAnswer(RebootAnswer.class);
+            if (rebootAnswer != null && rebootAnswer.getResult()) {
+                rebootedVm = vm;
+                return rebootedVm;
+            }
+            s_logger.info("Unable to reboot VM " + vm + " on " + dest.getHost() + " due to " + (rebootAnswer == null ? " no reboot answer" : rebootAnswer.getDetails()));
+        } catch (OperationTimedoutException e) {
+            s_logger.warn("Unable to send the reboot command to host " + dest.getHost() + " for the vm " + vm + " due to operation timeout", e);
+            throw new CloudRuntimeException("Failed to reboot the vm on host " + dest.getHost());
+        }
+        
+        return rebootedVm;
+    }
+
 }
