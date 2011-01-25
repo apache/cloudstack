@@ -807,6 +807,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 Account userAccount = _accountDao.findActiveAccount(accountName, domainId);
                 if (userAccount != null) {
                     accountId = userAccount.getId();
+                } else {
+                    throw new InvalidParameterValueException("Could not find account:"+accountName+" in domain:"+domainId);
                 }
             }
         } else {
