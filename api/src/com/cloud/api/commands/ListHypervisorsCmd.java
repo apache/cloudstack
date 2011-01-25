@@ -21,8 +21,10 @@ import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
+import com.cloud.api.Parameter;
 import com.cloud.api.response.HypervisorResponse;
 import com.cloud.api.response.ListResponse;
 
@@ -36,18 +38,39 @@ public class ListHypervisorsCmd extends BaseCmd {
 		return s_name;
 	}
 	
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
+
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the zone id for listing hypervisors.")
+    private Long zoneId;
+    
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+    
+    public Long getZoneId() {
+        return this.zoneId;
+    }
+    
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+    
     @Override
     public void execute(){
         String[] result = _mgr.getHypervisors(this);
         ListResponse<HypervisorResponse> response = new ListResponse<HypervisorResponse>();
         ArrayList<HypervisorResponse> responses = new ArrayList<HypervisorResponse>();
-        for (String hypervisor : result) {
-            HypervisorResponse hypervisorResponse = new HypervisorResponse();
-            hypervisorResponse.setName(hypervisor);
-            hypervisorResponse.setObjectName("hypervisor");
-            responses.add(hypervisorResponse);
+        if(result != null) {
+            for (String hypervisor : result) {
+                HypervisorResponse hypervisorResponse = new HypervisorResponse();
+                hypervisorResponse.setName(hypervisor);
+                hypervisorResponse.setObjectName("hypervisor");
+                responses.add(hypervisorResponse);
+            }
         }
-
         response.setResponses(responses);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

@@ -4662,11 +4662,25 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public String[] getHypervisors(ListHypervisorsCmd cmd) {
-    	String hypers = _configDao.getValue(Config.HypervisorList.key());
-    	if (hypers == "" || hypers == null) {
-    		return null;
-    	}
-    	return hypers.split(",");
+        Long zoneId = cmd.getZoneId();
+        if(zoneId == null) {
+            String hypers = _configDao.getValue(Config.HypervisorList.key());
+            if (hypers == "" || hypers == null) {
+                return null;
+            }
+            return hypers.split(",");
+        } else {
+            String[] result = null;
+            List<ClusterVO> clustersForZone = _clusterDao.listByZoneId(zoneId);
+            if(clustersForZone != null && clustersForZone.size() > 0) {
+                result = new String[clustersForZone.size()];
+                int i = 0;
+                for(ClusterVO cluster : clustersForZone) {
+                    result[i++] = cluster.getHypervisorType().toString();
+                }
+            }
+            return result;
+        }
     }
 
 	@Override

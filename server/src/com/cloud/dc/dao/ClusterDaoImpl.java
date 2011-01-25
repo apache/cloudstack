@@ -31,6 +31,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
 
     protected final SearchBuilder<ClusterVO> PodSearch;
     protected final SearchBuilder<ClusterVO> HyTypeWithoutGuidSearch;
+    protected final SearchBuilder<ClusterVO> ZoneSearch;
     protected ClusterDaoImpl() {
         super();
         
@@ -43,6 +44,17 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         PodSearch.and("pod", PodSearch.entity().getPodId(), SearchCriteria.Op.EQ);
         PodSearch.and("name", PodSearch.entity().getName(), SearchCriteria.Op.EQ);
         PodSearch.done();
+        
+        ZoneSearch = createSearchBuilder();
+        ZoneSearch.and("dataCenterId", ZoneSearch.entity().getPodId(), SearchCriteria.Op.EQ);
+        ZoneSearch.done();
+    }
+    
+    @Override
+    public List<ClusterVO> listByZoneId(long zoneId) {
+        SearchCriteria<ClusterVO> sc = ZoneSearch.create();
+        sc.setParameters("dataCenterId", zoneId);        
+        return listBy(sc);
     }
     
     @Override
