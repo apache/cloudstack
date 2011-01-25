@@ -116,11 +116,6 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
     
     @Override
     public void execute(){
-    	try {
-    		Thread.sleep(2000);
-    	} catch (Exception e) {
-    		
-    	}
         Volume result = _userVmService.attachVolumeToVM(this);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(result);
