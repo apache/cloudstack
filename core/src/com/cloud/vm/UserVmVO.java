@@ -39,15 +39,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Column(name="domain_router_id", updatable=true, nullable=true)
     Long domainRouterId;
 
-    @Column(name="guest_ip_address")
-    String guestIpAddress;
-    
-    @Column(name="guest_mac_address")
-    String guestMacAddress;
-    
-    @Column(name="guest_netmask")
-    String guestNetmask;
-
     @Column(name="iso_id", nullable=true, length=17)
     private Long isoId = null;
     
@@ -71,35 +62,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
         this.password = password;
     }
 
-	@Override
-    public String getGuestIpAddress() {
-		return guestIpAddress;
-	}
-
-	public void setGuestIpAddress(String guestIpAddress) {
-		this.guestIpAddress = guestIpAddress;
-		setPrivateIpAddress(guestIpAddress);
-	}
-
-	@Override
-    public String getGuestMacAddress() {
-		return guestMacAddress;
-	}
-
-	public void setGuestMacAddress(String guestMacAddress) {
-		this.guestMacAddress = guestMacAddress;
-		setPrivateMacAddress(guestMacAddress);
-
-	}
-
-	public String getGuestNetmask() {
-		return guestNetmask;
-	}
-
-	public void setGuestNetmask(String guestNetmask) {
-		this.guestNetmask = guestNetmask;
-	}
-	
     @Override
     public Long getIsoId() {
         return isoId;

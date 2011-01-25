@@ -51,8 +51,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     protected final SearchBuilder<UserVmVO> HostRunningSearch;
     protected final SearchBuilder<UserVmVO> NameSearch;
     protected final SearchBuilder<UserVmVO> StateChangeSearch;
-    protected final SearchBuilder<UserVmVO> GuestIpSearch;
-    protected final SearchBuilder<UserVmVO> ZoneAccountGuestIpSearch;
     protected final SearchBuilder<UserVmVO> ZoneNameSearch;
     protected final SearchBuilder<UserVmVO> AccountHostSearch;
 
@@ -116,23 +114,11 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         StateChangeSearch.and("update", StateChangeSearch.entity().getUpdated(), SearchCriteria.Op.EQ);
         StateChangeSearch.done();
         
-        GuestIpSearch = createSearchBuilder();
-        GuestIpSearch.and("dc", GuestIpSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        GuestIpSearch.and("ip", GuestIpSearch.entity().getGuestIpAddress(), SearchCriteria.Op.EQ);
-        GuestIpSearch.and("states", GuestIpSearch.entity().getState(), SearchCriteria.Op.NIN);
-        GuestIpSearch.done();
-
         DestroySearch = createSearchBuilder();
         DestroySearch.and("state", DestroySearch.entity().getState(), SearchCriteria.Op.IN);
         DestroySearch.and("updateTime", DestroySearch.entity().getUpdateTime(), SearchCriteria.Op.LT);
         DestroySearch.done();
 
-        ZoneAccountGuestIpSearch = createSearchBuilder();
-        ZoneAccountGuestIpSearch.and("dataCenterId", ZoneAccountGuestIpSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        ZoneAccountGuestIpSearch.and("accountId", ZoneAccountGuestIpSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        ZoneAccountGuestIpSearch.and("guestIpAddress", ZoneAccountGuestIpSearch.entity().getGuestIpAddress(), SearchCriteria.Op.EQ);
-        ZoneAccountGuestIpSearch.done();
-        
         ZoneNameSearch = createSearchBuilder();
         ZoneNameSearch.and("dataCenterId", ZoneNameSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         ZoneNameSearch.and("name", ZoneNameSearch.entity().getName(), SearchCriteria.Op.EQ);
@@ -285,26 +271,6 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
 
         return listBy(sc);
     }
-
-	@Override
-	public List<UserVmVO> listVmsUsingGuestIpAddress(long dcId, String ipAddress) {
-    	SearchCriteria<UserVmVO> sc = GuestIpSearch.create();
-    	sc.setParameters("dc", dcId);
-    	sc.setParameters("ip", ipAddress);
-    	sc.setParameters("states", new Object[] {State.Destroyed,  State.Expunging});
-    	
-    	return listBy(sc);
-	}
-
-	@Override
-	public UserVm findByZoneAndAcctAndGuestIpAddress(long zoneId, long accountId, String ipAddress) {
-	    SearchCriteria<UserVmVO> sc = ZoneAccountGuestIpSearch.create();
-	    sc.setParameters("dataCenterId", zoneId);
-        sc.setParameters("accountId", accountId);
-        sc.setParameters("guestIpAddress", ipAddress);
-
-        return findOneBy(sc);
-	}
 
 	@Override
 	public List<UserVmVO> listByLastHostId(Long hostId) {

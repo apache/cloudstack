@@ -77,10 +77,6 @@ public interface UserVmDao extends GenericDao<UserVmVO, Long> {
 	
 	List<UserVmVO> listByNetworkId(long networkId);
 	
-	List<UserVmVO> listVmsUsingGuestIpAddress(long dcId, String ipAddress);
-
-	UserVm findByZoneAndAcctAndGuestIpAddress(long zoneId, long accountId, String ipAddress);
-	
 	UserVm findVmByZoneIdAndName(long zoneId, String name);
 	List<UserVmVO> listByAccountIdAndHostId(long accountId, long hostId);
 	

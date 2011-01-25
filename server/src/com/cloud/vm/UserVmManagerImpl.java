@@ -2478,7 +2478,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Object hostName = c.getCriteria(Criteria.HOSTNAME);
         Object keyword = c.getCriteria(Criteria.KEYWORD);
         Object isAdmin = c.getCriteria(Criteria.ISADMIN);
-        Object ipAddress = c.getCriteria(Criteria.IPADDRESS);
+        assert c.getCriteria(Criteria.IPADDRESS) == null : "We don't support search by ip address on VM any more.  If you see this assert, it means we have to find a different way to search by the nic table.";
         Object groupId = c.getCriteria(Criteria.GROUPID);
         Object useVirtualNetwork = c.getCriteria(Criteria.FOR_VIRTUAL_NETWORK);
         Object path = c.getCriteria(Criteria.PATH);
@@ -2496,7 +2496,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("hostIdIN", sb.entity().getHostId(), SearchCriteria.Op.IN);
-        sb.and("guestIP", sb.entity().getGuestIpAddress(), SearchCriteria.Op.EQ);
         
         if (domainId != null || path != null) {
             // if accountId isn't specified, we can do a domain match for the admin case
@@ -2635,10 +2634,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
 
-        if (ipAddress != null) {
-            sc.setParameters("guestIP", ipAddress);
-        }
-        
         return _vmDao.search(sc, searchFilter);
     }
 }

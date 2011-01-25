@@ -25,28 +25,6 @@ import com.cloud.vm.VirtualMachine;
  */
 public interface UserVm extends VirtualMachine, ControlledEntity {
     
-    /**
-     * @return service offering id
-     */
-    @Override
-    long getServiceOfferingId();
-    
-    /**
-     * @return the domain this vm instance belongs to.
-     */
-    @Override
-    long getDomainId();
-    
-    /**
-     * @return ip address within the guest network.
-     */
-    String getGuestIpAddress();
-    
-    /**
-     * @return mac address of the guest network.
-     */
-    String getGuestMacAddress();
-    
     Long getIsoId();
     
     String getDisplayName();
