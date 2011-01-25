@@ -1,17 +1,15 @@
-<%@ page import="java.util.*" %>
-
-<%@ page import="com.cloud.utils.*" %>
-
-<%
-    Locale browserLocale = request.getLocale();
-    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
-%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
+<fmt:setBundle basename="resources/messages"/>
 
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
         <img src="images/title_podicon.gif" /></div>
     <h1 id="page_title">
-        Network
+        <fmt:message key="label.network"/>
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -24,13 +22,13 @@
     <div id="public_network_page" style="display:none">
         <div class="tabbox" style="margin-top: 15px;">
             <div class="content_tabs on" id="tab_details">
-                <%=t.t("details")%></div>
+                <fmt:message key="label.details"/></div>
             <div class="content_tabs off" id="tab_ipallocation">
-                IP Allocation</div>
+                <fmt:message key="label.ip.allocations"/></div>
             <div class="content_tabs off" id="tab_firewall">
-                Firewall</div>
+                <fmt:message key="label.firewall"/></div>
             <div class="content_tabs off" id="tab_loadbalancer">
-                Load Balancer</div>
+                <fmt:message key="label.load.balancer"/></div>
         </div>    
         <!-- Details tab (end)-->
         <div id="tab_content_details">  
@@ -39,17 +37,17 @@
 	                <div class="rightpanel_mainloader_animatedicon">
 	                </div>
 	                <p>
-	                    Loading &hellip;</p>
+	                    <fmt:message key="label.loading"/> &hellip;</p>
 	            </div>
 	        </div>    
             <div id="tab_container">			
 	            <div class="grid_container">
 	        	    <div class="grid_header">
 	            	    <div id="grid_header_title" class="grid_header_title">Title</div>
-	                       <div class="grid_actionbox" id="action_link"><p>Actions</p>
+	                       <div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
 	                        <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                            <ul class="actionsdropdown_boxlist" id="action_list">
-	                                <li><%=t.t("no.available.actions")%></li>
+	                                <li><fmt:message key="label.no.actions"/></li>
 	                            </ul>
 	                        </div>
 	                    </div>
@@ -58,13 +56,13 @@
 	                        <div class="gridheader_loader" id="icon">
 	                        </div>
 	                        <p id="description">
-	                            Waiting &hellip;</p>
+	                            <fmt:message key="label.waiting"/> &hellip;</p>
 	                    </div>
 	                </div>
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("ID")%>:</div>
+	                            <fmt:message key="label.id"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="id">
@@ -75,7 +73,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            State:</div>
+	                            <fmt:message key="label.state"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="state">
@@ -85,7 +83,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            Traffic Type:</div>
+	                            <fmt:message key="label.traffic.type"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="traffictype">
@@ -95,7 +93,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            Broadcast Domain Type:</div>
+	                            <fmt:message key="label.broadcast.domain.type"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="broadcastdomaintype">
@@ -105,7 +103,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            Is Shared:</div>
+	                            <fmt:message key="label.is.shared"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="isshared">
@@ -115,7 +113,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            Is System:</div>
+	                            <fmt:message key="label.is.system"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="issystem">
@@ -125,7 +123,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            Network Offering Name:</div>
+	                            <fmt:message key="label.network.offering.name"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="networkofferingname">
@@ -135,7 +133,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            Network Offering Display Text:</div>
+	                            <fmt:message key="label.network.offering.display.text"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="networkofferingdisplaytext">
@@ -145,7 +143,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            Network Offering ID:</div>
+	                            <fmt:message key="label.network.offering.id"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="networkofferingid">
@@ -155,7 +153,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            Related:</div>
+	                            <fmt:message key="label.related"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="related">
@@ -165,7 +163,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            Zone ID:</div>
+	                            <fmt:message key="label.zone.id"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="zoneid">
@@ -175,7 +173,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            DNS1:</div>
+	                            <fmt:message key="label.dns.1"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="dns1">
@@ -185,7 +183,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            DNS2:</div>
+	                            <fmt:message key="label.dns.2"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="dns2">
@@ -195,7 +193,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            Domain ID:</div>
+	                            <fmt:message key="label.domain.id"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="domainid">
@@ -205,7 +203,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            Account:</div>
+	                            <fmt:message key="label.account"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="account">
@@ -223,7 +221,7 @@
     	    <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
                   <div class="rightpanel_mainloaderbox">
                        <div class="rightpanel_mainloader_animatedicon"></div>
-                       <p>Loading &hellip;</p>    
+                       <p><fmt:message key="label.loading"/> &hellip;</p>    
                   </div>               
             </div>
             <div id="tab_container">
@@ -236,7 +234,7 @@
     	    <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
                   <div class="rightpanel_mainloaderbox">
                        <div class="rightpanel_mainloader_animatedicon"></div>
-                       <p>Loading &hellip;</p>    
+                       <p><fmt:message key="label.loading"/> &hellip;</p>    
                   </div>               
             </div>
             <div id="tab_container">
@@ -249,7 +247,7 @@
     	    <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
                   <div class="rightpanel_mainloaderbox">
                        <div class="rightpanel_mainloader_animatedicon"></div>
-                       <p>Loading &hellip;</p>    
+                       <p><fmt:message key="label.loading"/> &hellip;</p>    
                   </div>               
             </div>
             <div id="tab_container">
@@ -263,9 +261,9 @@
     <div id="direct_network_page" style="display:none">
         <div class="tabbox" style="margin-top: 15px;">
             <div class="content_tabs on" id="tab_details">
-                <%=t.t("Details")%></div>
+                <fmt:message key="label.details"/></div>
             <div class="content_tabs off" id="tab_ipallocation">
-                IP Allocation</div>
+                <fmt:message key="label.ip.allocation"/></div>
         </div>    
         <!-- Details tab (end)-->
         <div id="tab_content_details">  
@@ -274,17 +272,17 @@
 	                <div class="rightpanel_mainloader_animatedicon">
 	                </div>
 	                <p>
-	                    Loading &hellip;</p>
+	                    <fmt:message key="label.loading"/> &hellip;</p>
 	            </div>
 	        </div>    
             <div id="tab_container">			
 	            <div class="grid_container">
 	        	    <div class="grid_header">
 	            	    <div id="grid_header_title" class="grid_header_title">Title</div>
-	                       <div class="grid_actionbox" id="action_link"><p>Actions</p>
+	                       <div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
 	                        <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                            <ul class="actionsdropdown_boxlist" id="action_list">
-	                                <li><%=t.t("no.available.actions")%></li>
+	                                <li><fmt:message key="label.no.actions"/></li>
 	                            </ul>
 	                        </div>
 	                    </div>
@@ -293,13 +291,13 @@
 	                        <div class="gridheader_loader" id="icon">
 	                        </div>
 	                        <p id="description">
-	                            Waiting &hellip;</p>
+	                            <fmt:message key="label.waiting"/> &hellip;</p>
 	                    </div>
 	                </div>
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("ID")%>:</div>
+	                            <fmt:message key="label.id"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="id">
@@ -309,7 +307,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("Name")%>:</div>
+	                            <fmt:message key="label.name"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="name">
@@ -319,7 +317,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("display.text")%>:</div>
+	                            <fmt:message key="label.display.text"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="displaytext">
@@ -329,7 +327,7 @@
 					<div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            Is Default:</div>
+	                            <fmt:message key="label.is.default"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="default">
@@ -339,7 +337,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("vlan")%>:</div>
+	                            <fmt:message key="label.vlan"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="vlan">
@@ -349,7 +347,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            <%=t.t("gateway")%>:</div>
+	                            <fmt:message key="label.gateway"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="gateway">
@@ -359,7 +357,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            Netmask:</div>
+	                            <fmt:message key="label.netmask"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="netmask">
@@ -369,7 +367,7 @@
 	                <div class="grid_rows even">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            Domain:</div>
+	                            <fmt:message key="label.domain"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="domain">
@@ -379,7 +377,7 @@
 	                <div class="grid_rows odd">
 	                    <div class="grid_row_cell" style="width: 20%;">
 	                        <div class="row_celltitles">
-	                            Account:</div>
+	                            <fmt:message key="label.account"/>:</div>
 	                    </div>
 	                    <div class="grid_row_cell" style="width: 79%;">
 	                        <div class="row_celltitles" id="account">
@@ -396,7 +394,7 @@
     	    <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
                   <div class="rightpanel_mainloaderbox">
                        <div class="rightpanel_mainloader_animatedicon"></div>
-                       <p>Loading &hellip;</p>    
+                       <p><fmt:message key="label.loading"/> &hellip;</p>    
                   </div>               
             </div>
             <div id="tab_container">
@@ -413,7 +411,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt="Add Network" /></div>
             <div class="actionpanel_button_links">
-                Add Network
+                <fmt:message key="label.add.network"/>
             </div>
         </div>
     </div>
@@ -422,7 +420,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt="Add IP Range" /></div>
             <div class="actionpanel_button_links">
-                Add IP Range
+                <fmt:message key="label.add.ip.range"/>
             </div>
         </div>
     </div>
@@ -432,7 +430,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt="Add Firewall" /></div>
             <div class="actionpanel_button_links">
-                Add Firewall
+                <fmt:message key="label.add.firewall"/>
             </div>
         </div>
     </div>
@@ -441,7 +439,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt="Add Load Balancer" /></div>
             <div class="actionpanel_button_links">
-                Add Load Balancer
+                <fmt:message key="label.add.load.balancer"/>
             </div>
         </div>
     </div>
@@ -453,7 +451,7 @@
 	<div class="grid_header">
         <div class="grid_header_title" id="grid_header_title">
         </div>
-        <div class="grid_actionbox" id="firewall_action_link"><p>Actions</p>
+        <div class="grid_actionbox" id="firewall_action_link"><p><fmt:message key="label.actions"/></p>
             <div class="grid_actionsdropdown_box" id="firewall_action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
@@ -463,7 +461,7 @@
             <div class="gridheader_loader" id="icon">
             </div>
             <p id="description">
-                Waiting &hellip;
+                <fmt:message key="label.waiting"/> &hellip;
             </p>
         </div>       
     </div>
@@ -478,7 +476,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                ID:</div>
+                <fmt:message key="label.id"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="id">
@@ -489,7 +487,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                IP:</div>
+                <fmt:message key="label.ip"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="url">
@@ -516,7 +514,7 @@
 	<div class="grid_header">
         <div class="grid_header_title" id="grid_header_title">
         </div>
-        <div class="grid_actionbox" id="loadbalancer_action_link"><p>Actions</p>
+        <div class="grid_actionbox" id="loadbalancer_action_link"><p><fmt:message key="label.actions"/></p>
             <div class="grid_actionsdropdown_box" id="loadbalancer_action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
@@ -526,7 +524,7 @@
             <div class="gridheader_loader" id="icon">
             </div>
             <p id="description">
-                Waiting &hellip;
+                <fmt:message key="label.waiting"/> &hellip;
             </p>
         </div>       
     </div>
@@ -541,7 +539,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                ID:</div>
+                <fmt:message key="label.id"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="id">
@@ -552,7 +550,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                IP:</div>
+                <fmt:message key="label.ip"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="url">
@@ -568,7 +566,7 @@
 	<div class="grid_header">
         <div class="grid_header_title" id="grid_header_title">
         </div>
-        <div class="grid_actionbox" id="iprange_action_link"><p>Actions</p>
+        <div class="grid_actionbox" id="iprange_action_link"><p><fmt:message key="label.actions"/></p>
             <div class="grid_actionsdropdown_box" id="iprange_action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
@@ -578,7 +576,7 @@
             <div class="gridheader_loader" id="icon">
             </div>
             <p id="description">
-                Waiting &hellip;
+                <fmt:message key="label.waiting"/> &hellip;
             </p>
         </div>       
     </div>
@@ -593,7 +591,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                ID:</div>
+                <fmt:message key="label.id"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="id">
@@ -603,7 +601,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                VLAN:</div>
+                <fmt:message key="label.vlan"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="vlan">
@@ -613,7 +611,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Gateway:</div>
+                <fmt:message key="label.gateway"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="gateway">
@@ -623,7 +621,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Netmask:</div>
+                <fmt:message key="label.netmask"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="netmask">
@@ -633,7 +631,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                IP Range:</div>
+                <fmt:message key="label.ip.range"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="iprange">
@@ -643,7 +641,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Domain:</div>
+                <fmt:message key="label.domain"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="domain">
@@ -653,7 +651,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Account:</div>
+                <fmt:message key="label.account"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="account">
@@ -668,7 +666,7 @@
 	<div class="grid_header">
         <div class="grid_header_title" id="grid_header_title">
         </div>
-        <div class="grid_actionbox" id="iprange_action_link"><p>Actions</p>
+        <div class="grid_actionbox" id="iprange_action_link"><p><fmt:message key="label.actions"/></p>
             <div class="grid_actionsdropdown_box" id="iprange_action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
@@ -678,7 +676,7 @@
             <div class="gridheader_loader" id="icon">
             </div>
             <p id="description">
-                Waiting &hellip;
+                <fmt:message key="label.waiting"/> &hellip;
             </p>
         </div>       
     </div>
@@ -693,7 +691,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                ID:</div>
+                <fmt:message key="label.id"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="id">
@@ -703,7 +701,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                VLAN:</div>
+                <fmt:message key="label.vlan"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="vlan">
@@ -713,7 +711,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                IP Range:</div>
+                <fmt:message key="label.ip.range"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="iprange">
@@ -727,29 +725,29 @@
 <!-- Add IP Range for public netework dialog (begin) -->
 <div id="dialog_add_iprange_to_publicnetwork" title="Add IP Range to Public Network" style="display: none">
     <p>
-        Add an IP range to public network in zone: <b><span id="zone_name"></span></b>
+		<fmt:message key="message.add.ip.range"/>: <b><span id="zone_name"></span></b>
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>            
             <li id="add_publicip_vlan_container">
                 <label for="add_publicip_vlan_tagged">
-                    VLAN:</label>
+                    <fmt:message key="label.vlan"/>:</label>
                 <select class="select" name="add_publicip_vlan_tagged" id="add_publicip_vlan_tagged">
-                    <option value="untagged">untagged</option>
-                    <option value="tagged">tagged</option>
+                    <option value="untagged"><fmt:message key="label.untagged"/></option>
+                    <option value="tagged"><fmt:message key="label.tagged"/></option>
                 </select>
             </li>
             <li style="display: none" id="add_publicip_vlan_vlan_container">
                 <label for="user_name">
-                    VLAN ID:</label>
+                    <fmt:message key="label.vlan.id"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_vlan" id="add_publicip_vlan_vlan" />
                 <div id="add_publicip_vlan_vlan_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li id="add_publicip_vlan_scope_container">
                 <label for="add_publicip_vlan_scope">
-                    Scope:</label>
+                    <fmt:message key="label.scope"/>:</label>
                 <select class="select" name="add_publicip_vlan_scope" id="add_publicip_vlan_scope">
                     <!--  
                     <option value="zone-wide">zone-wide</option>
@@ -757,23 +755,15 @@
                     -->
                 </select>
             </li>
-            <!--  
-            <li style="display: none" id="add_publicip_vlan_pod_container">
-                <label for="user_name">
-                    Pod:</label>
-                <select class="select" name="add_publicip_vlan_pod" id="add_publicip_vlan_pod">
-                </select>
-            </li>
-            -->
             <li style="display: none" id="add_publicip_vlan_domain_container">
                 <label for="user_name">
-                    Domain:</label>
+                    <fmt:message key="label.domain"/>:</label>
                 <select class="select" name="add_publicip_vlan_domain" id="add_publicip_vlan_domain">
                 </select>
             </li>
             <li style="display: none" id="add_publicip_vlan_account_container">
                 <label for="user_name">
-                    Account:</label>
+                    <fmt:message key="label.account"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_account" id="add_publicip_vlan_account" />
                 <div id="add_publicip_vlan_account_errormsg" class="dialog_formcontent_errormsg"
                     style="display: none;">
@@ -781,7 +771,7 @@
             </li>
             <li>
                 <label for="user_name">
-                    Gateway:</label>
+                    <fmt:message key="label.gateway"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_gateway" id="add_publicip_vlan_gateway" />
                 <div id="add_publicip_vlan_gateway_errormsg" class="dialog_formcontent_errormsg"
                     style="display: none;">
@@ -789,7 +779,7 @@
             </li>
             <li>
                 <label for="user_name">
-                    Netmask:</label>
+                    <fmt:message key="label.netmask"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_netmask" id="add_publicip_vlan_netmask" />
                 <div id="add_publicip_vlan_netmask_errormsg" class="dialog_formcontent_errormsg"
                     style="display: none;">
@@ -797,7 +787,7 @@
             </li>
             <li>
                 <label for="user_name">
-                    IP Range:</label>
+                    <fmt:message key="label.ip.range"/>:</label>
                 <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_startip"
                     id="add_publicip_vlan_startip" /><span>-</span>
                 <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_endip"
@@ -816,7 +806,7 @@
         <div class="ui_dialog_loader">
         </div>
         <p>
-            Adding....</p>
+            <fmt:message key="label.adding"/>....</p>
     </div>
     <!--Confirmation msg box-->
     <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
@@ -833,6 +823,7 @@
 <!-- Add External Firewall dialog (begin) -->
 <div id="dialog_add_external_firewall" title="Add Firewall" style="display: none">   
     <p>
+		<fmt:message key="message.add.firewall"/>
         Add firewall for zone: <b><span id="zone_name"></span></b>
     </p>
     <div class="dialog_formcontent">
@@ -840,21 +831,21 @@
         <ol>   
             <li>
                 <label>
-                    IP:</label>
+                    <fmt:message key="label.ip"/>:</label>
                 <input class="text" type="text" id="ip" />
                 <div id="ip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label>
-                    User name:</label>
+                    <fmt:message key="label.username"/>:</label>
                 <input class="text" type="text" id="username" />
                 <div id="username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label>
-                    Password:</label>
+                    <fmt:message key="label.password"/>:</label>
                 <input class="text" type="password" id="password" autocomplete="off" />
                 <div id="password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
@@ -862,35 +853,35 @@
             
             <li>
                 <label>
-                    Public Interface:</label>
+                    <fmt:message key="label.public.interface"/>:</label>
                 <input class="text" type="text" id="public_interface" />
                 <div id="public_interface_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>         
             <li>
                 <label>
-                    Private Interface:</label>
+                    <fmt:message key="label.private.interface"/>:</label>
                 <input class="text" type="text" id="private_interface" />
                 <div id="private_interface_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>             
             <li>
                 <label>
-                    Usage Interface:</label>
+                    <fmt:message key="label.usage.interface"/>:</label>
                 <input class="text" type="text" id="usage_interface" />
                 <div id="usage_interface_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>                  
             <li>
                 <label>
-                    Public Zone:</label>
+                    <fmt:message key="label.public.zone"/>:</label>
                 <input class="text" type="text" id="public_zone" />
                 <div id="public_zone_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>       
             <li>
                 <label>
-                    Private Zone:</label>
+                    <fmt:message key="label.private.zone"/>:</label>
                 <input class="text" type="text" id="private_zone" />
                 <div id="private_zone_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
@@ -903,7 +894,7 @@
         <div class="ui_dialog_loader">
         </div>
         <p>
-            Adding....</p>
+            <fmt:message key="label.adding"/>....</p>
     </div>
     <!--Confirmation msg box-->
     <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
@@ -920,28 +911,28 @@
 <!-- Add Load Balancer dialog (begin) -->
 <div id="dialog_add_load_balancer" title="Add Load Balancer" style="display: none">   
     <p>
-        Add load balancer for zone: <b><span id="zone_name"></span></b>
+		<fmt:message key="message.add.load.balancer"/>: <b><span id="zone_name"></span></b>
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>   
             <li>
                 <label>
-                    IP:</label>
+                    <fmt:message key="label.ip"/>:</label>
                 <input class="text" type="text" id="ip" />
                 <div id="ip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label>
-                    User name:</label>
+                    <fmt:message key="label.username"/>:</label>
                 <input class="text" type="text" id="username" />
                 <div id="username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label>
-                    Password:</label>
+                    <fmt:message key="label.password"/>:</label>
                 <input class="text" type="password" id="password" autocomplete="off" />
                 <div id="password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
@@ -949,14 +940,14 @@
             
             <li>
                 <label>
-                    Public Interface:</label>
+                    <fmt:message key="label.public.interface"/>:</label>
                 <input class="text" type="text" id="public_interface" />
                 <div id="public_interface_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>         
             <li>
                 <label>
-                    Private Interface:</label>
+                    <fmt:message key="label.private.interface"/>:</label>
                 <input class="text" type="text" id="private_interface" />
                 <div id="private_interface_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
@@ -970,7 +961,7 @@
         <div class="ui_dialog_loader">
         </div>
         <p>
-            Adding....</p>
+            <fmt:message key="label.adding"/>....</p>
     </div>
     <!--Confirmation msg box-->
     <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
@@ -987,14 +978,14 @@
 <!-- Add IP Range for direct netework dialog (begin) -->
 <div id="dialog_add_iprange_to_directnetwork" title="Add IP Range to Direct Network" style="display: none">
     <p>
-        Add an IP range to direct network <b><span id="directnetwork_name"></span></b> in zone <b><span id="zone_name"></span></b>
+		<fmt:message key="add.ip.range.direct.network"/>
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>                
             <li>
                 <label for="user_name">
-                    IP Range:</label>
+                    <fmt:message key="label.ip.range"/>:</label>
                 <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_startip"
                     id="add_publicip_vlan_startip" /><span>-</span>
                 <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_endip"
@@ -1013,7 +1004,7 @@
         <div class="ui_dialog_loader">
         </div>
         <p>
-            Adding....</p>
+            <fmt:message key="label.adding"/>....</p>
     </div>
     <!--Confirmation msg box-->
     <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
@@ -1029,28 +1020,28 @@
 <!-- Add network dialog for zone (begin) -->
 <div id="dialog_add_network_for_zone" title="Add Network" style="display: none">
     <p>
-        Add a new network for zone: <b><span id="zone_name"></span></b>
+		<fmt:message key="message.add.network"/>
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>            
 			<li>
                 <label for="user_name">
-                    Network Name:</label>
+                    <fmt:message key="label.network.name"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_network_name" id="add_publicip_vlan_network_name" />
                 <div id="add_publicip_vlan_network_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
 			<li>
                 <label for="user_name">
-                    Network Desc:</label>
+                    <fmt:message key="label.network.desc"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_network_desc" id="add_publicip_vlan_network_desc" />
                 <div id="add_publicip_vlan_network_desc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
 			<li>
                 <label for="user_name">
-                    Is Default?</label>
+                    <fmt:message key="label.is.default"/>?</label>
                 <select class="select" name="add_publicip_vlan_default" id="add_publicip_vlan_default">
                     <option value="false">No</option>
 					<option value="true">Yes</option>
@@ -1058,35 +1049,35 @@
             </li>
             <li id="add_publicip_vlan_container">
                 <label for="add_publicip_vlan_tagged">
-                    VLAN:</label>
+                    <fmt:message key="label.vlan"/>:</label>
                 <select class="select" name="add_publicip_vlan_tagged" id="add_publicip_vlan_tagged">
                     <option value="tagged">tagged</option>
                 </select>
             </li>
             <li id="add_publicip_vlan_vlan_container">
                 <label for="user_name">
-                    VLAN ID:</label>
+                    <fmt:message key="label.vlan.id"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_vlan" id="add_publicip_vlan_vlan" />
                 <div id="add_publicip_vlan_vlan_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li id="add_publicip_vlan_scope_container">
                 <label for="add_publicip_vlan_scope">
-                    Scope:</label>
+                    <fmt:message key="label.scope"/>:</label>
                 <select class="select" id="add_publicip_vlan_scope">                    
-                    <option value="zone-wide">zone-wide</option>
-                    <option value="account-specific">account-specific</option>                   
+                    <option value="zone-wide"><fmt:message key="label.zone.wide"/></option>
+                    <option value="account-specific"><fmt:message key="label.account.specific"/></option>                   
                 </select>
             </li>           
             <li style="display: none" id="add_publicip_vlan_domain_container">
                 <label for="user_name">
-                    Domain:</label>
+                    <fmt:message key="label.domain"/>:</label>
                 <select class="select" name="add_publicip_vlan_domain" id="add_publicip_vlan_domain">
                 </select>
             </li>
             <li style="display: none" id="add_publicip_vlan_account_container">
                 <label for="user_name">
-                    Account:</label>
+                    <fmt:message key="label.account"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_account" id="add_publicip_vlan_account" />
                 <div id="add_publicip_vlan_account_errormsg" class="dialog_formcontent_errormsg"
                     style="display: none;">
@@ -1094,7 +1085,7 @@
             </li>
             <li>
                 <label for="user_name">
-                    Gateway:</label>
+                    <fmt:message key="label.gateway"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_gateway" id="add_publicip_vlan_gateway" />
                 <div id="add_publicip_vlan_gateway_errormsg" class="dialog_formcontent_errormsg"
                     style="display: none;">
@@ -1102,7 +1093,7 @@
             </li>
             <li>
                 <label for="user_name">
-                    Netmask:</label>
+                    <fmt:message key="label.netmask"/>:</label>
                 <input class="text" type="text" name="add_publicip_vlan_netmask" id="add_publicip_vlan_netmask" />
                 <div id="add_publicip_vlan_netmask_errormsg" class="dialog_formcontent_errormsg"
                     style="display: none;">
@@ -1110,7 +1101,7 @@
             </li>
             <li>
                 <label for="user_name">
-                    IP Range:</label>
+                    <fmt:message key="label.ip.range"/>:</label>
                 <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_startip"
                     id="add_publicip_vlan_startip" /><span>-</span>
                 <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_endip"
@@ -1129,7 +1120,7 @@
         <div class="ui_dialog_loader">
         </div>
         <p>
-            Adding....</p>
+            <fmt:message key="label.adding"/>....</p>
     </div>
     <!--Confirmation msg box-->
     <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
