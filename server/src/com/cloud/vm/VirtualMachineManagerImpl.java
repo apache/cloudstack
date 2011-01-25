@@ -824,8 +824,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
                 if (!stopped) {
                     throw new CloudRuntimeException("Unable to stop the virtual machine due to " + answer.getDetails());
                 } else {
-                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
-                    _usageEventDao.persist(usageEvent);
+                    if(vm.getType() == VirtualMachine.Type.User){
+                        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
+                        _usageEventDao.persist(usageEvent);
+                    }
                 }
                 vmGuru.finalizeStop(profile, answer);
                     
