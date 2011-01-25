@@ -30,6 +30,7 @@ import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
@@ -109,7 +110,13 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
 
     @Override
     public long getEntityOwnerId() {
-        return _entityMgr.findById(PortForwardingRule.class, getEntityId()).getAccountId();
+        Account account = UserContext.current().getCaller();
+
+        if (account != null) {
+            return account.getId();
+        }
+
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
     @Override
