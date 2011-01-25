@@ -381,6 +381,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
             s_logger.debug("Expunged " + vm);
         }
 
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
+        _usageEventDao.persist(usageEvent);
+
+        
         return true;
     }
 
