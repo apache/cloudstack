@@ -32,6 +32,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.utils.net.Ip;
 
 
 public interface NetworkService {
@@ -57,5 +58,7 @@ public interface NetworkService {
     int getActiveNicsInNetwork(long networkId);
     
     Network getNetwork(long networkId);
+    
+    IpAddress getIp(Ip ip);
     
 }

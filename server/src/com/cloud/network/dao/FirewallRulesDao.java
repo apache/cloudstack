@@ -29,7 +29,7 @@ import com.cloud.utils.net.Ip;
  * Data Access Object for user_ip_address and ip_forwarding tables
  */
 public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
-    List<FirewallRuleVO> listByIpAndNotRevoked(Ip ip);
+    List<FirewallRuleVO> listByIpAndNotRevoked(Ip ip, Boolean isOneToOneNat);
     
     boolean setStateToAdd(FirewallRuleVO rule);
     

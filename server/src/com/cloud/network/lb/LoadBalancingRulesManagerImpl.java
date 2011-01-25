@@ -36,7 +36,6 @@ import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
-import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
@@ -399,7 +398,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
     @Override
     public boolean removeAllLoadBalanacers(Ip ip) {   
-        List<FirewallRuleVO> rules = _rulesDao.listByIpAndNotRevoked(ip);
+        List<FirewallRuleVO> rules = _rulesDao.listByIpAndNotRevoked(ip, null);
         if (rules != null)
         s_logger.debug("Found " + rules.size() + " lb rules to cleanup");
         for (FirewallRule rule : rules) {

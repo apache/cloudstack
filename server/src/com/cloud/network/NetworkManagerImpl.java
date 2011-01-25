@@ -1979,4 +1979,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         assert vos.size() <= 1 : "If we have multiple networks of the same type, then this method should no longer be used.";
         return vos.size() == 1 ? vos.get(0) : null;
     }
+    
+    @Override
+    public IpAddress getIp(Ip ip) {
+        return _ipAddressDao.findById(ip);
+    }
 }

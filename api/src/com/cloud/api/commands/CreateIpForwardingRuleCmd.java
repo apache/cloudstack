@@ -28,7 +28,9 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.network.IpAddress;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -46,9 +48,6 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
 
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the public IP address of the forwarding rule, already associated via associateIp")
     private String ipAddress;
-
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the ID of the virtual machine for the forwarding rule")
-    private Long virtualMachineId;
     
     @Parameter(name=ApiConstants.START_PORT, type=CommandType.INTEGER, required=true, description="the start port for the rule")
     private Integer startPort;
@@ -58,6 +57,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
     
     @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, required=true, description="the protocol for the rule. Valid values are TCP or UDP.")
     private String protocol;
+    
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -65,10 +65,6 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
 
     public String getIpAddress() {
         return ipAddress;
-    }
-
-    public long getVirtualMachineId() {
-        return virtualMachineId;
     }
     
     public int getStartPort() {
@@ -113,7 +109,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
 	public void create() {
 		PortForwardingRule rule;
         try {
-            rule = _rulesService.createPortForwardingRule(this, virtualMachineId, true);
+            rule = _rulesService.createPortForwardingRule(this, getVirtualMachineId(), true);
         } catch (NetworkRuleConflictException e) {
             s_logger.info("Unable to create Port Forwarding Rule due to " + e.getMessage());
             throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
@@ -140,7 +136,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
 
     @Override
     public String getEventDescription() {
-        return  ("Creating an ipforwarding 1:1 NAT rule for "+ipAddress+" with virtual machine:"+virtualMachineId);
+        return  ("Creating an ipforwarding 1:1 NAT rule for "+ipAddress+" with virtual machine:"+ getVirtualMachineId());
     }
 
     @Override
@@ -224,6 +220,17 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
     @Override
     public boolean isOneToOneNat() {
         return true;
+    }
+    
+    @Override
+    public long getVirtualMachineId() {
+        IpAddress ip = _networkService.getIp(new Ip(ipAddress));
+        if (ip == null) {
+            throw new InvalidParameterValueException("Ip address " + ipAddress + " doesn't exist in the system");
+        } else {
+            return _networkService.getIp(new Ip(ipAddress)).getVmId();
+        }
+        
     }
 
 }

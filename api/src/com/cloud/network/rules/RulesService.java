@@ -54,4 +54,9 @@ public interface RulesService {
     public List<? extends PortForwardingRule> listPortForwardingRules(ListPortForwardingRulesCmd cmd);
 
     boolean applyPortForwardingRules(Ip ip, Account caller) throws ResourceUnavailableException;
+    
+    boolean enableOneToOneNat(Ip ipAddress, long vmId) throws NetworkRuleConflictException;
+    
+    boolean disableOneToOneNat(Ip ipAddress);
+    
 }

@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
@@ -28,76 +27,62 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddress;
+import com.cloud.utils.net.Ip;
 
-@Implementation(description="Deletes an ip forwarding rule", responseObject=SuccessResponse.class)
-public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteIpForwardingRuleCmd.class.getName());
-
-    private static final String s_name = "deleteipforwardingruleresponse";
+@Implementation(description="Disables one to one nat rule", responseObject=SuccessResponse.class)
+public class DisableOneToOneNat extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(DeletePortForwardingRuleCmd.class.getName());
+    private static final String s_name = "disableonetoonenatresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the id of the forwarding rule")
-    private Long id;
-
+    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the public IP address for which one-to-one nat feature is being disableed")
+    private String ipAddress;
     
-    // unexposed parameter needed for events logging
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, expose=false)
-    private Long ownerId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getId() {
-        return id;
+    public String getIpAddress() {
+        return ipAddress;
     }
-
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
     @Override
     public String getCommandName() {
         return s_name;
     }
-
-    @Override
-    public void execute(){
-    	boolean result = _rulesService.revokePortForwardingRule(id, true);
-
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            this.setResponseObject(response);
-        } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete ip forwarding rule");
-        }
-    }
-
-    @Override
-    public long getEntityOwnerId() {
-        if (ownerId == null) {
-            PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, id);
-            if (rule == null) {
-                throw new InvalidParameterValueException("Unable to find firewall rule by id: " + id);
-            } else {
-                ownerId = rule.getAccountId();
-            }
-        }
-        return ownerId;
-    }
-
+    
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_NET_RULE_DELETE;
+        return EventTypes.EVENT_DISABLE_ONE_TO_ONE_NAT;
     }
 
     @Override
     public String getEventDescription() {
-        return  ("Deleting an ipforwarding 1:1 NAT rule id:"+id);
+        return  ("Disabling one to one nat for ip=" + ipAddress);
     }
-
+    
+    @Override
+    public long getEntityOwnerId() {
+        return _entityMgr.findById(IpAddress.class, ipAddress).getAccountId();
+    }
+    
+    @Override
+    public void execute() throws ResourceUnavailableException {
+        boolean result = _rulesService.disableOneToOneNat(new Ip(ipAddress));
+        
+        if (result) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to disable oneToOne nat rule");
+        }
+    }
 }

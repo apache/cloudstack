@@ -65,6 +65,9 @@ public class IPAddressVO implements IpAddress {
 	@Column(name="one_to_one_nat")
 	private boolean oneToOneNat;
 	
+	@Column(name="vm_id")
+    private Long associatedWithVmId;
+	
 	@Column(name="state")
 	private State state;
 	
@@ -121,6 +124,15 @@ public class IPAddressVO implements IpAddress {
 	public void setAssociatedWithNetworkId(Long networkId) {
 	    this.associatedWithNetworkId = networkId;
 	}
+	
+	@Override
+    public Long getVmId() {
+        return associatedWithVmId;
+    }
+
+    public void setAssociatedWithVmId(Long vmId) {
+        this.associatedWithVmId = vmId;
+    }
 	
     @Override
     public Long getAllocatedInDomainId() {
@@ -194,4 +206,5 @@ public class IPAddressVO implements IpAddress {
     public String toString() {
 	    return new StringBuilder("Ip[").append(address).append("-").append(dataCenterId).append("]").toString();
 	}
+
 }

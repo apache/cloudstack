@@ -59,6 +59,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         IpNotRevokedSearch = createSearchBuilder();
         IpNotRevokedSearch.and("ip", IpNotRevokedSearch.entity().getSourceIpAddress(), Op.EQ);
         IpNotRevokedSearch.and("state", IpNotRevokedSearch.entity().getState(), Op.NEQ);
+        IpNotRevokedSearch.and("oneToOneNat", IpNotRevokedSearch.entity().isOneToOneNat(), Op.EQ);
         IpNotRevokedSearch.done();
         
         ReleaseSearch = createSearchBuilder();
@@ -91,10 +92,13 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     }
 
     @Override
-    public List<FirewallRuleVO> listByIpAndNotRevoked(Ip ip) {
+    public List<FirewallRuleVO> listByIpAndNotRevoked(Ip ip, Boolean isOneToOneNat) {
         SearchCriteria<FirewallRuleVO> sc = IpNotRevokedSearch.create();
         sc.setParameters("ip", ip);
         sc.setParameters("state", State.Revoke);
+        if (isOneToOneNat != null) {
+            sc.setParameters("oneToOneNat", isOneToOneNat);
+        }
         
         return listBy(sc);
     }

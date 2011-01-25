@@ -682,6 +682,7 @@ CREATE TABLE  `cloud`.`user_ip_address` (
   `allocated` datetime NULL COMMENT 'Date this ip was allocated to someone',
   `vlan_db_id` bigint unsigned NOT NULL,
   `one_to_one_nat` int(1) unsigned NOT NULL default '0',
+  `vm_id` bigint unsigned COMMENT 'vm id the one_to_one nat ip is assigned to',
   `state` char(32) NOT NULL default 'Free' COMMENT 'state of the ip address',
   `mac_address` bigint unsigned NOT NULL COMMENT 'mac address of this ip',
   `network_id` bigint unsigned COMMENT 'network this public ip address is associated with',

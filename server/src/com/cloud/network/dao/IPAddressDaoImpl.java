@@ -152,6 +152,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Ip> implements
         address.setAllocatedTime(null);
         address.setSourceNat(false);
         address.setOneToOneNat(false);
+        address.setAssociatedWithVmId(null);
         address.setState(State.Free);
         address.setAssociatedWithNetworkId(null);
         update(ipAddress, address);

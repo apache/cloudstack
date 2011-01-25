@@ -66,4 +66,6 @@ public interface IpAddress extends ControlledEntity {
     boolean readyToUse();
     
     Long getAssociatedWithNetworkId();
+    
+    Long getVmId();
 }

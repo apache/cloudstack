@@ -83,7 +83,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     public void detectRulesConflict(FirewallRule newRule, IpAddress ipAddress) throws NetworkRuleConflictException {
         assert newRule.getSourceIpAddress().equals(ipAddress.getAddress()) : "You passed in an ip address that doesn't match the address in the new rule";
         
-        List<FirewallRuleVO> rules = _firewallDao.listByIpAndNotRevoked(newRule.getSourceIpAddress());
+        List<FirewallRuleVO> rules = _firewallDao.listByIpAndNotRevoked(newRule.getSourceIpAddress(), null);
         assert (rules.size() >= 1) : "For network rules, we now always first persist the rule and then check for network conflicts so we should at least have one rule at this point.";
         
         for (FirewallRuleVO rule : rules) {
@@ -92,9 +92,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             }
             
             if (rule.isOneToOneNat() && !newRule.isOneToOneNat()) {
-                throw new NetworkRuleConflictException("There is already port forwarding rule specified for the " + newRule.getSourceIpAddress());
+                throw new NetworkRuleConflictException("There is 1 to 1 Nat rule specified for the " + newRule.getSourceIpAddress());
             } else if (!rule.isOneToOneNat() && newRule.isOneToOneNat()) {
-                throw new NetworkRuleConflictException("There is already 1 to 1 Nat rule specified for the " + newRule.getSourceIpAddress());
+                throw new NetworkRuleConflictException("There is already firewall rule specified for the " + newRule.getSourceIpAddress());
             }
             
             if (rule.getNetworkId() != newRule.getNetworkId() && rule.getState() != State.Revoke) {
@@ -133,6 +133,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("Invalid user vm: " + userVm.getId());
         }
         
+        _accountMgr.checkAccess(caller, ipAddress);
         _accountMgr.checkAccess(caller, userVm);
         
         // validate that IP address and userVM belong to the same account
@@ -193,13 +194,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         long accountId = network.getAccountId();
         long domainId = network.getDomainId();
         
-        checkIpAndUserVm(ipAddress, vm, caller);
-        if (isNat && (ipAddress.isSourceNat())) {
+        if (isNat && (ipAddress.isSourceNat() || !ipAddress.isOneToOneNat() || ipAddress.getVmId() == null)) {
             throw new NetworkRuleConflictException("Can't do one to one NAT on ip address: " + ipAddress.getAddress());
         }
         
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
         PortForwardingRuleVO newRule = 
             new PortForwardingRuleVO(rule.getXid(), 
                     rule.getSourceIpAddress(), 
@@ -213,12 +211,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                     accountId,
                     domainId, vmId, isNat);
         newRule = _forwardingDao.persist(newRule);
-        
-        if (isNat && !ipAddress.isOneToOneNat()) {
-            ipAddress.setOneToOneNat(true);
-            _ipAddressDao.update(ipAddress.getAddress(), ipAddress);
-        }
-        txn.commit();
 
         try {
             detectRulesConflict(newRule, ipAddress);
@@ -230,19 +222,46 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             _usageEventDao.persist(usageEvent);
             return newRule;
         } catch (Exception e) {
-            txn.start();
             _forwardingDao.remove(newRule.getId());
-            if (isNat) {
-                ipAddress.setOneToOneNat(false);
-                _ipAddressDao.update(ipAddress.getAddress(), ipAddress);
-            }
-            txn.commit();
             if (e instanceof NetworkRuleConflictException) {
                 throw (NetworkRuleConflictException)e;
             }
-            
             throw new CloudRuntimeException("Unable to add rule for " + newRule.getSourceIpAddress(), e);
         }
+    }
+    
+    @Override
+    public boolean enableOneToOneNat(Ip ip, long vmId) throws NetworkRuleConflictException{
+        IPAddressVO ipAddress = _ipAddressDao.findById(ip);
+        Account caller = UserContext.current().getCaller();
+        
+        UserVmVO vm = null;
+        vm = _vmDao.findById(vmId);
+        if (vm == null) {
+            throw new InvalidParameterValueException("Can't enable one-to-one nat for the address " + ipAddress + ", invalid virtual machine id specified (" + vmId + ").");
+        }
+        
+        checkIpAndUserVm(ipAddress, vm, caller);
+        
+        if (ipAddress.isSourceNat()) {
+            throw new InvalidParameterValueException("Can't enable one to one nat, ip address: " + ip.addr() + " is a sourceNat ip address");
+        }
+       
+        if (!ipAddress.isOneToOneNat()) {
+            List<FirewallRuleVO> rules = _firewallDao.listByIpAndNotRevoked(ip, false);
+            if (rules != null && !rules.isEmpty()) {
+                throw new NetworkRuleConflictException("Failed to enable one to one nat for the ip address " + ipAddress.getAddress() + " as it already has firewall rules assigned");
+            }
+        } else {
+            if (ipAddress.getVmId() != null && ipAddress.getVmId().longValue() != vmId) {
+                throw new NetworkRuleConflictException("Failed to enable one to one nat for the ip address " + ipAddress.getAddress() + " and vm id=" + vmId + " as it's already assigned to antoher vm");
+            }
+        } 
+        
+        ipAddress.setOneToOneNat(true);
+        ipAddress.setAssociatedWithVmId(vmId);
+        return _ipAddressDao.update(ipAddress.getAddress(), ipAddress);
+       
     }
     
     protected Pair<Network, Ip> getUserVmGuestIpAddress(UserVm vm) {
@@ -275,14 +294,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         } else if (rule.getState() == State.Add || rule.getState() == State.Active) {
             rule.setState(State.Revoke);
             _firewallDao.update(rule.getId(), rule);
-        }
-        if (rule.isOneToOneNat()) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Removing one to one nat so setting the ip back to one to one nat is false: "  + rule.getSourceIpAddress());
-            }
-            IPAddressVO ipAddress = _ipAddressDao.findById(rule.getSourceIpAddress());
-            ipAddress.setOneToOneNat(false);
-            _ipAddressDao.update(ipAddress.getAddress(), ipAddress);
         }
         
         // Save and create the event
@@ -339,7 +350,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
     
     public List<? extends FirewallRule> listFirewallRules(Ip ip) {
-        return _firewallDao.listByIpAndNotRevoked(ip);
+        return _firewallDao.listByIpAndNotRevoked(ip, null);
     }
 
     @Override
@@ -556,6 +567,54 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     @Override
     public List<? extends PortForwardingRule> listByNetworkId(long networkId) {
         return _forwardingDao.listByNetworkId(networkId);
+    }
+    
+    public boolean isLastOneToOneNatRule(FirewallRule ruleToCheck) {
+        List<FirewallRuleVO> rules = _firewallDao.listByIpAndNotRevoked(ruleToCheck.getSourceIpAddress(), false);
+        if (rules != null && !rules.isEmpty()) {
+            for (FirewallRuleVO rule : rules) {
+                if (ruleToCheck.getId() == rule.getId()) {
+                    continue;
+                }
+                if (rule.isOneToOneNat()) {
+                    return false;
+                }
+            }
+        } else {
+            return true;
+        }
+        
+        return true;
+    }
+    
+    @Override
+    public boolean disableOneToOneNat(Ip ip){
+        Account caller = UserContext.current().getCaller();
+        
+        IPAddressVO ipAddress = _ipAddressDao.findById(ip);
+        checkIpAndUserVm(ipAddress, null, caller);
+        
+        if (!ipAddress.isOneToOneNat()) {
+            throw new InvalidParameterValueException("One to one nat is not enabled for the ip: " + ip.addr());
+        }
+       
+        List<FirewallRuleVO> rules = _firewallDao.listByIpAndNotRevoked(ip, true);
+        if (rules != null) {
+            for (FirewallRuleVO rule : rules) {
+                rule.setState(State.Revoke);
+                _firewallDao.update(rule.getId(), rule);
+            }
+        }
+        
+        if (applyPortForwardingRules(ip, true)) {
+            ipAddress.setOneToOneNat(false);
+            ipAddress.setAssociatedWithVmId(null);
+            _ipAddressDao.update(ipAddress.getAddress(), ipAddress);
+            return true;
+        } else {
+            s_logger.warn("Failed to disable one to one nat for the ip address " + ip.addr());
+            return false;
+        }
     }
 
 }

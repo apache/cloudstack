@@ -80,6 +80,11 @@ public class PublicIp implements PublicIpAddress {
     }
     
     @Override
+    public Long getVmId() {
+        return _addr.getVmId();
+    }
+    
+    @Override
     public Date getAllocatedTime() {
         return _addr.getAllocatedTime();
     }
