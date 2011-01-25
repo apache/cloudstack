@@ -98,7 +98,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public List<VolumeVO> findByAccount(long accountId) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
-        sc.setParameters("destroyed", false);
+        sc.setParameters("notDestroyed", Volume.State.Destroy);
         return listBy(sc);
     }
     
@@ -121,7 +121,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     public List<VolumeVO> findByPoolId(long poolId) {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("poolId", poolId);
-        sc.setParameters("destroyed", false);
+        sc.setParameters("notDestroyed", Volume.State.Destroy);
 	    return listBy(sc);
 	}
     
@@ -130,7 +130,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("instanceId", id);
         sc.setParameters("status", AsyncInstanceCreateStatus.Created);
-        sc.setParameters("destroyed", false);
+        sc.setParameters("notDestroyed", Volume.State.Destroy);
         return listBy(sc);
     }
     
@@ -155,7 +155,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 	public List<VolumeVO> findByInstanceIdDestroyed(long vmId) {
 		SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
 		sc.setParameters("instanceId", vmId);
-		sc.setParameters("destroyed", true);
+		sc.setParameters("destroyed", Volume.State.Destroy);
 		return listIncludingRemovedBy(sc);
 	}
 	
@@ -164,7 +164,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
 		SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("pod", podId);
-        sc.setParameters("destroyed", false);
+        sc.setParameters("notDestroyed", Volume.State.Destroy);
         sc.setParameters("status", AsyncInstanceCreateStatus.Created);
         
         return listIncludingRemovedBy(sc);
@@ -274,6 +274,8 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         AllFieldsSearch.and("poolId", AllFieldsSearch.entity().getPoolId(), Op.EQ);
         AllFieldsSearch.and("vType", AllFieldsSearch.entity().getVolumeType(), Op.EQ);
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
+        AllFieldsSearch.and("destroyed", AllFieldsSearch.entity().getState(), Op.EQ);
+        AllFieldsSearch.and("notDestroyed", AllFieldsSearch.entity().getState(), Op.NEQ);
         AllFieldsSearch.done();
         
         DetachedAccountIdSearch = createSearchBuilder();
