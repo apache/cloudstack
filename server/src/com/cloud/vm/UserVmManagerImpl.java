@@ -121,7 +121,6 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.ovs.GreTunnelException;
 import com.cloud.network.ovs.OvsNetworkManager;
 import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
@@ -1110,7 +1109,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (vmName != null) {
             return new StopCommand(vm, vmName, VirtualMachineName.getVnet(vmName));
         } else if (vm != null) {
-            return new StopCommand(vm, vm.getVnet());
+            return new StopCommand(vm, null);
         } else {
             throw new CloudRuntimeException("Shouldn't even be here!");
         }
@@ -2375,8 +2374,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             accountId = account.getId();
         }
 
-        if(isRecursive == null)
+        if(isRecursive == null) {
             isRecursive = false;
+        }
         
         if(isRecursive && domainId != null) {
             DomainVO parentDomain = _domainDao.findById(domainId);

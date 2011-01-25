@@ -39,9 +39,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
     @Column(name="domain_router_id", updatable=true, nullable=true)
     Long domainRouterId;
 
-    @Column(name="vnet", length=10, updatable=true, nullable=true)
-    String vnet;
-
     @Column(name="guest_ip_address")
     String guestIpAddress;
     
@@ -126,10 +123,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
         this.domainRouterId = domainRouterId;
     }
 
-    public void setVnet(String vnet) {
-        this.vnet = vnet;
-    }
-
     @Override
     public long getServiceOfferingId() {
         return serviceOfferingId;
@@ -139,11 +132,6 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
         this.serviceOfferingId = serviceOfferingId;
     }
 
-    @Override
-    public String getVnet() {
-        return vnet;
-    }
-    
     public UserVmVO(long id,
                     String instanceName,
                     String displayName,

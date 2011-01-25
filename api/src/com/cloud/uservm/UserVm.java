@@ -32,16 +32,6 @@ public interface UserVm extends VirtualMachine, ControlledEntity {
     long getServiceOfferingId();
     
     /**
-     * @return the domain router associated with this vm.
-    Long getDomainRouterId();
-     */
-    
-    /**
-     * @return the vnet associated with this vm.
-     */
-    String getVnet();
-    
-    /**
      * @return the domain this vm instance belongs to.
      */
     @Override
