@@ -153,3 +153,50 @@ function doDeleteSecondaryStorage($actionLink, $detailsTab, $midmenuItem1) {
 		} 
 	}).dialog("open");
 }
+
+function bindAddSecondaryStorageButton(zoneObj) {        
+   $("#add_secondarystorage_button").unbind("click").bind("click", function(event) {   
+       $("#dialog_add_secondarystorage").find("#zone_name").text(fromdb(zoneObj.name));   
+       $("#dialog_add_secondarystorage").find("#info_container").hide();		    
+  
+       $("#dialog_add_secondarystorage")
+	    .dialog('option', 'buttons', { 				    
+		    "Add": function() { 
+		        var $thisDialog = $(this);	
+	            
+			    // validate values					
+			    var isValid = true;							    
+			    isValid &= validateString("NFS Server", $thisDialog.find("#nfs_server"), $thisDialog.find("#nfs_server_errormsg"));	
+			    isValid &= validatePath("Path", $thisDialog.find("#path"), $thisDialog.find("#path_errormsg"));					
+			    if (!isValid) 
+			        return;
+			    
+				$thisDialog.find("#spinning_wheel").show();
+								     					  								            				
+			    var zoneId = zoneObj.id;		
+			    var nfs_server = trim($thisDialog.find("#nfs_server").val());		
+			    var path = trim($thisDialog.find("#path").val());	    					    				    					   					
+				var url = nfsURL(nfs_server, path);  
+			    				  
+			    $.ajax({
+				    data: createURL("command=addSecondaryStorage&zoneId="+zoneId+"&url="+todb(url)),
+				    dataType: "json",
+				    success: function(json) {	
+				        $thisDialog.find("#spinning_wheel").hide();				        
+				        $thisDialog.dialog("close");										    
+					    $("#zone_"+zoneId).find("#secondarystorage_header").click();					    
+				    },			
+                   error: function(XMLHttpResponse) {	
+						handleError(XMLHttpResponse, function() {
+							handleErrorInDialog(XMLHttpResponse, $thisDialog);
+						});
+                   }					    			    
+			    });
+		    }, 
+		    "Cancel": function() { 
+			    $(this).dialog("close"); 
+		    } 
+	    }).dialog("open");                
+       return false;
+   });
+}

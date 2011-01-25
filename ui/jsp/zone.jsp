@@ -21,11 +21,7 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
-            <%=t.t("details")%></div>        
-        <!--    
-        <div class="content_tabs off" id="tab_secondarystorage">
-            Secondary Storage</div>   
-        -->   
+            <%=t.t("details")%></div>          
         <!--    
         <div class="content_tabs off" id="tab_network">
             Network </div>  
@@ -189,22 +185,7 @@
         </div>
     </div>
     <!-- Details tab (end)-->
-    
-    <!-- Secondary Storage tab (start)-->
-    <div id="tab_content_secondarystorage" style="display: none">        
-        <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
-            <div class="rightpanel_mainloaderbox">
-                <div class="rightpanel_mainloader_animatedicon">
-                </div>
-                <p>
-                    Loading &hellip;</p>
-            </div>
-        </div>
-        <div id="tab_container">
-        </div>
-    </div>
-    <!-- Secondary Storage tab (end)-->
-    
+        
     <!-- Network tab (start)-->
     <div style="display: none;" id="tab_content_network">
         <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
@@ -285,15 +266,6 @@
                 <img src="images/addvm_actionicon.png" /></div>
             <div class="actionpanel_button_links">
                 Add Primary Storage
-            </div>
-        </div>
-    </div>
-    <div class="actionpanel_button_wrapper" id="add_secondarystorage_button">
-        <div class="actionpanel_button">
-            <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" /></div>
-            <div class="actionpanel_button_links">
-                Add Secondary Storage
             </div>
         </div>
     </div>   
@@ -399,48 +371,7 @@
     </div>
 </div>
 <!-- Add Pod Dialog (end) -->
-<!-- Add Secondary Storage Dialog (begin) -->
-<div id="dialog_add_secondarystorage" title="Add Secondary Storage" style="display: none">
-    <p>
-        Add a new storage for zone <b><span id="zone_name"></span></b>
-    </p>
-    <div class="dialog_formcontent">
-        <form action="#" method="post" id="form1">
-        <ol>
-            <li>
-                <label>
-                    NFS Server:</label>
-                <input class="text" type="text" name="nfs_server" id="nfs_server" />
-                <div id="nfs_server_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                </div>
-            </li>
-            <li>
-                <label for="path">
-                    Path:</label>
-                <input class="text" type="text" name="path" id="path" />
-                <div id="path_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
-                </div>
-            </li>
-        </ol>
-        </form>
-    </div>
-    <!--Loading box-->
-    <div id="spinning_wheel" class="ui_dialog_loaderbox" style="display: none;">
-        <div class="ui_dialog_loader">
-        </div>
-        <p>
-            Adding....</p>
-    </div>
-    <!--Confirmation msg box-->
-    <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
-    <div id="info_container" class="ui_dialog_messagebox error" style="display: none;">
-        <div id="icon" class="ui_dialog_msgicon error">
-        </div>
-        <div id="info" class="ui_dialog_messagebox_text error">
-            (info)</div>
-    </div>
-</div>
-<!-- Add Secondary Storage Dialog (end) -->
+
 <!-- Add VLAN IP Range Dialog for zone (begin) -->
 <div id="dialog_add_vlan_for_zone" title="Add VLAN IP Range" style="display: none">
     <p>
@@ -950,110 +881,3 @@
     </div>
 </div>
 <!-- VLAN Template (end) -->
-<!--  secondary storage tab template (begin) -->
-<div class="grid_container" id="secondary_storage_tab_template" style="display: none">
-    <div class="grid_header">
-        <div class="grid_header_title" id="title">
-        </div>
-        <div class="grid_actionbox" id="secondarystorage_action_link"> <p>Actions</p>
-            <div class="grid_actionsdropdown_box" id="secondarystorage_action_menu" style="display: none;">
-                <ul class="actionsdropdown_boxlist" id="action_list">
-                </ul>
-            </div>
-        </div>
-        <div class="gridheader_loaderbox" id="spinning_wheel" style="display: none; height: 18px;">
-            <div class="gridheader_loader" id="icon">
-            </div>
-            <p id="description">
-                Waiting &hellip;
-            </p>
-        </div>
-    </div>
-    <div class="grid_rows" id="after_action_info_container" style="display: none">
-        <div class="grid_row_cell" style="width: 90%; border: none;">
-            <div class="row_celltitles">
-                <strong id="after_action_info">Message will appear here</strong></div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                ID:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="id">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows odd">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                Name:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="name">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("zone")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="zonename">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows odd">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("type")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="type">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("ip.address")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="ipaddress">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows odd">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("state")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="state">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows even">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("version")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="version">
-            </div>
-        </div>
-    </div>
-    <div class="grid_rows odd">
-        <div class="grid_row_cell" style="width: 20%;">
-            <div class="row_celltitles">
-                <%=t.t("last.disconnected")%>:</div>
-        </div>
-        <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="disconnected">
-            </div>
-        </div>
-    </div>
-</div>
-<!--  secondary storage tab template (end) -->

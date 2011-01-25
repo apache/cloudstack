@@ -24,15 +24,14 @@
         
     initDialog("dialog_add_external_cluster_in_zone_page", 320);
     initDialog("dialog_add_pod", 370); 
-    initDialog("dialog_add_vlan_for_zone");
-    initDialog("dialog_add_secondarystorage");   
+    initDialog("dialog_add_vlan_for_zone");    
     initDialog("dialog_add_host_in_zone_page"); 
 	initDialog("dialog_add_pool_in_zone_page");
         
     //switch between different tabs in zone page    
-    var tabArray = [$("#tab_details"), $("#tab_secondarystorage"), $("#tab_network")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_secondarystorage"), $("#tab_content_network")];      
-    var afterSwitchFnArray = [zoneJsonToDetailsTab, zoneJsonToSecondaryStorageTab, zoneJsonToNetworkTab];
+    var tabArray = [$("#tab_details"), $("#tab_network")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_network")];      
+    var afterSwitchFnArray = [zoneJsonToDetailsTab, zoneJsonToNetworkTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray); 
      
     $readonlyFields  = $("#tab_content_details").find("#name, #dns1, #dns2, #internaldns1, #internaldns2, #vlan, #guestcidraddress");
@@ -54,8 +53,7 @@ function zoneJsonToRightPanel($leftmenuItem1) {
     bindEventHandlerToDialogAddVlanForZone();                
                
     bindAddPodButton($("#add_pod_button"), $leftmenuItem1);                  
-    //bindAddVLANButton($("#add_vlan_button"), $leftmenuItem1);
-    bindAddSecondaryStorageButton($leftmenuItem1.data("jsonObj"));
+    //bindAddVLANButton($("#add_vlan_button"), $leftmenuItem1);    
           
     var pods;
     var zoneObj = $leftmenuItem1.data("jsonObj");
@@ -81,8 +79,7 @@ function zoneJsonToRightPanel($leftmenuItem1) {
 
 function zoneJsonClearRightPanel() {
     zoneJsonClearDetailsTab();   
-    zoneJsonClearNetworkTab();				    
-    zoneJsonClearSecondaryStorageTab();
+    zoneJsonClearNetworkTab(); 
 }
 
 function zoneJsonToDetailsTab() {	 
@@ -211,44 +208,6 @@ function zoneJsonClearDetailsTab() {
     $actionMenu.find("#action_list").empty();   
 	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());		
 }	
-
-function zoneJsonToSecondaryStorageTab() {      	
-	var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
-    if($leftmenuItem1 == null)
-        return;
-    
-    var jsonObj = $leftmenuItem1.data("jsonObj");    
-    if(jsonObj == null) 
-	    return;		
-      
-    var $thisTab = $("#right_panel_content").find("#tab_content_secondarystorage");
-	$thisTab.find("#tab_container").hide(); 
-    $thisTab.find("#tab_spinning_wheel").show();   
- 	
-    $.ajax({
-		cache: false,
-		data: createURL("command=listHosts&type=SecondaryStorage&zoneid="+jsonObj.id),
-		dataType: "json",
-		success: function(json) {			   			    
-			var items = json.listhostsresponse.host;	
-			var $container = $thisTab.find("#tab_container").empty();																					
-			if (items != null && items.length > 0) {			    
-				var $template = $("#secondary_storage_tab_template");				
-				for (var i = 0; i < items.length; i++) {
-					var $newTemplate = $template.clone(true);	               
-	                secondaryStorageJSONToTemplate(items[i], $newTemplate); 
-	                $container.append($newTemplate.show());	
-				}			
-			}	
-			$thisTab.find("#tab_spinning_wheel").hide();    
-            $thisTab.find("#tab_container").show();    		
-		}
-	});     
-}
-
-function zoneJsonClearSecondaryStorageTab() {   
-    $("#right_panel_content").find("#tab_content_secondarystorage").empty();	
-}
 
 var $vlanContainer;
 function zoneJsonToNetworkTab(jsonObj) {	
@@ -583,54 +542,6 @@ function bindAddVLANButton($button, $leftmenuItem1) {
     });
 }
 
-
-function bindAddSecondaryStorageButton(zoneObj) {        
-    $("#add_secondarystorage_button").unbind("click").bind("click", function(event) {   
-        $("#dialog_add_secondarystorage").find("#zone_name").text(fromdb(zoneObj.name));   
-        $("#dialog_add_secondarystorage").find("#info_container").hide();		    
-   
-        $("#dialog_add_secondarystorage")
-	    .dialog('option', 'buttons', { 				    
-		    "Add": function() { 
-		        var $thisDialog = $(this);	
-	            
-			    // validate values					
-			    var isValid = true;							    
-			    isValid &= validateString("NFS Server", $thisDialog.find("#nfs_server"), $thisDialog.find("#nfs_server_errormsg"));	
-			    isValid &= validatePath("Path", $thisDialog.find("#path"), $thisDialog.find("#path_errormsg"));					
-			    if (!isValid) 
-			        return;
-			    
-				$thisDialog.find("#spinning_wheel").show();
-								     					  								            				
-			    var zoneId = zoneObj.id;		
-			    var nfs_server = trim($thisDialog.find("#nfs_server").val());		
-			    var path = trim($thisDialog.find("#path").val());	    					    				    					   					
-				var url = nfsURL(nfs_server, path);  
-			    				  
-			    $.ajax({
-				    data: createURL("command=addSecondaryStorage&zoneId="+zoneId+"&url="+todb(url)),
-				    dataType: "json",
-				    success: function(json) {	
-				        $thisDialog.find("#spinning_wheel").hide();				        
-				        $thisDialog.dialog("close");										    
-					    $("#zone_"+zoneId).find("#secondarystorage_header").click();					    
-				    },			
-                    error: function(XMLHttpResponse) {	
-						handleError(XMLHttpResponse, function() {
-							handleErrorInDialog(XMLHttpResponse, $thisDialog);
-						});
-                    }					    			    
-			    });
-		    }, 
-		    "Cancel": function() { 
-			    $(this).dialog("close"); 
-		    } 
-	    }).dialog("open");                
-        return false;
-    });
-}
-
 function bindAddPodButton($button, $leftmenuItem1) {       
     $button.unbind("click").bind("click", function(event) {   
         var zoneObj = $leftmenuItem1.data("jsonObj"); 
@@ -762,38 +673,6 @@ function bindAddPodButton($button, $leftmenuItem1) {
         return false;
     });            
 }
-
-function secondaryStorageJSONToTemplate(json, template) {
-    template.data("jsonObj", json);
-    template.attr("id", "secondaryStorage_"+json.id).data("secondaryStorageId", json.id);   	
-   	template.find("#id").text(json.id);
-   	template.find("#title").text(fromdb(json.name));
-   	template.find("#name").text(fromdb(json.name));
-   	template.find("#zonename").text(fromdb(json.zonename));	
-	template.find("#type").text(json.type);	
-    template.find("#ipaddress").text(json.ipaddress);
-       
-    setHostStateInRightPanel(fromdb(json.state), template.find("#state"))
-    
-    template.find("#version").text(json.version); 
-    setDateField(json.disconnected, template.find("#disconnected"));
-    
-    var $actionLink = template.find("#secondarystorage_action_link");		
-	$actionLink.bind("mouseover", function(event) {
-        $(this).find("#secondarystorage_action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {
-        $(this).find("#secondarystorage_action_menu").hide();    
-        return false;
-    });		
-	
-	var $actionMenu = $actionLink.find("#secondarystorage_action_menu");
-    $actionMenu.find("#action_list").empty();	
-    
-    buildActionLinkForSubgridItem("Delete Secondary Storage", secondarystorageActionMap, $actionMenu, template);	    
-}   
-
 
 function bindEventHandlerToDialogAddVlanForZone() {
     //direct VLAN shows only "tagged" option while public VLAN shows both "tagged" and "untagged" option. 		
