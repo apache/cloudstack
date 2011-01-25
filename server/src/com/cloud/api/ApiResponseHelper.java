@@ -89,6 +89,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.domain.Domain;
@@ -1230,7 +1231,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             for (Nic singleNic : nics) {
                Network network = ApiDBUtils.findNetworkById(singleNic.getNetworkId());
                if (network != null) {
-                   if (network.getTrafficType() == TrafficType.Public) {
+                   TrafficType trafficType = TrafficType.Public;
+                   if(zone.getNetworkType() == NetworkType.Basic) {
+                       trafficType = TrafficType.Guest;
+                   }                  
+                   if (network.getTrafficType() == trafficType) {
                        vmResponse.setPublicIp(singleNic.getIp4Address());
                        vmResponse.setPublicMacAddress(singleNic.getMacAddress());
                        vmResponse.setPublicNetmask(singleNic.getNetmask());
