@@ -27,6 +27,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
+import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
 import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -51,6 +53,10 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
@@ -237,20 +243,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             }
             
             throw new CloudRuntimeException("Unable to add rule for " + newRule.getSourceIpAddress(), e);
-        } finally {
-            // Save and create the event
-            String description;
-            String ruleName = "ip forwarding";
-            String level = EventVO.LEVEL_INFO;
-
-            if (success == true) {
-                description = "created new " + ruleName + " rule [" + newRule.getSourceIpAddress() + ":" + newRule.getSourcePortStart() + "]->["
-                + newRule.getDestinationIpAddress() + ":" + newRule.getDestinationPortStart() + "]" + " " + newRule.getProtocol();
-            } else {
-                level = EventVO.LEVEL_ERROR;
-                description = "failed to create new " + ruleName + " rule [" + newRule.getSourceIpAddress() + ":" + newRule.getSourcePortStart() + "]->["
-                + newRule.getDestinationIpAddress() + ":" + newRule.getDestinationPortStart() + "]" + " " + newRule.getProtocol();
-            }
         }
     }
     
@@ -351,9 +343,12 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     
     @Override
     public List<? extends PortForwardingRule> listPortForwardingRules(ListPortForwardingRulesCmd cmd) {
-        Account caller = UserContext.current().getCaller();
-
-        List<PortForwardingRuleVO> rules = null;
+       Account caller = UserContext.current().getCaller();
+       String ip = cmd.getIpAddress();
+        
+       Pair<String, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId());
+       String accountName = accountDomainPair.first();
+       Long domainId = accountDomainPair.second();
         
         if(cmd.getIpAddress() != null){
             Ip ipAddress = new Ip(cmd.getIpAddress());
@@ -361,13 +356,30 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             if (ipAddressVO == null || !ipAddressVO.readyToUse()) {
                 throw new InvalidParameterValueException("Ip address not ready for port forwarding rules yet: " + ipAddress);
             }
-
-            rules = _forwardingDao.listByIp(ipAddress);
-            _accountMgr.checkAccess(caller, rules.toArray(new PortForwardingRuleVO[rules.size()]));
-        } else {
-            rules = _forwardingDao.listByAccount(caller.getAccountId());
+            _accountMgr.checkAccess(caller, ipAddressVO);
         }
-        return rules;
+        
+        Filter filter = new Filter(PortForwardingRuleVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal()); 
+        SearchBuilder<PortForwardingRuleVO> sb = _forwardingDao.createSearchBuilder();
+        sb.and("ip", sb.entity().getSourceIpAddress(), Op.EQ);
+        sb.and("accountId", sb.entity().getAccountId(), Op.EQ);
+        sb.and("domainId", sb.entity().getDomainId(), Op.EQ);
+        
+        SearchCriteria<PortForwardingRuleVO> sc = sb.create();
+        
+        if (ip != null) {
+            sc.setParameters("ip", ip);
+        }
+        
+        if (domainId != null) {
+            sc.setParameters("domainId", domainId);
+            if (accountName != null) {
+                Account account = _accountMgr.getActiveAccount(accountName, domainId);
+                sc.setParameters("accountId", account.getId());
+            }
+        }
+       
+        return _forwardingDao.search(sc, filter);
     }
 
     @Override 

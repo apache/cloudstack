@@ -61,9 +61,6 @@
             <adapter name="SimpleInvestigator" class="com.cloud.ha.CheckOnAgentInvestigator"/>
             <adapter name="PingInvestigator" class="com.cloud.ha.InvestigatorImpl"/>
         </adapters>
-        <adapters key="com.cloud.ha.FenceBuilder">
-            <adapter name="StorageFenceBuilder" class="com.cloud.ha.StorageFence"/>
-        </adapters>
         <adapters key="com.cloud.hypervisor.HypervisorGuru">
             <adapter name="XenServerGuru" class="com.cloud.hypervisor.XenServerGuru"/>
             <adapter name="KVMGuru" class="com.cloud.hypervisor.KVMGuru"/>

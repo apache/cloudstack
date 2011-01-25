@@ -1,13 +1,9 @@
-<%@ page import="java.util.*" %>
-
-<%@ page import="com.cloud.utils.*" %>
-
-<%
-    Locale browserLocale = request.getLocale();
-    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
-%>
-
-
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
+<fmt:setBundle basename="resources/messages"/>
 
 <div class="main_title" id="right_panel_header">
    
@@ -15,7 +11,7 @@
         <img src="images/title_globalsettingsicon.gif" /></div>
     
     <h1>
-        Global Settings
+        <fmt:message key="label.menu.global.settings"/>
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -25,7 +21,7 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on">
-            <%=t.t("details")%></div>
+            <fmt:message key="label.details"/></div>
     </div>
     <div id="tab_content_details">
 		<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
@@ -33,27 +29,27 @@
                 <div class="rightpanel_mainloader_animatedicon">
                 </div>
                 <p>
-                    Loading &hellip;</p>
+                    <fmt:message key="label.loading"/> &hellip;</p>
             </div>
         </div>    	
 		<div id="tab_container">
 	        <div class="grid_container">
 	        	<div class="grid_header">
 	            	<div class="grid_header_cell" style="width:35%; border:none;">
-	            		<div class="grid_header_title">Name</div>
+	            		<div class="grid_header_title"><fmt:message key="label.name"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width:23%; border:none;">
-	            		<div class="grid_header_title">Value</div>
+	            		<div class="grid_header_title"><fmt:message key="label.value"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width:27%; border:none;">
-	            		<div class="grid_header_title">Description</div>
+	            		<div class="grid_header_title"><fmt:message key="label.description"/></div>
 	                </div>                
 	                <div class="grid_header_cell" style="width:15%; border:none;">
 	            		<div id="action_link" class="grid_actionbox"><p>Actions</p>
 	                        <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                            <ul class="actionsdropdown_boxlist" id="action_list">
-	                                <li><%=t.t("no.available.actions")%></li>
-	                                <li id="edit_button">Edit</a></li>
+	                                <li><fmt:message key="label.no.actions"/></li>
+	                                <li id="edit_button"><fmt:message key="label.edit"/></a></li>
 	                            </ul>
 	                        </div>
 	                    </div>
@@ -64,8 +60,8 @@
 	         	</div>               
 	        </div>        
 	        <div class="grid_botactionpanel">
-	        	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
-	            <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
+	        	<div class="gridbot_buttons" id="save_button" style="display:none;"><fmt:message key="label.save"/></div>
+	            <div class="gridbot_buttons" id="cancel_button" style="display:none;"><fmt:message key="label.cancel"/></div>
 	        </div>  
         </div>            
     </div>
@@ -118,6 +114,6 @@
 
 <div id="dialog_alert_restart_management_server" title="Alert" style="display:none">
     <p>
-        <%=t.t("please.restart.your.management.server.for.your.new.settings.to.take.effect")%>        
+		<fmt:message key="message.restart.mgmt.server"/>
     </p>
 </div>

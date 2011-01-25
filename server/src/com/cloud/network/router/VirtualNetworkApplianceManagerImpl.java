@@ -73,9 +73,6 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
-import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -116,14 +113,15 @@ import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.ovs.GreTunnelException;
 import com.cloud.network.ovs.OvsNetworkManager;
+import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.service.ServiceOfferingVO;
@@ -154,7 +152,6 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -284,6 +281,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     VMInstanceDao _instanceDao;
     @Inject
     OvsNetworkManager _ovsNetworkMgr;
+    @Inject
+    OvsTunnelManager _ovsTunnelMgr;
 
     long _routerTemplateId = -1;
     int _routerRamSize;
@@ -644,7 +643,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return new StopCommand(vm, vmName, VirtualMachineName.getVnet(vmName));
         } else if (vm != null) {
             final DomainRouterVO vo = vm;
-            return new StopCommand(vo, vo.getVnet());
+            return new StopCommand(vo, null);
         } else {
             throw new CloudRuntimeException("Shouldn't even be here!");
         }
@@ -891,7 +890,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         DomainRouterVO router = _routerDao.findByNetworkConfiguration(guestNetwork.getId());
         if (router == null) {
-            long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, owner.getId(), EventTypes.EVENT_ROUTER_CREATE, "Starting to create router for accountId : " +owner.getAccountId());
             long id = _routerDao.getNextInSequence(Long.class, "id");
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Creating the router " + id);
@@ -933,22 +931,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), _template.getId(),
                     _template.getHypervisorType(), _template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA(), guestNetwork.getNetworkDomain());
             router = _itMgr.allocate(router, _template, _offering, networks, plan, null, owner);
-            if(router != null){
-                EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_CREATE, "successfully create router : " + router.getName(), startEventId);  
-            } else {
-                EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_CREATE, "router creation failed", startEventId);
-            }
         }
 
         State state = router.getState();
         if (state != State.Starting && state != State.Running) {
-            long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, owner.getId(), EventTypes.EVENT_ROUTER_START, "Starting router : " +router.getName());
             router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount());
-            if(router != null){
-                EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_START, "successfully started router : " + router.getName(), startEventId);  
-            } else {
-                EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_START, "failed to start router", startEventId);
-            }
         }
         
         return router;
@@ -978,7 +965,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         
         if (router == null) {
-            long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, owner.getId(), EventTypes.EVENT_ROUTER_CREATE, "Starting to create router for accountId : " +owner.getAccountId()); 
             long id = _routerDao.getNextInSequence(Long.class, "id");
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Creating the router " + id);
@@ -998,21 +984,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     _template.getHypervisorType(), _template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA(), guestNetwork.getNetworkDomain());
             router.setRole(Role.DHCP_USERDATA);
             router = _itMgr.allocate(router, _template, _offering, networks, plan, null, owner);
-            if(router != null){
-                EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_CREATE, "successfully create router : " + router.getName(), startEventId);  
-            } else {
-                EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_CREATE, "router creation failed", startEventId);
-            }
         }
         State state = router.getState();
         if (state != State.Starting && state != State.Running) {
-            long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, owner.getId(), EventTypes.EVENT_ROUTER_START, "Starting router : " +router.getName());
             router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount());
-            if(router != null){
-                EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ROUTER_START, "successfully started router : " + router.getName(), startEventId);  
-            } else {
-                EventUtils.saveEvent(User.UID_SYSTEM, owner.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ROUTER_START, "failed to start router", startEventId);
-            }
         }
         return router;
     }
@@ -1123,13 +1098,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException{
         NicProfile controlNic = (NicProfile) profile.getParameter("control.nic");
-        try {
-			_ovsNetworkMgr.RouterCheckAndCreateTunnel(cmds, profile, dest);
-			_ovsNetworkMgr.applyDefaultFlowToRouter(cmds, profile, dest);
-		} catch (GreTunnelException e) {
-			e.printStackTrace();
-		}
-		
+
+        _ovsNetworkMgr.RouterCheckAndCreateTunnel(cmds, profile, dest);
+        _ovsNetworkMgr.applyDefaultFlowToRouter(cmds, profile, dest);
+        _ovsTunnelMgr.RouterCheckAndCreateTunnel(cmds, profile, dest);
 		
         cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20));
 
@@ -1147,7 +1119,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         		router.setGuestMacAddress(nic.getMacAddress());
         	} else if (network.getTrafficType() == TrafficType.Control) {
         		router.setPrivateIpAddress(nic.getIp4Address());
-        		router.setPrivateNetmask(nic.getNetmask());
         		router.setPrivateMacAddress(nic.getMacAddress());
         	}
         }
@@ -1225,6 +1196,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         //Resend user data
         s_logger.debug("Reapplying user data entries as a part of domR " + router + " start...");
         createUserDataCommands(router, cmds);
+        // Network usage command to create iptables rules
+        cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIp4Address(), router.getName(), "create"));
         
         return true;
     }
@@ -1250,6 +1223,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     	DomainRouterVO router = profile.getVirtualMachine();
     	_ovsNetworkMgr.handleVmStateTransition(router, State.Stopped);
+    	_ovsTunnelMgr.CheckAndDestroyTunnel(router);
     }
 
     @Override
@@ -1518,10 +1492,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                  String vifMacAddress = ipAddr.getMacAddress();
                  
                  String vmGuestAddress = null;
-                 if(vmId!=0){
-                     vmGuestAddress = _vmDao.findById(vmId).getGuestIpAddress();
-                 }
-                 IpAddressTO ip = new IpAddressTO(ipAddr.getAddress().addr(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress);
+                 
+                 //Get network rate - required for IpAssoc
+                 Network network = _networkMgr.getNetwork(ipAddr.getNetworkId());
+                 NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+                 Integer networkRate = _configMgr.getNetworkRate(no.getId());
+                 
+                 IpAddressTO ip = new IpAddressTO(ipAddr.getAddress().addr(), add, firstIP, sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress, networkRate);
                  ipsToSend[i++] = ip;
                  firstIP = false;
              }

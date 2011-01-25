@@ -1,12 +1,9 @@
-<%@ page import="java.util.*" %>
-<%@ page import="com.cloud.utils.*" %>
-
-<%
-    Locale browserLocale = request.getLocale();
-    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
-%>
-
-    
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
+<fmt:setBundle basename="resources/messages"/>
 
 <!-- domain detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
@@ -15,7 +12,7 @@
         <img src="images/title_domainicon.gif" /></div>
    
     <h1>
-        Domain
+        <fmt:message key="label.menu.domains"/>
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -25,18 +22,18 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
-            <%=t.t("Details")%></div>
+            <fmt:message key="label.details"/></div>
         <div class="content_tabs off" id="tab_admin_account">
-            <%=t.t("Admin.Accounts")%></div>
+            <fmt:message key="label.admin.accounts"/></div>
         <div class="content_tabs off" id="tab_resource_limits">
-            <%=t.t("Resource.Limits")%></div>
+            <fmt:message key="label.resource.limits"/></div>
     </div>  
     <!-- Details tab (start)-->
     <div id="tab_content_details">
     	<div class="rightpanel_mainloader_panel" style="display:none;">
               <div class="rightpanel_mainloaderbox">
                    <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
+                   <p><fmt:message key="label.loading"/> &hellip;</p>    
               </div>               
         </div>
         <div class="grid_container">    
@@ -45,7 +42,7 @@
                 <div id="action_link" class="grid_actionbox"><p>Actions</p>
                     <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                         <ul class="actionsdropdown_boxlist" id="action_list">
-                        	<li><%=t.t("no.available.actions")%></li>
+                        	<li><fmt:message key="label.no.actions"/></li>
                         </ul>
                     </div>
                 </div>
@@ -54,14 +51,14 @@
                     <div class="gridheader_loader" id="Div1">
                     </div>
                     <p id="description">
-                        Waiting &hellip;</p>
+                        <fmt:message key="label.waiting"/> &hellip;</p>
                 </div>
             </div>        
         
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("ID")%>:</div>
+                        <fmt:message key="label.id"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="id">
@@ -71,7 +68,7 @@
             <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("Name")%>:</div>
+                        <fmt:message key="label.name"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="name">
@@ -83,7 +80,7 @@
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("Accounts")%>:</div>
+                        <fmt:message key="label.accounts"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="redirect_to_account_page">
@@ -93,7 +90,7 @@
             <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("Instances")%>:</div>
+                        <fmt:message key="label.instances"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="redirect_to_instance_page">
@@ -103,7 +100,7 @@
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("Volume")%>:</div>
+                        <fmt:message key="label.volumes"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="redirect_to_volume_page">
@@ -123,7 +120,7 @@
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
               <div class="rightpanel_mainloaderbox">
                    <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
+                   <p><fmt:message key="label.loading"/> &hellip;</p>    
               </div>               
         </div>
         <div id="tab_container">
@@ -136,7 +133,7 @@
     	<div class="rightpanel_mainloader_panel" style="display:none;">
               <div class="rightpanel_mainloaderbox">
                    <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
+                   <p><fmt:message key="label.loading"/> &hellip;</p>    
               </div>               
         </div>
         <div class="grid_container">                   
@@ -146,7 +143,7 @@
                 <div id="action_link" class="grid_actionbox"><p>Actions</p>
                     <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                         <ul class="actionsdropdown_boxlist" id="action_list">
-                    	    <li><%=t.t("no.available.actions")%></li>
+                    	    <li><fmt:message key="label.no.actions"/></li>
                         </ul>
                     </div>
                 </div>
@@ -155,14 +152,14 @@
                     <div class="gridheader_loader" id="Div1">
                     </div>
                     <p id="description">
-                        Waiting &hellip;</p>
+                        <fmt:message key="label.waiting"/> &hellip;</p>
                 </div>
             </div>        
                 
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("Instance.Limit")%>:</div>
+                        <fmt:message key="label.instance.limits"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="limits_vm">
@@ -174,7 +171,7 @@
             <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("Public.IP.Limit")%>:</div>
+                        <fmt:message key="label.ip.limits"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="limits_ip">
@@ -186,7 +183,7 @@
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("Disk.Volume.Limit")%>:</div>
+                        <fmt:message key="label.volume.limits"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="limits_volume">
@@ -198,7 +195,7 @@
             <div class="grid_rows even">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("Snapshot.Limit")%>:</div>
+                        <fmt:message key="label.snapshot.limits"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="limits_snapshot">
@@ -210,7 +207,7 @@
             <div class="grid_rows odd">
                 <div class="grid_row_cell" style="width: 20%;">
                     <div class="row_celltitles">
-                        <%=t.t("Template.Limit")%>:</div>
+                        <fmt:message key="label.template.limits"/>:</div>
                 </div>
                 <div class="grid_row_cell" style="width: 79%;">
                     <div class="row_celltitles" id="limits_template">
@@ -236,7 +233,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt="Add Domain" /></div>
             <div class="actionpanel_button_links">
-                Add Domain
+                <fmt:message key="label.add.domain"/>
             </div>
         </div>
     </div>
@@ -253,7 +250,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                <%=t.t("ID")%>:</div>
+                <fmt:message key="label.id"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="id">
@@ -263,7 +260,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                <%=t.t("Role")%>:</div>
+                <fmt:message key="label.role"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="role">
@@ -273,7 +270,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                <%=t.t("Account")%>:</div>
+                <fmt:message key="label.account"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="account">
@@ -283,7 +280,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                <%=t.t("Domain")%>:</div>
+                <fmt:message key="label.domain"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="domain">
@@ -293,7 +290,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                <%=t.t("VMs")%>:</div>
+                <fmt:message key="label.vms"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="vm_total">
@@ -303,7 +300,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                <%=t.t("IPs")%>:</div>
+                <fmt:message key="label.ips"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="ip_total">
@@ -313,7 +310,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                <%=t.t("Bytes.Received")%>:</div>
+                <fmt:message key="label.bytes.received"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="bytes_received">
@@ -323,7 +320,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                <%=t.t("Bytes.Sent")%>:</div>
+                <fmt:message key="label.bytes.sent"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="bytes_sent">
@@ -333,7 +330,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                <%=t.t("State")%>:</div>
+                <fmt:message key="label.state"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="state">
@@ -350,12 +347,12 @@
 		<form action="#" method="post" id="form1">
 			<ol>		
 				<li>
-					<label>Name:</label>
+					<label><fmt:message key="label.name"/>:</label>
 					<input class="text" type="text" id="add_domain_name"/>
 					<div id="add_domain_name_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>	
 				<li>
-					<label>Parent domain:</label>
+					<label><fmt:message key="label.parent.domain"/>:</label>
 					<select class="select" id="domain_dropdown">						
 					</select>
 				</li>		

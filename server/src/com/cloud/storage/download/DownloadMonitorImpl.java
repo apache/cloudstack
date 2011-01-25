@@ -42,7 +42,6 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventTypes;
-import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
@@ -100,8 +99,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     @Inject
     VMTemplateDao _templateDao =  null;
     @Inject
-	private final EventDao _eventDao = null;
-    @Inject
 	private AgentManager _agentMgr;
     @Inject
     ConfigurationDao _configDao;
@@ -122,17 +119,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 
 	public long send(Long hostId, Command cmd, Listener listener) {
 		return _agentMgr.gatherStats(hostId, cmd, listener);
-	}
-
-	public void logEvent(long accountId, String evtType, String description, String level) {
-		EventVO event = new EventVO();
-		event.setUserId(1);
-		event.setAccountId(accountId);
-		event.setType(evtType);
-		event.setDescription(description);
-		event.setLevel(level);
-		_eventDao.persist(event);
-		
 	}
 
 	@Override
@@ -344,15 +330,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 				_listenerMap.remove(vmTemplateHost);
 			}
 		}
-		if (dnldStatus == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-			logEvent(template.getAccountId(), EventTypes.EVENT_TEMPLATE_DOWNLOAD_SUCCESS, template.getName() + " successfully downloaded to storage server " + host.getName(), EventVO.LEVEL_INFO);
-		}
-		if (dnldStatus == Status.DOWNLOAD_ERROR) {
-			logEvent(template.getAccountId(), EventTypes.EVENT_TEMPLATE_DOWNLOAD_FAILED, template.getName() + " failed to download to storage server " + host.getName(), EventVO.LEVEL_ERROR);
-		}
-		if (dnldStatus == Status.ABANDONED) {
-			logEvent(template.getAccountId(), EventTypes.EVENT_TEMPLATE_DOWNLOAD_FAILED, template.getName() + " :aborted download to storage server " + host.getName(), EventVO.LEVEL_WARN);
-		}
 		
 		VMTemplateHostVO vmTemplateHost = _vmTemplateHostDao.findByHostTemplate(host.getId(), template.getId());
 		
@@ -364,22 +341,11 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             else{
             	s_logger.warn("Failed to get size for template" + template.getName());
             }
-			String eventParams = "id=" + template.getId() + "\ndcId="+host.getDataCenterId()+"\nsize="+size;
-            EventVO event = new EventVO();
-            event.setUserId(1L);
-            event.setAccountId(template.getAccountId());
+			String eventType = EventTypes.EVENT_TEMPLATE_CREATE;
             if((template.getFormat()).equals(ImageFormat.ISO)){
-            	event.setType(EventTypes.EVENT_ISO_CREATE);
-            	event.setDescription("Successfully created ISO " + template.getName());
+                eventType = EventTypes.EVENT_ISO_CREATE;
             }
-            else{
-            	event.setType(EventTypes.EVENT_TEMPLATE_CREATE);
-            	event.setDescription("Successfully created template " + template.getName());
-            }
-            event.setParameters(eventParams);
-            event.setLevel(EventVO.LEVEL_INFO);
-            _eventDao.persist(event);
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, template.getAccountId(), host.getDataCenterId(), template.getId(), template.getName(), null, null , size);
+            UsageEventVO usageEvent = new UsageEventVO(eventType, template.getAccountId(), host.getDataCenterId(), template.getId(), template.getName(), null, null , size);
             _usageEventDao.persist(usageEvent);
         } 
         
@@ -517,12 +483,10 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			long result = send(sserverId, dtCommand, null);
 			if (result == -1 ){
 				String description = "Failed to delete " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " which isn't in the database";
-				logEvent(1L, EventTypes.EVENT_TEMPLATE_CLEANUP, description , EventVO.LEVEL_ERROR);
 				s_logger.error(description);
 				return;
 			}
 			String description = "Deleted template " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database, result=" + result;
-			logEvent(1L, EventTypes.EVENT_TEMPLATE_CLEANUP, description, EventVO.LEVEL_INFO);
 			s_logger.info(description);
 		}
 

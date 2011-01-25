@@ -25,6 +25,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
@@ -41,6 +42,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.uservm.UserVm;
@@ -52,6 +54,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -68,6 +71,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement{
     @Inject UserVmManager _userVmMgr;
     @Inject UserVmDao _userVmDao;
     @Inject DomainRouterDao _routerDao;
+    @Inject ConfigurationManager _configMgr;
     
     private boolean canHandle(GuestIpType ipType, DeployDestination dest, TrafficType trafficType) {
         DataCenter dc = dest.getDataCenter();
@@ -162,5 +166,35 @@ public class DhcpElement extends AdapterBase implements NetworkElement{
         capabilities.put(Service.Dhcp, null);
         
         return capabilities;
+    }
+    
+    @Override
+    public boolean restart(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
+        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
+        NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+        DeployDestination dest = new DeployDestination(dc, null, null, null);
+        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
+        if (router == null) {
+            s_logger.trace("Can't find dhcp element in network " + network.getId());
+            return true;
+        }
+        
+        VirtualRouter result = null;
+        if (canHandle(network.getGuestType(), dest, offering.getTrafficType())) {
+            if (router.getState() == State.Stopped) {
+                result = _routerMgr.startRouter(router.getId());
+            } else {
+                result = _routerMgr.rebootRouter(router.getId());
+            }
+            if (result == null) {
+                s_logger.warn("Failed to restart dhcp element " + router + " as a part of netowrk " + network + " restart");
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            s_logger.trace("Dhcp element doesn't handle network restart for the network " + network);
+            return true;
+        }
     }
 }

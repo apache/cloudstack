@@ -78,7 +78,7 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     protected GenericSearchBuilder<VMInstanceVO, Long> VmsOnPoolSearch;
 
     
-    private int _hoursToSkipStoppedVMs = 24;
+    private int _secondsToSkipStoppedVMs = 86400;
     private int _secStorageVmRamSize = 1024;
     private int _proxyRamSize =  256;
     private int _routerRamSize = 128;
@@ -227,7 +227,7 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
     		// for stopped/Destroyed VMs, we will skip counting it if it hasn't been used for a while
     		
     		long millisecondsSinceLastUpdate = DateUtil.currentGMTTime().getTime() - vm.getUpdateTime().getTime();
-    		if(millisecondsSinceLastUpdate > _hoursToSkipStoppedVMs*3600000L) {
+    		if(millisecondsSinceLastUpdate > _secondsToSkipStoppedVMs*1000L) {
     			if(s_logger.isDebugEnabled()) {
                     s_logger.debug("Skip counting vm " + vm.getInstanceName() + " in capacity allocation as it has been stopped for " + millisecondsSinceLastUpdate/60000 + " minutes");
                 }
@@ -284,8 +284,8 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
         _extraBytesPerVolume = NumbersUtil.parseLong((String) params.get("extra.bytes.per.volume"), 50 * 1024L * 1024L);
 
 		Map<String, String> configs = _configDao.getConfiguration("management-server", params);
-		String value = configs.get("capacity.skipcounting.hours");
-		_hoursToSkipStoppedVMs = NumbersUtil.parseInt(value, 24);
+		String value = configs.get("vm.resource.release.interval");
+		_secondsToSkipStoppedVMs = NumbersUtil.parseInt(value, 86400);
 
 		// TODO this is not good, there should be one place to get these values
 		_secStorageVmRamSize = NumbersUtil.parseInt(configs.get("secstorage.vm.ram.size"), 256);

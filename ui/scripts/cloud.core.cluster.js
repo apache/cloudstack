@@ -37,12 +37,16 @@ function clusterClearRightPanel() {
 
 function clusterJsonToDetailsTab() {	   
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        clusterClearDetailsTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");    
-    if(jsonObj == null) 
+    if(jsonObj == null) {
+        clusterClearDetailsTab();
 	    return;	
+	}
     
     bindAddHostButton($midmenuItem1); 
     bindAddPrimaryStorageButton($midmenuItem1);  
@@ -91,6 +95,8 @@ function clusterClearDetailsTab() {
     $thisTab.find("#name").text("");
     $thisTab.find("#zonename").text("");        
     $thisTab.find("#podname").text("");     
+    $thisTab.find("#hypervisortype").text("");
+    $thisTab.find("#clustertype").text("");
     
     //actions ***   
     var $actionMenu = $thisTab.find("#action_link #action_menu");
@@ -101,7 +107,8 @@ function clusterClearDetailsTab() {
 var clusterActionMap = {   
     "Delete Cluster": {  
         api: "deleteCluster",            
-        isAsyncJob: false,        
+        isAsyncJob: false,      
+        dialogBeforeActionFn : doDeleteCluster,   
         inProcessText: "Deleting Cluster....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {     
             $midmenuItem1.slideUp("slow", function() {
@@ -113,4 +120,22 @@ var clusterActionMap = {
             });            
         }
     }
+}
+
+function doDeleteCluster($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text("Please confirm you want to delete this cluster")
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=deleteCluster&id="+id;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
 }

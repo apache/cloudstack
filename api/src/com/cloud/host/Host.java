@@ -19,8 +19,7 @@ package com.cloud.host;
 
 import java.util.Date;
 
-import com.cloud.host.Status;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 
 /**
@@ -56,7 +55,7 @@ public interface Host {
     /**
      * @return id of the host.
      */
-    Long getId();
+    long getId();
     
     /**
      * @return name of the machine.
@@ -145,27 +144,46 @@ public interface Host {
     /**
      * @return version
      */
-    public String getVersion();
+    String getVersion();
     /*
      * @return total size
      */
-    public long getTotalSize();
+    long getTotalSize();
     /*
      * @return capabilities
      */
-    public String getCapabilities();
+    String getCapabilities();
     /*
      * @return last pinged time
      */
-    public long getLastPinged();
+    long getLastPinged();
     /*
      * @return management server id
      */
-    public Long getManagementServerId();
+    Long getManagementServerId();
     /*
      *@return removal date
      */
-    public Date getRemoved();
+    Date getRemoved();
     
-    public Long getClusterId();
+    Long getClusterId();
+    
+    String getPublicIpAddress();
+    
+    String getPublicNetmask();
+    
+    String getPrivateNetmask();
+    
+    String getStorageNetmask();
+    
+    String getStorageMacAddress();
+    
+    String getPublicMacAddress();
+    
+    String getPrivateMacAddress();
+    
+    String getStorageNetmaskDeux();
+    
+    String getStorageMacAddressDeux();
+    
 }

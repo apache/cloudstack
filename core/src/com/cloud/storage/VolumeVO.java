@@ -84,9 +84,6 @@ public class VolumeVO implements Volume {
     @Column(name="pod_id")
     Long podId;
     
-    @Column(name="destroyed")
-    boolean destroyed = false;
-    
     @Column(name="created")
     Date created;
     
@@ -104,10 +101,6 @@ public class VolumeVO implements Volume {
     @Column(name="disk_offering_id")
     long diskOfferingId;
 
-    @Expose
-    @Column(name="mirror_vol")
-    Long mirrorVolume;
-    
     @Column(name="template_id")
     Long templateId;
     
@@ -119,11 +112,6 @@ public class VolumeVO implements Volume {
     @Enumerated(EnumType.STRING)
 	VolumeType volumeType = Volume.VolumeType.UNKNOWN;
 
-    @Expose
-    @Column(name="mirror_state")
-    @Enumerated(EnumType.STRING)
-	MirrorState mirrorState = Volume.MirrorState.NOT_MIRRORED;
-    
     @Expose
     @Column(name="pool_type")
     @Enumerated(EnumType.STRING)
@@ -185,8 +173,6 @@ public class VolumeVO implements Volume {
         this.size = size;
         this.status = AsyncInstanceCreateStatus.Creating;
         this.templateId = null;
-        this.mirrorState = MirrorState.NOT_MIRRORED;
-        this.mirrorVolume = null;
         this.storageResourceType = Storage.StorageResourceType.STORAGE_POOL;
         this.poolType = null;
     }
@@ -199,8 +185,6 @@ public class VolumeVO implements Volume {
         this.accountId = accountId;
         this.domainId = domainId;
         this.size = size;
-        this.mirrorVolume = null;
-        this.mirrorState = MirrorState.NOT_MIRRORED;
         this.diskOfferingId = diskOfferingId;
         this.status = AsyncInstanceCreateStatus.Creating;
         this.state = State.Allocated;
@@ -319,7 +303,8 @@ public class VolumeVO implements Volume {
     	return instanceId;
     }
     
-	public Long getDeviceId() {
+	@Override
+    public Long getDeviceId() {
         return deviceId;
     }
 
@@ -380,16 +365,9 @@ public class VolumeVO implements Volume {
 		volumeType = type;
 	}
 	
-	public boolean getDestroyed() {
-		return destroyed;
-	}
-
-	public Date getCreated() {
+	@Override
+    public Date getCreated() {
 		return created;
-	}
-	
-	public void setDestroyed(boolean destroyed) {
-		this.destroyed = destroyed;
 	}
 	
 	public Date getRemoved() {
@@ -400,15 +378,8 @@ public class VolumeVO implements Volume {
 		this.removed = removed;
 	}
 
-	public MirrorState getMirrorState() {
-		return mirrorState;
-	}
-
-	public void setMirrorState(MirrorState mirrorState) {
-		this.mirrorState = mirrorState;
-	}
-
-	public long getDiskOfferingId() {
+	@Override
+    public long getDiskOfferingId() {
 		return diskOfferingId;
 	}
 
@@ -433,14 +404,6 @@ public class VolumeVO implements Volume {
 	    this.firstSnapshotBackupUuid = firstSnapshotBackupUuid;
 	}
 	
-	public Long getMirrorVolume() {
-		return mirrorVolume;
-	}
-
-	public void setMirrorVolume(Long mirrorVolume) {
-		this.mirrorVolume = mirrorVolume;
-	}
-
 	@Override
 	public Storage.StorageResourceType getStorageResourceType() {
 		return storageResourceType;
@@ -459,6 +422,7 @@ public class VolumeVO implements Volume {
 		this.poolId = poolId;
 	}
 	
+    @Override
     public AsyncInstanceCreateStatus getStatus() {
 		return status;
 	}

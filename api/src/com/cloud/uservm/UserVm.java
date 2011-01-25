@@ -25,38 +25,6 @@ import com.cloud.vm.VirtualMachine;
  */
 public interface UserVm extends VirtualMachine, ControlledEntity {
     
-    /**
-     * @return service offering id
-     */
-    @Override
-    long getServiceOfferingId();
-    
-    /**
-     * @return the domain router associated with this vm.
-    Long getDomainRouterId();
-     */
-    
-    /**
-     * @return the vnet associated with this vm.
-     */
-    String getVnet();
-    
-    /**
-     * @return the domain this vm instance belongs to.
-     */
-    @Override
-    long getDomainId();
-    
-    /**
-     * @return ip address within the guest network.
-     */
-    String getGuestIpAddress();
-    
-    /**
-     * @return mac address of the guest network.
-     */
-    String getGuestMacAddress();
-    
     Long getIsoId();
     
     String getDisplayName();
@@ -64,8 +32,6 @@ public interface UserVm extends VirtualMachine, ControlledEntity {
     String getUserData();
     
     String getPassword();
-    
-    Long getDomainRouterId();
     
     void setUserData(String userData);
 

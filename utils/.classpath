@@ -12,5 +12,6 @@
 	<classpathentry kind="lib" path="/deps/cloud-bcprov-jdk16-1.45.jar"/>
 	<classpathentry kind="lib" path="/deps/cloud-jsch-0.1.42.jar"/>
 	<classpathentry kind="lib" path="/deps/cloud-commons-codec-1.4.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/deps"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

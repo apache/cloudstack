@@ -82,8 +82,6 @@ function initAddServiceOfferingDialog() {
 		$dialogAddService.find("#add_service_memory").val("");
 		$dialogAddService.find("#add_service_offerha").val("false");
 			
-		//(g_hypervisorType == "kvm")? $dialogAddService.find("#add_service_offerha_container").hide():$dialogAddService.find("#add_service_offerha_container").show();            
-				
 		$dialogAddService
 		.dialog('option', 'buttons', { 				
 			"Add": function() { 	
@@ -93,9 +91,9 @@ function initAddServiceOfferingDialog() {
 				var isValid = true;					
 				isValid &= validateString("Name", thisDialog.find("#add_service_name"), thisDialog.find("#add_service_name_errormsg"));
 				isValid &= validateString("Display Text", thisDialog.find("#add_service_display"), thisDialog.find("#add_service_display_errormsg"));
-				isValid &= validateNumber("# of CPU Core", thisDialog.find("#add_service_cpucore"), thisDialog.find("#add_service_cpucore_errormsg"), 1, 1000);		
-				isValid &= validateNumber("CPU", thisDialog.find("#add_service_cpu"), thisDialog.find("#add_service_cpu_errormsg"), 100, 100000);		
-				isValid &= validateNumber("Memory", thisDialog.find("#add_service_memory"), thisDialog.find("#add_service_memory_errormsg"), 64, 1000000);	
+				isValid &= validateInteger("# of CPU Core", thisDialog.find("#add_service_cpucore"), thisDialog.find("#add_service_cpucore_errormsg"), 1, 1000);		
+				isValid &= validateInteger("CPU", thisDialog.find("#add_service_cpu"), thisDialog.find("#add_service_cpu_errormsg"), 100, 100000);		
+				isValid &= validateInteger("Memory", thisDialog.find("#add_service_memory"), thisDialog.find("#add_service_memory_errormsg"), 64, 1000000);	
 				isValid &= validateString("Tags", thisDialog.find("#add_service_tags"), thisDialog.find("#add_service_tags_errormsg"), true);	//optional							
 				if (!isValid) 
 				    return;										
@@ -214,6 +212,24 @@ function doEditServiceOffering2($actionLink, $detailsTab, $midmenuItem1, $readon
 	});
 }
 
+function doDeleteServiceOffering($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text("Please confirm you want to delete this service offering")
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=deleteServiceOffering&id="+id;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
+
 function serviceOfferingToMidmenu(jsonObj, $midmenuItem1) {  
     $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj); 
@@ -233,12 +249,16 @@ function serviceOfferingToRightPanel($midmenuItem1) {
 
 function serviceOfferingJsonToDetailsTab() { 
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        serviceOfferingClearDetailsTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
-        return;     
+    if(jsonObj == null) {
+        serviceOfferingClearDetailsTab();
+        return;   
+    }  
     
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
@@ -311,6 +331,8 @@ function serviceOfferingClearDetailsTab() {
     $thisTab.find("#offerha").text("");
     $thisTab.find("#offerha_edit").val("");    
     $thisTab.find("#tags").text("");  
+    $thisTab.find("#domain").text(""); 
+    $thisTab.find("#domain_edit").val("");   
     $thisTab.find("#created").text(""); 
     
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
@@ -324,7 +346,8 @@ var serviceOfferingActionMap = {
     }, 
     "Delete Service Offering": {              
         api: "deleteServiceOffering",     
-        isAsyncJob: false,           
+        isAsyncJob: false,  
+        dialogBeforeActionFn : doDeleteServiceOffering,               
         inProcessText: "Deleting service offering....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {
             $midmenuItem1.slideUp("slow", function() {

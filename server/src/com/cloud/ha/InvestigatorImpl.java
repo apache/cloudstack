@@ -62,7 +62,7 @@ public class InvestigatorImpl implements Investigator {
         if (vm.getType() == VirtualMachine.Type.User) {
             // to verify that the VM is alive, we ask the domR (router) to ping the VM (private IP)
             UserVmVO userVm = _userVmDao.findById(vm.getId());
-            Long routerId = userVm.getDomainRouterId();
+            Long routerId = null; // FIXME: This doesn't work.  Need to grab the domain router from the network.
             if (routerId == null) {
             	/*TODO: checking vm status for external dhcp mode*/
             	s_logger.debug("It's external dhcp mode, how to checking the vm is alive?");

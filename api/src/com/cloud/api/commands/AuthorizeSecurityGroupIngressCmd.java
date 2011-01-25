@@ -32,6 +32,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.IngressRuleResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.event.EventTypes;
@@ -65,8 +66,8 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ICMP_CODE, type=CommandType.INTEGER, description="error code for this icmp message")
     private Integer icmpCode;
 
-    @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, required=true, description="the security group name")
-    private String securityGroupName;
+    @Parameter(name=ApiConstants.SECURITY_GROUP_ID, type=CommandType.LONG, required=true, description="The ID of the security group")
+    private Long securityGroupId;
 
     @Parameter(name=ApiConstants.CIDR_LIST, type=CommandType.LIST, collectionType=CommandType.STRING, description="the cidr list associated")
     private List cidrList;
@@ -109,8 +110,8 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
         return icmpType;
     }
 
-    public String getSecurityGroupName() {
-        return securityGroupName;
+    public Long getSecurityGroupId() {
+        return securityGroupId;
     }
 
     public String getProtocol() {
@@ -192,7 +193,7 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
             sb.append("<error:  no ingress parameters>");
         }
 
-        return  "authorizing ingress to group: " + getSecurityGroupName() + " to " + sb.toString();
+        return  "authorizing ingress to group: " + getSecurityGroupId() + " to " + sb.toString();
     }
 	
     @Override

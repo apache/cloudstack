@@ -99,9 +99,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name="private_mac_address", updatable=true, nullable=true)
     protected String privateMacAddress;
 
-    @Column(name="private_netmask")
-    protected String privateNetmask;
-
     @Column(name="data_center_id", updatable=true, nullable=false)
     protected long dataCenterId;
 
@@ -112,9 +109,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name="ha_enabled", updatable=true, nullable=true)
     protected boolean haEnabled;
     
-    @Column(name="mirrored_vols", updatable=true, nullable=true)
-    protected boolean mirroredVols;
-
     @Column(name="update_count", updatable = true, nullable=false)
     protected long updated;	// This field should be updated everytime the state is updated.  There's no set method in the vo object because it is done with in the dao code.
     
@@ -164,7 +158,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         this.type = type;
         this.guestOSId = guestOSId;
         this.haEnabled = haEnabled;
-        this.mirroredVols = false;
         this.vncPassword = Long.toHexString(new Random().nextLong());
         this.state = State.Stopped;
         this.accountId = accountId;
@@ -221,19 +214,6 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	@Override
     public long getDataCenterId() {
 	    return dataCenterId;
-	}
-	
-    public void setPrivateNetmask(String privateNetmask) {
-        this.privateNetmask = privateNetmask;
-    }
-
-    public String getPrivateNetmask() {
-        return privateNetmask;
-    }
-	
-
-	public void setId(long id) {
-		this.id = id;
 	}
 	
 	@Override
@@ -375,18 +355,10 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         return removed != null;
     }
     
-	public boolean isMirroredVols() {
-		return mirroredVols;
-	}
-    
     public void setHaEnabled(boolean value) {
         haEnabled = value;
     }
 
-	public void setMirroredVols(boolean mirroredVols) {
-		this.mirroredVols = mirroredVols;
-	}
-	
 	public void setReservationId(String reservationId) {
 	    this.reservationId = reservationId;
 	}

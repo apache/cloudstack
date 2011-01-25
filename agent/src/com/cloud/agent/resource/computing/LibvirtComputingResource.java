@@ -53,6 +53,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo;
@@ -78,6 +79,7 @@ import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckStateCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
+import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
@@ -104,16 +106,17 @@ import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.api.MirrorCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
@@ -165,8 +168,9 @@ import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.NetworkEnums.RouterPrivateIpStrategy;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.RouterPrivateIpStrategy;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
@@ -798,8 +802,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((GetHostStatsCommand)cmd);
             } else if (cmd instanceof CheckStateCommand) {
                 return executeRequest(cmd);
-            } else if (cmd instanceof MirrorCommand) {
-                return executeRequest(cmd);
             } else if (cmd instanceof CheckHealthCommand) {
                 return execute((CheckHealthCommand)cmd);
             } else if (cmd instanceof PrepareForMigrationCommand) {
@@ -866,6 +868,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             	return execute((CheckSshCommand) cmd);
             } else if (cmd instanceof NetworkUsageCommand) {
             	return execute((NetworkUsageCommand) cmd);
+            } else if (cmd instanceof NetworkRulesSystemVmCommand) {
+               return execute((NetworkRulesSystemVmCommand)cmd);
+            } else if (cmd instanceof CleanupNetworkRulesCmd) {
+               return execute((CleanupNetworkRulesCmd)cmd);
             } else {
         		s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -887,7 +893,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			}
 			
 			KVMHABase.NfsStoragePool sp = new KVMHABase.NfsStoragePool(cmd.getPool().getUuid(),
-					cmd.getPool().getHostAddress(),
+					cmd.getPool().getHost(),
 					cmd.getPool().getPath(),
 					_mountPoint + File.separator + cmd.getPool().getUuid(),
 					PoolType.PrimaryStorage);
@@ -1083,7 +1089,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			String result = command.execute();
 			if (result != null) {
 				s_logger.debug("Failed to backup snaptshot: " + result);
-				return new BackupSnapshotAnswer(cmd, false, result, null);
+				return new BackupSnapshotAnswer(cmd, false, result, null, true);
 			}
 			/*Delete the snapshot on primary*/
 			
@@ -1119,15 +1125,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     			result = command.execute();
     			if (result != null) {
     				s_logger.debug("Failed to backup snapshot: " + result);
-    	    		return new BackupSnapshotAnswer(cmd, false, "Failed to backup snapshot: " + result, null);
+    	    		return new BackupSnapshotAnswer(cmd, false, "Failed to backup snapshot: " + result, null, true);
     			}
 			}
 		} catch (LibvirtException e) {
-			return new BackupSnapshotAnswer(cmd, false, e.toString(), null);
+			return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
 		} catch (URISyntaxException e) {
-			return new BackupSnapshotAnswer(cmd, false, e.toString(), null);
+			return new BackupSnapshotAnswer(cmd, false, e.toString(), null, true);
 		}
-		return new BackupSnapshotAnswer(cmd, true, null, snapshotDestPath + File.separator + snapshotName);
+		return new BackupSnapshotAnswer(cmd, true, null, snapshotDestPath + File.separator + snapshotName, true);
     }
     
     protected DeleteSnapshotBackupAnswer execute(final DeleteSnapshotBackupCommand cmd) {
@@ -1571,6 +1577,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	}
     }
     
+    private Answer execute(CleanupNetworkRulesCmd cmd) {
+        boolean result = cleanup_rules();
+        return new Answer(cmd, result, "");
+    }
+    
 	protected GetVncPortAnswer execute(GetVncPortCommand cmd) {
 		try {
 			Connect conn = LibvirtConnection.getConnection();
@@ -1725,6 +1736,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 					_vms.put(cmd.getVmName(), State.Running);
 				}
 			}
+		
 			return new CheckVirtualMachineAnswer(cmd, state, vncPort);
 		} catch (LibvirtException e) {
 			return new CheckVirtualMachineAnswer(cmd, e.getMessage());
@@ -1816,26 +1828,44 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 
 	private synchronized Answer execute(PrepareForMigrationCommand cmd) {
-//		final String vmName = cmd.getVmName();
-//		String result = null;
-//		
-//		if (cmd.getVnet() != null && !isDirectAttachedNetwork(cmd.getVnet())) {
-//			final String vnet = getVnetId(cmd.getVnet());
-//			if (vnet != null) {
-//				try {
-//					createVnet(vnet, _pifs.first()); /*TODO: Need to add public network for domR*/
-//				} catch (InternalErrorException e) {
-//					return new PrepareForMigrationAnswer(cmd, false, result);
-//				}
-//			}
-//		}
-//
-//		synchronized(_vms) {
-//			_vms.put(vmName, State.Migrating);
-//		}
-//
-//		return new PrepareForMigrationAnswer(cmd, result == null, result);
-	    return null;
+		
+		VirtualMachineTO vm = cmd.getVirtualMachine();
+		if (s_logger.isDebugEnabled()) {
+			s_logger.debug("Preparing host for migrating " + vm);
+		}
+
+		NicTO[] nics = vm.getNics();
+		try {
+			Connect conn = LibvirtConnection.getConnection();
+			for (NicTO nic : nics) {
+				String vlanId = null;
+				if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
+					URI broadcastUri = nic.getBroadcastUri();
+					vlanId = broadcastUri.getHost();
+				}
+				if (nic.getType() == TrafficType.Guest) {
+					if (nic.getBroadcastType() == BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")){
+						createVlanBr(vlanId, _pifs.first());
+					}
+				} else if (nic.getType() == TrafficType.Control) {
+					/*Make sure the network is still there*/
+					createControlNetwork(conn);
+				} else if (nic.getType() == TrafficType.Public) {
+					if (nic.getBroadcastType() == BroadcastDomainType.Vlan && !vlanId.equalsIgnoreCase("untagged")) {
+						createVlanBr(vlanId, _pifs.second());
+					} 
+				}
+			}
+			synchronized (_vms) {
+				_vms.put(vm.getName(), State.Migrating);
+			}
+
+			return new PrepareForMigrationAnswer(cmd);
+		} catch (LibvirtException e) {
+			return new PrepareForMigrationAnswer(cmd, e.toString()); 
+		} catch (InternalErrorException e) {
+			return new PrepareForMigrationAnswer(cmd, e.toString()); 
+		}
 	}
 	
     public void createVnet(String vnetId, String pif) throws InternalErrorException {
@@ -2207,7 +2237,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			if (vmSpec.getType() != VirtualMachine.Type.User) {
 				default_network_rules_for_systemvm(vmName);
 			} else {
-				default_network_rules(vmName, vmSpec.getNics()[0].getIp(), vmSpec.getId(), vmSpec.getNics()[0].getMac());
+			    NicTO[] nics = vmSpec.getNics();
+			    for (NicTO nic : nics) { 
+			        if (nic.getIsolationUri() != null && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
+			            default_network_rules(vmName, vmSpec.getNics()[0].getIp(), vmSpec.getId(), vmSpec.getNics()[0].getMac());
+			        }
+			    }
 			}
 
 			// Attach each data volume to the VM, if there is a deferred attached disk
@@ -2220,8 +2255,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			return new StartAnswer(cmd);
 		} catch (Exception e) {
 			s_logger.warn("Exception ", e);
-			if (conn != null)
-				handleVmStartFailure(conn, vmName, vm);
+			if (conn != null) {
+                handleVmStartFailure(conn, vmName, vm);
+            }
 			return new StartAnswer(cmd, e.getMessage());
 		} finally {
 			synchronized (_vms) {
@@ -3472,6 +3508,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	return true;
     }
     
+    private boolean cleanup_rules() {
+        if (!_can_bridge_firewall) {
+            return false;
+        }
+        Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
+        cmd.add("cleanup_rules");
+        String result = cmd.execute();
+        if (result != null) {
+            return false;
+        }
+        return true;
+    }
+    
     private String get_rule_logs_for_vms() {
     	Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
     	cmd.add("get_rule_logs_for_vms");
@@ -3574,5 +3623,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     		storage.create(0);
     	}
     	return storage;
+    }
+    
+    private Answer execute(NetworkRulesSystemVmCommand cmd) {
+        boolean success = false;
+        if (cmd.getType() != VirtualMachine.Type.User) {
+            success = default_network_rules_for_systemvm(cmd.getVmName());
+        }
+        
+        return new Answer(cmd, success, "");
     }
 }

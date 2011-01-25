@@ -5,7 +5,7 @@ package com.cloud.agent.api.to;
 
 public class NicTO extends NetworkTO {
     int deviceId;
-    Integer networkRateMbps;
+    int networkRateMbps;
     Integer networkRateMulticastMbps;
     boolean defaultNic;
 

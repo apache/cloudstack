@@ -25,13 +25,10 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.capacity.CapacityVO;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.vm.VMInstanceVO;
 
 @Local(value = { CapacityDao.class })
 public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements CapacityDao {
@@ -43,12 +40,17 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     private static final String CLEAR_NON_STORAGE_CAPACITIES = "DELETE FROM `cloud`.`op_host_capacity` WHERE capacity_type<>2 AND capacity_type<>3 AND capacity_type<>6"; //clear non-storage and non-secondary_storage capacities
     private static final String CLEAR_NON_STORAGE_CAPACITIES2 = "DELETE FROM `cloud`.`op_host_capacity` WHERE capacity_type<>2 AND capacity_type<>3 AND capacity_type<>6 AND capacity_type<>0 AND capacity_type<>1"; //clear non-storage and non-secondary_storage capacities
     private SearchBuilder<CapacityVO> _hostIdTypeSearch;
+	private SearchBuilder<CapacityVO> _hostOrPoolIdSearch;
     
     public CapacityDaoImpl() {
     	_hostIdTypeSearch = createSearchBuilder();
     	_hostIdTypeSearch.and("hostId", _hostIdTypeSearch.entity().getHostOrPoolId(), SearchCriteria.Op.EQ);
     	_hostIdTypeSearch.and("type", _hostIdTypeSearch.entity().getCapacityType(), SearchCriteria.Op.EQ);
     	_hostIdTypeSearch.done();
+    	
+    	_hostOrPoolIdSearch = createSearchBuilder();
+    	_hostOrPoolIdSearch.and("hostId", _hostOrPoolIdSearch.entity().getHostOrPoolId(), SearchCriteria.Op.EQ);
+    	_hostOrPoolIdSearch.done();
     }
     
     public void updateAllocated(Long hostId, long allocatedAmount, short capacityType, boolean add) {
@@ -129,5 +131,12 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     	sc.setParameters("hostId", hostId);
     	sc.setParameters("type", capacityType);
     	return findOneBy(sc);
+    }
+    
+    @Override
+    public java.util.List<CapacityVO> findByHostorPoolId(Long hostorPoolId){
+    	SearchCriteria<CapacityVO> sc = _hostOrPoolIdSearch.create();
+    	sc.setParameters("hostId", hostorPoolId);
+    	return listBy(sc);
     }
 }

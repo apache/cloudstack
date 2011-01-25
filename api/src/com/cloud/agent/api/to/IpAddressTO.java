@@ -13,9 +13,10 @@ public class IpAddressTO {
     private String vlanNetmask;
     private String vifMacAddress;
     private String guestIp;
+    private Integer networkRate;
     
     
-    public IpAddressTO(String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress, String guestIp) {
+    public IpAddressTO(String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress, String guestIp, Integer networkRate) {
         this.publicIp = ipAddress;
         this.add = add;
         this.firstIP = firstIP;
@@ -25,6 +26,7 @@ public class IpAddressTO {
         this.vlanNetmask = vlanNetmask;
         this.vifMacAddress = vifMacAddress;
         this.guestIp = guestIp;
+        this.networkRate = networkRate;
     }
     
     protected IpAddressTO() {
@@ -72,6 +74,10 @@ public class IpAddressTO {
     
     public String getVifMacAddress() {
         return vifMacAddress;
+    }
+    
+    public Integer getNetworkRate() {
+        return networkRate;
     }
 
 }

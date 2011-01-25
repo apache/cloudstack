@@ -256,9 +256,7 @@ function afterLoadTemplateJSP() {
         }      
     });
 	
-	//initialize dialog box ***
-	initDialog("dialog_confirmation_delete_template_all_zones");
-    initDialog("dialog_confirmation_delete_template");    
+	//initialize dialog box ***	
     initDialog("dialog_add_template", 450);	
 	initDialog("dialog_copy_template", 300);	
 	initDialog("dialog_create_vm_from_template", 300);	
@@ -288,13 +286,17 @@ function templateToRightPanel($midmenuItem1) {
 }
 
 function templateJsonToDetailsTab() {   
-     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null) {
+        templateClearDetailsTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        templateClearDetailsTab();
         return;      
+    }
     
     var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
@@ -410,6 +412,8 @@ function templateClearRightPanel() {
 
 function templateClearDetailsTab() {
     var $thisTab = $("#right_panel_content").find("#tab_content_details");   
+    
+    $thisTab.find("#grid_header_title").text(""); 
    
     $thisTab.find("#id").text("");
     $thisTab.find("#zonename").text("");
@@ -419,6 +423,9 @@ function templateClearDetailsTab() {
     
     $thisTab.find("#displaytext").text("");
     $thisTab.find("#displaytext_edit").val("");
+            
+    $thisTab.find("#hypervisor").text("");    
+    $thisTab.find("#templatetype").text("");     
         
 	$thisTab.find("#status").text("");    
     
@@ -596,9 +603,9 @@ function doDeleteTemplate($actionLink, $detailsTab, $midmenuItem1) {
 	
 	var $dialog1;
 	if(jsonObj.crossZones == true)
-	    $dialog1 = $("#dialog_confirmation_delete_template_all_zones");
+	    $dialog1 = $("#dialog_confirmation").text("The template is used by all zones. Please confirm you want to delete it from all zones.");
 	else
-	    $dialog1 = $("#dialog_confirmation_delete_template");	
+	    $dialog1 = $("#dialog_confirmation").text("Please confirm you want to delete the template");	
 	
 	$dialog1		
 	.dialog('option', 'buttons', { 					
@@ -676,7 +683,7 @@ function doCreateVMFromTemplate($actionLink, $detailsTab, $midmenuItem1) {
 		    isValid &= validateString("Name", thisDialog.find("#name"), thisDialog.find("#name_errormsg"), true);
 		    isValid &= validateString("Group", thisDialog.find("#group"), thisDialog.find("#group_errormsg"), true);			    
 		    if(thisDialog.find("#size_container").css("display") != "none")
-			    isValid &= validateNumber("Size", thisDialog.find("#size"), thisDialog.find("#size_errormsg"));				    			
+			    isValid &= validateInteger("Size", thisDialog.find("#size"), thisDialog.find("#size_errormsg"));				    			
 		    if (!isValid) 
 		        return;	   
 		        

@@ -187,23 +187,6 @@
     </div>
 </div>
 <!-- view console template (end)  -->
-<!-- dialogs -->
-<div id="dialog_confirmation_start_systemVM" title="Confirmation" style="display: none">
-    <p>
-        <%=t.t("please.confirm.you.want.to.start.systemVM")%>
-    </p>
-</div>
-<div id="dialog_confirmation_stop_systemVM" title="Confirmation" style="display: none">
-    <p>
-        <%=t.t("please.confirm.you.want.to.stop.systemVM")%>
-    </p>
-</div>
-<div id="dialog_confirmation_reboot_systemVM" title="Confirmation" style="display: none">
-    <p>
-        <%=t.t("please.confirm.you.want.to.reboot.systemVM")%>
-    </p>
-</div>
-
 
 <div id="hidden_container">
     <!-- advanced search popup (begin) -->

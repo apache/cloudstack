@@ -59,7 +59,6 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     protected final SearchBuilder<DomainRouterVO> LastHostSearch;
     protected final SearchBuilder<DomainRouterVO> HostUpSearch;
     protected final SearchBuilder<DomainRouterVO> DomainIdSearch;
-    protected final SearchBuilder<DomainRouterVO> VlanDbIdSearch;
     protected final SearchBuilder<DomainRouterVO> StateChangeSearch;
     protected final SearchBuilder<DomainRouterVO> NetworkConfigSearch;
     protected final Attribute _updateTimeAttr;
@@ -110,10 +109,6 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         DomainIdSearch = createSearchBuilder();
         DomainIdSearch.and("domainId", DomainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         DomainIdSearch.done();
-
-        VlanDbIdSearch = createSearchBuilder();
-        VlanDbIdSearch.and("vlanDbId", VlanDbIdSearch.entity().getVlanDbId(), SearchCriteria.Op.EQ);
-        VlanDbIdSearch.done();
 
         StateChangeSearch = createSearchBuilder();
         StateChangeSearch.and("id", StateChangeSearch.entity().getId(), SearchCriteria.Op.EQ);
@@ -284,13 +279,6 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         return listBy(sc);
     }
 
-    @Override
-    public List<DomainRouterVO> listByVlanDbId(Long vlanDbId) {
-        SearchCriteria<DomainRouterVO> sc = VlanDbIdSearch.create();
-        sc.setParameters("vlanDbId", vlanDbId);
-        return listBy(sc);
-    }
-    
     @Override
     public DomainRouterVO findByNetworkConfiguration(long networkConfigurationId) {
         SearchCriteria<DomainRouterVO> sc = NetworkConfigSearch.create();

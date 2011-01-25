@@ -43,7 +43,7 @@ import com.cloud.utils.db.GenericDaoBase;
 public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc{
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	Long id;
+	long id;
 	
 	@Column(name="pool_id")
 	private long poolId;
@@ -72,11 +72,13 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc{
 	
 	@Column (name="marked_for_gc") boolean markedForGC;
     
-	public String getInstallPath() {
+	@Override
+    public String getInstallPath() {
 		return installPath;
 	}
 	
-	public long getTemplateSize() {
+	@Override
+    public long getTemplateSize() {
 		return templateSize;
 	}
 
@@ -88,47 +90,58 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc{
 		this.poolId = poolId;
 	}
 
-	public long getTemplateId() {
+	@Override
+    public long getTemplateId() {
 		return templateId;
 	}
 
-	public void setTemplateId(long templateId) {
+	@Override
+    public void setTemplateId(long templateId) {
 		this.templateId = templateId;
 	}
 
-	public int getDownloadPercent() {
+	@Override
+    public int getDownloadPercent() {
 		return downloadPercent;
 	}
 
-	public void setDownloadPercent(int downloadPercent) {
+	@Override
+    public void setDownloadPercent(int downloadPercent) {
 		this.downloadPercent = downloadPercent;
 	}
 
-	public void setDownloadState(Status downloadState) {
+	@Override
+    public void setDownloadState(Status downloadState) {
 		this.downloadState = downloadState;
 	}
 
-	public Long getId() {
+	@Override
+    public long getId() {
 		return id;
 	}
 
-	public Date getCreated() {
+	@Override
+    public Date getCreated() {
 		return created;
 	}
 
-	public Date getLastUpdated() {
+	@Override
+    public Date getLastUpdated() {
 		return lastUpdated;
 	}
 	
-	public void setLastUpdated(Date date) {
+	@Override
+    public void setLastUpdated(Date date) {
 	    lastUpdated = date;
 	}
 	
-	public void setInstallPath(String installPath) {
+	@Override
+    public void setInstallPath(String installPath) {
 	    this.installPath = installPath;
 	}
 
-	public Status getDownloadState() {
+	@Override
+    public Status getDownloadState() {
 		return downloadState;
 	}
 
@@ -161,27 +174,33 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc{
 		
 	}
 
-	public void setLocalDownloadPath(String localPath) {
+	@Override
+    public void setLocalDownloadPath(String localPath) {
 		this.localDownloadPath = localPath;
 	}
 
-	public String getLocalDownloadPath() {
+	@Override
+    public String getLocalDownloadPath() {
 		return localDownloadPath;
 	}
 
-	public void setErrorString(String errorString) {
+	@Override
+    public void setErrorString(String errorString) {
 		this.errorString = errorString;
 	}
 
-	public String getErrorString() {
+	@Override
+    public String getErrorString() {
 		return errorString;
 	}
 
-	public void setJobId(String jobId) {
+	@Override
+    public void setJobId(String jobId) {
 		this.jobId = jobId;
 	}
 
-	public String getJobId() {
+	@Override
+    public String getJobId() {
 		return jobId;
 	}
 	

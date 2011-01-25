@@ -248,7 +248,6 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     @Override
     @DB
     public VpnUser addVpnUser(long vpnOwnerId, String username, String password) {
-        long callerId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller();
 
         if (!username.matches("^[a-zA-Z0-9][a-zA-Z0-9@._-]{2,63}$")) {
@@ -272,15 +271,12 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         }
 
         VpnUser user = _vpnUsersDao.persist(new VpnUserVO(vpnOwnerId, owner.getDomainId(), username, password));
-        EventUtils.saveEvent(callerId, owner.getId(), EventTypes.EVENT_VPN_USER_ADD, "Added a VPN user for account: " + owner.getAccountName()
-                + " username= " + username);
         txn.commit();
         return user;
     }
 
     @Override
     public boolean removeVpnUser(long vpnOwnerId, String username) {
-        long callerId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller();
 
         VpnUserVO user = _vpnUsersDao.findByAccountAndUsername(vpnOwnerId, username);
@@ -291,7 +287,6 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
 
         user.setState(State.Revoke);
         _vpnUsersDao.update(user.getId(), user);
-        EventUtils.saveEvent(callerId, vpnOwnerId, EventTypes.EVENT_VPN_USER_REMOVE, "Removed a VPN user username= " + username);
         return true;
     }
 

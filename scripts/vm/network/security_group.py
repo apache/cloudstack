@@ -434,7 +434,6 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules):
   try:
     vmName = vm_name
     domId = getvmId(vmName)
-    vm_name =  '-'.join(vm_name.split('-')[:-1])
     vmchain = vm_name
     
     changes = check_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno)
@@ -447,14 +446,17 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules):
         logging.debug("Change detected in vmId or vmIp or domId, resetting default rules")
         default_network_rules(vmName, vm_ip, vm_id, vmMac)
         
+    if rules == "" or rules == None:
+	return 'true'
+
     lines = rules.split(';')
 
     print lines
     logging.debug("    programming network rules for  IP: " + vm_ip + " vmname=" + vm_name)
     #iptables('-F', vmchain)
-    print lines
     
     for line in lines:
+	
         tokens = line.split(':')
         if len(tokens) != 4:
           continue
@@ -473,16 +475,16 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules):
         if ips:    
             if protocol == 'all':
                 for ip in ips:
-                    iptables = "iptables -I " + vmchain + " -m state --state NEW -m iprange --src-range " + ip + " -j ACCEPT"
+                    iptables = "iptables -I " + vmchain + " -m state --state NEW -s " + ip + " -j ACCEPT"
             elif protocol != 'icmp':
                 for ip in ips:
-                    iptables = "iptables -I " + vmchain + " -p " + protocol + " -m " + protocol + " --dport " + range + " -m state --state NEW -m iprange --src-range " + ip + " -j ACCEPT"
+                    iptables = "iptables -I " + vmchain + " -p " + protocol + " -m " + protocol + " --dport " + range + " -m state --state NEW -s " + ip + " -j ACCEPT"
             else:
                 range = start + "/" + end
                 if start == "-1":
                     range = "any"
                     for ip in ips:
-                        iptables = "iptables -I " + vmchain + " -p icmp --icmp-type " + range + " -m iprange --src-range " + ip + " -j ACCEPT"
+                        iptables = "iptables -I " + vmchain + " -p icmp --icmp-type " + range + " -s " + ip + " -j ACCEPT"
             execute(iptables)
         
         if allow_any and protocol != 'all':
@@ -497,7 +499,6 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules):
 
     iptables =  "iptables -A " + vmchain + " -j DROP"       
     execute(iptables)
-
     if write_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno) == False:
         return 'false'
     
@@ -548,3 +549,5 @@ if __name__ == '__main__':
         get_rule_logs_for_vms()
     elif cmd == "add_network_rules":
         add_network_rules(option.vmName, option.vmID, option.vmIP, option.sig, option.seq, option.vmMAC, option.rules)
+    elif cmd == "cleanup_rules":
+	cleanup_rules()

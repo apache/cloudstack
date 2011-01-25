@@ -17,6 +17,8 @@
  */
 package com.cloud.api.response;
 
+import java.util.List;
+
 import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
@@ -99,6 +101,9 @@ public class AccountResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.IS_CLEANUP_REQUIRED) @Param(description="true if the account requires cleanup")
     private Boolean cleanupRequired;
+    
+    @SerializedName("user")  @Param(description="the list of users associated with account", responseObject = NicResponse.class)
+    private List<UserResponse> users;
 
     public Long getId() {
         return id;
@@ -306,5 +311,13 @@ public class AccountResponse extends BaseResponse {
 
     public void setCleanupRequired(Boolean cleanupRequired) {
         this.cleanupRequired = cleanupRequired;
+    }
+    
+    public  List<UserResponse> getUsers() {
+        return this.users;
+    }
+    
+    public void setUsers(List<UserResponse> users) {
+        this.users = users;
     }
 }

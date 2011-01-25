@@ -7,6 +7,7 @@ import java.util.Map;
 import com.cloud.agent.AgentManager;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
+import com.cloud.configuration.ConfigurationService;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
@@ -79,6 +80,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
@@ -137,6 +139,7 @@ public class ApiDBUtils {
     private static DataCenterDao _zoneDao;
     private static NetworkOfferingDao _networkOfferingDao;
     private static NetworkDao _networkDao;
+    private static ConfigurationService _configMgr;
 
     static {
         _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
@@ -150,6 +153,7 @@ public class ApiDBUtils {
         _storageMgr = locator.getManager(StorageManager.class);
         _userVmMgr = locator.getManager(UserVmManager.class);
         _networkMgr = locator.getManager(NetworkManager.class);
+        _configMgr = locator.getManager(ConfigurationService.class);
 
         _accountDao = locator.getDao(AccountDao.class);
         _accountVlanMapDao = locator.getDao(AccountVlanMapDao.class);
@@ -187,7 +191,7 @@ public class ApiDBUtils {
     /////////////////////////////////////////////////////////////
     //               ManagementServer methods                  //
     /////////////////////////////////////////////////////////////
-
+    
     public static VMInstanceVO findVMInstanceById(long vmId) {
         return _ms.findVMInstanceById(vmId);
     }
@@ -427,6 +431,10 @@ public class ApiDBUtils {
     public static VolumeVO findVolumeById(Long volumeId) {
         return _volumeDao.findByIdIncludingRemoved(volumeId);
     }
+    
+    public static List<UserVO> listUsersByAccount(long accountId) {
+        return _userDao.listByAccount(accountId);
+    }
 
     public static DataCenterVO findZoneById(Long zoneId) {
         return _zoneDao.findById(zoneId);
@@ -519,6 +527,14 @@ public class ApiDBUtils {
         } else {
             return null;
         }
+    }
+    
+    public static Integer getNetworkRate(long networkOfferingId) {
+       return _configMgr.getNetworkRate(networkOfferingId);
+    }
+    
+    public static Account getVlanAccount(long vlanId) {
+       return _configMgr.getVlanAccount(vlanId);
     }
     
 }

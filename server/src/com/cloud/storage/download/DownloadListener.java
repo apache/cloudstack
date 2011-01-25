@@ -175,7 +175,6 @@ public class DownloadListener implements Listener {
 
 	public void logDisconnect() {
 		s_logger.warn("Unable to monitor download progress of " + template.getName() + " at host " + sserver.getName());
-		downloadMonitor.logEvent(template.getAccountId(), EventTypes.EVENT_TEMPLATE_DOWNLOAD_FAILED, "Storage server " + sserver.getName() + " disconnected during download of template " + template.getName(), EventVO.LEVEL_WARN);
 	}
 
 	public synchronized void updateDatabase(Status state, String errorString) {
@@ -368,7 +367,6 @@ public class DownloadListener implements Listener {
 	}
 
 	public void logDownloadStart() {
-		downloadMonitor.logEvent(template.getAccountId(), EventTypes.EVENT_TEMPLATE_DOWNLOAD_START, "Storage server " + sserver.getName() + " started download of template " + template.getName(), EventVO.LEVEL_INFO);
 	}
 	
     @Override

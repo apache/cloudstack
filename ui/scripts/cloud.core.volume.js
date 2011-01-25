@@ -54,8 +54,7 @@ function afterLoadVolumeJSP() {
     initDialog("dialog_add_volume");	
     initDialog("dialog_attach_volume");	
     initDialog("dialog_add_volume_from_snapshot");	
-    initDialog("dialog_create_template_from_snapshot", 450);    
-	initDialog("dialog_confirmation_delete_snapshot");
+    initDialog("dialog_create_template_from_snapshot", 450);    	
 	initDialog("dialog_download_volume");
 	
 	if(isAdmin())
@@ -132,7 +131,7 @@ function afterLoadVolumeJSP() {
 			    var isValid = true;									
 			    isValid &= validateString("Name", thisDialog.find("#add_volume_name"), thisDialog.find("#add_volume_name_errormsg"));					    
 			    if(thisDialog.find("#size_container").css("display") != "none")
-			        isValid &= validateNumber("Size", thisDialog.find("#size"), thisDialog.find("#size_errormsg"));				    			
+			        isValid &= validateInteger("Size", thisDialog.find("#size"), thisDialog.find("#size_errormsg"));				    			
 			    if (!isValid) return;
 			    
 			    thisDialog.dialog("close");		
@@ -338,12 +337,16 @@ function volumeToRightPanel($midmenuItem1) {
  
 function volumeJsonToDetailsTab(){  
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        volumeJsonClearDetailsTab();   
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        volumeJsonClearDetailsTab();   
         return;
+    }
      
     var $thisTab = $("#right_panel_content #tab_content_details");      
     $thisTab.find("#tab_container").hide(); 
@@ -415,16 +418,20 @@ function volumeJsonToDetailsTab(){
     $thisTab.find("#tab_container").show();     
 } 
 
-function volumeJsonToSnapshotTab() {       		
+function volumeJsonToSnapshotTab() {    
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
-	if($midmenuItem1 == null)
+	if($midmenuItem1 == null) {
+	    volumeClearSnapshotTab();
 	    return;
+	}
 	
 	var jsonObj = $midmenuItem1.data("jsonObj");	
-	if(jsonObj == null)
+	if(jsonObj == null) {
+	    volumeClearSnapshotTab();
 	    return;
+	}
 	
-	var $thisTab = $("#right_panel_content").find("#tab_content_snapshot");	    
+	var $thisTab = $("#right_panel_content").find("#tab_content_snapshot");	  	
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
     
@@ -432,9 +439,9 @@ function volumeJsonToSnapshotTab() {
 		cache: false,
 		data: createURL("command=listSnapshots&volumeid="+fromdb(jsonObj.id)),
 		dataType: "json",
-		success: function(json) {							    
-			var items = json.listsnapshotsresponse.snapshot;	
-			var $container = $thisTab.find("#tab_container").empty();																					
+		success: function(json) {	
+		    var $container = $thisTab.find("#tab_container").empty();							    
+			var items = json.listsnapshotsresponse.snapshot;																								
 			if (items != null && items.length > 0) {			    
 				var template = $("#snapshot_tab_template");				
 				for (var i = 0; i < items.length; i++) {
@@ -447,6 +454,11 @@ function volumeJsonToSnapshotTab() {
             $thisTab.find("#tab_container").show();    			
 		}
 	});
+} 
+ 
+function volumeClearSnapshotTab() {
+    var $thisTab = $("#right_panel_content").find("#tab_content_snapshot");	  	
+    $thisTab.find("#tab_container").empty();
 } 
  
 function volumeSnapshotJSONToTemplate(jsonObj, template) {
@@ -507,8 +519,7 @@ var volumeActionMap = {
         inProcessText: "Attaching disk....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {                
             var jsonObj = json.queryasyncjobresultresponse.jobresult.volume;  
-            volumeToMidmenu(jsonObj, $midmenuItem1);
-            //volumeJsonToDetailsTab($midmenuItem1);   
+            volumeToMidmenu(jsonObj, $midmenuItem1);            
         }
     },
     "Detach Disk": {
@@ -518,8 +529,7 @@ var volumeActionMap = {
         inProcessText: "Detaching disk....",
         afterActionSeccessFn: function(json, $midmenuItem1, id){   
             var jsonObj = json.queryasyncjobresultresponse.jobresult.volume;     
-            volumeToMidmenu(jsonObj,  $midmenuItem1);
-            //volumeJsonToDetailsTab($midmenuItem1);   
+            volumeToMidmenu(jsonObj,  $midmenuItem1);            
         }
     },
     "Create Template": {
@@ -531,7 +541,8 @@ var volumeActionMap = {
     },
     "Delete Volume": {
         api: "deleteVolume",            
-        isAsyncJob: false,        
+        isAsyncJob: false,  
+        dialogBeforeActionFn : doDeleteVolume,      
         inProcessText: "Deleting volume....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {  
             $midmenuItem1.slideUp("slow", function() {
@@ -665,6 +676,24 @@ function doCreateTemplateFromVolume($actionLink, $detailsTab, $midmenuItem1) {
 	}).dialog("open");
 }   
 
+function doDeleteVolume($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text("Please confirm you want to delete this volume")
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=deleteVolume&id="+id;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
+
 function doTakeSnapshot($actionLink, $detailsTab, $midmenuItem1) {   
     $("#dialog_create_snapshot")					
     .dialog('option', 'buttons', { 					    
@@ -783,7 +812,7 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 							return false;
 						 case "0":
 							 var isValid = true;	 
-							 isValid &= validateNumber("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
+							 isValid &= validateInteger("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
 							 if (!isValid) return;
 							 intervalType = "hourly";
 							 minute = bottomPanel.find("#edit_minute").val();		                     
@@ -794,7 +823,7 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 							 
 						 case "1":
 							 var isValid = true;	 
-							 isValid &= validateNumber("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
+							 isValid &= validateInteger("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
 							 if (!isValid) return;
 							 intervalType = "daily";
 							 minute = bottomPanel.find("#edit_minute").val();		
@@ -811,7 +840,7 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 							 
 						 case "2":
 							 var isValid = true;	 
-							 isValid &= validateNumber("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
+							 isValid &= validateInteger("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
 							 if (!isValid) return;
 							 intervalType = "weekly";
 							 minute = bottomPanel.find("#edit_minute").val();		
@@ -830,7 +859,7 @@ function doRecurringSnapshot($actionLink, $detailsTab, $midmenuItem1) {
 							 
 						 case "3":
 							 var isValid = true;	 
-							 isValid &= validateNumber("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
+							 isValid &= validateInteger("Keep # of snapshots", bottomPanel.find("#edit_max"), bottomPanel.find("#edit_max_errormsg"));	    	
 							 if (!isValid) return;
 							 intervalType = "monthly";
 							 minute = bottomPanel.find("#edit_minute").val();		
@@ -985,7 +1014,8 @@ var volumeSnapshotActionMap = {
 }  
 
 function doSnapshotDelete($actionLink, $subgridItem) {
-	$("#dialog_confirmation_delete_snapshot")	
+	$("#dialog_confirmation")	
+	.text("Please confirm you want to delete the snapshot")
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 	

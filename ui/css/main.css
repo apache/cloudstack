@@ -226,7 +226,7 @@ a:hover {
 }
 
 .loginoptions_dropdownbutton {
-	width: 109px;
+	width: 139px;
 	height:21px;
 	float:left;
 	position:relative;
@@ -243,7 +243,7 @@ a:hover {
 }
 
 .loginoptions_dropdownbutton p{
-	width:78px;
+	width:105px;
 	height:auto;
 	float:left;
 	color:#2c8bbc;
@@ -267,7 +267,7 @@ a:hover {
 }
 
 .loginoptions_dropdown {
-	width:91px;
+	width:120px;
 	height:auto;
 	float:left;
 	position:absolute;
@@ -279,7 +279,7 @@ a:hover {
 }
 
 .loginoptions_dropdown ul{
-	width:73px;
+	width:110px;
 	height:auto;
 	float:left;
 	margin:3px 0 0 5px;
@@ -288,7 +288,7 @@ a:hover {
 }
 
 .loginoptions_dropdown li{
-	width:80px;
+	width:106px;
 	height:auto;
 	float:left;
 	color:#333;
@@ -1056,7 +1056,7 @@ a:hover {
 
 .rev_wiztemplistbox {
 	width:508px;
-	height:auto;
+	height:35px;
 	float:left;
 	border-bottom:1px solid #999;
 	margin:0;
@@ -1064,6 +1064,7 @@ a:hover {
 	background:#FFF repeat top left;
 	cursor:pointer;
 	cursor:hand;
+	overflow:hidden;
 }
 
 .rev_wiztemplistbox:hover {
@@ -1072,7 +1073,7 @@ a:hover {
 
 .rev_wiztemplistbox_selected {
 	width:508px;
-	height:auto;
+	height:35px;
 	float:left;
 	border-bottom:1px solid #999;
 	margin:0;
@@ -1080,6 +1081,7 @@ a:hover {
 	background:#8fe0f4 repeat top left;
 	cursor:pointer;
 	cursor:hand;
+	overflow:hidden;
 }
 
 
@@ -1113,7 +1115,7 @@ a:hover {
 
 .rev_wiztemp_listtext {
 	width:460px;
-	height:auto;
+	height:15px;
 	float:left;
 	color:#021a28;
 	font-size:11px;
@@ -1121,11 +1123,12 @@ a:hover {
 	text-align:left;
 	margin:5px 0 0 0;
 	padding:0;
+	overflow:hidden;
 }
 
 .rev_wiztemp_hypervisortext {
 	width:318px;
-	height:auto;
+	height:14px;
 	float:left;
 	color:#525252;
 	font-size:10px;
@@ -1134,11 +1137,12 @@ a:hover {
 	margin:2px 0 0 33px;
 	display:inline;
 	padding:0;
+	overflow:hidden;
 }
 
 .rev_wiztemp_ownertext {
-	width:110px;
-	height:auto;
+	width:130px;
+	height:14px;
 	float:left;
 	color:#666;
 	font-size:10px;
@@ -1146,6 +1150,7 @@ a:hover {
 	text-align:left;
 	margin:0px 0 0 0;
 	padding:0;
+	overflow:hidden;
 }
 .rev_wiztemp_ownertext span {
 	color:#666;
@@ -1575,9 +1580,7 @@ a:hover {
 	border-bottom:1px solid #FFF;
 	margin:0;
 	padding:0;
-	overflow-x:scoll;
-	overflow-x:auto;
-	overflow-y:hidden;
+	overflow:hidden;
 }
 
 .leftmenu_expandedlist{
@@ -3463,7 +3466,7 @@ a:hover.search_button {
 	float:right;
 	position:absolute;
 	background:#99b2c3 url(../images/gridheader_loadingbg.gif) repeat-x top left;
-	border-left:1px solid #999;
+	border: 1px solid #999;
 	padding:0 5px 0 0;
 	z-index:1001;
 	right:0;

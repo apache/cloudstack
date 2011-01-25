@@ -28,6 +28,8 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
@@ -89,7 +91,7 @@ public class RebootVMCmd extends BaseAsyncCmd {
     }
     
     @Override
-    public void execute(){
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
         UserVm result = _userVmService.rebootVirtualMachine(this);
         if (result !=null){
             UserVmResponse response = _responseGenerator.createUserVmResponse(result);

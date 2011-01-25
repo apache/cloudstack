@@ -44,20 +44,14 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the availability zone you want to acquire an public IP address from")
-    private Long zoneId;
     
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="The network this ip address should be associated to.")
-    private Long networkId;
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The network this ip address should be associated to.")
+    private Long id;
 
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public long getZoneId() {
-        return zoneId;
-    }
     
     public String getEventDescription() {
         return  "Restarting network: " + getNetworkId();
@@ -68,13 +62,13 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     }
     
     public long getEntityOwnerId() {
-        return _networkService.getNetwork(networkId).getAccountId();
+        return _networkService.getNetwork(id).getAccountId();
     }
     
     public Long getNetworkId() {
-        Network network = _networkService.getNetwork(networkId);
+        Network network = _networkService.getNetwork(id);
         if (network == null) {
-            throw new InvalidParameterValueException("Unable to find network by id " + networkId);
+            throw new InvalidParameterValueException("Unable to find network by id " + id);
         } else {
             return network.getId();
         }

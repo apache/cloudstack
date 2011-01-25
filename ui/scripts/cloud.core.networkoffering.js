@@ -116,12 +116,16 @@ function networkOfferingToRightPanel($midmenuItem1) {
 
 function networkOfferingJsonToDetailsTab() { 
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        networkOfferingClearDetailsTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        networkOfferingClearDetailsTab();
         return;
+    }
      
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
@@ -158,7 +162,7 @@ function networkOfferingJsonToDetailsTab() {
     setBooleanReadField(jsonObj.isdefault, $thisTab.find("#isdefault"));
     setBooleanReadField(jsonObj.specifyvlan, $thisTab.find("#specifyvlan"));
       
-    $thisTab.find("#type").text(fromdb(jsonObj.type));
+    $thisTab.find("#rate").text(fromdb(jsonObj.networkrate) + " Mb/s");
     $thisTab.find("#traffictype").text(fromdb(jsonObj.traffictype));
    
     //actions ***

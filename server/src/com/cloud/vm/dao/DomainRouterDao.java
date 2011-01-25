@@ -32,9 +32,6 @@ import com.cloud.vm.VirtualMachine.State;
  *  DomainRouterDao implements
  */
 public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long>, StateDao<State, VirtualMachine.Event, VMInstanceVO> {
-	//@Deprecated
-    //public boolean updateIf(DomainRouterVO router, State state, State... ifStates);
-
     /**
      * gets the DomainRouterVO by user id and data center
      * @Param dcId data center Id.
@@ -106,13 +103,6 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long>, State
 	 * @return
 	 */
 	public List<DomainRouterVO> listByDomain(Long id);
-	
-	/**
-	 * Find the list of domain routers on a vlan
-	 * @param id the id of the vlan record in the vlan table
-	 * @return
-	 */
-	public List<DomainRouterVO> listByVlanDbId(Long vlanId);
 
 	DomainRouterVO findBy(long accountId, long dcId, Role role);
 	

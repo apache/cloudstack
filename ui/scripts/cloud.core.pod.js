@@ -54,12 +54,16 @@ function podJsonToRightPanel($leftmenuItem1) {
 
 function podJsonToDetailsTab() {	    
     var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
-    if($leftmenuItem1 == null)
+    if($leftmenuItem1 == null) {
+        podClearDetailsTab();
         return;
+    }
     
     var jsonObj = $leftmenuItem1.data("jsonObj");    
-    if(jsonObj == null) 
+    if(jsonObj == null) {
+        podClearDetailsTab();
 	    return;	
+	}
     
     $.ajax({
         data: createURL("command=listPods&id="+jsonObj.id),
@@ -139,12 +143,16 @@ function podJsonToDetailsTab() {
 
 function podJsonToNetworkTab() {       
 	var $leftmenuItem1 = $("#right_panel_content").data("$leftmenuItem1");
-    if($leftmenuItem1 == null)
+    if($leftmenuItem1 == null) {
+        podClearNetworkTab();
         return;
+    }
     
     var jsonObj = $leftmenuItem1.data("jsonObj");    
-    if(jsonObj == null) 
+    if(jsonObj == null) {
+        podClearNetworkTab();
 	    return;	
+	}
      
     var $thisTab = $("#right_panel_content #tab_content_ipallocation");
 	$thisTab.find("#tab_container").hide(); 
@@ -169,6 +177,12 @@ function podJsonToNetworkTab() {
 		}			
 	});			
 } 
+
+function podClearNetworkTab() {    
+    var $thisTab = $("#right_panel_content #tab_content_ipallocation");
+	$thisTab.find("#tab_container").empty();
+} 
+
 
 function podNetworkJsonToTemplate(jsonObj, template) {
     template.data("jsonObj", jsonObj);     
@@ -209,11 +223,12 @@ var podNetworkActionMap = {
     } 
 }  
 
-function podJsonClearRightPanel(jsonObj) {	 
-    podJsonClearDetailsTab(jsonObj);
+function podClearRightPanel() {	 
+    podClearDetailsTab();
+    podClearNetworkTab();
 }
 
-function podJsonClearDetailsTab(jsonObj) {	    
+function podClearDetailsTab() {	    
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#grid_header_title").text("");    
     $thisTab.find("#id").text("");
@@ -904,16 +919,16 @@ var podActionMap = {
     "Edit Pod": {
         dialogBeforeActionFn: doEditPod  
     },
-    "Delete Pod": {  
-        api: "deletePod",            
-        isAsyncJob: false,        
+    "Delete Pod": {                   
+        isAsyncJob: false, 
+        dialogBeforeActionFn : doDeletePod,        
         inProcessText: "Deleting Pod....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {       
             $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();                
                 if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
                     clearRightPanel();
-                    podJsonClearRightPanel();
+                    podClearRightPanel();
                 }                
             });           
         }
@@ -1000,3 +1015,22 @@ function doEditPod2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $e
         $("#save_button, #cancel_button").hide();   
 	}
 }
+
+function doDeletePod($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text("Please confirm you want to delete this pod")
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=deletePod&id="+id;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
+

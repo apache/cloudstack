@@ -47,9 +47,8 @@ import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IPAssocCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
-import com.cloud.agent.api.routing.LoadBalancerCfgCommand;
-import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
@@ -98,8 +97,6 @@ public class VirtualRoutingResource implements Manager {
         try {
             if (cmd instanceof SetPortForwardingRulesCommand ) {
                 return execute((SetPortForwardingRulesCommand)cmd);
-            }else if (cmd instanceof LoadBalancerCfgCommand) {
-                return execute((LoadBalancerCfgCommand)cmd);
             } else if (cmd instanceof LoadBalancerConfigCommand) {
                 return execute((LoadBalancerConfigCommand)cmd);
             } else if (cmd instanceof IPAssocCommand) {
@@ -237,39 +234,6 @@ public class VirtualRoutingResource implements Manager {
         }
 
         return new Answer(cmd);
-    }
-
-    protected Answer execute(final LoadBalancerCfgCommand cmd) {
-
-        File tmpCfgFile = null;
-        try {
-            String cfgFilePath = "";
-            String routerIP = null;
-
-            if (cmd.getRouterIp() != null) {
-                tmpCfgFile = File.createTempFile(cmd.getRouterIp().replace('.', '_'), "cfg");
-                final PrintWriter out
-                = new PrintWriter(new BufferedWriter(new FileWriter(tmpCfgFile)));
-                for (int i=0; i < cmd.getConfig().length; i++) {
-                    out.println(cmd.getConfig()[i]);
-                }
-                out.close();
-                cfgFilePath = tmpCfgFile.getAbsolutePath();
-                routerIP = cmd.getRouterIp();
-            }
-
-            final String result = setLoadBalancerConfig(cfgFilePath,
-                    cmd.getAddFwRules(), cmd.getRemoveFwRules(),
-                    routerIP);
-
-            return new Answer(cmd, result == null, result);
-        } catch (final IOException e) {
-            return new Answer(cmd, false, e.getMessage());
-        } finally {
-            if (tmpCfgFile != null) {
-                tmpCfgFile.delete();
-            }
-        }
     }
 
     protected Answer execute(final IPAssocCommand cmd) {

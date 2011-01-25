@@ -167,6 +167,7 @@ $(document).ready(function() {
 			});
 			
 			$("#right_panel").load("jsp/dashboard.jsp", function(){
+			    currentRightPanelJSP = "jsp/dashboard.jsp";
 				afterLoadDashboardJSP();        
 			});
 		});	    
@@ -342,6 +343,13 @@ $(document).ready(function() {
 		return;
 	}
 	
+	//clear search
+	$("#clear_search").unbind("click").bind("click", function(event) {	    
+	    if($selectedSubMenu != null)
+	        $selectedSubMenu.click();
+	    return false;
+	});
+	
 	//basic search	
 	$("#basic_search").find("#search_input").unbind("keypress").bind("keypress", function(event) { 	 
 	    event.stopPropagation();   
@@ -350,7 +358,7 @@ $(document).ready(function() {
 	        var params = $("#middle_menu_pagination").data("params");
 	        if(params == null)
 	            return;	 
-	        lastSearchType = "basic_search";       	    
+	        //lastSearchType = "basic_search";       	    
 	        listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);
 	    }		    
 	});
@@ -388,7 +396,7 @@ $(document).ready(function() {
 	                    var params = $("#middle_menu_pagination").data("params");
 	                    if(params == null)
 	                        return;	        	    
-	                    lastSearchType = "advanced_search";  	                
+	                    //lastSearchType = "advanced_search";  	                
 	                    listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);    	                            
 	                }	
 	            });	
@@ -684,20 +692,14 @@ $(document).ready(function() {
 				g_domainid = json.loginresponse.domainid;	
 				g_timezone = json.loginresponse.timezone;								
 				g_timezoneoffset = json.loginresponse.timezoneoffset;					
-				if (json.loginresponse.hypervisortype != null) 
-					g_hypervisorType = json.loginresponse.hypervisortype;				
-				if (json.loginresponse.directattachsecuritygroupsenabled != null) 
-					g_directAttachSecurityGroupsEnabled = json.loginresponse.directattachsecuritygroupsenabled;
 					
 				$.cookie('sessionKey', g_sessionKey, { expires: 1});
-				$.cookie('hypervisortype', g_hypervisorType, { expires: 1});
 				$.cookie('username', g_username, { expires: 1});	
 				$.cookie('account', g_account, { expires: 1});	
 				$.cookie('domainid', g_domainid, { expires: 1});				
 				$.cookie('role', g_role, { expires: 1});
 				$.cookie('timezoneoffset', g_timezoneoffset, { expires: 1});  
 				$.cookie('timezone', g_timezone, { expires: 1});  
-				$.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1}); 
 				
 				$.ajax({
 					data: createURL("command=listCapabilities"),
@@ -707,6 +709,11 @@ $(document).ready(function() {
 						if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
 							g_userPublicTemplateEnabled = ""+json.listcapabilitiesresponse.capability.userpublictemplateenabled;
 							$.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});
+						}
+						
+						if (json.listcapabilitiesresponse.capability.securitygroupsenabled != null) {
+							g_directAttachSecurityGroupsEnabled = ""+json.listcapabilitiesresponse.capability.securitygroupsenabled;
+							$.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1});
 						}
 						
 						buildSecondLevelNavigation();
@@ -765,7 +772,6 @@ $(document).ready(function() {
 	g_username = $.cookie("username");
 	g_account = $.cookie("account");
 	g_domainid = $.cookie("domainid");
-	g_hypervisorType = $.cookie("hypervisortype");
 	g_timezone = $.cookie("timezone");
 	g_directAttachSecurityGroupsEnabled = $.cookie("directattachsecuritygroupsenabled");
 	g_userPublicTemplateEnabled = $.cookie("userpublictemplateenabled");
@@ -775,9 +781,6 @@ $(document).ready(function() {
 	else
 	    g_timezoneoffset = null;
 	    
-	if (!g_hypervisorType || g_hypervisorType.length == 0) 		
-		g_hypervisorType = "kvm";
-	
 	if (!g_directAttachSecurityGroupsEnabled || g_directAttachSecurityGroupsEnabled.length == 0) 		
 		g_directAttachSecurityGroupsEnabled = "false";	
 		

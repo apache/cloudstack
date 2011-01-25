@@ -215,7 +215,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_VM_START;
+        return EventTypes.EVENT_VM_CREATE;
     }
 
     @Override

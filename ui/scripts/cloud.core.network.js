@@ -167,6 +167,20 @@ function publicNetworkJsonToDetailsTab() {
 	$thisTab.find("#dns2").text(fromdb(jsonObj.dns2));	
 	$thisTab.find("#domainid").text(fromdb(jsonObj.domainid));	
 	$thisTab.find("#account").text(fromdb(jsonObj.account));	
+	
+	//actions ***   
+    var $actionLink = $thisTab.find("#action_link"); 
+    $actionLink.bind("mouseover", function(event) {	    
+        $(this).find("#action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {       
+        $(this).find("#action_menu").hide();    
+        return false;
+    });	      
+    var $actionMenu = $thisTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();   
+	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());	   
 			        
     $thisTab.find("#tab_container").show(); 
     $thisTab.find("#tab_spinning_wheel").hide();   
@@ -216,7 +230,9 @@ function publicNetworkIprangeJsonToTemplate(jsonObj, $template) {
     $template.find("#vlan").text(jsonObj.vlan);    
     $template.find("#gateway").text(jsonObj.gateway);
     $template.find("#netmask").text(jsonObj.netmask);    
-    $template.find("#iprange").text(ipRange);   
+    $template.find("#iprange").text(ipRange);     
+    $template.find("#domain").text(jsonObj.domain);
+    $template.find("#account").text(jsonObj.account);
    
     var $actionLink = $template.find("#iprange_action_link");		
 	$actionLink.bind("mouseover", function(event) {
@@ -934,7 +950,11 @@ function directNetworkJsonClearDetailsTab() {
     $thisTab.find("#netmask").text("");        
     $thisTab.find("#domain").text("");      
     $thisTab.find("#account").text("");       
-    $thisTab.find("#action_link #action_menu #action_list").empty(); //empty action menu
+       
+    //actions ***  
+    var $actionMenu = $thisTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();   
+	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());	   
 }
 
 function directNetworkJsonToIpAllocationTab() {	    
@@ -1094,7 +1114,7 @@ function bindAddNetworkButton($button) {
 				var isDirect = true;
 				
 				isValid &= validateString("Account", $thisDialog.find("#add_publicip_vlan_account"), $thisDialog.find("#add_publicip_vlan_account_errormsg"), true); //optional
-				isValid &= validateNumber("VLAN", $thisDialog.find("#add_publicip_vlan_vlan"), $thisDialog.find("#add_publicip_vlan_vlan_errormsg"), 2, 4095);
+				isValid &= validateInteger("VLAN", $thisDialog.find("#add_publicip_vlan_vlan"), $thisDialog.find("#add_publicip_vlan_vlan_errormsg"), 1, 4095);
 				isValid &= validateString("Network Name", $thisDialog.find("#add_publicip_vlan_network_name"), $thisDialog.find("#add_publicip_vlan_network_name_errormsg"));
 				isValid &= validateString("Network Description", $thisDialog.find("#add_publicip_vlan_network_desc"), $thisDialog.find("#add_publicip_vlan_network_desc_errormsg"));			
 				isValid &= validateIp("Gateway", $thisDialog.find("#add_publicip_vlan_gateway"), $thisDialog.find("#add_publicip_vlan_gateway_errormsg"));
@@ -1237,8 +1257,8 @@ function bindAddIpRangeToDirectNetworkButton($button, $midmenuItem1) {
 
 var directNetworkActionMap = {       
     "Delete Network": {              
-        api: "deleteNetwork",     
-        isAsyncJob: false,           
+        isAsyncJob: false,    
+        dialogBeforeActionFn : doDeleteNetwork,        
         inProcessText: "Deleting Network....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             $midmenuItem1.slideUp("slow", function() {
@@ -1252,5 +1272,22 @@ var directNetworkActionMap = {
     }    
 }  
 
+function doDeleteNetwork($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text("Please confirm you want to delete this network")
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=deleteNetwork&id="+id;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
 //***** Direct Network (end) ******************************************************************************************************
 

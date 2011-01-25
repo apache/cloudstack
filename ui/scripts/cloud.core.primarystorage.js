@@ -63,9 +63,7 @@ function primarystorageToRightPanel($midmenuItem1) {
 function afterLoadPrimaryStorageJSP() {     
     //add pool dialog
     initDialog("dialog_add_pool");
-    bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	  
-       
-    initDialog("dialog_confirmation_delete_primarystorage");  
+    bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	         
     
     primaryStorageRefreshDataBinding();     
 }
@@ -77,12 +75,16 @@ function primaryStorageRefreshDataBinding() {
 
 function primarystorageJsonToDetailsTab() {	
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        primarystorageClearDetailsTab(); 
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
-        return;               
+    if(jsonObj == null) {
+        primarystorageClearDetailsTab(); 
+        return;         
+    }      
     
     $.ajax({
         data: createURL("command=listStoragePools&id="+jsonObj.id),
@@ -170,10 +172,10 @@ function primarystorageJsonToDetailsTab() {
 }
        
 function primarystorageClearRightPanel() {  
-    primarystorageJsonClearDetailsTab();  
+    primarystorageClearDetailsTab();  
 }
 
-function primarystorageJsonClearDetailsTab() {	    
+function primarystorageClearDetailsTab() {	    
     var $thisTab = $("#right_panel_content").find("#tab_content_details");   
     $thisTab.find("#id").text("");
     $thisTab.find("#name").text("");
@@ -324,7 +326,8 @@ function doCancelMaintenanceModeForPrimaryStorage($actionLink, $detailsTab, $mid
 function doDeletePrimaryStorage($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $midmenuItem1.data("jsonObj");
        
-    $("#dialog_confirmation_delete_primarystorage")
+    $("#dialog_confirmation")
+    .text("Please confirm you want to delete the primary storage")
     .dialog("option", "buttons", {	                    
          "OK": function() {
              $(this).dialog("close");      

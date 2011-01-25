@@ -39,21 +39,6 @@ public interface VirtualRouter extends VirtualMachine {
     
     public String getPublicNetmask();
     
-    public String getPrivateNetmask();
-    
-    public String getVnet();
-    
-    public String getVlanId();
-    
-    public String getZoneVlan();
-    
-    public String getGuestZoneMacAddress();
-    
-    /**
-     * @return the gateway address for the router to use.
-     */
-    public String getGateway();
-    
     /**
      * @return the ram size for this machine.
      */
@@ -66,26 +51,9 @@ public interface VirtualRouter extends VirtualMachine {
      */
     String getPublicIpAddress();
     
-    String getDns1();
-    String getDns2();
     String getDomain();
     
-    /**
-     * @return account id that the domain router belongs to.
-     */
-    long getAccountId();
-
-    /**
-     * @return domain id that the domain router belongs to.
-     */
-    long getDomainId();
-    
     Role getRole();
-    
-    /**
-     * @return the range of dhcp addresses served (start and end)
-     */
-    String[] getDhcpRange();
 
 	void setRamSize(int ramSize);
 }

@@ -847,6 +847,9 @@ function disableConsoleHover($viewConsoleContainer) {
   
 function resetViewConsoleAction(jsonObj, $detailsTab) {
     var $viewConsoleContainer = $detailsTab.find("#view_console_container").empty(); //reset view console panel
+    if(jsonObj == null)
+        return;
+    
     var $viewConsoleTemplate = $("#view_console_template").clone();
     $viewConsoleContainer.append($viewConsoleTemplate.show());       
 	if (jsonObj.state == 'Running') {	
@@ -867,7 +870,12 @@ function resetViewConsoleAction(jsonObj, $detailsTab) {
 	} 	
 }    
 
-function setVmStateInRightPanel(stateValue, $stateField) {    
+function setVmStateInRightPanel(stateValue, $stateField) {   
+    if(stateValue == null) {
+        $stateField.text("").removeClass("green red gray");  
+        return;
+    }          	
+     
     if(stateValue == "Running")
         $stateField.text(stateValue).removeClass("red gray").addClass("green");
     else if(stateValue == "Stopped" || stateValue == "Error")
@@ -934,7 +942,7 @@ function initDialogWithOK(elementId, width1, addToActive) {
 
 function createMultipleSelectionSubContainer() {      
     var $multipleSelectionSubContainer = $("<div id='multiple_selection_sub_container'></div>"); 
-    $("#midmenu_container").append($multipleSelectionSubContainer);    
+    $("#midmenu_container").empty().append($multipleSelectionSubContainer);    
   
     $multipleSelectionSubContainer.selectable({
         selecting: function(event, ui) {	 	                               
@@ -970,9 +978,12 @@ function getMidmenuId(jsonObj) {
     return "midmenuItem_" + jsonObj.id; 
 }
 
-var lastSearchType;
+//var lastSearchType;
 var currentCommandString;
 function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, page) {                
+	$("#midmenu_container").hide();
+	$("#midmenu_spinning_wheel").show();
+	
 	var params = {
         "commandString": commandString,
         "getSearchParamsFn": getSearchParamsFn,
@@ -988,10 +999,16 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
 	
 	(page > 1)? $("#midmenu_prevbutton").show(): $("#midmenu_prevbutton").hide();
 	
+	var searchParams = getSearchParamsFn();
+	if(searchParams.length > 0)
+	    $("#clear_search").show();
+	else
+	    $("#clear_search").hide();
+	
     var count = 0;    
     $.ajax({
         cache: false,
-        data: createURL("command="+commandString+getSearchParamsFn()+"&pagesize="+midmenuItemCount+"&page="+page),
+        data: createURL("command="+commandString+searchParams+"&pagesize="+midmenuItemCount+"&page="+page),
         dataType: "json",
         async: false,
         success: function(json) {  
@@ -1025,6 +1042,12 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
                 count = items.length;
             }  
             else {
+                clearRightPanel(); //general one
+                
+                var clearRightPanelFn = $("#right_panel_content").data("clearRightPanelFn"); //page-specific one. e.g. vmClearRightPanel()
+                if(clearRightPanelFn != null)
+                    clearRightPanelFn();  
+                    
                 $container.append($("#midmenu_container_no_items_available").clone().show());  
             }
             $("#midmenu_container").show();
@@ -1040,12 +1063,14 @@ var currentRightPanelJSP = null;
 function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, leftmenuId, refreshDataBindingFn) { 
 	clearMiddleMenu();
 	showMiddleMenu();	
-	$("#midmenu_container").hide();
-	$("#midmenu_spinning_wheel").show();
 	
 	currentLeftMenuId = leftmenuId;
 	$("#right_panel").data("onRefreshFn", function() {
-	    $("#"+leftmenuId).click();
+	    //$("#"+leftmenuId).click();	    
+	    var params = $("#middle_menu_pagination").data("params");
+        if(params == null)
+            return;	 	         	    
+        listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);	    
 	});
 
 	if (currentRightPanelJSP != rightPanelJSP) {
@@ -1132,9 +1157,22 @@ function showLeftNavigationBasedOnRole() {
 	else {
 	    $("#leftmenu_security_group_container").hide();
 	}
+	
+	if (getUserPublicTemplateEnabled() == "true") {
+	    $("#leftmenu_submenu_community_template_container, #leftmenu_submenu_community_iso_container").show();
+	}
+	else {
+	    $("#leftmenu_submenu_community_template_container, #leftmenu_submenu_community_iso_container").hide();
+	}
 }
    
 function drawBarChart($capacity, percentused) { //percentused == "0.01%" (having % inside)    
+    if(percentused == null) {
+        $capacity.find("#percentused").text("");
+        $capacity.find("#bar_chart").removeClass().addClass("db_barbox low").css("width", 0); 
+        return;
+    }
+
     $capacity.find("#percentused").text(percentused);
     
     var percentusedFloat; 
@@ -1211,9 +1249,6 @@ var g_timezoneoffset = null;
 var g_timezone = null;
 
 // capabilities
-var g_hypervisorType = "kvm";
-function getHypervisorType() { return g_hypervisorType; }
-
 var g_directAttachSecurityGroupsEnabled = "false";
 function getDirectAttachSecurityGroupsEnabled() { return g_directAttachSecurityGroupsEnabled; }
 
@@ -1456,15 +1491,26 @@ function validateDropDownBox(label, field, errMsgField, appendErrMsg) {
 	return isValid;
 }
 
-function validateNumber(label, field, errMsgField, min, max, isOptional) {
+function validateInteger(label, field, errMsgField, min, max, isOptional) {
+    return validateNumber(label, field, errMsgField, min, max, isOptional, "integer");    
+}
+
+function validateNumber(label, field, errMsgField, min, max, isOptional, type) {
     var isValid = true;
     var errMsg = "";
-    var value = field.val();       
+    var value = field.val();  
+         
 	if (value != null && value.length != 0) {
 		if(isNaN(value)) {
 			errMsg = label + " must be a number";
 			isValid = false;
-		} else {
+		} 
+		else {
+		    if(type == "integer" && (value % 1) != 0) {
+		        errMsg = label + " must be an integer";
+				isValid = false;
+		    }
+		
 			if (min != null && value < min) {
 				errMsg = label + " must be a value greater than or equal to " + min;
 				isValid = false;
@@ -1474,7 +1520,8 @@ function validateNumber(label, field, errMsgField, min, max, isOptional) {
 				isValid = false;
 			}
 		}
-	} else if(isOptional!=true){  //required field
+	}
+	else if(isOptional!=true){  //required field
 		errMsg = label + " is a required value. ";
 		isValid = false;
 	}

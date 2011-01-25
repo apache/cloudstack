@@ -157,22 +157,15 @@ public class StatsCollector {
 				List<HostVO> hosts = _hostDao.search(sc, null);
 				for (HostVO host : hosts)
 				{
-					if (host.getId() != null)
-					{
-					    HostStatsEntry stats = (HostStatsEntry) _agentMgr.getHostStatistics(host.getId());
-					    if (stats != null)
-					    {
-	                        hostStats.put(host.getId(), stats);
-					    }
-					    else
-					    {
-					        s_logger.warn("Received invalid host stats for host: " + host.getId());
-					    }
-					}
-					else
-					{
-						s_logger.warn("Host: " + host.getId() + " does not exist, skipping host statistics");
-					}
+				    HostStatsEntry stats = (HostStatsEntry) _agentMgr.getHostStatistics(host.getId());
+				    if (stats != null)
+				    {
+                        hostStats.put(host.getId(), stats);
+				    }
+				    else
+				    {
+				        s_logger.warn("Received invalid host stats for host: " + host.getId());
+				    }
 				}
 				_hostStats = hostStats;
 			}

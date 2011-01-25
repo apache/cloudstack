@@ -163,7 +163,6 @@ import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.ActionEvent;
 import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
@@ -263,7 +262,6 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -274,7 +272,6 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class ManagementServerImpl implements ManagementServer {	
@@ -977,7 +974,7 @@ public class ManagementServerImpl implements ManagementServer {
         
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
         sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-        sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.LIKE);
+        sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
 
         if ((accountName == null) && (domainId != null)) {
@@ -1017,7 +1014,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         if (accountName != null) {
-            sc.setParameters("accountName", "%" + accountName + "%");
+            sc.setParameters("accountName", accountName);
             if (domainId != null) {
                 sc.setParameters("domainId", domainId);
             }
@@ -1738,7 +1735,11 @@ public class ManagementServerImpl implements ManagementServer {
         Long domainId = cmd.getDomainId();
         Long accountId = cmd.getId();
         String accountName = null;
-
+        Boolean isRecursive = cmd.isRecursive();
+        
+        if(isRecursive == null)
+            isRecursive = false;
+        
         if(accountId != null && accountId == 1){
         	//system account should NOT be searchable
         	List<AccountVO> emptyList = new ArrayList<AccountVO>();
@@ -1750,6 +1751,7 @@ public class ManagementServerImpl implements ManagementServer {
             if (domainId == null) {
                 // default domainId to the admin's domain
                 domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+                isRecursive = true;
             } else if (account != null) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
                     throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid domain id (" + domainId + ") given, unable to list accounts");
@@ -1775,13 +1777,21 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("needsCleanup", sb.entity().getNeedsCleanup(), SearchCriteria.Op.EQ);
 
-        if ((accountId == null) && (domainId != null)) {
-            // if accountId isn't specified, we can do a domain match for the admin case
+        if ((accountId == null) && (domainId != null) && isRecursive) {
+            // if accountId isn't specified, we can do a domain LIKE match for the admin case if isRecursive is true
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
+        } else if ((accountId == null) && (domainId != null) && !isRecursive) {
+            // if accountId isn't specified, we can do a domain EXACT match for the admin case if isRecursive is true
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.EQ);
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        } 
 
+        
+        
+        
         SearchCriteria<AccountVO> sc = sb.create();
         if (keyword != null) {
             SearchCriteria<AccountVO> ssc = _accountDao.createSearchCriteria();
@@ -1801,7 +1811,11 @@ public class ManagementServerImpl implements ManagementServer {
             DomainVO domain = _domainDao.findById(domainId);
 
             // I want to join on user_vm.domain_id = domain.id where domain.path like 'foo%'
-            sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            if(isRecursive)
+                sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            else
+                sc.setJoinParameters("domainSearch", "path", domain.getPath());
+            
             sc.setParameters("nid", 1L);
         } else {
         	sc.setParameters("nid", 1L);
@@ -2276,6 +2290,11 @@ public class ManagementServerImpl implements ManagementServer {
         String accountName = cmd.getAccountName();
         Long accountId = null;
         boolean isAdmin = false;
+        Boolean isRecursive = cmd.isRecursive();
+        
+        if(isRecursive == null)
+            isRecursive = false;
+        
         if ((account == null) || isAdmin(account.getType())) {
             isAdmin = true;
             if (domainId != null) {
@@ -2292,6 +2311,7 @@ public class ManagementServerImpl implements ManagementServer {
                 }
             } else {
                 domainId = ((account == null) ? DomainVO.ROOT_DOMAIN : account.getDomainId());
+                isRecursive = true;
             }
         } else {
             accountId = account.getId();
@@ -2337,14 +2357,18 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("status", sb.entity().getStatus(), SearchCriteria.Op.EQ);
 
         // Only return volumes that are not destroyed
-        sb.and("destroyed", sb.entity().getDestroyed(), SearchCriteria.Op.EQ);
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
 
-        if ((accountId == null) && (domainId != null)) {
-            // if accountId isn't specified, we can do a domain match for the admin case
+        if (((accountId == null) && (domainId != null) && isRecursive)) {
+            // if accountId isn't specified, we can do a domain match for the admin case if isRecursive is true
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
+        } else if((accountId == null) && (domainId != null) && !isRecursive) {
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.EQ);
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }  
 
         // now set the SC criteria...
         SearchCriteria<VolumeVO> sc = sb.create();
@@ -2368,7 +2392,10 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("accountIdEQ", accountId);
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById(domainId);
-            sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            if(isRecursive)
+                sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+            else
+                sc.setJoinParameters("domainSearch", "path", domain.getPath());
         }
         if (type != null) {
             sc.setParameters("volumeType", "%" + type + "%");
@@ -2391,7 +2418,7 @@ public class ManagementServerImpl implements ManagementServer {
 		*/
         
         // Only return volumes that are not destroyed
-        sc.setParameters("destroyed", false);
+        sc.setParameters("state", Volume.State.Destroy);
 
         List<VolumeVO> allVolumes = _volumeDao.search(sc, searchFilter);
         List<VolumeVO> returnableVolumes = new ArrayList<VolumeVO>(); //these are ones without domr and console proxy
@@ -2405,7 +2432,22 @@ public class ManagementServerImpl implements ManagementServer {
         	}
         	else
         	{
-        		returnableVolumes.add(v);
+        	    //do not add to returnable list if vol belongs to a user vm that is destoyed and cmd called by user
+        	    if(v.getInstanceId() == null) {
+        	        returnableVolumes.add(v);
+        	    }else {
+        	        if (account.getType() == Account.ACCOUNT_TYPE_NORMAL){
+            	        VMInstanceVO owningVm = _vmInstanceDao.findById(v.getInstanceId());
+            	        if(owningVm != null && owningVm.getType().equals(VirtualMachine.Type.User) && owningVm.getState().equals(VirtualMachine.State.Destroyed)){
+            	            // do not show volumes
+            	            // do nothing
+            	        }else {
+            	            returnableVolumes.add(v);
+            	        }
+        	        }else {
+        	            returnableVolumes.add(v);
+        	        }
+        	    }       	        
         	}
         }
         
@@ -2415,7 +2457,7 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public VolumeVO findVolumeByInstanceAndDeviceId(long instanceId, long deviceId) {
          VolumeVO volume = _volumeDao.findByInstanceAndDeviceId(instanceId, deviceId).get(0);
-         if (volume != null && !volume.getDestroyed() && volume.getRemoved() == null) {
+         if (volume != null && volume.getState() != Volume.State.Destroy && volume.getRemoved() == null) {
              return volume;
          } else {
              return null;
@@ -2629,7 +2671,6 @@ public class ManagementServerImpl implements ManagementServer {
         	if (s_logger.isDebugEnabled()) {
                 s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
             }
-        	EventUtils.saveEvent(user.getId(), user.getAccountId(), EventTypes.EVENT_USER_LOGIN, "user has logged in");
             return user;
         } else {
         	if (s_logger.isDebugEnabled()) {
@@ -2901,19 +2942,12 @@ public class ManagementServerImpl implements ManagementServer {
         if ((domains == null) || domains.isEmpty()) {
             DomainVO domain = new DomainVO(name, ownerId, parentId);
             try {
-                DomainVO dbDomain = _domainDao.create(domain);
-                EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_CREATE, "Domain, " + name + " created with owner id = " + ownerId
-                        + " and parentId " + parentId);
-                return dbDomain;
+                return _domainDao.create(domain);
             } catch (IllegalArgumentException ex) {
                 s_logger.warn("Failed to create domain ", ex);
-            	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_CREATE, "Domain, " + name + " was not created with owner id = " + ownerId
-                        + " and parentId " + parentId);
                 throw ex;
             }
         } else {
-            EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_CREATE, "Domain, " + name + " was not created with owner id = " + ownerId
-                    + " and parentId " + parentId);
             throw new InvalidParameterValueException("Domain with name " + name + " already exists for the parent id=" + parentId);
         }
     }
@@ -2976,23 +3010,11 @@ public class ManagementServerImpl implements ManagementServer {
             List<AccountVO> accounts = _accountDao.search(sc, null);
             for (AccountVO account : accounts) {
                 success = (success && _accountMgr.cleanupAccount(account, UserContext.current().getCallerUserId(), UserContext.current().getCaller()));
-                String description = "Account:" + account.getAccountId();
-                if(success){
-                    EventUtils.saveEvent(User.UID_SYSTEM, account.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ACCOUNT_DELETE, "Successfully deleted " +description);
-                }else{
-                    EventUtils.saveEvent(User.UID_SYSTEM, account.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_ACCOUNT_DELETE, "Error deleting " +description);
-                }
-
             }
         }
 
         // delete the domain itself
         boolean deleteDomainSuccess = _domainDao.remove(domainId);
-        if (!deleteDomainSuccess) {
-        	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_DELETE, "Domain with id " + domainId + " was not deleted");
-        } else {
-        	EventUtils.saveEvent(new Long(1), ownerId, EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_DELETE, "Domain with id " + domainId + " was deleted");
-        }
 
         return success && deleteDomainSuccess;
     }
@@ -3030,11 +3052,9 @@ public class ManagementServerImpl implements ManagementServer {
             String updatedDomainPath = getUpdatedDomainPath(domain.getPath(),domainName);
             updateDomainChildren(domain,updatedDomainPath);
             _domainDao.update(domainId, domainName, updatedDomainPath);
-            EventUtils.saveEvent(new Long(1), domain.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_UPDATE, "Domain, " + domainName + " was updated");
             return _domainDao.findById(domainId);
         } else {
             domain = _domainDao.findById(domainId);
-            EventUtils.saveEvent(new Long(1), domain.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_UPDATE, "Failed to update domain " + domain.getName() + " with name " + domainName + ", name in use.");
             s_logger.error("Domain with name " + domainName + " already exists in the system");
             throw new CloudRuntimeException("Failed to update domain " + domainId);
         }
@@ -4285,7 +4305,6 @@ public class ManagementServerImpl implements ManagementServer {
         List<HostVO> storageServers = _hostDao.listByTypeDataCenter(Host.Type.SecondaryStorage, zoneId);
         HostVO sserver = storageServers.get(0);
 
-        EventUtils.saveStartedEvent(userId, accountId, cmd.getEventType(), "Starting extraction of " +volume.getName()+ " mode:"+mode, cmd.getStartEventId());
         List<UploadVO> extractURLList = _uploadDao.listByTypeUploadStatus(volumeId, Upload.Type.VOLUME, UploadVO.Status.DOWNLOAD_URL_CREATED);
         
         if (extractMode == Upload.Mode.HTTP_DOWNLOAD && extractURLList.size() > 0){   
@@ -4326,7 +4345,6 @@ public class ManagementServerImpl implements ManagementServer {
                 uploadJob.setLastUpdated(new Date());
                 _uploadDao.update(uploadJob.getId(), uploadJob);
                 
-                EventUtils.saveEvent(userId, accountId, EventTypes.EVENT_VOLUME_UPLOAD, errorString);                
                 throw new CloudRuntimeException(errorString);            
             }
             
@@ -4342,7 +4360,6 @@ public class ManagementServerImpl implements ManagementServer {
                 return uploadJob.getId();
             }else{ // Volume is copied now make it visible under apache and create a URL.
                 _uploadMonitor.createVolumeDownloadURL(volumeId, volumeLocalPath, Upload.Type.VOLUME, zoneId, uploadJob.getId());                
-                EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, cmd.getEventType(), "Completed extraction of "+volume.getName()+ " in mode:" +mode, null, cmd.getStartEventId() == null ? 0:cmd.getStartEventId());
                 return uploadJob.getId();
             }
         }
@@ -4576,7 +4593,6 @@ public class ManagementServerImpl implements ManagementServer {
 							if(updateCertAns.getResult() == true)
 							{
 								//we have the cert copied over on cpvm
-								long eventId = saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_REBOOT, "rebooting console proxy with Id: "+cp.getId());    				
 								_consoleProxyMgr.rebootProxy(cp.getId());
 								//when cp reboots, the context will be reinit with the new cert
 								if(s_logger.isDebugEnabled()) {
@@ -4646,11 +4662,25 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public String[] getHypervisors(ListHypervisorsCmd cmd) {
-    	String hypers = _configDao.getValue(Config.HypervisorList.key());
-    	if (hypers == "" || hypers == null) {
-    		return null;
-    	}
-    	return hypers.split(",");
+        Long zoneId = cmd.getZoneId();
+        if(zoneId == null) {
+            String hypers = _configDao.getValue(Config.HypervisorList.key());
+            if (hypers == "" || hypers == null) {
+                return null;
+            }
+            return hypers.split(",");
+        } else {
+            String[] result = null;
+            List<ClusterVO> clustersForZone = _clusterDao.listByZoneId(zoneId);
+            if(clustersForZone != null && clustersForZone.size() > 0) {
+                result = new String[clustersForZone.size()];
+                int i = 0;
+                for(ClusterVO cluster : clustersForZone) {
+                    result[i++] = cluster.getHypervisorType().toString();
+                }
+            }
+            return result;
+        }
     }
 
 	@Override
@@ -4667,8 +4697,9 @@ public class ManagementServerImpl implements ManagementServer {
     public SSHKeyPair createSSHKeyPair(CreateSSHKeyPairCmd cmd) {
             Account account = UserContext.current().getCaller();
             SSHKeyPairVO s = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getName());
-            if (s != null)
-                     throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
+            if (s != null) {
+                throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
+            }
 
             SSHKeysHelper keys = new SSHKeysHelper();
 
@@ -4684,8 +4715,9 @@ public class ManagementServerImpl implements ManagementServer {
     public boolean deleteSSHKeyPair(DeleteSSHKeyPairCmd cmd) {
             Account account = UserContext.current().getCaller();
             SSHKeyPairVO s = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getName());
-            if (s == null)
-                     throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' does not exist.");
+            if (s == null) {
+                throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' does not exist.");
+            }
 
             return _sshKeyPairDao.deleteByName(account.getAccountId(), account.getDomainId(), cmd.getName());
     }
@@ -4694,11 +4726,13 @@ public class ManagementServerImpl implements ManagementServer {
     public List<? extends SSHKeyPair> listSSHKeyPairs(ListSSHKeyPairsCmd cmd) {
             Account account = UserContext.current().getCaller();
 
-            if (cmd.getName() != null && cmd.getName().length() > 0)
-                    return _sshKeyPairDao.listKeyPairsByName(account.getAccountId(), account.getDomainId(), cmd.getName());
+            if (cmd.getName() != null && cmd.getName().length() > 0) {
+                return _sshKeyPairDao.listKeyPairsByName(account.getAccountId(), account.getDomainId(), cmd.getName());
+            }
 
-            if (cmd.getFingerprint() != null && cmd.getFingerprint().length() > 0)
-                    return _sshKeyPairDao.listKeyPairsByFingerprint(account.getAccountId(), account.getDomainId(), cmd.getFingerprint());
+            if (cmd.getFingerprint() != null && cmd.getFingerprint().length() > 0) {
+                return _sshKeyPairDao.listKeyPairsByFingerprint(account.getAccountId(), account.getDomainId(), cmd.getFingerprint());
+            }
 
             return _sshKeyPairDao.listKeyPairs(account.getAccountId(), account.getDomainId());
     }
@@ -4707,15 +4741,17 @@ public class ManagementServerImpl implements ManagementServer {
     public SSHKeyPair registerSSHKeyPair(RegisterSSHKeyPairCmd cmd) {
             Account account = UserContext.current().getCaller();
             SSHKeyPairVO s = _sshKeyPairDao.findByName(account.getAccountId(), account.getDomainId(), cmd.getName());
-            if (s != null)
-                     throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
+            if (s != null) {
+                throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
+            }
 
             String name = cmd.getName();
             String publicKey = SSHKeysHelper.getPublicKeyFromKeyMaterial(cmd.getPublicKey());
             String fingerprint = SSHKeysHelper.getPublicKeyFingerprint(publicKey);
 
-            if (publicKey == null)
-                     throw new InvalidParameterValueException("Public key is invalid");
+            if (publicKey == null) {
+                throw new InvalidParameterValueException("Public key is invalid");
+            }
 
             return createAndSaveSSHKeyPair(name, fingerprint, publicKey, null);
     }
@@ -4740,13 +4776,15 @@ public class ManagementServerImpl implements ManagementServer {
     public String getVMPassword(GetVMPasswordCmd cmd) {   	
         Account account = UserContext.current().getCaller();
         UserVmVO vm = _userVmDao.findById(cmd.getId());
-        if (vm == null || vm.getAccountId() != account.getAccountId()) 
-        	throw new InvalidParameterValueException("No VM with id '" + cmd.getId() + "' found.");
+        if (vm == null || vm.getAccountId() != account.getAccountId()) {
+            throw new InvalidParameterValueException("No VM with id '" + cmd.getId() + "' found.");
+        }
             	
         _userVmDao.loadDetails(vm);
         String password = vm.getDetail("Encrypted.Password");         
-        if (password == null || password.equals(""))
-        	throw new InvalidParameterValueException("No password for VM with id '" + cmd.getId() + "' found.");
+        if (password == null || password.equals("")) {
+            throw new InvalidParameterValueException("No password for VM with id '" + cmd.getId() + "' found.");
+        }
 
         return password;
     }

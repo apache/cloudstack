@@ -66,17 +66,13 @@ function hostToRightPanel($midmenuItem1) {
 }
 
 function afterLoadHostJSP() {    
-    initDialog("dialog_add_host");      
-    initDialog("dialog_confirmation_enable_maintenance");
-    initDialog("dialog_confirmation_cancel_maintenance");
-    initDialog("dialog_confirmation_force_reconnect");
-    initDialog("dialog_confirmation_remove_host");
+    initDialog("dialog_add_host");    
     initDialog("dialog_update_os");
          
     // switch between different tabs 
-    var tabArray = [$("#tab_details"), $("#tab_primarystorage"), $("#tab_instance"), $("#tab_router"), $("#tab_systemvm"), $("#tab_statistics")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_primarystorage"), $("#tab_content_instance"), $("#tab_content_router"), $("#tab_content_systemvm"), $("#tab_content_statistics")];
-    var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToPrimaryStorageTab, hostJsonToInstanceTab, hostJsonToRouterTab, hostJsonToSystemvmTab, hostJsonToStatisticsTab];
+    var tabArray = [$("#tab_details"), $("#tab_instance"), $("#tab_router"), $("#tab_systemvm"), $("#tab_statistics")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_instance"), $("#tab_content_router"), $("#tab_content_systemvm"), $("#tab_content_statistics")];
+    var afterSwitchFnArray = [hostJsonToDetailsTab, hostJsonToInstanceTab, hostJsonToRouterTab, hostJsonToSystemvmTab, hostJsonToStatisticsTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);  
   
     hostRefreshDataBinding();  
@@ -89,12 +85,16 @@ function hostRefreshDataBinding() {
 
 function hostJsonToDetailsTab() {  
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        hostClearDetailsTab();     
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        hostClearDetailsTab();     
         return;    
+    }
        
     $.ajax({
         data: createURL("command=listHosts&id="+jsonObj.id),
@@ -197,182 +197,18 @@ function hostJsonToDetailsTab() {
     $thisTab.find("#tab_container").show();               
 }
 
-function hostJsonToPrimaryStorageTab() {       	
-	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
-        return;
-    
-    var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
-        return;
-    
-    var $thisTab = $("#right_panel_content #tab_content_primarystorage");
-	$thisTab.find("#tab_container").hide(); 
-    $thisTab.find("#tab_spinning_wheel").show(); 
-        
-    $.ajax({
-        cache: false,
-        data: createURL("command=listStoragePools&clusterid="+jsonObj.clusterid),
-        dataType: "json",        
-        success: function(json) {    
-            var items = json.liststoragepoolsresponse.storagepool;   
-            var $container = $thisTab.find("#tab_container").empty();   
-            if(items != null && items.length > 0) {                
-                var $template = $("#primarystorage_tab_template"); 		
-                for(var i=0; i<items.length;i++) { 
-                    var $newTemplate = $template.clone(true);	               
-	                hostPrimaryStorageJSONToTemplate(items[i], $newTemplate); 
-	                $container.append($newTemplate.show());                            
-                }                 
-            }  
-            $thisTab.find("#tab_spinning_wheel").hide();    
-            $thisTab.find("#tab_container").show();    		                
-        }
-    });	     
-} 
-
-function hostJsonClearPrimaryStorageTab() {   
-    var $thisTab = $("#right_panel_content").find("#tab_content_primarystorage");
-    $thisTab.find("#tab_container").empty();   
-} 
-
-function hostPrimaryStorageJSONToTemplate(jsonObj, $template) {
-    $template.data("jsonObj", jsonObj);     
-    $template.attr("id", "host_primarystorage_"+jsonObj.id).data("hostPrimarystorageId", jsonObj.id);        
-    $template.find("#grid_header_title").text(fromdb(jsonObj.name));
-    $template.find("#id").text(fromdb(jsonObj.id));
-    $template.find("#name").text(fromdb(jsonObj.name));
-        
-    setHostStateInRightPanel(fromdb(jsonObj.state), $template.find("#state"));
-    
-    $template.find("#zonename").text(fromdb(jsonObj.zonename));
-    $template.find("#podname").text(fromdb(jsonObj.podname));
-    $template.find("#clustername").text(fromdb(jsonObj.clustername));
-	var storageType = "ISCSI Share";
-	if (jsonObj.type == 'NetworkFilesystem') 
-	    storageType = "NFS Share";
-    $template.find("#type").text(fromdb(storageType));
-    $template.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
-    $template.find("#path").text(fromdb(jsonObj.path));                
-	$template.find("#disksizetotal").text(convertBytes(jsonObj.disksizetotal));
-	$template.find("#disksizeallocated").text(convertBytes(jsonObj.disksizeallocated));
-	
-	$template.find("#tags").text(fromdb(jsonObj.tags));   	
-	
-	var $actionLink = $template.find("#primarystorage_action_link");		
-	$actionLink.bind("mouseover", function(event) {
-        $(this).find("#primarystorage_action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {
-        $(this).find("#primarystorage_action_menu").hide();    
-        return false;
-    });		
-	
-	var $actionMenu = $actionLink.find("#primarystorage_action_menu");
-    $actionMenu.find("#action_list").empty();	
-    
-    buildActionLinkForSubgridItem("Enable Maintenance Mode", hostPrimarystorageActionMap, $actionMenu, $template);	
-    buildActionLinkForSubgridItem("Cancel Maintenance Mode", hostPrimarystorageActionMap, $actionMenu, $template);	
-    buildActionLinkForSubgridItem("Delete Primary Storage", hostPrimarystorageActionMap, $actionMenu, $template);	
-}  
-
-var hostPrimarystorageActionMap = {             
-    "Enable Maintenance Mode": {              
-        isAsyncJob: true,
-        asyncJobResponse: "prepareprimarystorageformaintenanceresponse",
-        dialogBeforeActionFn: doEnableMaintenanceModeForPrimaryStorageInHostPage,
-        inProcessText: "Enabling Maintenance Mode....",
-        afterActionSeccessFn: function(json, id, $subgridItem) {             
-            var item = json.queryasyncjobresultresponse.jobresult.storagepool; 
-            hostPrimaryStorageJSONToTemplate(item, $subgridItem);                                
-            $subgridItem.find("#after_action_info").text("We are actively enabling maintenance. Please refresh periodically for an updated status.");
-        }
-    },
-    "Cancel Maintenance Mode": {              
-        isAsyncJob: true,
-        asyncJobResponse: "cancelprimarystoragemaintenanceresponse",
-        dialogBeforeActionFn: doCancelMaintenanceModeForPrimaryStorageInHostPage,
-        inProcessText: "Cancelling Maintenance Mode....",
-        afterActionSeccessFn: function(json, id, $subgridItem) {   
-            var item = json.queryasyncjobresultresponse.jobresult.storagepool;    
-            hostPrimaryStorageJSONToTemplate(item, $subgridItem);                                
-            $subgridItem.find("#after_action_info").text("We are actively cancelling your scheduled maintenance.  Please refresh periodically for an updated status.");
-        }
-    },
-    "Delete Primary Storage": {              
-        isAsyncJob: false,        
-        dialogBeforeActionFn: doDeletePrimaryStorageInHostPage,
-        inProcessText: "Deleting Primary Storage....",
-        afterActionSeccessFn: function(json, id, $subgridItem) {   
-            $subgridItem.slideUp("slow", function() {
-                $(this).remove();
-            });               
-        }
-    }
-}
-
-function doEnableMaintenanceModeForPrimaryStorageInHostPage($actionLink, $subgridItem) { 
-    var jsonObj = $subgridItem.data("jsonObj");
-       
-    $("#dialog_confirmation")
-    .text("Warning: placing the primary storage into maintenance mode will cause all VMs using volumes from it to be stopped.  Do you want to continue?")
-    .dialog("option", "buttons", {	                    
-         "OK": function() {
-             $(this).dialog("close");      
-             var id = jsonObj.id;
-             var apiCommand = "command=enableStorageMaintenance&id="+id;
-             doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem);		
-         },
-         "Cancel": function() {	                         
-             $(this).dialog("close");
-         }
-    }).dialog("open");     
-} 
-
-function doCancelMaintenanceModeForPrimaryStorageInHostPage($actionLink, $subgridItem) { 
-    var jsonObj = $subgridItem.data("jsonObj");
-       
-    $("#dialog_confirmation")
-    .text("Please confirm you want to cancel maintenace")
-    .dialog("option", "buttons", {	                    
-         "OK": function() {
-             $(this).dialog("close");      
-             var id = jsonObj.id;
-             var apiCommand = "command=cancelStorageMaintenance&id="+id;
-             doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem);		
-         },
-         "Cancel": function() {	                         
-             $(this).dialog("close");
-         }
-    }).dialog("open");     
-} 
-
-function doDeletePrimaryStorageInHostPage($actionLink, $subgridItem) { 
-    var jsonObj = $subgridItem.data("jsonObj");
-       
-    $("#dialog_confirmation_delete_primarystorage")
-    .dialog("option", "buttons", {	                    
-         "OK": function() {
-             $(this).dialog("close");      
-             var id = jsonObj.id;
-             var apiCommand = "command=deleteStoragePool&id="+id;
-             doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem);		
-         },
-         "Cancel": function() {	                         
-             $(this).dialog("close");
-         }
-    }).dialog("open");     
-} 
-
 function hostJsonToInstanceTab() {       	
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        hostClearInstanceTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        hostClearInstanceTab();
         return;
+    }
     
     var $thisTab = $("#right_panel_content #tab_content_instance");
 	$thisTab.find("#tab_container").hide(); 
@@ -399,7 +235,7 @@ function hostJsonToInstanceTab() {
 	});
 } 
 
-function hostJsonClearInstanceTab() {
+function hostClearInstanceTab() {
     var $thisTab = $("#right_panel_content").find("#tab_content_instance");
     $thisTab.find("#tab_container").empty();   
 }
@@ -419,12 +255,16 @@ function hostInstanceJSONToTemplate(jsonObj, template) {
 
 function hostJsonToRouterTab() {   
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        hostClearRouterTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        hostClearRouterTab();
         return;
+    }
     
     var $thisTab = $("#right_panel_content #tab_content_router");
 	$thisTab.find("#tab_container").hide(); 
@@ -451,19 +291,23 @@ function hostJsonToRouterTab() {
 	});
 } 
 
-function hostJsonClearRouterTab() {
+function hostClearRouterTab() {
     var $thisTab = $("#right_panel_content").find("#tab_content_router");
     $thisTab.find("#tab_container").empty(); 
 }
 
 function hostJsonToStatisticsTab() {    
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        hostClearStatisticsTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        hostClearStatisticsTab();
         return;
+    }
     
     var $thisTab = $("#right_panel_content").find("#tab_content_statistics");  
 	$thisTab.find("#tab_container").hide(); 
@@ -504,7 +348,7 @@ function hostJsonToStatisticsTab() {
     $thisTab.find("#tab_container").show();  
 }
 
-function hostJsonClearStatisticsTab() {        
+function hostClearStatisticsTab() {        
     var $thisTab = $("#right_panel_content").find("#tab_content_statistics");  	
     var $barChartContainer = $thisTab.find("#cpu_barchart");            
     $barChartContainer.find("#cpunumber").text("");        
@@ -535,12 +379,16 @@ function hostRouterJSONToTemplate(jsonObj, template) {
 
 function hostJsonToSystemvmTab() {   
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        hostClearSystemvmTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        hostClearSystemvmTab();
         return;
+    }
     
     var $thisTab = $("#right_panel_content #tab_content_systemvm");
 	$thisTab.find("#tab_container").hide(); 
@@ -567,7 +415,7 @@ function hostJsonToSystemvmTab() {
 	});
 } 
 
-function hostJsonClearSystemvmTab() {
+function hostClearSystemvmTab() {
     var $thisTab = $("#right_panel_content").find("#tab_content_systemvm");
     $thisTab.find("#tab_container").empty(); 
 }
@@ -585,12 +433,11 @@ function hostSystemvmJSONToTemplate(jsonObj, template) {
 }  
 
 function hostClearRightPanel() {
-    hostClearDetailsTab(); 
-    hostJsonClearPrimaryStorageTab();
-    hostJsonClearInstanceTab();
-    hostJsonClearRouterTab();
-    hostJsonClearSystemvmTab();
-    hostJsonClearStatisticsTab();
+    hostClearDetailsTab();     
+    hostClearInstanceTab();
+    hostClearRouterTab();
+    hostClearSystemvmTab();
+    hostClearStatisticsTab();
 }
 
 function hostClearDetailsTab() {
@@ -702,7 +549,8 @@ var hostActionMap = {
 function doEnableMaintenanceMode($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $midmenuItem1.data("jsonObj");
        
-    $("#dialog_confirmation_enable_maintenance")
+    $("#dialog_confirmation")
+    .text("Enabling maintenance mode will cause a live migration of all running instances on this host to any available host.")
     .dialog("option", "buttons", {	                    
          "OK": function() {
              $(this).dialog("close");      
@@ -719,7 +567,8 @@ function doEnableMaintenanceMode($actionLink, $detailsTab, $midmenuItem1){
 function doCancelMaintenanceMode($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $midmenuItem1.data("jsonObj");
        
-    $("#dialog_confirmation_cancel_maintenance")
+    $("#dialog_confirmation")
+    .text("Please confirm you want to cancel maintenance for the host")
     .dialog("option", "buttons", {	                    
          "OK": function() {
              $(this).dialog("close");      
@@ -736,7 +585,8 @@ function doCancelMaintenanceMode($actionLink, $detailsTab, $midmenuItem1){
 function doForceReconnect($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $midmenuItem1.data("jsonObj");
        
-    $("#dialog_confirmation_force_reconnect")
+    $("#dialog_confirmation")
+    .text("Please confirm you want to force a reconnection for the host")
     .dialog("option", "buttons", {	                    
          "OK": function() {
              $(this).dialog("close");      
@@ -753,7 +603,8 @@ function doForceReconnect($actionLink, $detailsTab, $midmenuItem1){
 function doRemoveHost($actionLink, $detailsTab, $midmenuItem1){ 
     var jsonObj = $midmenuItem1.data("jsonObj");
        
-    $("#dialog_confirmation_remove_host")
+    $("#dialog_confirmation")
+    .text("Removing last/only host in cluster and reinstalling the host will destroy working environment/database on the host and render the VM Guests unuseable.")
     .dialog("option", "buttons", {	                    
          "OK": function() {
              $(this).dialog("close");      

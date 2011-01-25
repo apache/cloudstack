@@ -358,18 +358,22 @@ function accountToRightPanel($midmenuItem1) {
 }
 
 function accountClearRightPanel() { 
-    accountJsonClearDetailsTab();
-    accountJsonClearUserTab();
+    accountClearDetailsTab();
+    accountClearUserTab();
 }
 
 function accountJsonToDetailsTab() {  
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        accountClearDetailsTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        accountClearDetailsTab();
         return;
+    }
    
     var $detailsTab = $("#right_panel_content").find("#tab_content_details");           
     $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
@@ -416,7 +420,7 @@ function accountJsonToDetailsTab() {
 	}	  
 }
 
-function accountJsonClearDetailsTab() {      
+function accountClearDetailsTab() {      
     var $detailsTab = $("#right_panel_content").find("#tab_content_details");           
     $detailsTab.find("#grid_header_title").text("");
     $detailsTab.find("#id").text("");
@@ -437,12 +441,16 @@ function accountJsonClearDetailsTab() {
 
 function accountJsonToUserTab() {       	
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
-	if($midmenuItem1 == null)
+	if($midmenuItem1 == null) {
+	    accountClearUserTab();
 	    return;
+	}
 	
 	var jsonObj = $midmenuItem1.data("jsonObj");	
-	if(jsonObj == null)
-	    return;            
+	if(jsonObj == null) {
+	    accountClearUserTab();
+	    return;     
+	}       
 	
 	var $thisTab = $("#right_panel_content").find("#tab_content_user");	    
 	$thisTab.find("#tab_container").hide(); 
@@ -469,7 +477,7 @@ function accountJsonToUserTab() {
 	});
 } 
 
-function accountJsonClearUserTab() {     
+function accountClearUserTab() {     
 	var $thisTab = $("#right_panel_content").find("#tab_content_user");	    
 	$thisTab.find("#tab_container").empty();
 } 
@@ -514,8 +522,10 @@ function accountUserJSONToTemplate(jsonObj, $template) {
         noAvailableActions = false;
         
         if(jsonObj.id != systemUserId && jsonObj.id != adminUserId) {
-            buildActionLinkForSubgridItem("Disable User", accountUserActionMap, $actionMenu, $template);	  
-            buildActionLinkForSubgridItem("Enable User", accountUserActionMap, $actionMenu, $template);	  
+            if(jsonObj.state == "enabled") 
+                buildActionLinkForSubgridItem("Disable User", accountUserActionMap, $actionMenu, $template);	  
+            if(jsonObj.state == "disabled")
+                buildActionLinkForSubgridItem("Enable User", accountUserActionMap, $actionMenu, $template);	  
             buildActionLinkForSubgridItem("Delete User", accountUserActionMap, $actionMenu, $template);	  
         }
 	} 	
@@ -684,11 +694,11 @@ function doResourceLimitsForAccount($actionLink, $detailsTab, $midmenuItem1) {
 				"Save": function() { 	
 					// validate values
 					var isValid = true;					
-					isValid &= validateNumber("Instance Limit", $("#dialog_resource_limits #limits_vm"), $("#dialog_resource_limits #limits_vm_errormsg"), -1, 32000, false);
-					isValid &= validateNumber("Public IP Limit", $("#dialog_resource_limits #limits_ip"), $("#dialog_resource_limits #limits_ip_errormsg"), -1, 32000, false);
-					isValid &= validateNumber("Disk Volume Limit", $("#dialog_resource_limits #limits_volume"), $("#dialog_resource_limits #limits_volume_errormsg"), -1, 32000, false);
-					isValid &= validateNumber("Snapshot Limit", $("#dialog_resource_limits #limits_snapshot"), $("#dialog_resource_limits #limits_snapshot_errormsg"), -1, 32000, false);
-					isValid &= validateNumber("Template Limit", $("#dialog_resource_limits #limits_template"), $("#dialog_resource_limits #limits_template_errormsg"), -1, 32000, false);
+					isValid &= validateInteger("Instance Limit", $("#dialog_resource_limits #limits_vm"), $("#dialog_resource_limits #limits_vm_errormsg"), -1, 32000, false);
+					isValid &= validateInteger("Public IP Limit", $("#dialog_resource_limits #limits_ip"), $("#dialog_resource_limits #limits_ip_errormsg"), -1, 32000, false);
+					isValid &= validateInteger("Disk Volume Limit", $("#dialog_resource_limits #limits_volume"), $("#dialog_resource_limits #limits_volume_errormsg"), -1, 32000, false);
+					isValid &= validateInteger("Snapshot Limit", $("#dialog_resource_limits #limits_snapshot"), $("#dialog_resource_limits #limits_snapshot_errormsg"), -1, 32000, false);
+					isValid &= validateInteger("Template Limit", $("#dialog_resource_limits #limits_template"), $("#dialog_resource_limits #limits_template_errormsg"), -1, 32000, false);
 					if (!isValid) return;
 												
 					var instanceLimit = trim($("#dialog_resource_limits #limits_vm").val());

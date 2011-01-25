@@ -142,6 +142,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserContext;
 import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.UserVO;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
@@ -309,6 +310,30 @@ public class ApiResponseHelper implements ResponseGenerator {
         accountResponse.setVmRunning(vmRunning);
         accountResponse.setObjectName("account");
 
+        //adding all the users for an account as part of the response obj
+        List<UserVO> usersForAccount = ApiDBUtils.listUsersByAccount(account.getAccountId());
+        List<UserResponse> userResponseList = new ArrayList<UserResponse>();
+        for(UserVO user : usersForAccount) {
+            UserResponse userResponse = new UserResponse();
+            userResponse.setAccountName(account.getAccountName());
+            userResponse.setAccountType(account.getType());
+            userResponse.setApiKey(user.getApiKey());
+            userResponse.setCreated(user.getCreated());
+            userResponse.setDomainId(account.getDomainId());
+            userResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
+            userResponse.setEmail(user.getEmail());
+            userResponse.setFirstname(user.getFirstname());
+            userResponse.setId(user.getId());
+            userResponse.setSecretKey(user.getSecretKey());
+            userResponse.setLastname(user.getLastname());
+            userResponse.setState(user.getState().toString());
+            userResponse.setTimezone(user.getTimezone());
+            userResponse.setUsername(user.getUsername());
+            
+            userResponseList.add(userResponse);
+        }
+        
+        accountResponse.setUsers(userResponseList);
         return accountResponse;
     }
 
@@ -568,20 +593,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         vlanResponse.setStartIp(range[0]);
         vlanResponse.setEndIp(range[1]);
         
-        Long networkId = vlan.getNetworkId();
-        if (networkId != null) {
-            vlanResponse.setNetworkId(vlan.getNetworkId());
-            Network network = ApiDBUtils.findNetworkById(networkId);
-            if (network != null) {
-              Long accountId = network.getAccountId();
-              //Set account information
-                if (accountId != null) {
-                    Account account = ApiDBUtils.findAccountById(accountId);
-                    vlanResponse.setAccountName(account.getAccountName());
-                    vlanResponse.setDomainId(account.getDomainId());
-                    vlanResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
-                }
-            }
+        vlanResponse.setNetworkId(vlan.getNetworkId());
+        Account owner = ApiDBUtils.getVlanAccount(vlan.getId());
+        if (owner != null) {
+            vlanResponse.setAccountName(owner.getAccountName());
+            vlanResponse.setDomainId(owner.getDomainId());
+            vlanResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
         }
         
         vlanResponse.setObjectName("vlan");
@@ -743,7 +760,12 @@ public class ApiResponseHelper implements ResponseGenerator {
             VMInstanceVO vm = ApiDBUtils.findVMInstanceById(instanceId);
             volResponse.setVirtualMachineId(vm.getId());
             volResponse.setVirtualMachineName(vm.getName());
-            volResponse.setVirtualMachineDisplayName(vm.getName());
+            if(vm.getType().equals(VirtualMachine.Type.User)) {
+                UserVm userVm = ApiDBUtils.findUserVmById(vm.getId());
+                volResponse.setVirtualMachineDisplayName(userVm.getDisplayName());
+            }else {
+                volResponse.setVirtualMachineDisplayName(vm.getName());
+            }
             volResponse.setVirtualMachineState(vm.getState().toString());
         }
 
@@ -802,7 +824,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());
         volResponse.setAttached(volume.getAttached());
-        volResponse.setDestroyed(volume.getDestroyed());
+        volResponse.setDestroyed(volume.getState() == Volume.State.Destroy);
         VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());      
 		boolean isExtractable = template != null&&  template.isExtractable()&&  !(template.getTemplateType()== TemplateType.SYSTEM);
         volResponse.setExtractable(isExtractable);
@@ -1166,7 +1188,6 @@ public class ApiResponseHelper implements ResponseGenerator {
             vmResponse.setSystemVmType(vm.getType().toString().toLowerCase());
             vmResponse.setZoneId(vm.getDataCenterId());
 
-            vmResponse.setNetworkDomain(vm.getDomain());
             vmResponse.setName(vm.getName());
             vmResponse.setPodId(vm.getPodId());
             vmResponse.setTemplateId(vm.getTemplateId());
@@ -1848,7 +1869,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
         List<TemplateResponse> isoResponses = new ArrayList<TemplateResponse>();
         
-        for (Pair<Long,Long> isoZonePair : isoZonePairSet) {
+        for (Pair<Long,Long> isoZonePair : isoZonePairSet) {  
         	VMTemplateVO iso = ApiDBUtils.findTemplateById(isoZonePair.first());
             if ( (isBootable == null || !isBootable) && iso.getTemplateType() == TemplateType.PERHOST ) {
                 TemplateResponse isoResponse = new TemplateResponse();
@@ -1862,8 +1883,14 @@ public class ApiResponseHelper implements ResponseGenerator {
                 isoResponse.setFeatured(iso.isFeatured());
                 isoResponse.setCrossZones(iso.isCrossZones());
                 isoResponse.setPublic(iso.isPublicTemplate());
+                isoResponse.setCreated(iso.getCreated());
                 isoResponse.setPasswordEnabled(false);
-                isoResponse.setDomainId(iso.getDomainId());
+                Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
+                if (owner != null) {
+                    isoResponse.setAccount(owner.getAccountName());
+                    isoResponse.setDomainId(owner.getDomainId());                 
+                    isoResponse.setDomainName(ApiDBUtils.findDomainById(owner.getDomainId()).getName());
+                }
                 isoResponse.setObjectName("iso");
                 isoResponses.add(isoResponse);
                 response.setResponses(isoResponses);
@@ -2187,6 +2214,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIsDefault(offering.isDefault());
         response.setSpecifyVlan(offering.getSpecifyVlan());
         response.setAvailability(offering.getAvailability().toString());
+        response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
         response.setObjectName("networkoffering");
         return response;
     }

@@ -192,12 +192,12 @@ function initAddIngressRuleDialog() {
 	            var isValid = true;		
 	            		
 	            if(protocol == "ICMP") {					
-	                isValid &= validateNumber("Type", $thisDialog.find("#icmp_type"), $thisDialog.find("#icmp_type_errormsg"), -1, 40, false);	//required	
-	                isValid &= validateNumber("Code", $thisDialog.find("#icmp_code"), $thisDialog.find("#icmp_code_errormsg"), -1 , 15, false);	//required
+	                isValid &= validateInteger("Type", $thisDialog.find("#icmp_type"), $thisDialog.find("#icmp_type_errormsg"), -1, 40, false);	//required	
+	                isValid &= validateInteger("Code", $thisDialog.find("#icmp_code"), $thisDialog.find("#icmp_code_errormsg"), -1 , 15, false);	//required
 	            }	
 	            else {  //TCP, UDP
-	                isValid &= validateNumber("Start Port", $thisDialog.find("#start_port"), $thisDialog.find("#start_port_errormsg"), 1, 65535, false);	//required	
-	                isValid &= validateNumber("End Port", $thisDialog.find("#end_port"), $thisDialog.find("#end_port_errormsg"), 1, 65535, false);	//required
+	                isValid &= validateInteger("Start Port", $thisDialog.find("#start_port"), $thisDialog.find("#start_port_errormsg"), 1, 65535, false);	//required	
+	                isValid &= validateInteger("End Port", $thisDialog.find("#end_port"), $thisDialog.find("#end_port_errormsg"), 1, 65535, false);	//required
 	            }
 	            				          	
 	            if($thisDialog.find("input[name='ingress_rule_type']:checked").val() == "cidr") {					                
@@ -218,16 +218,17 @@ function initAddIngressRuleDialog() {
 				
 				$thisDialog.find("#spinning_wheel").show();    
 							
-		    	var securitygroupObj = $currentMidmenuItem.data("jsonObj");	
-		    	var securityGroupId = securitygroupObj.id;
-		    	var domainId = securitygroupObj.domainid;
-		    	var account = securitygroupObj.account;    	
-		    	var securityGroupName = securitygroupObj.name;	
+		    	var securityGroupObj = $currentMidmenuItem.data("jsonObj");	
+		    	var securityGroupId = securityGroupObj.id;
+		    	var domainId = securityGroupObj.domainid;
+		    	var account = securityGroupObj.account;    	
+		    	var securityGroupName = securityGroupObj.name;	
 		    	
 		    	var moreCriteria = [];			    	    	
 		    	moreCriteria.push("&domainid=" + domainId);
                 moreCriteria.push("&account=" + account);
-                moreCriteria.push("&securitygroupname=" + securityGroupName);   
+                //moreCriteria.push("&securitygroupname=" + securityGroupName);   
+                moreCriteria.push("&securitygroupid=" + securityGroupId);   
                   	    	
 	            if (protocol!=null && protocol.length > 0) 
 		            moreCriteria.push("&protocol="+encodeURIComponent(protocol));	
@@ -293,7 +294,8 @@ function initAddIngressRuleDialog() {
 									            var items = result.jobresult.securitygroup.ingressrule;	
 									                                					
 					                            var $subgridItem = $("#ingressrule_tab_template").clone(true);	 
-					                            securityGroupIngressRuleJSONToTemplate(items[0], $subgridItem).data("parentSecurityGroupId", securityGroupId).data("parentSecurityGroupDomainId", domainId).data("parentSecurityGroupAccount", account).data("parentSecurityGroupName",securityGroupName);													            
+					                            //securityGroupIngressRuleJSONToTemplate(items[0], $subgridItem).data("parentSecurityGroupId", securityGroupId).data("parentSecurityGroupDomainId", domainId).data("parentSecurityGroupAccount", account).data("parentSecurityGroupName",securityGroupName);													            
+									            securityGroupIngressRuleJSONToTemplate(items[0], $subgridItem).data("parentObj", securityGroupObj); 
 									            $subgridItem.find("#after_action_info").text("Ingress rule was added successfully.");
                                                 $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
                                                 $("#right_panel_content").find("#tab_content_ingressrule").find("#tab_container").prepend($subgridItem.show());  
@@ -301,7 +303,8 @@ function initAddIngressRuleDialog() {
 									            if(items.length > 1) {                               
                                                     for(var i=1; i<items.length; i++) {                                                                                           
                                                         var $subgridItem = $("#ingressrule_tab_template").clone(true);	 
-					                                    securityGroupIngressRuleJSONToTemplate(items[i], $subgridItem).data("parentSecurityGroupId", securityGroupId).data("parentSecurityGroupDomainId", domainId).data("parentSecurityGroupAccount", account).data("parentSecurityGroupName",securityGroupName);													            
+					                                    //securityGroupIngressRuleJSONToTemplate(items[i], $subgridItem).data("parentSecurityGroupId", securityGroupId).data("parentSecurityGroupDomainId", domainId).data("parentSecurityGroupAccount", account).data("parentSecurityGroupName",securityGroupName);		
+					                                    securityGroupIngressRuleJSONToTemplate(items[i], $subgridItem).data("parentObj", securityGroupObj);													            											            
 									                    $subgridItem.find("#after_action_info").text("Ingress rule was added successfully.");
                                                         $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
                                                         $("#right_panel_content").find("#tab_content_ingressrule").find("#tab_container").prepend($subgridItem.show());                                                                                                                       
@@ -395,29 +398,22 @@ function doEditSecurityGroup2($actionLink, $detailsTab, $midmenuItem1, $readonly
 	});
 }
 
-function doDeleteSecurityGroup($actionLink, $thisTab, $midmenuItem1) {
-	$("#dialog_info")	
-	.text("Are you sure you want to delete this security group?")
-    .dialog('option', 'buttons', { 						
-	    "Confirm": function() { 
-		    $(this).dialog("close"); 	
-		    	
-		    var jsonObj = $midmenuItem1.data("jsonObj");	
-		    		    
-		    var array1 = [];
-            array1.push("&domainid="+jsonObj.domainid);
-            array1.push("&account="+jsonObj.account);
-            array1.push("&name="+jsonObj.name);    
-		    
-			var id = jsonObj.id;
-			var apiCommand = "command=deleteSecurityGroup" + array1.join(""); 	                 
-            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab); 
-	    }, 
-	    "Cancel": function() { 
-		    $(this).dialog("close"); 
-			
-	    } 
-    }).dialog("open");
+function doDeleteSecurityGroup($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text("Please confirm you want to delete this security group")
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=deleteSecurityGroup&id="+id;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
 }
 
 function securityGroupToMidmenu(jsonObj, $midmenuItem1) {  
@@ -441,12 +437,16 @@ function securityGroupToRightPanel($midmenuItem1) {
 
 function securityGroupJsonToDetailsTab() {     
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        securityGroupClearDetailsTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        securityGroupClearDetailsTab();
         return;
+    }
      
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
@@ -487,12 +487,16 @@ function securityGroupJsonToDetailsTab() {
 
 function securityGroupJsonToIngressRuleTab() {       		
 	var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
-	if($midmenuItem1 == null)
+	if($midmenuItem1 == null) {
+	    securityGroupClearIngressRuleTab();
 	    return;
+	}
 	
 	var securityGroupObj = $midmenuItem1.data("jsonObj");	
-	if(securityGroupObj == null)
+	if(securityGroupObj == null) {
+	    securityGroupClearIngressRuleTab();
 	    return;
+	}
 	
 	var $thisTab = $("#right_panel_content").find("#tab_content_ingressrule");	    
 	$thisTab.find("#tab_container").hide(); 
@@ -518,6 +522,11 @@ function securityGroupJsonToIngressRuleTab() {
             $thisTab.find("#tab_container").show();    			
 		}
 	});
+} 
+
+function securityGroupClearIngressRuleTab() {   	
+	var $thisTab = $("#right_panel_content").find("#tab_content_ingressrule");	    
+	$thisTab.find("#tab_container").empty();  
 } 
 
 function securityGroupIngressRuleJSONToTemplate(jsonObj, $template) {
@@ -589,18 +598,19 @@ function doDeleteIngressRule($actionLink, $subgridItem) {
             var moreCriteria = [];		 
 	        moreCriteria.push("&domainid="+securityGroupObj.domainid);    	    	        
 	        moreCriteria.push("&account="+securityGroupObj.account);    	    		    	        
-	        moreCriteria.push("&securitygroupname="+securityGroupObj.name);    
+	        //moreCriteria.push("&securitygroupname="+securityGroupObj.name);    
+    	    moreCriteria.push("&securitygroupid="+securityGroupObj.id);    
     	    	
     	    var protocol = ingressRuleObj.protocol;      
 	        moreCriteria.push("&protocol="+protocol);		    	
     	 
 	        if(protocol == "icmp") {
 	            var icmpType = ingressRuleObj.icmptype;
-	            if(icmpType != null && icmpType.length > 0)
+	            if(icmpType != null)
 	                moreCriteria.push("&icmptype="+encodeURIComponent(icmpType));
     		    
 	            var icmpCode = ingressRuleObj.icmpcode;
-	            if(icmpCode != null && icmpCode.length > 0)
+	            if(icmpCode != null)
 	                moreCriteria.push("&icmpcode="+encodeURIComponent(icmpCode));
 	        }
 	        else {  //TCP, UDP
@@ -659,8 +669,9 @@ var securityGroupActionMap = {
         dialogBeforeActionFn: doEditSecurityGroup
     },   
     "Delete Security Group": {               
-        isAsyncJob: false,      
-        dialogBeforeActionFn: doDeleteSecurityGroup,     
+        api: "deleteSecurityGroup",     
+        isAsyncJob: false,  
+        dialogBeforeActionFn : doDeleteSecurityGroup,               
         inProcessText: "Deleting Security Group....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {  
             $midmenuItem1.slideUp("slow", function() {

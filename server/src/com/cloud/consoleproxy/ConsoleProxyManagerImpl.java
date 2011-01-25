@@ -75,9 +75,6 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
-import com.cloud.event.EventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -340,8 +337,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         try {
             if (proxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                 try {
-                    long accountId = proxy.getAccountId();
-                    long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, accountId, EventTypes.EVENT_PROXY_START, "Starting proxy : " + proxy.getName());
                     proxy = startProxy(proxyVmId);
 
                     if (proxy == null) {
@@ -363,7 +358,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                         if (s_logger.isInfoEnabled()) {
                             s_logger.info("Unable to start console proxy, proxy vm Id : " + proxyVmId + " will recycle it and restart a new one");
                         }
-                        EventUtils.saveEvent(User.UID_SYSTEM, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_PROXY_START, "Failed to start console proxy", startEventId);
                         destroyProxy(proxyVmId);
                         return null;
                     } else {
@@ -371,7 +365,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                             s_logger.trace("Console proxy " + proxy.getName() + " is started");
                         }
 
-                        EventUtils.saveEvent(User.UID_SYSTEM, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_PROXY_START, "Started console proxy: "+proxy.getName(), startEventId);
                         // if it is a new assignment or a changed assignment,
                         // update the
                         // record
@@ -644,7 +637,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             s_logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
         }
 
-        long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventTypes.EVENT_PROXY_CREATE, "Creating console proxy");
         Map<String, Object> context = createProxyInstance(dataCenterId);
 
         long proxyVmId = (Long) context.get("proxyVmId");
@@ -652,14 +644,12 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Creating proxy instance failed, data center id : " + dataCenterId);
             }
-            EventUtils.saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_ERROR, EventTypes.EVENT_PROXY_CREATE, "console proxy creation failed", startEventId);
             return null;
         }
 
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyVmId); 
        // allocProxyStorage(dataCenterId, proxyVmId);
         if (proxy != null) {
-            EventUtils.saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_INFO, EventTypes.EVENT_PROXY_CREATE, "Succesfully created console proxy", startEventId);
             SubscriptionMgr.getInstance().notifySubscribers(ConsoleProxyManager.ALERT_SUBJECT, this,
                     new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_CREATED, dataCenterId, proxy.getId(), proxy, null));
             return proxy;
@@ -673,7 +663,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                     this,
                     new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_CREATE_FAILURE, dataCenterId, proxyVmId, null,
                             "Unable to allocate storage"));
-            EventUtils.saveEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_ERROR, EventTypes.EVENT_PROXY_CREATE, "console proxy creation failed", startEventId);
         }
         return null;
     }
@@ -936,7 +925,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                         return;
                     }
                     console.setPrivateIpAddress(cmd.getPrivateIpAddress());
-                    console.setPrivateNetmask(cmd.getPrivateNetmask());
                     console.setPublicIpAddress(cmd.getPublicIpAddress());
                     console.setPublicNetmask(cmd.getPublicNetmask());
                     _consoleProxyDao.persist(console);
@@ -1171,8 +1159,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         if (proxy != null) {
             long proxyVmId = proxy.getId();
             GlobalLock proxyLock = GlobalLock.getInternLock(getProxyLockName(proxyVmId));
-            long accountId = proxy.getAccountId();
-            long startEventId = EventUtils.saveStartedEvent(User.UID_SYSTEM, accountId, EventTypes.EVENT_PROXY_START, "Starting proxy : " + proxy.getName());
             try {
                 if (proxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC)) {
                     try {
@@ -1195,7 +1181,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                     s_logger.info("Unable to start console proxy for standby capacity, proxy vm Id : " + proxyVmId
                             + ", will recycle it and start a new one");
                 }
-                EventUtils.saveEvent(User.UID_SYSTEM, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_PROXY_START, "Failed to start console proxy", startEventId);
                 
                 if (proxyFromStoppedPool) {
                     destroyProxy(proxyVmId);
@@ -1204,8 +1189,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 if (s_logger.isInfoEnabled()) {
                     s_logger.info("Console proxy " + proxy.getName() + " is started");
                 }
-                
-                EventUtils.saveEvent(User.UID_SYSTEM, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_PROXY_START, "Started console proxy: "+proxy.getName(), startEventId);
             }
         }
     }
@@ -1682,13 +1665,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         		proxy.setPublicIpAddress(nic.getIp4Address());
         		proxy.setPublicNetmask(nic.getNetmask());
         		proxy.setPublicMacAddress(nic.getMacAddress());
-        	} else if (network.getTrafficType() == TrafficType.Control) {
-        		proxy.setGuestIpAddress(nic.getIp4Address());
-        		proxy.setGuestNetmask(nic.getNetmask());
-        		proxy.setGuestMacAddress(nic.getMacAddress());
         	} else if (network.getTrafficType() == TrafficType.Management) {
         		proxy.setPrivateIpAddress(nic.getIp4Address());
-        		proxy.setPrivateNetmask(nic.getNetmask());
         		proxy.setPrivateMacAddress(nic.getMacAddress());
         	}
         }

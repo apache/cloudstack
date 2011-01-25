@@ -28,7 +28,6 @@ import javax.persistence.Table;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.utils.net.NetUtils;
 
 /**
  * VirtualMachineRouterVO implements all the fields stored for a domain router.
@@ -41,9 +40,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Column(name="ram_size", nullable=false)
     private int ramSize;
     
-    @Column(name="gateway")
-    private String gateway;
-    
     @Column(name="public_ip_address")
     private String publicIpAddress;
     
@@ -52,12 +48,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     
     @Column(name="public_netmask")
     private String publicNetmask;
-    
-    @Column(name="vlan_db_id")
-    private Long vlanDbId;
-    
-    @Column(name="vlan_id")
-    private String vlanId;
     
     @Column(name="guest_mac_address")
     private String guestMacAddress;
@@ -68,24 +58,9 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Column(name="guest_netmask")
     private String guestNetmask;
 
-    @Column(name="dns1")
-    private String dns1;
-    
-    @Column(name="dns2")
-    private String dns2;
-    
     @Column(name="domain", nullable=false)
     private String domain;
 
-    @Column(name="vnet")
-    private String vnet;
-    
-    @Column(name="dc_vlan")
-    private String zoneVlan;
-
-    @Column(name="guest_dc_mac_address")
-    private String guestZoneMacAddress;
-    
     @Column(name="network_id")
     long networkId;
     
@@ -107,10 +82,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
         super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.networkId = networkConfigurationId;
         this.domain = networkDomain;
-    }
-
-    public void setGateway(String gateway) {
-        this.gateway = gateway;
     }
 
     public void setPublicIpAddress(String publicIpAddress) {
@@ -142,27 +113,10 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
         this.guestIpAddress = routerIpAddress;
     }
 
-    public void setDns1(String dns1) {
-        this.dns1 = dns1;
-    }
-
-    public void setDns2(String dns2) {
-        this.dns2 = dns2;
-    }
-
     public void setDomain(String domain) {
         this.domain = domain;
     }
 
-    public void setVnet(String vnet) {
-        this.vnet = vnet;
-    }
-
-    @Override
-    public String getVnet() {
-        return vnet;
-    }
-    
     @Override
     public long getDataCenterId() {
         return dataCenterId;
@@ -188,16 +142,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     }
     
     @Override
-    public String getDns1() {
-        return dns1;
-    }
-
-    @Override
-    public String getDns2() {
-        return dns2;
-    }
-
-    @Override
     public String getDomain() {
         return domain;
     }
@@ -213,32 +157,14 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     }
     
     @Override
-    public String getGateway() {
-        return gateway;
-    }
-    
-    @Override
     public String getPublicIpAddress() {
         return publicIpAddress;
-    }
-    
-    @Override
-    public String getVlanId() {
-    	return vlanId;
     }
     
     @Override
     public String getGuestMacAddress() {
         return guestMacAddress;
     }
-
-	public void setVlanDbId(Long vlanDbId) {
-		this.vlanDbId = vlanDbId;
-	}
-
-	public Long getVlanDbId() {
-		return vlanDbId;
-	}
 
 	@Override
 	public Role getRole() {
@@ -249,33 +175,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
 		this.role = role;
 	}
 
-	@Override
-	public String[] getDhcpRange() {
-	   if (guestIpAddress != null && guestNetmask != null) {
-		   long cidrSize = NetUtils.getCidrSize(guestNetmask);
-		   return NetUtils.getIpRangeFromCidr(guestIpAddress, cidrSize);
-	   }
-	   return new String[2];
-	}
-
-    public void setZoneVlan(String zoneVlan) {
-        this.zoneVlan = zoneVlan;
-    }
-
-    @Override
-    public String getZoneVlan() {
-        return zoneVlan;
-    }
-
-    public void setGuestZoneMacAddress(String guestZoneMacAddress) {
-        this.guestZoneMacAddress = guestZoneMacAddress;
-    }
-
-    @Override
-    public String getGuestZoneMacAddress() {
-        return guestZoneMacAddress;
-    }
-    
     public void setServiceOfferingId(long serviceOfferingId) {
         this.serviceOfferingId = serviceOfferingId;
     }

@@ -1445,12 +1445,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 					String hostDesc = "name: " + host.getName() + " (id:"
 							+ host.getId() + "), availability zone: "
 							+ dcVO.getName() + ", pod: " + podVO.getName();
-					_alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST,
-							host.getDataCenterId(), host.getPodId(),
-							"Host disconnected, " + hostDesc,
-							"If the agent for host [" + hostDesc
-									+ "] is not restarted within " + _alertWait
-									+ " seconds, HA will begin on the VMs");
+					if((host.getType() != Host.Type.SecondaryStorage) && (host.getType() != Host.Type.ConsoleProxy)){
+					    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST,
+					            host.getDataCenterId(), host.getPodId(),
+					            "Host disconnected, " + hostDesc,
+					            "If the agent for host [" + hostDesc
+					            + "] is not restarted within " + _alertWait
+					            + " seconds, HA will begin on the VMs");
+					}
 					event = Event.AgentDisconnected;
 				}
 			} else {

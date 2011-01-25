@@ -33,7 +33,6 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long> {
     List<VolumeVO> findByInstance(long id);
     List<VolumeVO> findByInstanceAndType(long id, Volume.VolumeType vType);
     List<VolumeVO> findByInstanceIdDestroyed(long vmId);
-    List<VolumeVO> findByDetachedDestroyed();
     List<VolumeVO> findByAccountAndPod(long accountId, long podId);
     List<VolumeVO> findByTemplateAndZone(long templateId, long zoneId);
     List<Long> findVmsStoredOnHost(long hostId);
@@ -41,7 +40,6 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long> {
     void attachVolume(long volumeId, long vmId, long deviceId);
     void detachVolume(long volumeId);
     boolean isAnyVolumeActivelyUsingTemplateOnPool(long templateId, long poolId);
-    List<VolumeVO> listRemovedButNotDestroyed();
     List<VolumeVO> findCreatedByInstance(long id);
     List<VolumeVO> findByPoolId(long poolId);
 	List<VolumeVO> findByInstanceAndDeviceId(long instanceId, long deviceId);

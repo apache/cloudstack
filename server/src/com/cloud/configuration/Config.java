@@ -56,11 +56,12 @@ public enum Config {
 	GuestIpNetwork("Network", AgentManager.class, String.class, "guest.ip.network", "10.1.1.1", "The network address of the guest virtual network. Virtual machines will be assigned an IP in this subnet.", "privateip"),
 	GuestNetmask("Network", AgentManager.class, String.class, "guest.netmask", "255.255.255.0", "The netmask of the guest virtual network.", "netmask"),
 	GuestVlanBits("Network", ManagementServer.class, Integer.class, "guest.vlan.bits", "12", "The number of bits to reserve for the VLAN identifier in the guest subnet.", null),
-	MulticastThrottlingRate("Network", ManagementServer.class, Integer.class, "multicast.throttling.rate", "10", "Default multicast rate in megabits per second allowed.", null),
+	//MulticastThrottlingRate("Network", ManagementServer.class, Integer.class, "multicast.throttling.rate", "10", "Default multicast rate in megabits per second allowed.", null),
 	NetworkThrottlingRate("Network", ManagementServer.class, Integer.class, "network.throttling.rate", "200", "Default data transfer rate in megabits per second allowed.", null),
 	GuestDomainSuffix("Network", AgentManager.class, String.class, "guest.domain.suffix", "cloud.internal", "Default domain name for vms inside virtualized networks fronted by router", null),
 	DirectNetworkNoDefaultRoute("Network", ManagementServer.class, Boolean.class, "direct.network.no.default.route", "false", "Direct Network Dhcp Server should not send a default route", "true/false"),
-	OvsNetwork("Network", ManagementServer.class, Boolean.class, "open.vswitch.network", "false", "enable/disable open vswitch network", null),
+	OvsNetwork("Network", ManagementServer.class, Boolean.class, "open.vswitch.vlan.network", "false", "enable/disable vlan remapping of  open vswitch network", null),
+	OvsTunnelNetwork("Network", ManagementServer.class, Boolean.class, "open.vswitch.tunnel.network", "false", "enable/disable open vswitch tunnel network(no vlan)", null),
 	
 	//VPN
 	RemoteAccessVpnPskLength("Network", AgentManager.class, Integer.class, "remote.access.vpn.psk.length", "24", "The length of the ipsec preshared key (minimum 8, maximum 256)", null),
@@ -72,8 +73,6 @@ public enum Config {
 	// Usage
 	
 	CapacityCheckPeriod("Usage", ManagementServer.class, Integer.class, "capacity.check.period", "300000", "The interval in milliseconds between capacity checks", null),
-	CapacitySkipCountingHours("Usage", ManagementServer.class, Integer.class, "capacity.skipcounting.hours", "24", "The interval in hours since VM has stopped to skip counting its allocated CPU/Memory capacity. Applies to vms in Stopped state", null),
-	CapacitySkipCountingDestroyedHours("Usage", ManagementServer.class, Integer.class, "capacity.skipcounting.destroyed.hours", "0", "The interval in hours since VM has stopped to skip counting its allocated CPU/Memory capacity. Applies to vms in Destroyed state", null),
 	StorageAllocatedCapacityThreshold("Usage", ManagementServer.class, Float.class, "storage.allocated.capacity.threshold", "0.85", "Percentage (as a value between 0 and 1) of allocated storage utilization above which alerts will be sent about low storage available.", null),
 	StorageCapacityThreshold("Usage", ManagementServer.class, Float.class, "storage.capacity.threshold", "0.85", "Percentage (as a value between 0 and 1) of storage utilization above which alerts will be sent about low storage available.", null),
 	CPUCapacityThreshold("Usage", ManagementServer.class, Float.class, "cpu.capacity.threshold", "0.85", "Percentage (as a value between 0 and 1) of cpu utilization above which alerts will be sent about low cpu available.", null),
@@ -161,7 +160,6 @@ public enum Config {
 	DirectAttachNetworkEnabled("Advanced", ManagementServer.class, Boolean.class, "direct.attach.network.externalIpAllocator.enabled", "false", "Direct-attach VMs using external DHCP server", "true,false"),
 	DirectAttachNetworkExternalAPIURL("Advanced", ManagementServer.class, String.class, "direct.attach.network.externalIpAllocator.url", null, "Direct-attach VMs using external DHCP server (API url)", null),
 	CheckPodCIDRs("Advanced", ManagementServer.class, String.class, "check.pod.cidrs", "true", "If true, different pods must belong to different CIDR subnets.", "true,false"),
-	MD5Hashed("Advanced", ManagementServer.class, Boolean.class, "security.password.md5hashed", "true", "If set to false password is sent in clear text or else md5hashed", null),
 	NetworkGcWait("Advanced", ManagementServer.class, Integer.class, "network.gc.wait", "600", "Seconds to wait before shutting down a network that's not in used", null),
 	NetworkGcInterval("Advanced", ManagementServer.class, Integer.class, "network.gc.interval", "600", "Seconds to wait before checking for networks to shutdown", null),
 	HostCapacityCheckerWait("Advanced", ManagementServer.class, Integer.class, "host.capacity.checker.wait", "3600", "Seconds to wait before starting host capacity background checker", null),

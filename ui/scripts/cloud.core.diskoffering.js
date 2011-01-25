@@ -103,7 +103,7 @@ function initAddDiskOfferingDialog() {
 				isValid &= validateString("Description", thisDialog.find("#add_disk_description"), thisDialog.find("#add_disk_description_errormsg"));
 				
 				if($("#add_disk_disksize_container").css("display") != "none")
-				    isValid &= validateNumber("Disk size", thisDialog.find("#add_disk_disksize"), thisDialog.find("#add_disk_disksize_errormsg"), 0, null, false); //required
+				    isValid &= validateInteger("Disk size", thisDialog.find("#add_disk_disksize"), thisDialog.find("#add_disk_disksize_errormsg"), 0, null, false); //required
 								
 				isValid &= validateString("Tags", thisDialog.find("#add_disk_tags"), thisDialog.find("#add_disk_tags_errormsg"), true);	//optional	
 				if (!isValid) 
@@ -214,6 +214,24 @@ function doEditDiskOffering2($actionLink, $detailsTab, $midmenuItem1, $readonlyF
 	});
 }
 
+function doDeleteDiskOffering($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text("Please confirm you want to delete this disk offering")
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=deleteDiskOffering&id="+id;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
+
 function diskOfferingToMidmenu(jsonObj, $midmenuItem1) {  
     $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj); 
@@ -233,12 +251,16 @@ function diskOfferingToRightPanel($midmenuItem1) {
 
 function diskOfferingJsonToDetailsTab() { 
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        diskOfferingClearDetailsTab();
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
+    if(jsonObj == null) {
+        diskOfferingClearDetailsTab();
         return;
+    }
      
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
@@ -324,7 +346,8 @@ var diskOfferingActionMap = {
     },   
     "Delete Disk Offering": {              
         api: "deleteDiskOffering",     
-        isAsyncJob: false,           
+        isAsyncJob: false,   
+        dialogBeforeActionFn : doDeleteDiskOffering,              
         inProcessText: "Deleting disk offering....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             $midmenuItem1.slideUp("slow", function() {

@@ -39,15 +39,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 @DiscriminatorValue(value="SecondaryStorageVm")
 public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStorageVm {
 
-    @Column(name="gateway", nullable=false)
-    private String gateway;
-    
-    @Column(name="dns1")
-    private String dns1;
-    
-    @Column(name="dns2")
-    private String dns2;
-
     @Column(name="public_ip_address", nullable=false)
     private String publicIpAddress;
     
@@ -56,24 +47,6 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
     
     @Column(name="public_netmask", nullable=false)
     private String publicNetmask;
-    
-    @Column(name="guest_mac_address")
-    private String guestMacAddress;
-    
-    @Column(name="guest_ip_address")
-    private String guestIpAddress;
-    
-    @Column(name="guest_netmask")
-    private String guestNetmask;
-    
-    @Column(name="vlan_db_id")
-    private Long vlanDbId;
-    
-    @Column(name="vlan_id")
-    private String vlanId;
-    
-    @Column(name="domain", nullable=false)
-    private String domain;
     
     @Column(name="guid", nullable=false)
     private String guid;
@@ -100,22 +73,6 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
         super();
     }
 
-    public void setGateway(String gateway) {
-    	this.gateway = gateway;
-    }
-    
-    public void setDns1(String dns1) {
-    	this.dns1 = dns1;
-    }
-    
-    public void setDns2(String dns2) {
-    	this.dns2 = dns2;
-    }
-    
-    public void setDomain(String domain) {
-    	this.domain = domain;
-    }
-    
     public void setPublicIpAddress(String publicIpAddress) {
     	this.publicIpAddress = publicIpAddress;
     }
@@ -128,18 +85,6 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
     	this.publicMacAddress = publicMacAddress;
     }
     
-    public void setGuestIpAddress(String guestIpAddress) {
-    	this.guestIpAddress = guestIpAddress;
-    }
-    
-    public void setGuestNetmask(String guestNetmask) {
-    	this.guestNetmask = guestNetmask;
-    }
-    
-    public void setGuestMacAddress(String guestMacAddress) {
-    	this.guestMacAddress = guestMacAddress;
-    }
-    
     public void setRamSize(int ramSize) {
     	this.ramSize = ramSize;
     }
@@ -148,21 +93,6 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
     	this.lastUpdateTime = time;
     }
   
-    @Override
-	public String getGateway() {
-		return this.gateway;
-	}
-	
-    @Override
-	public String getDns1() {
-    	return this.dns1;
-	}
-	
-    @Override
-	public String getDns2() {
-    	return this.dns2;
-	}
-	
     @Override
 	public String getPublicIpAddress() {
     	return this.publicIpAddress;
@@ -178,36 +108,6 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
 		return this.publicMacAddress;
 	}
     
-
-	public String getGuestIpAddress() {
-    	return this.guestIpAddress;
-	}
-	
-
-	public String getGuestNetmask() {
-    	return this.guestNetmask;
-	}
-	
-
-	public String getGuestMacAddress() {
-		return this.guestMacAddress;
-	}
-    
-    @Override
-	public Long getVlanDbId() {
-    	return vlanDbId;
-    }
-    
-    @Override
-	public String getVlanId() {
-    	return vlanId;
-    }
-    
-    @Override
-    public String getDomain() {
-    	return this.domain;
-    }
-	
     @Override
 	public int getRamSize() {
     	return this.ramSize;

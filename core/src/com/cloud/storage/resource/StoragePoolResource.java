@@ -23,10 +23,8 @@ import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
-import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
-import com.cloud.agent.api.storage.ShareAnswer;
-import com.cloud.agent.api.storage.ShareCommand;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 
 public interface StoragePoolResource {
     // FIXME: Should have a PrimaryStorageDownloadAnswer
@@ -34,8 +32,6 @@ public interface StoragePoolResource {
     
     // FIXME: Should have an DestroyAnswer
     Answer execute(DestroyCommand cmd);
-    
-    ShareAnswer execute(ShareCommand cmd);
     
     CopyVolumeAnswer execute(CopyVolumeCommand cmd);
     

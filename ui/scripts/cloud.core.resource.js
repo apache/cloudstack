@@ -1316,7 +1316,7 @@ function addZoneWizardValidatePublicIPRange($thisWizard) {
 	isValid &= validateString("Account", $thisWizard.find("#step4").find("#add_publicip_vlan_account"), $thisWizard.find("#step4").find("#add_publicip_vlan_account_errormsg"), true); //optional
 	
 	if (isTagged) {
-		isValid &= validateNumber("VLAN", $thisWizard.find("#step4").find("#add_publicip_vlan_vlan"), $thisWizard.find("#step4").find("#add_publicip_vlan_vlan_errormsg"), 2, 4095);
+		isValid &= validateInteger("VLAN", $thisWizard.find("#step4").find("#add_publicip_vlan_vlan"), $thisWizard.find("#step4").find("#add_publicip_vlan_vlan_errormsg"), 1, 4095);
 	}
 	
 	isValid &= validateIp("Gateway", $thisWizard.find("#step4").find("#add_publicip_vlan_gateway"), $thisWizard.find("#step4").find("#add_publicip_vlan_gateway_errormsg"), false); //required
@@ -1629,8 +1629,9 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 	var $dialogAddPool = $("#dialog_add_pool_in_resource_page");    
 	
     // if hypervisor is KVM, limit the server option to NFS for now
-    if (getHypervisorType() == 'kvm') 
-	    $dialogAddPool.find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
+	// TODO: Fix this to use the hypervisor from the cluster
+    //if (getHypervisorType() == 'kvm') 
+	//    $dialogAddPool.find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
     bindEventHandlerToDialogAddPool($dialogAddPool);	
     
     $dialogAddPool.find("#zone_dropdown").bind("change", function(event) {

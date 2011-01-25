@@ -152,7 +152,6 @@ public interface Volume extends ControlledEntity, BasedOn {
 	
 	Date getCreated();
 	AsyncInstanceCreateStatus getStatus();
-	boolean getDestroyed();
 	
 	long getDiskOfferingId();
 	

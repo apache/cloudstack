@@ -73,7 +73,7 @@ public interface UserVmService {
      * @param cmd - the command specifying vmId, password
      * @return the VM if reset worked successfully, null otherwise
      */
-    UserVm resetVMPassword(ResetVMPasswordCmd cmd, String password);
+    UserVm resetVMPassword(ResetVMPasswordCmd cmd, String password) throws ResourceUnavailableException, InsufficientCapacityException;
     
     /**
      * Attaches the specified volume to the specified VM
@@ -93,7 +93,7 @@ public interface UserVmService {
     
     UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
     UserVm stopVirtualMachine(StopVMCmd cmd) throws ServerApiException, ConcurrentOperationException;
-    UserVm rebootVirtualMachine(RebootVMCmd cmd);
+    UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException;
     UserVm updateVirtualMachine(UpdateVMCmd cmd);
     UserVm recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException;
     

@@ -45,12 +45,12 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.resource.Resource.ReservationStrategy;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -206,7 +206,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     
     @DB
     protected String acquireGuestIpAddress(Network network) {
-        List<String> ips = _nicDao.listIpAddressInNetworkConfiguration(network.getId());
+        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
         String[] cidr = network.getCidr().split("/");
         Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]));
         Set<Long> usedIps = new TreeSet<Long> ();

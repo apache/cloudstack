@@ -1,11 +1,9 @@
-<%@ page import="java.util.*" %>
-
-<%@ page import="com.cloud.utils.*" %>
-
-<%
-    Locale browserLocale = request.getLocale();
-    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
-%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
+<fmt:setBundle basename="resources/messages"/>
 
 
 <!-- IP Address detail panel (begin) -->
@@ -13,7 +11,7 @@
     <div class="main_titleicon">
         <img src="images/title_ipicon.gif" /></div>
     <h1>
-        IP Address
+        <fmt:message key="label.ip.address"/>
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -23,13 +21,13 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
-            <%=t.t("Details")%></div>		
+            <fmt:message key="label.details"/></div>		
 		<div class="content_tabs off" id="tab_port_forwarding" style="display: none">
-            <%=t.t("Port Forwarding")%></div>
+            <fmt:message key="label.port.forwarding"/></div>
         <div class="content_tabs off" id="tab_load_balancer" style="display: none">
-            <%=t.t("Load Balancer")%></div>
+            <fmt:message key="label.load.balancer"/></div>
 		<div class="content_tabs off" id="tab_vpn" style="display: none">
-            <%=t.t("VPN")%></div>
+            <fmt:message key="label.vpn"/></div>
     </div>  
     <div id="tab_content_details">
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
@@ -37,17 +35,17 @@
 	            <div class="rightpanel_mainloader_animatedicon">
 	            </div>
 	            <p>
-	                Loading &hellip;</p>
+	                <fmt:message key="label.loading"/> &hellip;</p>
 	        </div>
 	    </div>
 		<div id="tab_container">
 	        <div class="grid_container">
 	        	<div class="grid_header">
 	            	<div id="grid_header_title" class="grid_header_title">(title)</div>
-	                <div class="grid_actionbox" id="action_link"><p>Actions</p>
+	                <div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
 	                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                        <ul class="actionsdropdown_boxlist" id="action_list">
-	                            <li><%=t.t("no.available.actions")%></li>
+	                            <li><fmt:message key="label.no.actions"/></li>
 	                        </ul>
 	                    </div>
 	                </div>
@@ -55,14 +53,14 @@
 	                display: none;">
 	                    <div class="gridheader_loader" id="icon">
 	                    </div>
-	                    <p id="description">
-	                        Detaching Disk &hellip;</p>
+	                    <p id="description"></p>
 	                </div>
 	            </div>
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        IP:</div>
+	                        <fmt:message key="label.ip"/>
+						</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="ipaddress">
@@ -72,7 +70,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        Zone:</div>
+	                        <fmt:message key="label.zone"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="zonename">
@@ -82,7 +80,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        VLAN:</div>
+	                        <fmt:message key="label.vlan"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="vlanname">
@@ -92,7 +90,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        Source NAT:</div>
+	                        <fmt:message key="label.source.nat"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="source_nat">
@@ -102,7 +100,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        Network Type:</div>
+	                        <fmt:message key="label.network.type"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="network_type">
@@ -112,7 +110,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        Network ID:</div>
+	                        <fmt:message key="label.network.id"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="networkid">
@@ -122,7 +120,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        Associated Network ID:</div>
+	                        <fmt:message key="label.associated.network.id"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="associatednetworkid">
@@ -132,7 +130,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        Domain:</div>
+	                        <fmt:message key="label.domain"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="domain">
@@ -142,7 +140,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        Account:</div>
+	                        <fmt:message key="label.account"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="account">
@@ -152,7 +150,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        Allocated:</div>
+	                        <fmt:message key="label.allocated"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="allocated">
@@ -162,7 +160,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        Static NAT:</div>
+	                        <fmt:message key="label.static.nat"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="static_nat">
@@ -172,7 +170,7 @@
 	            <div class="grid_rows even" id="vm_of_static_nat_container" style="display:none">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        VM of Static NAT:</div>
+	                        <fmt:message key="label.static.nat.to"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="vm_of_static_nat">
@@ -190,7 +188,7 @@
                 <div class="rightpanel_mainloader_animatedicon">
                 </div>
                 <p>
-                    Loading &hellip;</p>
+                    <fmt:message key="label.loading"/> &hellip;</p>
             </div>
         </div>        
         <div id="tab_container">
@@ -198,27 +196,27 @@
 	            <div class="grid_header">
 	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
-	                        Public Port</div>
+	                        <fmt:message key="label.public.port"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
-	                        Private Port</div>
+	                        <fmt:message key="label.private.port"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
-	                        Protocol</div>
+	                        <fmt:message key="label.protocol"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 25%; border: none; padding: 1px;">
 	                    <div class="grid_header_title">
-	                        Instance</div>
+	                        <fmt:message key="label.instance"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 10%; padding: 1px;">
 	                    <div class="grid_header_title">
-	                        State</div>
+	                        <fmt:message key="label.state"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
-	                        Action</div>
+	                        <fmt:message key="label.actions"/></div>
 	                </div>
 	            </div>
 	            <div class="grid_rows even" id="create_port_forwarding_row">
@@ -248,7 +246,7 @@
 	                </div>  
 	                <div class="grid_row_cell" style="width: 15%; padding: 1px;">
 	                    <div class="row_celltitles">
-	                        <a id="add_link" href="#">Add</a></div>
+	                        <a id="add_link" href="#"><fmt:message key="label.add"/></a></div>
 	                </div>
 	            </div>              
 	            <div id="grid_content">
@@ -264,7 +262,7 @@
                 <div class="rightpanel_mainloader_animatedicon">
                 </div>
                 <p>
-                    Loading &hellip;</p>
+                    <fmt:message key="label.loading"/> &hellip;</p>
             </div>
         </div>        
         <div id="tab_container">
@@ -272,27 +270,27 @@
 	            <div class="grid_header">
 	                <div class="grid_header_cell" style="width: 20%; padding: 1px;">
 	                    <div class="grid_header_title">
-	                        Name</div>
+	                        <fmt:message key="label.name"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 10%; padding: 1px;">
 	                    <div class="grid_header_title">
-	                        Public Port</div>
+	                        <fmt:message key="label.public.port"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 10%; padding: 1px;">
 	                    <div class="grid_header_title">
-	                        Private Port</div>
+	                        <fmt:message key="label.private.port"/></div>
 	                </div>
 	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
-	                        Algorithm</div>
+	                        <fmt:message key="label.algorithm"/></div>
 	                </div>	                
 	                <div class="grid_header_cell" style="width: 10%; padding: 1px;">
 	                    <div class="grid_header_title">
-	                        State</div>
+	                        <fmt:message key="label.state"/></div>
 	                </div>	                
 	                <div class="grid_header_cell" style="width: 29%; padding: 1px;">
 	                    <div class="grid_header_title">
-	                        Action</div>
+	                        <fmt:message key="label.actions"/></div>
 	                </div>
 	            </div>
 	            <div class="grid_rows even" id="create_load_balancer_row">
@@ -338,36 +336,36 @@
                 <div class="rightpanel_mainloader_animatedicon">
                 </div>
                 <p>
-                    Loading &hellip;</p>
+                    <fmt:message key="label.loading"/> &hellip;</p>
             </div>
         </div>        
         <div id="tab_container" style="display:none">
 			<div id="vpn_help" class="info_detailbox defaultbox" style="display:none;"> 
 				<p>
-					Your VPN access is currently enabled and can be accessed via the IP : <b><span id="vpn_ip"></span></b><br/>
-					Your IPSec pre-shared key is : <b><span id="vpn_key"></span></b><br/>
+					<fmt:message key="message.enabled.vpn"/> : <b><span id="vpn_ip"></span></b><br/>
+					<fmt:message key="message.enabled.vpn.ip.sec"/> : <b><span id="vpn_key"></span></b><br/>
 				</p>
 			</div>
 			<div class="grid_container">
 	        	<div class="grid_header">
 	            	<div id="grid_header_title" class="grid_header_title">VPN Users</div>
-	                <div class="grid_actionbox" id="vpn_action_link"><p>Actions</p>
+	                <div class="grid_actionbox" id="vpn_action_link"><p><fmt:message key="label.actions"/></p>
 	                    <div class="grid_actionsdropdown_box" id="vpn_action_menu" style="display: none;">
 	                        <ul class="actionsdropdown_boxlist" id="action_list">
-	                            <li><%=t.t("no.available.actions")%></li>
+	                            <li><fmt:message key="label.no.actions"/></li>
 	                        </ul>
 	                    </div>
 	                </div>
 	                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999; display: none;">
 	                    <div class="gridheader_loader" id="icon"></div>
-	                    <p id="vpn_enable">Enable VPN &hellip;</p>
+	                    <p id="vpn_enable"><fmt:message key="label.enabling.vpn"/> &hellip;</p>
 	                </div>
 	            </div>
 				<div id="grid_content">
 	            </div> 
 	        </div>
         </div>    
-		<div id="vpn_disabled_msg" class="info_detailbox defaultbox" style="display:none;"> <p>VPN access is currently not enabled.  Please <a href="#" id="enable_vpn_link">click here</a> to enable VPN.</p></div>
+		<div id="vpn_disabled_msg" class="info_detailbox defaultbox" style="display:none;"> <p><fmt:message key="message.enable.vpn"/></p></div>
     </div>
     <!-- VPN ends here-->
 </div>
@@ -380,7 +378,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt="Acquire New IP" /></div>
             <div class="actionpanel_button_links">
-                Acquire New IP
+                <fmt:message key="label.acquire.new.ip"/>
             </div>
         </div>
     </div>
@@ -411,16 +409,16 @@
         </div>  
         <div class="grid_row_cell" style="width: 29%; padding: 1px;">
             <div class="row_celltitles">
-                <a id="manage_link" href="#" style="float:left;">Manage</a>
-                <a id="edit_link" href="#" style="float:left; margin-left:15px;">Edit</a>
-                <a id="delete_link" href="#" style="float:left; margin-left:15px;" >Delete</a>
+                <a id="manage_link" href="#" style="float:left;"><fmt:message key="label.manage"/></a>
+                <a id="edit_link" href="#" style="float:left; margin-left:15px;"><fmt:message key="label.edit"/></a>
+                <a id="delete_link" href="#" style="float:left; margin-left:15px;" ><fmt:message key="label.delete"/></a>
             </div>
         </div>       
         <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
             <div class="gridrow_loader">
             </div>
             <p id="description">
-                Waiting &hellip;
+                <fmt:message key="label.waiting"/> &hellip;
             </p>
         </div>
     </div> 
@@ -449,15 +447,15 @@
         </div>        
         <div class="grid_row_cell" style="width: 29%; padding: 1px;">
             <div class="row_celltitles">
-                <a id="save_link" href="#" style="float:left;">Save</a>
-                <a id="cancel_link" href="#" style="float:left; margin-left:15px; display:inline;">Cancel</a>
+                <a id="save_link" href="#" style="float:left;"><fmt:message key="label.save"/></a>
+                <a id="cancel_link" href="#" style="float:left; margin-left:15px; display:inline;"><fmt:message key="label.cancel"/></a>
             </div>
         </div>
         <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
             <div class="gridrow_loader">
             </div>
             <p id="description">
-                Waiting &hellip;
+                <fmt:message key="label.waiting"/> &hellip;
             </p>
         </div>
     </div>  
@@ -476,13 +474,13 @@
                 </div>
                 <div class="grid_row_cell" style="width: 30%;">
                     <div class="row_celltitles">
-                        <a id="assign_link" href="#">Assign</a></div>
+                        <a id="assign_link" href="#"><fmt:message key="label.assign"/></a></div>
                 </div>
                 <div id="spinning_wheel" class="gridrow_loaderbox" style="display: none;">
                     <div class="gridrow_loader">
                     </div>
                     <p>
-                        Assigning instance to load balancer rule &hellip;</p>
+                        <fmt:message key="label.assign.to.load.balancer"/> &hellip;</p>
                 </div>
             </div>
             <div id="subgrid_content" class="ip_description_managearea">
@@ -512,7 +510,7 @@
         <div class="gridrow_loader">
         </div>
         <p>
-            Removing instance from load balancer rule &hellip;</p>
+            <fmt:message key="label.remove.from.load.balancer"/> &hellip;</p>
     </div>
 </div>
 <!-- Load Balancer's VM subgrid template (end) -->
@@ -537,7 +535,7 @@
         </div>        
         <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles">
-                <a id="revoke_link" href="#" style="float:left;">Revoke</a>
+                <a id="revoke_link" href="#" style="float:left;"><fmt:message key="label.revoke"/> </a>
                 <!--  
                 <a id="edit_link" href="#" style="float:left; margin-left:15px;">Edit</a>
                 -->                
@@ -547,7 +545,7 @@
             <div class="gridrow_loader">
             </div>
             <p id="description">
-                Waiting &hellip;
+                <fmt:message key="label.waiting"/>  &hellip;
             </p>
         </div>
     </div>
@@ -572,15 +570,15 @@
         </div>
         <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles">
-                <a id="save_link" href="#" style="float:left;">Save</a>
-                <a id="cancel_link" href="#" style="float:left; margin-left:15px;">Cancel</a>
+                <a id="save_link" href="#" style="float:left;"><fmt:message key="label.save"/> </a>
+                <a id="cancel_link" href="#" style="float:left; margin-left:15px;"><fmt:message key="label.cancel"/> </a>
             </div>
         </div>
         <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
             <div class="gridrow_loader">
             </div>
             <p id="description">
-                Waiting &hellip;
+                <fmt:message key="label.waiting"/>  &hellip;
             </p>
         </div>
     </div>
@@ -591,32 +589,26 @@
 <div class="grid_rows odd" id="vpn_template" style="display:none">
 	<div class="grid_row_cell" style="width: 20%;">
 		<div class="row_celltitles">
-			Username:</div>
+			<fmt:message key="label.username"/> :</div>
 	</div>
 	<div class="grid_row_cell" style="width: 59%;">
 		<div class="row_celltitles" id="username"></div>
 	</div>
 	<div class="grid_row_cell" style="width: 20%;">
-		<div class="row_celltitles"><a href="#" id="vpn_delete_user">Delete</a></div>
+		<div class="row_celltitles"><a href="#" id="vpn_delete_user"><fmt:message key="label.delete"/> </a></div>
 	</div>
 </div>
 <!-- VPN Template (end) -->
 
 <!--  dialogs (begin) -->
-<div id="dialog_confirmation_release_ip" title="Confirmation" style="display:none">
-    <p>
-        <%=t.t("please.confirm.you.want.to.release.this.IP.address")%>
-    </p>
-</div>
-
 <div id="dialog_confirmation_remove_vpnuser" title="Confirmation" style="display:none">
     <p>
-		Please confirm you want to remove VPN access from the following user: <span id="username"></span>
+		<fmt:message key="message.remove.vpn.access"/> : <span id="username"></span>
     </p>
 	<!--Loading box-->
 	<div id="spinning_wheel" class="ui_dialog_loaderbox" style="display:none;">
 		<div class="ui_dialog_loader"></div>
-		<p>Removing User....</p>
+		<p><fmt:message key="label.removing.user"/> ....</p>
 	</div>
    
 	<!--Confirmation msg box-->
@@ -629,12 +621,12 @@
 
 <div id="dialog_enable_vpn" title="Enable VPN" style="display:none">
     <p>
-        VPN is currently disabled for this IP Address.  Would you like to enable VPN access?
+		<fmt:message key="message.enable.vpn.access"/> 
     </p>
 	<!--Loading box-->
 	<div id="spinning_wheel" class="ui_dialog_loaderbox" style="display:none;">
 		<div class="ui_dialog_loader"></div>
-		<p>Enabling VPN Access....</p>
+		<p><fmt:message key="label.enabling.vpn.access"/> ....</p>
 	</div>
    
 	<!--Confirmation msg box-->
@@ -647,12 +639,12 @@
 
 <div id="dialog_disable_vpn" title="Disable VPN" style="display:none">
     <p>
-        Please confirm you want to disable VPN Access.
+		<fmt:message key="message.disable.vpn.access"/> 
     </p>
 	<!--Loading box-->
 	<div id="spinning_wheel" class="ui_dialog_loaderbox" style="display:none;">
 		<div class="ui_dialog_loader"></div>
-		<p>Disabling VPN Access....</p>
+		<p><fmt:message key="label.disabling.vpn.access"/>....</p>
 	</div>
    
 	<!--Confirmation msg box-->
@@ -665,16 +657,16 @@
 
 <div id="dialog_acquire_public_ip" title="Acquire New IP" style="display: none">
     <p> 
-        <%=t.t("please.select.an.available.zone.to.associate.your.new.ip.with..acquiring.additional.ip.may.cost.you.an.additional.dollars.per.month.")%>
+		<fmt:message key="message.acquire.public.ip"/>
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form1">
         <ol>
             <li>
                 <label>
-                    <%=t.t("zone")%>:</label>
+                    <fmt:message key="label.zone"/>:</label>
                 <select class="select" name="acquire_zone" id="acquire_zone">
-                    <option value="default"><%=t.t("please.wait")%>....</option>
+                    <option value="default"><fmt:message key="label.waiting"/>....</option>
                 </select>
             </li>
         </ol>
@@ -685,18 +677,18 @@
 <!-- Create User for VPN (begin) -->
 <div id="dialog_add_vpnuser" title="Add VPN User" style="display:none">	
 	<p> 
-        Please enter a username and password of the user that you want to allow VPN access.
+		<fmt:message key="message.allow.vpn.access"/>
     </p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form5">
 			<ol>			   
 				<li>
-					<label><%=t.t("username")%>:</label>
+					<label><fmt:message key="label.username"/>:</label>
 					<input class="text" type="text" id="username"/>
 					<div id="username_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
 				</li>
 				<li>
-					<label><%=t.t("password")%>:</label>
+					<label><fmt:message key="label.password"/>:</label>
 					<input class="text" type="password" id="password"/>
 					<div id="password_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
 				</li>				
@@ -706,7 +698,7 @@
 	<!--Loading box-->
 	<div id="spinning_wheel" class="ui_dialog_loaderbox" style="display:none;">
 		<div class="ui_dialog_loader"></div>
-		<p>Adding User....</p>
+		<p><fmt:message key="label.adding.user"/>....</p>
 	</div>
    
 	<!--Confirmation msg box-->
@@ -725,7 +717,7 @@
         <ol>
             <li>
                 <label for="vm_dropdown">
-                    Instance:</label>
+                    <fmt:message key="label.instance"/>:</label>
                 <select class="select" name="vm_dropdown" id="vm_dropdown">
                 </select>
                 <div id="vm_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">

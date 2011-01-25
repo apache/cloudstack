@@ -36,6 +36,14 @@ public class Networks {
         Firewall
     }
     
+    public enum RouterPrivateIpStrategy {
+        None,
+        DcGlobal, //global to data center
+        HostLocal;
+        
+        public static String DummyPrivateIp = "169.254.1.1";
+    }
+    
     /**
      * Different ways to assign ip address to this network.
      */

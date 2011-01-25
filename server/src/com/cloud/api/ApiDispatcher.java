@@ -64,19 +64,13 @@ public class ApiDispatcher {
 
     public void dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) {
         
-        boolean created = false;
         String errorMsg = "";
-        long startId = 0;
-        
-        if(cmd.getCreateEventType() != null){
-            startId = cmd.saveStartedEvent(cmd.getCreateEventType(), cmd.getCreateEventDescription(), 0L);
-        }
-        
         setupParameters(cmd, params);
 
         try {
+            UserContext ctx = UserContext.current();
+            ctx.setAccountId(cmd.getEntityOwnerId());
             cmd.create();
-            created = true;
         } catch (Throwable t) {
             if (t instanceof  InvalidParameterValueException || t instanceof IllegalArgumentException) {
                 s_logger.info(t.getMessage());
@@ -121,27 +115,21 @@ public class ApiDispatcher {
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
                 }                
             }
-        } finally {
-            if(cmd.getCreateEventType() != null){
-                if (created){
-                    cmd.saveCompletedEvent(EventVO.LEVEL_INFO, cmd.getCreateEventType(), cmd.getCreateEventDescription()+" successfull. Id: "+cmd.getEntityId(), startId);
-                } else {
-                    cmd.saveCompletedEvent(EventVO.LEVEL_ERROR, cmd.getCreateEventType(), cmd.getCreateEventDescription()+" failed. "+errorMsg, startId);
-                }
-            }
         }
     }
 
     public void dispatch(BaseCmd cmd, Map<String, String> params) {
-        boolean success = false;
         String errorMsg = "";
         setupParameters(cmd, params);
         try {
             if(cmd instanceof BaseAsyncCmd){
-                ((BaseAsyncCmd)cmd).saveStartedEvent();
+                UserContext ctx = UserContext.current();
+                BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmd;
+                ctx.setAccountId(asyncCmd.getEntityOwnerId());
+                String startEventId = params.get("ctxStartEventId");
+                ctx.setStartEventId(Long.valueOf(startEventId));
             }
             cmd.execute();
-            success = true;
         } catch (Throwable t) {
             if (t instanceof  InvalidParameterValueException || t instanceof IllegalArgumentException) {
                 s_logger.info(t.getMessage());
@@ -185,15 +173,6 @@ public class ApiDispatcher {
                 } else {
                     throw new ServerApiException(BaseCmd.INTERNAL_ERROR, BaseCmd.USER_ERROR_MESSAGE);
                 }
-            }
-        } finally {
-            if(cmd instanceof BaseAsyncCmd){
-                BaseAsyncCmd asyncCmd = (BaseAsyncCmd)cmd;
-                if(success){
-                    asyncCmd.saveCompletedEvent(EventVO.LEVEL_INFO, asyncCmd.getEventDescription()+" completed successfully");
-                } else {
-                    asyncCmd.saveCompletedEvent(EventVO.LEVEL_ERROR, asyncCmd.getEventDescription()+" failed. "+errorMsg);
-                }            
             }
         }
     }

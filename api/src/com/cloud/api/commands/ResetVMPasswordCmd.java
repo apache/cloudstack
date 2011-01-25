@@ -30,6 +30,8 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
@@ -107,7 +109,7 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd {
 	
     Random _rand = new Random(System.currentTimeMillis());
     @Override
-    public void execute(){
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
         password = Long.toHexString(_rand.nextLong());
         UserVm result = _userVmService.resetVMPassword(this, password);
         if (result != null){

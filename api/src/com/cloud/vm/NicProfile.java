@@ -10,8 +10,7 @@ import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.resource.Resource;
-import com.cloud.resource.Resource.ReservationStrategy;
+import com.cloud.vm.Nic.ReservationStrategy;
 
 public class NicProfile {
     long id;
@@ -34,6 +33,7 @@ public class NicProfile {
     Integer deviceId;
     String dns1;
     String dns2;
+    int networkRate;
     
     public String getDns1() {
         return dns1;
@@ -182,8 +182,12 @@ public class NicProfile {
     public void setIp4Address(String ip4Address) {
         this.ip4Address = ip4Address;
     }
+    
+    public int getNetworkRate() {
+        return networkRate;
+    }
 
-    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri) {
+    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri, Integer networkRate) {
         this.id = nic.getId();
         this.networkId = network.getId();
         this.gateway = nic.getGateway();
@@ -203,6 +207,9 @@ public class NicProfile {
         this.netmask = nic.getNetmask();
         this.dns1 = network.getDns1();
         this.dns2 = network.getDns2();
+        if (networkRate != null) {
+            this.networkRate = networkRate;
+        }
     }
 
     public NicProfile(long id, BroadcastDomainType type, Mode mode, long vmId) {
@@ -212,7 +219,7 @@ public class NicProfile {
         this.vmId = vmId;
     }
     
-    public NicProfile(Resource.ReservationStrategy strategy, String ip4Address, String macAddress, String gateway, String netmask) {
+    public NicProfile(ReservationStrategy strategy, String ip4Address, String macAddress, String gateway, String netmask) {
         this.format = AddressFormat.Ip4;
         this.ip4Address = ip4Address;
         this.macAddress = macAddress;

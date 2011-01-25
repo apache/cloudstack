@@ -132,10 +132,10 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        Type:</div>
+	                        Network Rate:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
-	                    <div class="row_celltitles" id="type">
+	                    <div class="row_celltitles" id="rate">
 	                    </div>
 	                </div>
 	            </div>

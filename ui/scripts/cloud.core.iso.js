@@ -52,9 +52,7 @@ function isoGetSearchParams() {
 	return moreCriteria.join("");          
 }
 
-function afterLoadIsoJSP() {    
-    initDialog("dialog_confirmation_delete_iso_all_zones");
-    initDialog("dialog_confirmation_delete_iso");
+function afterLoadIsoJSP() {   
     initDialog("dialog_copy_iso", 300);    
     initDialog("dialog_download_ISO");
     
@@ -266,7 +264,7 @@ function isoToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.data("jsonObj", jsonObj); 
         
     var $iconContainer = $midmenuItem1.find("#icon_container").show();
-    setIconByOsType(jsonObj.ostypename, $iconContainer.find("#icon"));
+    $iconContainer.find("#icon").attr("src", "images/midmenuicon_iso.png");
     
     $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
     $midmenuItem1.find("#second_row").text(fromdb(jsonObj.zonename).substring(0,25));  
@@ -280,12 +278,16 @@ function isoToRightPanel($midmenuItem1) {
 
 function isoJsonToDetailsTab() {     
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        isoClearDetailsTab(); 
         return;
+    }
     
     var jsonObj = $midmenuItem1.data("jsonObj");
-    if(jsonObj == null)
-        return;          
+    if(jsonObj == null) {
+        isoClearDetailsTab(); 
+        return;    
+    }      
     
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
@@ -336,7 +338,7 @@ function isoJsonToDetailsTab() {
     // "Edit ISO", "Copy ISO"
 	if ((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) 
 	    || (jsonObj.isready == false)
-	    || (jsonObj.domainid ==	-1)
+	    || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
 	    ) {		
 		//do nothing
     }
@@ -354,7 +356,7 @@ function isoJsonToDetailsTab() {
 	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account)) 
 	    || jsonObj.isready == false) 
 	    || (jsonObj.bootable == false)
-	    || (jsonObj.domainid ==	-1)
+	    || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
 	    ) {
 	    //do nothing
 	}
@@ -367,7 +369,7 @@ function isoJsonToDetailsTab() {
 	// "Download ISO"
 	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
 	    || (jsonObj.isready == false)
-	    || (jsonObj.domainid ==	-1)
+	    || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
 	    ) {
 	    //do nothing
 	}
@@ -379,7 +381,7 @@ function isoJsonToDetailsTab() {
 	// "Delete ISO"
 	if (((isUser() && jsonObj.ispublic == true && !(jsonObj.domainid == g_domainid && jsonObj.account == g_account))) 
 	    || (jsonObj.isready == false && jsonObj.status != null && jsonObj.status.indexOf("Downloaded") != -1)
-	    || (jsonObj.domainid ==	-1)
+	    || (jsonObj.domainid ==	1 && jsonObj.account ==	"system")
 	    ) {
 	    //do nothing
 	}
@@ -572,9 +574,9 @@ function doDeleteIso($actionLink, $detailsTab, $midmenuItem1) {
 	
 	var $dialog1;
 	if(jsonObj.crossZones == true)
-	    $dialog1 = $("#dialog_confirmation_delete_iso_all_zones");
+	    $dialog1 = $("#dialog_confirmation").text("The ISO is used by all zones. Please confirm you want to delete it from all zones.");
 	else
-	    $dialog1 = $("#dialog_confirmation_delete_iso");	
+	    $dialog1 = $("#dialog_confirmation").text("Please confirm you want to delete the ISO");	
 	
 	$dialog1	
 	.dialog('option', 'buttons', { 					
@@ -644,7 +646,7 @@ function doCreateVMFromIso($actionLink, $detailsTab, $midmenuItem1) {
 		    isValid &= validateString("Name", thisDialog.find("#name"), thisDialog.find("#name_errormsg"), true);
 		    isValid &= validateString("Group", thisDialog.find("#group"), thisDialog.find("#group_errormsg"), true);	
 		     if(thisDialog.find("#size_container").css("display") != "none")
-			    isValid &= validateNumber("Size", thisDialog.find("#size"), thisDialog.find("#size_errormsg"));				
+			    isValid &= validateInteger("Size", thisDialog.find("#size"), thisDialog.find("#size_errormsg"));				
 		    if (!isValid) 
 		        return;	       
 	           

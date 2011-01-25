@@ -47,6 +47,9 @@ public class ListVMsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID. If used with the account parameter, lists virtual machines for the specified account in this domain.")
     private Long domainId;
 
+    @Parameter(name=ApiConstants.IS_RECURSIVE, type=CommandType.BOOLEAN, description="defaults to false, but if true, lists all vms from the parent specified by the domain id till leaves.")
+    private Boolean recursive;
+
     @Parameter(name=ApiConstants.GROUP_ID, type=CommandType.LONG, description="the group ID")
     private Long groupId;
 
@@ -126,6 +129,9 @@ public class ListVMsCmd extends BaseListCmd {
         return networkId;
     }
 
+    public Boolean isRecursive() {
+        return recursive;
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

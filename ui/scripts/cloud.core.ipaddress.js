@@ -58,7 +58,6 @@ function afterLoadIpJSP() {
         
     //dialogs
     initDialog("dialog_acquire_public_ip", 325);
-    initDialog("dialog_confirmation_release_ip");
 	initDialog("dialog_enable_vpn");
 	initDialog("dialog_disable_vpn");
 	initDialog("dialog_add_vpnuser");
@@ -122,8 +121,8 @@ function afterLoadIpJSP() {
     $createPortForwardingRow.find("#add_link").bind("click", function(event){	        
 		var isValid = true;		
 		isValid &= validateDropDownBox("Instance", $createPortForwardingRow.find("#vm"), $createPortForwardingRow.find("#vm_errormsg"));				
-		isValid &= validateNumber("Public Port", $createPortForwardingRow.find("#public_port"), $createPortForwardingRow.find("#public_port_errormsg"), 1, 65535);
-		isValid &= validateNumber("Private Port", $createPortForwardingRow.find("#private_port"), $createPortForwardingRow.find("#private_port_errormsg"), 1, 65535);				
+		isValid &= validateInteger("Public Port", $createPortForwardingRow.find("#public_port"), $createPortForwardingRow.find("#public_port_errormsg"), 1, 65535);
+		isValid &= validateInteger("Private Port", $createPortForwardingRow.find("#private_port"), $createPortForwardingRow.find("#private_port_errormsg"), 1, 65535);				
 		if (!isValid) 
 		    return;			
 	    
@@ -220,8 +219,8 @@ function afterLoadIpJSP() {
 	    // validate values		    
 		var isValid = true;					
 		isValid &= validateString("Name", createLoadBalancerRow.find("#name"), createLoadBalancerRow.find("#name_errormsg"));
-		isValid &= validateNumber("Public Port", createLoadBalancerRow.find("#public_port"), createLoadBalancerRow.find("#public_port_errormsg"), 1, 65535);
-		isValid &= validateNumber("Private Port", createLoadBalancerRow.find("#private_port"), createLoadBalancerRow.find("#private_port_errormsg"), 1, 65535);				
+		isValid &= validateInteger("Public Port", createLoadBalancerRow.find("#public_port"), createLoadBalancerRow.find("#public_port_errormsg"), 1, 65535);
+		isValid &= validateInteger("Private Port", createLoadBalancerRow.find("#private_port"), createLoadBalancerRow.find("#private_port_errormsg"), 1, 65535);				
 		if (!isValid) return;
 		 
 		var $template = $("#load_balancer_template").clone();	
@@ -296,7 +295,8 @@ function ipToMidmenu(jsonObj, $midmenuItem1) {
 }
 
 function isIpManageable(domainid, account) {             
-    if((g_domainid == domainid && g_account == account) || (isAdmin() && account!="system")) 
+    if(((g_domainid == domainid && g_account == account) || (g_domainid == domainid && isDomainAdmin()) || (isAdmin())) 
+        && account!="system") 
         return true;
     else
         return false;
@@ -391,12 +391,16 @@ function ipToRightPanel($midmenuItem1) {
 
 function ipJsonToPortForwardingTab() {   
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        ipClearPortForwardingTab();
         return;    
+    }
         
     var ipObj = $midmenuItem1.data("jsonObj");
-    if(ipObj == null)
+    if(ipObj == null) {
+        ipClearPortForwardingTab();
         return;   
+    }
         
     var networkObj = $midmenuItem1.data("networkObj");
       
@@ -446,12 +450,16 @@ function ipJsonToPortForwardingTab() {
 
 function ipJsonToLoadBalancerTab() {
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        ipClearLoadBalancerTab();
         return;
+    }
     
     var ipObj = $midmenuItem1.data("jsonObj");
-    if(ipObj == null)
+    if(ipObj == null) {
+        ipClearLoadBalancerTab();
         return;
+    }
    
     var networkObj = $midmenuItem1.data("networkObj");
    
@@ -574,19 +582,27 @@ function showEnableVPNDialog($thisTab) {
 
 function ipJsonToVPNTab() {
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        ipClearVPNTab();
         return;
+    }
     
     var ipObj = $midmenuItem1.data("jsonObj");
-    if(ipObj == null)
+    if(ipObj == null) {
+        ipClearVPNTab();
         return;
+    }
 	
 	var ipAddress = ipObj.ipaddress;
-	if(ipAddress == null || ipAddress.length == 0)
+	if(ipAddress == null || ipAddress.length == 0) {
+	    ipClearVPNTab();
 	    return;
+	}
 	
 	var $thisTab = $("#right_panel_content").find("#tab_content_vpn");  	
-	
+	$thisTab.find("#tab_spinning_wheel").show();    
+    $thisTab.find("#tab_container").hide();   
+		
 	$.ajax({
         data: createURL("command=listRemoteAccessVpns&publicip="+ipAddress),
         dataType: "json",
@@ -602,6 +618,12 @@ function ipJsonToVPNTab() {
 			$thisTab.find("#vpn_disabled_msg").hide();
         }
     });    
+}
+
+function ipClearVPNTab() {
+	var $thisTab = $("#right_panel_content").find("#tab_content_vpn");  	
+	showEnableVPNDialog($thisTab);	 	
+	$thisTab.find("#vpn_disabled_msg").hide();
 }
 
 function showVpnUsers(presharedkey, publicip) {
@@ -893,12 +915,16 @@ function ipClearRightPanel() {
 //***** Details tab (begin) ****************************************************************************************************************
 function ipJsonToDetailsTab() {  
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
+    if($midmenuItem1 == null) {
+        ipClearDetailsTab()
         return;
+    }
     
     var ipObj = $midmenuItem1.data("jsonObj");
-    if(ipObj == null)
+    if(ipObj == null) {
+        ipClearDetailsTab()
         return;
+    }
     
     var networkObj = $midmenuItem1.data("networkObj");
     
@@ -1116,7 +1142,8 @@ function doReleaseIp($actionLink, $detailsTab, $midmenuItem1) {
     var jsonObj = $midmenuItem1.data("jsonObj");
     var ipaddress = jsonObj.ipaddress;
     
-    $("#dialog_confirmation_release_ip")	
+    $("#dialog_confirmation")
+    .text("Please confirm you want to release this IP address")	
 	.dialog('option', 'buttons', { 						
 		"Confirm": function() { 
 		    $(this).dialog("close");			
@@ -1305,7 +1332,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     $template.find("#save_link").unbind("click").bind("click", function(event){          		       
         // validate values		    
 	    var isValid = true;					    
-	    isValid &= validateNumber("Private Port", $rowContainerEdit.find("#private_port"), $rowContainerEdit.find("#private_port_errormsg"), 1, 65535);				
+	    isValid &= validateInteger("Private Port", $rowContainerEdit.find("#private_port"), $rowContainerEdit.find("#private_port_errormsg"), 1, 65535);				
 	    if (!isValid) return;		    		        
 	    
         var $spinningWheel = $rowContainerEdit.find("#spinning_wheel");	                     

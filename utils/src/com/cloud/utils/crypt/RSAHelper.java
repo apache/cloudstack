@@ -19,6 +19,12 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class RSAHelper {
     
+	static {
+		BouncyCastleProvider provider = new BouncyCastleProvider();
+		if (Security.getProvider(provider.getName()) == null)
+			Security.addProvider(provider);
+	}
+	
 	private static RSAPublicKey readKey(String key) throws Exception {
 		byte[] encKey = Base64.decodeBase64(key.split(" ")[1]);
 		DataInputStream dis = new DataInputStream(new ByteArrayInputStream(encKey));
@@ -48,7 +54,6 @@ public class RSAHelper {
 	public static String encryptWithSSHPublicKey(String sshPublicKey, String content) {
 		String returnString = null;
 		try {
-	        Security.addProvider(new BouncyCastleProvider());
 	        RSAPublicKey publicKey = readKey(sshPublicKey);
 	        Cipher cipher = Cipher.getInstance("RSA/None/PKCS1Padding", BouncyCastleProvider.PROVIDER_NAME);
 	        cipher.init(Cipher.ENCRYPT_MODE, publicKey , new SecureRandom());

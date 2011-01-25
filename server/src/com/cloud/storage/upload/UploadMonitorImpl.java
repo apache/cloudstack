@@ -27,9 +27,6 @@ import com.cloud.agent.api.storage.UploadProgressCommand.RequestType;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.event.EventTypes;
-import com.cloud.event.EventVO;
-import com.cloud.event.dao.EventDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -75,8 +72,6 @@ public class UploadMonitorImpl implements UploadMonitor {
     HostDao _serverDao = null;    
     @Inject
     VMTemplateDao _templateDao =  null;
-    @Inject
-	private final EventDao _eventDao = null;
     @Inject
 	private AgentManager _agentMgr;
     @Inject
@@ -159,7 +154,7 @@ public class UploadMonitorImpl implements UploadMonitor {
         		
 		if(vmTemplateHost != null) {
 		    start();
-			UploadCommand ucmd = new UploadCommand(template, url, vmTemplateHost);	
+			UploadCommand ucmd = new UploadCommand(template, url, vmTemplateHost.getInstallPath(), vmTemplateHost.getSize());	
 			UploadListener ul = new UploadListener(sserver, _timer, _uploadDao, uploadTemplateObj, this, ucmd, template.getAccountId(), template.getName(), type, eventId, asyncJobId, asyncMgr);			
 			_listenerMap.put(uploadTemplateObj, ul);
 
@@ -363,20 +358,6 @@ public class UploadMonitorImpl implements UploadMonitor {
 		return true;
 	}
 	
-	public String getEvent(Type type){
-					
-		if(type == Type.TEMPLATE) {
-            return EventTypes.EVENT_TEMPLATE_EXTRACT;
-        }
-		if(type == Type.ISO) {
-            return EventTypes.EVENT_ISO_EXTRACT;
-        }
-		if(type == Type.VOLUME) {
-            return EventTypes.EVENT_VOLUME_EXTRACT;
-        }			
-		
-		return null;
-	}	
 	public void handleUploadEvent(HostVO host, Long accountId, String typeName, Type type, Long uploadId, com.cloud.storage.Upload.Status reason, long eventId) {
 		
 		if ((reason == Upload.Status.UPLOADED) || (reason==Upload.Status.ABANDONED)){
@@ -386,30 +367,9 @@ public class UploadMonitorImpl implements UploadMonitor {
 				_listenerMap.remove(uploadObj);
 			}
 		}
-		if (reason == Upload.Status.UPLOADED) {
-			logEvent(accountId, getEvent(type), typeName + " successfully uploaded from storage server " + host.getName(), EventVO.LEVEL_INFO, eventId);
-		}
-		if (reason == Upload.Status.UPLOAD_ERROR) {
-			logEvent(accountId, getEvent(type), typeName + " failed to upload from storage server " + host.getName(), EventVO.LEVEL_ERROR, eventId);
-		}
-		if (reason == Upload.Status.ABANDONED) {
-			logEvent(accountId, getEvent(type), typeName + " :aborted upload from storage server " + host.getName(), EventVO.LEVEL_WARN, eventId);
-		}			
 
 	}
 	
-	public void logEvent(long accountId, String evtType, String description, String level, long eventId) {
-		EventVO event = new EventVO();
-		event.setUserId(1);
-		event.setAccountId(accountId);
-		event.setType(evtType);
-		event.setDescription(description);
-		event.setLevel(level);
-		event.setStartId(eventId);
-		_eventDao.persist(event);
-		
-	}
-
 	@Override
 	public void handleUploadSync(long sserverId) {
 	    

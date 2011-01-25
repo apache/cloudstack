@@ -49,6 +49,7 @@ import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.api.commands.UpdateResourceLimitCmd;
 import com.cloud.api.commands.UpdateUserCmd;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimitVO;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -131,6 +132,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	@Inject private StorageManager _storageMgr;
 	@Inject private TemplateManager _tmpltMgr;
 	@Inject private VirtualNetworkApplianceManager _routerMgr;
+	@Inject private ConfigurationManager _configMgr;
 	
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 	
@@ -840,13 +842,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
 
             for (UserVmVO vm : vms) {
-                long startEventId = EventUtils.saveStartedEvent(callerUserId, vm.getAccountId(), EventTypes.EVENT_VM_DESTROY, "Destroyed VM instance : " + vm.getName());
                 if (!_vmMgr.expunge(vm, callerUserId, caller)) {
                     s_logger.error("Unable to destroy vm: " + vm.getId());
                     accountCleanupNeeded = true;
-                    EventUtils.saveEvent(callerUserId, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_DESTROY, "Unable to destroy vm: " + vm.getId(), startEventId);
-                } else {
-                    EventUtils.saveEvent(callerUserId, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_DESTROY, "Successfully destroyed VM instance : " + vm.getName(), startEventId);
                 }
             }
             
@@ -861,21 +859,32 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             s_logger.info("deleteAccount: Deleted " + numRemoved + " network groups for account " + accountId);
             
             //Delete all the networks
+            boolean networksDeleted = true;
             s_logger.debug("Deleting networks for account " + account.getId());
             List<NetworkVO> networks = _networkDao.listByOwner(accountId);
             if (networks != null) {
                 for (NetworkVO network : networks) {
                     if (!_networkMgr.deleteNetwork(network.getId())) {
-                        s_logger.warn("Unable to destroy network " + network + " as a part of account cleanup");
+                        s_logger.warn("Unable to destroy network " + network + " as a part of account id=" + accountId +" cleanup.");
                         accountCleanupNeeded = true;
-                    }  
-                    s_logger.debug("Network " + network.getId() + " successfully deleted.");
+                        networksDeleted = false;
+                    }  else {
+                        s_logger.debug("Network " + network.getId() + " successfully deleted as a part of account id=" + accountId + " cleanup.");
+                    }
+                }
+            }
+            
+            //delete account specific vlans - only when networks are cleaned up successfully
+            if (networksDeleted) {
+                if (!_configMgr.deleteAccountSpecificVirtualRanges(accountId)){
+                    accountCleanupNeeded = true;
+                } else {
+                    s_logger.debug("Account specific Virtual IP ranges " + " are successfully deleted as a part of account id=" + accountId + " cleanup.");
                 }
             }
             return true;
         } finally {
             s_logger.info("Cleanup for account " + account.getId() + (accountCleanupNeeded ? " is needed." : " is not needed."));
-            
             if (accountCleanupNeeded) {
                 _accountDao.markForCleanup(accountId);
             }
@@ -1010,12 +1019,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 throw new CloudRuntimeException("The user " + username + " being creating is using a password that is different than what's in the db");
             }
 
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_USER_CREATE, "User, " + username + " for accountId = " + accountId
-                    + " and domainId = " + domainId + " was created.");
             return _userAccountDao.findById(dbUser.getId());
         } catch (Exception e) {
-            EventUtils.saveEvent(new Long(1), new Long(1), EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_CREATE, "Error creating user, " + username + " for accountId = " + accountId
-                    + " and domainId = " + domainId);
             if (e instanceof CloudRuntimeException) {
                 s_logger.info("unable to create user: " + e);
             } else {
@@ -1069,8 +1074,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new CloudRuntimeException("The user " + userName + " being creating is using a password that is different than what's in the db");
         }
         
-        EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_USER_CREATE, "User, " + userName + " for accountId = " + accountId
-                + " and domainId = " + domainId + " was created.");
         return dbUser;
     }
     
@@ -1152,12 +1155,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
 
             _userDao.update(id, userName, password, firstName, lastName, email, accountId, timeZone, apiKey, secretKey);
-            EventUtils.saveEvent(new Long(1), Long.valueOf(1), EventVO.LEVEL_INFO, EventTypes.EVENT_USER_UPDATE, "User, " + userName + " for accountId = "
-                    + accountId + " domainId = " + userAccount.getDomainId() + " and timezone = "+timeZone + " was updated.");
         } catch (Throwable th) {
             s_logger.error("error updating user", th);
-            EventUtils.saveEvent(Long.valueOf(1), Long.valueOf(1), EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_UPDATE, "Error updating user, " + userName
-                    + " for accountId = " + accountId + " and domainId = " + userAccount.getDomainId());
             throw new CloudRuntimeException("Unable to update user " + id);
         } 
         return _userAccountDao.findById(id);
@@ -1454,15 +1453,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             throw new InvalidParameterValueException("Account id : " + user.getAccountId() + " is a system account, delete for user associated with this account is not allowed");
         }
         
-        long accountId = user.getAccountId();
-        long userId = UserContext.current().getCallerUserId();
-        boolean success = _userDao.remove(id);
-        if(success){
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, EventTypes.EVENT_USER_DELETE, "Deleted User, " + user.getUsername() + " for accountId = " + user.getAccountId());
-        } else {
-            EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, EventTypes.EVENT_USER_DELETE, "Failed to delete User, " + user.getUsername() + " for accountId = " + user.getAccountId());
-        }
-        return success;
+        return _userDao.remove(id);
 	}
 	
     protected class AccountCleanupTask implements Runnable {
@@ -1510,28 +1501,30 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
     
     public Account finalizeOwner(Account caller, String accountName, Long domainId) {
-        if (isAdmin(caller.getType())) {
-            if (domainId != null) {             
-                DomainVO domain = _domainDao.findById(domainId);
-                if (domain == null) {
-                    throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
-                }
+        if (isAdmin(caller.getType()) && accountName != null && domainId != null) {          
+            DomainVO domain = _domainDao.findById(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
+            }
 
-                if (accountName != null) {
-                    Account owner = _accountDao.findActiveAccount(accountName, domainId);
-                    if (owner == null) {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                    checkAccess(caller, domain);
-                    return owner;
-                } else {
-                    throw new InvalidParameterValueException("Account have to be specified along with domainId");
-                }  
+            Account owner = _accountDao.findActiveAccount(accountName, domainId);
+            if (owner == null) {
+                throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+            }
+            checkAccess(caller, domain);
+            
+            return owner;
+        } else if (!isAdmin(caller.getType()) && accountName != null && domainId != null) {
+            if (!accountName.equals(caller.getAccountName()) || domainId.longValue() != caller.getDomainId()) {
+                throw new PermissionDeniedException("Can't create/list resources for account " + accountName + " in domain " + domainId + ", permission denied");
             } else {
                 return caller;
             }
         } else {
-            //regular user can't create resources for other people 
+            if ((accountName == null && domainId != null) || (accountName != null && domainId == null)) {
+                throw new InvalidParameterValueException("AccountName and domainId must be specified together");
+            }
+            //regular user can't create/list resources for other people 
             return caller;
         }
     }
@@ -1567,5 +1560,42 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Override
     public User getActiveUser(long userId) {
         return _userDao.findById(userId);
+    }
+    
+    @Override
+    public Domain getDomain(long domainId) {
+        return _domainDao.findById(domainId);
+    }
+    
+    @Override
+    public Pair<String, Long> finalizeAccountDomainForList(Account caller, String accountName, Long domainId) {
+        if (isAdmin(caller.getType())) { 
+            if (domainId == null && accountName != null) {
+                throw new InvalidParameterValueException("accountName and domainId might be specified together");
+            } else if (domainId != null){
+                Domain domain = getDomain(domainId);
+                if (domain == null) {
+                    throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
+                }
+                
+                checkAccess(caller, domain);
+                
+                if (accountName != null) {
+                    Account owner = getActiveAccount(accountName, domainId);
+                    if (owner == null) {
+                        throw new InvalidParameterValueException("Unable to find account with name " + accountName + " in domain id=" + domainId);
+                    }
+                }
+            }
+         } else if (accountName != null && domainId != null) {
+             if (!accountName.equals(caller.getAccountName()) || domainId.longValue() != caller.getDomainId()) {
+                 throw new PermissionDeniedException("Can't list port forwarding rules for account " + accountName + " in domain " + domainId + ", permission denied");
+             }
+         } else {
+             accountName = caller.getAccountName();
+             domainId = caller.getDomainId();
+         }
+        
+        return new Pair<String, Long>(accountName, domainId);
     }
 }

@@ -13,6 +13,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
@@ -47,8 +48,8 @@ public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ICMP_TYPE, type=CommandType.INTEGER, description="type for this icmp message")
     private Integer icmpType;
 
-    @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, required=true, description="name of the security group")
-    private String securityGroupName;
+    @Parameter(name=ApiConstants.SECURITY_GROUP_ID, type=CommandType.LONG, required=true, description="The ID of the security group")
+    private Long securityGroupId;
 
     @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, description="protocol used")
     private String protocol;
@@ -87,8 +88,8 @@ public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
         return icmpType;
     }
 
-    public String getSecurityGroupName() {
-        return securityGroupName;
+    public Long getSecurityGroupId() {
+        return securityGroupId;
     }
 
     public String getProtocol() {
@@ -165,7 +166,7 @@ public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
             sb.append("<error:  no ingress parameters>");
         }
 
-        return  "revoking ingress from group: " + getSecurityGroupName() + " for " + sb.toString();
+        return  "revoking ingress from group: " + getSecurityGroupId() + " for " + sb.toString();
     }
     
     @Override

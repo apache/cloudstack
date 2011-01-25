@@ -250,7 +250,6 @@ public class UploadListener implements Listener {
 	}
 	
 	public void logUploadStart() {
-		String event = uploadMonitor.getEvent(type);
 		//uploadMonitor.logEvent(accountId, event, "Storage server " + sserver.getName() + " started upload of " +type.toString() + " " + typeName, EventVO.LEVEL_INFO, eventId);
 	}
 	
@@ -418,9 +417,6 @@ public class UploadListener implements Listener {
 
 	public void logDisconnect() {
 		s_logger.warn("Unable to monitor upload progress of " + typeName + " at host " + sserver.getName());
-		String event;
-		event = uploadMonitor.getEvent(type);
-		uploadMonitor.logEvent(accountId, event, "Storage server " + sserver.getName() + " disconnected during upload of " + typeName, EventVO.LEVEL_WARN, eventId);
 	}
 	
 	public void scheduleImmediateStatusCheck(RequestType request) {

@@ -114,23 +114,23 @@
                             <div class="loginoptions_panel">
                             	<div class="loginoptions_box">
                                 	<div id="lang_button" class="loginoptions_dropdownbutton">
-                                    	<p id="lang_name">English</p>
+                                    	<p id="lang_name"><fmt:message key="label.lang.english"/></p>
                                         <div class="loginoptions_ddarrow"></div>
          							
 										<div id="lang_menu" class="loginoptions_dropdown" style="display:none;">
 											<ul>
-												<li id="en">English</li>
-												<li id="zh">Chinese</li>
+												<li id="en"><fmt:message key="label.lang.english"/></li>
+												<li id="zh"><fmt:message key="label.lang.chinese"/></li>
 											</ul>
 										</div>
                                     </div>
                                     <div id="theme_button" class="loginoptions_dropdownbutton">
-                                    	<p id="theme_name">Default Theme</p>
+                                    	<p id="theme_name"><fmt:message key="label.theme.default"/></p>
                                         <div class="loginoptions_ddarrow"></div>
 										<div id="theme_menu" class="loginoptions_dropdown" style="display:none;">
 											<ul>
-												<li id="theme_default">Default Theme</li>
-												<li id="custom/custom1/css/custom1.css">Custom - Grey</li>
+												<li id="theme_default"><fmt:message key="label.theme.default"/></li>
+												<li id="custom/custom1/css/custom1.css"><fmt:message key="label.theme.grey"/></li>
 											</ul>
 										</div>
                                     </div>
@@ -161,20 +161,6 @@
                     <p>
                         <fmt:message key="label.welcome"/> <span id="main_username"></span>, <a href="#" id="main_logout"><fmt:message key="label.logout"/></a>
                     </p>
-					<!--
-                    <div class="language_dropdownpanel">
-                    	<div class="language_icon"></div>
-                        <p>English</p>
-                        <div class="language_ddarrow"></div>
-                        <div class="language_dropdownbox" style="display:none;">
-                        	<ul>
-                            	<li>English</li>
-                                <li>汉语 </li>
-                                <li>Fran&ccedil;ais</li>
-                            </ul>
-                        </div>
-                    </div>
-                    -->
                 </div>
             </div>
         </div>
@@ -189,7 +175,7 @@
                                 <li>
                                     <div id="basic_search" class="search_textbg">
                                         <input class="text" type="text" id="search_input" />
-                                        <div class="search_closebutton" style="display: none;">
+                                        <div id="clear_search" class="search_closebutton" style="display: none;">
                                         </div>
                                     </div>
                                 </li>
@@ -462,7 +448,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="leftmenu_expandedlist">
+                                <div class="leftmenu_expandedlist" id="leftmenu_submenu_community_template_container" style="display: none">
                                     <div class="leftmenu_content" id="leftmenu_submenu_community_template">
                                         <div class="leftmenu_thirdindent">
                                             <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
@@ -504,7 +490,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="leftmenu_expandedlist">
+                                <div class="leftmenu_expandedlist" id="leftmenu_submenu_community_iso_container" style="display: none">
                                     <div class="leftmenu_content" id="leftmenu_submenu_community_iso">
                                         <div class="leftmenu_thirdindent">
                                             <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
@@ -535,7 +521,7 @@
 				                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
 				                    </div>
 				                    <span id="label">
-				                        My Accounts
+				                        <fmt:message key="label.menu.my.accounts"/>
 				                    </span>
 				                </div>
 				            </div>
@@ -546,7 +532,7 @@
 				                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
 				                    </div>
 				                    <span id="label">
-				                        All Accounts
+				                        <fmt:message key="label.menu.all.accounts"/>
 				                    </span>
 				                </div>
 				            </div>
@@ -708,7 +694,7 @@
                                 <div class="leftmenu_secondindent">
                                     <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
                                     </div>
-                                    Network Offering
+                                    <fmt:message key="label.menu.network.offerings"/>
                                 </div>
                             </div>
                         </div>
@@ -732,12 +718,6 @@
     <!-- Left Menu ends here-->
     </div>
     <div id="footer">
-	<!--
-     <div class="footer_testprovisiongtool" id="launch_test" style="display:none">
-     	<div class="footer_testprovisiongtool_icon"></div>
-        <a href="#">Launch Test Provisioning Tool</a>
-     </div>
-	-->
         <div class="poweredby_box">
         </div>
     </div>

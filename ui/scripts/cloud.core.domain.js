@@ -217,9 +217,19 @@ function domainToRightPanel2($midmenuItem1) {
     $("#tab_details").click();   
 }
 
-function domainJsonToDetailsTab() {
+function domainJsonToDetailsTab() {    
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    if($midmenuItem1 == null) {
+        domainClearDetailsTab();
+        return;
+    }
+    
     var jsonObj = $midmenuItem1.data("jsonObj");  
+    if(jsonObj == null) {
+        domainClearDetailsTab();
+        return;
+    }
+    
     var domainId = jsonObj.id;   
            
     $("#right_panel").data("onRefreshFn", function() {	    
@@ -306,18 +316,38 @@ function domainJsonToDetailsTab() {
 	}	 
 }
 
-function domainJsonToAdminAccountTab() {    
+function domainJsonToAdminAccountTab() {     
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    var jsonObj = $midmenuItem1.data("jsonObj");  
+    if($midmenuItem1 == null) {
+        domainClearAdminAccountTab();
+        return;
+    }
+    
+    var jsonObj = $midmenuItem1.data("jsonObj"); 
+    if(jsonObj == null) {
+        domainClearAdminAccountTab();
+        return; 
+    }
+    
     var domainId = jsonObj.id;
    
     listAdminAccounts(domainId);  
 }
 
-function domainJsonToResourceLimitsTab() {    
+function domainJsonToResourceLimitsTab() {       
 	if (isAdmin() || (isDomainAdmin() && (g_domainid != domainId))) {	
 	    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+	    if($midmenuItem1 == null) {
+	        domainClearResourceLimitsTab();    
+	        return;
+	    }
+	    
         var jsonObj = $midmenuItem1.data("jsonObj");  
+        if(jsonObj == null) {
+            domainClearResourceLimitsTab();    
+            return;
+        }
+        
         var domainId = jsonObj.id;    
 				
 		var $resourceLimitsTab = $("#right_panel_content #tab_content_resource_limits");	
@@ -372,12 +402,12 @@ function domainJsonToResourceLimitsTab() {
 }
 
 function domainJsonClearRightPanel() {
-    domainJsonClearDetailsTab();
-    domainJsonClearAdminAccountTab();
-    domainJsonClearResourceLimitsTab();    
+    domainClearDetailsTab();
+    domainClearAdminAccountTab();
+    domainClearResourceLimitsTab();    
 }
 
-function domainJsonClearDetailsTab() {
+function domainClearDetailsTab() {
     var $thisTab = $("#right_panel_content").find("#tab_content_details");
     $thisTab.find("#id").text("");
     $thisTab.find("#grid_header_title").text("");	
@@ -386,13 +416,18 @@ function domainJsonClearDetailsTab() {
     $thisTab.find("#redirect_to_account_page").text("");	
     $thisTab.find("#redirect_to_instance_page").text("");	
     $thisTab.find("#redirect_to_volume_page").text("");	
+    
+    var $actionMenu = $thisTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();    
+	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());		 
 }
 
-function domainJsonClearAdminAccountTab() {
-    $("#right_panel_content").find("#tab_content_admin_account").empty();	
+function domainClearAdminAccountTab() {
+    var $thisTab = $("#right_panel_content").find("#tab_content_admin_account");
+    $thisTab.empty();	
 }
 
-function domainJsonClearResourceLimitsTab() {
+function domainClearResourceLimitsTab() {
     var $thisTab = $("#right_panel_content").find("#tab_content_resource_limits");
 
     $thisTab.find("#limits_vm").text("");
@@ -409,6 +444,10 @@ function domainJsonClearResourceLimitsTab() {
 	
 	$thisTab.find("#limits_template").text("");
 	$thisTab.find("#limits_template_edit").val("");	
+		
+	var $actionMenu = $thisTab.find("#action_link #action_menu");
+    $actionMenu.find("#action_list").empty();    
+	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());		 	
 }
 
 function domainToResourceLimitsTab() {   
@@ -537,11 +576,11 @@ function doEditResourceLimits2($actionLink, $detailsTab, $midmenuItem1, $readonl
     var $resourceLimitsTab = $("#right_panel_content #tab_content_resource_limits");
 
     var isValid = true;	        			
-	isValid &= validateNumber("Instance Limit", $resourceLimitsTab.find("#limits_vm_edit"), $resourceLimitsTab.find("#limits_vm_edit_errormsg"), -1, 32000, false);
-	isValid &= validateNumber("Public IP Limit", $resourceLimitsTab.find("#limits_ip_edit"), $resourceLimitsTab.find("#limits_ip_edit_errormsg"), -1, 32000, false);
-	isValid &= validateNumber("Disk Volume Limit", $resourceLimitsTab.find("#limits_volume_edit"), $resourceLimitsTab.find("#limits_volume_edit_errormsg"), -1, 32000, false);
-	isValid &= validateNumber("Snapshot Limit", $resourceLimitsTab.find("#limits_snapshot_edit"), $resourceLimitsTab.find("#limits_snapshot_edit_errormsg"), -1, 32000, false);
-	isValid &= validateNumber("Template Limit", $resourceLimitsTab.find("#limits_template_edit"), $resourceLimitsTab.find("#limits_template_edit_errormsg"), -1, 32000, false);
+	isValid &= validateInteger("Instance Limit", $resourceLimitsTab.find("#limits_vm_edit"), $resourceLimitsTab.find("#limits_vm_edit_errormsg"), -1, 32000, false);
+	isValid &= validateInteger("Public IP Limit", $resourceLimitsTab.find("#limits_ip_edit"), $resourceLimitsTab.find("#limits_ip_edit_errormsg"), -1, 32000, false);
+	isValid &= validateInteger("Disk Volume Limit", $resourceLimitsTab.find("#limits_volume_edit"), $resourceLimitsTab.find("#limits_volume_edit_errormsg"), -1, 32000, false);
+	isValid &= validateInteger("Snapshot Limit", $resourceLimitsTab.find("#limits_snapshot_edit"), $resourceLimitsTab.find("#limits_snapshot_edit_errormsg"), -1, 32000, false);
+	isValid &= validateInteger("Template Limit", $resourceLimitsTab.find("#limits_template_edit"), $resourceLimitsTab.find("#limits_template_edit_errormsg"), -1, 32000, false);
 	if (!isValid) 
 	    return;
 								
@@ -627,13 +666,31 @@ function doEditDomain2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields,
     $("#save_button, #cancel_button").hide();  		  
 }
 
+function doDeleteDomain($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text("Please confirm you want to delete this domain")
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=deleteDomain&id="+id;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
+
 var domainActionMap = {        
     "Edit Domain": {
         dialogBeforeActionFn: doEditDomain
     },
-    "Delete Domain": {              
-        api: "deleteDomain",     
-        isAsyncJob: true,    
+    "Delete Domain": {   
+        isAsyncJob: true,
+        dialogBeforeActionFn : doDeleteDomain,          
         asyncJobResponse: "deletedomainresponse",          
         inProcessText: "Deleting Domain....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {        

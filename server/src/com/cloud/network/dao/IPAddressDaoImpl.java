@@ -109,35 +109,6 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Ip> implements
         return update(vo, sc) >= 1;
     }
 
-    @Override
-    @DB
-    public List<String> assignAcccountSpecificIps(long accountId, long domainId, Long vlanDbId, boolean sourceNat) {
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
-        sc.setParameters("vlan", vlanDbId);
-        sc.setParameters("sourceNat", sourceNat);
-
-        List<IPAddressVO> ipList = lockRows(sc, null, true);
-        List<String> ipStringList = new ArrayList<String>();
-
-        for (IPAddressVO ip : ipList) {
-
-            ip.setAllocatedToAccountId(accountId);
-            ip.setAllocatedTime(new Date());
-            ip.setAllocatedInDomainId(domainId);
-            ip.setSourceNat(sourceNat);
-            ip.setState(State.Allocated);
-
-            if (!update(ip.getAddress(), ip)) {
-                throw new CloudRuntimeException("Unable to update a locked ip address " + ip.getAddress());
-            }
-            ipStringList.add(ip.getAddress().toString());
-        }
-        txn.commit();
-        return ipStringList;
-    }
-
     /**
      * @deprecated This method is now deprecated because vlan has been
      *             added.  The actual method is now within NetworkManager.
@@ -203,7 +174,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Ip> implements
     }
     
     @Override
-    public List<IPAddressVO> listByNetwork(long networkId) {
+    public List<IPAddressVO> listByAssociatedNetwork(long networkId) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
         

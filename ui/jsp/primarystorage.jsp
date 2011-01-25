@@ -302,14 +302,6 @@
     </div>
 </div>
 
-<!-- dialogs -->
-<div id="dialog_confirmation_delete_primarystorage" title="Confirmation" style="display: none">
-    <p>
-        <%=t.t("please.confirm.you.want.to.delete.the.primary.storage")%>
-    </p>
-</div>
-
-
 <div id="hidden_container">
     <!-- advanced search popup (begin) -->
     <div class="adv_searchpopup_bg" id="advanced_search_popup" style="display: none;">

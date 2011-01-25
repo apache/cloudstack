@@ -26,6 +26,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.async.AsyncJob;
@@ -62,6 +63,8 @@ public class ListSnapshotsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.LONG, description="the ID of the disk volume")
     private Long volumeId;
 
+    @Parameter(name=ApiConstants.IS_RECURSIVE, type=CommandType.BOOLEAN, description="defaults to false, but if true, lists all snapshots from the parent specified by the domain id till leaves.")
+    private Boolean recursive;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -94,6 +97,10 @@ public class ListSnapshotsCmd extends BaseListCmd {
         return volumeId;
     }
 
+    public Boolean isRecursive() {
+        return recursive;
+        
+    }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

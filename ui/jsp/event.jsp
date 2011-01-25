@@ -1,11 +1,9 @@
-<%@ page import="java.util.*" %>
-<%@ page import="com.cloud.utils.*" %>
-
-<%
-    Locale browserLocale = request.getLocale();
-    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
-%>
-
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
+<fmt:setBundle basename="resources/messages"/>
 
 <!-- event detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
@@ -13,7 +11,7 @@
     <div class="main_titleicon">
         <img src="images/title_eventsicon.gif"/></div>
    
-    <h1>Event
+    <h1> <fmt:message key="label.menu.events"/>
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -23,7 +21,7 @@
     </div>
     <div class="tabbox" style="margin-top:15px;">
         <div class="content_tabs on">
-            <%=t.t("Details")%></div>        
+             <fmt:message key="label.details"/></div>        
     </div>    
     <div id="tab_content_details">
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
@@ -31,7 +29,7 @@
                 <div class="rightpanel_mainloader_animatedicon">
                 </div>
                 <p>
-                    Loading &hellip;</p>
+                    <fmt:message key="label.loading"/> &hellip;</p>
             </div>
         </div>   
         <div id="tab_container">
@@ -39,7 +37,7 @@
 		        <div class="grid_rows odd">
 		            <div class="grid_row_cell" style="width: 20%;">
 		                <div class="row_celltitles">
-		                    <%=t.t("id")%>:</div>
+		                    <fmt:message key="label.id"/>:</div>
 		            </div>
 		            <div class="grid_row_cell" style="width: 79%;">
 		                <div class="row_celltitles" id="id">
@@ -49,7 +47,7 @@
 		        <div class="grid_rows even">
 		            <div class="grid_row_cell" style="width: 20%;">
 		                <div class="row_celltitles">
-		                    <%=t.t("Initiated.By")%>:</div>
+		                    <fmt:message key="label.initiated.by"/>:</div>
 		            </div>
 		            <div class="grid_row_cell" style="width: 79%;">
 		                <div class="row_celltitles" id="username">
@@ -59,57 +57,67 @@
 		        <div class="grid_rows odd">
 		            <div class="grid_row_cell" style="width: 20%;">
 		                <div class="row_celltitles">
-		                    <%=t.t("Owner.Account")%>:</div>
+		                    <fmt:message key="label.owner.account"/>:</div>
 		            </div>
 		            <div class="grid_row_cell" style="width: 79%;">
 		                <div class="row_celltitles" id="account">
 		                    </div>
 		            </div>
-		        </div>
+		        </div>		        
 		        <div class="grid_rows even">
 		            <div class="grid_row_cell" style="width: 20%;">
 		                <div class="row_celltitles">
-		                    <%=t.t("Type")%>:</div>
+		                    <fmt:message key="label.owner.domain"/>:</div>
+		            </div>
+		            <div class="grid_row_cell" style="width: 79%;">
+		                <div class="row_celltitles" id="domain">
+		                    </div>
+		            </div>
+		        </div>		        
+		        <div class="grid_rows odd">
+		            <div class="grid_row_cell" style="width: 20%;">
+		                <div class="row_celltitles">
+		                    <fmt:message key="label.type"/>:</div>
 		            </div>
 		            <div class="grid_row_cell" style="width: 79%;">
 		                <div class="row_celltitles" id="type">
 		                </div>
 		            </div>
 		        </div>
-		        <div class="grid_rows odd">
+		        <div class="grid_rows even">
 		            <div class="grid_row_cell" style="width: 20%;">
 		                <div class="row_celltitles">
-		                    <%=t.t("Level")%>:</div>
+		                    <fmt:message key="label.level"/>:</div>
 		            </div>
 		            <div class="grid_row_cell" style="width: 79%;">
 		                <div class="row_celltitles" id="level">
 		                </div>
 		            </div>
 		        </div>
-		        <div class="grid_rows even">
+		        <div class="grid_rows odd">
 		            <div class="grid_row_cell" style="width: 20%;">
 		                <div class="row_celltitles">
-		                    <%=t.t("Description")%>:</div>
+		                    <fmt:message key="label.description"/>:</div>
 		            </div>
 		            <div class="grid_row_cell" style="width: 79%;">
 		                <div class="row_celltitles" id="description">
 		                </div>
 		            </div>
 		        </div>
-		        <div class="grid_rows odd">
+		        <div class="grid_rows even">
 		            <div class="grid_row_cell" style="width: 20%;">
 		                <div class="row_celltitles">
-		                    <%=t.t("State")%>:</div>
+		                    <fmt:message key="label.state"/>:</div>
 		            </div>
 		            <div class="grid_row_cell" style="width: 79%;">
 		                <div class="row_celltitles" id="state">
 		                </div>
 		            </div>
 		        </div>
-		        <div class="grid_rows even">
+		        <div class="grid_rows odd">
 		            <div class="grid_row_cell" style="width: 20%;">
 		                <div class="row_celltitles">
-		                    <%=t.t("Date")%>:</div>
+		                    <fmt:message key="label.date"/>:</div>
 		            </div>
 		            <div class="grid_row_cell" style="width: 79%;">
 		                <div class="row_celltitles" id="created">
@@ -130,7 +138,7 @@
             <ol>
                 <li>
                     <select class="select" id="adv_search_type">
-                        <option value="">by type</option>
+                        <option value=""><fmt:message key="label.by.type"/></option>
                         <option value="VM.CREATE">VM.CREATE</option>
                         <option value="VM.DESTROY">VM.DESTROY</option>
                         <option value="VM.START">VM.START</option>
@@ -207,10 +215,10 @@
                 </li>
                 <li>
                     <select class="select" id="adv_search_level">
-                        <option value="">by level</option>
-                        <option value="INFO">INFO</option>
-                        <option value="WARN">WARN</option>
-                        <option value="ERROR">ERROR</option>
+                        <option value=""><fmt:message key="label.by.level"/></option>
+                        <option value="INFO"><fmt:message key="label.info"/></option>
+                        <option value="WARN"><fmt:message key="label.warn"/></option>
+                        <option value="ERROR"><fmt:message key="label.error"/></option>
                     </select>
                 </li>
                 <li id="adv_search_domain_li" style="display: none;">
