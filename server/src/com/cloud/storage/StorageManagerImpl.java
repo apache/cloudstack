@@ -161,9 +161,9 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachine.Type;
-import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -2437,6 +2437,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             } else if (state == Volume.State.Allocated) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Creating volume " + vol + " for the first time.");
+                }
+                recreateVols.add(vol);
+            } else if(state == Volume.State.Creating && vol.isRecreatable()) { 
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Re-creating volume " + vol + " as it was left with Creating state");
                 }
                 recreateVols.add(vol);
             } else {
