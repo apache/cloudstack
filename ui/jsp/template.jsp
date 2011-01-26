@@ -1,21 +1,16 @@
-<%@ page import="java.util.*" %>
-
-<%@ page import="com.cloud.utils.*" %>
-
-<%
-    Locale browserLocale = request.getLocale();
-    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
-%>
-
-
-
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
+<fmt:setBundle basename="resources/messages"/>
 
 <!-- template detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
         <img src="images/title_templatesicon.gif"/></div>
     <h1>
-        Template
+        <fmt:message key="label.template"/>
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -25,7 +20,7 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on">
-            <%=t.t("Details")%></div>
+            <fmt:message key="label.details"/></div>
     </div>    
     <div id="tab_content_details">
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
@@ -33,17 +28,17 @@
                 <div class="rightpanel_mainloader_animatedicon">
                 </div>
                 <p>
-                    Loading &hellip;</p>
+                    <fmt:message key="label.loading"/> &hellip;</p>
             </div>
         </div>   
         <div id="tab_container">
 	        <div class="grid_container">
 	        	<div class="grid_header">
 	            	<div id="grid_header_title" class="grid_header_title">Title</div>
-	                <div class="grid_actionbox" id="action_link"><p>Actions</p>
+	                <div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
 	                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                        <ul class="actionsdropdown_boxlist" id="action_list">
-	                            <li><%=t.t("no.available.actions")%></li>
+	                            <li><fmt:message key="label.no.actions"/></li>
 	                        </ul>
 	                    </div>
 	                </div>
@@ -52,13 +47,13 @@
 	                    <div class="gridheader_loader" id="Div1">
 	                    </div>
 	                    <p id="description">
-	                        Waiting &hellip;</p>
+	                        <fmt:message key="label.waiting"/> &hellip;</p>
 	                </div>   
 	            </div>
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("ID")%>:</div>
+	                        <fmt:message key="label.id"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="id">
@@ -68,7 +63,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Zone")%>:</div>
+	                        <fmt:message key="label.zone"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="zonename">
@@ -78,7 +73,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Name")%>:</div>
+	                        <fmt:message key="label.name"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="name">
@@ -90,7 +85,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Display.Text")%>:</div>
+	                        <fmt:message key="label.display.text"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="displaytext">
@@ -102,7 +97,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("hypervisor")%>:</div>
+	                        <fmt:message key="label.hypervisor"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="hypervisor">
@@ -112,7 +107,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        Type:</div>
+	                        <fmt:message key="label.type"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="templatetype">
@@ -122,7 +117,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Status")%>:</div>
+	                        <fmt:message key="label.status"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="status">
@@ -132,7 +127,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Size")%>:</div>
+	                        <fmt:message key="label.size"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="size">
@@ -142,49 +137,49 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Password.Enabled")%>:</div>
+	                        <fmt:message key="label.password.enabled"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="passwordenabled">                        
 	                    </div>
 	                    <select class="select" id="passwordenabled_edit" style="width: 202px; display: none;">
-	                        <option value="false">No</option>
-							<option value="true">Yes</option>
+	                        <option value="false"><fmt:message key="label.no"/></option>
+							<option value="true"><fmt:message key="label.yes"/></option>
 	                    </select>
 	                </div>
 	            </div>
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Public")%>:</div>
+	                        <fmt:message key="label.public"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="ispublic">                       
 	                    </div>
 	                    <select class="select" id="ispublic_edit" style="width: 202px; display: none;">
-	                        <option value="true">Yes</option>
-							<option value="false">No</option>
+	                        <option value="true"><fmt:message key="label.yes"/></option>
+							<option value="false"><fmt:message key="label.no"/></option>
 	                    </select>
 	                </div>
 	            </div>
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Featured")%>:</div>
+	                        <fmt:message key="label.featured"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="isfeatured">                        
 	                    </div>
 	                    <select class="select" id="isfeatured_edit" style="width: 202px; display: none;">
-	                        <option value="true">Yes</option>
-							<option value="false">No</option>
+	                        <option value="true"><fmt:message key="label.yes"/></option>
+							<option value="false"><fmt:message key="label.no"/></option>
 	                    </select>
 	                </div>
 	            </div>
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Cross.Zones")%>:</div>
+	                        <fmt:message key="label.cross.zones"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="crossZones">                        
@@ -194,7 +189,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("OS.Type")%>:</div>
+	                        <fmt:message key="label.os.type"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="ostypename">
@@ -206,7 +201,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Account")%>:</div>
+	                        <fmt:message key="label.account"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="account">
@@ -216,7 +211,7 @@
 				<div class="grid_rows odd">
 					<div class="grid_row_cell" style="width: 20%;">
 						<div class="row_celltitles">
-							<%=t.t("Domain")%>:</div>
+							<fmt:message key="label.domain"/>:</div>
 					</div>
 					<div class="grid_row_cell" style="width: 79%;">
 						<div class="row_celltitles" id="domain">
@@ -226,7 +221,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Created")%>:</div>
+	                        <fmt:message key="label.created"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="created">
@@ -235,8 +230,8 @@
 	            </div>            
 	        </div>
 	        <div class="grid_botactionpanel">
-	        	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
-	            <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
+	        	<div class="gridbot_buttons" id="save_button" style="display:none;"><fmt:message key="label.save"/></div>
+	            <div class="gridbot_buttons" id="cancel_button" style="display:none;"><fmt:message key="label.cancel"/></div>
 	        </div>
         </div>   
     </div>
@@ -250,7 +245,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt="Add Template" /></div>
             <div class="actionpanel_button_links">
-                Add Template
+                <fmt:message key="label.add.template"/>
             </div>
         </div>
     </div>
@@ -259,12 +254,12 @@
 
 <!-- Copy Template Dialog (begin) -->
 <div id="dialog_copy_template" title="Copy Template" style="display:none">
-	<p>Copy template <b id="copy_template_name_text">XXX</b> from zone <b id="copy_template_source_zone_text">XXX</b> to</p>
+	<p><fmt:message key="message.copy.template"/></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form3">
 			<ol>				
 				<li>
-                    <label>Zone:</label>
+                    <label><fmt:message key="label.zone"/>:</label>
                     <select class="select" id="copy_template_zone">  
                         <option value=""></option>                      
                     </select>
@@ -278,33 +273,33 @@
 
 <!-- Create VM from template (begin) -->
 <div id="dialog_create_vm_from_template" title="Create VM from template" style="display:none">
-	<p>Create VM from template <b id="p_name">xxx</b></p>
+	<p><fmt:message key="message.create.template"/></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form5">
 			<ol>			   
 				<li>
-					<label>Name:</label>
+					<label><fmt:message key="label.name"/>:</label>
 					<input class="text" type="text" id="name"/>
 					<div id="name_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
 				</li>
 				<li>
-					<label>Group:</label>
+					<label><fmt:message key="label.group"/>:</label>
 					<input class="text" type="text" id="group"/>
 					<div id="group_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
 				</li>				
 				<li>
-                    <label>Service Offering:</label>
+                    <label><fmt:message key="label.service.offering"/>:</label>
                     <select class="select" id="service_offering">
                     </select>
                 </li>					
 				<li>
-                    <label>Disk Offering:</label>
+                    <label><fmt:message key="label.disk.offering"/>:</label>
                     <select class="select" id="disk_offering">
                     </select>
                 </li>	  
                 <li id="size_container">
                     <label>
-                        Size:</label>
+                        <fmt:message key="label.size"/>:</label>
                     <input class="text" type="text" id="size" />
                     <div id="size_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                     </div>
@@ -317,37 +312,37 @@
 
 <!-- Add Template Dialog (begin) -->
 <div id="dialog_add_template" title="Add Template" style="display:none">
-	<p>Please enter the following data to create your new template</p>
+	<p><fmt:message key="message.add.template"/></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form_acquire">
 			<ol>
 				<li>
-					<label for="user_name">Name:</label>
+					<label for="user_name"><fmt:message key="label.name"/>:</label>
 					<input class="text" type="text" name="add_template_name" id="add_template_name" style="width:250px"/>
 					<div id="add_template_name_errormsg" class="dialog_formcontent_errormsg" style="display:none; margin-left:0;"></div>
 				</li>
 				<li>
-					<label for="user_name">Display Text:</label>
+					<label for="user_name"><fmt:message key="label.display.text"/>:</label>
 					<input class="text" type="text" name="add_template_display_text" id="add_template_display_text" style="width:250px"/>
 					<div id="add_template_display_text_errormsg" class="dialog_formcontent_errormsg" style="display:none; margin-left:0"></div>
 				</li>
 				<li>
-					<label for="user_name">URL:</label>
+					<label for="user_name"><fmt:message key="label.url"/>:</label>
 					<input class="text" type="text" name="add_template_url" id="add_template_url" style="width:250px"/>
 					<div id="add_template_url_errormsg" class="dialog_formcontent_errormsg" style="display:none; margin-left:0"></div>
 				</li>
 				<li>
-                    <label>Zone:</label>
+                    <label><fmt:message key="label.zone"/>:</label>
                     <select class="select" id="add_template_zone">
                     </select>
                 </li>					
 				<li>
-					<label for="add_template_os_type">OS Type:</label>
+					<label for="add_template_os_type"><fmt:message key="label.os.type"/>:</label>
 					<select class="select" name="add_template_os_type" id="add_template_os_type">
 					</select>
 				</li>					
 				<li>
-					<label for="add_template_hypervisor">Hypervisor:</label>
+					<label for="add_template_hypervisor"><fmt:message key="label.hypervisor"/>:</label>
 					<select class="select" name="add_template_hypervisor" id="add_template_hypervisor">		
 					    <!--  			
 						<option value='XenServer'>Citrix XenServer</option>
@@ -357,29 +352,29 @@
 					</select>
 				</li>
 				<li>
-					<label for="add_template_format">Format:</label>
+					<label for="add_template_format"><fmt:message key="label.format"/>:</label>
 					<select class="select" name="add_template_format" id="add_template_format">
 					</select>
 				</li>	
 				<li>
-					<label>Password Enabled?:</label>
+					<label><fmt:message key="label.password.enabled"/>?:</label>
 					<select class="select" id="add_template_password">						
-						<option value="false">No</option>
-						<option value="true">Yes</option>
+						<option value="false"><fmt:message key="label.no"/></option>
+						<option value="true"><fmt:message key="label.yes"/></option>
 					</select>
 				</li>
 				<li id="add_template_public_container" style="display:none">
-					<label>Public?:</label>
+					<label><fmt:message key="label.public"/>?:</label>
 					<select class="select" id="add_template_public">
-						<option value="false">No</option>
-						<option value="true">Yes</option>						
+						<option value="false"><fmt:message key="label.no"/></option>
+						<option value="true"><fmt:message key="label.yes"/></option>						
 					</select>
 				</li>				
 				<li id="add_template_featured_container" style="display:none">
-					<label>Featured?:</label>
+					<label><fmt:message key="label.featured"/>?:</label>
 					<select class="select" id="add_template_featured">
-					    <option value="false">No</option>
-						<option value="true">Yes</option>						
+					    <option value="false"><fmt:message key="label.no"/></option>
+						<option value="true"><fmt:message key="label.yes"/></option>						
 					</select>
 				</li>
 			</ol>
@@ -394,7 +389,7 @@
         <div class="ui_dialog_loader">
         </div>
         <p>
-            Generating URL....</p>
+            <fmt:message key="label.generating.url"/>....</p>
     </div>
     <!--Confirmation msg box-->
     <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->

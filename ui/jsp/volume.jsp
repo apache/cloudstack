@@ -1,14 +1,9 @@
-<%@ page import="java.util.*" %>
-
-<%@ page import="com.cloud.utils.*" %>
-
-<%
-    Locale browserLocale = request.getLocale();
-    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
-%>
-
-
-
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
+<fmt:setBundle basename="resources/messages"/>
 
 <!-- volume detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
@@ -17,7 +12,7 @@
         <img src="images/title_volumeicons.gif" /></div>
     
     <h1>
-        Volume
+        <fmt:message key="label.volume"/>
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -27,26 +22,26 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
-            <%=t.t("Details")%></div>
+            <fmt:message key="label.details"/></div>
         <div class="content_tabs off" id="tab_snapshot">
-            <%=t.t("Snapshot")%></div>
+            <fmt:message key="label.snapshots"/></div>
     </div>
     <!--Details tab (start)-->
     <div id="tab_content_details">
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
               <div class="rightpanel_mainloaderbox">
                    <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
+                   <p><fmt:message key="label.loading"/> &hellip;</p>    
               </div>               
         </div>
         <div id="tab_container">
 	        <div class="grid_container">
 	        	<div class="grid_header">
 	            	<div class="grid_header_title">Title</div>
-	                    <div class="grid_actionbox" id="action_link"><p>Actions</p>
+	                    <div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
 	                        <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                            <ul class="actionsdropdown_boxlist" id="action_list">
-	                                <li><%=t.t("no.available.actions")%></li>
+	                                <li><fmt:message key="label.no.actions"/></li>
 	                            </ul>
 	                        </div>
 	                    </div>
@@ -61,7 +56,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("ID")%>:</div>
+	                        <fmt:message key="label.id"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="id">
@@ -71,7 +66,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Name")%>:</div>
+	                        <fmt:message key="label.name"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="name">
@@ -81,7 +76,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Type")%>:</div>
+	                        <fmt:message key="label.type"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="type">
@@ -91,7 +86,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Zone")%>:</div>
+	                        <fmt:message key="label.zone"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="zonename">
@@ -101,7 +96,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Instance.Name")%>:</div>
+	                        <fmt:message key="label.instance.name"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="vm_name">
@@ -111,7 +106,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Device.ID")%>:</div>
+	                        <fmt:message key="label.device.id"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="device_id">
@@ -121,7 +116,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Size")%>:</div>
+	                        <fmt:message key="label.size"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="size">
@@ -131,7 +126,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("State")%>:</div>
+	                        <fmt:message key="label.state"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="state">
@@ -141,7 +136,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Created")%>:</div>
+	                        <fmt:message key="label.created"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="created">
@@ -151,7 +146,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Storage")%>:</div>
+	                        <fmt:message key="label.storage"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="storage">
@@ -161,7 +156,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Account")%>:</div>
+	                        <fmt:message key="label.account"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="account">
@@ -171,7 +166,7 @@
 				<div class="grid_rows even">
 					<div class="grid_row_cell" style="width: 20%;">
 						<div class="row_celltitles">
-							Domain:</div>
+							<fmt:message key="label.domain"/>:</div>
 					</div>
 					<div class="grid_row_cell" style="width: 79%;">
 						<div class="row_celltitles" id="domain">
@@ -187,7 +182,7 @@
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
               <div class="rightpanel_mainloaderbox">
                    <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
+                   <p><fmt:message key="label.loading"/> &hellip;</p>    
               </div>               
         </div>
         <div id="tab_container">
@@ -203,7 +198,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt="Add Volume" /></div>
             <div class="actionpanel_button_links">
-                Add Volume
+                <fmt:message key="label.add.volume"/>
             </div>
         </div>
     </div>
@@ -212,47 +207,44 @@
 
 <!-- Create Template Dialog -->
 <div id="dialog_create_template" title="Create Template" style="display: none">
-    <p>
-        Please specify the following information before creating a template of your disk
-        volume: <b><span id="volume_name"></span></b>. Creating a template could take up
-        to several hours depending on the size of your disk volume.</p>
+    <p><fmt:message key="message.create.template.volume"/></p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
             <li>
                 <label for="user_name">
-                    Name:</label>
+                    <fmt:message key="label.name"/>:</label>
                 <input class="text" type="text" name="create_template_name" id="create_template_name" />
                 <div id="create_template_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="user_name">
-                    Display Text:</label>
+                    <fmt:message key="label.display.text"/>:</label>
                 <input class="text" type="text" name="create_template_desc" id="create_template_desc" />
                 <div id="create_template_desc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="create_template_os_type">
-                    OS Type:</label>
+                    <fmt:message key="label.os.type"/>:</label>
                 <select class="select" name="create_template_os_type" id="create_template_os_type">
                 </select>
             </li>
             <li id="create_template_public_container" style="display:none">
                 <label for="create_template_public">
-                    Public:</label>
+                    <fmt:message key="label.public"/>:</label>
                 <select class="select" name="create_template_public" id="create_template_public">
-                    <option value="false">No</option>
-                    <option value="true">Yes</option>
+                    <option value="false"><fmt:message key="label.no"/></option>
+                    <option value="true"><fmt:message key="label.yes"/></option>
                 </select>
             </li>
             <li>
                 <label for="user_name">
-                    Password Enabled?:</label>
+                    <fmt:message key="label.password.enabled"/>?:</label>
                 <select class="select" name="create_template_password" id="create_template_password">
-                    <option value="false">No</option>
-                    <option value="true">Yes</option>
+                    <option value="false"><fmt:message key="label.no"/></option>
+                    <option value="true"><fmt:message key="label.yes"/></option>
                 </select>
             </li>
         </ol>
@@ -267,7 +259,7 @@
       <div class="ui_dialog_loader">
       </div>
       <p>
-          Generating URL....</p>
+          <fmt:message key="label.generating.url"/>....</p>
   </div>
   <!--Confirmation msg box-->
   <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
@@ -282,8 +274,7 @@
 
 <!-- Create Snapshot Dialog (begin) -->
 <div id="dialog_create_snapshot" title="Create Snapshot" style="display: none">
-    <p>
-        Please confirm you want to create snapshot for this volume.</p>
+    <p><fmt:message key="message.create.snapshot"/></p>
 </div>
 <!-- Create Snapshot Dialog (end) -->
 
@@ -291,18 +282,18 @@
 <div id="dialog_recurring_snapshot" title="Recurring Snapshot" style="display:none;">
     <div class="dialog_snapshotcontainer">
         <div class="dialog_snapshotleft" id="dialog_snapshotleft" >
-			<p>Your snapshot schedule is currently set to:<br/><br/></p>
+			<p><fmt:message key="message.snapshot.schedule"/>:<br/><br/></p>
         </div>
         <div class="dialog_snapshotright" id="dialog_snapshotright">
             <div class="dialog_snapshots_editcontent" style="display:block;">
                 <div class="dialog_snapshots_editcontent_title">
-					<div class="dialog_snapshotleft_label" style="width:120px">&nbsp;Snapshot Schedule: &nbsp;&nbsp;</div>
+					<div class="dialog_snapshotleft_label" style="width:120px">&nbsp;<fmt:message key="label.snapshot.schedule"/>: &nbsp;&nbsp;</div>
                     <select class="snapselect" id="snapshot_interval">
-						<option value="-1">Disabled</option>
-						<option value="0">Hourly</option>
-						<option value="1">Daily</option>
-						<option value="2">Weekly</option>
-						<option value="3">Monthly</option>
+						<option value="-1"><fmt:message key="label.disabled"/></option>
+						<option value="0"><fmt:message key="label.hourly"/></option>
+						<option value="1"><fmt:message key="label.daily"/></option>
+						<option value="2"><fmt:message key="label.weekly"/></option>
+						<option value="3"><fmt:message key="label.monthly"/></option>
 					</select>
                 </div>
                 <div class="dialog_formcontent" id="snapshot_form">
@@ -310,7 +301,7 @@
                     <ol>
                         <li>
                             <label for="add_volume_name" style="width:75px">
-                                Time:</label>
+                                <fmt:message key="label.time"/>:</label>
                             <span id="edit_hardcoding_hour" style="display:none">00</span>
                             <span id="edit_hour_container">
                             	
@@ -397,7 +388,7 @@
                                 </select>                                
                             </span>
 							
-							<span id="edit_past_the_hour" style="display:none"> Minute(s) Past the Hour</span>
+							<span id="edit_past_the_hour" style="display:none"> <fmt:message key="label.minute.past.hour"/></span>
                             
                             <span id="edit_meridiem_container">
                                 <select class="snapselect"id="edit_meridiem">                                                                
@@ -408,20 +399,20 @@
                         </li>                     
                         <li style="margin-top:10px;" id="edit_day_of_week_container">
                             <label for="filter" style="width:75px">
-                                Day of Week:</label>
+                                <fmt:message key="label.day.of.week"/>:</label>
                             <select class="snapselect"id="edit_day_of_week">
-                                <option value="1">Sunday</option>
-                                <option value="2">Monday</option>
-                                <option value="3">Tuesday</option>
-                                <option value="4">Wednesday</option>
-                                <option value="5">Thursday</option>
-                                <option value="6">Friday</option>
-                                <option value="7">Saturday</option>                                
+                                <option value="1"><fmt:message key="label.sunday"/></option>
+                                <option value="2"><fmt:message key="label.monday"/></option>
+                                <option value="3"><fmt:message key="label.tuesday"/></option>
+                                <option value="4"><fmt:message key="label.wednesday"/></option>
+                                <option value="5"><fmt:message key="label.thursday"/></option>
+                                <option value="6"><fmt:message key="label.friday"/></option>
+                                <option value="7"><fmt:message key="label.saturday"/></option>                                
                             </select>                            
                         </li>
                         <li style="margin-top:10px;" id="edit_day_of_month_container">
                             <label for="filter" style="width:75px">
-                                Day of Month:</label>
+                                <fmt:message key="label.day.of.month"/>:</label>
                             <select class="snapselect" id="edit_day_of_month">
                                 <option value="1">1</option>
                                 <option value="2">2</option>
@@ -455,7 +446,7 @@
                         </li>
                         <li style="margin-top:10px;">
                             <label for="edit_timezone" style="width:75px">
-                                Time Zone:</label>                             
+                                <fmt:message key="label.time.zone"/>:</label>                             
                             <select class="snapselect" id="edit_timezone" style="width:240px">
 								<option value='Etc/GMT+12'>[UTC-12:00] GMT-12:00</option>
 								<option value='Etc/GMT+11'>[UTC-11:00] GMT-11:00</option>
@@ -520,9 +511,9 @@
                         </li>
 						<li style="margin-top:10px;">
                             <label for="edit_max" style="width:75px">
-                                Keep:</label>
+                                <fmt:message key="label.keep"/>:</label>
                             <input class="text" style="width: 68px;" type="text" id="edit_max"/>
-                            <span>Snapshot(s)</span>
+                            <span><fmt:message key="label.snapshot.s"/></span>
                             <div id="edit_max_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>                             
                         </li>  						
                     </ol>
@@ -536,35 +527,34 @@
 
 <!-- Add Volume Dialog (begin) -->
 <div id="dialog_add_volume" title="Add Volume" style="display: none">
-    <p>
-        Please fill in the following data to add a new volume.</p>
+    <p><fmt:message key="message.add.volume"/></p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form2">
         <ol>
             <li>
                 <label for="add_volume_name">
-                    Name:</label>
+                    <fmt:message key="label.name"/>:</label>
                 <input class="text" type="text" name="add_volume_name" id="add_volume_name" />
                 <div id="add_volume_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="volume_zone">
-                    Availability Zone:</label>
+                    <fmt:message key="label.availability.zone"/>:</label>
                 <select class="select" name="volume_zone" id="volume_zone">
                     <option value="default">Please wait...</option>
                 </select>
             </li>
             <li>
                 <label for="volume_diskoffering">
-                    Disk Offering:</label>
+                    <fmt:message key="label.disk.offering"/>:</label>
                 <select class="select" name="volume_diskoffering" id="volume_diskoffering">
-                    <option value="default">Please wait...</option>
+                    <option value="default"><fmt:message key="label.please.wait"/>...</option>
                 </select>
             </li>
             <li id="size_container">
                 <label>
-                    Disk Size (in GB):</label>
+                    <fmt:message key="label.disk.size.gb"/>:</label>
                 <input class="text" type="text" id="size" />
                 <div id="size_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
@@ -577,16 +567,13 @@
 
 <!-- Attach Volume Dialog (begin) -->
 <div id="dialog_attach_volume" title="Attach Volume" style="display: none">
-    <p>
-        Please fill in the following data to attach a new volume. If you are attaching a
-        disk volume to a Windows based virtual machine, you will need to reboot the instance
-        to see the attached disk.</p>
+    <p><fmt:message key="message.attach.volume"/></p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form3">
         <ol>
             <li>
                 <label for="volume_vm">
-                    Virtual Machine:</label>
+                    <fmt:message key="label.instance"/>:</label>
                 <select class="select" name="volume_vm" id="volume_vm">
                 </select>
                 <div id="volume_vm_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
@@ -602,7 +589,7 @@
     <div class="grid_header">
         <div class="grid_header_title" id="grid_header_title">
         </div>
-        <div class="grid_actionbox" id="snapshot_action_link"><p>Actions</p>
+        <div class="grid_actionbox" id="snapshot_action_link"><p><fmt:message key="label.actions"/></p>
             <div class="grid_actionsdropdown_box" id="snapshot_action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
@@ -612,7 +599,7 @@
             <div class="gridheader_loader" id="icon">
             </div>
             <p id="description">
-                Waiting &hellip;
+                <fmt:message key="label.waiting"/> &hellip;
             </p>
         </div>       
     </div>
@@ -627,7 +614,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                ID:</div>
+                <fmt:message key="label.id"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="id">
@@ -637,7 +624,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Snapshot Name:</div>
+                <fmt:message key="label.snapshot.name"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="name">
@@ -647,7 +634,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Volume Name:</div>
+                <fmt:message key="label.volume.name"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="volumename">
@@ -657,7 +644,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Interval Type:</div>
+                <fmt:message key="label.interval.type"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="intervaltype">
@@ -667,7 +654,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Created:</div>
+                <fmt:message key="label.created"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="created">
@@ -677,7 +664,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Account:</div>
+                <fmt:message key="label.account"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="account">
@@ -687,7 +674,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Domain:</div>
+                <fmt:message key="label.domain"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="domain">
@@ -703,7 +690,7 @@
         <form action="#" method="post" id="form5">
         <ol>
             <li>
-                <label>Name:</label>
+                <label><fmt:message key="label.name"/>:</label>
                 <input class="text" type="text" id="name" />
                 <div id="name_errormsg" class="dialog_formcontent_errormsg" style="display: none;"></div>
             </li>           
@@ -719,40 +706,40 @@
 		<form action="#" method="post" id="form6">
 			<ol>
 				<li>
-					<label>Name:</label>
+					<label><fmt:message key="label.name"/>:</label>
 					<input class="text" type="text" id="name" style="width:250px"/>
 					<div id="name_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
 				</li>
 				<li>
-					<label>Display Text:</label>
+					<label><fmt:message key="label.display.text"/>:</label>
 					<input class="text" type="text" id="display_text" style="width:250px"/>
 					<div id="display_text_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
 				</li>				
 				<li>
-					<label>OS Type:</label>
+					<label><fmt:message key="label.os.type"/>:</label>
 					<select class="select" id="os_type">
 					</select>
 				</li>				
 				<li id="create_template_public_container" style="display:none">
 	                <label for="ispublic">
-	                    Public:</label>
+	                    <fmt:message key="label.public"/>:</label>
 	                <select class="select" name="ispublic" id="ispublic">
-	                    <option value="false">No</option>
-	                    <option value="true">Yes</option>
+	                    <option value="false"><fmt:message key="label.no"/></option>
+	                    <option value="true"><fmt:message key="label.yes"/></option>
 	                </select>
 	            </li>						
 				<li>
-					<label>Password Enabled?:</label>
+					<label><fmt:message key="label.password.enabled"/>?:</label>
 					<select class="select" id="password">						
-						<option value="false">No</option>
-						<option value="true">Yes</option>
+						<option value="false"><fmt:message key="label.no"/></option>
+						<option value="true"><fmt:message key="label.yes"/></option>
 					</select>
 				</li>
 				<li id="isfeatured_container" style="display:none">
-					<label>Featured?:</label>
+					<label><fmt:message key="label.featured"/>?:</label>
 					<select class="select" id="isfeatured">
-					    <option value="false">No</option>
-						<option value="true">Yes</option>						
+					    <option value="false"><fmt:message key="label.no"/></option>
+						<option value="true"><fmt:message key="label.yes"/></option>						
 					</select>
 				</li>		
 			</ol>
