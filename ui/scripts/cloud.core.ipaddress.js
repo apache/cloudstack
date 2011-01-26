@@ -141,9 +141,9 @@ function afterLoadIpJSP() {
 	    var protocol = $createPortRangeRow.find("#protocol").val();
 	   	    
 	    var array1 = [];
-        array1.push("&ipaddress="+ipAddress);    
-        array1.push("&endPort="+endPort);
+        array1.push("&ipaddress="+ipAddress);           
         array1.push("&startPort="+startPort);
+        array1.push("&endPort="+endPort);
         array1.push("&protocol="+protocol);
                 
         $.ajax({
@@ -167,7 +167,7 @@ function afterLoadIpJSP() {
 			                        $("body").stopTime(timerKey);				                        
 			                        $spinningWheel.hide();  			                                 		                       
 			                        if (result.jobstatus == 1) { // Succeeded 				                            
-	                                    var item = json.queryasyncjobresultresponse.jobresult.portforwardingrule;		       	        	
+	                                    var item = json.queryasyncjobresultresponse.jobresult.ipforwardingrule;		       	        	
 	                                    portRangeJsonToTemplate(item, $template);
 	                                    $spinningWheel.hide();   
 	                                    refreshCreatePortRangeRow();			 
@@ -238,9 +238,9 @@ function afterLoadIpJSP() {
 	    var virtualMachineId = $createPortForwardingRow.find("#vm").val();		   
 	    		    
 	    var array1 = [];
-        array1.push("&ipaddress="+ipAddress);    
-        array1.push("&privateport="+privatePort);
+        array1.push("&ipaddress="+ipAddress);           
         array1.push("&publicport="+publicPort);
+        array1.push("&privateport="+privatePort);
         array1.push("&protocol="+protocol);
         array1.push("&virtualmachineid=" + virtualMachineId);
         

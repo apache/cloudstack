@@ -288,7 +288,7 @@
 	            </div>
 	            <div class="grid_rows even" id="create_port_forwarding_row">
 	                <div class="grid_row_cell" style="width: 15%;">
-	                    <input id="end_port" class="text" style="width: 70%;" type="text" />
+	                    <input id="public_port" class="text" style="width: 70%;" type="text" />
 	                    <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 15%;">
