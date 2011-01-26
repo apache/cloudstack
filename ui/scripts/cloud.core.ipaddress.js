@@ -1098,41 +1098,43 @@ var ipActionMap = {
         }
     },
     "Enable Static NAT": {                      
-        isAsyncJob: true,
-        asyncJobResponse: "createipforwardingruleresponse",
+        isAsyncJob: false,        
         dialogBeforeActionFn: doEnableStaticNAT,
         inProcessText: "Enabling Static NAT....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {              
-            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#ipaddress").text()) {    
-                var ipObj = $midmenuItem1.data("jsonObj");                 
-                ipObj.isstaticnat = true;   
-                setBooleanReadField(ipObj.isstaticnat, $("#right_panel_content #tab_content_details").find("#static_nat"));     
-             
-                var item = json.queryasyncjobresultresponse.jobresult.portforwardingrule;        
-                var $thisTab =$("#right_panel_content #tab_content_details");
-                $thisTab.find("#vm_of_static_nat").text(getVmName(item.virtualmachinename, item.virtualmachinedisplayname));
-	            $thisTab.find("#vm_of_static_nat_container").show();	 
-    	        
-	            ipToRightPanel($midmenuItem1);   
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {  //id is ipaddress         
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#ipaddress").text()) {  //id is ipaddress          
+                 $.ajax({
+                    data: createURL("command=listPublicIpAddresses&ipaddress="+id), //id is ipaddress  
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {  
+                        var items = json.listpublicipaddressesresponse.publicipaddress;
+                        if(items != null && items.length > 0) {                                              
+                            ipToMidmenu(items[0], $midmenuItem1); 
+                        }
+                    }
+                });                
 	        }   
         }        
     },
     "Disable Static NAT": {                      
         isAsyncJob: true,
-        asyncJobResponse: "deleteipforwardingruleresponse",
+        asyncJobResponse: "disablestaticnatresponse",
         dialogBeforeActionFn: doDisableStaticNAT,
         inProcessText: "Disabling Static NAT....",
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {          
-            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#ipaddress").text()) {    
-                var ipObj = $midmenuItem1.data("jsonObj");               
-                ipObj.isstaticnat = false;   
-                setBooleanReadField(ipObj.isstaticnat, $("#right_panel_content #tab_content_details").find("#static_nat"));              
-                
-                var $thisTab = $("#right_panel_content #tab_content_details");
-                $thisTab.find("#vm_of_static_nat").text("");
-                $thisTab.find("#vm_of_static_nat_container").hide();   
-                
-                ipToRightPanel($midmenuItem1);  
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {  //id is ipaddress        
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#ipaddress").text()) {  //id is ipaddress  
+                $.ajax({
+                    data: createURL("command=listPublicIpAddresses&ipaddress="+id), //id is ipaddress  
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {  
+                        var items = json.listpublicipaddressesresponse.publicipaddress;
+                        if(items != null && items.length > 0) {                                              
+                            ipToMidmenu(items[0], $midmenuItem1); 
+                        }
+                    }
+                });         
             }      
         }        
     }
@@ -1172,7 +1174,7 @@ function doEnableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {
 		
 		    $thisDialog.dialog("close");	
 		    
-			var apiCommand = "command=createIpForwardingRule&ipaddress="+ipaddress+"&virtualmachineid="+vmId;
+			var apiCommand = "command=enableStaticNat&ipaddress="+ipaddress+"&virtualmachineid="+vmId;
             doActionToTab(ipaddress, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
 		}, 
 		"Cancel": function() { 
@@ -1188,25 +1190,10 @@ function doDisableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {
     $("#dialog_info")
     .text("Please confirm you want to disable static NAT")    
 	.dialog('option', 'buttons', { 						
-		"Confirm": function() { 
-		    var $thisDialog = $(this);
-		
-		    var ipForwardingRuleId;		    
-		    $.ajax({
-		        data: createURL("command=listIpForwardingRules&ipaddress="+ipaddress),		       
-		        dataType: "json",		        
-		        async: false,
-		        success: function(json) {
-		            var items = json.listipforwardingrulesresponse.ipforwardingrule;
-		            if(items != null && items.length > 0) {
-		                ipForwardingRuleId = items[0].id;
-		            }		            
-		        }	        	    
-		    });			       
-				
-		    $thisDialog.dialog("close");	
+		"Confirm": function() { 		    
+		    $(this).dialog("close");	
 		    
-			var apiCommand = "command=deleteIpForwardingRule&id="+ipForwardingRuleId;
+			var apiCommand = "command=disableStaticNat&ipaddress="+ipaddress;
             doActionToTab(ipaddress, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
 		}, 
 		"Cancel": function() { 
@@ -1295,8 +1282,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
 											$(this).remove();													
 										});									
 									} else if (result.jobstatus == 2) { // Failed		
-									    $("#dialog_error").text("Revoking port forwarding rule failed.").dialog("open");								
-										//$("#dialog_error").text(fromdb(???)).dialog("open");
+									    $("#dialog_error").text("Revoking port forwarding rule failed.").dialog("open");											
 									}							                    
 		                        }
 	                        },
