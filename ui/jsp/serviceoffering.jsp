@@ -1,12 +1,9 @@
-<%@ page import="java.util.*" %>
-
-<%@ page import="com.cloud.utils.*" %>
-
-<%
-    Locale browserLocale = request.getLocale();
-    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
-%>
-
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
+<fmt:setBundle basename="resources/messages"/>
 
 <div class="main_title" id="right_panel_header">
     
@@ -14,7 +11,7 @@
         <img src="images/title_serviceofferingicon.gif"/></div>
     
     <h1>
-        Service Offering
+        <fmt:message key="label.service.offering"/>
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -24,7 +21,7 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on">
-            <%=t.t("details")%></div>
+            <fmt:message key="label.details"/></div>
     </div>
     <div id="tab_content_details">
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
@@ -32,17 +29,17 @@
                 <div class="rightpanel_mainloader_animatedicon">
                 </div>
                 <p>
-                    Loading &hellip;</p>
+                    <fmt:message key="label.loading"/> &hellip;</p>
             </div>
         </div>
         <div id="tab_container">   
 	        <div class="grid_container">
 	        	<div class="grid_header">
 	            	<div id="grid_header_title" class="grid_header_title">(title)</div>
-	                <div id="action_link" class="grid_actionbox"><p>Actions</p>
+	                <div id="action_link" class="grid_actionbox"><p><fmt:message key="label.actions"/></p>
 	                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                        <ul class="actionsdropdown_boxlist" id="action_list">
-	                        	<li><%=t.t("no.available.actions")%></li>
+	                        	<li><fmt:message key="label.no.actions"/></li>
 	                        </ul>
 	                    </div>
 	                </div>
@@ -51,13 +48,13 @@
 	                    <div class="gridheader_loader" id="Div1">
 	                    </div>
 	                    <p id="description">
-	                        Waiting &hellip;</p>
+	                        <fmt:message key="label.waiting"/> &hellip;</p>
 	                </div>
 	            </div>
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("ID")%>:</div>
+	                        <fmt:message key="label.id"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="id">
@@ -67,7 +64,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("name")%>:</div>
+	                        <fmt:message key="label.name"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="name">
@@ -79,7 +76,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("display.text")%>:</div>
+	                        <fmt:message key="label.display.text"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="displaytext">
@@ -91,7 +88,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("storage.type")%>:</div>
+	                        <fmt:message key="label.storage.type"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="storagetype">
@@ -101,7 +98,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("CPU")%>:</div>
+	                        <fmt:message key="label.cpu"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="cpu">
@@ -111,7 +108,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("memory")%>:</div>
+	                        <fmt:message key="label.memory"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="memory">
@@ -121,21 +118,21 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("offer.HA")%>:</div>
+	                        <fmt:message key="label.offer.ha"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="offerha">
 	                    </div>
 	                    <select class="select" id="offerha_edit" style="width: 202px; display: none;">
-	                        <option value="false">No</option>
-							<option value="true">Yes</option>
+	                        <option value="false"><fmt:message key="label.no"/></option>
+							<option value="true"><fmt:message key="label.yes"/></option>
 	                    </select>
 	                </div>
 	            </div>
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("tags")%>:</div>
+	                        <fmt:message key="label.tags"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="tags">
@@ -148,7 +145,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("domain")%>:</div>
+	                        <fmt:message key="label.domain"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="domain">
@@ -161,7 +158,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("created")%>:</div>
+	                        <fmt:message key="label.created"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="created">
@@ -170,8 +167,8 @@
 	            </div>
 	        </div>        
 	        <div class="grid_botactionpanel">
-	        	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
-	            <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
+	        	<div class="gridbot_buttons" id="save_button" style="display:none;"><fmt:message key="label.save"/></div>
+	            <div class="gridbot_buttons" id="cancel_button" style="display:none;"><fmt:message key="label.cancel"/></div>
 	        </div>  
        </div>         
     </div>
@@ -184,7 +181,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt="Add Service Offering" /></div>
             <div class="actionpanel_button_links">
-                Add Service Offering
+                <fmt:message key="label.add.service.offering"/>
             </div>
         </div>
     </div>
@@ -193,67 +190,67 @@
 
 <!-- Add Service Offering Dialog -->
 <div id="dialog_add_service" title="Add Service Offering" style="display:none">
-	<p>Please fill in the following data to add a new Service Offering.</p>
+	<p><fmt:message key="message.add.service.offering"/></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form_acquire">
 			<ol>
 				<li>
-					<label for="user_name">Name:</label>
+					<label for="user_name"><fmt:message key="label.name"/>:</label>
 					<input class="text" type="text" name="add_service_name" id="add_service_name"/>
 					<div id="add_service_name_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
 				<li>
-					<label for="user_name">Display text:</label>
+					<label for="user_name"><fmt:message key="label.display.text"/>:</label>
 					<input class="text" type="text" name="add_service_display" id="add_service_display"/>
 					<div id="add_service_display_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
 				<li>
-					<label for="add_service_storagetype">Storage type:</label>
+					<label for="add_service_storagetype"><fmt:message key="label.storage.type"/>:</label>
 					<select class="select" name="add_service_storagetype" id="add_service_storagetype">
-					    <option value="shared">shared</option>
-						<option value="local">local</option>						
+					    <option value="shared"><fmt:message key="label.shared"/></option>
+						<option value="local"><fmt:message key="label.local"/></option>						
 					</select>
 				</li>		
 				<li>
-					<label for="user_name"># of CPU cores:</label>
+					<label for="user_name"><fmt:message key="label.num.cpu.cores"/>:</label>
 					<input class="text" type="text" name="add_service_cpucore" id="add_service_cpucore"/>
 					<div id="add_service_cpucore_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
 				<li>
-					<label for="user_name">CPU (in MHz):</label>
+					<label for="user_name"><fmt:message key="label.cpu.mhz"/>:</label>
 					<input class="text" type="text" name="add_service_cpu" id="add_service_cpu"/>
 					<div id="add_service_cpu_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>
 				<li>
-					<label for="user_name">Memory (in MB):</label>
+					<label for="user_name"><fmt:message key="label.memory.mb"/>:</label>
 					<input class="text" type="text" name="add_service_memory" id="add_service_memory"/>
 					<div id="add_service_memory_errormsg" class="dialog_formcontent_errormsg" style="display:none;" ></div>
 				</li>				
 				<li id="add_service_offerha_container">
-					<label>Offer HA?</label>
+					<label><fmt:message key="label.offer.ha"/>?</label>
 					<select class="select" id="add_service_offerha">						
-						<option value="false">No</option>
-						<option value="true">Yes</option>
+						<option value="false"><fmt:message key="label.no"/></option>
+						<option value="true"><fmt:message key="label.yes"/></option>
 					</select>
 				</li>	
 				<li id="add_service_tags_container">
                     <label for="add_service_tags">
-                        Tags:</label>
+                        <fmt:message key="label.tags"/>:</label>
                     <input class="text" type="text" id="add_service_tags" />
                     <div id="add_service_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                     </div>
                 </li>	
                 <li>
 				    <label>
-				        Public?:</label>
+				        <fmt:message key="label.public"/>?:</label>
 				    <select class="select" id="public_dropdown">
-				        <option value="true">Yes</option>
-				        <option value="false">No</option>
+				        <option value="true"><fmt:message key="label.yes"/></option>
+				        <option value="false"><fmt:message key="label.no"/></option>
 				    </select>
 				</li>
 				<li id="domain_dropdown_container" style="display: none">
 				    <label>
-				        Domain:</label>
+				        <fmt:message key="label.domain"/>:</label>
 				    <select class="select" id="domain_dropdown">
 				    </select>
 				</li>    			

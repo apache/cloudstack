@@ -1,18 +1,16 @@
-<%@ page import="java.util.*" %>
-
-<%@ page import="com.cloud.utils.*" %>
-
-<%
-    Locale browserLocale = request.getLocale();
-    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
-%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
+<fmt:setBundle basename="resources/messages"/>
 
 <!-- snapshot detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
         <img src="images/title_snapshoticon.gif" /></div>
     <h1>
-        Snapshot
+        <fmt:message key="label.snapshot"/>
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -22,7 +20,7 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on">
-            <%=t.t("Details")%></div>
+            <fmt:message key="label.details"/></div>
     </div>    
     <div id="tab_content_details">  
         <div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
@@ -30,17 +28,17 @@
 	            <div class="rightpanel_mainloader_animatedicon">
 	            </div>
 	            <p>
-	                Loading &hellip;</p>
+	                <fmt:message key="label.loading"/> &hellip;</p>
 	        </div>
 	    </div>    
         <div id="tab_container">			
 	        <div class="grid_container">
 	        	<div class="grid_header">
 	            	<div class="grid_header_title">Title</div>
-	                   <div class="grid_actionbox" id="action_link"><p>Actions</p>
+	                   <div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
 	                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                        <ul class="actionsdropdown_boxlist" id="action_list">
-	                            <li><%=t.t("no.available.actions")%></li>
+	                            <li><fmt:message key="label.no.actions"/></li>
 	                        </ul>
 	                    </div>
 	                </div>
@@ -49,13 +47,13 @@
 	                    <div class="gridheader_loader" id="icon">
 	                    </div>
 	                    <p id="description">
-	                        Waiting &hellip;</p>
+	                        <fmt:message key="label.waiting"/> &hellip;</p>
 	                </div>
 	            </div>
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("ID")%>:</div>
+	                        <fmt:message key="label.id"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="id">
@@ -65,7 +63,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Name")%>:</div>
+	                        <fmt:message key="label.name"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="name">
@@ -75,7 +73,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Volume")%>:</div>
+	                        <fmt:message key="label.volume"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="volume_name">
@@ -85,7 +83,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Interval.Type")%>:</div>
+	                        <fmt:message key="label.interval.type"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="interval_type">
@@ -95,7 +93,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Created")%>:</div>
+	                        <fmt:message key="label.created"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="created">
@@ -105,7 +103,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Account")%>:</div>
+	                        <fmt:message key="label.account"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="account">
@@ -115,7 +113,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("Domain")%>:</div>
+	                        <fmt:message key="label.domain"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="domain">
@@ -134,7 +132,7 @@
         <form action="#" method="post" id="form5">
         <ol>
             <li>
-                <label>Name:</label>
+                <label><fmt:message key="label.name"/>:</label>
                 <input class="text" type="text" id="name" />
                 <div id="name_errormsg" class="dialog_formcontent_errormsg" style="display: none;"></div>
             </li>           
@@ -150,40 +148,40 @@
 		<form action="#" method="post" id="form6">
 			<ol>
 				<li>
-					<label>Name:</label>
+					<label><fmt:message key="label.name"/>:</label>
 					<input class="text" type="text" id="name" style="width:250px"/>
 					<div id="name_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
 				</li>
 				<li>
-					<label>Display Text:</label>
+					<label><fmt:message key="label.display.text"/>:</label>
 					<input class="text" type="text" id="display_text" style="width:250px"/>
 					<div id="display_text_errormsg" class="dialog_formcontent_errormsg" style="display:none;"></div>
 				</li>				
 				<li>
-					<label>OS Type:</label>
+					<label><fmt:message key="label.os.type"/>:</label>
 					<select class="select" id="os_type">
 					</select>
 				</li>				
 				<li id="create_template_public_container" style="display:none">
 	                <label for="create_template_public">
-	                    Public:</label>
+	                    <fmt:message key="label.public"/>:</label>
 	                <select class="select" id="ispublic">
-	                    <option value="false">No</option>
-	                    <option value="true">Yes</option>
+	                    <option value="false"><fmt:message key="label.no"/></option>
+	                    <option value="true"><fmt:message key="label.yes"/></option>
 	                </select>
 	            </li>						
 				<li>
-					<label>Password Enabled?:</label>
+					<label><fmt:message key="label.password.enabled"/>?:</label>
 					<select class="select" id="password">						
-						<option value="false">No</option>
-						<option value="true">Yes</option>
+						<option value="false"><fmt:message key="label.no"/></option>
+						<option value="true"><fmt:message key="label.yes"/></option>
 					</select>
 				</li>				
 				<li id="isfeatured_container" style="display:none">
-					<label>Featured?:</label>
+					<label><fmt:message key="label.featured"/>?:</label>
 					<select class="select" id="isfeatured">
-					    <option value="false">No</option>
-						<option value="true">Yes</option>						
+					    <option value="false"><fmt:message key="label.no"/></option>
+						<option value="true"><fmt:message key="label.yes"/></option>						
 					</select>
 				</li>				
 			</ol>

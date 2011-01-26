@@ -1,17 +1,15 @@
-<%@ page import="java.util.*" %>
-
-<%@ page import="com.cloud.utils.*" %>
-
-<%
-    Locale browserLocale = request.getLocale();
-    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
-%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
+<fmt:setBundle basename="resources/messages"/>
 
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
         <img src="images/title_systemvmicon.gif" /></div>
     <h1>
-        System VM
+        <fmt:message key="label.system.vm"/>
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -21,7 +19,7 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
-            <%=t.t("details")%></div>
+            <fmt:message key="label.details"/></div>
     </div>
     <!-- Details tab (start)-->
     <div id="tab_content_details">
@@ -30,7 +28,7 @@
                 <div class="rightpanel_mainloader_animatedicon">
                 </div>
                 <p>
-                    Loading &hellip;</p>
+                    <fmt:message key="label.loading"/> &hellip;</p>
             </div>
         </div> 
         <div id="tab_container">
@@ -38,11 +36,11 @@
 	            <div class="grid_header">
 	                <div id="grid_header_title" class="grid_header_title">
 	                    (title)</div>
-	                <div id="action_link" class="grid_actionbox"><p>Actions</p>
+	                <div id="action_link" class="grid_actionbox"><p><fmt:message key="label.actions"/></p>
 	                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                        <ul class="actionsdropdown_boxlist" id="action_list">
 	                            <li>
-	                                <%=t.t("no.available.actions")%></li>
+	                                <fmt:message key="label.no.actions"/></li>
 	                        </ul>
 	                    </div>
 	                </div>
@@ -51,7 +49,7 @@
 	                    <div class="gridheader_loader" id="icon">
 	                    </div>
 	                    <p id="description">
-	                        Detaching Disk &hellip;</p>
+	                        <fmt:message key="label.detaching.disk"/> &hellip;</p>
 	                </div>
 	            </div>
 	            <div class="grid_rows odd">
@@ -76,7 +74,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("system.vm.type")%>:</div>
+	                        <fmt:message key="label.system.vm.type"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="systemvmtype">
@@ -86,7 +84,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("zone")%>:</div>
+	                        <fmt:message key="label.zone"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="zonename">
@@ -96,7 +94,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("ID")%>:</div>
+	                        <fmt:message key="label.id"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="id">
@@ -106,7 +104,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("name")%>:</div>
+	                        <fmt:message key="label.name"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="name">
@@ -116,7 +114,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("public.ip")%>:</div>
+	                        <fmt:message key="label.public.ip"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="publicip">
@@ -126,7 +124,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("private.ip")%>:</div>
+	                        <fmt:message key="label.private.ip"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="privateip">
@@ -136,7 +134,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("host")%>:</div>
+	                        <fmt:message key="label.host"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="hostname">
@@ -146,7 +144,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("gateway")%>:</div>
+	                        <fmt:message key="label.gateway"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="gateway">
@@ -156,7 +154,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("created")%>:</div>
+	                        <fmt:message key="label.created"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="created">
@@ -166,7 +164,7 @@
 	            <div class="grid_rows odd" id="activeviewersessions_container" style="display:none">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("active.sessions")%>:</div>
+	                        <fmt:message key="label.active.sessions"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="activeviewersessions">
@@ -196,7 +194,7 @@
             <ol>               
                 <li>
                     <select class="select" id="adv_search_state">
-                        <option value="">by state</option>
+                        <option value=""><fmt:message key="label.by.state"/></option>
                         <option value="Creating">Creating</option>
                         <option value="Starting">Starting</option>
                         <option value="Running">Running</option>
