@@ -85,11 +85,11 @@ import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.domain.Domain;
@@ -631,6 +631,13 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         ipResponse.setForVirtualNetwork(forVirtualNetworks);
         ipResponse.setStaticNat(ipAddress.isOneToOneNat());
+         
+        if (ipAddress.getVmId() != null) {
+            UserVm vm = ApiDBUtils.findUserVmById(ipAddress.getVmId());
+            ipResponse.setVirtualMachineId(vm.getId());
+            ipResponse.setVirtualMachineName(vm.getName());
+            ipResponse.setVirtualMachineDisplayName(vm.getDisplayName());
+        }
         
         ipResponse.setAssociatedNetworkId(ipAddress.getAssociatedWithNetworkId());
         

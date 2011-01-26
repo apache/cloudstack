@@ -59,6 +59,15 @@ public class IPAddressResponse extends BaseResponse {
     @SerializedName("isstaticnat") @Param(description="true if this ip is for static nat, false otherwise")
     private Boolean staticNat;
     
+    @SerializedName("virtualmachineid") @Param(description="virutal machine id the ip address is assigned to (not null only for static nat Ip)")
+    private Long virtualMachineId;
+    
+    @SerializedName("virtualmachinename") @Param(description="virutal machine name the ip address is assigned to (not null only for static nat Ip)")
+    private String virtualMachineName;
+    
+    @SerializedName("virtualmachinedisplayname") @Param(description="virutal machine display name the ip address is assigned to (not null only for static nat Ip)")
+    private String virtualMachineDisplayName;
+    
     @SerializedName("associatednetworkid") @Param(description="the ID of the Network associated with the IP address")
     private Long associatedNetworkId;
     
@@ -175,5 +184,29 @@ public class IPAddressResponse extends BaseResponse {
 
     public void setNetworkId(Long networkId) {
         this.networkId = networkId;
+    }
+
+    public Long getVirtualMachineId() {
+        return virtualMachineId;
+    }
+
+    public void setVirtualMachineId(Long virtualMachineId) {
+        this.virtualMachineId = virtualMachineId;
+    }
+
+    public String getVirtualMachineName() {
+        return virtualMachineName;
+    }
+
+    public void setVirtualMachineName(String virtualMachineName) {
+        this.virtualMachineName = virtualMachineName;
+    }
+
+    public String getVirtualMachineDisplayName() {
+        return virtualMachineDisplayName;
+    }
+
+    public void setVirtualMachineDisplayName(String virtualMachineDisplayName) {
+        this.virtualMachineDisplayName = virtualMachineDisplayName;
     }
 }
