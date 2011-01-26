@@ -63,11 +63,10 @@ function zoneJsonToRightPanel($leftmenuItem1) {
             pods = json.listpodsresponse.pod;            
         }        
     });
-    if(pods != null && pods.length > 0) {
-        bindAddClusterButtonOnZonePage($("#add_cluster_button"), zoneId, zoneName); 
-        bindAddHostButtonOnZonePage($("#add_host_button"), zoneId, zoneName); 
-        bindAddPrimaryStorageButtonOnZonePage($("#add_primarystorage_button"), zoneId, zoneName);  
-    }
+    
+    bindAddClusterButtonOnZonePage($("#add_cluster_button"), zoneId, zoneName); 
+    bindAddHostButtonOnZonePage($("#add_host_button"), zoneId, zoneName); 
+    bindAddPrimaryStorageButtonOnZonePage($("#add_primarystorage_button"), zoneId, zoneName);      
     
     $("#right_panel_content").find("#tab_details").click();     
 }
@@ -487,8 +486,7 @@ function doDeleteZone($actionLink, $detailsTab, $midmenuItem1) {
 	}).dialog("open");
 }
 
-function bindAddClusterButtonOnZonePage($button, zoneId, zoneName) {
-    $button.show();
+function bindAddClusterButtonOnZonePage($button, zoneId, zoneName) {    
     $button.unbind("click").bind("click", function(event) {
         $dialogAddCluster = $("#dialog_add_external_cluster_in_zone_page");      
         $dialogAddCluster.find("#info_container").hide();          
@@ -541,6 +539,7 @@ function bindAddClusterButtonOnZonePage($button, zoneId, zoneName) {
 			    	clusterType = $thisDialog.find("#type_dropdown").val();
 	            
 		        var isValid = true;
+		        isValid &= validateDropDownBox("Pod", $thisDialog.find("#pod_dropdown"), $thisDialog.find("#pod_dropdown_errormsg"));	
 		        if(hypervisor == "VmWare" && clusterType != "CloudManaged") {
 			        isValid &= validateString("vCenter Server", $thisDialog.find("#cluster_hostname"), $thisDialog.find("#cluster_hostname_errormsg"));
 			        isValid &= validateString("vCenter user", $thisDialog.find("#cluster_username"), $thisDialog.find("#cluster_username_errormsg"));
@@ -652,21 +651,7 @@ function bindAddHostButtonOnZonePage($button, zoneId, zoneName) {
             }                
         }        
     });                   
-    
-    /* 
-    $dialogAddHost.find("#host_hypervisor").change(function() {
-    if($(this).val() == "VmWare") {
-    		$('li[input_group="general"]', $dialogAddHost).hide();
-    		$('li[input_group="vmware"]', $dialogAddHost).show();
-    	} else {
-    		$('li[input_group="vmware"]', $dialogAddHost).hide();
-    		$('li[input_group="general"]', $dialogAddHost).show();
-    	}
-    	
-        refreshClsuterFieldInAddHostDialog($dialogAddHost, $podSelect.val(), null, $(this).val());        
-    }); 
-    */            
-             
+                 
     $dialogAddHost.find("#pod_dropdown").unbind("change").bind("change", function(event) {    	   
         $dialogAddHost.find("#cluster_select").change();       
     });  

@@ -259,15 +259,12 @@ function getIpRange(startip, endip) {
 }	
 
 var clustersUnderOnePod = {};
-//function refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId, hypervisorType) {
 function refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId) {   
+	if(podId == null)
+	    return;
+	
 	var arrayParams = [];
 	arrayParams.push("&podid=" + podId);
-	/*
-	arrayParams.push("&hypervisor=" + hypervisorType);
-	if(hypervisorType == "VmWare")
-		arrayParams.push("&clustertype=CloudManaged");
-	*/
 	
     $.ajax({
         data: createURL("command=listClusters"+arrayParams.join("")),
