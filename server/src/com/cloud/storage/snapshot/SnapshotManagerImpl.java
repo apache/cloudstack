@@ -110,6 +110,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value={SnapshotManager.class, SnapshotService.class})
@@ -357,6 +358,16 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                     throw new CloudRuntimeException("KVM Snapshot is not supported on cluster: " + host.getId());
                 }
         	}
+        }
+        
+        //if volume is attached to a vm in destroyed or expunging state; disallow
+        if(v.getInstanceId() != null) {
+            UserVmVO userVm = _vmDao.findById(v.getInstanceId());
+            if(userVm != null) {
+                if(userVm.getState().equals(State.Destroyed) || userVm.getState().equals(State.Expunging)) {
+                    throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " due to the associated vm:"+userVm.getInstanceName()+" is in "+userVm.getState().toString()+" state");
+                }
+            }
         }
         
         SnapshotVO snapshot = null;
