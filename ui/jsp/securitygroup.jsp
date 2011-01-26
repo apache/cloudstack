@@ -288,22 +288,23 @@
                 </div>
             </li>
             <li>
-                <label>
-                    <input type="radio" name="ingress_rule_type" value="cidr" checked>
+            	<input type="radio" class="radio" style="margin:-2px 5px 0 0;" name="ingress_rule_type" value="cidr" checked="checked" />
+                <label style="width:80px;">
+
                     <fmt:message key="label.add.by.cidr"/>:</label>
-                <div id="cidr_container">
+                <div id="cidr_container" style="float:left; width:170px;">
                 </div>
                 <a style="margin-left: 110px; display: inline;" id="add_more_cidr" href="#">Add more</a>
             </li>
             <li style="margin-top: 7px;">
-                <label>
-                    <input type="radio" name="ingress_rule_type" value="account_securitygroup">
+            	<input class="radio" style="margin:-2px 5px 0 0;" type="radio" name="ingress_rule_type" value="account_securitygroup">
+                <label style="width:80px;">
                     <fmt:message key="label.add.by.group"/>:</label>
                 <p style="color: #999;">
                     <fmt:message key="label.account.name"/></p>
                 <p style="margin-left: 25px; display: inline; color: #999;">
                     <fmt:message key="label.security.group.name"/></p>
-                <div id="account_securitygroup_container">
+                <div id="account_securitygroup_container" style="float:left; width:200px;">
                 </div>
                 <a style="margin-left: 110px; display: inline;" id="add_more_account_securitygroup"
                     href="#"><fmt:message key="label.add.more"/></a></li>
