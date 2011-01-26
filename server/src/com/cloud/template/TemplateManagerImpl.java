@@ -370,21 +370,12 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     private VMTemplateVO createTemplateOrIso(long userId, Long accountId, Long zoneId, String name, String displayText, boolean isPublic, boolean featured, boolean isExtractable, String format, TemplateType diskType, String url, String chksum, boolean requiresHvm, int bits, boolean enablePassword, long guestOSId, boolean bootable, HypervisorType hypervisorType) throws IllegalArgumentException, ResourceAllocationException {
         try
         {
-            if (name.length() > 32)
-            {
-                throw new InvalidParameterValueException("Template name should be less than 32 characters");
-            }
         	
             ImageFormat imgfmt = ImageFormat.valueOf(format.toUpperCase());
             if (imgfmt == null) {
                 throw new IllegalArgumentException("Image format is incorrect " + format + ". Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
             }
-            
-//            FileSystem fileSystem = FileSystem.valueOf(diskType);
-//            if (fileSystem == null) {
-//                throw new IllegalArgumentException("File system is incorrect " + diskType + ". Supported file systems are " + EnumUtils.listValues(FileSystem.values()));
-//            }
-            
+                        
             URI uri = new URI(url);
             if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
                throw new IllegalArgumentException("Unsupported scheme for url: " + url);
