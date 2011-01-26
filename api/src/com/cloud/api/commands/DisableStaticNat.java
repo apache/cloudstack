@@ -31,16 +31,16 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.utils.net.Ip;
 
-@Implementation(description="Disables one to one nat rule", responseObject=SuccessResponse.class)
-public class DisableOneToOneNat extends BaseAsyncCmd {
+@Implementation(description="Disables static rule for given ip address", responseObject=SuccessResponse.class)
+public class DisableStaticNat extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePortForwardingRuleCmd.class.getName());
-    private static final String s_name = "disableonetoonenatresponse";
+    private static final String s_name = "disablestaticnatresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the public IP address for which one-to-one nat feature is being disableed")
+    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the public IP address for which static nat feature is being disableed")
     private String ipAddress;
     
     /////////////////////////////////////////////////////
@@ -61,12 +61,12 @@ public class DisableOneToOneNat extends BaseAsyncCmd {
     
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_DISABLE_ONE_TO_ONE_NAT;
+        return EventTypes.EVENT_DISABLE_STATIC_NAT;
     }
 
     @Override
     public String getEventDescription() {
-        return  ("Disabling one to one nat for ip=" + ipAddress);
+        return  ("Disabling static nat for ip=" + ipAddress);
     }
     
     @Override
@@ -82,7 +82,7 @@ public class DisableOneToOneNat extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to disable oneToOne nat rule");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to disable static nat");
         }
     }
 }

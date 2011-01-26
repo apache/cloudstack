@@ -111,11 +111,11 @@ deletePortForwardingRule=com.cloud.api.commands.DeletePortForwardingRuleCmd;15
 #### updatePortForwardingRule=com.cloud.api.commands.UpdatePortForwardingRuleCmd;15
 
 #### NAT commands
-enableOneToOneNat=com.cloud.api.commands.EnableOneToOneNat;15
+enableStaticNat=com.cloud.api.commands.EnableStaticNat;15
 createIpForwardingRule=com.cloud.api.commands.CreateIpForwardingRuleCmd;15
 deleteIpForwardingRule=com.cloud.api.commands.DeleteIpForwardingRuleCmd;15
 listIpForwardingRules=com.cloud.api.commands.ListIpForwardingRulesCmd;15
-disableOneToOneNat=com.cloud.api.commands.DisableOneToOneNat;15
+disableStaticNat=com.cloud.api.commands.DisableStaticNat;15
 
 #### load balancer commands
 createLoadBalancerRule=com.cloud.api.commands.CreateLoadBalancerRuleCmd;15

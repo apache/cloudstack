@@ -29,20 +29,20 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.utils.net.Ip;
 
-@Implementation(description="Enables one to one nat for the ip address", responseObject=SuccessResponse.class)
-public class EnableOneToOneNat extends BaseCmd{
+@Implementation(description="Enables static nat for given ip address", responseObject=SuccessResponse.class)
+public class EnableStaticNat extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(CreateIpForwardingRuleCmd.class.getName());
 
-    private static final String s_name = "enableonetoonenatresponse";
+    private static final String s_name = "enablestaticnatresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the public IP address for which one-to-one nat feature is being enabled")
+    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the public IP address for which static nat feature is being enabled")
     private String ipAddress;
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the ID of the virtual machine for enabling one-to-one nat feature")
+    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the ID of the virtual machine for enabling static nat feature")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////
@@ -74,7 +74,7 @@ public class EnableOneToOneNat extends BaseCmd{
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to enable one-to-one nat");
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to enable static nat");
             }
         } catch (NetworkRuleConflictException ex) {
             s_logger.info("Network rule conflict: " + ex.getMessage());

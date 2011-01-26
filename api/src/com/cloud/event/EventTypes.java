@@ -185,7 +185,7 @@ public class EventTypes {
 	public static final String EVENT_UPLOAD_CUSTOM_CERTIFICATE = "UPLOAD.CUSTOM.CERTIFICATE";
 	
 	//OneToOnenat
-	public static final String EVENT_ENABLE_ONE_TO_ONE_NAT = "ONETOONENAT.ENABLE";
-	public static final String EVENT_DISABLE_ONE_TO_ONE_NAT = "ONETOONENAT.DISABLE";
+	public static final String EVENT_ENABLE_STATIC_NAT = "STATICNAT.ENABLE";
+	public static final String EVENT_DISABLE_STATIC_NAT = "STATICNAT.DISABLE";
 	
 }
