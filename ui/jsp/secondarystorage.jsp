@@ -1,17 +1,16 @@
-<%@ page import="java.util.*" %>
-<%@ page import="com.cloud.utils.*" %>
-
-<%
-    Locale browserLocale = request.getLocale();
-    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
-%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
+<fmt:setBundle basename="resources/messages"/>
 
 <div class="main_title" id="right_panel_header">
    
     <div class="main_titleicon">
         <img src="images/title_secondarystorageicon.gif"/></div>
    
-    <h1>Secondary Storage
+    <h1><fmt:message key="label.secondary.storage"/>
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -21,7 +20,7 @@
     </div>
     <div class="tabbox" style="margin-top:15px;">
         <div class="content_tabs on">
-            <%=t.t("Details")%></div>        
+            <fmt:message key="label.details"/></div>        
     </div>    
     <div id="tab_content_details">
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
@@ -29,7 +28,7 @@
                 <div class="rightpanel_mainloader_animatedicon">
                 </div>
                 <p>
-                    Loading &hellip;</p>
+                    <fmt:message key="label.loading"/> &hellip;</p>
             </div>
         </div>   
         <div id="tab_container">
@@ -37,11 +36,11 @@
 		        <div class="grid_header">
 	                <div id="grid_header_title" class="grid_header_title">
 	                    (title)</div>
-	                <div class="grid_actionbox" id="action_link"><p>Actions</p>
+	                <div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
 	                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                        <ul class="actionsdropdown_boxlist" id="action_list">
 	                            <li>
-	                                <%=t.t("no.available.actions")%></li>
+	                                <fmt:message key="label.no.actions"/></li>
 	                        </ul>
 	                    </div>
 	                </div>
@@ -50,13 +49,13 @@
 	                    <div class="gridheader_loader" id="icon">
 	                    </div>
 	                    <p id="description">
-	                        Waiting &hellip;</p>
+	                        <fmt:message key="label.waiting"/> &hellip;</p>
 	                </div>
 	            </div>
 		        <div class="grid_rows odd">
 		            <div class="grid_row_cell" style="width: 20%;">
 		                <div class="row_celltitles">
-		                    <%=t.t("ID")%>:</div>
+		                    <fmt:message key="label.id"/>:</div>
 		            </div>
 		            <div class="grid_row_cell" style="width: 79%;">
 		                <div class="row_celltitles" id="id">
@@ -66,7 +65,7 @@
 		        <div class="grid_rows even">
 		            <div class="grid_row_cell" style="width: 20%;">
 		                <div class="row_celltitles">
-		                    <%=t.t("name")%>:</div>
+		                    <fmt:message key="label.name"/>:</div>
 		            </div>
 		            <div class="grid_row_cell" style="width: 79%;">
 		                <div class="row_celltitles" id="name">
@@ -76,7 +75,7 @@
 				<div class="grid_rows odd">
 			        <div class="grid_row_cell" style="width: 20%;">
 			            <div class="row_celltitles">
-			                <%=t.t("zone")%>:</div>
+			                <fmt:message key="label.zone"/>:</div>
 			        </div>
 			        <div class="grid_row_cell" style="width: 79%;">
 			            <div class="row_celltitles" id="zonename">
@@ -86,7 +85,7 @@
 			    <div class="grid_rows even">
 			        <div class="grid_row_cell" style="width: 20%;">
 			            <div class="row_celltitles">
-			                <%=t.t("type")%>:</div>
+			                <fmt:message key="label.type"/>:</div>
 			        </div>
 			        <div class="grid_row_cell" style="width: 79%;">
 			            <div class="row_celltitles" id="type">
@@ -96,7 +95,7 @@
 			    <div class="grid_rows odd">
 			        <div class="grid_row_cell" style="width: 20%;">
 			            <div class="row_celltitles">
-			                <%=t.t("ip.address")%>:</div>
+			                <fmt:message key="label.ip.address"/>:</div>
 			        </div>
 			        <div class="grid_row_cell" style="width: 79%;">
 			            <div class="row_celltitles" id="ipaddress">
@@ -106,7 +105,7 @@
 			    <div class="grid_rows even">
 			        <div class="grid_row_cell" style="width: 20%;">
 			            <div class="row_celltitles">
-			                <%=t.t("state")%>:</div>
+			                <fmt:message key="label.state"/>:</div>
 			        </div>
 			        <div class="grid_row_cell" style="width: 79%;">
 			            <div class="row_celltitles" id="state">
@@ -116,7 +115,7 @@
 			    <div class="grid_rows odd">
 			        <div class="grid_row_cell" style="width: 20%;">
 			            <div class="row_celltitles">
-			                <%=t.t("version")%>:</div>
+			                <fmt:message key="label.version"/>:</div>
 			        </div>
 			        <div class="grid_row_cell" style="width: 79%;">
 			            <div class="row_celltitles" id="version">
@@ -126,7 +125,7 @@
 			    <div class="grid_rows even">
 			        <div class="grid_row_cell" style="width: 20%;">
 			            <div class="row_celltitles">
-			                <%=t.t("last.disconnected")%>:</div>
+			                <fmt:message key="label.last.disconnected"/>:</div>
 			        </div>
 			        <div class="grid_row_cell" style="width: 79%;">
 			            <div class="row_celltitles" id="disconnected">
@@ -145,7 +144,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt="Add Secondary Storage" /></div>
             <div class="actionpanel_button_links">
-                Add Secondary Storage
+                <fmt:message key="label.add.secondary.storage"/>
             </div>
         </div>
     </div>
@@ -155,21 +154,21 @@
 <!-- Add Secondary Storage Dialog (begin) -->
 <div id="dialog_add_secondarystorage" title="Add Secondary Storage" style="display: none">
     <p>
-        Add a new storage for zone <b><span id="zone_name"></span></b>
+		<fmt:message key="message.add.secondary.storage"/>
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form1">
         <ol>
             <li>
                 <label>
-                    NFS Server:</label>
+                    <fmt:message key="label.nfs.server"/>:</label>
                 <input class="text" type="text" name="nfs_server" id="nfs_server" />
                 <div id="nfs_server_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="path">
-                    Path:</label>
+                    <fmt:message key="label.path"/>:</label>
                 <input class="text" type="text" name="path" id="path" />
                 <div id="path_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
@@ -182,7 +181,7 @@
         <div class="ui_dialog_loader">
         </div>
         <p>
-            Adding....</p>
+            <fmt:message key="label.adding"/>....</p>
     </div>
     <!--Confirmation msg box-->
     <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
