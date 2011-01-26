@@ -365,7 +365,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             UserVmVO userVm = _vmDao.findById(v.getInstanceId());
             if(userVm != null) {
                 if(userVm.getState().equals(State.Destroyed) || userVm.getState().equals(State.Expunging)) {
-                    throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " is associated with vm:"+userVm.getInstanceName()+" which is in "+userVm.getState().toString()+" state");
+                    throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " is associated with vm:"+userVm.getInstanceName()+" is in "+userVm.getState().toString()+" state");
                 }
             }
         }
