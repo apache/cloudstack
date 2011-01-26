@@ -1,17 +1,15 @@
-<%@ page import="java.util.*" %>
-
-<%@ page import="com.cloud.utils.*" %>
-
-<%
-    Locale browserLocale = request.getLocale();
-    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
-%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
+<fmt:setBundle basename="resources/messages"/>
 
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
         <img src="images/title_zoneicon.gif" /></div>
    <h1>
-        Zone
+        <fmt:message key="label.volume"/>
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -21,7 +19,7 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
-            <%=t.t("details")%></div>                     
+            <fmt:message key="label.details"/></div>                     
     </div>
     
     <!-- Details tab (start)-->
@@ -31,7 +29,7 @@
                 <div class="rightpanel_mainloader_animatedicon">
                 </div>
                 <p>
-                    Loading &hellip;</p>
+                    <fmt:message key="label.loading"/> &hellip;</p>
             </div>
         </div>
         <div id="tab_container">
@@ -39,11 +37,11 @@
                 <div class="grid_header">
                     <div id="grid_header_title" class="grid_header_title">
                         Title</div>
-                    <div class="grid_actionbox" id="action_link"><p>Actions</p>
+                    <div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
                         <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                             <ul class="actionsdropdown_boxlist" id="action_list">
                                 <li>
-                                    <%=t.t("no.available.actions")%></li>
+                                    <fmt:message key="label.no.actions"/></li>
                             </ul>
                         </div>
                     </div>
@@ -52,13 +50,13 @@
                         <div class="gridheader_loader" id="icon">
                         </div>
                         <p id="description">
-                            Waiting &hellip;</p>
+                            <fmt:message key="label.waiting"/> &hellip;</p>
                     </div>
                 </div>
                 <div class="grid_rows odd">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
-                            <%=t.t("ID")%>:</div>
+                            <fmt:message key="label.id"/>:</div>
                     </div>
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="id">
@@ -68,7 +66,7 @@
                 <div class="grid_rows even">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
-                            <%=t.t("name")%>:</div>
+                            <fmt:message key="label.name"/>:</div>
                     </div>
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="name">
@@ -80,7 +78,7 @@
                 <div class="grid_rows odd">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
-                            <%=t.t("dns1")%>:</div>
+                            <fmt:message key="label.dns.1"/>:</div>
                     </div>
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="dns1">
@@ -92,7 +90,7 @@
                 <div class="grid_rows even">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
-                            <%=t.t("dns2")%>:</div>
+                            <fmt:message key="label.dns.2"/>:</div>
                     </div>
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="dns2">
@@ -104,7 +102,7 @@
                 <div class="grid_rows odd">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
-                            <%=t.t("internaldns1")%>:</div>
+                            <fmt:message key="label.internal.dns.1"/>:</div>
                     </div>
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="internaldns1">
@@ -116,7 +114,7 @@
                 <div class="grid_rows even">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
-                            <%=t.t("internaldns2")%>:</div>
+                            <fmt:message key="label.internal.dns.2"/>:</div>
                     </div>
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="internaldns2">
@@ -128,7 +126,7 @@
                 <div class="grid_rows odd">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
-                            <%=t.t("network.type")%>:</div>
+                            <fmt:message key="label.network.type"/>:</div>
                     </div>
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="networktype">
@@ -138,7 +136,7 @@
                 <div class="grid_rows even" id="vlan_container">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
-                            <%=t.t("vlan")%>:</div>
+                            <fmt:message key="label.vlan"/>:</div>
                     </div>
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="vlan">
@@ -152,7 +150,7 @@
                 <div class="grid_rows odd" id="guestcidraddress_container">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
-                            <%=t.t("guestcidraddress")%>:</div>
+                            <fmt:message key="label.guest.cidr"/>:</div>
                     </div>
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="guestcidraddress">
@@ -164,7 +162,7 @@
                 <div class="grid_rows even">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
-                            <%=t.t("domain")%>:</div>
+                            <fmt:message key="label.domain"/>:</div>
                     </div>
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="domain">
@@ -174,8 +172,8 @@
             </div>            
             
             <div class="grid_botactionpanel">
-	        	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
-	            <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
+	        	<div class="gridbot_buttons" id="save_button" style="display:none;"><fmt:message key="label.save"/></div>
+	            <div class="gridbot_buttons" id="cancel_button" style="display:none;"><fmt:message key="label.cancel"/></div>
 	        </div>             
             
         </div>
@@ -190,7 +188,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" /></div>
             <div class="actionpanel_button_links">
-                Add Pod
+                <fmt:message key="label.add.pod"/>
             </div>
         </div>
     </div>  
@@ -199,7 +197,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png"/></div>
             <div class="actionpanel_button_links">
-                Add Cluster
+                <fmt:message key="label.add.cluster"/>
             </div>
         </div>
     </div>
@@ -208,7 +206,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" /></div>
             <div class="actionpanel_button_links">
-                Add Host
+                <fmt:message key="label.add.host"/>
             </div>
         </div>
     </div>
@@ -217,7 +215,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" /></div>
             <div class="actionpanel_button_links">
-                Add Primary Storage
+                <fmt:message key="label.add.primary.storage"/>
             </div>
         </div>
     </div>    
@@ -229,35 +227,35 @@
 <!-- Add Pod Dialog (begin) -->
 <div id="dialog_add_pod" title="Add Pod" style="display: none">
     <p>
-        Add a new pod for zone <b><span id="add_pod_zone_name"></span></b>
+        <fmt:message key="message.add.pod"/>
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
             <li>
                 <label for="user_name" style="width: 115px;">
-                    Name:</label>
+                    <fmt:message key="label.name"/>:</label>
                 <input class="text" type="text" name="add_pod_name" id="add_pod_name" />
                 <div id="add_pod_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="add_pod_gateway" style="width: 115px;">
-                    Gateway:</label>
+                    <fmt:message key="label.gateway"/>:</label>
                 <input class="text" type="text" id="add_pod_gateway" />
                 <div id="add_pod_gateway_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="user_name" style="width: 115px;">
-                    Netmask:</label>
+                    <fmt:message key="label.netmask"/>:</label>
                 <input class="text" type="text" name="add_pod_netmask" id="add_pod_netmask" />
                 <div id="add_pod_netmask_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="user_name" style="width: 115px;">
-                    Private IP Range:</label>
+                    <fmt:message key="label.private.ip.range"/>:</label>
                 <input class="text" style="width: 67px" type="text" name="add_pod_startip" id="add_pod_startip" /><span>-</span>
                 <input class="text" style="width: 67px" type="text" name="add_pod_endip" id="add_pod_endip" />
                 <div id="add_pod_startip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
@@ -267,7 +265,7 @@
             </li>            
             <li id="guestip_container" style="display: none">
                 <label style="width: 115px;">
-                    Guest IP Range:</label>
+                    <fmt:message key="label.guest.ip.range"/>:</label>
                 <input class="text" style="width: 92px" type="text" id="startguestip" /><span>-</span>
                 <input class="text" style="width: 92px" type="text" id="endguestip" />
                 <div id="startguestip_errormsg" class="dialog_formcontent_errormsg" style="display: none;
@@ -278,7 +276,7 @@
             </li>
             <li id="guestnetmask_container" style="display: none">
                 <label style="width: 115px;">
-                    Guest Netmask:</label>
+                    <fmt:message key="label.guest.netmask"/>:</label>
                 <input class="text" type="text" id="guestnetmask" />
                 <div id="guestnetmask_errormsg" class="dialog_formcontent_errormsg" style="display: none;
                     margin-left: 0;">
@@ -286,7 +284,7 @@
             </li>
             <li id="guestgateway_container" style="display: none">
                 <label style="width: 115px;">
-                    Guest Gateway:</label>
+                    <fmt:message key="label.guest.gateway"/>:</label>
                 <input class="text" type="text" id="guestgateway" />
                 <div id="guestgateway_errormsg" class="dialog_formcontent_errormsg" style="display: none;
                     margin-left: 0;">
@@ -300,7 +298,7 @@
         <div class="ui_dialog_loader">
         </div>
         <p>
-            Adding....</p>
+            <fmt:message key="label.adding"/>....</p>
     </div>
     <!--Confirmation msg box-->
     <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
@@ -316,25 +314,14 @@
 <!-- Add Host Dialog in zone page (begin) -->
 <div id="dialog_add_host_in_zone_page" title="Add Host" style="display: none">   
     <p>
-        Add a host for zone <b><span id="zone_name"></span></b>
-        </span></b>
+        <fmt:message key="message.add.host"/>
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>    
-            <!--    
-            <li>
-            	<label for="host_hypervisor">Hypervisor:</label>
-                <select class="select" id="host_hypervisor">
-                    <option value="XenServer" SELECTED>Xen Server</option>		
-                    <option value="KVM">KVM</option>										
-                    <option value="VmWare">VMware</option>										
-                </select>
-            </li>
-            -->  
             <li>
                 <label>
-                    Pod:</label>
+                    <fmt:message key="label.pod"/>:</label>
                 <select class="select" id="pod_dropdown">
                 </select>
                 <div id="pod_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
@@ -342,7 +329,7 @@
             </li>              
             <li>
                 <label>
-                    Cluster:</label>
+                    <fmt:message key="label.cluster"/>:</label>
                 <select class="select" id="cluster_select">
                 </select>
                 <div id="cluster_select_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
@@ -350,56 +337,56 @@
             </li>            
             <li input_group="general">
                 <label for="host_hostname">
-                    Host name:</label>
+                    <fmt:message key="label.host.name"/>:</label>
                 <input class="text" type="text" name="host_hostname" id="host_hostname" />
                 <div id="host_hostname_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li input_group="general">
                 <label for="user_name">
-                    User name:</label>
+                    <fmt:message key="label.username"/>:</label>
                 <input class="text" type="text" name="host_username" id="host_username" />
                 <div id="host_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li input_group="general">
                 <label for="host_password">
-                    Password:</label>
+                    <fmt:message key="label.password"/>:</label>
                 <input class="text" type="password" name="host_password" id="host_password" autocomplete="off" />
                 <div id="host_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li input_group="vmware" style="display: none;">
                 <label for="host_vcenter_address">
-                    vCenter Address:</label>
+                    <fmt:message key="label.vcenter.host"/>:</label>
                 <input class="text" type="text" name="host_vcenter_address" id="host_vcenter_address" />
                 <div id="host_vcenter_address_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li input_group="vmware" style="display: none;">
                 <label for="host_vcenter_username">
-                    vCenter User:</label>
+                    <fmt:message key="label.vcenter.username"/>:</label>
                 <input class="text" type="text" name="host_vcenter_username" id="host_vcenter_username" />
                 <div id="host_vcenter_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li input_group="vmware" style="display: none;">
                 <label for="host_vcenter_password">
-                    vCenter Password:</label>
+                    <fmt:message key="label.vcenter.password"/>:</label>
                 <input class="text" type="password" name="host_vcenter_password" id="host_vcenter_password" autocomplete="off" />
                 <div id="host_vcenter_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li input_group="vmware" style="display: none;">
                 <label for="host_vcenter_dc">
-                    vCenter Datacenter:</label>
+                    <fmt:message key="label.vcenter.datacenter"/>:</label>
                 <input class="text" type="text" name="host_vcenter_dc" id="host_vcenter_dc" />
                 <div id="host_vcenter_dc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li input_group="vmware" style="display: none;">
                 <label for="host_vcenter_host">
-                    vCenter Host:</label>
+                    <fmt:message key="label.esx.host"/>:</label>
                 <input class="text" type="text" name="host_vcenter_host" id="host_vcenter_host" />
                 <div id="host_vcenter_host_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
@@ -412,7 +399,7 @@
         <div class="ui_dialog_loader">
         </div>
         <p>
-            Adding....</p>
+            <fmt:message key="label.adding"/>....</p>
     </div>
     <!--Confirmation msg box-->
     <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
@@ -428,13 +415,13 @@
 <!-- Add Hypervisor managed cluster Dialog (begin) -->
 <div id="dialog_add_external_cluster_in_zone_page" title="Add Cluster" style="display: none">
     <p>
-        Add a hypervisor managed cluster for zone <b><span id="zone_name"></span></b>
+		<fmt:message key="message.add.cluster.zone"/>
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
             <li>
-            	<label for="cluster_hypervisor">Hypervisor:</label>
+            	<label for="cluster_hypervisor"><fmt:message key="label.hypervisor"/>:</label>
                 <select class="select" id="cluster_hypervisor">
                     <option value="XenServer" SELECTED>Xen Server</option>		
                     <option value="KVM">KVM</option>										
@@ -443,17 +430,17 @@
             </li>
             <li input_group="vmware">
                 <label>
-                    Cluster Type:</label>
+                    <fmt:message key="label.cluster.type"/>:</label>
                 <select class="select" id="type_dropdown">
-                    <option value="CloudManaged">Cloud.com Managed</option>		
-                    <option value="ExternalManaged" SELECTED>vSphere Managed</option>										
+                    <option value="CloudManaged"><fmt:message key="label.cloud.managed"/></option>		
+                    <option value="ExternalManaged" SELECTED><fmt:message key="label.vsphere.managed"/></option>										
                 </select>
                 <div id="pod_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>   
             <li>
                 <label>
-                    Pod:</label>
+                    <fmt:message key="label.pod"/>:</label>
                 <select class="select" id="pod_dropdown">
                 </select>
                 <div id="pod_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
@@ -461,35 +448,35 @@
             </li>   
             <li input_group="vmware" input_sub_group="external">
                 <label for="cluster_hostname">
-                    vCenter Server:</label>
+                    <fmt:message key="label.vcenter.host"/>:</label>
                 <input class="text" type="text" name="cluster_hostname" id="cluster_hostname" />
                 <div id="cluster_hostname_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li input_group="vmware" input_sub_group="external">
                 <label for="cluster_username">
-                    vCenter User:</label>
+                    <fmt:message key="label.vcenter.username"/>:</label>
                 <input class="text" type="text" name="cluster_username" id="cluster_username" />
                 <div id="cluster_username_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li input_group="vmware" input_sub_group="external">
                 <label for="cluster_password">
-                    Password:</label>
+                    <fmt:message key="label.vcenter.password"/>:</label>
                 <input class="text" type="password" name="cluster_password" id="cluster_password" autocomplete="off" />
                 <div id="cluster_password_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li input_group="vmware" input_sub_group="external">
                 <label for="cluster_datacenter">
-                    vCenter Datacenter:</label>
+                    <fmt:message key="label.vcenter.datacenter"/>:</label>
                 <input class="text" type="text" name="cluster_datacenter" id="cluster_datacenter" />
                 <div id="cluster_datacenter_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="cluster_name" id="cluster_name_label">
-                    vCenter Cluster:</label>
+                    <fmt:message key="label.vcenter.cluster"/>:</label>
                 <input class="text" type="text" name="cluster_name" id="cluster_name" />
                 <div id="cluster_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
@@ -502,7 +489,7 @@
         <div class="ui_dialog_loader">
         </div>
         <p>
-            Adding....</p>
+            <fmt:message key="label.adding"/>....</p>
     </div>
     <!--Confirmation msg box-->
     <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
@@ -519,15 +506,14 @@
 <!-- Add Primary Storage Dialog  in zone page (begin) -->
 <div id="dialog_add_pool_in_zone_page" title="Add Primary Storage" style="display: none"> 
     <p>
-        Add a primary storage for zone <b><span id="zone_name"></span></b>
-        </span></b>
+		<fmt:message key="message.add.primary.storage"/>
     </p>   
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>            
             <li>
                 <label>
-                    Pod:</label>
+                    <fmt:message key="label.pod"/>:</label>
                 <select class="select" id="pod_dropdown">
                 </select>
                 <div id="pod_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
@@ -535,7 +521,7 @@
             </li>   
             <li id="pool_cluster_container">
                 <label for="pool_cluster">
-                    Cluster:</label>
+                    <fmt:message key="label.cluster"/>:</label>
                 <select class="select" id="cluster_select">
                 </select>
                 <div id="cluster_select_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
@@ -543,14 +529,14 @@
             </li>
             <li>
                 <label for="user_name">
-                    Name:</label>
+                    <fmt:message key="label.name"/>:</label>
                 <input class="text" type="text" name="add_pool_name" id="add_pool_name" />
                 <div id="add_pool_name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label for="add_pool_protocol">
-                    Protocol:</label>
+                    <fmt:message key="label.protocol"/>:</label>
                 <select class="select" id="add_pool_protocol">
                     <option value="nfs">NFS</option>
                     <option value="iscsi">ISCSI</option>
@@ -559,49 +545,49 @@
             </li>
             <li id="add_pool_server_container">
                 <label for="add_pool_nfs_server">
-                    Server:</label>
+                    <fmt:message key="label.server"/>:</label>
                 <input class="text" type="text" name="add_pool_nfs_server" id="add_pool_nfs_server" />
                 <div id="add_pool_nfs_server_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li id="add_pool_path_container" input_group="nfs">
                 <label for="add_pool_path">
-                    Path:</label>
+                    <fmt:message key="label.path"/>:</label>
                 <input class="text" type="text" name="add_pool_path" id="add_pool_path" />
                 <div id="add_pool_path_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li id="add_pool_iqn_container" style="display: none" input_group="iscsi">
                 <label for="add_pool_iqn">
-                    Target IQN:</label>
+                    <fmt:message key="label.target.iqn"/>:</label>
                 <input class="text" type="text" name="add_pool_iqn" id="add_pool_iqn" />
                 <div id="add_pool_iqn_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li id="add_pool_lun_container" style="display: none" input_group="iscsi">
                 <label for="add_pool_lun">
-                    LUN #:</label>
+                    <fmt:message key="label.lun"/> #:</label>
                 <input class="text" type="text" name="add_pool_lun" id="add_pool_lun" />
                 <div id="add_pool_lun_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li input_group="vmfs">
                 <label for="add_pool_vmfs_dc">
-                    vCenter Datacenter:</label>
+                    <fmt:message key="label.vcenter.datacenter"/>:</label>
                 <input class="text" type="text" name="add_pool_vmfs_dc" id="add_pool_vmfs_dc" />
                 <div id="add_pool_vmfs_dc_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li input_group="vmfs">
                 <label for="add_pool_vmfs_ds">
-                    vCenter Datastore:</label>
+                    <fmt:message key="label.vcenter.datastore"/>:</label>
                 <input class="text" type="text" name="add_pool_vmfs_ds" id="add_pool_vmfs_ds" />
                 <div id="add_pool_vmfs_ds_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li id="add_pool_tags_container">
                 <label for="add_pool_tags">
-                    Tags:</label>
+                    <fmt:message key="label.tags"/>:</label>
                 <input class="text" type="text" id="add_pool_tags" />
                 <div id="add_pool_tags_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
@@ -614,7 +600,7 @@
         <div class="ui_dialog_loader">
         </div>
         <p>
-            Adding....</p>
+            <fmt:message key="label.adding"/>....</p>
     </div>
     <!--Confirmation msg box-->
     <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
