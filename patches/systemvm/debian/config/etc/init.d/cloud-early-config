@@ -30,9 +30,50 @@ iface lo inet loopback
 EOF
 }
 
+hypervisor() {
+  [ -d /proc/xen ] && mount -t xenfs none /proc/xen
+
+  local try=$([ -x /usr/sbin/virt-what ] && virt-what | tail -1)
+  [ "$try" != "" ] && echo $try && return 0
+
+  vmware-checkvm &> /dev/null && echo "vmware" && return 0
+
+  [ -d /proc/xen ] && echo "xen-domU" && return 0
+
+  grep -q QEMU /proc/cpuinfo  && echo "kvm" && return 0
+  grep -q QEMU /var/log/messages && echo "kvm" && return 0
+
+  echo "unknown" && return 1
+
+}
+
+get_boot_params() {
+  local EXTRA_MOUNT=/media/extra
+  local hyp=$(hypervisor)
+  [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
+
+  case $hyp in 
+     xen-domU)
+          cat /proc/cmdline > /var/cache/cloud/cmdline
+          ;;
+     kvm)
+          # KVM needs to mount another disk, to get cmdline
+          mkdir -p $EXTRA_MOUNT
+          mount /dev/vdb $EXTRA_MOUNT
+          cp -f $EXTRA_MOUNT/cmdline  /var/cache/cloud/cmdline
+          cp -f $EXTRA_MOUNT/authorized_keys /var/cache/cloud/authorized_keys
+          privkey=/var/cache/cloud/authorized_keys
+          umount $EXTRA_MOUNT
+          ;;
+     vmware)
+          vmtoolsd --cmd 'machine.id.get' > /var/cache/cloud/cmdline 
+          ;;
+  esac
+
+}
+
 patch() {
   local PATCH_MOUNT=/media/cdrom
-  local EXTRA_MOUNT=/media/extra
   local patchfile=$PATCH_MOUNT/cloud-scripts.tgz
   local md5file=/var/cache/cloud/cloud-scripts-signature
   local privkey=$PATCH_MOUNT/authorized_keys
@@ -40,29 +81,15 @@ patch() {
   local cdrom_dev=
   mkdir -p $PATCH_MOUNT
 
-  if [ -e /dev/vdb ]; then
-    # KVM needs to mount another disk, to get cmdline
-    mkdir -p $EXTRA_MOUNT
-    mount /dev/vdb $EXTRA_MOUNT
-    cp -f $EXTRA_MOUNT/cmdline  /var/cache/cloud/cmdline
-    cp -f $EXTRA_MOUNT/authorized_keys /var/cache/cloud/authorized_keys
-    privkey=/var/cache/cloud/authorized_keys
-    umount $EXTRA_MOUNT
-  elif [ -e /dev/cdrom1 ]; then
-    vmtoolsd --cmd 'machine.id.get' > /var/cache/cloud/cmdline 
-  else
-    cat /proc/cmdline > /var/cache/cloud/cmdline
-  fi
 
   if [ -e /dev/xvdd ]; then
-	cdrom_dev=/dev/xvdd
+       cdrom_dev=/dev/xvdd
   elif [ -e /dev/cdrom ]; then
-	# For KVM
-	cdrom_dev=/dev/cdrom
+       cdrom_dev=/dev/cdrom
   elif [ -e /dev/cdrom1 ]; then
-    # for VmWare
-    cdrom_dev=/dev/cdrom1
+       cdrom_dev=/dev/cdrom1
   fi
+  [ -f /var/cache/cloud/authorized_keys ] && privkey=/var/cache/cloud/authorized_keys
 
   if [ -n "$cdrom_dev" ]; then
     mount -o ro $cdrom_dev $PATCH_MOUNT
@@ -128,14 +155,14 @@ setup_interface() {
 }
 
 enable_fwding() {
-  log_action_begin_msg "cloud: enable_fwding = $1"
+  log_it "cloud: enable_fwding = $1"
   log_it "enable_fwding = $1"
   echo "$1" > /proc/sys/net/ipv4/ip_forward
   [ -f /etc/iptables/iptables.conf ] && sed  -i "s/ENABLE_ROUTING=.*$/ENABLE_ROUTING=$enabled/" /etc/iptables/iptables.conf && return
 }
 
 disable_rpfilter() {
-  log_action_begin_msg "cloud: disable rp_filter"
+  log_it "cloud: disable rp_filter"
   log_it "disable rpfilter"
   sed -i "s/net.ipv4.conf.default.rp_filter.*$/net.ipv4.conf.default.rp_filter = 0/" /etc/sysctl.conf 
 }
@@ -194,7 +221,7 @@ setup_common() {
 }
 
 setup_dnsmasq() {
-  log_action_begin_msg "Setting up dnsmasq"
+  log_it "Setting up dnsmasq"
   [ -z $DHCP_RANGE ] && DHCP_RANGE=$ETH0_IP
   [ -z $DOMAIN ] && DOMAIN="cloudnine.internal"
   if [ -n "$DOMAIN" ]
@@ -217,7 +244,7 @@ setup_sshd(){
 }
 
 setup_apache2() {
-  log_action_begin_msg "Setting up apache web server"
+  log_it "Setting up apache web server"
   local ip=$1
   [ -f /etc/apache2/sites-available/default ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:80>/" /etc/apache2/sites-available/default
   [ -f /etc/apache2/sites-available/default-ssl ] && sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:443>/" /etc/apache2/sites-available/default-ssl
@@ -227,7 +254,7 @@ setup_apache2() {
 }
 
 setup_router() {
-  log_action_begin_msg "Setting up virtual router system vm"
+  log_it "Setting up virtual router system vm"
   if [ -n "$ETH2_IP" ]
   then
   	setup_common eth0 eth1 eth2
@@ -253,7 +280,7 @@ setup_router() {
 }
 
 setup_dhcpsrvr() {
-  log_action_begin_msg "Setting up dhcp server system vm"
+  log_it "Setting up dhcp server system vm"
   setup_common eth0 eth1
   setup_dnsmasq
   setup_apache2 $ETH0_IP
@@ -286,7 +313,8 @@ setup_dhcpsrvr() {
 }
 
 setup_secstorage() {
-  log_action_begin_msg "Setting up secondary storage system vm"
+  log_it "Setting up secondary storage system vm"
+  local hyp=$1
   setup_common eth0 eth1 eth2
   sed -i  /gateway/d /etc/hosts
   public_ip=$ETH2_IP
@@ -294,7 +322,7 @@ setup_secstorage() {
   echo "$public_ip $NAME" >> /etc/hosts
 
   cp /etc/iptables/iptables-secstorage /etc/iptables/rules
-  if [ -e /dev/cdrom1 ]; then
+  if [ "$hyp" == "vmware" ]; then
     setup_sshd $ETH1_IP
   else
     setup_sshd $ETH0_IP
@@ -310,14 +338,15 @@ setup_secstorage() {
 }
 
 setup_console_proxy() {
-  log_action_begin_msg "Setting up console proxy system vm"
+  log_it "Setting up console proxy system vm"
+  local hyp=$1
   setup_common eth0 eth1 eth2
   public_ip=$ETH2_IP
   [ "$ETH2_IP" == "0.0.0.0" ] && public_ip=$ETH1_IP
   sed -i  /gateway/d /etc/hosts
   echo "$public_ip $NAME" >> /etc/hosts
   cp /etc/iptables/iptables-consoleproxy /etc/iptables/rules
-  if [ -e /dev/cdrom1 ]; then
+  if [ "$hyp" == "vmware" ]; then
     setup_sshd $ETH1_IP
   else
     setup_sshd $ETH0_IP
@@ -343,6 +372,10 @@ EOF
 }
 
 start() {
+  local hyp=$(hypervisor)
+  [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
+  log_it "Detected that we are running inside $hyp guest"
+  get_boot_params
   patch
   parse_cmd_line
   case $TYPE in 
@@ -356,11 +389,11 @@ start() {
 	  ;;
      secstorage)
          [ "$NAME" == "" ] && NAME=secstorage
-         setup_secstorage;
+         setup_secstorage $hyp;
 	  ;;
      consoleproxy)
          [ "$NAME" == "" ] && NAME=consoleproxy
-         setup_console_proxy;
+         setup_console_proxy $hyp;
 	  ;;
      unknown)
          [ "$NAME" == "" ] && NAME=systemvm
