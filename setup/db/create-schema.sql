@@ -28,7 +28,6 @@ DROP TABLE IF EXISTS `cloud`.`user_vm`;
 DROP TABLE IF EXISTS `cloud`.`template_host_ref`;
 DROP TABLE IF EXISTS `cloud`.`upload`;
 DROP TABLE IF EXISTS `cloud`.`template_zone_ref`;
-DROP TABLE IF EXISTS `cloud`.`ha_work`;
 DROP TABLE IF EXISTS `cloud`.`dc_vnet_alloc`;
 DROP TABLE IF EXISTS `cloud`.`dc_ip_address_alloc`;
 DROP TABLE IF EXISTS `cloud`.`vlan`;
@@ -198,7 +197,9 @@ CREATE TABLE `cloud`.`nics` (
   `default_nic` tinyint NOT NULL COMMENT "None", 
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_nics__instance_id` FOREIGN KEY `fk_nics__instance_id`(`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_nics__networks_id` FOREIGN KEY `fk_nics__networks_id`(`network_id`) REFERENCES `networks`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`network_offerings` (
@@ -306,7 +307,16 @@ CREATE TABLE `cloud`.`op_ha_work` (
   `step` varchar(32) NOT NULL COMMENT 'Step in the work',
   `time_to_try` bigint COMMENT 'time to try do this work',
   `updated` bigint unsigned NOT NULL COMMENT 'time the VM state was updated when it was stored into work queue',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_op_ha_work__instance_id` FOREIGN KEY `fk_op_ha_work__instance_id` (`instance_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE, 
+  INDEX `i_op_ha_work__instance_id`(`instance_id`),
+  CONSTRAINT `fk_op_ha_work__host_id` FOREIGN KEY `fk_op_ha_work__host_id` (`host_id`) REFERENCES `host` (`id`),
+  INDEX `i_op_ha_work__host_id`(`host_id`), 
+  INDEX `i_op_ha_work__step`(`step`), 
+  INDEX `i_op_ha_work__type`(`type`),
+  CONSTRAINT `fk_op_ha_work__mgmt_server_id` FOREIGN KEY `fk_op_ha_work__mgmt_server_id`(`mgmt_server_id`) REFERENCES `mshost`(`id`),
+  INDEX `i_op_ha_work__mgmt_server_id`(`mgmt_server_id`)
+
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`sequence` (
@@ -342,13 +352,10 @@ CREATE TABLE `cloud`.`volumes` (
   `volume_type` varchar(64) NOT NULL COMMENT 'root, swap or data',
   `resource_type` varchar(64) COMMENT 'pool-based or host-based',
   `pool_type` varchar(64) COMMENT 'type of the pool',
-  `mirror_state` varchar(64) COMMENT 'not_mirrored, active or defunct',
-  `mirror_vol` bigint unsigned COMMENT 'the other half of the mirrored set if mirrored',
   `disk_offering_id` bigint unsigned NOT NULL COMMENT 'can be null for system VMs',
   `template_id` bigint unsigned COMMENT 'fk to vm_template.id',
   `first_snapshot_backup_uuid` varchar (255) COMMENT 'The first snapshot that was ever taken for this volume',
   `recreatable` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is this volume recreatable?',
-  `destroyed` tinyint(1) COMMENT 'indicates whether the volume was destroyed by the user or not',
   `created` datetime COMMENT 'Date Created',
   `attached` datetime COMMENT 'Date Attached',
   `updated` datetime COMMENT 'Date updated for attach/detach',
@@ -358,7 +365,16 @@ CREATE TABLE `cloud`.`volumes` (
   `source_id` bigint unsigned  COMMENT 'id for the source',
   `source_type` varchar(32) COMMENT 'source from which the volume is created -- snapshot, diskoffering, template, blank',
   `chain_info` text COMMENT 'save possible disk chain info in primary storage',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  INDEX `i_volumes__removed`(`removed`),
+  INDEX `i_volumes__pod_id`(`pod_id`),
+  INDEX `i_volumes__data_center_id`(`data_center_id`),
+  CONSTRAINT `fk_volumes__account_id` FOREIGN KEY `fk_volumes__account_id` (`account_id`) REFERENCES `account` (`id`),
+  INDEX `i_volumes__account_id`(`account_id`),
+  CONSTRAINT `fk_volumes__pool_id` FOREIGN KEY `fk_volumes__pool_id` (`pool_id`) REFERENCES `storage_pool` (`id`),
+  INDEX `i_volumes__pool_id`(`pool_id`),
+  CONSTRAINT `fk_volumes__instance_id` FOREIGN KEY `fk_volumes__instance_id` (`instance_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE,
+  INDEX `i_volumes__instance_id`(`instance_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`snapshots` (
@@ -770,17 +786,12 @@ CREATE TABLE `cloud`.`user_vm` (
   `id` bigint unsigned UNIQUE NOT NULL,
   `iso_id` bigint unsigned,
   `display_name` varchar(255),
-  `domain_router_id` bigint unsigned COMMENT 'router id',
-  `vnet` varchar(18) COMMENT 'vnet',
-  `dc_vlan` varchar(18) COMMENT 'zone vlan',
   `guest_ip_address` varchar(15) COMMENT 'ip address within the guest network',
   `guest_mac_address` varchar(17) COMMENT 'mac address within the guest network',
   `guest_netmask` varchar(15) COMMENT 'netmask within the guest network',
-  `external_ip_address` varchar(15)  COMMENT 'ip address within the external network',
-  `external_mac_address` varchar(17)  COMMENT 'mac address within the external network',
-  `external_vlan_db_id` bigint unsigned  COMMENT 'foreign key into vlan table',
   `user_data` varchar(2048),
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_user_vm__id` FOREIGN KEY `fk_user_vm__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`user_vm_details` (
@@ -788,32 +799,25 @@ CREATE TABLE `cloud`.`user_vm_details` (
   `vm_id` bigint unsigned NOT NULL COMMENT 'vm id',
   `name` varchar(255) NOT NULL,
   `value` varchar(1024) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_user_vm_details__vm_id` FOREIGN KEY `fk_user_vm_details__vm_id`(`vm_id`) REFERENCES `user_vm`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `cloud`.`domain_router` (
   `id` bigint unsigned UNIQUE NOT NULL COMMENT 'Primary Key',
-  `gateway` varchar(15)  COMMENT 'ip address of the gateway to this domR',
   `ram_size` int(10) unsigned NOT NULL DEFAULT 128 COMMENT 'memory to use in mb',
-  `dns1` varchar(15) COMMENT 'dns1',
-  `dns2` varchar(15) COMMENT 'dns2',
   `domain` varchar(255) COMMENT 'domain',
   `public_mac_address` varchar(17)   COMMENT 'mac address of the public facing network card',
   `public_ip_address` varchar(15)  COMMENT 'public ip address used for source net',
   `public_netmask` varchar(15)  COMMENT 'netmask used for the domR',
   `guest_mac_address` varchar(17) COMMENT 'mac address of the pod facing network card',
-  `guest_dc_mac_address` varchar(17) COMMENT 'mac address of the data center facing network card',
   `guest_netmask` varchar(15) COMMENT 'netmask used for the guest network',
   `guest_ip_address` varchar(15) COMMENT ' ip address in the guest network',   
-  `vnet` varchar(18) COMMENT 'vnet',
-  `dc_vlan` varchar(18) COMMENT 'vnet',
-  `vlan_db_id` bigint unsigned COMMENT 'Foreign key into vlan id table',
-  `vlan_id` varchar(255) COMMENT 'optional VLAN ID for DomainRouter that can be used in rundomr.sh',
-  `dhcp_ip_address` bigint unsigned DEFAULT 2 COMMENT 'next ip address for dhcp for this domR',
   `network_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'network configuration that this domain router belongs to',
   `role` varchar(64) NOT NULL COMMENT 'type of role played by this router',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_domain_router__id` FOREIGN KEY `fk_domain_router__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT = 'information about the domR instance';
 
 CREATE TABLE  `cloud`.`upload` (
@@ -874,44 +878,28 @@ CREATE TABLE  `cloud`.`template_zone_ref` (
 
 CREATE TABLE  `cloud`.`console_proxy` (
   `id` bigint unsigned NOT NULL auto_increment,
-  `gateway` varchar(15)  COMMENT 'gateway info for this console proxy towards public network interface',
-  `dns1` varchar(15) COMMENT 'dns1',
-  `dns2` varchar(15) COMMENT 'dns2',
-  `domain` varchar(255) COMMENT 'domain',
   `public_mac_address` varchar(17) unique COMMENT 'mac address of the public facing network card',
   `public_ip_address` varchar(15) UNIQUE COMMENT 'public ip address for the console proxy',
   `public_netmask` varchar(15)  COMMENT 'public netmask used for the console proxy',
-  `guest_mac_address` varchar(17) unique COMMENT 'mac address of the guest facing network card',
-  `guest_ip_address`  varchar(15) UNIQUE COMMENT 'guest ip address for the console proxy',
-  `guest_netmask` varchar(15)  COMMENT 'guest netmask used for the console proxy',
-  `vlan_db_id` bigint unsigned COMMENT 'Foreign key into vlan id table',
-  `vlan_id` varchar(255) COMMENT 'optional VLAN ID for console proxy that can be used',
   `ram_size` int(10) unsigned NOT NULL DEFAULT 512 COMMENT 'memory to use in mb',
   `active_session` int(10) NOT NULL DEFAULT 0 COMMENT 'active session number',
   `last_update` DATETIME NULL COMMENT 'Last session update time',
   `session_details` BLOB NULL COMMENT 'session detail info',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_console_proxy__id` FOREIGN KEY `fk_console_proxy__id`(`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`secondary_storage_vm` (
   `id` bigint unsigned NOT NULL auto_increment,
-  `gateway` varchar(15)  COMMENT 'gateway info for this sec storage vm towards public network interface',
-  `dns1` varchar(15) COMMENT 'dns1',
-  `dns2` varchar(15) COMMENT 'dns2',
-  `domain` varchar(255) COMMENT 'domain',
   `public_mac_address` varchar(17)  unique COMMENT 'mac address of the public facing network card',
   `public_ip_address` varchar(15) UNIQUE COMMENT 'public ip address for the sec storage vm',
   `public_netmask` varchar(15)  COMMENT 'public netmask used for the sec storage vm',
-  `guest_mac_address` varchar(17)  unique COMMENT 'mac address of the guest facing network card',
-  `guest_ip_address`  varchar(15) UNIQUE COMMENT 'guest ip address for the console proxy',
-  `guest_netmask` varchar(15)  COMMENT 'guest netmask used for the console proxy',
-  `vlan_db_id` bigint unsigned COMMENT 'Foreign key into vlan id table',
-  `vlan_id` varchar(255) COMMENT 'optional VLAN ID for sec storage vm that can be used',
   `ram_size` int(10) unsigned NOT NULL DEFAULT 512 COMMENT 'memory to use in mb',
   `guid` varchar(255)  COMMENT 'copied from guid of secondary storage host',
   `nfs_share` varchar(255)  COMMENT 'server and path exported by the nfs server ',
   `last_update` DATETIME NULL COMMENT 'Last session update time',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_secondary_storage_vm__id` FOREIGN KEY `fk_secondary_storage_vm__id`(`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`domain` (
@@ -1040,14 +1028,6 @@ CREATE TABLE `cloud`.`sync_queue_item` (
   `queue_proc_msid` bigint COMMENT 'owner msid when the queue item is being processed',
   `queue_proc_number` bigint COMMENT 'used to distinguish raw items and items being in process',
   `created` datetime COMMENT 'time created',
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`vm_disk` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `instance_id` bigint unsigned NOT NULL,
-  `disk_offering_id` bigint unsigned NOT NULL,
-  `removed` datetime COMMENT 'date removed',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

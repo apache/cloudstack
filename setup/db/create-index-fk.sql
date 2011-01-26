@@ -1,31 +1,7 @@
-ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__removed`(`removed`);
-ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__pod_id`(`pod_id`);
-ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__data_center_id`(`data_center_id`);
-
-ALTER TABLE `cloud`.`volumes` ADD CONSTRAINT `fk_volumes__account_id` FOREIGN KEY `fk_volumes__account_id` (`account_id`) REFERENCES `account` (`id`);
-ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__account_id`(`account_id`);
-
-ALTER TABLE `cloud`.`volumes` ADD CONSTRAINT `fk_volumes__pool_id` FOREIGN KEY `fk_volumes__pool_id` (`pool_id`) REFERENCES `storage_pool` (`id`);
-ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__pool_id`(`pool_id`);
-
-ALTER TABLE `cloud`.`volumes` ADD CONSTRAINT `fk_volumes__instance_id` FOREIGN KEY `fk_volumes__instance_id` (`instance_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`volumes` ADD INDEX `i_volumes__instance_id`(`instance_id`);
-
-#ALTER TABLE `cloud`.`op_ha_work` ADD CONSTRAINT `fk_op_ha_work__instance_id` FOREIGN KEY `fk_op_ha_work__instance_id` (`instance_id`) REFERENCES `vm_instance` (`id`);
-ALTER TABLE `cloud`.`op_ha_work` ADD INDEX `i_op_ha_work__instance_id`(`instance_id`);
-
-#ALTER TABLE `cloud`.`op_ha_work` ADD CONSTRAINT `fk_op_ha_work__host_id` FOREIGN KEY `fk_op_ha_work__host_id` (`host_id`) REFERENCES `host` (`id`);
-ALTER TABLE `cloud`.`op_ha_work` ADD INDEX `i_op_ha_work__host_id`(`host_id`); 
-
-ALTER TABLE `cloud`.`op_ha_work` ADD INDEX `i_op_ha_work__step`(`step`); 
-ALTER TABLE `cloud`.`op_ha_work` ADD INDEX `i_op_ha_work__type`(`type`);
-ALTER TABLE `cloud`.`op_ha_work` ADD INDEX `i_op_ha_work__mgmt_server_id`(`mgmt_server_id`);
+# This file is obsolete!  Put what you need into create-schema.sql
 
 ALTER TABLE `cloud`.`account_network_ref` ADD CONSTRAINT `fk_account_network_ref__account_id` FOREIGN KEY `fk_account_network_ref__account_id`(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`account_network_ref` ADD CONSTRAINT `fk_account_network_ref__networks_id` FOREIGN KEY `fk_account_network_ref__networks_id`(`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE;
-
-ALTER TABLE `cloud`.`nics` ADD CONSTRAINT `fk_nics__instance_id` FOREIGN KEY `fk_nics__instance_id`(`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`nics` ADD CONSTRAINT `fk_nics__networks_id` FOREIGN KEY `fk_nics__networks_id`(`network_id`) REFERENCES `networks`(`id`);
 
 ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD INDEX `i_op_dc_ip_address_alloc__pod_id__data_center_id__taken` (`pod_id`, `data_center_id`, `taken`, `instance_id`);
 ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD UNIQUE `i_op_dc_ip_address_alloc__ip_address__data_center_id`(`ip_address`, `data_center_id`);
@@ -95,27 +71,6 @@ ALTER TABLE `cloud`.`vm_template` ADD INDEX `i_vm_template__public`(`public`);
 
 ALTER TABLE `cloud`.`service_offering` ADD CONSTRAINT `fk_service_offering__id` FOREIGN KEY `fk_service_offering__id`(`id`) REFERENCES `disk_offering`(`id`) ON DELETE CASCADE;
 
-ALTER TABLE `cloud`.`user_vm` ADD CONSTRAINT `fk_user_vm__domain_router_id` FOREIGN KEY `fk_user_vm__domain_router_id` (`domain_router_id`) REFERENCES `domain_router` (`id`);
-ALTER TABLE `cloud`.`user_vm` ADD INDEX `i_user_vm__domain_router_id`(`domain_router_id`);
-ALTER TABLE `cloud`.`user_vm` ADD CONSTRAINT `fk_user_vm__id` FOREIGN KEY `fk_user_vm__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE;
-#ALTER TABLE `cloud`.`user_vm` ADD CONSTRAINT `fk_user_vm__external_ip_address` FOREIGN KEY `fk_user_vm__external_ip_address` (`external_ip_address`) REFERENCES `user_ip_address` (`public_ip_address`);
-ALTER TABLE `cloud`.`user_vm` ADD INDEX `i_user_vm__external_ip_address`(`external_ip_address`);
-ALTER TABLE `cloud`.`user_vm` ADD CONSTRAINT `fk_user_vm__external_vlan_db_id` FOREIGN KEY `fk_user_vm__external_vlan_db_id` (`external_vlan_db_id`) REFERENCES `vlan` (`id`);
-ALTER TABLE `cloud`.`user_vm` ADD INDEX `i_user_vm__external_vlan_db_id`(`external_vlan_db_id`);
-
-ALTER TABLE `cloud`.`user_vm_details` ADD CONSTRAINT `fk_user_vm_details__vm_id` FOREIGN KEY `fk_user_vm_details__vm_id`(`vm_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE;
-
-#ALTER TABLE `cloud`.`domain_router` ADD CONSTRAINT `fk_domain_router__public_ip_address` FOREIGN KEY `fk_domain_router__public_ip_address` (`public_ip_address`) REFERENCES `user_ip_address` (`public_ip_address`);
-ALTER TABLE `cloud`.`domain_router` ADD INDEX `i_domain_router__public_ip_address`(`public_ip_address`);
-ALTER TABLE `cloud`.`domain_router` ADD CONSTRAINT `fk_domain_router__id` FOREIGN KEY `fk_domain_router__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE;
-
-ALTER TABLE `cloud`.`domain_router` ADD CONSTRAINT `fk_domain_router__vlan_id` FOREIGN KEY `fk_domain_router__vlan_id` (`vlan_db_id`) REFERENCES `vlan` (`id`);
-ALTER TABLE `cloud`.`domain_router` ADD INDEX `i_domain_router__vlan_id`(`vlan_db_id`);
-
-ALTER TABLE `cloud`.`domain_router` ADD CONSTRAINT `fk_domain_route__id` FOREIGN KEY `fk_domain_router__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`console_proxy` ADD CONSTRAINT `fk_console_proxy__vlan_id` FOREIGN KEY `fk_console_proxy__vlan_id` (`vlan_db_id`) REFERENCES `vlan` (`id`);
-ALTER TABLE `cloud`.`console_proxy` ADD INDEX `i_console_proxy__vlan_id`(`vlan_db_id`);
-
 ALTER TABLE `cloud`.`op_host_capacity` ADD INDEX `i_op_host_capacity__host_type`(`host_id`, `capacity_type`);
 ALTER TABLE `cloud`.`op_host_capacity` ADD CONSTRAINT `fk_op_host_capacity__pod_id` FOREIGN KEY `fk_op_host_capacity__pod_id` (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`op_host_capacity` ADD INDEX `i_op_host_capacity__pod_id`(`pod_id`);
@@ -137,11 +92,6 @@ ALTER TABLE `cloud`.`account_vlan_map` ADD INDEX `i_account_vlan_map__account_id
 
 ALTER TABLE `cloud`.`account_vlan_map` ADD CONSTRAINT `fk_account_vlan_map__vlan_id` FOREIGN KEY `fk_account_vlan_map__vlan_id` (`vlan_db_id`) REFERENCES `vlan` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`account_vlan_map` ADD INDEX `i_account_vlan_map__vlan_id`(`vlan_db_id`);
-
-#ALTER TABLE `cloud`.`ip_forwarding` ADD INDEX `i_ip_forwarding__forwarding`(`forwarding`);
-#ALTER TABLE `cloud`.`ip_forwarding` ADD INDEX `i_ip_forwarding__public_ip_address__public_port`(`public_ip_address`, `public_port`);
-#ALTER TABLE `cloud`.`ip_forwarding` ADD CONSTRAINT `fk_ip_forwarding__public_ip_address` FOREIGN KEY `fk_ip_forwarding__public_ip_address` (`public_ip_address`) REFERENCES `user_ip_address` (`public_ip_address`) ON DELETE CASCADE;
-#ALTER TABLE `cloud`.`ip_forwarding` ADD INDEX `i_ip_forwarding__public_ip_address`(`public_ip_address`);
 
 ALTER TABLE `cloud`.`user_statistics` ADD CONSTRAINT `fk_user_statistics__account_id` FOREIGN KEY `fk_user_statistics__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`user_statistics` ADD INDEX `i_user_statistics__account_id`(`account_id`);
@@ -222,5 +172,3 @@ ALTER TABLE `cloud`.`instance_group_vm_map` ADD CONSTRAINT `fk_instance_group_vm
 
 ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT `fk_ssh_keypairs__account_id` FOREIGN KEY `fk_ssh_keypair__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT `fk_ssh_keypairs__domain_id` FOREIGN KEY `fk_ssh_keypair__domain_id` (`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE;
-
-#ALTER TABLE `cloud`.`vlan` ADD CONSTRAINT `fk_vlan__network_id` FOREIGN KEY `fk_vlan__network_id` (`network_id`) REFERENCES `networks` (`id`) ON DELETE CASCADE;
