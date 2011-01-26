@@ -1537,8 +1537,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     @Override
     public boolean finalizeStart(VirtualMachineProfile<ConsoleProxyVO> profile, long hostId, Commands cmds, ReservationContext context) {
         CheckSshAnswer answer = (CheckSshAnswer)cmds.getAnswer("checkSsh");
-        if (!answer.getResult()) {
-            s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
+        if (answer == null || !answer.getResult()) {
+            if(answer != null)
+                s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
+            else
+                s_logger.warn("Unable to ssh to the VM: null answer");
             return false;
         }
         
