@@ -132,7 +132,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt="Add Primary Storage" /></div>
             <div class="actionpanel_button_links">
-                <fmt:message key="label.add.primarystorage"/>
+                <fmt:message key="label.add.primary.storage"/>
             </div>
         </div>
     </div>
@@ -177,7 +177,7 @@
             </li>
             <li input_group="vmware" style="display: none;">
                 <label for="host_vcenter_address">
-                    <fmt:message key="label.vcenter.address"/>:</label>
+                    <fmt:message key="label.vcenter.host"/>:</label>
                 <input class="text" type="text" name="host_vcenter_address" id="host_vcenter_address" />
                 <div id="host_vcenter_address_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
@@ -205,7 +205,7 @@
             </li>
             <li input_group="vmware" style="display: none;">
                 <label for="host_vcenter_host">
-                    <fmt:message key="label.vcenter.host"/>:</label>
+                    <fmt:message key="label.esx.host"/>:</label>
                 <input class="text" type="text" name="host_vcenter_host" id="host_vcenter_host" />
                 <div id="host_vcenter_host_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
