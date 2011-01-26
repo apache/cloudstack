@@ -20,6 +20,7 @@ package com.cloud.agent.api;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.cloud.host.Host;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.template.TemplateInfo;
@@ -37,11 +38,11 @@ public class StartupStorageCommand extends StartupCommand {
     String nfsShare;
 
     public StartupStorageCommand() {
-        super();
+        super(Host.Type.Storage);
     }
     
     public StartupStorageCommand(String parent, StoragePoolType fsType, long totalSize, Map<String, TemplateInfo> info) {
-        super();
+        super(Host.Type.Storage);
         this.parent = parent;
         this.totalSize = totalSize;
         this.templateInfo = info;
@@ -51,7 +52,7 @@ public class StartupStorageCommand extends StartupCommand {
     
 
     public StartupStorageCommand(String parent, StoragePoolType fsType, Map<String, TemplateInfo> templateInfo, StoragePoolInfo poolInfo) {
-		super();
+		super(Host.Type.Storage);
 		this.parent = parent;
 		this.templateInfo = templateInfo;
 		this.totalSize = poolInfo.capacityBytes;

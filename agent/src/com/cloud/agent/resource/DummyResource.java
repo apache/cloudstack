@@ -61,7 +61,7 @@ public class DummyResource implements ServerResource {
 
     @Override
     public StartupCommand[] initialize() {
-        return new StartupCommand[] {new StartupCommand()};
+        return new StartupCommand[] {new StartupCommand(Host.Type.Storage)};
     }
 
     @Override

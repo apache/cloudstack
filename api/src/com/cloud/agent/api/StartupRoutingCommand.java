@@ -19,6 +19,7 @@ package com.cloud.agent.api;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.vm.VirtualMachine.State;
@@ -35,7 +36,7 @@ public class StartupRoutingCommand extends StartupCommand {
     Map<String, String> hostDetails; //stuff like host os, cpu capabilities
 
     public StartupRoutingCommand() {
-        super();
+        super(Host.Type.Routing);
         hostDetails = new HashMap<String, String>();
         getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), RouterPrivateIpStrategy.DcGlobal.toString());
 
@@ -62,7 +63,7 @@ public class StartupRoutingCommand extends StartupCommand {
     		
     		final Map<String, String> hostDetails,
     		Map<String, State> vms) {
-    	super();
+    	super(Host.Type.Routing);
     	this.cpus = cpus;
     	this.speed = speed;
     	this.memory = memory;

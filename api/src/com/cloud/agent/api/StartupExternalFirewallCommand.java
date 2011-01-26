@@ -1,5 +1,10 @@
 package com.cloud.agent.api;
 
-public class StartupExternalFirewallCommand extends StartupCommand {
+import com.cloud.host.Host;
 
+public class StartupExternalFirewallCommand extends StartupCommand {
+    
+    public StartupExternalFirewallCommand() {
+        super(Host.Type.ExternalFirewall);
+    }
 }

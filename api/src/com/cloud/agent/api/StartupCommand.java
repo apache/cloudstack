@@ -17,7 +17,10 @@
  */
 package com.cloud.agent.api;
 
+import com.cloud.host.Host;
+
 public class StartupCommand extends Command {
+    Host.Type type;
     String dataCenter;
     String pod;
     String cluster;
@@ -41,10 +44,11 @@ public class StartupCommand extends Command {
     String agentTag;
     String resourceName;
     
-    public StartupCommand() {
+    public StartupCommand(Host.Type type) {
+        this.type = type;
     }
     
-    public StartupCommand(Long id, String name, String dataCenter, String pod, String guid, String version) {
+    public StartupCommand(Long id, Host.Type type, String name, String dataCenter, String pod, String guid, String version) {
         super();
         this.id = id;
         this.dataCenter = dataCenter;
@@ -52,6 +56,11 @@ public class StartupCommand extends Command {
         this.guid = guid;
         this.name = name;
         this.version = version;
+        this.type = type;
+    }
+    
+    public Host.Type getHostType() {
+        return type;
     }
     
     public String getIqn() {
@@ -232,9 +241,9 @@ public class StartupCommand extends Command {
     }
     
     public String getGuidWithoutResource() {
-    	if (resourceName == null)
-    	  return guid;
-    	else {
+    	if (resourceName == null) {
+            return guid;
+        } else {
     	  int hyph = guid.lastIndexOf('-');
     	  if (hyph == -1) {
     		  return guid;
