@@ -31,13 +31,10 @@ import com.cloud.utils.fsm.StateMachine;
 public interface Volume extends ControlledEntity, BasedOn {
 	enum VolumeType {UNKNOWN, ROOT, SWAP, DATADISK, ISO};
 	
-	enum MirrorState {NOT_MIRRORED, ACTIVE, DEFUNCT};
-	
 	enum State implements FiniteState<State, Event> {
 	    Allocated("The volume is allocated but has not been created yet."),
 	    Creating("The volume is being created.  getPoolId() should reflect the pool where it is being created."),
 	    Ready("The volume is ready to be used."),
-	    Used("The volume is used"),
 	    Destroy("The volume is set to be destroyed but can be recovered.");
 	    
 	    String _description;
@@ -79,14 +76,13 @@ public interface Volume extends ControlledEntity, BasedOn {
             s_fsm.addTransition(Creating, Event.OperationFailed, Allocated);
             s_fsm.addTransition(Creating, Event.OperationSucceeded, Ready);
             s_fsm.addTransition(Creating, Event.Destroy, Destroy);
+            s_fsm.addTransition(Creating, Event.Create, Creating);
             s_fsm.addTransition(Ready, Event.Destroy, Destroy);
-            s_fsm.addTransition(Ready, Event.Start, Used);
         }
 	}
 	
 	enum Event {
 	    Create,
-	    Start,
 	    OperationFailed,
 	    OperationSucceeded,
 	    OperationRetry,
@@ -107,8 +103,6 @@ public interface Volume extends ControlledEntity, BasedOn {
      * @return total size of the partition
      */
     long getSize();
-    
-    void setSize(long size);
     
     /**
      * @return the vm instance id
@@ -139,15 +133,10 @@ public interface Volume extends ControlledEntity, BasedOn {
 	
 	SourceType getSourceType();
 	
-	void setSourceType(SourceType sourceType);
-
-	void setSourceId(Long sourceId);
-
 	Long getSourceId();
 
 	Date getAttached();
 
-	void setAttached(Date attached);
 	Long getDeviceId();
 	
 	Date getCreated();

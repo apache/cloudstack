@@ -293,7 +293,6 @@ public class VolumeVO implements Volume {
         return size;
     }
     
-	@Override
     public void setSize(long size) {
 		this.size = size;
 	}
@@ -506,12 +505,10 @@ public class VolumeVO implements Volume {
 		return this.sourceType;
 	}
 
-	@Override
 	public void setSourceType(SourceType sourceType) {
 		this.sourceType = sourceType;
 	}
 	
-	@Override
 	public void setSourceId(Long sourceId){
 		this.sourceId = sourceId;
 	}
@@ -526,7 +523,6 @@ public class VolumeVO implements Volume {
 		return this.attached; 
 	}
 	
-	@Override
 	public void setAttached(Date attached){
 		this.attached = attached;
 	}
