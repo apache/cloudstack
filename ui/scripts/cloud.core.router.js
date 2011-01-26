@@ -104,6 +104,7 @@ function routerJsonToDetailsTab() {
     $thisTab.find("#guestipaddress").text(fromdb(jsonObj.guestipaddress));
     $thisTab.find("#hostname").text(fromdb(jsonObj.hostname));
     $thisTab.find("#networkdomain").text(fromdb(jsonObj.networkdomain));
+    $thisTab.find("#domain").text(fromdb(jsonObj.domain));  
     $thisTab.find("#account").text(fromdb(jsonObj.account));  
     setDateField(jsonObj.created, $thisTab.find("#created"));	 
     
@@ -146,6 +147,7 @@ function routerClearDetailsTab() {
     $thisTab.find("#guestipaddress").text("");
     $thisTab.find("#hostname").text("");
     $thisTab.find("#networkdomain").text("");
+    $thisTab.find("#domain").text("");  
     $thisTab.find("#account").text("");  
     $thisTab.find("#created").text("");   
     resetViewConsoleAction(null, $thisTab);       
