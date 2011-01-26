@@ -308,7 +308,7 @@ a:hover {
 
 .login_button {
 	width:94px;
-	height:30px;
+	height:32px;
 	float:left;
 	background:url(../images/login_button.gif) no-repeat top left;
 	color:#FFF;
@@ -318,7 +318,8 @@ a:hover {
 	cursor:pointer;
 	cursor:hand;
 	margin:0;
-	padding:7px 0 0 0;
+	padding:0 0 0 0;
+	border:none;
 }
 
 
