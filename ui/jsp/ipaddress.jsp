@@ -21,7 +21,9 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
-            <fmt:message key="label.details"/></div>		
+            <fmt:message key="label.details"/></div>	            
+        <div class="content_tabs off" id="tab_port_range" style="display: none">
+            <fmt:message key="label.port.range"/></div>            	
 		<div class="content_tabs off" id="tab_port_forwarding" style="display: none">
             <fmt:message key="label.port.forwarding"/></div>
         <div class="content_tabs off" id="tab_load_balancer" style="display: none">
@@ -181,6 +183,80 @@
         </div>        
     </div>
     <!-- Details ends here-->
+    <!-- Port Range start here-->
+    <div id="tab_content_port_range" style="display:none">
+    	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">
+            <div class="rightpanel_mainloaderbox">
+                <div class="rightpanel_mainloader_animatedicon">
+                </div>
+                <p>
+                    <fmt:message key="label.loading"/> &hellip;</p>
+            </div>
+        </div>        
+        <div id="tab_container">
+	        <div class="grid_container" id="grid_container">
+	            <div class="grid_header">
+	                <div class="grid_header_cell" style="width: 15%;">
+	                    <div class="grid_header_title">
+	                        <fmt:message key="label.public.port"/></div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 15%;">
+	                    <div class="grid_header_title">
+	                        <fmt:message key="label.private.port"/></div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 15%;">
+	                    <div class="grid_header_title">
+	                        <fmt:message key="label.protocol"/></div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 25%; border: none;">
+	                    <div class="grid_header_title">
+	                        <fmt:message key="label.instance"/></div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 10%;">
+	                    <div class="grid_header_title">
+	                        <fmt:message key="label.state"/></div>
+	                </div>
+	                <div class="grid_header_cell" style="width: 15%;">
+	                    <div class="grid_header_title">
+	                        <fmt:message key="label.actions"/></div>
+	                </div>
+	            </div>
+	            <div class="grid_rows even" id="create_port_range_row">
+	                <div class="grid_row_cell" style="width: 15%;">
+	                    <input id="public_port" class="text" style="width: 70%;" type="text" />
+	                    <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 15%;">
+	                    <input id="private_port" class="text" style="width: 70%;" type="text" />
+	                    <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 15%;">  
+	                   <select class="select" id="protocol" style="width:70%;">
+	                       <!--  
+	                       <option value="TCP">TCP</option>
+	                       <option value="UDP">UDP</option>
+	                       -->
+	                   </select>
+	                </div>
+	                <div class="grid_row_cell" style="width: 25%;">                   
+	                    <select class="select" id="vm">
+	                    </select>
+	                    <div id="vm_errormsg" class="errormsg" style="display: none;"></div>	                    
+	                </div>
+	                <div class="grid_row_cell" style="width: 10%;">   
+	                    <div class="row_celltitles" id="state"></div>
+	                </div>  
+	                <div class="grid_row_cell" style="width: 15%;">
+	                    <div class="row_celltitles">
+	                        <a id="add_link" href="#"><fmt:message key="label.add"/></a></div>
+	                </div>
+	            </div>              
+	            <div id="grid_content">
+	            </div>            
+	        </div>
+        </div>      
+    </div>
+    <!-- Port Range ends here-->
     <!-- Port Forwarding start here-->
     <div id="tab_content_port_forwarding" style="display:none">
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display: none;">

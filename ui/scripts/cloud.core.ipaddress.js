@@ -50,9 +50,9 @@ function ipGetSearchParams() {
 
 function afterLoadIpJSP() {
     //***** switch between different tabs (begin) ********************************************************************
-    var tabArray = [$("#tab_details"), $("#tab_port_forwarding"), $("#tab_load_balancer"), $("#tab_vpn")];
-    var tabContentArray = [$("#tab_content_details"), $("#tab_content_port_forwarding"), $("#tab_content_load_balancer"), $("#tab_content_vpn")];
-    var afterSwitchFnArray = [ipJsonToDetailsTab, ipJsonToPortForwardingTab, ipJsonToLoadBalancerTab, ipJsonToVPNTab];
+    var tabArray = [$("#tab_details"), $("#tab_port_range"), $("#tab_port_forwarding"), $("#tab_load_balancer"), $("#tab_vpn")];
+    var tabContentArray = [$("#tab_content_details"), $("#tab_content_port_range"), $("#tab_content_port_forwarding"), $("#tab_content_load_balancer"), $("#tab_content_vpn")];
+    var afterSwitchFnArray = [ipJsonToDetailsTab, ipJsonToPortRangeTab, ipJsonToPortForwardingTab, ipJsonToLoadBalancerTab, ipJsonToVPNTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);       
     //***** switch between different tabs (end) **********************************************************************
         
@@ -327,9 +327,11 @@ function ipToRightPanel($midmenuItem1) {
     $("#tab_details").click();        
    
     if(ipObj.isstaticnat == true) {
+        $("#tab_port_range").show();	
         $("#tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();	
     }
     else { //ipObj.isstaticnat == false  
+        $("#tab_port_range").hide();
         if(ipObj.forvirtualnetwork == true) { //(public network)            
             if(isIpManageable(ipObj.domainid, ipObj.account) == true) {           
 	            //Port Forwarding tab
@@ -387,6 +389,68 @@ function ipToRightPanel($midmenuItem1) {
             $("#tab_port_forwarding, #tab_load_balancer, #tab_vpn").hide();	    
         }            
     }        
+}
+
+function ipJsonToPortRangeTab() {   
+    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
+    
+    /*
+    if($midmenuItem1 == null) {
+        ipClearPortRangeTab();
+        return;    
+    }
+        
+    var ipObj = $midmenuItem1.data("jsonObj");
+    if(ipObj == null) {
+        ipClearPortRangeTab();
+        return;   
+    }
+        
+    var networkObj = $midmenuItem1.data("networkObj");
+      
+    var ipAddress = ipObj.ipaddress;
+    if(ipAddress == null || ipAddress.length == 0)
+        return;    
+   
+    var $thisTab = $("#right_panel_content #tab_content_port_range");  
+	$thisTab.find("#tab_container").hide(); 
+    $thisTab.find("#tab_spinning_wheel").show();   		
+
+    if(networkObj != null) {
+        var firewallServiceObj = ipFindNetworkServiceByName("Firewall", networkObj);
+        if(firewallServiceObj != null) {
+	        var supportedProtocolsCapabilityObj = ipFindCapabilityByName("SupportedProtocols", firewallServiceObj);    
+            if(supportedProtocolsCapabilityObj != null) {
+                var protocols = supportedProtocolsCapabilityObj.value.toUpperCase();  //e.g. "tcp,udp" => "TCP,UDP"         
+                var array1 = protocols.split(",");
+                var $protocolField = $("#create_port_range_row").find("#protocol").empty();
+                for(var i=0; i<array1.length; i++)
+                    $protocolField.append("<option value='"+array1[i]+"'>"+array1[i]+"</option>")
+            }  
+        }
+    }  
+    
+    refreshCreatePortRangeRow();         
+           		
+    $.ajax({
+        data: createURL("command=listPortRangeRules&ipaddress=" + ipAddress),
+        dataType: "json",        
+        success: function(json) {	                                    
+            var items = json.listPortRangerulesresponse.PortRangerule;              
+            var $PortRangeGrid = $thisTab.find("#grid_content");            
+            $PortRangeGrid.empty();                       		    		      	    		
+            if (items != null && items.length > 0) {				        			        
+                for (var i = 0; i < items.length; i++) {
+	                var $template = $("#port_range_template").clone(true);
+	                PortRangeJsonToTemplate(items[i], $template); 
+	                $PortRangeGrid.append($template.show());						   
+                }			    
+            } 	
+            $thisTab.find("#tab_spinning_wheel").hide();    
+            $thisTab.find("#tab_container").show();           	      		    						
+        }
+    });  
+    */ 
 }
 
 function ipJsonToPortForwardingTab() {   
@@ -963,7 +1027,7 @@ function ipJsonToDetailsTab() {
     
     setBooleanReadField(ipObj.isstaticnat, $thisTab.find("#static_nat")); 
     
-    if(ipObj.isstaticnat == true) {   
+    if(ipObj.isstaticnat == true) {    
 	    $thisTab.find("#vm_of_static_nat").text(getVmName(ipObj.virtualmachinename, ipObj.virtualmachinedisplayname));
 	    $thisTab.find("#vm_of_static_nat_container").show();	        
     }
