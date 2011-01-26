@@ -196,57 +196,48 @@
         <div id="tab_container">
 	        <div class="grid_container" id="grid_container">
 	            <div class="grid_header">
-	                <div class="grid_header_cell" style="width: 15%;">
+	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
-	                        <fmt:message key="label.public.port"/></div>
+	                        <fmt:message key="label.start.port"/></div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 15%;">
+	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
-	                        <fmt:message key="label.private.port"/></div>
+	                        <fmt:message key="label.end.port"/></div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 15%;">
+	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.protocol"/></div>
-	                </div>
-	                <div class="grid_header_cell" style="width: 25%; border: none;">
-	                    <div class="grid_header_title">
-	                        <fmt:message key="label.instance"/></div>
-	                </div>
-	                <div class="grid_header_cell" style="width: 10%;">
+	                </div>	                
+	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.state"/></div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 15%;">
+	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.actions"/></div>
 	                </div>
 	            </div>
 	            <div class="grid_rows even" id="create_port_range_row">
-	                <div class="grid_row_cell" style="width: 15%;">
+	                <div class="grid_row_cell" style="width: 15%; padding: 1px;">
 	                    <input id="start_port" class="text" style="width: 70%;" type="text" />
 	                    <div id="start_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
 	                </div>
-	                <div class="grid_row_cell" style="width: 15%;">
+	                <div class="grid_row_cell" style="width: 15%; padding: 1px;">
 	                    <input id="end_port" class="text" style="width: 70%;" type="text" />
 	                    <div id="end_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
 	                </div>
-	                <div class="grid_row_cell" style="width: 15%;">  
+	                <div class="grid_row_cell" style="width: 15%; padding: 1px;">  
 	                   <select class="select" id="protocol" style="width:70%;">
 	                       <!--  
 	                       <option value="TCP">TCP</option>
 	                       <option value="UDP">UDP</option>
 	                       -->
 	                   </select>
-	                </div>
-	                <div class="grid_row_cell" style="width: 25%;">                   
-	                    <select class="select" id="vm">
-	                    </select>
-	                    <div id="vm_errormsg" class="errormsg" style="display: none;"></div>	                    
-	                </div>
-	                <div class="grid_row_cell" style="width: 10%;">   
+	                </div>	                
+	                <div class="grid_row_cell" style="width: 15%; padding: 1px;">   
 	                    <div class="row_celltitles" id="state"></div>
 	                </div>  
-	                <div class="grid_row_cell" style="width: 15%;">
+	                <div class="grid_row_cell" style="width: 15%; padding: 1px;">
 	                    <div class="row_celltitles">
 	                        <a id="add_link" href="#"><fmt:message key="label.add"/></a></div>
 	                </div>
@@ -594,22 +585,19 @@
 <!-- Port Range template (begin) -->
 <div class="grid_rows odd" id="port_range_template" style="display: none">    
     <div id="row_container">
-        <div class="grid_row_cell" style="width: 15%;">
+        <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles" id="start_port"></div>
         </div>
-        <div class="grid_row_cell" style="width: 15%;">
+        <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles" id="end_port"></div>
         </div>
-        <div class="grid_row_cell" style="width: 15%;">
+        <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles" id="protocol"></div>
-        </div>
-        <div class="grid_row_cell" style="width: 25%;">
-            <div class="row_celltitles" id="vm_name">vm</div>
-        </div>   
-        <div class="grid_row_cell" style="width: 10%;">
+        </div>       
+        <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles" id="state"></div>
         </div>        
-        <div class="grid_row_cell" style="width: 15%;">
+        <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles">
                 <a id="revoke_link" href="#" style="float:left;"><fmt:message key="label.revoke"/> </a>                            
             </div>
