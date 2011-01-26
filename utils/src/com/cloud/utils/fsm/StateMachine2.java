@@ -24,10 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.cloud.utils.component.Adapters;
-
-
-
 /**
  * StateMachine is a partial implementation of a finite state machine.
  * Specifically, it implements the Moore machine.
@@ -109,21 +105,22 @@ public class StateMachine2<S, E, V extends StateObject<S>> {
     	}
 
     	for (StateListener<S,E, V> listener : _listeners) {
-    		transitionStatus = listener.processStateTransitionEvent(currentState, e, nextState, vo, transitionStatus, id, dao);
+    		listener.preStateTransitionEvent(currentState, e, nextState, vo, transitionStatus, id);
     	}
+    	
+    	transitionStatus = dao.updateState(currentState, e, nextState, vo, id);
+    	
+    	for (StateListener<S,E, V> listener : _listeners) {
+            listener.postStateTransitionEvent(currentState, e, nextState, vo, transitionStatus);
+        }
 
     	return transitionStatus;
     }
 
     public boolean registerListener(StateListener<S,E,V> listener) {
-    	return _listeners.add(listener);
-    }
-    
-    public boolean registerListeners(Adapters<StateListener<S,E,V>> listeners) {
-    	for (StateListener<S,E,V> listener : listeners) {
-    		_listeners.add(listener);
-    	}
-    	return true;
+        synchronized (_listeners) {
+            return _listeners.add(listener);
+        }
     }
     
     @Override

@@ -18,10 +18,6 @@
 package com.cloud.utils.fsm;
 
 public interface FiniteStateObject<S, E> {
-    /**
-     * @return finite state.
-     */
-    FiniteState<S, E> getState();
-    
+
     void setState(S state);
 }

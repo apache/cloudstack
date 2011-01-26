@@ -7,6 +7,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.ClusterVO;
@@ -47,6 +48,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 	@Inject DetailsDao _hostDetailsDao = null;
 	@Inject GuestOSDao _guestOSDao = null; 
     @Inject GuestOSCategoryDao _guestOSCategoryDao = null;
+    @Inject CapacityManager _capacityMgr;
 	
 	@Override
 	public DeployDestination plan(VirtualMachineProfile vmProfile,
@@ -162,73 +164,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 			return false;
     	}
 
-    	CapacityVO capacityCpu = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_CPU);
-    	CapacityVO capacityMem = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_MEMORY);
-
-    	Transaction txn = Transaction.currentTxn();
-
-    	try {
-    		txn.start();
-    		capacityCpu = _capacityDao.lockRow(capacityCpu.getId(), true);
-    		capacityMem = _capacityDao.lockRow(capacityMem.getId(), true);
-
-    		long usedCpu = capacityCpu.getUsedCapacity();
-    		long usedMem = capacityMem.getUsedCapacity();
-    		long reservedCpu = capacityCpu.getReservedCapacity();
-    		long reservedMem = capacityMem.getReservedCapacity();
-    		long totalCpu = capacityCpu.getTotalCapacity();
-    		long totalMem = capacityMem.getTotalCapacity();
-
-    		boolean success = false;
-    		if (fromLastHost) {
-    			/*alloc from reserved*/
-    			if (reservedCpu >= cpu && reservedMem >= ram) {
-    				capacityCpu.setReservedCapacity(reservedCpu - cpu);
-    				capacityMem.setReservedCapacity(reservedMem - ram);        
-    				if ((usedCpu + reservedCpu + cpu <= totalCpu) && (reservedMem + usedMem + ram <= totalMem)) {
-    					capacityCpu.setUsedCapacity(usedCpu + cpu);
-    					capacityMem.setUsedCapacity(usedMem + ram);
-    				}
-    				success = true;
-    			}		
-    		} else {
-    			/*alloc from free resource*/
-    			if ((reservedCpu + usedCpu + cpu <= totalCpu) && (reservedMem + usedMem + ram <= totalMem)) {
-    				capacityCpu.setUsedCapacity(usedCpu + cpu);
-    				capacityMem.setUsedCapacity(usedMem + ram);
-    				success = true;
-    			}
-    		}
-
-    		if (success) {
-    			s_logger.debug("alloc cpu from host: " + host.getId() + ", old used: " + usedCpu + ", old reserved: " +
-    					reservedCpu + ", old total: " + totalCpu + 
-    					"; new used:" + capacityCpu.getUsedCapacity() + ", reserved:" + capacityCpu.getReservedCapacity() + ", total: " + capacityCpu.getTotalCapacity() + 
-    					"; requested cpu:" + cpu + ",alloc_from_last:" + fromLastHost);
-        		
-        		s_logger.debug("alloc mem from host: " + host.getId() + ", old used: " + usedMem + ", old reserved: " +
-        				reservedMem + ", old total: " + totalMem + "; new used: " + capacityMem.getUsedCapacity() + ", reserved: " +
-        				capacityMem.getReservedCapacity() + ", total: " + capacityMem.getTotalCapacity() + "; requested mem: " + ram + ",alloc_from_last:" + fromLastHost);
-        		
-        		_capacityDao.update(capacityCpu.getId(), capacityCpu);
-        		_capacityDao.update(capacityMem.getId(), capacityMem);
-        	} else {
-        		if (fromLastHost) {
-        			s_logger.debug("Failed to alloc resource from host: " + host.getId() + " reservedCpu: " + reservedCpu + ", requested cpu: " + cpu +
-        					", reservedMem: " + reservedMem + ", requested mem: " + ram); 
-        		} else {
-        			s_logger.debug("Failed to alloc resource from host: " + host.getId() + " reservedCpu: " + reservedCpu + ", used cpu: " + usedCpu + ", requested cpu: " + cpu +
-        					", total cpu: " + totalCpu + 
-        					", reservedMem: " + reservedMem + ", used Mem: " + usedMem + ", requested mem: " + ram + ", total Mem:" + totalMem); 
-        		}
-         	}
-        	
-        	txn.commit();
-        	return success;
-        } catch (Exception e) {
-        	txn.rollback();
-        	return false;
-        }        		
+    	return _capacityMgr.allocateVmCapacity(host.getId(), cpu, ram, fromLastHost);
 	}
     
     protected List<HostVO> prioritizeHosts(VirtualMachineTemplate template, List<HostVO> hosts) {

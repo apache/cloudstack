@@ -33,6 +33,7 @@ import com.cloud.async.SyncQueueManagerImpl;
 import com.cloud.async.dao.AsyncJobDaoImpl;
 import com.cloud.async.dao.SyncQueueDaoImpl;
 import com.cloud.async.dao.SyncQueueItemDaoImpl;
+import com.cloud.capacity.CapacityManagerImpl;
 import com.cloud.capacity.dao.CapacityDaoImpl;
 import com.cloud.certificate.dao.CertificateDaoImpl;
 import com.cloud.cluster.DummyClusterManagerImpl;
@@ -313,6 +314,7 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addManager("RemoteAccessVpnManager", RemoteAccessVpnManagerImpl.class);
         addManager("OvsNetworkManager", OvsNetworkManagerImpl.class);
         addManager("OvsTunnelManager", OvsTunnelManagerImpl.class);
+        addManager("Capacity Manager", CapacityManagerImpl.class);
     }
 
     protected <T> List<ComponentInfo<Adapter>> addAdapterChain(Class<T> interphace, List<Pair<String, Class<? extends T>>> adapters) {

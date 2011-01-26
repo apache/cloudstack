@@ -37,6 +37,9 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.fsm.StateListener;
+import com.cloud.vm.VirtualMachine.Event;
+import com.cloud.vm.VirtualMachine.State;
 
 /**
  * Manages allocating resources to vms.

@@ -20,7 +20,6 @@ package com.cloud.vm.dao;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Date;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -36,9 +35,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 
 @Local(value = { DomainRouterDao.class })
@@ -149,57 +145,6 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
 
     @Override
-    public boolean updateIf(DomainRouterVO router, VirtualMachine.Event event, Long hostId) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("updateIf called on " + router.toString() + " event " + event.toString() + " host " + hostId);
-        }
-        State oldState = router.getState();
-        State newState = oldState.getNextState(event);
-        long oldDate = router.getUpdated();
-
-        Long oldHostId = router.getHostId();
-
-        if (newState == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
-            }
-            return false;
-        }
-
-        SearchCriteria<DomainRouterVO> sc = StateChangeSearch.create();
-        sc.setParameters("id", router.getId());
-        sc.setParameters("states", oldState);
-        sc.setParameters("host", router.getHostId());
-        sc.setParameters("update", router.getUpdated());
-
-        router.incrUpdated();
-        UpdateBuilder ub = getUpdateBuilder(router);
-        if(newState == State.Running) {
-        	// save current running host id
-        	ub.set(router, "lastHostId", router.getHostId());
-        }
-        
-        ub.set(router, "state", newState);
-        ub.set(router, "hostId", hostId);
-        ub.set(router, _updateTimeAttr, new Date());
-
-        int result = update(router, sc);
-        if (result == 0 && s_logger.isDebugEnabled()) {
-            DomainRouterVO vo = findById(router.getId());
-            StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-            str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(
-                    vo.getUpdated());
-            str.append("} New Data: {Host=").append(router.getHostId()).append("; State=").append(router.getState().toString()).append("; updated=").append(
-                    router.getUpdated());
-            str.append("} Stale Data: {Host=").append(oldHostId).append("; State=").append(oldState.toString()).append("; updated=").append(oldDate)
-                    .append("}");
-            s_logger.debug(str.toString());
-        }
-
-        return result > 0;
-    }
-
-    @Override
     public List<DomainRouterVO> listByDataCenter(long dcId) {
         SearchCriteria<DomainRouterVO> sc = DcSearch.create();
         sc.setParameters("dc", dcId);
@@ -294,41 +239,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         return findOneIncludingRemovedBy(sc);
     }
 
-    @Override
-	public boolean updateState(State oldState, Event event,
-			State newState, VMInstanceVO vm, Long hostId) {
-		if (newState == null) {
-			if (s_logger.isDebugEnabled()) {
-				s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
-			}
-			return false;
-		}
-		
-		DomainRouterVO routerVM = (DomainRouterVO)vm;
-
-		SearchCriteria<DomainRouterVO> sc = StateChangeSearch.create();
-		sc.setParameters("id", routerVM.getId());
-		sc.setParameters("states", oldState);
-		sc.setParameters("host", routerVM.getHostId());
-		sc.setParameters("update", routerVM.getUpdated());
-
-		vm.incrUpdated();
-		UpdateBuilder ub = getUpdateBuilder(routerVM);
-		ub.set(routerVM, "state", newState);
-		ub.set(routerVM, "hostId", hostId);
-		ub.set(routerVM, _updateTimeAttr, new Date());
-
-		int result = update(routerVM, sc);
-		if (result == 0 && s_logger.isDebugEnabled()) {
-			DomainRouterVO vo = findById(routerVM.getId());
-			StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-			str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated());
-			str.append("} Stale Data: {Host=").append(routerVM.getHostId()).append("; State=").append(routerVM.getState().toString()).append("; updated=").append(routerVM.getUpdated()).append("}");
-			s_logger.debug(str.toString());
-		}
-		return result > 0;
-	}
-
+  
 	@Override
 	public List<DomainRouterVO> listByLastHostId(Long hostId) {
 		SearchCriteria<DomainRouterVO> sc = LastHostSearch.create();

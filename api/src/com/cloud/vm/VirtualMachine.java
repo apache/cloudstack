@@ -18,20 +18,19 @@
 package com.cloud.vm;
 
 import java.util.Date;
-import java.util.List;
-import java.util.Set;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.utils.fsm.FiniteState;
-import com.cloud.utils.fsm.StateMachine;
+import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.utils.fsm.StateObject;
+
 
 /**
  * VirtualMachine describes the properties held by a virtual machine 
  *
  */
-public interface VirtualMachine extends RunningOn, ControlledEntity {
-    public enum State implements FiniteState<State, Event> {
+public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject<VirtualMachine.State> {
+    public enum State {
         Starting(true, "VM is being started.  At this state, you should find host id filled which means it's being started on that host."),
         Running(false, "VM is running.  host id has the host that it is running on."),
         Stopping(true, "VM is being stopped.  host id has the host that it is being stopped on."),
@@ -52,7 +51,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity {
             _description = description;
         }
         
-        @Override
         public String getDescription() {
             return _description;
         }
@@ -61,68 +59,71 @@ public interface VirtualMachine extends RunningOn, ControlledEntity {
             return _transitional;
         }
         
-        @Override
-        public State getNextState(VirtualMachine.Event e) {
-            return s_fsm.getNextState(this, e);
-        }
-
-        @Override
-        public List<State> getFromStates(VirtualMachine.Event e) {
-            return s_fsm.getFromStates(this, e);
-        }
-        
-        @Override
-        public Set<Event> getPossibleEvents() {
-            return s_fsm.getPossibleEvents(this);
-        }
-        
-        @Override
-        public StateMachine<State, Event> getStateMachine() {
+        public static StateMachine2<State, VirtualMachine.Event, VirtualMachine> getStateMachine() {
             return s_fsm;
         }
         
-        
-        protected static final StateMachine<State, VirtualMachine.Event> s_fsm = new StateMachine<State, VirtualMachine.Event>();
+        protected static final StateMachine2<State, VirtualMachine.Event, VirtualMachine> s_fsm = new StateMachine2<State, VirtualMachine.Event, VirtualMachine>();
         static {
-//            s_fsm.addTransition(null, VirtualMachine.Event.CreateRequested, State.Creating); 
-//            s_fsm.addTransition(State.Creating, VirtualMachine.Event.OperationSucceeded, State.Stopped); 
-//            s_fsm.addTransition(State.Creating, VirtualMachine.Event.OperationFailed, State.Error); 
-            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.StartRequested, State.Starting); 
-            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.DestroyRequested, State.Destroyed); 
-            s_fsm.addTransition(State.Error, VirtualMachine.Event.DestroyRequested, State.Destroyed); 
-            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.StopRequested, State.Stopped); 
-            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.AgentReportStopped, State.Stopped); 
+            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.StartRequested, State.Starting);
+            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.DestroyRequested, State.Destroyed);
+            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.StopRequested, State.Stopped);
+            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.AgentReportStopped, State.Stopped);
+            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.OperationFailed, State.Error);
+            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.ExpungeOperation, State.Expunging);
             s_fsm.addTransition(State.Stopped, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
-            s_fsm.addTransition(State.Starting, VirtualMachine.Event.OperationRetry, State.Starting); 
-            s_fsm.addTransition(State.Starting, VirtualMachine.Event.OperationSucceeded, State.Running); 
-            s_fsm.addTransition(State.Starting, VirtualMachine.Event.OperationFailed, State.Stopped); 
-            s_fsm.addTransition(State.Starting, VirtualMachine.Event.AgentReportRunning, State.Running); 
-            s_fsm.addTransition(State.Starting, VirtualMachine.Event.AgentReportStopped, State.Stopped); 
+            s_fsm.addTransition(State.Starting, VirtualMachine.Event.OperationRetry, State.Starting);
+            s_fsm.addTransition(State.Starting, VirtualMachine.Event.OperationSucceeded, State.Running);
+            s_fsm.addTransition(State.Starting, VirtualMachine.Event.OperationFailed, State.Stopped);
+            s_fsm.addTransition(State.Starting, VirtualMachine.Event.AgentReportRunning, State.Running);
+            s_fsm.addTransition(State.Starting, VirtualMachine.Event.AgentReportStopped, State.Stopped);
             s_fsm.addTransition(State.Starting, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
-            s_fsm.addTransition(State.Destroyed, VirtualMachine.Event.RecoveryRequested, State.Stopped); 
-            s_fsm.addTransition(State.Destroyed, VirtualMachine.Event.ExpungeOperation, State.Expunging); 
-//            s_fsm.addTransition(State.Creating, VirtualMachine.Event.MigrationRequested, State.Destroyed); 
-            s_fsm.addTransition(State.Running, VirtualMachine.Event.MigrationRequested, State.Migrating); 
-            s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportRunning, State.Running); 
-            s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportStopped, State.Stopped); 
-            s_fsm.addTransition(State.Running, VirtualMachine.Event.StopRequested, State.Stopping); 
+            s_fsm.addTransition(State.Destroyed, VirtualMachine.Event.RecoveryRequested, State.Stopped);
+            s_fsm.addTransition(State.Destroyed, VirtualMachine.Event.ExpungeOperation, State.Expunging);
+            s_fsm.addTransition(State.Running, VirtualMachine.Event.MigrationRequested, State.Migrating);
+            s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportRunning, State.Running);
+            s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportStopped, State.Stopped);
+            s_fsm.addTransition(State.Running, VirtualMachine.Event.StopRequested, State.Stopping);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
-            s_fsm.addTransition(State.Migrating, VirtualMachine.Event.MigrationRequested, State.Migrating); 
-            s_fsm.addTransition(State.Migrating, VirtualMachine.Event.OperationSucceeded, State.Running); 
-            s_fsm.addTransition(State.Migrating, VirtualMachine.Event.OperationFailed, State.Running); 
-            s_fsm.addTransition(State.Migrating, VirtualMachine.Event.MigrationFailedOnSource, State.Running); 
-            s_fsm.addTransition(State.Migrating, VirtualMachine.Event.MigrationFailedOnDest, State.Running); 
-            s_fsm.addTransition(State.Migrating, VirtualMachine.Event.AgentReportRunning, State.Running); 
-            s_fsm.addTransition(State.Migrating, VirtualMachine.Event.AgentReportStopped, State.Stopped); 
+            s_fsm.addTransition(State.Migrating, VirtualMachine.Event.MigrationRequested, State.Migrating);
+            s_fsm.addTransition(State.Migrating, VirtualMachine.Event.OperationSucceeded, State.Running);
+            s_fsm.addTransition(State.Migrating, VirtualMachine.Event.OperationFailed, State.Running);
+            s_fsm.addTransition(State.Migrating, VirtualMachine.Event.MigrationFailedOnSource, State.Running);
+            s_fsm.addTransition(State.Migrating, VirtualMachine.Event.MigrationFailedOnDest, State.Running);
+            s_fsm.addTransition(State.Migrating, VirtualMachine.Event.AgentReportRunning, State.Running);
+            s_fsm.addTransition(State.Migrating, VirtualMachine.Event.AgentReportStopped, State.Stopped);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
-            s_fsm.addTransition(State.Stopping, VirtualMachine.Event.OperationSucceeded, State.Stopped); 
-            s_fsm.addTransition(State.Stopping, VirtualMachine.Event.OperationFailed, State.Running); 
-            s_fsm.addTransition(State.Stopping, VirtualMachine.Event.AgentReportRunning, State.Running); 
-            s_fsm.addTransition(State.Stopping, VirtualMachine.Event.AgentReportStopped, State.Stopped); 
-            s_fsm.addTransition(State.Stopping, VirtualMachine.Event.StopRequested, State.Stopping); 
+            s_fsm.addTransition(State.Stopping, VirtualMachine.Event.OperationSucceeded, State.Stopped);
+            s_fsm.addTransition(State.Stopping, VirtualMachine.Event.OperationFailed, State.Running);
+            s_fsm.addTransition(State.Stopping, VirtualMachine.Event.AgentReportRunning, State.Running);
+            s_fsm.addTransition(State.Stopping, VirtualMachine.Event.AgentReportStopped, State.Stopped);
+            s_fsm.addTransition(State.Stopping, VirtualMachine.Event.StopRequested, State.Stopping);
             s_fsm.addTransition(State.Stopping, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
-            s_fsm.addTransition(State.Expunging, VirtualMachine.Event.OperationFailed, State.Expunging); 
-            s_fsm.addTransition(State.Expunging, VirtualMachine.Event.ExpungeOperation, State.Expunging); 
+            s_fsm.addTransition(State.Expunging, VirtualMachine.Event.OperationFailed, State.Expunging);
+            s_fsm.addTransition(State.Expunging, VirtualMachine.Event.ExpungeOperation, State.Expunging);
+            s_fsm.addTransition(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging);
+            s_fsm.addTransition(State.Error, VirtualMachine.Event.ExpungeOperation, State.Expunging);
+        }
+        
+        public static boolean isVmStarted(State oldState, Event e, State newState) {
+            if (oldState == State.Starting && newState == State.Running) {
+                return true;
+            }
+            return false;
+        }
+        
+        public static boolean isVmStopped(State oldState, Event e, State newState) {
+            if (oldState == State.Stopping && newState == State.Stopped) {
+                return true;
+            }
+            return false;
+        }
+        
+        public static boolean isVmMigrated(State oldState, Event e, State newState) {
+            if (oldState == State.Migrating && newState == State.Running && (e == Event.OperationSucceeded || e == Event.AgentReportRunning)) {
+                return true;
+            }
+            return false;
         }
     }
     
@@ -182,7 +183,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity {
     /**
      * @return the state of the virtual machine
      */
-    public State getState();
+    //public State getState();
     
     /**
      * @return template id.
@@ -209,7 +210,9 @@ public interface VirtualMachine extends RunningOn, ControlledEntity {
      * @return id of the host it was assigned last time.
      */
     public Long getLastHostId();
-
+    
+    public void setLastHostId(Long lastHostId);
+    
     /**
      * @return should HA be enabled for this machine?
      */

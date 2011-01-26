@@ -52,6 +52,5 @@ public interface FiniteState<S, E> {
      * @return array of events.
      */
     Set<E> getPossibleEvents();
-    
     String getDescription();
 }

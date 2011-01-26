@@ -20,9 +20,8 @@ package com.cloud.network.security;
 import java.util.HashMap;
 import java.util.List;
 
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine.State;
+
 
 /**
  * Ensures that network firewall rules stay updated as VMs go up and down
@@ -32,8 +31,6 @@ public interface SecurityGroupManager {
 	
 	public static final String DEFAULT_GROUP_NAME = "default"; 
 	public static final String DEFAULT_GROUP_DESCRIPTION = "Default Security Group"; 
-
-	public void handleVmStateTransition(UserVm userVm, State vmState);
 	
 	public SecurityGroupVO createSecurityGroup(String name, String description, Long domainId, Long accountId, String accountName);
 	

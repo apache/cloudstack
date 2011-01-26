@@ -74,9 +74,6 @@
         <adapters key="com.cloud.deploy.DeploymentPlanner">
             <adapter name="First Fit" class="com.cloud.deploy.FirstFitPlanner"/>
         </adapters>
-        <adapters key="com.cloud.utils.fsm.StateListener">
-            <adapter name="VMStateListener" class="com.cloud.stateListener.VMStateListener"/>
-        </adapters>
         <adapters key="com.cloud.network.element.NetworkElement">
             <adapter name="DomainRouter" class="com.cloud.network.element.VirtualRouterElement"/>
             <adapter name="Dhcp" class="com.cloud.network.element.DhcpElement"/>

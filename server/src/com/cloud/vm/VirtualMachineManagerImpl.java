@@ -51,6 +51,7 @@ import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -121,7 +122,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value=VirtualMachineManager.class)
-public class VirtualMachineManagerImpl implements VirtualMachineManager {
+public class VirtualMachineManagerImpl implements VirtualMachineManager, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineManagerImpl.class);
     
     String _name;
@@ -150,16 +151,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
     @Inject protected VolumeDao _volsDao;
     @Inject protected ConsoleProxyManager _consoleProxyMgr;
     @Inject protected ConfigurationManager _configMgr;
+    @Inject protected CapacityManager _capacityMgr;
     
     @Inject(adapter=DeploymentPlanner.class)
     protected Adapters<DeploymentPlanner> _planners;
-    @Inject(adapter=StateListener.class)
-    protected Adapters<StateListener<State, VirtualMachine.Event, VMInstanceVO>> _stateListner;
-    
 
     Map<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>>();
     Map<HypervisorType, HypervisorGuru> _hvGurus = new HashMap<HypervisorType, HypervisorGuru>();
-    protected StateMachine2<State, VirtualMachine.Event, VMInstanceVO> _stateMachine;
+    protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
     
     ScheduledExecutorService _executor = null;
     
@@ -426,8 +425,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vm-Operations-Cleanup"));
         _nodeId = _clusterMgr.getId();
       
-        setStateMachine();
-        
+        _stateMachine.registerListener(this);
         return true;
     }
     
@@ -437,6 +435,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
     }
     
     protected VirtualMachineManagerImpl() {
+        setStateMachine();
     }
     
     @Override
@@ -868,48 +867,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
     }
     
     private void setStateMachine() {
-    	_stateMachine = new StateMachine2<State, VirtualMachine.Event, VMInstanceVO>();
-
-    	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.StartRequested, State.Starting);
-    	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.DestroyRequested, State.Destroyed);
-    	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.StopRequested, State.Stopped);
-    	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.AgentReportStopped, State.Stopped);
-    	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.OperationFailed, State.Error);
-    	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.ExpungeOperation, State.Expunging);
-    	_stateMachine.addTransition(State.Stopped, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
-    	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.OperationRetry, State.Starting);
-    	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.OperationSucceeded, State.Running);
-    	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.OperationFailed, State.Stopped);
-    	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.AgentReportRunning, State.Running);
-    	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.AgentReportStopped, State.Stopped);
-    	_stateMachine.addTransition(State.Starting, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
-    	_stateMachine.addTransition(State.Destroyed, VirtualMachine.Event.RecoveryRequested, State.Stopped);
-    	_stateMachine.addTransition(State.Destroyed, VirtualMachine.Event.ExpungeOperation, State.Expunging);
-    	_stateMachine.addTransition(State.Running, VirtualMachine.Event.MigrationRequested, State.Migrating);
-    	_stateMachine.addTransition(State.Running, VirtualMachine.Event.AgentReportRunning, State.Running);
-    	_stateMachine.addTransition(State.Running, VirtualMachine.Event.AgentReportStopped, State.Stopped);
-    	_stateMachine.addTransition(State.Running, VirtualMachine.Event.StopRequested, State.Stopping);
-    	_stateMachine.addTransition(State.Running, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
-    	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.MigrationRequested, State.Migrating);
-    	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.OperationSucceeded, State.Running);
-    	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.OperationFailed, State.Running);
-    	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.MigrationFailedOnSource, State.Running);
-    	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.MigrationFailedOnDest, State.Running);
-    	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.AgentReportRunning, State.Running);
-    	_stateMachine.addTransition(State.Migrating, VirtualMachine.Event.AgentReportStopped, State.Stopped);
-        _stateMachine.addTransition(State.Migrating, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
-    	_stateMachine.addTransition(State.Stopping, VirtualMachine.Event.OperationSucceeded, State.Stopped);
-    	_stateMachine.addTransition(State.Stopping, VirtualMachine.Event.OperationFailed, State.Running);
-    	_stateMachine.addTransition(State.Stopping, VirtualMachine.Event.AgentReportRunning, State.Running);
-    	_stateMachine.addTransition(State.Stopping, VirtualMachine.Event.AgentReportStopped, State.Stopped);
-    	_stateMachine.addTransition(State.Stopping, VirtualMachine.Event.StopRequested, State.Stopping);
-    	_stateMachine.addTransition(State.Stopping, VirtualMachine.Event.AgentReportShutdowned, State.Stopped); 
-    	_stateMachine.addTransition(State.Expunging, VirtualMachine.Event.OperationFailed, State.Expunging);
-    	_stateMachine.addTransition(State.Expunging, VirtualMachine.Event.ExpungeOperation, State.Expunging);
-        _stateMachine.addTransition(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging);
-        _stateMachine.addTransition(State.Error, VirtualMachine.Event.ExpungeOperation, State.Expunging);
-    	
-    	_stateMachine.registerListeners(_stateListner);
+    	_stateMachine = VirtualMachine.State.getStateMachine();
     }
     
     protected boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId, String reservationId) {
@@ -1019,11 +977,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
             Commands cmds = new Commands(OnError.Revert);
             CheckVirtualMachineCommand cvm = new CheckVirtualMachineCommand(vm.getInstanceName());
             cmds.addCommand(cvm);
-           
-            if (vm.getType() != VirtualMachine.Type.User) {
-                NetworkRulesSystemVmCommand nrc = new NetworkRulesSystemVmCommand(vm.getInstanceName(), vm.getType());
-                cmds.addCommand(nrc);
-            }
             
              _agentMgr.send(dstHostId, cmds);
              CheckVirtualMachineAnswer answer = cmds.getAnswer(CheckVirtualMachineAnswer.class);
@@ -1040,7 +993,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
                 return null;
             }
 
-            // FIXME:          _networkGroupMgr.handleVmStateTransition(vm, State.Running);
             stateTransitTo(vm, VirtualMachine.Event.OperationSucceeded, dstHostId);
             migrated = true;
             return vm;
@@ -1176,5 +1128,65 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager {
         
         return rebootedVm;
     }
+    
+    @Override
+    public boolean preStateTransitionEvent(State oldState,
+            Event event, State newState, VirtualMachine vm, boolean transitionStatus, Long id) {
+        s_logger.debug("VM state transitted from :" + oldState + " to " + newState + " with event: " + event +
+                "vm's original host id: " + vm.getHostId() + " new host id: " + id);
+        if (!transitionStatus) {
+            return false;
+        }
 
+        if (oldState == State.Starting) {
+            if (event == Event.OperationSucceeded) {
+                if (vm.getLastHostId() != null && vm.getLastHostId() != id) {
+                    /*need to release the reserved capacity on lasthost*/
+                    _capacityMgr.releaseVmCapacity(vm, true, false, vm.getLastHostId());
+                }
+                vm.setLastHostId(id);
+            } else if (event == Event.OperationFailed) {
+                _capacityMgr.releaseVmCapacity(vm, false, false, vm.getHostId());
+            } else if (event == Event.OperationRetry) {
+                _capacityMgr.releaseVmCapacity(vm, false, false, vm.getHostId());
+            } else if (event == Event.AgentReportStopped) {
+                _capacityMgr.releaseVmCapacity(vm, false, true, vm.getHostId());
+            }
+        } else if (oldState == State.Running) {
+            if (event == Event.AgentReportStopped) {
+                _capacityMgr.releaseVmCapacity(vm, false, true, vm.getHostId());
+            }
+        } else if (oldState == State.Migrating) {
+            if (event == Event.AgentReportStopped) {
+                /*Release capacity from original host*/
+                _capacityMgr.releaseVmCapacity(vm, false, true, vm.getHostId());
+            } else if (event == Event.MigrationFailedOnSource) {
+                /*release capacity from dest host*/
+                _capacityMgr.releaseVmCapacity(vm, false, false, id);
+                id = vm.getHostId();
+            } else if (event == Event.MigrationFailedOnDest) {
+                /*release capacify from original host*/
+                _capacityMgr.releaseVmCapacity(vm, false, false, vm.getHostId());
+            } else if (event == Event.OperationSucceeded) {
+                _capacityMgr.releaseVmCapacity(vm, false, false, vm.getHostId());
+                /*set lasthost id to migration destination host id*/
+                vm.setLastHostId(id);
+            }
+        } else if (oldState == State.Stopping) {
+            if (event == Event.AgentReportStopped || event == Event.OperationSucceeded) {
+                _capacityMgr.releaseVmCapacity(vm, false, true, vm.getHostId());
+            }
+        } else if (oldState == State.Stopped) {
+            if (event == Event.DestroyRequested) {
+                _capacityMgr.releaseVmCapacity(vm, true, false, vm.getLastHostId());
+                vm.setLastHostId(null);
+            }
+        }
+        return transitionStatus;
+    }
+    
+    @Override
+    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status) {
+        return true;
+    }
 }

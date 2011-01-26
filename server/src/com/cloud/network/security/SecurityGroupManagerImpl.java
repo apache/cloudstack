@@ -40,6 +40,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.api.SecurityIngressRulesCmd.IpPortAndProto;
 import com.cloud.agent.manager.Commands;
@@ -55,6 +56,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.network.security.SecurityGroupWorkVO.Step;
@@ -82,13 +84,18 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 
 @Local(value={SecurityGroupManager.class, SecurityGroupService.class})
-public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityGroupService, Manager {
+public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityGroupService, Manager, StateListener<State, VirtualMachine.Event, VirtualMachine> {
     public static final Logger s_logger = Logger.getLogger(SecurityGroupManagerImpl.class);
 
 	@Inject SecurityGroupDao _securityGroupDao;
@@ -102,6 +109,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	@Inject VmRulesetLogDao _rulesetLogDao;
 	@Inject DomainDao _domainDao;
 	@Inject AgentManager _agentMgr;
+	@Inject VirtualMachineManager _itMgr;
 	ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
 
@@ -242,29 +250,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 		
 	}
 
-	@Override
-	public void handleVmStateTransition(UserVm userVm, State vmState) {
-		if (!_enabled) {
-			return;
-		}
-		switch (vmState) {
-		case Destroyed:
-		case Error:
-		case Migrating:
-		case Expunging:
-		case Starting:
-		case Unknown:
-			return;
-		case Running:
-			handleVmStarted(userVm);
-			break;
-		case Stopping:
-		case Stopped:
-			handleVmStopped(userVm);
-			break;
-		}
-
-	}
+	
 	
 	public static class CidrComparator implements Comparator<String> {
 
@@ -315,8 +301,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 		return DigestUtils.md5Hex(ruleset);
 	}
 
-	protected void handleVmStarted(UserVm userVm) {
-		Set<Long> affectedVms = getAffectedVmsForVmStart(userVm);
+	protected void handleVmStarted(VMInstanceVO vm) {
+		Set<Long> affectedVms = getAffectedVmsForVmStart(vm);
 		scheduleRulesetUpdateToHosts(affectedVms, true, null);
 	}
 	
@@ -372,10 +358,10 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 		}
 	}
 	
-	protected Set<Long> getAffectedVmsForVmStart(UserVm userVm) {
+	protected Set<Long> getAffectedVmsForVmStart(VMInstanceVO vm) {
 		Set<Long> affectedVms = new HashSet<Long>();
-		affectedVms.add(userVm.getId());
-		List<SecurityGroupVMMapVO> groupsForVm = _securityGroupVMMapDao.listByInstanceId(userVm.getId());
+		affectedVms.add(vm.getId());
+		List<SecurityGroupVMMapVO> groupsForVm = _securityGroupVMMapDao.listByInstanceId(vm.getId());
 		//For each group, find the ingress rules that allow the group
 		for (SecurityGroupVMMapVO mapVO: groupsForVm) {//FIXME: use custom sql in the dao
 			List<IngressRuleVO> allowingRules = _ingressRuleDao.listByAllowedSecurityGroupId(mapVO.getSecurityGroupId());
@@ -385,9 +371,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 		return affectedVms;
 	}
 	
-	protected Set<Long> getAffectedVmsForVmStop(UserVm userVm) {
+	protected Set<Long> getAffectedVmsForVmStop(VMInstanceVO vm) {
 		Set<Long> affectedVms = new HashSet<Long>();
-		List<SecurityGroupVMMapVO> groupsForVm = _securityGroupVMMapDao.listByInstanceId(userVm.getId());
+		List<SecurityGroupVMMapVO> groupsForVm = _securityGroupVMMapDao.listByInstanceId(vm.getId());
 		//For each group, find the ingress rules that allow the group
 		for (SecurityGroupVMMapVO mapVO: groupsForVm) {//FIXME: use custom sql in the dao
 			List<IngressRuleVO> allowingRules = _ingressRuleDao.listByAllowedSecurityGroupId(mapVO.getSecurityGroupId());
@@ -426,11 +412,22 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 		return new SecurityIngressRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqnum, result.toArray(new IpPortAndProto[result.size()]));
 	}
 	
-	protected void handleVmStopped(UserVm userVm) {
-		Set<Long> affectedVms = getAffectedVmsForVmStop(userVm);
+	protected void handleVmStopped(VMInstanceVO vm) {
+		Set<Long> affectedVms = getAffectedVmsForVmStop(vm);
 		scheduleRulesetUpdateToHosts(affectedVms, true, null);
 	}
 	
+	protected void handleVmMigrated(VMInstanceVO vm) {
+	    NetworkRulesSystemVmCommand nrc = new NetworkRulesSystemVmCommand(vm.getInstanceName(), vm.getType());
+	    Commands cmds = new Commands(nrc);
+	    try {
+            _agentMgr.send(vm.getHostId(), cmds);
+        } catch (AgentUnavailableException e) {
+            s_logger.debug(e.toString());
+        } catch (OperationTimedoutException e) {
+          s_logger.debug(e.toString());
+        }
+	}
 	
 	@Override @DB @SuppressWarnings("rawtypes")
 	public List<IngressRuleVO> authorizeSecurityGroupIngress(AuthorizeSecurityGroupIngressCmd cmd) throws InvalidParameterValueException, PermissionDeniedException{
@@ -969,7 +966,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         _executorPool = Executors.newScheduledThreadPool(10, new NamedThreadFactory("NWGRP"));
         _cleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NWGRP-Cleanup"));
 
-
+        VirtualMachine.State.getStateMachine().registerListener(this);
  		return true;
 	}
 
@@ -1428,4 +1425,27 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 		}
 
 	}
+
+    @Override
+    public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Long id) {
+        return true;
+    }
+
+    @Override
+    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status) {
+        if (!_enabled || !status || vm.getType() != VirtualMachine.Type.User) {
+            return false;
+        }
+
+        if (VirtualMachine.State.isVmStarted(oldState, event, newState)) {
+            handleVmStarted((VMInstanceVO)vm);
+        } else if (VirtualMachine.State.isVmStopped(oldState, event, newState)) {
+            handleVmStopped((VMInstanceVO)vm);
+        } else if (VirtualMachine.State.isVmMigrated(oldState, event, newState)) {
+            handleVmMigrated((VMInstanceVO)vm);
+        }
+
+        return true;
+    }
+    
 }

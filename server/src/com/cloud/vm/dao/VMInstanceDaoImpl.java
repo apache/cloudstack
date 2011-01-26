@@ -280,32 +280,33 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     @Override
     public boolean updateState(State oldState, Event event,
-    		State newState, VMInstanceVO vm, Long hostId) {
+    		State newState, VirtualMachine vm, Long hostId) {
     	if (newState == null) {
     		if (s_logger.isDebugEnabled()) {
     			s_logger.debug("There's no way to transition from old state: " + oldState.toString() + " event: " + event.toString());
     		}
     		return false;
     	}
+    	VMInstanceVO vmi = (VMInstanceVO)vm;
 
     	SearchCriteria<VMInstanceVO> sc = StateChangeSearch.create();
-    	sc.setParameters("id", vm.getId());
+    	sc.setParameters("id", vmi.getId());
     	sc.setParameters("states", oldState);
-    	sc.setParameters("host", vm.getHostId());
-    	sc.setParameters("update", vm.getUpdated());
+    	sc.setParameters("host", vmi.getHostId());
+    	sc.setParameters("update", vmi.getUpdated());
 
-    	vm.incrUpdated();
-    	UpdateBuilder ub = getUpdateBuilder(vm);
-    	ub.set(vm, "state", newState);
-    	ub.set(vm, "hostId", hostId);
-    	ub.set(vm, _updateTimeAttr, new Date());
+    	vmi.incrUpdated();
+    	UpdateBuilder ub = getUpdateBuilder(vmi);
+    	ub.set(vmi, "state", newState);
+    	ub.set(vmi, "hostId", hostId);
+    	ub.set(vmi, _updateTimeAttr, new Date());
 
-    	int result = update(vm, sc);
+    	int result = update(vmi, sc);
     	if (result == 0 && s_logger.isDebugEnabled()) {
     		VMInstanceVO vo = findById(vm.getId());
     		StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
     		str.append(": DB Data={Host=").append(vo.getHostId()).append("; State=").append(vo.getState().toString()).append("; updated=").append(vo.getUpdated());
-    		str.append("} Stale Data: {Host=").append(vm.getHostId()).append("; State=").append(vm.getState().toString()).append("; updated=").append(vm.getUpdated()).append("}");
+    		str.append("} Stale Data: {Host=").append(vm.getHostId()).append("; State=").append(vm.getState().toString()).append("; updated=").append(vmi.getUpdated()).append("}");
     		s_logger.debug(str.toString());
     	}
     	return result > 0;

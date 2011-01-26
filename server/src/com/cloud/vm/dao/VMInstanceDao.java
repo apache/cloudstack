@@ -31,7 +31,7 @@ import com.cloud.vm.VirtualMachine.State;
 /*
  * Data Access Object for vm_instance table
  */
-public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<State, VirtualMachine.Event, VMInstanceVO> {
+public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<State, VirtualMachine.Event, VirtualMachine> {
     /**
      * What are the vms running on this host?
      * @param hostId host.

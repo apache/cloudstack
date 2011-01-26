@@ -21,17 +21,13 @@ import java.util.List;
 
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.fsm.StateDao;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
 
 /**
  *
  *  DomainRouterDao implements
  */
-public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long>, StateDao<State, VirtualMachine.Event, VMInstanceVO> {
+public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long>{
     /**
      * gets the DomainRouterVO by user id and data center
      * @Param dcId data center Id.
@@ -54,16 +50,6 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long>, State
      * @return list of DomainRouterVO
      */
     public List<DomainRouterVO> listBy(long userId);
-    
-    /**
-     * Update the domainrouterVO only if the state is correct and the hostId is set.
-     * 
-     * @param router router object
-     * @param event event that forces this update
-     * @param hostId host id to set to.
-     * @return true if update worked; false if not.
-     */
-   public boolean updateIf(DomainRouterVO router, VirtualMachine.Event event, Long hostId);
     
     /**
      * list virtual machine routers by host id.  pass in null to get all

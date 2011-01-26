@@ -2199,7 +2199,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     public boolean finalizeStart(VirtualMachineProfile<UserVmVO> profile, long hostId, Commands cmds, ReservationContext context) {
     	UserVmVO vm = profile.getVirtualMachine();
-        _networkGroupMgr.handleVmStateTransition(vm, State.Running);
         _ovsNetworkMgr.handleVmStateTransition(vm, State.Running);
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
         _usageEventDao.persist(usageEvent);
@@ -2257,7 +2256,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     public void finalizeStop(VirtualMachineProfile<UserVmVO> profile, StopAnswer answer) {
 		UserVmVO vm = profile.getVirtualMachine();
-		_networkGroupMgr.handleVmStateTransition(vm, State.Stopped);
 		_ovsNetworkMgr.handleVmStateTransition(vm, State.Stopped);
 		_ovsTunnelMgr.CheckAndDestroyTunnel(vm);
     }
