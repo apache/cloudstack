@@ -766,32 +766,53 @@ $(document).ready(function() {
 	initDialogWithOK("dialog_info_please_select_one_item_in_middle_menu", 350, false);		
 				
 	// Check whether the session is valid.
-	g_mySession = $.cookie("JSESSIONID");
-	g_sessionKey = $.cookie("sessionKey");
-	g_role = $.cookie("role");
-	g_username = $.cookie("username");
-	g_account = $.cookie("account");
-	g_domainid = $.cookie("domainid");
-	g_timezone = $.cookie("timezone");
-	g_directAttachSecurityGroupsEnabled = $.cookie("directattachsecuritygroupsenabled");
-	g_userPublicTemplateEnabled = $.cookie("userpublictemplateenabled");
-	
-	if($.cookie("timezoneoffset") != null)
-	    g_timezoneoffset = isNaN($.cookie("timezoneoffset"))?null: parseFloat($.cookie("timezoneoffset"));
-	else
-	    g_timezoneoffset = null;
-	    
-	if (!g_directAttachSecurityGroupsEnabled || g_directAttachSecurityGroupsEnabled.length == 0) 		
-		g_directAttachSecurityGroupsEnabled = "false";	
+	if (g_loginResponse == null) {
+		g_mySession = $.cookie("JSESSIONID");
+		g_sessionKey = $.cookie("sessionKey");
+		g_role = $.cookie("role");
+		g_username = $.cookie("username");
+		g_account = $.cookie("account");
+		g_domainid = $.cookie("domainid");
+		g_timezone = $.cookie("timezone");
+		g_directAttachSecurityGroupsEnabled = $.cookie("directattachsecuritygroupsenabled");
+		g_userPublicTemplateEnabled = $.cookie("userpublictemplateenabled");
 		
-	if (!g_userPublicTemplateEnabled || g_userPublicTemplateEnabled.length == 0) 		
-		g_userPublicTemplateEnabled = "true";
+		if($.cookie("timezoneoffset") != null)
+			g_timezoneoffset = isNaN($.cookie("timezoneoffset"))?null: parseFloat($.cookie("timezoneoffset"));
+		else
+			g_timezoneoffset = null;
+			
+		if (!g_directAttachSecurityGroupsEnabled || g_directAttachSecurityGroupsEnabled.length == 0) 		
+			g_directAttachSecurityGroupsEnabled = "false";	
+			
+		if (!g_userPublicTemplateEnabled || g_userPublicTemplateEnabled.length == 0) 		
+			g_userPublicTemplateEnabled = "true";
+	} else {
+		g_mySession = $.cookie('JSESSIONID');
+		g_sessionKey = encodeURIComponent(g_loginResponse.sessionkey);
+		g_role = g_loginResponse.type;
+		g_username = g_loginResponse.username;	
+		g_account = g_loginResponse.account;
+		g_domainid = g_loginResponse.domainid;	
+		g_timezone = g_loginResponse.timezone;								
+		g_timezoneoffset = g_loginResponse.timezoneoffset;
+	}
 		
 	$.ajax({
 	    data: createURL("command=listCapabilities"),
 		dataType: "json",
 		async: false,
 		success: function(json) {
+			if (json.listcapabilitiesresponse.capability.userpublictemplateenabled != null) {
+				g_userPublicTemplateEnabled = ""+json.listcapabilitiesresponse.capability.userpublictemplateenabled;
+				$.cookie('userpublictemplateenabled', g_userPublicTemplateEnabled, { expires: 1});
+			}
+			
+			if (json.listcapabilitiesresponse.capability.securitygroupsenabled != null) {
+				g_directAttachSecurityGroupsEnabled = ""+json.listcapabilitiesresponse.capability.securitygroupsenabled;
+				$.cookie('directattachsecuritygroupsenabled', g_directAttachSecurityGroupsEnabled, { expires: 1});
+			}
+						
 			buildSecondLevelNavigation();
 			$("#main_username").text(g_username);
 			showLeftNavigationBasedOnRole();
