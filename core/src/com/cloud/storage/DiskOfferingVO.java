@@ -66,9 +66,6 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name="disk_size")
     long diskSize;
 
-    @Column(name="mirrored")
-    boolean mirrored;
-    
     @Column(name="tags")
     String tags;
     
@@ -91,12 +88,12 @@ public class DiskOfferingVO implements DiskOffering {
     private boolean systemUse;
     
     @Column(name="customized")
-    private Boolean customized;
+    private boolean customized;
     
     public DiskOfferingVO() {
     }
 
-    public DiskOfferingVO(long domainId, String name, String displayText, long diskSize, String tags, Boolean isCustomized) {
+    public DiskOfferingVO(long domainId, String name, String displayText, long diskSize, String tags, boolean isCustomized) {
         this.domainId = domainId;
         this.name = name;
         this.displayText = displayText;
@@ -113,7 +110,6 @@ public class DiskOfferingVO implements DiskOffering {
         this.type = Type.Service;
         this.name = name;
         this.displayText = displayText;
-        this.mirrored = mirrored;
         this.tags = tags;
         this.recreatable = recreatable;
         this.useLocalStorage = useLocalStorage;
@@ -127,7 +123,6 @@ public class DiskOfferingVO implements DiskOffering {
         this.type = Type.Service;
         this.name = name;
         this.displayText = displayText;
-        this.mirrored = mirrored;
         this.tags = tags;
         this.recreatable = recreatable;
         this.useLocalStorage = useLocalStorage;
@@ -141,11 +136,12 @@ public class DiskOfferingVO implements DiskOffering {
         return id;
     }
     
-    public Boolean isCustomized() {
+    @Override
+    public boolean isCustomized() {
 		return customized;
 	}
 
-	public void setCustomized(Boolean customized) {
+	public void setCustomized(boolean customized) {
 		this.customized = customized;
 	}
 
@@ -197,6 +193,7 @@ public class DiskOfferingVO implements DiskOffering {
         this.displayText = displayText;
     }
 
+    @Override
     public long getDiskSize(){
     	return diskSize;
     }
@@ -210,18 +207,12 @@ public class DiskOfferingVO implements DiskOffering {
         this.diskSize = diskSize;
     }
 
-    public boolean isMirrored() {
-        return mirrored;
-    }
-    public void setMirrored(boolean mirrored) {
-        this.mirrored = mirrored;
-    }
-
     public Date getRemoved() {
         return removed;
     }
     
-	public Date getCreated() {
+	@Override
+    public Date getCreated() {
 		return created;
 	}
 	

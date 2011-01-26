@@ -1017,7 +1017,6 @@ CREATE TABLE `cloud`.`disk_offering` (
   `name` varchar(255) NOT NULL,
   `display_text` varchar(4096) NULL COMMENT 'Descrianaption text set by the admin for display purpose only',
   `disk_size` bigint unsigned NOT NULL COMMENT 'disk space in mbs',
-  `mirrored` tinyint(1) unsigned NOT NULL DEFAULT 1 COMMENT 'Enable mirroring?',
   `type` varchar(32) COMMENT 'inheritted by who?',
   `tags` varchar(4096) COMMENT 'comma separated tags about the disk_offering',
   `recreatable` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'The root disk is always recreatable',

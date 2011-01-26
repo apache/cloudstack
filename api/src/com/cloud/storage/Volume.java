@@ -90,7 +90,7 @@ public interface Volume extends ControlledEntity, BasedOn {
 	}
 	
 	enum SourceType {
-		Snapshot,DiskOffering,Template,Blank
+		Snapshot,DiskOffering,Template
 	}
 	
 	long getId();

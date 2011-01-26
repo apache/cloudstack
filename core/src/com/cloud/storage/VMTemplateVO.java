@@ -112,7 +112,8 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Column(name="extractable")
     private boolean extractable = true;
     
-	public String getUniqueName() {
+	@Override
+    public String getUniqueName() {
 		return uniqueName;
 	}
 	
@@ -265,7 +266,8 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	    return created;
 	}
 	
-	public String getUrl() {
+	@Override
+    public String getUrl() {
 		return url;
 	}
 	
@@ -287,7 +289,8 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 		return accountId;
 	}
 
-	public String getChecksum() {
+	@Override
+    public String getChecksum() {
 		return checksum;
 	}
     
@@ -381,7 +384,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 	@Override
     public String toString() {
 	    if (toString == null) {
-	        toString = new StringBuilder("Template:").append(id).append(":").append(format).append(":").append(uniqueName).toString();
+	        toString = new StringBuilder("Tmpl[").append(id).append("-").append(format).append("-").append(uniqueName).toString();
 	    }
 	    return toString;
 	}

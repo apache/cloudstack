@@ -48,5 +48,5 @@ public interface DiskOffering {
     
     long getDiskSize();
     
-    Boolean isCustomized();
+    boolean isCustomized();
 }

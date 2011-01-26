@@ -1373,7 +1373,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override
-    public DiskOfferingVO createDiskOffering(long domainId, String name, String description, Long numGibibytes, String tags, Boolean isCustomized) throws InvalidParameterValueException {
+    public DiskOfferingVO createDiskOffering(long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized) throws InvalidParameterValueException {
         long diskSize = 0;//special case for custom disk offerings
     	if (numGibibytes != null && (numGibibytes <= 0)) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.");
@@ -1399,7 +1399,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String name = cmd.getOfferingName();
         String description = cmd.getDisplayText();
         Long numGibibytes = cmd.getDiskSize();
-        Boolean isCustomized = cmd.isCustomized() != null ? cmd.isCustomized() : false; //false by default
+        boolean isCustomized = cmd.isCustomized() != null ? cmd.isCustomized() : false; //false by default
         String tags = cmd.getTags();        
         Long domainId = cmd.getDomainId() != null ? cmd.getDomainId() : Long.valueOf(DomainVO.ROOT_DOMAIN); // disk offering always gets created under the root domain.Bug # 6055 if not passed in cmd        
 

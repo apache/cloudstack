@@ -80,7 +80,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 	 * @param isCustomized
 	 * @return newly created disk offering
 	 */
-	DiskOfferingVO createDiskOffering(long domainId, String name, String description, Long numGibibytes, String tags, Boolean isCustomized);
+	DiskOfferingVO createDiskOffering(long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized);
     
 	/**
 	 * Creates a new pod

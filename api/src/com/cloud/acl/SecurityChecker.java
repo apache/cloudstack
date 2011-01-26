@@ -62,11 +62,4 @@ public interface SecurityChecker extends Adapter {
     public boolean checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException;
 
 	boolean checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException;
-    
-// We should be able to use this method to check against commands.  For example, we can
-// annotate the command with access annotations and this method can use it to extract
-// OwnedBy and PartOf interfaces on the object and use it to verify against a user.
-// I leave this empty for now so Kris and the API team can see if it is useful.
-//    boolean checkAuthorization(User user, Command cmd) throws PermissionDeniedException;
-
 }
