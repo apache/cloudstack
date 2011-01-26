@@ -1494,7 +1494,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 				    try {
                         _storageMgr.destroyVolume(volume);
                     } catch (ConcurrentOperationException e) {
-                        s_logger.warn("Unable to delete volume:"+volume.getId()+" for vm:"+vmId+" whilsts transitioning to error state");
+                        s_logger.warn("Unable to delete volume:"+volume.getId()+" for vm:"+vmId+" whilst transitioning to error state");
                     }
 				}
 			}
