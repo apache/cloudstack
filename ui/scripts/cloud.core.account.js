@@ -734,7 +734,7 @@ function doDisableAccount($actionLink, $detailsTab, $midmenuItem1) {
     var id = jsonObj.id;
     
     $("#dialog_confirmation")  
-    .text($("#message_disable_account").text())  
+    .text(dictionary["message.disable.account"])  
     .dialog('option', 'buttons', {                    
         "Yes": function() { 		                    
             $(this).dialog("close");	
@@ -751,7 +751,7 @@ function doLockAccount($actionLink, $detailsTab, $midmenuItem1) {
     var jsonObj = $midmenuItem1.data("jsonObj");    
     
     $("#dialog_confirmation")
-    .text($("#message_lock_account").text())    
+    .text(dictionary["message.lock.account"])    
     .dialog('option', 'buttons', {                    
         "Yes": function() { 		                    
             $(this).dialog("close");			
@@ -768,7 +768,7 @@ function doEnableAccount($actionLink, $detailsTab, $midmenuItem1) {
     var jsonObj = $midmenuItem1.data("jsonObj");    
     
     $("#dialog_confirmation")  
-    .text($("#message_enable_account").text())  
+    .text(dictionary["message.enable.account"])  
     .dialog('option', 'buttons', {                    
         "Yes": function() { 		                    
             $(this).dialog("close");	
@@ -785,8 +785,8 @@ function doDeleteAccount($actionLink, $detailsTab, $midmenuItem1) {
     var jsonObj = $midmenuItem1.data("jsonObj");    
     var id = jsonObj.id;
     
-    $("#dialog_info")    
-    .text("Are you sure you want to delete this account?")
+    $("#dialog_confirmation")    
+    .text(dictionary["message.delete.account"])
     .dialog('option', 'buttons', {                    
         "Yes": function() { 		                    
             $(this).dialog("close");	

@@ -5,9 +5,15 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
-<span id="message_disable_account" style="display:none;"><fmt:message key="message.disable.account"/></span>
-<span id="message_lock_account" style="display:none;"><fmt:message key="message.lock.account"/></span>
-<span id="message_enable_account" style="display:none;"><fmt:message key="message.enable.account"/></span>
+<script language="javascript">
+var dictionary = { 
+	"message.disable.account" : '<fmt:message key="message.disable.account"/>',
+	"message.lock.account" : '<fmt:message key="message.lock.account"/>',
+	"message.enable.account" : '<fmt:message key="message.enable.account"/>',
+	"message.delete.account" : '<fmt:message key="message.delete.account"/>',
+};	
+</script>
+
 
 <!-- account detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
