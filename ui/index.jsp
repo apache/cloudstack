@@ -102,8 +102,8 @@
                                         </div>
                                     </li>
                                 </ol>
-                                <div class="loginbutton_box">
-                                	<div class="login_button" id="loginbutton" ><fmt:message key="label.login"/></div>
+                                <div class="loginbutton_box">                                   
+                                	<button type="button" id="loginbutton" class="login_button"><fmt:message key="label.login"/></button>
                                 </div>
                             </form>
                             
