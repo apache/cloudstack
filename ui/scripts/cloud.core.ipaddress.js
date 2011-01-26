@@ -963,21 +963,8 @@ function ipJsonToDetailsTab() {
     
     setBooleanReadField(ipObj.isstaticnat, $thisTab.find("#static_nat")); 
     
-    if(ipObj.isstaticnat == true) {        
-        var virtualmachinename, virtualmachinedisplayname;
-        $.ajax({
-	        data: createURL("command=listIpForwardingRules&ipaddress="+ipaddress),		       
-	        dataType: "json",		        
-	        async: false,
-	        success: function(json) {
-	            var items = json.listipforwardingrulesresponse.ipforwardingrule;
-	            if(items != null && items.length > 0) {
-	                virtualmachinename = items[0].virtualmachinename;
-	                virtualmachinedisplayname = items[0].virtualmachinedisplayname;
-	            }		            
-	        }	        	    
-	    });	
-	    $thisTab.find("#vm_of_static_nat").text(getVmName(virtualmachinename, virtualmachinedisplayname));
+    if(ipObj.isstaticnat == true) {   
+	    $thisTab.find("#vm_of_static_nat").text(getVmName(ipObj.virtualmachinename, ipObj.virtualmachinedisplayname));
 	    $thisTab.find("#vm_of_static_nat_container").show();	        
     }
     else {
