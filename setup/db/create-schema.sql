@@ -624,7 +624,7 @@ CREATE TABLE `cloud`.`host_details` (
 
 CREATE TABLE  `cloud`.`mshost` (
   `id` bigint unsigned NOT NULL auto_increment,
-  `msid` bigint  NOT NULL UNIQUE COMMENT 'management server id derived from MAC address',
+  `msid` bigint unsigned NOT NULL UNIQUE COMMENT 'management server id derived from MAC address',
   `name` varchar(255),
   `version` varchar(255),
   `service_ip` varchar(15) NOT NULL,
