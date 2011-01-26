@@ -314,7 +314,7 @@ CREATE TABLE `cloud`.`op_ha_work` (
   INDEX `i_op_ha_work__host_id`(`host_id`), 
   INDEX `i_op_ha_work__step`(`step`), 
   INDEX `i_op_ha_work__type`(`type`),
-  CONSTRAINT `fk_op_ha_work__mgmt_server_id` FOREIGN KEY `fk_op_ha_work__mgmt_server_id`(`mgmt_server_id`) REFERENCES `mshost`(`id`),
+  CONSTRAINT `fk_op_ha_work__mgmt_server_id` FOREIGN KEY `fk_op_ha_work__mgmt_server_id`(`mgmt_server_id`) REFERENCES `mshost`(`msid`),
   INDEX `i_op_ha_work__mgmt_server_id`(`mgmt_server_id`)
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
