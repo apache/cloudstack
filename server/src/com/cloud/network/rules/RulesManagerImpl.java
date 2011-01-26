@@ -603,6 +603,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             for (FirewallRuleVO rule : rules) {
                 rule.setState(State.Revoke);
                 _firewallDao.update(rule.getId(), rule);
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_DELETE, rule.getAccountId(), 0, rule.getId(), null);
+                _usageEventDao.persist(usageEvent);
             }
         }
         
