@@ -44,10 +44,7 @@ function accountGetSearchParams() {
 
 function afterLoadAccountJSP() {
     if(isAdmin()) {
-        initDialog("dialog_resource_limits");
-        initDialog("dialog_disable_account");
-        initDialog("dialog_lock_account");
-        initDialog("dialog_enable_account");  
+        initDialog("dialog_resource_limits");            
         initDialog("dialog_edit_user", 450);    
         initDialog("dialog_change_password", 450);    
         initDialog("dialog_add_user", 450);
@@ -736,7 +733,8 @@ function doDisableAccount($actionLink, $detailsTab, $midmenuItem1) {
     var jsonObj = $midmenuItem1.data("jsonObj");    
     var id = jsonObj.id;
     
-    $("#dialog_disable_account")    
+    $("#dialog_confirmation")  
+    .text($("#message_disable_account").text())  
     .dialog('option', 'buttons', {                    
         "Yes": function() { 		                    
             $(this).dialog("close");	
@@ -752,7 +750,8 @@ function doDisableAccount($actionLink, $detailsTab, $midmenuItem1) {
 function doLockAccount($actionLink, $detailsTab, $midmenuItem1) {       
     var jsonObj = $midmenuItem1.data("jsonObj");    
     
-    $("#dialog_lock_account")    
+    $("#dialog_confirmation")
+    .text($("#message_lock_account").text())    
     .dialog('option', 'buttons', {                    
         "Yes": function() { 		                    
             $(this).dialog("close");			
@@ -768,7 +767,8 @@ function doLockAccount($actionLink, $detailsTab, $midmenuItem1) {
 function doEnableAccount($actionLink, $detailsTab, $midmenuItem1) {       
     var jsonObj = $midmenuItem1.data("jsonObj");    
     
-    $("#dialog_enable_account")    
+    $("#dialog_confirmation")  
+    .text($("#message_enable_account").text())  
     .dialog('option', 'buttons', {                    
         "Yes": function() { 		                    
             $(this).dialog("close");	

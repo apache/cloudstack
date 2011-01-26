@@ -5,6 +5,10 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<span id="message_disable_account" style="display:none;"><fmt:message key="message.disable.account"/></span>
+<span id="message_lock_account" style="display:none;"><fmt:message key="message.lock.account"/></span>
+<span id="message_enable_account" style="display:none;"><fmt:message key="message.enable.account"/></span>
+
 <!-- account detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
@@ -371,24 +375,6 @@
 			</ol>
 		</form>
 	</div>
-</div>
-
-<div id="dialog_disable_account" title="Disable account" style="display:none">
-    <p>
-		<fmt:message key="message.disable.account"/>
-    </p>
-</div>
-
-<div id="dialog_lock_account" title="Lock account" style="display:none">
-    <p>
-		<fmt:message key="message.lock.account"/>
-    </p>
-</div>
-
-<div id="dialog_enable_account" title="Enable account" style="display:none">
-    <p>
-		<fmt:message key="message.enable.account"/>
-    </p>
 </div>
 
 <!-- Add Account Dialog (begin)-->
