@@ -108,6 +108,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
@@ -1152,6 +1153,17 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 s_logger.debug("Removed vm id=" + vmId + " from all load balancers as a part of expunge process");
             } else {
                 s_logger.warn("Fail to remove vm id=" + vmId + " from load balancers as a part of expunge process");
+            }
+            
+            //If vm is assigned to static nat ip address, remove the mapping
+            List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVmId(vmId);
+            if (ips != null) {
+                for (IPAddressVO ip : ips) {
+                    ip.setOneToOneNat(false);
+                    ip.setAssociatedWithVmId(null);
+                    _ipAddressDao.update(ip.getAddress(), ip);
+                    s_logger.debug("Disabled 1-1 nat for ip address " + ip + " as a part of vm " + vm + " expunge");
+                }
             }
  
             _itMgr.remove(vm, _accountMgr.getSystemUser(), caller);

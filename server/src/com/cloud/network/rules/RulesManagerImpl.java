@@ -194,7 +194,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         long accountId = network.getAccountId();
         long domainId = network.getDomainId();
         
-        if (isNat && (ipAddress.isSourceNat() || !ipAddress.isOneToOneNat() || ipAddress.getVmId() == null)) {
+        if (isNat && (ipAddress.isSourceNat() || !ipAddress.isOneToOneNat() || ipAddress.getAssociatedWithVmId() == null)) {
             throw new NetworkRuleConflictException("Can't do one to one NAT on ip address: " + ipAddress.getAddress());
         }
         
@@ -253,7 +253,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 throw new NetworkRuleConflictException("Failed to enable one to one nat for the ip address " + ipAddress.getAddress() + " as it already has firewall rules assigned");
             }
         } else {
-            if (ipAddress.getVmId() != null && ipAddress.getVmId().longValue() != vmId) {
+            if (ipAddress.getAssociatedWithVmId() != null && ipAddress.getAssociatedWithVmId().longValue() != vmId) {
                 throw new NetworkRuleConflictException("Failed to enable one to one nat for the ip address " + ipAddress.getAddress() + " and vm id=" + vmId + " as it's already assigned to antoher vm");
             }
         } 

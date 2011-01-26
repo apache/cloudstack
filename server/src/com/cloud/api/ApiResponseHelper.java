@@ -632,8 +632,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setForVirtualNetwork(forVirtualNetworks);
         ipResponse.setStaticNat(ipAddress.isOneToOneNat());
          
-        if (ipAddress.getVmId() != null) {
-            UserVm vm = ApiDBUtils.findUserVmById(ipAddress.getVmId());
+        if (ipAddress.getAssociatedWithVmId() != null) {
+            UserVm vm = ApiDBUtils.findUserVmById(ipAddress.getAssociatedWithVmId());
             ipResponse.setVirtualMachineId(vm.getId());
             ipResponse.setVirtualMachineName(vm.getName());
             ipResponse.setVirtualMachineDisplayName(vm.getDisplayName());

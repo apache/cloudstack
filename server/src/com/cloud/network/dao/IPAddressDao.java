@@ -43,4 +43,6 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Ip> {
 	boolean mark(long dcId, Ip ip);
 
 	int countIPsForDashboard(long dcId, boolean onlyCountAllocated);
+	
+	List<IPAddressVO> listByAssociatedVmId(long vmId);
 }

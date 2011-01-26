@@ -228,7 +228,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
         if (ip == null) {
             throw new InvalidParameterValueException("Ip address " + ipAddress + " doesn't exist in the system");
         } else {
-            return _networkService.getIp(new Ip(ipAddress)).getVmId();
+            return _networkService.getIp(new Ip(ipAddress)).getAssociatedWithVmId();
         }
         
     }

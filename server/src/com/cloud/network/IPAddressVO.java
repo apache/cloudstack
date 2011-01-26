@@ -124,16 +124,16 @@ public class IPAddressVO implements IpAddress {
 	public void setAssociatedWithNetworkId(Long networkId) {
 	    this.associatedWithNetworkId = networkId;
 	}
-	
+
 	@Override
-    public Long getVmId() {
+    public Long getAssociatedWithVmId() {
         return associatedWithVmId;
     }
 
-    public void setAssociatedWithVmId(Long vmId) {
-        this.associatedWithVmId = vmId;
+    public void setAssociatedWithVmId(Long associatedWithVmId) {
+        this.associatedWithVmId = associatedWithVmId;
     }
-	
+
     @Override
     public Long getAllocatedInDomainId() {
         return allocatedInDomainId;

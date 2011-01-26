@@ -80,8 +80,8 @@ public class PublicIp implements PublicIpAddress {
     }
     
     @Override
-    public Long getVmId() {
-        return _addr.getVmId();
+    public Long getAssociatedWithVmId() {
+        return _addr.getAssociatedWithVmId();
     }
     
     @Override
