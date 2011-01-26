@@ -115,7 +115,102 @@ function afterLoadIpJSP() {
 	});
     //*** Acquire New IP (end) ***
     
-    //Port Fowording tab
+    //*** Port Range tab (begin) ***
+    var $createPortRangeRow = $("#tab_content_port_range").find("#create_port_range_row");     
+  
+    $createPortRangeRow.find("#add_link").bind("click", function(event){	        
+		var isValid = true;							
+		isValid &= validateInteger("Start Port", $createPortRangeRow.find("#start_port"), $createPortRangeRow.find("#start_port_errormsg"), 1, 65535);
+		isValid &= validateInteger("End Port", $createPortRangeRow.find("#end_port"), $createPortRangeRow.find("#end_port_errormsg"), 1, 65535);				
+		if (!isValid) 
+		    return;			
+	    
+	    var $template = $("#port_range_template").clone();
+	    $("#tab_content_port_range #grid_content").append($template.show());		
+	    
+	    var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
+	    $spinningWheel.find("#description").text("Adding....");	
+        $spinningWheel.show();   
+	    	    
+	    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");       
+        var ipObj = $midmenuItem1.data("jsonObj");            	        
+		var ipAddress = ipObj.ipaddress;
+				
+	    var startPort = $createPortRangeRow.find("#start_port").val();
+	    var endPort = $createPortRangeRow.find("#end_port").val();
+	    var protocol = $createPortRangeRow.find("#protocol").val();
+	   	    
+	    var array1 = [];
+        array1.push("&ipaddress="+ipAddress);    
+        array1.push("&endPort="+endPort);
+        array1.push("&startPort="+startPort);
+        array1.push("&protocol="+protocol);
+                
+        $.ajax({
+            data: createURL("command=createIpForwardingRule"+array1.join("")),
+            dataType: "json",           
+            success: function(json) {                                    	                        
+                var jobId = json.createipforwardingruleresponse.jobid;                  			                        
+                var timerKey = "asyncJob_" + jobId;					                       
+                $("body").everyTime(
+                    10000,
+                    timerKey,
+                    function() {
+                        $.ajax({
+                            data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+	                        dataType: "json",									                    					                    
+	                        success: function(json) {		                                              							                       
+		                        var result = json.queryasyncjobresultresponse;										                   
+		                        if (result.jobstatus == 0) {
+			                        return; //Job has not completed
+		                        } else {											                    
+			                        $("body").stopTime(timerKey);				                        
+			                        $spinningWheel.hide();  			                                 		                       
+			                        if (result.jobstatus == 1) { // Succeeded 				                            
+	                                    var item = json.queryasyncjobresultresponse.jobresult.portforwardingrule;		       	        	
+	                                    portRangeJsonToTemplate(item, $template);
+	                                    $spinningWheel.hide();   
+	                                    refreshCreatePortRangeRow();			 
+			                        } else if (result.jobstatus == 2) { // Failed			                            
+				                        $template.slideUp("slow", function() {
+					                        $(this).remove();
+				                        });
+				                        var errorMsg = "Create Port Fowarding Rule action failed. Reason: " + fromdb(result.jobresult.errortext);				
+	                                    $("#dialog_error").text(errorMsg).dialog("open");
+			                        }											                    
+		                        }
+	                        },
+	                        error: function(XMLHttpResponse) {	                  
+		                        $("body").stopTime(timerKey);	
+								handleError(XMLHttpResponse, function() {
+					                $template.slideUp("slow", function() {
+						                $(this).remove();
+					                });
+					                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
+		                            $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
+				                });								
+	                        }
+                        });
+                    },
+                    0
+                );
+            },
+            error: function(XMLHttpResponse) {	
+                handleError(XMLHttpResponse, function() {
+	                $template.slideUp("slow", function() {
+		                $(this).remove();
+	                });
+	                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);				
+                    $("#dialog_error").text(fromdb(errorMsg)).dialog("open");
+                });		
+            }
+        });    	    
+	    
+	    return false;
+	});
+    //*** Port Range tab (end) ***
+   
+    //*** Port Forwarding tab (begin) ***
     var $createPortForwardingRow = $("#tab_content_port_forwarding").find("#create_port_forwarding_row");     
     
     $createPortForwardingRow.find("#add_link").bind("click", function(event){	        
@@ -211,8 +306,9 @@ function afterLoadIpJSP() {
 	    
 	    return false;
 	});
+    //*** Port Forwarding tab (end) ***
     
-    //Load Balancer tab
+    //*** Load Balancer tab (begin) ***
     var createLoadBalancerRow = $("#tab_content_load_balancer #create_load_balancer_row");
     
     createLoadBalancerRow.find("#add_link").bind("click", function(event){		
@@ -268,6 +364,7 @@ function afterLoadIpJSP() {
 		});  	    
 	    return false;
 	});
+	//*** Load Balancer tab (end) ***
 }
 
 function ipGetMidmenuId(jsonObj) {   
@@ -393,8 +490,7 @@ function ipToRightPanel($midmenuItem1) {
 
 function ipJsonToPortRangeTab() {   
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    
-    /*
+   
     if($midmenuItem1 == null) {
         ipClearPortRangeTab();
         return;    
@@ -433,24 +529,23 @@ function ipJsonToPortRangeTab() {
     refreshCreatePortRangeRow();         
            		
     $.ajax({
-        data: createURL("command=listPortRangeRules&ipaddress=" + ipAddress),
+        data: createURL("command=listIpForwardingRules&ipaddress=" + ipAddress),
         dataType: "json",        
-        success: function(json) {	                                    
-            var items = json.listPortRangerulesresponse.PortRangerule;              
+        success: function(json) {	                                       
+            var items = json.listipforwardingrulesresponse.ipforwardingrule;              
             var $PortRangeGrid = $thisTab.find("#grid_content");            
             $PortRangeGrid.empty();                       		    		      	    		
             if (items != null && items.length > 0) {				        			        
                 for (var i = 0; i < items.length; i++) {
 	                var $template = $("#port_range_template").clone(true);
-	                PortRangeJsonToTemplate(items[i], $template); 
+	                portRangeJsonToTemplate(items[i], $template); 
 	                $PortRangeGrid.append($template.show());						   
                 }			    
             } 	
             $thisTab.find("#tab_spinning_wheel").hide();    
             $thisTab.find("#tab_container").show();           	      		    						
         }
-    });  
-    */ 
+    });      
 }
 
 function ipJsonToPortForwardingTab() {   
@@ -1264,6 +1359,81 @@ function ipSetRuleState(stateValue, $stateField) {
         $stateField.removeClass("status_red status_green").addClass("status_gray");
 }
 
+//***** Port Range tab (begin) ********************************************************************************************************
+function ipClearPortRangeTab() {
+   $("#tab_content_port_range #grid_content").empty(); 
+    refreshCreatePortRangeRow(); 
+}    
+
+function portRangeJsonToTemplate(jsonObj, $template) {	     
+    $template.attr("id", "PortRange_" + fromdb(jsonObj.id)).data("PortRangeId", fromdb(jsonObj.id));    		     
+    $template.find("#row_container #start_port").text(fromdb(jsonObj.startport));        
+    $template.find("#row_container #end_port").text(fromdb(jsonObj.endport));        
+    $template.find("#row_container #protocol").text(fromdb(jsonObj.protocol));      
+    ipSetRuleState(fromdb(jsonObj.state), $template.find("#row_container #state"));
+                
+    $template.find("#revoke_link").unbind("click").bind("click", function(event){   		                    
+        var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");		
+        $spinningWheel.find("#description").text("Revoking....");	
+        $spinningWheel.show();   
+             
+        $.ajax({
+            data: createURL("command=deleteIpForwardingRule&id="+fromdb(jsonObj.id)),
+            dataType: "json",           
+            success: function(json) {	                                  	                        
+                var jobId = json.deleteipforwardingruleresponse.jobid;                  			                        
+                var timerKey = "asyncJob_" + jobId;					                       
+                $("body").everyTime(
+                    10000,
+                    timerKey,
+                    function() {
+                        $.ajax({
+                            data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+	                        dataType: "json",									                    					                    
+	                        success: function(json) {		                                                     							                       
+		                        var result = json.queryasyncjobresultresponse;										                   
+		                        if (result.jobstatus == 0) {
+			                        return; //Job has not completed
+		                        } else {
+			                        $("body").stopTime(timerKey);
+			                        $spinningWheel.hide();   
+									if (result.jobstatus == 1) { // Succeeded										   
+										$template.slideUp("slow", function() {
+											$(this).remove();													
+										});									
+									} else if (result.jobstatus == 2) { // Failed		
+									    $("#dialog_error").text("Revoking Port Range rule failed.").dialog("open");											
+									}							                    
+		                        }
+	                        },
+	                        error: function(XMLHttpResponse) {	 
+		                        $("body").stopTime(timerKey);
+								$spinningWheel.hide();   
+								handleError(XMLHttpResponse);		         
+	                        }
+                        });
+                    },
+                    0
+                );
+            },
+            error: function(XMLHttpResponse) {				
+				$spinningWheel.hide();   
+				handleError(XMLHttpResponse);				
+            }
+        });    
+                 
+        return false;
+    }); 
+}	  
+
+function refreshCreatePortRangeRow() {    
+    var $createPortRangeRow = $("#create_port_range_row");      
+    $createPortRangeRow.find("#start_port").val("");
+    $createPortRangeRow.find("#end_port").val("");    
+}
+
+//***** Port Range tab (end) **********************************************************************************************************
+
 //***** Port Forwarding tab (begin) ********************************************************************************************************
 function ipClearPortForwardingTab() {
    $("#tab_content_port_forwarding #grid_content").empty(); 
@@ -1433,14 +1603,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     });   
 }	  
 
-function refreshCreatePortForwardingRow() {    
-    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
-    if($midmenuItem1 == null)
-        return;    
-    var ipObj = $midmenuItem1.data("jsonObj");
-    if(ipObj == null)
-        return;     
-      
+function refreshCreatePortForwardingRow() {       
     var $createPortForwardingRow = $("#create_port_forwarding_row");      
     $createPortForwardingRow.find("#public_port").val("");
     $createPortForwardingRow.find("#private_port").val("");

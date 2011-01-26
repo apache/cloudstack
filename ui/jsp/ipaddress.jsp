@@ -223,12 +223,12 @@
 	            </div>
 	            <div class="grid_rows even" id="create_port_range_row">
 	                <div class="grid_row_cell" style="width: 15%;">
-	                    <input id="public_port" class="text" style="width: 70%;" type="text" />
-	                    <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                    <input id="start_port" class="text" style="width: 70%;" type="text" />
+	                    <div id="start_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 15%;">
-	                    <input id="private_port" class="text" style="width: 70%;" type="text" />
-	                    <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
+	                    <input id="end_port" class="text" style="width: 70%;" type="text" />
+	                    <div id="end_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 15%;">  
 	                   <select class="select" id="protocol" style="width:70%;">
@@ -297,7 +297,7 @@
 	            </div>
 	            <div class="grid_rows even" id="create_port_forwarding_row">
 	                <div class="grid_row_cell" style="width: 15%;">
-	                    <input id="public_port" class="text" style="width: 70%;" type="text" />
+	                    <input id="end_port" class="text" style="width: 70%;" type="text" />
 	                    <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 15%;">
@@ -590,6 +590,40 @@
     </div>
 </div>
 <!-- Load Balancer's VM subgrid template (end) -->
+
+<!-- Port Range template (begin) -->
+<div class="grid_rows odd" id="port_range_template" style="display: none">    
+    <div id="row_container">
+        <div class="grid_row_cell" style="width: 15%;">
+            <div class="row_celltitles" id="start_port"></div>
+        </div>
+        <div class="grid_row_cell" style="width: 15%;">
+            <div class="row_celltitles" id="end_port"></div>
+        </div>
+        <div class="grid_row_cell" style="width: 15%;">
+            <div class="row_celltitles" id="protocol"></div>
+        </div>
+        <div class="grid_row_cell" style="width: 25%;">
+            <div class="row_celltitles" id="vm_name">vm</div>
+        </div>   
+        <div class="grid_row_cell" style="width: 10%;">
+            <div class="row_celltitles" id="state"></div>
+        </div>        
+        <div class="grid_row_cell" style="width: 15%;">
+            <div class="row_celltitles">
+                <a id="revoke_link" href="#" style="float:left;"><fmt:message key="label.revoke"/> </a>                            
+            </div>
+        </div>
+        <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
+            <div class="gridrow_loader">
+            </div>
+            <p id="description">
+                <fmt:message key="label.waiting"/>  &hellip;
+            </p>
+        </div>
+    </div>    
+</div>
+<!-- Port Range template (end) -->
 
 <!-- Port Forwarding template (begin) -->
 <div class="grid_rows odd" id="port_forwarding_template" style="display: none">    
