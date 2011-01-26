@@ -1,13 +1,9 @@
-<%@ page import="java.util.*" %>
-
-<%@ page import="com.cloud.utils.*" %>
-
-<%
-    Locale browserLocale = request.getLocale();
-    CloudResourceBundle t = CloudResourceBundle.getBundle("resources/resource", browserLocale);
-%>
-
-
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:if test="${!empty cookie.lang}">
+	<fmt:setLocale value="${cookie.lang.value}" />
+</c:if>
+<fmt:setBundle basename="resources/messages"/>
 
 <div class="main_title" id="right_panel_header">
     
@@ -15,7 +11,7 @@
         <img src="images/title_secgroupicons.gif" /></div>
     
     <h1>
-        Security Group
+        <fmt:message key="label.security.group"/>
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
@@ -25,9 +21,9 @@
     </div>
     <div class="tabbox" style="margin-top: 15px;">
         <div class="content_tabs on" id="tab_details">
-            <%=t.t("details")%></div>
+            <fmt:message key="label.details"/></div>
         <div class="content_tabs off" id="tab_ingressrule">
-            Ingress Rule</div>
+            <fmt:message key="label.ingress.rule"/></div>
     </div>
     <!--Details tab (start)-->
     <div id="tab_content_details">
@@ -36,17 +32,17 @@
                 <div class="rightpanel_mainloader_animatedicon">
                 </div>
                 <p>
-                    Loading &hellip;</p>
+                    <fmt:message key="label.loading"/> &hellip;</p>
             </div>
         </div>
         <div id="tab_container"> 
 	        <div class="grid_container">
 	        	<div class="grid_header">
 	            	<div id="grid_header_title" class="grid_header_title">(title)</div>
-	                <div id="action_link" class="grid_actionbox"><p>Actions</p>
+	                <div id="action_link" class="grid_actionbox"><p><fmt:message key="label.actions"/></p>
 	                    <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
 	                        <ul class="actionsdropdown_boxlist" id="action_list">
-	                        	<li><%=t.t("no.available.actions")%></li>
+	                        	<li><fmt:message key="label.no.actions"/></li>
 	                        </ul>
 	                    </div>
 	                </div>
@@ -55,13 +51,13 @@
 	                    <div class="gridheader_loader" id="Div1">
 	                    </div>
 	                    <p id="description">
-	                        Waiting &hellip;</p>
+	                        <fmt:message key="label.waiting"/> &hellip;</p>
 	                </div>
 	            </div>
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("ID")%>:</div>
+	                        <fmt:message key="label.id"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="id">
@@ -71,7 +67,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("name")%>:</div>
+	                        <fmt:message key="label.name"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="name">
@@ -81,7 +77,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("display.text")%>:</div>
+	                        <fmt:message key="label.display.text"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="displaytext">
@@ -91,7 +87,7 @@
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("domain")%>:</div>
+	                        <fmt:message key="label.domain"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="domain">
@@ -101,7 +97,7 @@
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <%=t.t("account")%>:</div>
+	                        <fmt:message key="label.account"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="account">
@@ -110,8 +106,8 @@
 	            </div>	 
 	        </div>        
 	        <div class="grid_botactionpanel">
-	        	<div class="gridbot_buttons" id="save_button" style="display:none;">Save</div>
-	            <div class="gridbot_buttons" id="cancel_button" style="display:none;">Cancel</div>
+	        	<div class="gridbot_buttons" id="save_button" style="display:none;"><fmt:message key="label.save"/></div>
+	            <div class="gridbot_buttons" id="cancel_button" style="display:none;"><fmt:message key="label.cancel"/></div>
 	        </div>  
         </div>
     </div>
@@ -122,7 +118,7 @@
     	<div id="tab_spinning_wheel" class="rightpanel_mainloader_panel" style="display:none;">
               <div class="rightpanel_mainloaderbox">
                    <div class="rightpanel_mainloader_animatedicon"></div>
-                   <p>Loading &hellip;</p>    
+                   <p><fmt:message key="label.loading"/> &hellip;</p>    
               </div>               
         </div>
         <div id="tab_container">
@@ -138,7 +134,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt="Add Security Group" /></div>
             <div class="actionpanel_button_links">
-                Add Security Group
+                <fmt:message key="label.add.security.group"/>
             </div>
         </div>
     </div>
@@ -147,7 +143,7 @@
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" alt="Add Ingress Rule" /></div>
             <div class="actionpanel_button_links">
-                Add Ingress Rule
+                <fmt:message key="label.add.ingress.rule"/>
             </div>
         </div>
     </div>    
@@ -159,7 +155,7 @@
     <div class="grid_header">
         <div class="grid_header_title" id="grid_header_title">
         </div>
-        <div class="grid_actionbox" id="ingressrule_action_link"><p>Actions</p>
+        <div class="grid_actionbox" id="ingressrule_action_link"><p><fmt:message key="label.actions"/></p>
             <div class="grid_actionsdropdown_box" id="ingressrule_action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
@@ -169,7 +165,7 @@
             <div class="gridheader_loader" id="icon">
             </div>
             <p id="description">
-                Waiting &hellip;
+                <fmt:message key="label.waiting"/> &hellip;
             </p>
         </div>       
     </div>
@@ -184,7 +180,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                ID:</div>
+                <fmt:message key="label.id"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="id">
@@ -194,7 +190,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Protocol:</div>
+                <fmt:message key="label.protocol"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="protocol">
@@ -204,7 +200,7 @@
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                Endpoint or Operation:</div>
+                <fmt:message key="label.endpoint.or.operation"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="endpoint">
@@ -214,7 +210,7 @@
     <div class="grid_rows odd">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
-                CIDR or Account/Security Group:</div>
+                <fmt:message key="label.cidr.account"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
             <div class="row_celltitles" id="cidr">
@@ -231,14 +227,14 @@
         <ol>
             <li>
                 <label>
-                    Name:</label>
+                    <fmt:message key="label.name"/>:</label>
                 <input class="text" type="text" id="name" />
                 <div id="name_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
                 <label>
-                    Description:</label>
+                    <fmt:message key="label.description"/>:</label>
                 <input class="text" type="text" id="description" />
                 <div id="description_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
@@ -256,7 +252,7 @@
         <ol>
             <li>
                 <label for="protocol">
-                    Protocol</label>
+                    <fmt:message key="label.protocol"/></label>
                 <select class="select" id="protocol">
                     <option value="TCP">TCP</option>
                     <option value="UDP">UDP</option>
@@ -265,28 +261,28 @@
             </li>
             <li id="start_port_container">
                 <label for="start_port">
-                    Start Port:</label>
+                    <fmt:message key="label.start.port"/>:</label>
                 <input class="text" type="text" id="start_port" />
                 <div id="start_port_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li id="end_port_container">
                 <label for="end_port">
-                    End Port:</label>
+                    <fmt:message key="label.end.port"/>:</label>
                 <input class="text" type="text" id="end_port" />
                 <div id="end_port_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li id="icmp_type_container">
                 <label for="start_port">
-                    Type:</label>
+                    <fmt:message key="label.type"/>:</label>
                 <input class="text" type="text" id="icmp_type" />
                 <div id="icmp_type_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li id="icmp_code_container">
                 <label for="end_port">
-                    Code:</label>
+                    <fmt:message key="label.code"/>:</label>
                 <input class="text" type="text" id="icmp_code" />
                 <div id="icmp_code_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
@@ -294,7 +290,7 @@
             <li>
                 <label>
                     <input type="radio" name="ingress_rule_type" value="cidr" checked>
-                    Add by CIDR:</label>
+                    <fmt:message key="label.add.by.cidr"/>:</label>
                 <div id="cidr_container">
                 </div>
                 <a style="margin-left: 110px; display: inline;" id="add_more_cidr" href="#">Add more</a>
@@ -302,15 +298,15 @@
             <li style="margin-top: 7px;">
                 <label>
                     <input type="radio" name="ingress_rule_type" value="account_securitygroup">
-                    Add by Group:</label>
+                    <fmt:message key="label.add.by.group"/>:</label>
                 <p style="color: #999;">
-                    Account Name</p>
+                    <fmt:message key="label.account.name"/></p>
                 <p style="margin-left: 25px; display: inline; color: #999;">
-                    Security Group Name</p>
+                    <fmt:message key="label.security.group.name"/></p>
                 <div id="account_securitygroup_container">
                 </div>
                 <a style="margin-left: 110px; display: inline;" id="add_more_account_securitygroup"
-                    href="#">Add more</a></li>
+                    href="#"><fmt:message key="label.add.more"/></a></li>
         </ol>
         </form>
     </div>
@@ -319,7 +315,7 @@
         <div class="ui_dialog_loader">
         </div>
         <p>
-            Adding....</p>
+            <fmt:message key="label.adding"/>....</p>
     </div>
     <!--Confirmation msg box-->
     <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
