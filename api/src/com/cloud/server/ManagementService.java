@@ -30,6 +30,7 @@ import com.cloud.api.commands.CreateSSHKeyPairCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
 import com.cloud.api.commands.DeletePreallocatedLunCmd;
 import com.cloud.api.commands.DeleteSSHKeyPairCmd;
+import com.cloud.api.commands.DestroySystemVmCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.GetVMPasswordCmd;
@@ -61,7 +62,6 @@ import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.ListTemplatesCmd;
 import com.cloud.api.commands.ListUsersCmd;
 import com.cloud.api.commands.ListVMGroupsCmd;
-import com.cloud.api.commands.ListVMsCmd;
 import com.cloud.api.commands.ListVlanIpRangesCmd;
 import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.api.commands.ListZonesByCmd;
@@ -103,7 +103,6 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.SSHKeyPair;
 import com.cloud.user.UserAccount;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.VirtualMachine;
@@ -239,6 +238,8 @@ public interface ManagementService {
     VirtualMachine stopSystemVM(StopSystemVmCmd cmd);
     VirtualMachine startSystemVM(StartSystemVMCmd cmd);
     VirtualMachine rebootSystemVM(RebootSystemVmCmd cmd);
+    VirtualMachine destroySystemVM(DestroySystemVmCmd cmd);
+    
     /**
      * Search for domains owned by the given domainId/domainName (those parameters are wrapped
      * in a command object.

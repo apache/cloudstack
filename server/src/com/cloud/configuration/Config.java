@@ -90,6 +90,7 @@ public enum Config {
 	ConsoleProxySessionMax("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.session.max", "50", "The max number of viewer sessions console proxy is configured to serve for", null),
 	ConsoleProxySessionTimeout("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.session.timeout", "300000", "Timeout(in milliseconds) that console proxy tries to maintain a viewer session before it times out the session for no activity", null),
 	ConsoleProxyDisableRpFilter("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.disable.rpfilter", "true", "disable rp_filter on console proxy VM public interface", null),
+    ConsoleProxyLaunchMax("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.launch.max", "10", "maximum number of console proxy instances per zone can be launched", null),
 	
 	// Snapshots
     SnapshotHourlyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.hourly", "8", "Maximum hourly snapshots for a volume", null),

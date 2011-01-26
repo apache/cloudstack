@@ -65,14 +65,13 @@ import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -80,8 +79,8 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
-import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
+import com.cloud.host.Host.Type;
 import com.cloud.host.dao.HostDao;
 import com.cloud.info.ConsoleProxyConnectionInfo;
 import com.cloud.info.ConsoleProxyInfo;
@@ -104,16 +103,14 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.servlet.ConsoleProxyServlet;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
-import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -132,11 +129,11 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -145,41 +142,30 @@ import com.google.gson.GsonBuilder;
 
 //
 // Possible console proxy state transition cases
-//		Creating -> Destroyed
-//		Creating -> Stopped --> Starting -> Running
+//		Stopped --> Starting -> Running
 //		HA -> Stopped -> Starting -> Running
 //		Migrating -> Running	(if previous state is Running before it enters into Migrating state
 //		Migrating -> Stopped	(if previous state is not Running before it enters into Migrating state)
 //		Running -> HA			(if agent lost connection)
 //		Stopped -> Destroyed
 //
-//		Creating state indicates of record creating and IP address allocation are ready, it is a transient
-// 		state which will soon be switching towards Running if everything goes well.
-//		Stopped state indicates the readiness of being able to start (has storage and IP resources allocated)
-//		Starting state can only be entered from Stopped states
-//
-// Starting, HA, Migrating, Creating and Running state are all counted as "Open" for available capacity calculation
+// Starting, HA, Migrating, Running state are all counted as "Open" for available capacity calculation
 // because sooner or later, it will be driven into Running state
 //
 @Local(value = { ConsoleProxyManager.class, ConsoleProxyService.class })
 public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProxyService, Manager, AgentHook, VirtualMachineGuru<ConsoleProxyVO> {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
-    private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30
-    // seconds
-    private static final int EXECUTOR_SHUTDOWN_TIMEOUT = 1000; // 1 second
+    private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000;    // 30 seconds
+    private static final int EXECUTOR_SHUTDOWN_TIMEOUT = 1000;          // 1 second
 
-    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3; // 3
-    // seconds
-    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC = 180; // 3
-    // minutes
+    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3;   // 3 seconds
+    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC = 180;        // 3 minutes
 
-    private static final int API_WAIT_TIMEOUT = 5000; // 5 seconds (in
-    // milliseconds)
-    private static final int STARTUP_DELAY = 60000; // 60 seconds
+    private static final int API_WAIT_TIMEOUT = 5000;   // 5 seconds (in milliseconds)
+    private static final int STARTUP_DELAY = 60000;     // 60 seconds
 
     private int _consoleProxyPort = ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT;
-    private int _consoleProxyUrlPort = ConsoleProxyManager.DEFAULT_PROXY_URL_PORT;
 
     private String _mgmt_host;
     private int _mgmt_port = 8250;
@@ -187,37 +173,25 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private String _name;
     private Adapters<ConsoleProxyAllocator> _consoleProxyAllocators;
 
-    @Inject
-    private ConsoleProxyDao _consoleProxyDao;
-    @Inject
-    private DataCenterDao _dcDao;
-    @Inject
-    private VMTemplateDao _templateDao;
-    @Inject
-    private VolumeDao _volsDao;
-    @Inject
-    private HostPodDao _podDao;
-    @Inject
-    private HostDao _hostDao;
-    @Inject
-    private ConfigurationDao _configDao;
-    @Inject
-    private CertificateDao _certDao;
-    @Inject
-    private VMInstanceDao _instanceDao;
-    @Inject
-    private AccountDao _accountDao;
+    @Inject private ConsoleProxyDao _consoleProxyDao;
+    @Inject private DataCenterDao _dcDao;
+    @Inject private VMTemplateDao _templateDao;
+    @Inject private HostPodDao _podDao;
+    @Inject private HostDao _hostDao;
+    @Inject private ConfigurationDao _configDao;
+    @Inject private CertificateDao _certDao;
+    @Inject private VMInstanceDao _instanceDao;
     @Inject private VMTemplateHostDao _vmTemplateHostDao;
     @Inject private AgentManager _agentMgr;
     @Inject private StorageManager _storageMgr;
     @Inject NetworkManager _networkMgr;
     @Inject AccountManager _accountMgr;
-    @Inject private EventDao _eventDao;
     @Inject GuestOSDao _guestOSDao = null;
     @Inject ServiceOfferingDao _offeringDao;
     @Inject NetworkOfferingDao _networkOfferingDao;
     @Inject NicDao _nicDao;
     @Inject NetworkDao _networkDao;
+    
     private IpAddrAllocator _IpAllocator;
 
     private ConsoleProxyListener _listener;
@@ -229,11 +203,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     NetworkOfferingVO _managementNetworkOffering;
     NetworkOfferingVO _linkLocalNetworkOffering;
 
-    @Inject
-    private AsyncJobManager _asyncMgr;
-    
-    @Inject
-    private VirtualMachineManager _itMgr;
+    @Inject private AsyncJobManager _asyncMgr;
+    @Inject private VirtualMachineManager _itMgr;
     
     private final ScheduledExecutorService _capacityScanScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("CP-Scan"));
     private final ExecutorService _requestHandlerScheduler = Executors.newCachedThreadPool(new NamedThreadFactory("Request-handler"));
@@ -243,16 +214,12 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private int _standbyCapacity = ConsoleProxyManager.DEFAULT_STANDBY_CAPACITY;
 
     private int _proxyRamSize;
-    private int _ssh_retry;
-    private int _ssh_sleep;
     private boolean _use_lvm;
     private boolean _use_storage_vm;
     private boolean _disable_rp_filter = false;
     private String _domain;
     private String _instance;
     
-    // private String _privateNetmask;
-    private int _proxyCmdPort = DEFAULT_PROXY_CMD_PORT;
     private int _proxySessionTimeoutValue = DEFAULT_PROXY_SESSION_TIMEOUT;
     private boolean _sslEnabled = false;
 
@@ -352,7 +319,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 proxy.setPort(80);
             }
             
-         
             return proxy;
         }
     }
@@ -572,6 +538,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
+        }
+        
+        if(!allowToLaunchNew(dataCenterId)) {
+            s_logger.warn("The number of launched console proxy on zone " + dataCenterId + " has reached to limit");
+            return null;
         }
 
         Map<String, Object> context = createProxyInstance(dataCenterId);
@@ -894,6 +865,16 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             return true;
         
         return false;
+    }
+    
+    private boolean allowToLaunchNew(long dcId) {
+        List<ConsoleProxyVO> l = _consoleProxyDao.getProxyListInStates(dcId, VirtualMachine.State.Starting, 
+          VirtualMachine.State.Running, VirtualMachine.State.Stopping, VirtualMachine.State.Stopped,
+          VirtualMachine.State.Migrating, VirtualMachine.State.Shutdowned, VirtualMachine.State.Unknown);
+        
+        String value = _configDao.getValue(Config.ConsoleProxyLaunchMax.key());
+        int launchLimit = NumbersUtil.parseInt(value, 10);
+        return l.size() < launchLimit;
     }
 
     private Runnable getCapacityScanTask() {
@@ -1256,12 +1237,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                     s_logger.debug("Successfully reboot console proxy " + proxy.getName());
                 }
 
-                SubscriptionMgr.getInstance()
-                        .notifySubscribers(
-                                ConsoleProxyManager.ALERT_SUBJECT,
-                                this,
-                                new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_REBOOTED, proxy.getDataCenterId(), proxy.getId(),
-                                        proxy, null));
+                SubscriptionMgr.getInstance().notifySubscribers(
+                    ConsoleProxyManager.ALERT_SUBJECT,
+                    this,
+                    new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_REBOOTED, proxy.getDataCenterId(), proxy.getId(),
+                    proxy, null));
 
                 return true;
             } else {
@@ -1319,8 +1299,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         _proxyRamSize = NumbersUtil.parseInt(configs.get("consoleproxy.ram.size"), DEFAULT_PROXY_VM_RAMSIZE);
 
         String value = configs.get("consoleproxy.cmd.port");
-        _proxyCmdPort = NumbersUtil.parseInt(value, DEFAULT_PROXY_CMD_PORT);
-
         value = configs.get("consoleproxy.sslEnabled");
         if (value != null && value.equalsIgnoreCase("true")) {
             _sslEnabled = true;
@@ -1336,11 +1314,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         value = configs.get("consoleproxy.port");
         if (value != null) {
             _consoleProxyPort = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT);
-        }
-
-        value = configs.get("consoleproxy.url.port");
-        if (value != null) {
-            _consoleProxyUrlPort = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_URL_PORT);
         }
         
         value = configs.get(Config.ConsoleProxyDisableRpFilter.key());
@@ -1372,12 +1345,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         if (_instance == null) {
             _instance = "DEFAULT";
         }
-
-        value = (String) params.get("ssh.sleep");
-        _ssh_sleep = NumbersUtil.parseInt(value, 5) * 1000;
-
-        value = (String) params.get("ssh.retry");
-        _ssh_retry = NumbersUtil.parseInt(value, 3);
 
         Map<String, String> agentMgrConfigs = configDao.getConfiguration("AgentManager", params);
         _mgmt_host = agentMgrConfigs.get("host");
@@ -1581,7 +1548,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 					return false;
 				}
 			}
-		}else{
+		} else {
 			return false;//no cert entry in the db record
 		}
 		return false;//cert already applied in previous cycles

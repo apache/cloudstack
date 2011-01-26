@@ -137,6 +137,7 @@ listRouters=com.cloud.api.commands.ListRoutersCmd;7
 startSystemVm=com.cloud.api.commands.StartSystemVMCmd;1
 rebootSystemVm=com.cloud.api.commands.RebootSystemVmCmd;1
 stopSystemVm=com.cloud.api.commands.StopSystemVmCmd;1
+destroySystemVm=com.cloud.api.commands.DestroySystemVmCmd;1
 listSystemVms=com.cloud.api.commands.ListSystemVMsCmd;1
 
 #### configuration commands

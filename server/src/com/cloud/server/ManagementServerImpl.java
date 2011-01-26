@@ -79,6 +79,7 @@ import com.cloud.api.commands.CreateSSHKeyPairCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
 import com.cloud.api.commands.DeletePreallocatedLunCmd;
 import com.cloud.api.commands.DeleteSSHKeyPairCmd;
+import com.cloud.api.commands.DestroySystemVmCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
 import com.cloud.api.commands.GetCloudIdentifierCmd;
 import com.cloud.api.commands.GetVMPasswordCmd;
@@ -152,8 +153,8 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -196,19 +197,19 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.Upload;
-import com.cloud.storage.Upload.Mode;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.Upload.Mode;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -249,10 +250,10 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
-import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.MacAddress;
@@ -346,7 +347,7 @@ public class ManagementServerImpl implements ManagementServer {
     
     private final Map<String, Boolean> _availableIdsMap;
 
-    private boolean _isHypervisorSnapshotCapable = false;
+    private final boolean _isHypervisorSnapshotCapable = false;
     private String _hashKey = null;    
     
     protected ManagementServerImpl() {
@@ -2760,6 +2761,11 @@ public class ManagementServerImpl implements ManagementServer {
         _consoleProxyMgr.rebootProxy(instanceId);
         return _consoleProxyDao.findById(instanceId);
     }
+    
+    public ConsoleProxyVO destroyConsoleProxy(long instanceId) {
+        _consoleProxyMgr.destroyProxy(instanceId);
+        return _consoleProxyDao.findById(instanceId);
+    }
 
     @Override
     public String getConsoleAccessUrlRoot(long vmId) {
@@ -3881,8 +3887,9 @@ public class ManagementServerImpl implements ManagementServer {
         return _secStorageVmDao.findById(instanceId);
     }
 
-    public boolean destroySecondaryStorageVm(long instanceId) {
-        return _secStorageVmMgr.destroySecStorageVm(instanceId);
+    public SecondaryStorageVmVO destroySecondaryStorageVm(long instanceId) {
+        _secStorageVmMgr.destroySecStorageVm(instanceId);
+        return _secStorageVmDao.findById(instanceId);
     }
 
 	@Override
@@ -4024,6 +4031,20 @@ public class ManagementServerImpl implements ManagementServer {
 		}
 	}
 
+    public VMInstanceVO destroySystemVM(DestroySystemVmCmd cmd)  {
+        VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
+    
+        if (systemVm == null) {
+            throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + cmd.getId());
+        }
+        
+        if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
+            return destroyConsoleProxy(cmd.getId());
+        } else {
+            return destroySecondaryStorageVm(cmd.getId());
+        }
+    }
+	
 	private String signRequest(String request, String key) {
 		try
 		{

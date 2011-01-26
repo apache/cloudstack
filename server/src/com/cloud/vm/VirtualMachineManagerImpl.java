@@ -39,7 +39,6 @@ import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootAnswer;
@@ -76,18 +75,18 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.org.Cluster;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -375,6 +374,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
         _networkMgr.cleanupNics(profile);
     	//Clean up volumes based on the vm's instance id
     	_storageMgr.cleanupVolumes(vm.getId());
+    	
+    	ConsoleProxyVO proxy = _consoleDao.findById(vm.getId());
+    	proxy.setPublicIpAddress(null);
+    	proxy.setPublicMacAddress(null);
+    	proxy.setPublicNetmask(null);
+    	proxy.setPrivateMacAddress(null);
+        proxy.setPrivateIpAddress(null);
+        _consoleDao.update(vm.getId(), proxy);
     	
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Expunged " + vm);
