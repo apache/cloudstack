@@ -1230,40 +1230,40 @@ function initVMWizard() {
 //***** VM Detail (begin) ******************************************************************************
       
 var vmActionMap = {    
-    "Start Instance": {        
+    "label.action.start.instance": {        
         isAsyncJob: true,
         asyncJobResponse: "startvirtualmachineresponse",
-        inProcessText: "Starting Instance....",
+        inProcessText: "label.action.start.instance.processing",
         dialogBeforeActionFn : doStartVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;      
             vmToMidmenu(jsonObj, $midmenuItem1);            
         }
     },
-    "Stop Instance": {             
+    "label.action.stop.instance": {             
         isAsyncJob: true,
         asyncJobResponse: "stopvirtualmachineresponse",
-        inProcessText: "Stopping Instance....",
+        inProcessText: "label.action.stop.instance.processing",
         dialogBeforeActionFn : doStopVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;            
             vmToMidmenu(jsonObj, $midmenuItem1);            
         }
     },
-    "Reboot Instance": {        
+    "label.action.reboot.instance": {        
         isAsyncJob: true,
         asyncJobResponse: "rebootvirtualmachineresponse",
-        inProcessText: "Rebooting Instance....",
+        inProcessText: "label.action.reboot.instance.processing",
         dialogBeforeActionFn : doRebootVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;       
             vmToMidmenu(jsonObj, $midmenuItem1);            
         }
     },
-    "Destroy Instance": {        
+    "label.action.destroy.instance": {        
         isAsyncJob: true,
         asyncJobResponse: "destroyvirtualmachineresponse",
-        inProcessText: "Destroying Instance....",
+        inProcessText: "label.action.destroy.instance.processing",
         dialogBeforeActionFn : doDestroyVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) {             
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine; 
@@ -1722,9 +1722,9 @@ function vmJsonToDetailsTab(){
 	} 
 	else if (jsonObj.state == 'Running') {		      
 	    buildActionLinkForTab("Edit Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab); 			
-		buildActionLinkForTab("Stop Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
-		buildActionLinkForTab("Reboot Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
-		buildActionLinkForTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		buildActionLinkForTab("label.action.stop.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		buildActionLinkForTab("label.action.reboot.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		buildActionLinkForTab("label.action.destroy.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		
 		if (jsonObj.isoid == null)	
 			buildActionLinkForTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
@@ -1736,8 +1736,8 @@ function vmJsonToDetailsTab(){
 	} 
 	else if (jsonObj.state == 'Stopped') {	    
 	    buildActionLinkForTab("Edit Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab); 
-		buildActionLinkForTab("Start Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);		    
-		buildActionLinkForTab("Destroy Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		buildActionLinkForTab("label.action.start.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);		    
+		buildActionLinkForTab("label.action.destroy.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		
 		if (jsonObj.isoid == null)	
 			buildActionLinkForTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
