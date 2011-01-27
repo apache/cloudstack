@@ -24,10 +24,12 @@ function buildActionLinkForTab(label, actionMap, $actionMenu, $midmenuItem1, $th
     var $listItem = $("#action_list_item").clone();
     $actionMenu.find("#action_list").append($listItem.show());
   
+    var label2;
     if(label in dictionary)
-        $listItem.find("#link").text(dictionary[label]);   
+        label2 = dictionary[label];
     else
-        $listItem.find("#link").text(label);   
+        label2 = label;    
+    $listItem.find("#link").text(label2);   
         
     $listItem.data("label", label);	  
     $listItem.data("apiInfo", apiInfo);	 
@@ -52,9 +54,21 @@ function buildActionLinkForTab(label, actionMap, $actionMenu, $midmenuItem1, $th
 
 function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {  
     var label = $actionLink.data("label");	
+    var label2;
+    if(label in dictionary)
+        label2 = dictionary[label];
+    else
+        label2 = label;    
+        
     var apiInfo = $actionLink.data("apiInfo");	
     
-    var inProcessText = apiInfo.inProcessText;		           
+    var inProcessText = apiInfo.inProcessText;	
+    var inProcessText2;
+    if(inProcessText in dictionary)
+        inProcessText2 = dictionary[inProcessText];   
+    else
+        inProcessText2 = inProcessText;    
+    	           
     var isAsyncJob = apiInfo.isAsyncJob;
     var asyncJobResponse = apiInfo.asyncJobResponse;	
     var afterActionSeccessFn = apiInfo.afterActionSeccessFn;	    
@@ -68,7 +82,7 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
         
     $midmenuItem1.find("#content").removeClass("selected").addClass("inaction");                          
     $midmenuItem1.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
-    $midmenuItem1.find("#spinning_wheel").data("inProcessText", inProcessText);
+    $midmenuItem1.find("#spinning_wheel").data("inProcessText", inProcessText2);
     $midmenuItem1.find("#info_icon").hide();		
     
     var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");   
@@ -102,11 +116,11 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
                                         
                                         //handleMidMenuItemAfterDetailsTabAction() will used updated $midmenuItem1.data("jsonObj")
                                         if(afterActionInfo == null)
-                                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label + " action succeeded.")); 
+                                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label2 + " action succeeded.")); 
                                         else
                                             handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, afterActionInfo); 
 			                        } else if (result.jobstatus == 2) { // Failed	
-			                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, false, (label + " action failed. Reason: " + fromdb(result.jobresult.errortext)));			                            
+			                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, false, (label2 + " action failed. Reason: " + fromdb(result.jobresult.errortext)));			                            
 			                        }											                    
 		                        }
 	                        },
