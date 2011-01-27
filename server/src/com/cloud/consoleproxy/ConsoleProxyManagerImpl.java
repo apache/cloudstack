@@ -1515,6 +1515,16 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         return true;
     }
     
+    @Override 
+    public void finalizeExpunge(ConsoleProxyVO proxy) {
+        proxy.setPublicIpAddress(null);
+        proxy.setPublicMacAddress(null);
+        proxy.setPublicNetmask(null);
+        proxy.setPrivateMacAddress(null);
+        proxy.setPrivateIpAddress(null);
+        _consoleProxyDao.update(proxy.getId(), proxy);
+    }
+    
     @Override
     public boolean applyCustomCertToNewProxy(StartupProxyCommand cmd){
         //this is the case for updating cust cert on each new starting proxy, if such cert exists

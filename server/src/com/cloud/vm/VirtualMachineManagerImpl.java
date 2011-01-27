@@ -375,13 +375,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
     	//Clean up volumes based on the vm's instance id
     	_storageMgr.cleanupVolumes(vm.getId());
     	
-    	ConsoleProxyVO proxy = _consoleDao.findById(vm.getId());
-    	proxy.setPublicIpAddress(null);
-    	proxy.setPublicMacAddress(null);
-    	proxy.setPublicNetmask(null);
-    	proxy.setPrivateMacAddress(null);
-        proxy.setPrivateIpAddress(null);
-        _consoleDao.update(vm.getId(), proxy);
+        VirtualMachineGuru<T> guru = (VirtualMachineGuru<T>)_vmGurus.get(vm.getType());
+        guru.finalizeExpunge(vm);
     	
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Expunged " + vm);

@@ -56,10 +56,10 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -347,5 +347,9 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, StopAnswer answer) {
         // TODO Auto-generated method stub
         
+    }
+    
+    @Override 
+    public void finalizeExpunge(ConsoleProxyVO proxy) {
     }
 }

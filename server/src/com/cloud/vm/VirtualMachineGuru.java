@@ -65,6 +65,8 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
     
     void finalizeStop(VirtualMachineProfile<T> profile, StopAnswer answer);
     
+    void finalizeExpunge(T vm);
+    
     /**
      * Returns the id parsed from the name.  If it cannot parse the name,
      * then return null.  This method is used to determine if this is
