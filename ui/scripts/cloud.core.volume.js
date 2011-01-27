@@ -486,8 +486,8 @@ function volumeSnapshotJSONToTemplate(jsonObj, template) {
 	var $actionMenu = $actionLink.find("#snapshot_action_menu");
     $actionMenu.find("#action_list").empty();	
     
-    buildActionLinkForSubgridItem("Create Volume", volumeSnapshotActionMap, $actionMenu, template);	
-    buildActionLinkForSubgridItem("Delete Snapshot", volumeSnapshotActionMap, $actionMenu, template);	
+    buildActionLinkForSubgridItem("label.action.create.volume", volumeSnapshotActionMap, $actionMenu, template);	
+    buildActionLinkForSubgridItem("label.action.delete.snapshot", volumeSnapshotActionMap, $actionMenu, template);	
     buildActionLinkForSubgridItem("label.action.create.template", volumeSnapshotActionMap, $actionMenu, template);	
 } 
  
@@ -976,11 +976,11 @@ function doAttachDisk($actionLink, $detailsTab, $midmenuItem1) {
 
 //Snapshot tab actions
 var volumeSnapshotActionMap = {  
-    "Create Volume": {              
+    "label.action.create.volume": {              
         isAsyncJob: true,
         asyncJobResponse: "createvolumeresponse",
         dialogBeforeActionFn : doCreateVolumeFromSnapshotInVolumePage,
-        inProcessText: "Creating Volume....",
+        inProcessText: "label.action.create.volume.processing",
         afterActionSeccessFn: function(json, id, $subgridItem) {   
             var $midmenuItem1 = $("#midmenu_item").clone();		        
             var item = json.queryasyncjobresultresponse.jobresult.volume;		   
@@ -992,12 +992,12 @@ var volumeSnapshotActionMap = {
         }
     }   
     , 
-    "Delete Snapshot": {              
+    "label.action.delete.snapshot": {              
         api: "deleteSnapshot",     
         isAsyncJob: true,
         asyncJobResponse: "deletesnapshotresponse",
 		dialogBeforeActionFn : doSnapshotDelete,
-        inProcessText: "Deleting snapshot....",
+        inProcessText: "label.action.delete.snapshot.processing",
         afterActionSeccessFn: function(json, id, $subgridItem) {                 
             $subgridItem.slideUp("slow", function() {
                 $(this).remove();
@@ -1016,7 +1016,7 @@ var volumeSnapshotActionMap = {
 
 function doSnapshotDelete($actionLink, $subgridItem) {
 	$("#dialog_confirmation")	
-	.text("Please confirm you want to delete the snapshot")
+	.text(dictionary["message.action.delete.snapshot"])
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 	

@@ -20,7 +20,12 @@ dictionary = {
 	'label.action.take.snapshot.processing' : '<fmt:message key="label.action.take.snapshot.processing"/>',
 	'message.action.take.snapshot' : '<fmt:message key="message.action.take.snapshot"/>',
 	'label.action.recurring.snapshot' : '<fmt:message key="label.action.recurring.snapshot"/>',
-	'label.action.download.volume' : '<fmt:message key="label.action.download.volume"/>'
+	'label.action.download.volume' : '<fmt:message key="label.action.download.volume"/>',
+	'label.action.create.volume' : '<fmt:message key="label.action.create.volume"/>',
+	'label.action.create.volume.processing' : '<fmt:message key="label.action.create.volume.processing"/>',
+	'label.action.delete.snapshot' : '<fmt:message key="label.action.delete.snapshot"/>',
+	'label.action.delete.snapshot.processing' : '<fmt:message key="label.action.delete.snapshot.processing"/>',
+	'message.action.delete.snapshot' : '<fmt:message key="message.action.delete.snapshot"/>'
 };	
 </script>
 
