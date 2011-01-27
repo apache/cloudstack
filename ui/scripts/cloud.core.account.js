@@ -522,8 +522,8 @@ function accountUserJSONToTemplate(jsonObj, $template) {
             if(jsonObj.state == "enabled") 
                 buildActionLinkForSubgridItem("label.action.disable.user", accountUserActionMap, $actionMenu, $template);	  
             if(jsonObj.state == "disabled")
-                buildActionLinkForSubgridItem("Enable User", accountUserActionMap, $actionMenu, $template);	  
-            buildActionLinkForSubgridItem("Delete User", accountUserActionMap, $actionMenu, $template);	  
+                buildActionLinkForSubgridItem("label.action.enable.user", accountUserActionMap, $actionMenu, $template);	  
+            buildActionLinkForSubgridItem("label.action.delete.user", accountUserActionMap, $actionMenu, $template);	  
         }
 	} 	
 	
@@ -823,19 +823,19 @@ var accountUserActionMap = {
             accountUserJSONToTemplate(item, $subgridItem); 
         }
     } ,
-    "Enable User": {              
+    "label.action.enable.user": {              
         api: "enableUser",     
         isAsyncJob: false,        
-        inProcessText: "Enabling User....",
+        inProcessText: "label.action.enable.user.processing",
         afterActionSeccessFn: function(json, id, $subgridItem) {    
             var item = json.enableuserresponse.user;    
             accountUserJSONToTemplate(item, $subgridItem); 
         }
     } ,
-    "Delete User": {
+    "label.action.delete.user": {
         api: "deleteUser",            
         isAsyncJob: false,
-        inProcessText: "Deleting User....",
+        inProcessText: "label.action.delete.user.processing",
         afterActionSeccessFn: function(json, id, $subgridItem) {
             $subgridItem.slideUp("slow", function() {
                 $(this).remove();

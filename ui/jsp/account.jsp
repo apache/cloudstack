@@ -26,7 +26,11 @@ dictionary = {
 	'label.action.generate.keys': '<fmt:message key="label.action.generate.keys"/>',
 	'label.action.generate.keys.processing': '<fmt:message key="label.action.generate.keys.processing"/>',
 	'label.action.disable.user': '<fmt:message key="label.action.disable.user"/>',
-	'label.action.disable.user.processing': '<fmt:message key="label.action.disable.user.processing"/>'
+	'label.action.disable.user.processing': '<fmt:message key="label.action.disable.user.processing"/>',
+	'label.action.enable.user': '<fmt:message key="label.action.enable.user"/>',
+	'label.action.enable.user.processing': '<fmt:message key="label.action.enable.user.processing"/>',
+	'label.action.delete.user': '<fmt:message key="label.action.delete.user"/>',
+	'label.action.delete.user.processing': '<fmt:message key="label.action.delete.user.processing"/>'
 };	
 </script>
 
