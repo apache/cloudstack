@@ -1270,44 +1270,42 @@ var vmActionMap = {
             vmToMidmenu(jsonObj, $midmenuItem1);            
         }
     },
-    "Restore Instance": {          
+    "label.action.restore.instance": {          
         isAsyncJob: false,
-        inProcessText: "Restoring Instance....",
+        inProcessText: "label.action.restore.instance.processing",
         dialogBeforeActionFn : doRestoreVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.recovervirtualmachineresponse.virtualmachine;
             vmToMidmenu(jsonObj, $midmenuItem1);            
         }
     },
-    "Edit Instance": {
+    "label.action.edit.instance": {
         dialogBeforeActionFn: doEditVM  
     },
-    "Attach ISO": {
+    "label.action.attach.iso": {
         isAsyncJob: true,
         asyncJobResponse: "attachisoresponse",    
-        inProcessText: "Attaching ISO....",        
+        inProcessText: "label.action.attach.iso.processing",        
         dialogBeforeActionFn : doAttachISO,
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;           
-            vmToMidmenu(jsonObj, $midmenuItem1);            
-            //setBooleanReadField((jsonObj.isoid != null), $("#right_panel_content").find("#tab_content_details").find("#iso")); 
+            vmToMidmenu(jsonObj, $midmenuItem1);              
         }   
     },
-    "Detach ISO": {
+    "label.action.detach.iso": {
         isAsyncJob: true,
         asyncJobResponse: "detachisoresponse",     
-        inProcessText: "Detaching ISO....",       
+        inProcessText: "label.action.detach.iso.processing",       
         dialogBeforeActionFn : doDetachISO,
         afterActionSeccessFn: function(json, $midmenuItem1, id) { 
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;    
-            vmToMidmenu(jsonObj, $midmenuItem1);           
-            //setBooleanReadField((jsonObj.isoid != null), $("#right_panel_content").find("#tab_content_details").find("#iso")); 
+            vmToMidmenu(jsonObj, $midmenuItem1);                 
         }   
     },
-    "Reset Password": {                
+    "label.action.reset.password": {                
         isAsyncJob: true,  
         asyncJobResponse: "resetpasswordforvirtualmachineresponse", 
-        inProcessText: "Resetting Password....",  
+        inProcessText: "label.action.reset.password.processing",  
         dialogBeforeActionFn : doResetPassword,
         afterActionSeccessFn: function(json, $midmenuItem1, id) {      
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;   
@@ -1324,9 +1322,9 @@ var vmActionMap = {
 	        return "New password is " + fromdb(jsonObj.password);
         }
     },       
-    "Change Service": {
+    "label.action.change.service": {
         isAsyncJob: false,        
-        inProcessText: "Changing Service....",
+        inProcessText: "label.action.change.service",
         dialogBeforeActionFn : doChangeService,
         afterActionSeccessFn: function(json, $midmenuItem1, id) {                 
             var jsonObj = json.changeserviceforvirtualmachineresponse.virtualmachine;       
@@ -1716,36 +1714,36 @@ function vmJsonToDetailsTab(){
 	// Show State of the VM
 	if (jsonObj.state == 'Destroyed') {
 	    if(isAdmin() || isDomainAdmin()) {
-		    buildActionLinkForTab("Restore Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		    buildActionLinkForTab("label.action.restore.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		    noAvailableActions = false;		
 		}	
 	} 
 	else if (jsonObj.state == 'Running') {		      
-	    buildActionLinkForTab("Edit Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab); 			
+	    buildActionLinkForTab("label.action.edit.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab); 			
 		buildActionLinkForTab("label.action.stop.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		buildActionLinkForTab("label.action.reboot.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		buildActionLinkForTab("label.action.destroy.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		
 		if (jsonObj.isoid == null)	
-			buildActionLinkForTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+			buildActionLinkForTab("label.action.attach.iso", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		else 		
-			buildActionLinkForTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+			buildActionLinkForTab("label.action.detach.iso", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);	
 			
-		buildActionLinkForTab("Reset Password", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		buildActionLinkForTab("label.action.reset.password", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		noAvailableActions = false;	
 	} 
 	else if (jsonObj.state == 'Stopped') {	    
-	    buildActionLinkForTab("Edit Instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+	    buildActionLinkForTab("label.action.edit.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab); 
 		buildActionLinkForTab("label.action.start.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);		    
 		buildActionLinkForTab("label.action.destroy.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		
 		if (jsonObj.isoid == null)	
-			buildActionLinkForTab("Attach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+			buildActionLinkForTab("label.action.attach.iso", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
 		else 		
-		   buildActionLinkForTab("Detach ISO", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);				    
+		   buildActionLinkForTab("label.action.detach.iso", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);				    
 		
-		buildActionLinkForTab("Reset Password", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
-		buildActionLinkForTab("Change Service", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+		buildActionLinkForTab("label.action.reset.password", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+		buildActionLinkForTab("label.action.change.service", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);	
 		noAvailableActions = false;			    					
 	}
 			

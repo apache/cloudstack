@@ -18,7 +18,19 @@ dictionary = {
 	'message.action.reboot.instance' : '<fmt:message key="message.action.reboot.instance"/>',
 	'label.action.destroy.instance' : '<fmt:message key="label.action.destroy.instance"/>',
 	'label.action.destroy.instance.processing' : '<fmt:message key="label.action.destroy.instance.processing"/>',
-	'message.action.destroy.instance' : '<fmt:message key="message.action.destroy.instance"/>'
+	'message.action.destroy.instance' : '<fmt:message key="message.action.destroy.instance"/>',
+	'label.action.restore.instance' : '<fmt:message key="label.action.restore.instance"/>',
+	'label.action.restore.instance.processing' : '<fmt:message key="label.action.restore.instance.processing"/>',
+	'message.action.restore.instance' : '<fmt:message key="message.action.restore.instance"/>',
+	'label.action.edit.instance' : '<fmt:message key="label.action.edit.instance"/>',
+	'label.action.attach.iso' : '<fmt:message key="label.action.attach.iso"/>',
+	'label.action.attach.iso.processing' : '<fmt:message key="label.action.attach.iso.processing"/>',
+	'label.action.detach.iso' : '<fmt:message key="label.action.detach.iso"/>',
+	'label.action.detach.iso.processing' : '<fmt:message key="label.action.detach.iso.processing"/>',
+	'label.action.reset.password' : '<fmt:message key="label.action.reset.password"/>',
+	'label.action.reset.password.processing' : '<fmt:message key="label.action.reset.password.processing"/>',
+	'label.action.change.service' : '<fmt:message key="label.action.change.service"/>',
+	'label.action.change.service.processing' : '<fmt:message key="label.action.change.service.processing"/>'	
 };	
 </script>
 
