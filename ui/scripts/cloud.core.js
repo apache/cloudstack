@@ -74,10 +74,7 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
     var afterActionSeccessFn = apiInfo.afterActionSeccessFn;	    
             
     var $spinningWheel = $thisTab.find("#spinning_wheel");
-    if(inProcessText in dictionary)
-        $spinningWheel.find("#description").text(dictionary[inProcessText]);   
-    else
-        $spinningWheel.find("#description").text(label);       
+    $spinningWheel.find("#description").text(inProcessText2);       
     $spinningWheel.show();  
         
     $midmenuItem1.find("#content").removeClass("selected").addClass("inaction");                          
@@ -127,7 +124,7 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
 	                        error: function(XMLHttpResponse) {	                            
 		                        $("body").stopTime(timerKey);	
 								handleError(XMLHttpResponse, function() {
-									handleErrorInDetailsTab(XMLHttpResponse, $thisTab, label, $afterActionInfoContainer, $midmenuItem1); 		
+									handleErrorInDetailsTab(XMLHttpResponse, $thisTab, label2, $afterActionInfoContainer, $midmenuItem1); 		
 								});
 	                        }
                         });
@@ -137,7 +134,7 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
             },
             error: function(XMLHttpResponse) {
 				handleError(XMLHttpResponse, function() {
-					handleErrorInDetailsTab(XMLHttpResponse, $thisTab, label, $afterActionInfoContainer, $midmenuItem1); 
+					handleErrorInDetailsTab(XMLHttpResponse, $thisTab, label2, $afterActionInfoContainer, $midmenuItem1); 
 				});
             }
         });     
@@ -153,11 +150,11 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
 	        success: function(json) {	 	                  
 	            $spinningWheel.hide(); 	 
 	            afterActionSeccessFn(json, $midmenuItem1, id); //afterActionSeccessFn() will update $midmenuItem1.data("jsonObj")   
-	            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label + " action succeeded.")); //handleMidMenuItemAfterDetailsTabAction() will used updated $midmenuItem1.data("jsonObj")
+	            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label2 + " action succeeded.")); //handleMidMenuItemAfterDetailsTabAction() will used updated $midmenuItem1.data("jsonObj")
 	        },
             error: function(XMLHttpResponse) {
 				handleError(XMLHttpResponse, function() {
-					handleErrorInDetailsTab(XMLHttpResponse, $thisTab, label, $afterActionInfoContainer, $midmenuItem1); 
+					handleErrorInDetailsTab(XMLHttpResponse, $thisTab, label2, $afterActionInfoContainer, $midmenuItem1); 
 				});
             }        
         });

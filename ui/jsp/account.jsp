@@ -16,7 +16,9 @@ var dictionary = {
 	"label.action.disable.account": '<fmt:message key="label.action.disable.account"/>',
 	"label.action.disable.account.processing": '<fmt:message key="label.action.disable.account.processing"/>',
 	"label.action.lock.account": '<fmt:message key="label.action.lock.account"/>',
-	"label.action.lock.account.processing": '<fmt:message key="label.action.lock.account.processing"/>'
+	"label.action.lock.account.processing": '<fmt:message key="label.action.lock.account.processing"/>',
+	"label.action.enable.account": '<fmt:message key="label.action.enable.account"/>',
+	"label.action.enable.account.processing": '<fmt:message key="label.action.enable.account.processing"/>'
 };	
 </script>
 

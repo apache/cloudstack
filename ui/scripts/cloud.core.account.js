@@ -403,7 +403,7 @@ function accountJsonToDetailsTab() {
                 buildActionLinkForTab("label.action.lock.account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);                
             }          	        
             else if(jsonObj.state == "disabled" || jsonObj.state == "locked") {
-                buildActionLinkForTab("Enable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);                   
+                buildActionLinkForTab("label.action.enable.account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);                   
             }   
             
             buildActionLinkForTab("Delete account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
@@ -562,10 +562,10 @@ var accountActionMap = {
         }
     }    
     ,
-    "Enable account": {              
+    "label.action.enable.account": {              
         isAsyncJob: false,       
         dialogBeforeActionFn : doEnableAccount,
-        inProcessText: "Enabling account....",
+        inProcessText: "label.action.enable.account.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             var item = json.enableaccountresponse.account;                  
             accountToMidmenu(item, $midmenuItem1);    
