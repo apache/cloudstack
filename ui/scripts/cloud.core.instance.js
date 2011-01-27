@@ -294,15 +294,15 @@ function bindDestroyVMButton() {
         }        
                 
         $("#dialog_confirmation")
-        .text("Please confirm you want to destroy instance")	
+        .text(dictionary["message.action.destroy.instance"])	
 	    .dialog('option', 'buttons', { 						
 		    "Confirm": function() { 
 			    $(this).dialog("close"); 			
 			    
 			    var apiInfo = {
-                    label: "Destroy Instance",
+                    label: "label.action.destroy.instance",
                     isAsyncJob: true,
-                    inProcessText: "Destroying Instance....",
+                    inProcessText: "label.action.destroy.instance.processing",
                     asyncJobResponse: "destroyvirtualmachineresponse",                 
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {  
                         var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine; 

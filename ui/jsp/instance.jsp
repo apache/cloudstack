@@ -15,7 +15,10 @@ dictionary = {
 	'message.action.stop.instance' : '<fmt:message key="message.action.stop.instance"/>',
 	'label.action.reboot.instance' : '<fmt:message key="label.action.reboot.instance"/>',
 	'label.action.reboot.instance.processing' : '<fmt:message key="label.action.reboot.instance.processing"/>',
-	'message.action.reboot.instance' : '<fmt:message key="message.action.reboot.instance"/>'
+	'message.action.reboot.instance' : '<fmt:message key="message.action.reboot.instance"/>',
+	'label.action.destroy.instance' : '<fmt:message key="label.action.destroy.instance"/>',
+	'label.action.destroy.instance.processing' : '<fmt:message key="label.action.destroy.instance.processing"/>',
+	'message.action.destroy.instance' : '<fmt:message key="message.action.destroy.instance"/>'
 };	
 </script>
 
