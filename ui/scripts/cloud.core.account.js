@@ -513,7 +513,7 @@ function accountUserJSONToTemplate(jsonObj, $template) {
     var noAvailableActions = true;
     
     if(isAdmin()) {
-        buildActionLinkForSubgridItem("Edit User", accountUserActionMap, $actionMenu, $template);	 
+        buildActionLinkForSubgridItem("label.action.edit.user", accountUserActionMap, $actionMenu, $template);	 
         buildActionLinkForSubgridItem("Change Password", accountUserActionMap, $actionMenu, $template);	  
         buildActionLinkForSubgridItem("Generate Keys", accountUserActionMap, $actionMenu, $template);	    
         noAvailableActions = false;
@@ -797,7 +797,7 @@ function doDeleteAccount($actionLink, $detailsTab, $midmenuItem1) {
 }
 
 var accountUserActionMap = {
-    "Edit User": {
+    "label.action.edit.user": {
         dialogBeforeActionFn : doEditUser
     },
     "Change Password": {

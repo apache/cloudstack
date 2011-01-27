@@ -20,10 +20,10 @@ dictionary = {
 	"label.action.enable.account": '<fmt:message key="label.action.enable.account"/>',
 	"label.action.enable.account.processing": '<fmt:message key="label.action.enable.account.processing"/>',
 	"label.action.delete.account": '<fmt:message key="label.action.delete.account"/>',
-	"label.action.delete.account.processing": '<fmt:message key="label.action.delete.account.processing"/>'
+	"label.action.delete.account.processing": '<fmt:message key="label.action.delete.account.processing"/>',
+	"label.action.edit.user": '<fmt:message key="label.action.edit.user"/>'
 };	
 </script>
-
 
 <!-- account detail panel (begin) -->
 <div class="main_title" id="right_panel_header">

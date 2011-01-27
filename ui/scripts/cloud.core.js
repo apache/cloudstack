@@ -207,9 +207,16 @@ function handleMidMenuItemAfterDetailsTabAction($midmenuItem1, isSuccessful, aft
 function buildActionLinkForSubgridItem(label, actionMap, $actionMenu, $subgridItem) {
     var apiInfo = actionMap[label];
     var $listItem = $("#action_list_item").clone();
-    $actionMenu.find("#action_list").append($listItem.show());    
-    $listItem.find("#link").text(label);   
-    $listItem.data("label", label);	  
+    $actionMenu.find("#action_list").append($listItem.show());        
+    $listItem.data("label", label);	    
+    
+    var label2;
+    if(label in dictionary)
+        label2 = dictionary[label];   
+    else
+        label2 = label;
+    $listItem.find("#link").text(label2);    
+    
     $listItem.data("apiInfo", apiInfo);	 
     
     var id = $subgridItem.data("jsonObj").id;
@@ -232,15 +239,27 @@ function buildActionLinkForSubgridItem(label, actionMap, $actionMenu, $subgridIt
 
 function doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem) {       
     var label = $actionLink.data("label");	
+    var label2;
+    if(label in dictionary)
+        label2 = dictionary[label];   
+    else
+        label2 = label;
+        
     var apiInfo = $actionLink.data("apiInfo");	
     
-    var inProcessText = apiInfo.inProcessText;		           
+    var inProcessText = apiInfo.inProcessText;
+    var inProcessText2;
+    if(inProcessText in dictionary)
+        inProcessText2 = dictionary[inProcessText];   
+    else
+        inProcessText2 = inProcessText;
+    		           
     var isAsyncJob = apiInfo.isAsyncJob;
     var asyncJobResponse = apiInfo.asyncJobResponse;	
     var afterActionSeccessFn = apiInfo.afterActionSeccessFn;	 
            
     var $spinningWheel = $subgridItem.find("#spinning_wheel");
-    $spinningWheel.find("#description").text(inProcessText);  
+    $spinningWheel.find("#description").text(inProcessText2);  
     $spinningWheel.show();  
     $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").hide();      
     
@@ -267,11 +286,11 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem) {
 			                        $("body").stopTime(timerKey);				                        
 			                        $spinningWheel.hide();      		                       
 			                        if (result.jobstatus == 1) { // Succeeded 				                        
-			                            $subgridItem.find("#after_action_info").text(label + " action succeeded.");
+			                            $subgridItem.find("#after_action_info").text(label2 + " action succeeded.");
                                         $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
 			                            afterActionSeccessFn(json, id, $subgridItem);	
 			                        } else if (result.jobstatus == 2) { // Failed
-			                            $subgridItem.find("#after_action_info").text(label + " action failed. Reason: " + fromdb(result.jobresult.errortext));
+			                            $subgridItem.find("#after_action_info").text(label2 + " action failed. Reason: " + fromdb(result.jobresult.errortext));
                                         $subgridItem.find("#after_action_info_container").removeClass("success").addClass("error").show();			                          
 			                        }											                    
 		                        }
@@ -279,7 +298,7 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem) {
 	                        error: function(XMLHttpResponse) {	                  
 		                        $("body").stopTime(timerKey);
 								handleError(XMLHttpResponse, function() { 
-									handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label); 
+									handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label2); 
 								});
 	                        }
                         });
@@ -289,7 +308,7 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem) {
             },
             error: function(XMLHttpResponse) {	 
 				handleError(XMLHttpResponse, function() {
-					handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label);
+					handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label2);
 				});
             }
         });     
@@ -304,13 +323,13 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem) {
 	        async: false,
 	        success: function(json) {	   
 	            $spinningWheel.hide();   
-	            $subgridItem.find("#after_action_info").text(label + " action succeeded.");
+	            $subgridItem.find("#after_action_info").text(label2 + " action succeeded.");
                 $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
                 afterActionSeccessFn(json, id, $subgridItem);    
 	        },
             error: function(XMLHttpResponse) {
 				handleError(XMLHttpResponse, function() {
-					handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label);    
+					handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label2);    
 				});
             }        
         });
