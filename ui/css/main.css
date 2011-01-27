@@ -2435,7 +2435,6 @@ a:hover.search_button {
 	background:#fffbe6 url(../images/infomsg_bg.gif) repeat-x top left;
 	margin:0;
 	padding:0;
-	position:absolute;
 	top:0px;
 	left:0px;
 	margin:0;
@@ -2725,6 +2724,7 @@ a:hover.search_button {
 }
 
 .tabbox {
+	min-width:760px;
 	width:100%;
 	height:auto;
 	float:left;
