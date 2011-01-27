@@ -395,11 +395,11 @@ function accountJsonToDetailsTab() {
             buildActionLinkForTab("label.action.edit.account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
              
             if (jsonObj.accounttype == roleTypeUser || jsonObj.accounttype == roleTypeDomainAdmin) {
-                buildActionLinkForTab("Resource limits", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);	                
+                buildActionLinkForTab("label.action.resource.limits", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);	                
             }
              
             if(jsonObj.state == "enabled") {
-                buildActionLinkForTab("Disable account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+                buildActionLinkForTab("label.action.disable.account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
                 buildActionLinkForTab("Lock account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);                
             }          	        
             else if(jsonObj.state == "disabled" || jsonObj.state == "locked") {
@@ -536,19 +536,18 @@ var accountActionMap = {
     "label.action.edit.account": {
         dialogBeforeActionFn: doEditAccount  
     },
-    "Resource limits": {                 
+    "label.action.resource.limits": {                 
         dialogBeforeActionFn : doResourceLimitsForAccount 
     } 
     ,
-    "Disable account": {              
+    "label.action.disable.account": {              
         isAsyncJob: true,
         asyncJobResponse: "disableaccountresponse",
         dialogBeforeActionFn : doDisableAccount,
-        inProcessText: "Disabling account....",
+        inProcessText: "label.action.disable.account.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {             
             var item = json.queryasyncjobresultresponse.jobresult.account;
-            accountToMidmenu(item, $midmenuItem1);           
-            //accountJsonToDetailsTab();
+            accountToMidmenu(item, $midmenuItem1);  
         }
     }    
     ,
@@ -559,8 +558,7 @@ var accountActionMap = {
         inProcessText: "Locking account....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {  
             var item = json.queryasyncjobresultresponse.jobresult.account;
-            accountToMidmenu(item, $midmenuItem1);           
-            //accountJsonToDetailsTab();
+            accountToMidmenu(item, $midmenuItem1);   
         }
     }    
     ,
@@ -570,8 +568,7 @@ var accountActionMap = {
         inProcessText: "Enabling account....",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             var item = json.enableaccountresponse.account;                  
-            accountToMidmenu(item, $midmenuItem1);           
-            //accountJsonToDetailsTab();
+            accountToMidmenu(item, $midmenuItem1);    
         }
     } 
     ,

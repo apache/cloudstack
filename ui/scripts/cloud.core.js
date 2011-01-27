@@ -60,7 +60,10 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
     var afterActionSeccessFn = apiInfo.afterActionSeccessFn;	    
             
     var $spinningWheel = $thisTab.find("#spinning_wheel");
-    $spinningWheel.find("#description").text(inProcessText);  
+    if(inProcessText in dictionary)
+        $spinningWheel.find("#description").text(dictionary[inProcessText]);   
+    else
+        $spinningWheel.find("#description").text(label);       
     $spinningWheel.show();  
         
     $midmenuItem1.find("#content").removeClass("selected").addClass("inaction");                          
@@ -525,7 +528,11 @@ function copyActionInfoFromMidMenuToRightPanel($midmenuItem1) {
     if($midMenuSpinningWheel.css("display") != "none") {         
         if($detailsTabSpinningWheel.css("display") == "none") {
             var inProcessText = $midMenuSpinningWheel.data("inProcessText");
-            $detailsTabSpinningWheel.find("#description").text(inProcessText);  
+            $detailsTabSpinningWheel.find("#description").text(inProcessText);             
+            if(inProcessText in dictionary)
+                $detailsTabSpinningWheel.find("#description").text(dictionary[inProcessText]);   
+            else
+                $detailsTabSpinningWheel.find("#description").text(label);  
             $detailsTabSpinningWheel.show();  
         }
     }

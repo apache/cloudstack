@@ -11,7 +11,10 @@ var dictionary = {
 	"message.lock.account" : '<fmt:message key="message.lock.account"/>',
 	"message.enable.account" : '<fmt:message key="message.enable.account"/>',
 	"message.delete.account" : '<fmt:message key="message.delete.account"/>',
-	"label.action.edit.account" : '<fmt:message key="label.action.edit.account"/>'
+	"label.action.edit.account" : '<fmt:message key="label.action.edit.account"/>',
+	"label.action.resource.limits": '<fmt:message key="label.action.resource.limits"/>',
+	"label.action.disable.account": '<fmt:message key="label.action.disable.account"/>',
+	"label.action.disable.account.processing": '<fmt:message key="label.action.disable.account.processing"/>'
 };	
 </script>
 
