@@ -472,7 +472,7 @@ dictionary = {
                                 </div>
                                 <div class="rev_wiztemplistactions">
                                     <div class="rev_wiztemplist_actionsbox">
-                                        <a href="#" id="prev_page"><fmt:message key="label.prev"/></a> <a href="#" id="next_page"><fmt:message key="label.next"/></a>
+                                        <a href="#" id="prev_page"><fmt:message key="label.prev"/></a> <a href="#" id="next_page"><fmt:message key="label.more.templates"/></a>
                                     </div>
                                 </div>
                             </div>
