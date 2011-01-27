@@ -247,15 +247,15 @@ function bindRebootVMButton() {
         }        
                
         $("#dialog_confirmation")	
-        .text("Please confirm you want to reboot instance")
+        .text(dictionary["message.action.reboot.instance"])
 	    .dialog('option', 'buttons', { 						
 		    "Confirm": function() { 
 			    $(this).dialog("close"); 			
 			    
 			    var apiInfo = {
-                    label: "Reboot Instance",
+                    label: "label.action.reboot.instance",
                     isAsyncJob: true,
-                    inProcessText: "Rebooting Instance....",
+                    inProcessText: "label.action.reboot.instance.processing",
                     asyncJobResponse: "rebootvirtualmachineresponse",                  
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {  
                         var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;  
