@@ -1142,7 +1142,7 @@ function ipJsonToDetailsTab() {
         ipPopulateVMDropdown($vmSelect);
      
         if(ipObj.isstaticnat == true) {        
-            buildActionLinkForTab("Disable Static NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+            buildActionLinkForTab("label.action.disable.static.NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);	
 			noAvailableActions = false;
         } else {  
 			if(ipObj.issourcenat != true) {   	
@@ -1152,12 +1152,12 @@ function ipJsonToDetailsTab() {
 			            var staticNatCapabilityObj = ipFindCapabilityByName("StaticNat", firewallServiceObj);
 			            if(staticNatCapabilityObj != null) {
 			                if(staticNatCapabilityObj.value == "true")
-				                buildActionLinkForTab("Enable Static NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);
+				                buildActionLinkForTab("label.action.enable.static.NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);
 				        }
 				    }
 				}    				
     				    
-				buildActionLinkForTab("Release IP", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);
+				buildActionLinkForTab("label.action.release.ip", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);
 				noAvailableActions = false;
 			}
         }  
@@ -1228,10 +1228,10 @@ function setNetworkTypeField(value, $field) {
 }
 
 var ipActionMap = {  
-    "Release IP": {                  
+    "label.action.release.ip": {                  
         isAsyncJob: false,        
         dialogBeforeActionFn : doReleaseIp,
-        inProcessText: "Releasing IP....",
+        inProcessText: "label.action.release.ip.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             $midmenuItem1.slideUp("slow", function(){
                 $(this).remove();                    
@@ -1243,10 +1243,10 @@ var ipActionMap = {
             
         }
     },
-    "Enable Static NAT": {                      
+    "label.action.enable.static.NAT": {                      
         isAsyncJob: false,        
         dialogBeforeActionFn: doEnableStaticNAT,
-        inProcessText: "Enabling Static NAT....",
+        inProcessText: "label.action.enable.static.NAT.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {  //id is ipaddress         
             if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#ipaddress").text()) {  //id is ipaddress          
                  $.ajax({
@@ -1263,11 +1263,11 @@ var ipActionMap = {
 	        }   
         }        
     },
-    "Disable Static NAT": {                      
+    "label.action.disable.static.NAT": {                      
         isAsyncJob: true,
         asyncJobResponse: "disablestaticnatresponse",
         dialogBeforeActionFn: doDisableStaticNAT,
-        inProcessText: "Disabling Static NAT....",
+        inProcessText: "label.action.disable.static.NAT.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {  //id is ipaddress        
             if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#ipaddress").text()) {  //id is ipaddress  
                 $.ajax({
@@ -1291,7 +1291,7 @@ function doReleaseIp($actionLink, $detailsTab, $midmenuItem1) {
     var ipaddress = jsonObj.ipaddress;
     
     $("#dialog_confirmation")
-    .text("Please confirm you want to release this IP address")	
+    .text(dictionary["message.action.release.ip"])	
 	.dialog('option', 'buttons', { 						
 		"Confirm": function() { 
 		    $(this).dialog("close");			
@@ -1334,7 +1334,7 @@ function doDisableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {
     var ipaddress = jsonObj.ipaddress;
     
     $("#dialog_info")
-    .text("Please confirm you want to disable static NAT")    
+    .text(dictionary["message.action.disable.static.NAT"])    
 	.dialog('option', 'buttons', { 						
 		"Confirm": function() { 		    
 		    $(this).dialog("close");	

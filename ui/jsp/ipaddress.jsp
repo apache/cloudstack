@@ -5,6 +5,18 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<script language="javascript">
+dictionary = { 	
+	'label.action.release.ip' : '<fmt:message key="label.action.release.ip"/>',
+	'label.action.release.ip.processing' : '<fmt:message key="label.action.release.ip.processing"/>',
+	'message.action.release.ip' : '<fmt:message key="message.action.release.ip"/>',
+	'label.action.enable.static.NAT' : '<fmt:message key="label.action.enable.static.NAT"/>',
+	'label.action.enable.static.NAT.processing' : '<fmt:message key="label.action.enable.static.NAT.processing"/>',
+	'label.action.disable.static.NAT' : '<fmt:message key="label.action.disable.static.NAT"/>',
+	'label.action.disable.static.NAT.processing' : '<fmt:message key="label.action.disable.static.NAT.processing"/>',
+	'message.action.disable.static.NAT' : '<fmt:message key="message.action.disable.static.NAT"/>'
+};	
+</script>
 
 <!-- IP Address detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
