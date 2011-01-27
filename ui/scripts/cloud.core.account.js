@@ -392,7 +392,7 @@ function accountJsonToDetailsTab() {
   
     if(isAdmin()) {
         if(jsonObj.id != systemAccountId && jsonObj.id != adminAccountId) {   
-            buildActionLinkForTab("Edit account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+            buildActionLinkForTab("label.action.edit.account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
              
             if (jsonObj.accounttype == roleTypeUser || jsonObj.accounttype == roleTypeDomainAdmin) {
                 buildActionLinkForTab("Resource limits", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);	                
@@ -533,7 +533,7 @@ function accountUserJSONToTemplate(jsonObj, $template) {
 } 
 
 var accountActionMap = {  
-    "Edit account": {
+    "label.action.edit.account": {
         dialogBeforeActionFn: doEditAccount  
     },
     "Resource limits": {                 

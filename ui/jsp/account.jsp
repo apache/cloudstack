@@ -11,6 +11,7 @@ var dictionary = {
 	"message.lock.account" : '<fmt:message key="message.lock.account"/>',
 	"message.enable.account" : '<fmt:message key="message.enable.account"/>',
 	"message.delete.account" : '<fmt:message key="message.delete.account"/>',
+	"label.action.edit.account" : '<fmt:message key="label.action.edit.account"/>'
 };	
 </script>
 

@@ -23,7 +23,12 @@ function buildActionLinkForTab(label, actionMap, $actionMenu, $midmenuItem1, $th
     var apiInfo = actionMap[label];
     var $listItem = $("#action_list_item").clone();
     $actionMenu.find("#action_list").append($listItem.show());
-    $listItem.find("#link").text(label);   
+  
+    if(label in dictionary)
+        $listItem.find("#link").text(dictionary[label]);   
+    else
+        $listItem.find("#link").text(label);   
+        
     $listItem.data("label", label);	  
     $listItem.data("apiInfo", apiInfo);	 
       
