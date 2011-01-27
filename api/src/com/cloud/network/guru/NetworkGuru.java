@@ -9,6 +9,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkProfile;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Adapter;
@@ -72,6 +73,8 @@ public interface NetworkGuru extends Adapter {
     
     void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm);
     
+    void updateNicProfile(NicProfile profile, Network network);
+    
     void destroy(Network network, NetworkOffering offering);
     
     /**
@@ -82,4 +85,7 @@ public interface NetworkGuru extends Adapter {
      * @return
      */
     boolean trash(Network network, NetworkOffering offering, Account owner);
+    
+    void updateNetworkProfile(NetworkProfile networkProfile);
+    
 }

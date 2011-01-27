@@ -164,8 +164,6 @@ public class NetworkVO implements Network {
     public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText, Boolean isShared, boolean isDefault) {
         this(id, that.getTrafficType(), that.getGuestType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related, name, displayText, isShared, isDefault);
         this.gateway = that.getGateway();
-        this.dns1 = that.getDns1();
-        this.dns2 = that.getDns2();
         this.cidr = that.getCidr();
         this.broadcastUri = that.getBroadcastUri();
         this.broadcastDomainType = that.getBroadcastDomainType();
@@ -340,7 +338,6 @@ public class NetworkVO implements Network {
         return dataCenterId;
     }
     
-    @Override
     public String getDns1() {
         return dns1;
     }
@@ -349,7 +346,6 @@ public class NetworkVO implements Network {
         this.dns1 = dns;
     }
     
-    @Override
     public String getDns2() {
         return dns2;
     }

@@ -911,12 +911,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         to.setIp(nic.getIp4Address());
         to.setNetmask(nic.getNetmask());
         to.setMac(nic.getMacAddress());
-        if (config.getDns1() != null) {
-            to.setDns1(config.getDns1());
-        }
-        if (config.getDns2() != null) {
-            to.setDns2(config.getDns2());
-        }
+        to.setDns1(profile.getDns1());
+        to.setDns2(profile.getDns2());
         if (nic.getGateway() != null) {
             to.setGateway(nic.getGateway());
         } else {
@@ -969,8 +965,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             network.setCidr(result.getCidr());
             network.setBroadcastUri(result.getBroadcastUri());
             network.setGateway(result.getGateway());
-            network.setDns1(result.getDns1());
-            network.setDns2(result.getDns2());
             network.setMode(result.getMode());
             _networksDao.update(networkId, network);
 
@@ -1051,7 +1045,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
                 element.prepare(network, profile, vmProfile, dest, context);
             }
-
+            concierge.updateNicProfile(profile, network);
             vmProfile.addNic(profile);
         }
     }
@@ -1060,12 +1054,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public <T extends VMInstanceVO> void prepareNicForMigration(VirtualMachineProfile<T> vm, DeployDestination dest) {
         List<NicVO> nics = _nicDao.listBy(vm.getId());
         for (NicVO nic : nics) {
-            Network network = _networksDao.findById(nic.getNetworkId());
+            NetworkVO network = _networksDao.findById(nic.getNetworkId());
             NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
             Integer networkRate = _configMgr.getNetworkRate(no.getId());
-
+            
+            NetworkGuru concierge = _networkGurus.get(network.getGuruName());
             NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate);
-
+            concierge.updateNicProfile(profile, network);
             vm.addNic(profile);
         }
     }
@@ -1109,6 +1104,27 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return _accountMgr.getActiveAccount(address.getAllocatedToAccountId());
         }
         return null;
+    }
+    
+    
+    @Override
+    public List<NicProfile> getNicProfiles(VirtualMachine vm) {
+        List<NicVO> nics = _nicDao.listBy(vm.getId());
+        List<NicProfile> profiles = new ArrayList<NicProfile>();
+        
+        if (nics != null) {
+            for (Nic nic : nics) {
+                NetworkVO network = _networksDao.findById(nic.getNetworkId());
+                NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+                Integer networkRate = _configMgr.getNetworkRate(no.getId());
+                
+                NetworkGuru concierge = _networkGurus.get(network.getGuruName());
+                NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate);
+                concierge.updateNicProfile(profile, network);
+                profiles.add(profile);
+            }
+        } 
+        return profiles;
     }
 
     @Override
@@ -1983,5 +1999,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public IpAddress getIp(Ip ip) {
         return _ipAddressDao.findById(ip);
+    }
+    
+    @Override
+    public NetworkProfile getNetworkProfile(long networkId) {
+        NetworkVO network = _networksDao.findById(networkId);
+        NetworkGuru concierge = _networkGurus.get(network.getGuruName());
+        NetworkProfile profile = new NetworkProfile(network, null, null);
+        concierge.updateNetworkProfile(profile);
+        
+        return profile;
     }
 }

@@ -1066,10 +1066,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	    	_zoneDao.addVnet(zone.getId(), begin, end);
     	}
     	
-    	if(dnsUpdate){
-    	    // FIXME: Need to update dns in network rather than in the vms.
-    	}
-    	
     	return zone;
     }
 

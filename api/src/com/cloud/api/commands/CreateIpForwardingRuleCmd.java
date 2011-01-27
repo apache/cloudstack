@@ -27,6 +27,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.FirewallRuleResponse;
+import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -96,7 +97,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
         }
         if (result) {
             PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
-            FirewallRuleResponse fwResponse = _responseGenerator.createFirewallRuleResponse(rule);
+            IpForwardingRuleResponse fwResponse = _responseGenerator.createIpForwardingRuleResponse(rule);
             fwResponse.setResponseName(getCommandName());
             this.setResponseObject(fwResponse);
         } else {

@@ -205,8 +205,7 @@ public class NicProfile {
         this.broadcastUri = broadcastUri;
         this.isolationUri = isolationUri;
         this.netmask = nic.getNetmask();
-        this.dns1 = network.getDns1();
-        this.dns2 = network.getDns2();
+        
         if (networkRate != null) {
             this.networkRate = networkRate;
         }

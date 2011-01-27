@@ -112,6 +112,8 @@ public interface NetworkManager extends NetworkService {
     void expungeNics(VirtualMachineProfile<? extends VMInstanceVO> vm);
     
     List<? extends Nic> getNics(VirtualMachine vm);
+    
+    List<NicProfile> getNicProfiles(VirtualMachine vm);
 	
     List<AccountVO> getAccountsUsingNetwork(long configurationId);    
     AccountVO getNetworkOwner(long configurationId);

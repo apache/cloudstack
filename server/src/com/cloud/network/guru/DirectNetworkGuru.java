@@ -36,6 +36,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -49,6 +50,7 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
+import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -110,9 +112,6 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                 config.setBroadcastDomainType(userSpecified.getBroadcastDomainType());
             }
         }
-       
-        config.setDns1(dc.getDns1());
-        config.setDns2(dc.getDns2());
         
        return config;
     }
@@ -136,6 +135,15 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         nic.setDns1(dc.getDns1());
         nic.setDns2(dc.getDns2());
+    }
+    
+    @Override
+    public void updateNicProfile(NicProfile profile, Network network) {
+        DataCenter dc = _dcDao.findById(network.getDataCenterId());
+        if (profile != null) {
+            profile.setDns1(dc.getDns1());
+            profile.setDns2(dc.getDns2());
+        } 
     }
 
     @Override
@@ -189,5 +197,12 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public boolean trash(Network network, NetworkOffering offering, Account owner) {
         return true;
+    }
+    
+    @Override
+    public void updateNetworkProfile(NetworkProfile networkProfile) {
+        DataCenter dc = _dcDao.findById(networkProfile.getNetwork().getDataCenterId());
+        networkProfile.setDns1(dc.getDns1());
+        networkProfile.setDns2(dc.getDns2());
     }
 }

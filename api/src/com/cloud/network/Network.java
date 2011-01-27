@@ -192,10 +192,6 @@ public interface Network extends ControlledEntity {
     
     URI getBroadcastUri();
     
-    String getDns1();
-    
-    String getDns2();
-    
     GuestIpType getGuestType();
     
     String getDisplayText();

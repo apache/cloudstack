@@ -61,4 +61,6 @@ public interface NetworkService {
     
     IpAddress getIp(Ip ip);
     
+    NetworkProfile getNetworkProfile(long networkId);
+    
 }

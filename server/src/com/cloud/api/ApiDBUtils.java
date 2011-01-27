@@ -34,6 +34,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
@@ -91,6 +92,7 @@ import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.Nic;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -492,12 +494,12 @@ public class ApiDBUtils {
         return _storageMgr.volumeOnSharedStoragePool(volume);
     }
     
-    public static List<? extends Nic> getNics(VirtualMachine vm) {
-        return _networkMgr.getNics(vm);
+    public static List<NicProfile> getNics(VirtualMachine vm) {
+        return _networkMgr.getNicProfiles(vm);
     }
     
-    public static Network getNetwork(long id) {
-        return _networkMgr.getNetwork(id);
+    public static NetworkProfile getNetworkProfile(long networkId) {
+        return _networkMgr.getNetworkProfile(networkId);
     }
     
     public static void synchronizeCommand(Object job, String syncObjType, long syncObjId) {

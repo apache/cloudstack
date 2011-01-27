@@ -102,6 +102,7 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
@@ -150,7 +151,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
-import com.cloud.vm.Nic;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.SystemVm;
 import com.cloud.vm.UserVmVO;
@@ -1104,27 +1105,27 @@ public class ApiResponseHelper implements ResponseGenerator {
         // network groups
         userVmResponse.setSecurityGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(userVm.getId()));
 
-        List<? extends Nic> nics = ApiDBUtils.getNics(userVm);
+        List<NicProfile> nicProfiles = ApiDBUtils.getNics(userVm);
         List<NicResponse> nicResponses = new ArrayList<NicResponse>();
-        for (Nic singleNic : nics) {
+        for (NicProfile singleNicProfile : nicProfiles) {
             NicResponse nicResponse = new NicResponse();
-            nicResponse.setId(singleNic.getId());
-            nicResponse.setIpaddress(singleNic.getIp4Address());
-            nicResponse.setGateway(singleNic.getGateway());
-            nicResponse.setNetmask(singleNic.getNetmask());
-            nicResponse.setNetworkid(singleNic.getNetworkId());
+            nicResponse.setId(singleNicProfile.getId());
+            nicResponse.setIpaddress(singleNicProfile.getIp4Address());
+            nicResponse.setGateway(singleNicProfile.getGateway());
+            nicResponse.setNetmask(singleNicProfile.getNetmask());
+            nicResponse.setNetworkid(singleNicProfile.getNetworkId());
             if (acct.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-                if (singleNic.getBroadcastUri() != null) {
-                    nicResponse.setBroadcastUri(singleNic.getBroadcastUri().toString());
+                if (singleNicProfile.getBroadCastUri() != null) {
+                    nicResponse.setBroadcastUri(singleNicProfile.getBroadCastUri().toString());
                 }
-                if (singleNic.getIsolationUri() != null) {
-                    nicResponse.setIsolationUri(singleNic.getIsolationUri().toString());
+                if (singleNicProfile.getIsolationUri() != null) {
+                    nicResponse.setIsolationUri(singleNicProfile.getIsolationUri().toString());
                 }
             } 
-            Network network = ApiDBUtils.findNetworkById(singleNic.getNetworkId());
+            Network network = ApiDBUtils.findNetworkById(singleNicProfile.getNetworkId());
             nicResponse.setTrafficType(network.getTrafficType().toString());
             nicResponse.setType(network.getGuestType().toString());
-            nicResponse.setIsDefault(singleNic.isDefaultNic());
+            nicResponse.setIsDefault(singleNicProfile.isDefaultNic());
             
             nicResponse.setObjectName("nic");
             
@@ -1159,23 +1160,23 @@ public class ApiResponseHelper implements ResponseGenerator {
             routerResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
         }
 
-        List<? extends Nic> nics = ApiDBUtils.getNics(router);
-        for (Nic singleNic : nics) {
-           Network network = ApiDBUtils.findNetworkById(singleNic.getNetworkId());
+        List<NicProfile> nicProfiles = ApiDBUtils.getNics(router);
+        for (NicProfile singleNicProfile : nicProfiles) {
+           Network network = ApiDBUtils.findNetworkById(singleNicProfile.getNetworkId());
            if (network != null) {
                if (network.getTrafficType() == TrafficType.Public) {
-                   routerResponse.setPublicIp(singleNic.getIp4Address());
-                   routerResponse.setPublicMacAddress(singleNic.getMacAddress());
-                   routerResponse.setPublicNetmask(singleNic.getNetmask());
-                   routerResponse.setGateway(singleNic.getGateway());
+                   routerResponse.setPublicIp(singleNicProfile.getIp4Address());
+                   routerResponse.setPublicMacAddress(singleNicProfile.getMacAddress());
+                   routerResponse.setPublicNetmask(singleNicProfile.getNetmask());
+                   routerResponse.setGateway(singleNicProfile.getGateway());
                } else if (network.getTrafficType() == TrafficType.Control) {
-                   routerResponse.setPrivateIp(singleNic.getIp4Address());
-                   routerResponse.setPrivateMacAddress(singleNic.getMacAddress());
-                   routerResponse.setPrivateNetmask(singleNic.getNetmask());
+                   routerResponse.setPrivateIp(singleNicProfile.getIp4Address());
+                   routerResponse.setPrivateMacAddress(singleNicProfile.getMacAddress());
+                   routerResponse.setPrivateNetmask(singleNicProfile.getNetmask());
                } else if (network.getTrafficType() == TrafficType.Guest) {
-                   routerResponse.setGuestIpAddress(singleNic.getIp4Address());
-                   routerResponse.setGuestMacAddress(singleNic.getMacAddress());
-                   routerResponse.setGuestNetmask(singleNic.getNetmask());
+                   routerResponse.setGuestIpAddress(singleNicProfile.getIp4Address());
+                   routerResponse.setGuestMacAddress(singleNicProfile.getMacAddress());
+                   routerResponse.setGuestNetmask(singleNicProfile.getNetmask());
                }
            }
         }
@@ -1238,22 +1239,22 @@ public class ApiResponseHelper implements ResponseGenerator {
                 vmResponse.setDns2(zone.getDns2());
             }
 
-            List<? extends Nic> nics = ApiDBUtils.getNics(systemVM);
-            for (Nic singleNic : nics) {
-               Network network = ApiDBUtils.findNetworkById(singleNic.getNetworkId());
+            List<NicProfile> nicProfiles = ApiDBUtils.getNics(systemVM);
+            for (NicProfile singleNicProfile : nicProfiles) {
+               Network network = ApiDBUtils.findNetworkById(singleNicProfile.getNetworkId());
                if (network != null) {
                    TrafficType trafficType = TrafficType.Public;
                    if(zone.getNetworkType() == NetworkType.Basic) {
                        trafficType = TrafficType.Guest;
                    }                  
                    if (network.getTrafficType() == trafficType) {
-                       vmResponse.setPublicIp(singleNic.getIp4Address());
-                       vmResponse.setPublicMacAddress(singleNic.getMacAddress());
-                       vmResponse.setPublicNetmask(singleNic.getNetmask());
+                       vmResponse.setPublicIp(singleNicProfile.getIp4Address());
+                       vmResponse.setPublicMacAddress(singleNicProfile.getMacAddress());
+                       vmResponse.setPublicNetmask(singleNicProfile.getNetmask());
                    } else if (network.getTrafficType() == TrafficType.Control) {
-                       vmResponse.setPrivateIp(singleNic.getIp4Address());
-                       vmResponse.setPrivateMacAddress(singleNic.getMacAddress());
-                       vmResponse.setPrivateNetmask(singleNic.getNetmask());
+                       vmResponse.setPrivateIp(singleNicProfile.getIp4Address());
+                       vmResponse.setPrivateMacAddress(singleNicProfile.getMacAddress());
+                       vmResponse.setPrivateNetmask(singleNicProfile.getNetmask());
                    }
                }
             }
@@ -2237,6 +2238,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     
     @Override
     public NetworkResponse createNetworkResponse(Network network) {
+        NetworkProfile profile = ApiDBUtils.getNetworkProfile(network.getId());
+        network = profile.getNetwork();     
         NetworkResponse response = new NetworkResponse();
         response.setId(network.getId());
         response.setName(network.getName());
@@ -2285,9 +2288,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIsDefault(network.isDefault());
         response.setState(network.getState().toString());
         response.setRelated(network.getRelated());
-        response.setDns1(network.getDns1());
-        response.setDns2(network.getDns2());
         response.setNetworkDomain(network.getNetworkDomain());
+        
+        response.setDns1(profile.getDns1());
+        response.setDns2(profile.getDns2());
         
         //populate capability
         Map<Service, Map<Capability, String>>  serviceCapabilitiesMap = ApiDBUtils.getZoneCapabilities(network.getDataCenterId());

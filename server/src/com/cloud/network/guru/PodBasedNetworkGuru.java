@@ -9,7 +9,6 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
@@ -18,6 +17,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -51,9 +51,6 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         
         NetworkVO config = new NetworkVO(type, null, Mode.Static, BroadcastDomainType.Native, offering.getId(), plan.getDataCenterId(), Network.State.Setup);
-        DataCenterVO dc = _dcDao.findById(plan.getDataCenterId());
-        config.setDns1(dc.getDns1());
-        config.setDns2(dc.getDns2());
         return config;
     }
     
@@ -103,7 +100,16 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         
         s_logger.debug("Allocated a nic " + nic + " for " + vm);
     }
-
+    
+    
+    @Override
+    public void updateNicProfile(NicProfile profile, Network network) {
+    }
+    
+    @Override
+    public void updateNetworkProfile(NetworkProfile networkProfile) {
+    }
+    
     @Override
     public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
         _dcDao.releasePrivateIpAddress(nic.getId(), nic.getReservationId());

@@ -39,11 +39,13 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
@@ -64,6 +66,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject protected DataCenterDao _dcDao;
     @Inject protected VlanDao _vlanDao;
     @Inject protected NicDao _nicDao;
+    @Inject protected NetworkDao _networkDao;
     
     String _defaultGateway;
     String _defaultCidr;
@@ -110,9 +113,6 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
                 }
             }
             
-            network.setDns1(dc.getDns1());
-            network.setDns2(dc.getDns2());
-            
             if (userSpecified.getBroadcastUri() != null) {
                 network.setBroadcastUri(userSpecified.getBroadcastUri());
                 network.setState(State.Setup);
@@ -125,9 +125,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
             String guestNetworkCidr = dc.getGuestNetworkCidr();
             String[] cidrTuple = guestNetworkCidr.split("\\/");
             network.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));
-            network.setCidr(guestNetworkCidr);
-            network.setDns1(dc.getDns1());
-            network.setDns2(dc.getDns2());
+            network.setCidr(guestNetworkCidr);;
         }
         
         return network;
@@ -161,25 +159,20 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
             implemented.setCidr(network.getCidr());
         }
         
-        if (network.getDns1() != null) {
-            implemented.setDns1(network.getDns1());
-        }
-        
-        if (network.getDns2() != null) {
-            implemented.setDns2(network.getDns2());
-        }
-        
         return implemented;
     }
 
     @Override
     public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+        
         assert (network.getTrafficType() == TrafficType.Guest) : "Look at my name!  Why are you calling me when the traffic type is : " + network.getTrafficType();
         
         if (nic == null) {
             nic = new NicProfile(ReservationStrategy.Start, null, null, null, null);
         } 
+        
+        DataCenter dc = _dcDao.findById(network.getDataCenterId());
         
         if (nic.getIp4Address() == null){
             nic.setBroadcastUri(network.getBroadcastUri());
@@ -187,9 +180,10 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setGateway(network.getGateway());
             nic.setIp4Address(acquireGuestIpAddress(network));
             nic.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
-            nic.setDns1(network.getDns1());
-            nic.setDns2(network.getDns2());
             nic.setFormat(AddressFormat.Ip4);
+            
+            nic.setDns1(dc.getDns1());
+            nic.setDns2(dc.getDns2());
         }
         
         nic.setStrategy(ReservationStrategy.Start);
@@ -202,6 +196,15 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         
         return nic;
+    }
+    
+    @Override
+    public void updateNicProfile(NicProfile profile, Network network) {
+        DataCenter dc = _dcDao.findById(network.getDataCenterId());
+        if (profile != null) {
+            profile.setDns1(dc.getDns1());
+            profile.setDns2(dc.getDns2());
+        } 
     }
     
     @DB
@@ -248,5 +251,12 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public boolean trash(Network network, NetworkOffering offering, Account owner) {
         return true;
+    }
+    
+    @Override
+    public void updateNetworkProfile(NetworkProfile networkProfile) {
+        DataCenter dc = _dcDao.findById(networkProfile.getNetwork().getDataCenterId());
+        networkProfile.setDns1(dc.getDns1());
+        networkProfile.setDns2(dc.getDns2());
     }
 }

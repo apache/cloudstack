@@ -20,6 +20,7 @@ import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -70,8 +71,6 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         
         if (offering.getTrafficType() == TrafficType.Public) {
             NetworkVO ntwk = new NetworkVO(offering.getTrafficType(), null, Mode.Static, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId(), State.Setup);
-            ntwk.setDns1(dc.getDns1());
-            ntwk.setDns2(dc.getDns2());
             return ntwk;
         } else {
             return null;
@@ -95,8 +94,19 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             nic.setReservationId(String.valueOf(ip.getVlanTag()));
             nic.setMacAddress(ip.getMacAddress());
         }
+        
         nic.setDns1(dc.getDns1());
         nic.setDns2(dc.getDns2());
+    }
+    
+    
+    @Override
+    public void updateNicProfile(NicProfile profile, Network network) {
+        DataCenter dc = _dcDao.findById(network.getDataCenterId());
+        if (profile != null) {
+            profile.setDns1(dc.getDns1());
+            profile.setDns2(dc.getDns2());
+        } 
     }
 
     @Override
@@ -154,5 +164,12 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public boolean trash(Network network, NetworkOffering offering, Account owner) {
         return true;
+    }
+    
+    @Override
+    public void updateNetworkProfile(NetworkProfile networkProfile) {
+        DataCenter dc = _dcDao.findById(networkProfile.getNetwork().getDataCenterId());
+        networkProfile.setDns1(dc.getDns1());
+        networkProfile.setDns2(dc.getDns2());
     }
 }
