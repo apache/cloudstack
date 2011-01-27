@@ -34,10 +34,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.host.HostVO;
 import com.cloud.server.ManagementServer;
 import com.cloud.user.Account;
@@ -45,8 +44,6 @@ import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.encoding.Base64;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 
 /**
@@ -288,7 +285,7 @@ public class ConsoleProxyServlet extends HttpServlet {
         }
 		String sid = vm.getVncPassword();
 		long tag = vm.getId();
-		String ticket = URLEncoder.encode(genAccessTicket(host, String.valueOf(portInfo.second()), sid, String.valueOf(tag)));
+		String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, String.valueOf(tag));
 		
 		sb.append("/getscreen?host=").append(host);
 		sb.append("&port=").append(portInfo.second());
@@ -313,7 +310,7 @@ public class ConsoleProxyServlet extends HttpServlet {
         }
 		String sid = vm.getVncPassword();
 		long tag = vm.getId();
-		String ticket = URLEncoder.encode(genAccessTicket(host, String.valueOf(portInfo.second()), sid, String.valueOf(tag)));
+		String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, String.valueOf(tag));
 		
 		sb.append("/ajax?host=").append(host);
 		sb.append("&port=").append(portInfo.second());
@@ -347,7 +344,8 @@ public class ConsoleProxyServlet extends HttpServlet {
 	        mac.update(String.valueOf(ts).getBytes());
 	        
 	        byte[] encryptedBytes = mac.doFinal();
-	        return Base64.encodeBytes(encryptedBytes);
+	        
+	        return Base64.encodeBase64URLSafeString(encryptedBytes);
 		} catch(Exception e) {
 			s_logger.error("Unexpected exception ", e);
 		}
@@ -518,7 +516,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             mac.init(keySpec);
             mac.update(unsignedRequest.getBytes());
             byte[] encryptedBytes = mac.doFinal();
-            String computedSignature = Base64.encodeBytes(encryptedBytes);
+            String computedSignature = com.cloud.utils.encoding.Base64.encodeBytes(encryptedBytes);
             boolean equalSig = signature.equals(computedSignature);
             if (!equalSig) {
             	s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);

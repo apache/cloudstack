@@ -706,21 +706,31 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 			return new ConsoleAccessAuthenticationAnswer(cmd, false);
 		}
 		
+		if(s_logger.isDebugEnabled())
+		    s_logger.debug("Console authentication. Ticket in url for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + ticketInUrl);
+
         String ticket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId());
-		if(!ticket.startsWith(ticketInUrl)) {
+        if(s_logger.isDebugEnabled())
+            s_logger.debug("Console authentication. Ticket in 1 minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + ticket);
+        
+		if(!ticket.equals(ticketInUrl)) {
 			Date now = new Date();
 			// considering of minute round-up
 			String minuteEarlyTicket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId(), 
 				new Date(now.getTime() - 60*1000));
-			if(!minuteEarlyTicket.startsWith(ticketInUrl)) {
+
+			if(s_logger.isDebugEnabled())
+			    s_logger.debug("Console authentication. Ticket in 2-minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + minuteEarlyTicket);
+			
+			if(!minuteEarlyTicket.equals(ticketInUrl)) {
 				s_logger.error("Access ticket expired or has been modified. vmId: " + cmd.getVmId() + "ticket in URL: " + ticketInUrl + ", tickets to check against: " + ticket + "," + minuteEarlyTicket);
 				return new ConsoleAccessAuthenticationAnswer(cmd, false);
 			}
 		}
 
         if (cmd.getVmId() != null && cmd.getVmId().isEmpty()) {
-            if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Invalid vm id sent from proxy(happens when proxy session has terminated)");
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Invalid vm id sent from proxy(happens when proxy session has terminated)");
             }
             return new ConsoleAccessAuthenticationAnswer(cmd, false);
         }
