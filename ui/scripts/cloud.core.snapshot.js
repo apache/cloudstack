@@ -135,9 +135,9 @@ function snapshotJsonToDetailsTab() {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();  
-    buildActionLinkForTab("Create Volume"  , snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);		
-    buildActionLinkForTab("Delete Snapshot", snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);	
-    buildActionLinkForTab("Create Template", snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+    buildActionLinkForTab("label.action.create.volume"  , snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);		
+    buildActionLinkForTab("label.action.delete.snapshot", snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+    buildActionLinkForTab("label.action.create.template", snapshotActionMap, $actionMenu, $midmenuItem1, $thisTab);	
     
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();     				
@@ -159,20 +159,20 @@ function snapshotClearDetailsTab() {
 }
 
 var snapshotActionMap = {  
-    "Create Volume": {              
+    "label.action.create.volume": {              
         isAsyncJob: true,
         asyncJobResponse: "createvolumeresponse",
         dialogBeforeActionFn : doCreateVolumeFromSnapshotInSnapshotPage,
-        inProcessText: "Creating Volume....",
+        inProcessText: "label.action.create.volume.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id){}
     }   
     , 
-    "Delete Snapshot": {              
+    "label.action.delete.snapshot": {              
         api: "deleteSnapshot",     
         isAsyncJob: true,
         asyncJobResponse: "deletesnapshotresponse",    
 		dialogBeforeActionFn : doSnapshotDelete,
-        inProcessText: "Deleting snapshot....",
+        inProcessText: "label.action.delete.snapshot.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id){   
             $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();                
@@ -184,18 +184,18 @@ var snapshotActionMap = {
         }
     } 
     ,
-    "Create Template": {              
+    "label.action.create.template": {              
         isAsyncJob: true,
         asyncJobResponse: "createtemplateresponse",
         dialogBeforeActionFn : doCreateTemplateFromSnapshotInSnapshotPage,
-        inProcessText: "Creating Template....",
+        inProcessText: "label.action.create.template.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id){}
     }
 }   
 
 function doSnapshotDelete($actionLink, $thisTab, $midmenuItem1) {
 	$("#dialog_confirmation")	
-	.text("Please confirm you want to delete the snapshot")
+	.text(dictionary["message.action.delete.snapshot"])
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 	
