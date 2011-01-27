@@ -78,7 +78,7 @@ public class LoadBalancerTO {
     }
 
     
-    public class DestinationTO {
+    public static class DestinationTO {
         String destIp;
         int destPort;
         boolean revoked;
