@@ -1920,29 +1920,29 @@ function vmJsonClearDetailsTab(){
 
 //***** declaration for volume tab (begin) *********************************************************
 var vmVolumeActionMap = {  
-    "Detach Disk": {
+    "label.action.detach.disk": {
         api: "detachVolume",            
         isAsyncJob: true,
         asyncJobResponse: "detachvolumeresponse",
-        inProcessText: "Detaching disk....",
+        inProcessText: "label.action.detach.disk.processing",
         afterActionSeccessFn: function(json, id, $subgridItem) {         
             $subgridItem.slideUp("slow", function(){                   
                 $(this).remove();
             });
         }
     },
-    "Create Template": {
+    "label.action.create.template": {
         isAsyncJob: true,
         asyncJobResponse: "createtemplateresponse",            
         dialogBeforeActionFn : doCreateTemplateFromVmVolume,
-        inProcessText: "Creating template....",
+        inProcessText: "label.action.create.template.processing",
         afterActionSeccessFn: function(json, id, $subgridItem) {}         
     },
-    "Take Snapshot": { 
+    "label.action.take.snapshot": { 
         isAsyncJob: true,
         asyncJobResponse: "createsnapshotresponse",            
         dialogBeforeActionFn : doTakeSnapshotFromVmVolume,
-        inProcessText: "Taking Snapshot....",
+        inProcessText: "label.action.take.snapshot.processing",
         afterActionSeccessFn: function(json, id, $subgridItem) {}         
     }
 }     
@@ -1985,17 +1985,17 @@ function vmVolumeJSONToTemplate(json, $template) {
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
      
-    buildActionLinkForSubgridItem("Take Snapshot", vmVolumeActionMap, $actionMenu, $template);	 
+    buildActionLinkForSubgridItem("label.action.take.snapshot", vmVolumeActionMap, $actionMenu, $template);	 
     noAvailableActions = false;		
      
-	if(json.type=="ROOT") { //"create template" is allowed(when stopped), "detach disk" is disallowed.
+	if(json.type=="ROOT") { //"label.action.create.template" is allowed(when stopped), "label.action.detach.disk" is disallowed.
 		if (json.vmstate == "Stopped") {
-		    buildActionLinkForSubgridItem("Create Template", vmVolumeActionMap, $actionMenu, $template);	
+		    buildActionLinkForSubgridItem("label.action.create.template", vmVolumeActionMap, $actionMenu, $template);	
 		    noAvailableActions = false;		
 		}
 	} 
-	else { //json.type=="DATADISK": "detach disk" is allowed, "create template" is disallowed.			
-		buildActionLinkForSubgridItem("Detach Disk", vmVolumeActionMap, $actionMenu, $template);		
+	else { //json.type=="DATADISK": "label.action.detach.disk" is allowed, "label.action.create.template" is disallowed.			
+		buildActionLinkForSubgridItem("label.action.detach.disk", vmVolumeActionMap, $actionMenu, $template);		
 		noAvailableActions = false;				
 	}	
 	

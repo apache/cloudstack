@@ -30,7 +30,13 @@ dictionary = {
 	'label.action.reset.password' : '<fmt:message key="label.action.reset.password"/>',
 	'label.action.reset.password.processing' : '<fmt:message key="label.action.reset.password.processing"/>',
 	'label.action.change.service' : '<fmt:message key="label.action.change.service"/>',
-	'label.action.change.service.processing' : '<fmt:message key="label.action.change.service.processing"/>'	
+	'label.action.change.service.processing' : '<fmt:message key="label.action.change.service.processing"/>',
+	'label.action.detach.disk' : '<fmt:message key="label.action.detach.disk"/>',
+	'label.action.detach.disk.processing' : '<fmt:message key="label.action.detach.disk.processing"/>',
+	'label.action.create.template' : '<fmt:message key="label.action.create.template"/>',
+	'label.action.create.template.processing' : '<fmt:message key="label.action.create.template.processing"/>',
+	'label.action.take.snapshot' : '<fmt:message key="label.action.take.snapshot"/>',
+	'label.action.take.snapshot.processing' : '<fmt:message key="label.action.take.snapshot.processing"/>'	
 };	
 </script>
 
