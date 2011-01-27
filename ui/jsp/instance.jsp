@@ -1054,7 +1054,7 @@
     <div class="actionpanel_button_wrapper" id="add_vm_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" alt="Add VM" /></div>
+                <img src="images/addvm_actionicon.png" /></div>
             <div class="actionpanel_button_links">
                 <fmt:message key="label.vm.add"/>
             </div>
@@ -1064,7 +1064,7 @@
     <div class="actionpanel_button_wrapper" id="start_vm_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/startvm_actionicon.png" alt="Start VM" /></div>
+                <img src="images/startvm_actionicon.png" /></div>
             <div class="actionpanel_button_links">
                 <fmt:message key="label.vm.start" />
             </div>
@@ -1073,7 +1073,7 @@
     <div class="actionpanel_button_wrapper" id="stop_vm_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/stopvm_actionicon.png" alt="Stop VM" /></div>
+                <img src="images/stopvm_actionicon.png"/></div>
             <div class="actionpanel_button_links">
                 <fmt:message key="label.vm.stop" />
             </div>
@@ -1082,7 +1082,7 @@
     <div class="actionpanel_button_wrapper" id="reboot_vm_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/rebootvm_actionicon.png" alt="Reboot VM" /></div>
+                <img src="images/rebootvm_actionicon.png" /></div>
             <div class="actionpanel_button_links">
                 <fmt:message key="label.vm.reboot" />
             </div>
@@ -1091,7 +1091,7 @@
     <div class="actionpanel_button_wrapper" id="destroy_vm_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/destroyvm_actionicon.png" alt="Destroy VM" /></div>
+                <img src="images/destroyvm_actionicon.png" /></div>
             <div class="actionpanel_button_links">
                 <fmt:message key="label.vm.destroy" />
             </div>
