@@ -15,7 +15,7 @@ html,body{
 	background:#00374e url(../images/login_bg.gif) repeat-x top left;
 	margin:0;
 	padding:0;
-	overflow-x:hidden;
+
 }
 
 <!--[if IE 6]>
@@ -353,7 +353,7 @@ a:hover {
 
 
 #main {
-	min-width:980px;
+	min-width:1250px;
 	width:100%;
 	min-height:1000px;
 	height:auto;
@@ -1354,7 +1354,7 @@ a:hover {
 
 
 #main_header {
-	min-width:980px;
+	min-width:1250px;
 	width:100%;
 	height:44px;
 	float:left;
@@ -1532,7 +1532,7 @@ a:hover {
 }
 
 #main_contentpanel {
-	min-width:980px;
+	min-width:1250px;
 	width:100%;
 	min-height:1000px;
 	height:100%;
@@ -1853,13 +1853,14 @@ a:hover {
 }
 
 .actionpanel {
+	min-width:800px;
 	width:100%;
 	height:27px;
 	float:left;
 	background:url(../images/actionpanel_bg.gif) repeat-x top left;
 	margin:0;
 	padding:0;
-}
+}                  
 
 
 .searchpanel {
@@ -2192,9 +2193,8 @@ a:hover.search_button {
 
 
 
-
 .actionpanel_rightbutton_container {
-	width:18%;
+	width:auto;
 	height:27px;
 	float:right;
 	margin:0;

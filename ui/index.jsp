@@ -199,7 +199,7 @@
                                     </div>
                                 </div>
                             </div>-->
-                            <div class="actionpanel_button_wrapper" id="refresh_link" style="display: block; border:none; float: right; position: relative;">
+                            <div class="actionpanel_button_wrapper" id="refresh_link">
                                 <div class="actionpanel_button" id="refresh_button">
                                     <div class="actionpanel_button_icons">
                                         <img src="images/refresh_actionicon.png" alt="Refresh" /></div>
