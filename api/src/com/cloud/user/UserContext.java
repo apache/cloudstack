@@ -21,7 +21,6 @@ package com.cloud.user;
 import com.cloud.server.ManagementService;
 import com.cloud.utils.component.ComponentLocator;
 
-
 public class UserContext {
     
     private static ThreadLocal<UserContext> s_currentContext = new ThreadLocal<UserContext>();
@@ -82,7 +81,14 @@ public class UserContext {
 
     public static UserContext current() {
         UserContext context = s_currentContext.get();
-        if (context == null) {
+        if(context == null) {
+            //
+            // TODO: we should enforce explicit UserContext setup at major entry-points for security concerns,
+            // however, there are many places that run background jobs assume the system context. 
+            //
+            // If there is a security concern, all entry points from user (including the front end that takes HTTP request in and
+            // the core async-job manager that runs commands from user) have explicitly setup the UserContext.
+            // 
             return s_adminContext;
         }
         return context;
@@ -120,5 +126,4 @@ public class UserContext {
     public void setAccountId(long accountId) {
         this.accountId = accountId;
     }
-
 }

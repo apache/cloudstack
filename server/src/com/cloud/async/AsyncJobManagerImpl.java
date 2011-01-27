@@ -380,12 +380,15 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
                     }
 
                     UserContext.registerContext(userId, accountObject, null, false);
-
-                    // dispatch could ultimately queue the job
-                    _dispatcher.dispatch(cmdObj, params);
-
-                    // serialize this to the async job table
-                    completeAsyncJob(jobId, AsyncJobResult.STATUS_SUCCEEDED, 0, cmdObj.getResponseObject());
+                    try {
+                        // dispatch could ultimately queue the job
+                        _dispatcher.dispatch(cmdObj, params);
+    
+                        // serialize this to the async job table
+                        completeAsyncJob(jobId, AsyncJobResult.STATUS_SUCCEEDED, 0, cmdObj.getResponseObject());
+                    } finally {
+                        UserContext.unregisterContext();
+                    }
 
                     // commands might need to be queued as part of synchronization here, so they just have to be re-dispatched from the queue mechanism...
                     if (job.getSyncSource() != null) {
