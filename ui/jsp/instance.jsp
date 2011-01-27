@@ -10,6 +10,9 @@ dictionary = {
 	'label.action.start.instance' : '<fmt:message key="label.action.start.instance"/>',
 	'label.action.start.instance.processing' : '<fmt:message key="label.action.start.instance.processing"/>',
 	'message.action.start.instance' : '<fmt:message key="message.action.start.instance"/>',
+	'label.action.stop.instance' : '<fmt:message key="label.action.stop.instance"/>',
+	'label.action.stop.instance.processing' : '<fmt:message key="label.action.stop.instance.processing"/>',
+	'message.action.stop.instance' : '<fmt:message key="message.action.stop.instance"/>'
 };	
 </script>
 

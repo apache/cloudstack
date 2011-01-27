@@ -153,7 +153,7 @@ function bindStartVMButton() {
         }        
                 
         $("#dialog_confirmation")	
-        .text("Please confirm you want to start instance")
+        .text(dictionary["message.action.start.instance"])
 	    .dialog('option', 'buttons', { 						
 		    "Confirm": function() { 
 			    $(this).dialog("close"); 			
@@ -200,15 +200,15 @@ function bindStopVMButton() {
         }        
         
         $("#dialog_confirmation")
-        .text("Please confirm you want to stop instance")	
+        .text(dictionary["message.action.stop.instance"])	
 	    .dialog('option', 'buttons', { 						
 		    "Confirm": function() { 
 			    $(this).dialog("close"); 			
 			    
 			    var apiInfo = {
-                    label: "Stop Instance",
+                    label: "label.action.stop.instance",
                     isAsyncJob: true,
-                    inProcessText: "Stopping Instance....",
+                    inProcessText: "label.action.stop.instance.processing",
                     asyncJobResponse: "stopvirtualmachineresponse",                 
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {                         
                         var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;  
