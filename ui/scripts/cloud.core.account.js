@@ -514,13 +514,13 @@ function accountUserJSONToTemplate(jsonObj, $template) {
     
     if(isAdmin()) {
         buildActionLinkForSubgridItem("label.action.edit.user", accountUserActionMap, $actionMenu, $template);	 
-        buildActionLinkForSubgridItem("Change Password", accountUserActionMap, $actionMenu, $template);	  
-        buildActionLinkForSubgridItem("Generate Keys", accountUserActionMap, $actionMenu, $template);	    
+        buildActionLinkForSubgridItem("label.action.change.password", accountUserActionMap, $actionMenu, $template);	  
+        buildActionLinkForSubgridItem("label.action.generate.keys", accountUserActionMap, $actionMenu, $template);	    
         noAvailableActions = false;
         
         if(jsonObj.id != systemUserId && jsonObj.id != adminUserId) {
             if(jsonObj.state == "enabled") 
-                buildActionLinkForSubgridItem("Disable User", accountUserActionMap, $actionMenu, $template);	  
+                buildActionLinkForSubgridItem("label.action.disable.user", accountUserActionMap, $actionMenu, $template);	  
             if(jsonObj.state == "disabled")
                 buildActionLinkForSubgridItem("Enable User", accountUserActionMap, $actionMenu, $template);	  
             buildActionLinkForSubgridItem("Delete User", accountUserActionMap, $actionMenu, $template);	  
@@ -800,24 +800,24 @@ var accountUserActionMap = {
     "label.action.edit.user": {
         dialogBeforeActionFn : doEditUser
     },
-    "Change Password": {
+    "label.action.change.password": {
         dialogBeforeActionFn : doChangePassword
     },
-    "Generate Keys": {  
+    "label.action.generate.keys": {  
         api: "registerUserKeys",            
         isAsyncJob: false,
-        inProcessText: "Generate Keys....",
+        inProcessText: "label.action.generate.keys.processing",
         afterActionSeccessFn: function(json, id, $subgridItem) {
             var jsonObj = json.registeruserkeysresponse.userkeys;
             $subgridItem.find("#apikey").text(fromdb(jsonObj.apikey));    
             $subgridItem.find("#secretkey").text(fromdb(jsonObj.secretkey));	
         }            
     },
-    "Disable User": {              
+    "label.action.disable.user": {              
         api: "disableUser",     
         isAsyncJob: true,
         asyncJobResponse: "disableuserresponse",		
-        inProcessText: "Disabling User....",
+        inProcessText: "label.action.disable.user.processing",
         afterActionSeccessFn: function(json, id, $subgridItem) {                 
             var item = json.queryasyncjobresultresponse.jobresult.user;    
             accountUserJSONToTemplate(item, $subgridItem); 

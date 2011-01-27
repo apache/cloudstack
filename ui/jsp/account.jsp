@@ -7,21 +7,26 @@
 
 <script language="javascript">
 dictionary = { 
-	"message.disable.account" : '<fmt:message key="message.disable.account"/>',
-	"message.lock.account" : '<fmt:message key="message.lock.account"/>',
-	"message.enable.account" : '<fmt:message key="message.enable.account"/>',
-	"message.delete.account" : '<fmt:message key="message.delete.account"/>',
-	"label.action.edit.account" : '<fmt:message key="label.action.edit.account"/>',
-	"label.action.resource.limits": '<fmt:message key="label.action.resource.limits"/>',
-	"label.action.disable.account": '<fmt:message key="label.action.disable.account"/>',
-	"label.action.disable.account.processing": '<fmt:message key="label.action.disable.account.processing"/>',
-	"label.action.lock.account": '<fmt:message key="label.action.lock.account"/>',
-	"label.action.lock.account.processing": '<fmt:message key="label.action.lock.account.processing"/>',
-	"label.action.enable.account": '<fmt:message key="label.action.enable.account"/>',
-	"label.action.enable.account.processing": '<fmt:message key="label.action.enable.account.processing"/>',
-	"label.action.delete.account": '<fmt:message key="label.action.delete.account"/>',
-	"label.action.delete.account.processing": '<fmt:message key="label.action.delete.account.processing"/>',
-	"label.action.edit.user": '<fmt:message key="label.action.edit.user"/>'
+	'message.disable.account' : '<fmt:message key="message.disable.account"/>',
+	'message.lock.account' : '<fmt:message key="message.lock.account"/>',
+	'message.enable.account' : '<fmt:message key="message.enable.account"/>',
+	'message.delete.account' : '<fmt:message key="message.delete.account"/>',
+	'label.action.edit.account' : '<fmt:message key="label.action.edit.account"/>',
+	'label.action.resource.limits': '<fmt:message key="label.action.resource.limits"/>',
+	'label.action.disable.account': '<fmt:message key="label.action.disable.account"/>',
+	'label.action.disable.account.processing': '<fmt:message key="label.action.disable.account.processing"/>',
+	'label.action.lock.account': '<fmt:message key="label.action.lock.account"/>',
+	'label.action.lock.account.processing': '<fmt:message key="label.action.lock.account.processing"/>',
+	'label.action.enable.account': '<fmt:message key="label.action.enable.account"/>',
+	'label.action.enable.account.processing': '<fmt:message key="label.action.enable.account.processing"/>',
+	'label.action.delete.account': '<fmt:message key="label.action.delete.account"/>',
+	'label.action.delete.account.processing': '<fmt:message key="label.action.delete.account.processing"/>',
+	'label.action.edit.user': '<fmt:message key="label.action.edit.user"/>',
+	'label.action.change.password': '<fmt:message key="label.action.change.password"/>',
+	'label.action.generate.keys': '<fmt:message key="label.action.generate.keys"/>',
+	'label.action.generate.keys.processing': '<fmt:message key="label.action.generate.keys.processing"/>',
+	'label.action.disable.user': '<fmt:message key="label.action.disable.user"/>',
+	'label.action.disable.user.processing': '<fmt:message key="label.action.disable.user.processing"/>'
 };	
 </script>
 
