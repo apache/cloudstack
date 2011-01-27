@@ -1287,6 +1287,9 @@ var ERROR_INTERNET_NAME_NOT_RESOLVED = 12007;
 var ERROR_INTERNET_CANNOT_CONNECT = 12029;
 var ERROR_VMOPS_ACCOUNT_ERROR = 531;
 
+//localization
+var dictionary = {};
+
 var g_logger = new Logger();
 $(function() {
 	if(g_enableLogging)

@@ -6,7 +6,7 @@
 <fmt:setBundle basename="resources/messages"/>
 
 <script language="javascript">
-var dictionary = { 
+dictionary = { 
 	"message.disable.account" : '<fmt:message key="message.disable.account"/>',
 	"message.lock.account" : '<fmt:message key="message.lock.account"/>',
 	"message.enable.account" : '<fmt:message key="message.enable.account"/>',
@@ -18,7 +18,9 @@ var dictionary = {
 	"label.action.lock.account": '<fmt:message key="label.action.lock.account"/>',
 	"label.action.lock.account.processing": '<fmt:message key="label.action.lock.account.processing"/>',
 	"label.action.enable.account": '<fmt:message key="label.action.enable.account"/>',
-	"label.action.enable.account.processing": '<fmt:message key="label.action.enable.account.processing"/>'
+	"label.action.enable.account.processing": '<fmt:message key="label.action.enable.account.processing"/>',
+	"label.action.delete.account": '<fmt:message key="label.action.delete.account"/>',
+	"label.action.delete.account.processing": '<fmt:message key="label.action.delete.account.processing"/>'
 };	
 </script>
 

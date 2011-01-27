@@ -406,7 +406,7 @@ function accountJsonToDetailsTab() {
                 buildActionLinkForTab("label.action.enable.account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);                   
             }   
             
-            buildActionLinkForTab("Delete account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
+            buildActionLinkForTab("label.action.delete.account", accountActionMap, $actionMenu, $midmenuItem1, $detailsTab);  
             noAvailableActions = false;	            
         }  
     }
@@ -572,11 +572,11 @@ var accountActionMap = {
         }
     } 
     ,
-    "Delete account": {              
+    "label.action.delete.account": {              
         isAsyncJob: true,
         asyncJobResponse: "deleteaccountresponse",
         dialogBeforeActionFn : doDeleteAccount,
-        inProcessText: "Deleting account....",
+        inProcessText: "label.action.delete.account.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {    
             $midmenuItem1.slideUp("slow", function() {                
                 $(this).remove();  
