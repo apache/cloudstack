@@ -2435,8 +2435,7 @@ a:hover.search_button {
 	background:#fffbe6 url(../images/infomsg_bg.gif) repeat-x top left;
 	margin:0;
 	padding:0;
-	top:0px;
-	left:0px;
+	float:left;
 	margin:0;
 	padding:0 0 9px 0;
 	border-bottom:1px dashed #999;
