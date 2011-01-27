@@ -5,6 +5,25 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<script language="javascript">
+dictionary = { 
+	'label.action.attach.disk' : '<fmt:message key="label.action.attach.disk"/>',
+	'label.action.attach.disk.processing' : '<fmt:message key="label.action.attach.disk.processing"/>',
+	'label.action.detach.disk' : '<fmt:message key="label.action.detach.disk"/>',
+	'label.action.detach.disk.processing' : '<fmt:message key="label.action.detach.disk.processing"/>',
+	'label.action.create.template' : '<fmt:message key="label.action.create.template"/>',
+	'label.action.create.template.processing' : '<fmt:message key="label.action.create.template.processing"/>',
+	'label.action.delete.volume' : '<fmt:message key="label.action.delete.volume"/>',
+	'label.action.delete.volume.processing' : '<fmt:message key="label.action.delete.volume.processing"/>',
+	'message.action.delete.volume' : '<fmt:message key="message.action.delete.volume"/>',
+	'label.action.take.snapshot' : '<fmt:message key="label.action.take.snapshot"/>',
+	'label.action.take.snapshot.processing' : '<fmt:message key="label.action.take.snapshot.processing"/>',
+	'message.action.take.snapshot' : '<fmt:message key="message.action.take.snapshot"/>',
+	'label.action.recurring.snapshot' : '<fmt:message key="label.action.recurring.snapshot"/>',
+	'label.action.download.volume' : '<fmt:message key="label.action.download.volume"/>'
+};	
+</script>
+
 <!-- volume detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
   
@@ -271,12 +290,6 @@
   </div>
 </div>
 <!-- Download Volume Dialog (end) -->
-
-<!-- Create Snapshot Dialog (begin) -->
-<div id="dialog_create_snapshot" title="Create Snapshot" style="display: none">
-    <p><fmt:message key="message.create.snapshot"/></p>
-</div>
-<!-- Create Snapshot Dialog (end) -->
 
 <!-- Recurring Snapshots Dialog (begin) -->
 <div id="dialog_recurring_snapshot" title="Recurring Snapshot" style="display:none;">

@@ -387,28 +387,28 @@ function volumeJsonToDetailsTab(){
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();
         
-    buildActionLinkForTab("Take Snapshot", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);	//show take snapshot
-    buildActionLinkForTab("Recurring Snapshot", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);	//show Recurring Snapshot
-    buildActionLinkForTab("Download Volume", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);
+    buildActionLinkForTab("label.action.take.snapshot", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);	//show take snapshot
+    buildActionLinkForTab("label.action.recurring.snapshot", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);	//show Recurring Snapshot
+    buildActionLinkForTab("label.action.download.volume", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);
     
     if(jsonObj.state != "Creating" && jsonObj.state != "Corrupted" && jsonObj.name != "attaching") {
         if(jsonObj.type=="ROOT") {
             if (jsonObj.vmstate == "Stopped") { 
-                buildActionLinkForTab("Create Template", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);
+                buildActionLinkForTab("label.action.create.template", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);
             }
         } 
         else { 
 	        if (jsonObj.virtualmachineid != null) {
 		        if (jsonObj.storagetype == "shared" && (jsonObj.vmstate == "Running" || jsonObj.vmstate == "Stopped")) {
-			        buildActionLinkForTab("Detach Disk", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+			        buildActionLinkForTab("label.action.detach.disk", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab); 
 		        }
 	        } else {
 		        // Disk not attached
 		        if (jsonObj.storagetype == "shared") {
-			        buildActionLinkForTab("Attach Disk", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+			        buildActionLinkForTab("label.action.attach.disk", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab);   
     			    			  		    
 			        if(jsonObj.vmname == null || jsonObj.vmname == "none")
-			            buildActionLinkForTab("Delete Volume", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+			            buildActionLinkForTab("label.action.delete.volume", volumeActionMap, $actionMenu, $midmenuItem1, $thisTab); 
 		        }
 	        }
         }
@@ -488,7 +488,7 @@ function volumeSnapshotJSONToTemplate(jsonObj, template) {
     
     buildActionLinkForSubgridItem("Create Volume", volumeSnapshotActionMap, $actionMenu, template);	
     buildActionLinkForSubgridItem("Delete Snapshot", volumeSnapshotActionMap, $actionMenu, template);	
-    buildActionLinkForSubgridItem("Create Template", volumeSnapshotActionMap, $actionMenu, template);	
+    buildActionLinkForSubgridItem("label.action.create.template", volumeSnapshotActionMap, $actionMenu, template);	
 } 
  
 function volumeClearRightPanel() {       
@@ -512,38 +512,38 @@ function volumeJsonClearDetailsTab(){
 }
    
 var volumeActionMap = {  
-    "Attach Disk": {
+    "label.action.attach.disk": {
         isAsyncJob: true,
         asyncJobResponse: "attachvolumeresponse",            
         dialogBeforeActionFn : doAttachDisk,
-        inProcessText: "Attaching disk....",
+        inProcessText: "label.action.attach.disk.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {                
             var jsonObj = json.queryasyncjobresultresponse.jobresult.volume;  
             volumeToMidmenu(jsonObj, $midmenuItem1);            
         }
     },
-    "Detach Disk": {
+    "label.action.detach.disk": {
         api: "detachVolume",            
         isAsyncJob: true,
         asyncJobResponse: "detachvolumeresponse",
-        inProcessText: "Detaching disk....",
+        inProcessText: "label.action.detach.disk.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id){   
             var jsonObj = json.queryasyncjobresultresponse.jobresult.volume;     
             volumeToMidmenu(jsonObj,  $midmenuItem1);            
         }
     },
-    "Create Template": {
+    "label.action.create.template": {
         isAsyncJob: true,
         asyncJobResponse: "createtemplateresponse",            
         dialogBeforeActionFn : doCreateTemplateFromVolume,
-        inProcessText: "Creating template....",
+        inProcessText: "label.action.create.template.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {}   
     },
-    "Delete Volume": {
+    "label.action.delete.volume": {
         api: "deleteVolume",            
         isAsyncJob: false,  
         dialogBeforeActionFn : doDeleteVolume,      
-        inProcessText: "Deleting volume....",
+        inProcessText: "label.action.delete.volume.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {  
             $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();                
@@ -554,17 +554,17 @@ var volumeActionMap = {
             });          
         }
     },
-    "Take Snapshot": {
+    "label.action.take.snapshot": {
         isAsyncJob: true,
         asyncJobResponse: "createsnapshotresponse",            
         dialogBeforeActionFn : doTakeSnapshot,
-        inProcessText: "Taking Snapshot....",
+        inProcessText: "label.action.take.snapshot.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {}   
     },
-    "Recurring Snapshot": {                 
+    "label.action.recurring.snapshot": {                 
         dialogBeforeActionFn : doRecurringSnapshot 
     },
-    "Download Volume": {               
+    "label.action.download.volume": {               
         dialogBeforeActionFn : doDownloadVolume        
     }        
 }   
@@ -681,7 +681,7 @@ function doDeleteVolume($actionLink, $detailsTab, $midmenuItem1) {
 	var id = jsonObj.id;
 		
 	$("#dialog_confirmation")
-	.text("Please confirm you want to delete this volume")
+	.text(dictionary["message.action.delete.volume"])
 	.dialog('option', 'buttons', { 					
 		"Confirm": function() { 			
 			$(this).dialog("close");			
@@ -694,8 +694,9 @@ function doDeleteVolume($actionLink, $detailsTab, $midmenuItem1) {
 	}).dialog("open");
 }
 
-function doTakeSnapshot($actionLink, $detailsTab, $midmenuItem1) {   
-    $("#dialog_create_snapshot")					
+function doTakeSnapshot($actionLink, $detailsTab, $midmenuItem1) {      
+    $("#dialog_confirmation")
+    .text(dictionary["message.action.take.snapshot"])				
     .dialog('option', 'buttons', { 					    
 	    "Confirm": function() { 	
 	        $(this).dialog("close");	
@@ -1004,11 +1005,11 @@ var volumeSnapshotActionMap = {
         }
     } 
     ,
-    "Create Template": {              
+    "label.action.create.template": {              
         isAsyncJob: true,
         asyncJobResponse: "createtemplateresponse",
         dialogBeforeActionFn : doCreateTemplateFromSnapshotInVolumePage,
-        inProcessText: "Creating Template....",
+        inProcessText: "label.action.create.template.processing",
         afterActionSeccessFn: function(json, id, $subgridItem) {}            
     }
 }  
