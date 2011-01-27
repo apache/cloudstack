@@ -356,67 +356,34 @@ function handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label) {
 //***** actions for middle menu (begin) ************************************************************************
 var selectedItemsInMidMenu = {};
 
-function buildActionLinkForMidMenu(label, actionMap, $actionMenu) {
-    var apiInfo = actionMap[label];
-    var $listItem = $("#action_list_item_middle_menu").clone();
-    $actionMenu.find("#action_list").append($listItem.show());
-    var $link = $listItem.find("#link").text(label);
-    $link.data("apiInfo", apiInfo);
-    
-    /*
-    $link.data("label", label);	  
-    $link.data("api",apiInfo .api);				                 
-    $link.data("isAsyncJob", apiInfo.isAsyncJob);
-    $link.data("asyncJobResponse", apiInfo.asyncJobResponse);		     
-    $link.data("afterActionSeccessFn", apiInfo.afterActionSeccessFn);
-    $link.data("dialogBeforeActionFn", apiInfo.dialogBeforeActionFn);
-    */
-    
-    $link.bind("click", function(event) {	
-        $actionMenu.hide();    	 
-                
-        var itemCounts = 0;
-        for(var id in selectedItemsInMidMenu) {
-            itemCounts ++;
-        }
-        if(itemCounts == 0) {
-            $("#dialog_info_please_select_one_item_in_middle_menu").dialog("open");		
-            return;
-        }        
-        
-        var $actionLink = $(this);   
-        var dialogBeforeActionFn = $actionLink.data("dialogBeforeActionFn"); 
-        if(dialogBeforeActionFn == null) {		                   
-            for(var id in selectedItemsInMidMenu) {	
-                var apiCommand = "command="+$actionLink.data("api")+"&id="+id;                      
-                doActionToMidMenu(id, apiInfo, apiCommand); 	
-            }
-        }
-        else {
-            dialogBeforeActionFn(apiInfo, selectedItemsInMidMenu);	
-            
-        }        
-        selectedItemsInMidMenu = {}; //clear selected items for action	                          
-        return false;
-    });  
-} 
-
 function doActionToMidMenu(id, apiInfo, apiCommand) {   
-    var label = apiInfo.label;			           
-    var isAsyncJob = apiInfo.isAsyncJob;
+    var label = apiInfo.label;	
+    var label2;
+    if(label in dictionary)
+        label2 = dictionary[label];
+    else
+        label2 = label;   
+    
     var inProcessText = apiInfo.inProcessText;   
+    var inProcessText2;
+    if(inProcessText in dictionary)
+        inProcessText2 = dictionary[inProcessText];   
+    else
+        inProcessText2 = inProcessText;  
+        		           
+    var isAsyncJob = apiInfo.isAsyncJob;    
     var asyncJobResponse = apiInfo.asyncJobResponse;	
     var afterActionSeccessFn = apiInfo.afterActionSeccessFn;	    
         
     var $midmenuItem1 = $("#midmenuItem_"+id);	
     $midmenuItem1.find("#content").removeClass("selected").addClass("inaction");                          
     $midmenuItem1.find("#spinning_wheel").addClass("midmenu_addingloader").show();	
-    $midmenuItem1.find("#spinning_wheel").data("inProcessText", inProcessText);
+    $midmenuItem1.find("#spinning_wheel").data("inProcessText", inProcessText2);
     $midmenuItem1.find("#info_icon").hide();		  
 	
 	var $detailsTab = $("#right_panel_content #tab_content_details");  
     var $spinningWheel = $detailsTab.find("#spinning_wheel");
-    $spinningWheel.find("#description").text(inProcessText);  
+    $spinningWheel.find("#description").text(inProcessText2);  
     $spinningWheel.show();     
 	
 	//Async job (begin) *****
@@ -442,20 +409,20 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
 			                        $("body").stopTime(timerKey);	
 			                        $midmenuItem1.find("#content").removeClass("inaction");
 			                        $midmenuItem1.find("#spinning_wheel").hide();			                        
-			                        hideDetailsTabActionSpinningWheel(id, inProcessText, $midmenuItem1);				                        			                       
+			                        hideDetailsTabActionSpinningWheel(id, inProcessText2, $midmenuItem1);				                        			                       
 			                        if (result.jobstatus == 1) { // Succeeded  
 			                            $midmenuItem1.find("#info_icon").removeClass("error").show();
-			                            $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 			                            
+			                            $midmenuItem1.data("afterActionInfo", (label2 + " action succeeded.")); 			                            
 			                            afterActionSeccessFn(json, $midmenuItem1, id);  			                            
 			                        } else if (result.jobstatus == 2) { // Failed				                            
-			                            var errorMsg = label + " action failed. Reason: " + fromdb(result.jobresult.errortext);
-			                            handleErrorInMidMenu2(errorMsg, $midmenuItem1, id, inProcessText); 
+			                            var errorMsg = label2 + " action failed. Reason: " + fromdb(result.jobresult.errortext);
+			                            handleErrorInMidMenu2(errorMsg, $midmenuItem1, id, inProcessText2); 
 			                        }											                    
 		                        }
 	                        },
 	                        error: function(XMLHttpResponse) {
 		                        $("body").stopTime(timerKey);		                       		                        
-		                        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1, id, inProcessText); 		                        
+		                        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1, id, inProcessText2); 		                        
 	                        }
                         });
                     },
@@ -464,7 +431,7 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
             },
             error: function(XMLHttpResponse) {
 				handleError(XMLHttpResponse);
-		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1, id, inProcessText);    
+		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1, id, inProcessText2);    
             }
         });     
     }     
@@ -480,12 +447,12 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
 	            $midmenuItem1.find("#content").removeClass("inaction");
 				$midmenuItem1.find("#spinning_wheel").hide();				
 				$midmenuItem1.find("#info_icon").removeClass("error").show();
-			    $midmenuItem1.data("afterActionInfo", (label + " action succeeded.")); 		
-			    hideDetailsTabActionSpinningWheel(id, inProcessText, $midmenuItem1);	
+			    $midmenuItem1.data("afterActionInfo", (label2 + " action succeeded.")); 		
+			    hideDetailsTabActionSpinningWheel(id, inProcessText2, $midmenuItem1);	
 				afterActionSeccessFn(json, $midmenuItem1, id); 		
 	        },
             error: function(XMLHttpResponse) {	                
-		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1, id, inProcessText);    
+		        handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1, id, inProcessText2);    
             }        
         });
     }

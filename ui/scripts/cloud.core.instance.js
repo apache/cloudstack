@@ -159,9 +159,9 @@ function bindStartVMButton() {
 			    $(this).dialog("close"); 			
 			    
 			    var apiInfo = {
-                    label: "Start Instance",
+                    label: "label.action.start.instance",
                     isAsyncJob: true,
-                    inProcessText: "Starting Instance....",
+                    inProcessText: "label.action.start.instance.processing",
                     asyncJobResponse: "startvirtualmachineresponse",                  
                     afterActionSeccessFn: function(json, $midmenuItem1, id) {                    
                         var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;                         

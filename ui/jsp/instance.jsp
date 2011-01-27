@@ -5,6 +5,14 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<script language="javascript">
+dictionary = { 
+	'label.action.start.instance' : '<fmt:message key="label.action.start.instance"/>',
+	'label.action.start.instance.processing' : '<fmt:message key="label.action.start.instance.processing"/>',
+	'message.action.start.instance' : '<fmt:message key="message.action.start.instance"/>',
+};	
+</script>
+
 <!-- VM detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
