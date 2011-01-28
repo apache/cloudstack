@@ -543,7 +543,7 @@ function doEnableMaintenanceMode($actionLink, $detailsTab, $midmenuItem1){
     var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_confirmation")
-    .text(dictionary["message.action.enable.maintenance.mode"])
+    .text(dictionary["message.action.host.enable.maintenance.mode"])
     .dialog("option", "buttons", {	                    
          "OK": function() {
              $(this).dialog("close");      

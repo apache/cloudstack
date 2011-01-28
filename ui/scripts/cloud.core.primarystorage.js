@@ -136,32 +136,32 @@ function primarystorageJsonToDetailsTab() {
     });	  
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty(); 
-    //buildActionLinkForTab("Edit Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  //because updateStoragePool API is commented out.
+    //buildActionLinkForTab("label.action.edit.primary.storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  //because updateStoragePool API is commented out.
       
     if (jsonObj.state == 'Up' || jsonObj.state == "Connecting") {
-		buildActionLinkForTab("Enable Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+		buildActionLinkForTab("label.action.enable.maintenance.mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  
 	} 
 	else if(jsonObj.state == 'Down') {
-	    buildActionLinkForTab("Enable Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab); 
-        buildActionLinkForTab("Delete Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+	    buildActionLinkForTab("label.action.enable.maintenance.mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+        buildActionLinkForTab("label.action.delete.primary.storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  
         
     }	
 	else if(jsonObj.state == "Alert") {	     
-	    buildActionLinkForTab("Delete Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+	    buildActionLinkForTab("label.action.delete.primary.storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);   
 	}	
 	else if (jsonObj.state == "ErrorInMaintenance") {
-	    buildActionLinkForTab("Enable Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  
-        buildActionLinkForTab("Cancel Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+	    buildActionLinkForTab("label.action.enable.maintenance.mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+        buildActionLinkForTab("label.action.cancel.maintenance.mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);   
     }
 	else if (jsonObj.state == "PrepareForMaintenance") {
-	    buildActionLinkForTab("Cancel Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+	    buildActionLinkForTab("label.action.cancel.maintenance.mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab); 
     }
 	else if (jsonObj.state == "Maintenance") {
-	    buildActionLinkForTab("Cancel Maintenance Mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);            	    
-        buildActionLinkForTab("Delete Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);          
+	    buildActionLinkForTab("label.action.cancel.maintenance.mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);            	    
+        buildActionLinkForTab("label.action.delete.primary.storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);          
     }
 	else if (jsonObj.state == "Disconnected"){	      	    
-        buildActionLinkForTab("Delete Primary Storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);          
+        buildActionLinkForTab("label.action.delete.primary.storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);          
     }
 	else {
 	    alert("Unsupported Host State: " + jsonObj.state);
@@ -192,37 +192,33 @@ function primarystorageClearDetailsTab() {
 }
 
 var primarystorageActionMap = {    
-    "Edit Primary Storage": {
+    "label.action.edit.primary.storage": {
         dialogBeforeActionFn: doEditPrimaryStorage
     },           
-    "Enable Maintenance Mode": {              
+    "label.action.enable.maintenance.mode": {              
         isAsyncJob: true,
         asyncJobResponse: "prepareprimarystorageformaintenanceresponse",
         dialogBeforeActionFn: doEnableMaintenanceModeForPrimaryStorage,
-        inProcessText: "Enabling Maintenance Mode....",
+        inProcessText: "label.action.enable.maintenance.mode.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {             
             var item = json.queryasyncjobresultresponse.jobresult.storagepool; 
-            primarystorageToMidmenu(item, $midmenuItem1);
-            //primarystorageToRightPanel($midmenuItem1);                        
-            //$("#right_panel_content #after_action_info").text("We are actively enabling maintenance. Please refresh periodically for an updated status."); 
+            primarystorageToMidmenu(item, $midmenuItem1);           
         }
     },
-    "Cancel Maintenance Mode": {              
+    "label.action.cancel.maintenance.mode": {              
         isAsyncJob: true,
         asyncJobResponse: "cancelprimarystoragemaintenanceresponse",
         dialogBeforeActionFn: doCancelMaintenanceModeForPrimaryStorage,
-        inProcessText: "Cancelling Maintenance Mode....",
+        inProcessText: "label.action.cancel.maintenance.mode.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {       
             var item = json.queryasyncjobresultresponse.jobresult.storagepool;    
-            primarystorageToMidmenu(item, $midmenuItem1);
-            //primarystorageToRightPanel($midmenuItem1);            
-            //$("#right_panel_content #after_action_info").text("We are actively cancelling your scheduled maintenance.  Please refresh periodically for an updated status."); 
+            primarystorageToMidmenu(item, $midmenuItem1);        
         }
     },
-    "Delete Primary Storage": {              
+    "label.action.delete.primary.storage": {              
         isAsyncJob: false,        
         dialogBeforeActionFn: doDeletePrimaryStorage,
-        inProcessText: "Deleting Primary Storage....",
+        inProcessText: "label.action.delete.primary.storage.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();                
@@ -291,7 +287,7 @@ function doEnableMaintenanceModeForPrimaryStorage($actionLink, $detailsTab, $mid
     var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_confirmation")
-    .text("Warning: placing the primary storage into maintenance mode will cause all VMs using volumes from it to be stopped.  Do you want to continue?")
+    .text(dictionary["message.action.primarystorage.enable.maintenance.mode"])
     .dialog("option", "buttons", {	                    
          "OK": function() {
              $(this).dialog("close");      
@@ -309,7 +305,7 @@ function doCancelMaintenanceModeForPrimaryStorage($actionLink, $detailsTab, $mid
     var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_confirmation")
-    .text("Please confirm you want to cancel maintenace")
+    .text(dictionary["message.action.cancel.maintenance.mode"])
     .dialog("option", "buttons", {	                    
          "OK": function() {
              $(this).dialog("close");      
@@ -327,7 +323,7 @@ function doDeletePrimaryStorage($actionLink, $detailsTab, $midmenuItem1){
     var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_confirmation")
-    .text("Please confirm you want to delete the primary storage")
+    .text(dictionary["message.action.delete.primary.storage"])
     .dialog("option", "buttons", {	                    
          "OK": function() {
              $(this).dialog("close");      

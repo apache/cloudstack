@@ -9,7 +9,7 @@
 dictionary = { 	
 	'label.action.enable.maintenance.mode' : '<fmt:message key="label.action.enable.maintenance.mode"/>',
 	'label.action.enable.maintenance.mode.processing' : '<fmt:message key="label.action.enable.maintenance.mode.processing"/>',
-	'message.action.enable.maintenance.mode' : '<fmt:message key="message.action.enable.maintenance.mode"/>',
+	'message.action.host.enable.maintenance.mode' : '<fmt:message key="message.action.host.enable.maintenance.mode"/>',
 	'label.action.cancel.maintenance.mode' : '<fmt:message key="label.action.cancel.maintenance.mode"/>',
 	'label.action.cancel.maintenance.mode.processing' : '<fmt:message key="label.action.cancel.maintenance.mode.processing"/>',
 	'message.action.cancel.maintenance.mode' : '<fmt:message key="message.action.cancel.maintenance.mode"/>',

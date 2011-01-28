@@ -5,6 +5,21 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<script language="javascript">
+dictionary = { 	
+	'label.action.edit.primary.storage' : '<fmt:message key="label.action.edit.primary.storage"/>',
+	'label.action.enable.maintenance.mode' : '<fmt:message key="label.action.enable.maintenance.mode"/>',
+	'label.action.enable.maintenance.mode.processing' : '<fmt:message key="label.action.enable.maintenance.mode.processing"/>',
+	'message.action.primarystorage.enable.maintenance.mode' : '<fmt:message key="message.action.primarystorage.enable.maintenance.mode"/>',
+	'label.action.cancel.maintenance.mode' : '<fmt:message key="label.action.cancel.maintenance.mode"/>',
+	'label.action.cancel.maintenance.mode.processing' : '<fmt:message key="label.action.cancel.maintenance.mode.processing"/>',
+	'message.action.cancel.maintenance.mode' : '<fmt:message key="message.action.cancel.maintenance.mode"/>',	
+	'label.action.delete.primary.storage' : '<fmt:message key="label.action.delete.primary.storage"/>',
+	'label.action.delete.primary.storage.processing' : '<fmt:message key="label.action.delete.primary.storage.processing"/>',
+	'message.action.delete.primary.storage' : '<fmt:message key="message.action.delete.primary.storage"/>'
+};	
+</script>
+
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
         <img src="images/title_storageicon.gif"/></div>
