@@ -354,12 +354,12 @@ function templateJsonToDetailsTab() {
 	    //do nothing	
     }
     else {
-        buildActionLinkForTab("Edit Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);      
+        buildActionLinkForTab("label.action.edit.template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);      
         
-        buildActionLinkForTab("Copy Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);			
+        buildActionLinkForTab("label.action.copy.template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);			
         
         // For Beta2, this simply doesn't work without a network.
-		//buildActionLinkForTab("Create VM", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);	 		       
+		//buildActionLinkForTab("label.action.create.vm", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);	 		       
         
         noAvailableActions = false;		
     }
@@ -370,7 +370,7 @@ function templateJsonToDetailsTab() {
 	    //do nothing	
     }
     else {
-        buildActionLinkForTab("Download Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);        
+        buildActionLinkForTab("label.action.download.template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);        
         noAvailableActions = false;	
     }
      
@@ -381,7 +381,7 @@ function templateJsonToDetailsTab() {
 	    //do nothing	
     }
     else {        
-        buildActionLinkForTab("Delete Template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);
+        buildActionLinkForTab("label.action.delete.template", templateActionMap, $actionMenu, $midmenuItem1, $thisTab);
         noAvailableActions = false;	
     } 
             
@@ -451,14 +451,14 @@ function templateClearDetailsTab() {
 }
 
 var templateActionMap = {  
-    "Edit Template": {
+    "label.action.edit.template": {
         dialogBeforeActionFn : doEditTemplate  
     },
-    "Delete Template": {              
+    "label.action.delete.template": {              
         isAsyncJob: true,
         asyncJobResponse: "deletetemplateresponse",
         dialogBeforeActionFn : doDeleteTemplate,
-        inProcessText: "Deleting Template....",
+        inProcessText: "label.action.delete.template.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id){  
             $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();
@@ -470,22 +470,22 @@ var templateActionMap = {
             
         }
     },
-    "Copy Template": {
+    "label.action.copy.template": {
         isAsyncJob: true,
         asyncJobResponse: "copytemplateresponse",            
         dialogBeforeActionFn : doCopyTemplate,
-        inProcessText: "Copying Template....",
+        inProcessText: "label.action.copy.template.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id){}   
     }  
     ,
-    "Create VM": {
+    "label.action.create.vm": {
         isAsyncJob: true,
         asyncJobResponse: "deployvirtualmachineresponse",            
         dialogBeforeActionFn : doCreateVMFromTemplate,
-        inProcessText: "Creating VM....",
+        inProcessText: "label.action.create.vm.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id){}   
     },
-    "Download Template": {               
+    "label.action.download.template": {               
         dialogBeforeActionFn : doDownloadTemplate        
     }   
 }   
@@ -603,9 +603,9 @@ function doDeleteTemplate($actionLink, $detailsTab, $midmenuItem1) {
 	
 	var $dialog1;
 	if(jsonObj.crossZones == true)
-	    $dialog1 = $("#dialog_confirmation").text("The template is used by all zones. Please confirm you want to delete it from all zones.");
+	    $dialog1 = $("#dialog_confirmation").text(dictionary["message.action.delete.template.for.all.zones"]);
 	else
-	    $dialog1 = $("#dialog_confirmation").text("Please confirm you want to delete the template");	
+	    $dialog1 = $("#dialog_confirmation").text(dictionary["message.action.delete.template"]);	
 	
 	$dialog1		
 	.dialog('option', 'buttons', { 					

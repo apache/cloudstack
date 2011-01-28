@@ -5,6 +5,21 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<script language="javascript">
+dictionary = { 	
+	'label.action.edit.template' : '<fmt:message key="label.action.edit.template"/>',
+	'label.action.delete.template' : '<fmt:message key="label.action.delete.template"/>',
+	'label.action.delete.template.processing' : '<fmt:message key="label.action.delete.template.processing"/>',
+	'message.action.delete.template' : '<fmt:message key="message.action.delete.template"/>',
+	'message.action.delete.template.for.all.zones' : '<fmt:message key="message.action.delete.template.for.all.zones"/>',
+	'label.action.copy.template' : '<fmt:message key="label.action.copy.template"/>',
+	'label.action.copy.template.processing' : '<fmt:message key="label.action.copy.template.processing"/>',
+	'label.action.create.vm' : '<fmt:message key="label.action.create.vm"/>',
+	'label.action.create.vm.processing' : '<fmt:message key="label.action.create.vm.processing"/>',
+	'label.action.download.template' : '<fmt:message key="label.action.download.template"/>'
+};	
+</script>
+
 <!-- template detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
