@@ -84,7 +84,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     protected String _storageNic2;
     protected int _wait;
     protected XenServerConnectionPool _connPool;
-    protected String _increase;
     protected boolean _checkHvm;
     protected String _guestNic;
 
@@ -234,9 +233,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 params.put("pool", poolUuid);
                 params.put("ipaddress", record.address);
                 
-                if (_increase != null) {
-                    params.put(Config.XenPreallocatedLunSizeRange.name(), _increase);
-                }
                 details.put(HostInfo.HOST_OS, hostOS);
                 details.put(HostInfo.HOST_OS_VERSION, hostOSVer);
                 details.put(HostInfo.HOST_OS_KERNEL_VERSION, hostKernelVer);
@@ -397,9 +393,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         _storageNic2 = _params.get(Config.XenStorageNetwork2.key());
         
         _guestNic = _params.get(Config.XenGuestNetwork.key());
-        
-        _increase = _params.get(Config.XenPreallocatedLunSizeRange.key());
-        
+               
         String value = _params.get(Config.Wait.toString());
         _wait = NumbersUtil.parseInt(value, Integer.parseInt(Config.Wait.getDefaultValue()));
         
