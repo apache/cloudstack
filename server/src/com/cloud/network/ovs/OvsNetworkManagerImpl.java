@@ -44,10 +44,12 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
@@ -78,9 +80,44 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 	ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
     OvsListener _ovsListener;
+    VmStateListener _stateListener;
 
 	private long _serverId;
 	private final long _timeBetweenCleanups = 30; //seconds
+	
+	public class VmStateListener implements StateListener<State, VirtualMachine.Event, VirtualMachine> {
+	    OvsNetworkManager _mgr;
+	    public VmStateListener(OvsNetworkManager mgr) {
+	        _mgr = mgr;
+	    }
+	    
+        @Override
+        public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status) {
+            if (!_isEnabled || !status || (vm.getType() != VirtualMachine.Type.User && vm.getType() != VirtualMachine.Type.DomainRouter)) {
+                return false;
+            }
+
+            if (VirtualMachine.State.isVmStarted(oldState, event, newState)) {
+                _mgr.handleVmStateTransition((VMInstanceVO)vm, State.Running);
+            } else if (VirtualMachine.State.isVmMigrated(oldState, event, newState)) {
+            }
+            return true;
+        }
+
+        @Override
+        public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status, Long id) {
+            if (!_isEnabled || !status || (vm.getType() != VirtualMachine.Type.User && vm.getType() != VirtualMachine.Type.DomainRouter)) {
+                return false;
+            }
+            
+            if (VirtualMachine.State.isVmStopped(oldState, event, newState)) {
+                _mgr.handleVmStateTransition((VMInstanceVO)vm, State.Stopped);
+            }
+            
+            return true;
+        }
+	    
+	}
 	
 	public  class WorkerThread implements Runnable {
 		@Override
@@ -117,6 +154,8 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 			_cleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("OVS-Cleanup"));
 			_ovsListener = new OvsListener(this, _workDao, _tunnelDao, _vlanMappingDao, _hostDao);
 			_agentMgr.registerForHostEvents(_ovsListener, true, true, true);
+			_stateListener = new VmStateListener(this);
+			VirtualMachine.State.getStateMachine().registerListener(_stateListener);
 		}
 		
 		return true;

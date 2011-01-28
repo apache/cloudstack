@@ -1213,9 +1213,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             s_logger.warn("Unable to ssh to the VM: " + answer.getDetails());
             return false;
         }
-
-        DomainRouterVO router = profile.getVirtualMachine();
-        _ovsNetworkMgr.handleVmStateTransition(router, State.Running);
+        
         return true;
     }
 
@@ -1226,7 +1224,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
 
     	DomainRouterVO router = profile.getVirtualMachine();
-    	_ovsNetworkMgr.handleVmStateTransition(router, State.Stopped);
     	_ovsTunnelMgr.CheckAndDestroyTunnel(router);
     }
     
