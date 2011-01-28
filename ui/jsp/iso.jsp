@@ -182,7 +182,7 @@ dictionary = {
 				<div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
-	                        <fmt:message key="label.os.types"/>:</div>
+	                        <fmt:message key="label.os.type"/>:</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="ostypename">
