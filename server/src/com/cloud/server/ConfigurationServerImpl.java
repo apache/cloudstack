@@ -407,7 +407,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         if (already == null || already.isEmpty()) {
             if (s_logger.isInfoEnabled()) {
-                s_logger.info("Need to store in the database");
+                s_logger.info("Systemvm keypairs not found in database. Need to store them in the database");
             }
             Script.runSimpleBashScript("if [ -f ~/.ssh/id_rsa ] ; then true ; else yes '' | ssh-keygen -t rsa -q ; fi");
 
@@ -458,19 +458,20 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 throw new CloudRuntimeException("SQL of the public key failed");
             }
         
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Public key inserted into systemvm iso");
-            }
         } else {
             s_logger.info("Keypairs already in database");
             if (userid.startsWith("cloud")) {
                 s_logger.info("Keypairs already in database, updating local copy");
                 updateKeyPairsOnDisk(homeDir);
+            } else {
+                s_logger.info("Keypairs already in database, skip updating local copy (not running as cloud user)");
             }
         }
         if (userid.startsWith("cloud")){
             s_logger.info("Going to update systemvm iso with generated keypairs if needed");
             injectSshKeysIntoSystemVmIsoPatch(pubkeyfile.getAbsolutePath(), privkeyfile.getAbsolutePath());
+        } else {
+            s_logger.info("Skip updating keypairs on systemvm iso (not running as cloud user)");
         }
     }
     
