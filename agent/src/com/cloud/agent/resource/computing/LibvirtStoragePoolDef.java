@@ -21,7 +21,7 @@ package com.cloud.agent.resource.computing;
 public class LibvirtStoragePoolDef {
 	public enum poolType {
 		ISCSI("iscsi"),
-		NFS("netfs"),
+		NETFS("netfs"),
 		DIR("dir");
 		String _poolType;
 		poolType(String poolType) {
@@ -48,6 +48,26 @@ public class LibvirtStoragePoolDef {
 		_targetPath = targetPath;
 	}
 	
+	public String getPoolName() {
+	    return _poolName;
+	}
+	
+	public poolType getPoolType() {
+	    return _poolType;
+	}
+	
+	public String getSourceHost() {
+	    return _sourceHost;
+	}
+	
+	public String getSourceDir() {
+	    return _sourceDir;
+	}
+	
+	public String getTargetPath() {
+	    return _targetPath;
+	}
+	
     @Override
 	public String toString() {
 		StringBuilder storagePoolBuilder = new StringBuilder();
@@ -55,7 +75,7 @@ public class LibvirtStoragePoolDef {
 		storagePoolBuilder.append("<name>" + _poolName + "</name>\n");
 		if (_uuid != null)
 			storagePoolBuilder.append("<uuid>" + _uuid + "</uuid>\n");
-		if (_poolType == poolType.NFS) {
+		if (_poolType == poolType.NETFS) {
 			storagePoolBuilder.append("<source>\n");
 			storagePoolBuilder.append("<host name='" + _sourceHost + "'/>\n");
 			storagePoolBuilder.append("<dir path='" + _sourceDir + "'/>\n");

@@ -1039,6 +1039,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 if (uriHost == null || uriPath == null || uriHost.trim().isEmpty() || uriPath.trim().isEmpty()) {
                     throw new ServerApiException(BaseCmd.PARAM_ERROR, "host or path is null, should be nfs://hostname/path");
                 }
+            } else if (uri.getScheme().equalsIgnoreCase("sharedMountPoint")) {
+                String uriPath = uri.getPath();
+                if (uriPath == null) {
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "host or path is null, should be sharedmountpoint://localhost/path");
+                }
             }
         } catch (URISyntaxException e) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, cmd.getUrl() + " is not a valid uri");
@@ -1078,6 +1083,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 port = 0;
             }
             pool = new StoragePoolVO(StoragePoolType.Filesystem, "localhost", 0, hostPath);
+        } else if (scheme.equalsIgnoreCase("sharedMountPoint")) {
+            pool = new StoragePoolVO(StoragePoolType.SharedMountPoint, storageHost, 0, hostPath);
         } else if (scheme.equalsIgnoreCase("iscsi")) {
             String[] tokens = hostPath.split("/");
             int lun = NumbersUtil.parseInt(tokens[tokens.length - 1], -1);
@@ -1125,7 +1132,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         }
         
         List<StoragePoolVO> pools = _storagePoolDao.listPoolByHostPath(storageHost, hostPath);
-        if (!pools.isEmpty()) {
+        if (!pools.isEmpty() && !scheme.equalsIgnoreCase("sharedmountpoint")) {
             Long oldPodId = pools.get(0).getPodId();
             throw new ResourceInUseException("Storage pool " + uri + " already in use by another pod (id=" + oldPodId + ")", "StoragePool", uri.toASCIIString());
         }
@@ -1139,7 +1146,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             throw new ResourceAllocationException("No host exists to associate a storage pool with");
         }
         long poolId = _storagePoolDao.getNextInSequence(Long.class, "id");
-        String uuid = UUID.nameUUIDFromBytes(new String(storageHost + hostPath).getBytes()).toString();
+        String uuid = null;
+        if (scheme.equalsIgnoreCase("sharedmountpoint")) {
+            uuid = UUID.randomUUID().toString();
+        } else {
+            uuid = UUID.nameUUIDFromBytes(new String(storageHost + hostPath).getBytes()).toString();
+        }
         
         List<StoragePoolVO> spHandles = _storagePoolDao.findIfDuplicatePoolsExistByUUID(uuid);
         if ((spHandles != null) && (spHandles.size() > 0)) {
@@ -1315,7 +1327,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     public boolean addPoolToHost(long hostId, StoragePoolVO pool) {
         s_logger.debug("Adding pool " + pool.getName() + " to  host " + hostId);
         if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem 
-        	&& pool.getPoolType() != StoragePoolType.IscsiLUN && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS) {
+        	&& pool.getPoolType() != StoragePoolType.IscsiLUN && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS
+        	&& pool.getPoolType() != StoragePoolType.SharedMountPoint) {
 
         	return true;
         }
