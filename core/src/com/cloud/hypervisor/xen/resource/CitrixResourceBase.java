@@ -2761,8 +2761,8 @@ public abstract class CitrixResourceBase implements ServerResource {
         Task task = null;
         try {
             task = vdi.copyAsync(conn, sr);
-            // poll every 5 seconds , timeout after 2 hours
-            waitForTask(conn, task, 5 * 1000, 2 * 60 * 60 * 1000);
+            // poll every 1 seconds , timeout after 2 hours
+            waitForTask(conn, task, 1000, 2 * 60 * 60 * 1000);
             checkForSuccess(conn, task);
             VDI dvdi = Types.toVDI(task, conn);
             return dvdi;
@@ -2831,8 +2831,8 @@ public abstract class CitrixResourceBase implements ServerResource {
             }
             Host host = Host.getByUuid(conn, _host.uuid);
             task = host.callPluginAsync(conn, plugin, cmd, args);
-            // poll every 60 seconds
-            waitForTask(conn, task, 20 * 1000, timeout);
+            // poll every 1 seconds
+            waitForTask(conn, task, 1000, timeout);
             checkForSuccess(conn, task);
             String result = task.getResult(conn);
             if (s_logger.isTraceEnabled()) {
