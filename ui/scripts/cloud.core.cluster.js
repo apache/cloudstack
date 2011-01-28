@@ -85,7 +85,7 @@ function clusterJsonToDetailsTab() {
     });	  
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();       
-    buildActionLinkForTab("Delete Cluster", clusterActionMap, $actionMenu, $midmenuItem1, $thisTab);        
+    buildActionLinkForTab("label.action.delete.cluster", clusterActionMap, $actionMenu, $midmenuItem1, $thisTab);        
 }
 
 function clusterClearDetailsTab() {	   
@@ -105,11 +105,11 @@ function clusterClearDetailsTab() {
 }
 
 var clusterActionMap = {   
-    "Delete Cluster": {  
+    "label.action.delete.cluster": {  
         api: "deleteCluster",            
         isAsyncJob: false,      
         dialogBeforeActionFn : doDeleteCluster,   
-        inProcessText: "Deleting Cluster....",
+        inProcessText: "label.action.delete.cluster.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {     
             $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();                
@@ -127,7 +127,7 @@ function doDeleteCluster($actionLink, $detailsTab, $midmenuItem1) {
 	var id = jsonObj.id;
 		
 	$("#dialog_confirmation")
-	.text("Please confirm you want to delete this cluster")
+	.text(dictionary["message.action.delete.cluster"])
 	.dialog('option', 'buttons', { 					
 		"Confirm": function() { 			
 			$(this).dialog("close");			

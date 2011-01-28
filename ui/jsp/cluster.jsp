@@ -5,6 +5,14 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<script language="javascript">
+dictionary = { 	
+	'label.action.delete.cluster' : '<fmt:message key="label.action.delete.cluster"/>',
+	'label.action.delete.cluster.processing' : '<fmt:message key="label.action.delete.cluster.processing"/>',
+	'message.action.delete.cluster' : '<fmt:message key="message.action.delete.cluster"/>'
+};	
+</script>
+
 <div class="main_title" id="right_panel_header">
    
     <div class="main_titleicon">
