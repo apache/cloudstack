@@ -1210,6 +1210,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         } else {
             createCapacityEntry(pool);
         }
+        
+        //ensures cpvm is restarted even if the existing pools in system are in maintenance, hence flag below was hitherto in false state
+        _configMgr.updateConfiguration(UserContext.current().getCallerUserId(), "consoleproxy.restart", "true");
+        
         return pool;
     }
     
