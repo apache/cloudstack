@@ -3,7 +3,7 @@
 # $1 = new public key
 # $2 = new private key
 
-#set -x
+set -x
 
 TMP=${HOME}/tmp
 SYSTEMVM_PATCH_DIR=../../../vms/
@@ -33,15 +33,15 @@ inject_into_iso() {
   [ $? -ne 0 ] && echo "$(basename $0): Failed to create new iso $tmpiso from $TMPDIR" && return 1
   sudo umount $MOUNTPATH
   [ $? -ne 0 ] && echo "$(basename $0): Failed to unmount old iso from $MOUNTPATH" && return 1
-  sudo cp -f $tmpiso $isofile
-  [ $? -ne 0 ] && echo "$(basename $0): Failed to overwrite old iso $isofile with $tmpiso" && return 1
+  #cp -f $tmpiso $isofile
+  #[ $? -ne 0 ] && echo "$(basename $0): Failed to overwrite old iso $isofile with $tmpiso" && return 1
   rm -rf $TMPDIR
 }
 
 copy_priv_key() {
   local newprivkey=$1
   diff -q $newprivkey $(dirname $0)/id_rsa.cloud && return 0
-  sudo cp -fb $newprivkey $(dirname $0)/id_rsa.cloud 
+  sudo cp -fb $newprivkey $(dirname $0)/id_rsa.cloud && sudo chmod 0600 $(dirname $0)/id_rsa.cloud
   return $?
 }
 

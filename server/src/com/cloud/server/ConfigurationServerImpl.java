@@ -22,6 +22,8 @@ import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.NetworkInterface;
@@ -30,6 +32,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
@@ -393,29 +396,28 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             s_logger.info("Processing updateKeyPairs");
         }
         String already = _configDao.getValue("ssh.privatekey");
+        String homeDir = Script.runSimpleBashScript("echo ~");
+        String userid = System.getProperty("user.name");
+        if (homeDir == "~") {
+            s_logger.error("No home directory was detected.  Set the HOME environment variable to point to your user profile or home directory.");
+            throw new CloudRuntimeException("No home directory was detected.  Set the HOME environment variable to point to your user profile or home directory.");
+        }
+        File privkeyfile = new File(homeDir + "/.ssh/id_rsa");
+        File pubkeyfile  = new File(homeDir + "/.ssh/id_rsa.pub");
 
         if (already == null || already.isEmpty()) {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Need to store in the database");
             }
+            Script.runSimpleBashScript("if [ -f ~/.ssh/id_rsa ] ; then true ; else yes '' | ssh-keygen -t rsa -q ; fi");
 
-            String homeDir = Script.runSimpleBashScript("echo ~");
-            if (homeDir == "~") {
-                s_logger.error("No home directory was detected.  Set the HOME environment variable to point to your user profile or home directory.");
-                throw new RuntimeException("No home directory was detected.  Set the HOME environment variable to point to your user profile or home directory.");
-            }
-
-            String keygenOutput = Script.runSimpleBashScript("if [ -f ~/.ssh/id_rsa ] ; then true ; else yes '' | ssh-keygen -t rsa -q ; fi");
-
-            File privkeyfile = new File(homeDir + "/.ssh/id_rsa");
-            File pubkeyfile  = new File(homeDir + "/.ssh/id_rsa.pub");
             byte[] arr1 = new byte[4094]; // configuration table column value size
             try {
                 new DataInputStream(new FileInputStream(privkeyfile)).readFully(arr1);
             } catch (EOFException e) {
             } catch (Exception e) {
                 s_logger.error("Cannot read the private key file",e);
-                throw new RuntimeException("Cannot read the private key file");
+                throw new CloudRuntimeException("Cannot read the private key file");
             }
             String privateKey = new String(arr1).trim();
             byte[] arr2 = new byte[4094]; // configuration table column value size
@@ -424,7 +426,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             } catch (EOFException e) {			    
             } catch (Exception e) {
                 s_logger.warn("Cannot read the public key file",e);
-                throw new RuntimeException("Cannot read the public key file");
+                throw new CloudRuntimeException("Cannot read the public key file");
             }
             String publicKey  = new String(arr2).trim();
 
@@ -442,7 +444,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 }
             } catch (SQLException ex) {
                 s_logger.error("SQL of the private key failed",ex);
-                throw new RuntimeException("SQL of the private key failed");
+                throw new CloudRuntimeException("SQL of the private key failed");
             }
 
             try {
@@ -453,19 +455,62 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 }
             } catch (SQLException ex) {
                 s_logger.error("SQL of the public key failed",ex);
-                throw new RuntimeException("SQL of the public key failed");
+                throw new CloudRuntimeException("SQL of the public key failed");
             }
-            injectSshKeyIntoSystemVmIsoPatch(pubkeyfile.getAbsolutePath());
+        
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Public key inserted into systemvm iso");
             }
         } else {
             s_logger.info("Keypairs already in database");
+            if (userid.startsWith("cloud")) {
+                s_logger.info("Keypairs already in database, updating local copy");
+                updateKeyPairsOnDisk(homeDir);
+            }
+        }
+        if (userid.startsWith("cloud")){
+            s_logger.info("Going to update systemvm iso with generated keypairs if needed");
+            injectSshKeysIntoSystemVmIsoPatch(pubkeyfile.getAbsolutePath(), privkeyfile.getAbsolutePath());
         }
     }
     
+    private void writeKeyToDisk(String key, String keyPath) {
 
-    protected void injectSshKeyIntoSystemVmIsoPatch(String publicKeyPath) {
+        File keyfile = new File( keyPath);
+        if (!keyfile.exists()) {
+            try {
+                keyfile.createNewFile();
+            } catch (IOException e) {
+                s_logger.warn("Failed to create file: " + e.toString());
+                throw new CloudRuntimeException("Failed to update keypairs on disk: cannot create  key file " + keyPath);
+            }
+        }
+        
+        if (keyfile.exists()) {
+            try {
+                FileOutputStream kStream = new FileOutputStream(keyfile);
+                kStream.write(key.getBytes());
+                kStream.close();
+            } catch (FileNotFoundException e) {
+                s_logger.warn("Failed to write  key to " + keyfile.getAbsolutePath());
+                throw new CloudRuntimeException("Failed to update keypairs on disk: cannot find  key file " + keyPath);
+            } catch (IOException e) {
+                s_logger.warn("Failed to write  key to " + keyfile.getAbsolutePath());
+                throw new CloudRuntimeException("Failed to update keypairs on disk: cannot write to  key file " + keyPath);
+            }
+        }
+
+    }
+    
+    private void updateKeyPairsOnDisk(String homeDir ) {
+        
+        String pubKey = _configDao.getValue("ssh.publickey");
+        String prvKey = _configDao.getValue("ssh.privatekey");
+        writeKeyToDisk(homeDir + "/.ssh/id_rsa", prvKey);
+        writeKeyToDisk(homeDir + "/.ssh/id_rsa.pub", pubKey);
+    }
+
+    protected void injectSshKeysIntoSystemVmIsoPatch(String publicKeyPath, String privKeyPath) {
         String injectScript = "scripts/vm/systemvm/injectkeys.sh";    
         String scriptPath = Script.findScript("" , injectScript);
         if ( scriptPath == null ) {
@@ -473,6 +518,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
         final Script command  = new Script(scriptPath,  s_logger);
         command.add(publicKeyPath);
+        command.add(privKeyPath);
        
         final String result = command.execute();
         if (result != null) {
