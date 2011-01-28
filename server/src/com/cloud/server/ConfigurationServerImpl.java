@@ -41,6 +41,7 @@ import javax.crypto.SecretKey;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationVO;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -84,6 +85,7 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 
@@ -248,54 +250,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 		_configDao.update("init", "true");
 	}
 
-	/*
-	private String getManagementNetworkCIDR() {
-		String[] gatewayAndNetmask = getGatewayAndNetmask();
-		
-		if (gatewayAndNetmask == null) {
-			return null;
-		} else {
-			String gateway = gatewayAndNetmask[0];
-			String netmask = gatewayAndNetmask[1];
-			
-			String subnet = NetUtils.getSubNet(gateway, netmask);
-			long cidrSize = NetUtils.getCidrSize(netmask);
-			
-			return subnet + "/" + cidrSize;
-		}
-	}
-	*/
 
-	private String[] getGatewayAndNetmask() {
-		String defaultRoute = Script.runSimpleBashScript("/sbin/ip route | grep default");
-		
-		if (defaultRoute == null) {
-			return null;
-		}
-		
-		String[] defaultRouteList = defaultRoute.split("\\s+");
-		
-		if (defaultRouteList.length < 5) {
-			return null;
-		}
-		
-		String gateway = defaultRouteList[2];
-		String ethDevice = defaultRouteList[4];
-		String netmask = null;
-		
-		if (ethDevice != null) {
-			netmask = Script.runSimpleBashScript("/sbin/ifconfig " + ethDevice + " | grep Mask | awk '{print $4}' | cut -d':' -f2");
-		}
-			
-		if (gateway == null || netmask == null) {
-			return null;
-		} else if (!NetUtils.isValidIp(gateway) || !NetUtils.isValidNetmask(netmask)) {
-			return null;
-		} else {
-			return new String[] {gateway, netmask};
-		}
-	}
-	
+
 	private String getEthDevice() {
 		String defaultRoute = Script.runSimpleBashScript("/sbin/route | grep default");
 		
@@ -334,19 +290,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 		}
 	}
 	
-	private String getDNS() {
-		String dnsLine = Script.runSimpleBashScript("grep nameserver /etc/resolv.conf");
-		if (dnsLine == null) {
-			return null;
-		} else {
-			String[] dnsLineArray = dnsLine.split(" ");
-			if (dnsLineArray.length != 2) {
-				return null;
-			} else {
-				return dnsLineArray[1];
-			}
-		}
-	}
+	
 	
 	@DB
 	protected String getHost() {
@@ -511,6 +455,29 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 s_logger.error("SQL of the public key failed",ex);
                 throw new RuntimeException("SQL of the public key failed");
             }
+            injectSshKeyIntoSystemVmIsoPatch(pubkeyfile.getAbsolutePath());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Public key inserted into systemvm iso");
+            }
+        } else {
+            s_logger.info("Keypairs already in database");
+        }
+    }
+    
+
+    protected void injectSshKeyIntoSystemVmIsoPatch(String publicKeyPath) {
+        String injectScript = "scripts/vm/systemvm/injectkeys.sh";    
+        String scriptPath = Script.findScript("" , injectScript);
+        if ( scriptPath == null ) {
+            throw new CloudRuntimeException("Unable to find key inject script " + injectScript);
+        }
+        final Script command  = new Script(scriptPath,  s_logger);
+        command.add(publicKeyPath);
+       
+        final String result = command.execute();
+        if (result != null) {
+            s_logger.warn("Failed to inject generated public key into systemvm iso " + result);
+            throw new CloudRuntimeException("Failed to inject generated public key into systemvm iso " + result);
         }
     }
 
