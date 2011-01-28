@@ -5,6 +5,20 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<script language="javascript">
+dictionary = { 	
+	'label.action.start.systemvm' : '<fmt:message key="label.action.start.systemvm"/>',
+	'label.action.start.systemvm.processing' : '<fmt:message key="label.action.start.systemvm.processing"/>',
+	'message.action.start.systemvm' : '<fmt:message key="message.action.start.systemvm"/>',
+	'label.action.stop.systemvm' : '<fmt:message key="label.action.stop.systemvm"/>',
+	'label.action.stop.systemvm.processing' : '<fmt:message key="label.action.stop.systemvm.processing"/>',
+	'message.action.stop.systemvm' : '<fmt:message key="message.action.stop.systemvm"/>',
+	'label.action.reboot.systemvm' : '<fmt:message key="label.action.reboot.systemvm"/>',
+	'label.action.reboot.systemvm.processing' : '<fmt:message key="label.action.reboot.systemvm.processing"/>',
+	'message.action.reboot.systemvm' : '<fmt:message key="message.action.reboot.systemvm"/>'
+};	
+</script>
+
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
         <img src="images/title_systemvmicon.gif" /></div>

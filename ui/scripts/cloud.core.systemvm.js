@@ -124,11 +124,11 @@ function systemvmJsonToDetailsTab() {
     $actionMenu.find("#action_list").empty();   
 	
 	if (jsonObj.state == 'Running') {	//Show "Stop System VM", "Reboot System VM"
-	    buildActionLinkForTab("Stop System VM", systemVmActionMap, $actionMenu, $midmenuItem1, $thisTab);     
-        buildActionLinkForTab("Reboot System VM", systemVmActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+	    buildActionLinkForTab("label.action.stop.systemvm", systemVmActionMap, $actionMenu, $midmenuItem1, $thisTab);     
+        buildActionLinkForTab("label.action.reboot.systemvm", systemVmActionMap, $actionMenu, $midmenuItem1, $thisTab);   
 	} 
 	else if (jsonObj.state == 'Stopped') { //show "Start System VM"	    
-	    buildActionLinkForTab("Start System VM", systemVmActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+	    buildActionLinkForTab("label.action.start.systemvm", systemVmActionMap, $actionMenu, $midmenuItem1, $thisTab); 
 	}  
 	
 	$thisTab.find("#tab_spinning_wheel").hide();    
@@ -167,47 +167,42 @@ function toSystemVMTypeText(value) {
     return text;        
 }
 
-
-//SystemVM 
 var systemVmActionMap = {      
-    "Start System VM": {             
+    "label.action.start.systemvm": {             
         isAsyncJob: true,
         asyncJobResponse: "startsystemvmresponse",
-        inProcessText: "Starting System VM....",
+        inProcessText: "label.action.start.systemvm.processing",
         dialogBeforeActionFn : doStartSystemVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) {            
             var jsonObj = json.queryasyncjobresultresponse.jobresult.systemvm;  
-            systemvmToMidmenu(jsonObj, $midmenuItem1);
-            //systemvmToRightPanel($midmenuItem1);            
+            systemvmToMidmenu(jsonObj, $midmenuItem1);                   
         }
     },
-    "Stop System VM": {            
+    "label.action.stop.systemvm": {            
         isAsyncJob: true,
         asyncJobResponse: "stopsystemvmresponse",
-        inProcessText: "Stopping System VM....",
+        inProcessText: "label.action.stop.systemvm.processing",
         dialogBeforeActionFn : doStopSystemVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) {           
             var jsonObj = json.queryasyncjobresultresponse.jobresult.systemvm;                  	
-            systemvmToMidmenu(jsonObj, $midmenuItem1);
-            //systemvmToRightPanel($midmenuItem1);      
+            systemvmToMidmenu(jsonObj, $midmenuItem1);           
         }
     },
-    "Reboot System VM": {        
+    "label.action.reboot.systemvm": {        
         isAsyncJob: true,
         asyncJobResponse: "rebootsystemvmresponse",
-        inProcessText: "Rebooting System VM....",
+        inProcessText: "label.action.reboot.systemvm.processing",
         dialogBeforeActionFn : doRebootSystemVM,
         afterActionSeccessFn: function(json, $midmenuItem1, id) {            
             var jsonObj = json.queryasyncjobresultresponse.jobresult.systemvm;              
-            systemvmToMidmenu(jsonObj, $midmenuItem1);
-            //systemvmToRightPanel($midmenuItem1);      
+            systemvmToMidmenu(jsonObj, $midmenuItem1);                
         }
     }
 }   
 
 function doStartSystemVM($actionLink, $detailsTab, $midmenuItem1) {   
     $("#dialog_confirmation")
-    .text("Please confirm you want to start system VM")	
+    .text(dictionary["message.action.start.systemvm"])	
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
@@ -226,7 +221,7 @@ function doStartSystemVM($actionLink, $detailsTab, $midmenuItem1) {
 
 function doStopSystemVM($actionLink, $detailsTab, $midmenuItem1) {     
     $("#dialog_confirmation")	
-    .text("Please confirm you want to stop system VM")
+    .text(dictionary["message.action.stop.systemvm"])
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
@@ -245,7 +240,7 @@ function doStopSystemVM($actionLink, $detailsTab, $midmenuItem1) {
    
 function doRebootSystemVM($actionLink, $detailsTab, $midmenuItem1) {   
     $("#dialog_confirmation")	
-    .text("Please confirm you want to reboot system VM")
+    .text(dictionary["message.action.reboot.systemvm"])
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
