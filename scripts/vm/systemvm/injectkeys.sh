@@ -1,6 +1,7 @@
 #!/bin/bash
-
-# $1 = new key
+# Copies keys that enable SSH communication with system vms
+# $1 = new public key
+# $2 = new private key
 
 #set -x
 
@@ -10,7 +11,7 @@ MOUNTPATH=/mnt/cloud/systemvm
 TMPDIR=${TMP}/cloud/systemvm
 
 
-inject() {
+inject_into_iso() {
   local isofile=${SYSTEMVM_PATCH_DIR}/$1
   local newpubkey=$2
   local backup=${isofile}.bak
@@ -36,16 +37,28 @@ inject() {
   rm -rf $TMPDIR
 }
 
+copy_priv_key() {
+  local newprivkey=$1
+  cp -fb $newprivkey $(dirname $0)/id_rsa.cloud && chmod 0600 $(dirname $0)/id_rsa.cloud
+  return $?
+}
+
 mkdir -p $MOUNTPATH
 
-[ $# -ne 1 ] && echo "Usage: $(basename $0)  <new keyfile>" && exit 3
+[ $# -ne 2 ] && echo "Usage: $(basename $0)  <new public key file> <new private key file>" && exit 3
 newpubkey=$1
+newprivkey=$2
 [ ! -f $newpubkey ] && echo "$(basename $0): Could not open $newpubkey" && exit 3
+[ ! -f $newprivkey ] && echo "$(basename $0): Could not open $newprivkey" && exit 3
 [ $EUID -ne 0 ] && echo  "$(basename $0): You have to be root to run this script" && exit 3
 
 command -v mkisofs > /dev/null   || (echo "$(basename $0): mkisofs not found, please install or ensure PATH is accurate" ; exit 4)
 
-inject systemvm.iso $newpubkey
-#inject systemvm-premium.iso $newpubkey
+inject_into_iso systemvm.iso $newpubkey
+#inject_into_iso systemvm-premium.iso $newpubkey
+
+[ $? -ne 0 ] && exit 5
+
+copy_priv_key $newprivkey
 
 exit $?
