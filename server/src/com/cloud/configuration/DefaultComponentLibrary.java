@@ -106,6 +106,7 @@ import com.cloud.storage.dao.SnapshotPolicyDaoImpl;
 import com.cloud.storage.dao.SnapshotScheduleDaoImpl;
 import com.cloud.storage.dao.StoragePoolDaoImpl;
 import com.cloud.storage.dao.StoragePoolHostDaoImpl;
+import com.cloud.storage.dao.StoragePoolWorkDaoImpl;
 import com.cloud.storage.dao.UploadDaoImpl;
 import com.cloud.storage.dao.VMTemplateDaoImpl;
 import com.cloud.storage.dao.VMTemplateHostDaoImpl;
@@ -256,6 +257,7 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addDao("GreTunnelDao", GreTunnelDaoImpl.class);
         addDao("OvsTunnelDao", OvsTunnelDaoImpl.class);
         addDao("OvsTunnelAccountDao", OvsTunnelAccountDaoImpl.class);
+        addDao("StoragePoolWorkDao", StoragePoolWorkDaoImpl.class);
     }
 
     Map<String, ComponentInfo<Manager>> _managers = new HashMap<String, ComponentInfo<Manager>>();

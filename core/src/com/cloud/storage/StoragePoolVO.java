@@ -80,7 +80,7 @@ public class StoragePoolVO implements StoragePool {
 
     @Column(name="status",  updatable=true, nullable=false)
     @Enumerated(value=EnumType.STRING)
-    private Status status;
+    private StoragePoolStatus status;
     
 	@Override
     public long getId() {
@@ -88,7 +88,7 @@ public class StoragePoolVO implements StoragePool {
 	}
 	
 	@Override
-	public Status getStatus() {
+	public StoragePoolStatus getStatus() {
 		return status;
 	}
 
@@ -193,7 +193,7 @@ public class StoragePoolVO implements StoragePool {
         this.path = hostPath;
         this.port = port;
         this.podId = podId;
-        this.setStatus(Status.Up);
+        this.setStatus(StoragePoolStatus.Up);
     }
     
     public StoragePoolVO(StoragePoolVO that) {
@@ -205,10 +205,10 @@ public class StoragePoolVO implements StoragePool {
         this.hostAddress = hostAddress;
         this.port = port;
         this.path = path;
-        this.setStatus(Status.Up);
+        this.setStatus(StoragePoolStatus.Up);
     }
     
-    public void setStatus(Status status)
+    public void setStatus(StoragePoolStatus status)
     {
     	this.status = status;
     }
@@ -273,7 +273,7 @@ public class StoragePoolVO implements StoragePool {
 	}
 	
 	public boolean isInMaintenance() {
-	    return status == Status.PrepareForMaintenance || status == Status.Maintenance || status == Status.ErrorInMaintenance || removed != null;
+	    return status == StoragePoolStatus.PrepareForMaintenance || status == StoragePoolStatus.Maintenance || status == StoragePoolStatus.ErrorInMaintenance || removed != null;
 	}
 	
 	@Override

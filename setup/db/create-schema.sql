@@ -1385,4 +1385,15 @@ CREATE TABLE `cloud`.`ovs_work` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`storage_pool_work` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `pool_id` bigint unsigned NOT NULL COMMENT 'storage pool associated with the vm',
+  `vm_id` bigint unsigned NOT NULL COMMENT 'vm identifier',
+  `stopped_for_maintenance` tinyint unsigned NOT NULL DEFAULT 0 COMMENT 'this flag denoted whether the vm was stopped during maintenance',
+  `started_after_maintenance` tinyint unsigned NOT NULL DEFAULT 0 COMMENT 'this flag denoted whether the vm was started after maintenance',
+  `mgmt_server_id` bigint unsigned NOT NULL COMMENT 'management server id',
+  PRIMARY KEY (`id`),
+ UNIQUE (pool_id,vm_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 SET foreign_key_checks = 1;

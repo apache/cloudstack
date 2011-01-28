@@ -22,6 +22,7 @@ import java.util.Date;
 import com.cloud.api.ApiConstants;
 import com.cloud.host.Status;
 import com.cloud.serializer.Param;
+import com.cloud.storage.StoragePoolStatus;
 import com.google.gson.annotations.SerializedName;
 
 public class StoragePoolResponse extends BaseResponse {
@@ -71,7 +72,7 @@ public class StoragePoolResponse extends BaseResponse {
     private String tags;
 
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the storage pool")
-    private Status state;
+    private StoragePoolStatus state;
     
     @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the storage pool")
     private Long jobId;
@@ -203,11 +204,11 @@ public class StoragePoolResponse extends BaseResponse {
         this.tags = tags;
     }
 
-    public Status getState() {
+    public StoragePoolStatus getState() {
         return state;
     }
 
-    public void setState(Status state) {
+    public void setState(StoragePoolStatus state) {
         this.state = state;
     }
     

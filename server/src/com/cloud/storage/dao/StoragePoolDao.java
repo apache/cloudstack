@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.host.Status;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.utils.db.GenericDao;
 /**
@@ -104,6 +105,5 @@ public interface StoragePoolDao extends GenericDao<StoragePoolVO, Long> {
 
 	List<StoragePoolVO> findIfDuplicatePoolsExistByUUID(String uuid);
 
-	List<StoragePoolVO> listPoolsByStatus(Status status);
-    
+	List<StoragePoolVO> listPoolsByStatus(StoragePoolStatus status);  
 }

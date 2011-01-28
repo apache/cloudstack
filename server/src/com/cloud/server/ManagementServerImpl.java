@@ -196,6 +196,7 @@ import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.Upload;
@@ -4156,9 +4157,9 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public long getPsMaintenanceCount(long podId){
     	List<StoragePoolVO> poolsInTransition = new ArrayList<StoragePoolVO>();
-    	poolsInTransition.addAll(_poolDao.listPoolsByStatus(Status.Maintenance));
-    	poolsInTransition.addAll(_poolDao.listPoolsByStatus(Status.PrepareForMaintenance));
-    	poolsInTransition.addAll(_poolDao.listPoolsByStatus(Status.ErrorInMaintenance));
+    	poolsInTransition.addAll(_poolDao.listPoolsByStatus(StoragePoolStatus.Maintenance));
+    	poolsInTransition.addAll(_poolDao.listPoolsByStatus(StoragePoolStatus.PrepareForMaintenance));
+    	poolsInTransition.addAll(_poolDao.listPoolsByStatus(StoragePoolStatus.ErrorInMaintenance));
 
     	return poolsInTransition.size();
     }
@@ -4168,7 +4169,7 @@ public class ManagementServerImpl implements ManagementServer {
 		VolumeVO rootVolume = _volumeDao.findByInstance(instanceId).get(0);
 		
 		if(rootVolume!=null){
-			Status poolStatus = _poolDao.findById(rootVolume.getPoolId()).getStatus();
+		    StoragePoolStatus poolStatus = _poolDao.findById(rootVolume.getPoolId()).getStatus();
     	
 			if(!poolStatus.equals(Status.Up)) {
                 return false;

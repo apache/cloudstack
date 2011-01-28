@@ -559,7 +559,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
         long vmId = vm.getId();
         
         VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
-        
+        vm = vmGuru.findById(vm.getId());        
         Ternary<T, ReservationContext, ItWorkVO> start = changeToStartState(vmGuru, vm, caller, account);
         if (start == null) {
             return vmGuru.findById(vmId);

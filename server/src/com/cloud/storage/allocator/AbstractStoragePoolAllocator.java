@@ -39,6 +39,7 @@ import com.cloud.server.StatsCollector;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VMTemplateHostVO;
@@ -139,7 +140,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         
         //by default, all pools are up when successfully added
 		//don't return the pool if not up (if in maintenance/prepareformaintenance/errorinmaintenance)
-        if(!pool.getStatus().equals(com.cloud.host.Status.Up))
+        if(!pool.getStatus().equals(StoragePoolStatus.Up))
         	return false;
         
 		// Check that the pool type is correct

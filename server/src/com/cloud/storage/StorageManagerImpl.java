@@ -75,6 +75,8 @@ import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.cluster.ClusterManagerListener;
+import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceCount.ResourceType;
@@ -115,6 +117,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
@@ -127,6 +130,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.StoragePoolWorkDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
@@ -138,6 +142,7 @@ import com.cloud.storage.snapshot.SnapshotScheduler;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
@@ -157,19 +162,26 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
+import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DiskProfile;
+import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.ConsoleProxyDao;
+import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = { StorageManager.class, StorageService.class })
-public class StorageManagerImpl implements StorageManager, StorageService, Manager {
+public class StorageManagerImpl implements StorageManager, StorageService, Manager, ClusterManagerListener  {
     private static final Logger s_logger = Logger.getLogger(StorageManagerImpl.class);
 
     protected String _name;
@@ -212,6 +224,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Inject protected ClusterDao _clusterDao;
     @Inject protected VirtualNetworkApplianceManager _routerMgr;
     @Inject protected UsageEventDao _usageEventDao;    
+    @Inject protected VirtualMachineManager _vmMgr;
+    @Inject protected DomainRouterDao _domrDao;
+    @Inject protected SecondaryStorageVmDao _secStrgDao;
+    @Inject protected StoragePoolWorkDao _storagePoolWorkDao;
 
     
     @Inject(adapter=StoragePoolAllocator.class)
@@ -235,6 +251,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     private int _totalRetries;
     private int _pauseInterval;
     private final boolean _shouldBeSnapshotCapable = true;
+    private long _serverId;
     
     public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) throws StorageUnavailableException {
     	
@@ -305,7 +322,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     	List<StoragePoolVO> pools = _storagePoolDao.listAll();
     	
     	//if no pools or 1 pool which is in maintenance
-    	if(pools == null || pools.size() == 0 || (pools.size() == 1 && pools.get(0).getStatus().equals(Status.Maintenance) )){
+    	if(pools == null || pools.size() == 0 || (pools.size() == 1 && pools.get(0).getStatus().equals(StoragePoolStatus.Maintenance) )){
     		return false;
     	}else{
     		return true;
@@ -867,6 +884,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         HostSearch.done();
         HostTemplateStatesSearch.done();
         
+        _serverId = ((ManagementServer)ComponentLocator.getComponent(ManagementServer.Name)).getId();
+        
         return true;
     }
 
@@ -1171,7 +1190,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         pool.setPodId(podId);
         pool.setName(cmd.getStoragePoolName());
         pool.setClusterId(clusterId);
-        pool.setStatus(Status.Up);
+        pool.setStatus(StoragePoolStatus.Up);
         pool = _storagePoolDao.persist(pool, details);
         if (allHosts.isEmpty()) {
         	return pool;
@@ -1297,7 +1316,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                         _storagePoolHostDao.deleteStoragePoolHostDetails(host.getHostId(),host.getPoolId());
                     }
                     sPool.setUuid(null);
-                    sPool.setStatus(Status.Removed);
+                    sPool.setStatus(StoragePoolStatus.Removed);
                     _storagePoolDao.update(id, sPool);
                     _storagePoolDao.remove(id);
                     deleteHostorPoolStats(id);
@@ -1905,148 +1924,211 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
     
     @Override @DB
-    public synchronized StoragePoolVO preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws ServerApiException{
+    public StoragePoolVO preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws ServerApiException{
     	Long primaryStorageId = cmd.getId();
     	Long userId = UserContext.current().getCallerUserId();
+    	User user = _userDao.findById(userId);
+    	Account account = UserContext.current().getCaller();
         boolean restart = true;
         StoragePoolVO primaryStorage = null;
         try 
         {
-        	Transaction.currentTxn();
-        	//1. Get the primary storage record and perform validation check
-        	primaryStorage = _storagePoolDao.acquireInLockTable(primaryStorageId);
-			
-			if(primaryStorage == null){
-				String msg = "Unable to obtain lock on the storage pool in preparePrimaryStorageForMaintenance()";
-				s_logger.error(msg);
-				throw new ExecutionException(msg);
-			}
-        	
-        	if (!primaryStorage.getStatus().equals(Status.Up) && !primaryStorage.getStatus().equals(Status.ErrorInMaintenance)) {
-    			throw new InvalidParameterValueException("Primary storage with id " + primaryStorageId + " is not ready for migration, as the status is:" + primaryStorage.getStatus().toString());
-        	}        
-        	//set the pool state to prepare for maintenance
-        	primaryStorage.setStatus(Status.PrepareForMaintenance);
-        	_storagePoolDao.persist(primaryStorage);
+        	Transaction txn = Transaction.currentTxn();
+        	txn.start();
 
+            //1. Get the primary storage record and perform validation check
+            primaryStorage = _storagePoolDao.lockRow(primaryStorageId, true);
+            
+            if(primaryStorage == null){
+            	String msg = "Unable to obtain lock on the storage pool record in preparePrimaryStorageForMaintenance()";
+            	s_logger.error(msg);
+            	throw new ExecutionException(msg);
+            }
+            
+            if (!primaryStorage.getStatus().equals(StoragePoolStatus.Up) && !primaryStorage.getStatus().equals(StoragePoolStatus.ErrorInMaintenance)) {
+            	throw new InvalidParameterValueException("Primary storage with id " + primaryStorageId + " is not ready for migration, as the status is:" + primaryStorage.getStatus().toString());
+            }    
+            
+            //set the pool state to prepare for maintenance
+            primaryStorage.setStatus(StoragePoolStatus.PrepareForMaintenance);
+            _storagePoolDao.update(primaryStorageId,primaryStorage);
+            txn.commit();
+            
         	//check to see if other ps exist
         	//if they do, then we can migrate over the system vms to them
         	//if they dont, then just stop all vms on this one
-        	List<StoragePoolVO> upPools = _storagePoolDao.listPoolsByStatus(Status.Up);
+        	List<StoragePoolVO> upPools = _storagePoolDao.listPoolsByStatus(StoragePoolStatus.Up);
         	
         	if(upPools == null || upPools.size() == 0) {
                 restart = false;
             }
         		
-        	//2. Get a list of all the volumes within this storage pool
+        	//2. Get a list of all the ROOT volumes within this storage pool
         	List<VolumeVO> allVolumes = _volsDao.findByPoolId(primaryStorageId);
-                	
-        	//3. Each volume has an instance associated with it, stop the instance if running
-        	for(VolumeVO volume : allVolumes)
-        	{
-        		VMInstanceVO vmInstance = _vmInstanceDao.findById(volume.getInstanceId());
-        		
-        		if(vmInstance == null) {
+
+            //3. Enqueue to the work queue 
+            for(VolumeVO volume : allVolumes)
+            {
+                VMInstanceVO vmInstance = _vmInstanceDao.findById(volume.getInstanceId());
+                
+                if(vmInstance == null) {
                     continue;
                 }
-        		
-        		//shut down the running vms
-        		if(vmInstance.getState().equals(State.Running) || vmInstance.getState().equals(State.Starting) || vmInstance.getState().equals(State.Stopping))
-        		{
-        			
-        			//if the instance is of type consoleproxy, call the console proxy
-        			if(vmInstance.getType().equals(VirtualMachine.Type.ConsoleProxy))
-        			{        				
-        				//make sure it is not restarted again, update config to set flag to false
-        				_configMgr.updateConfiguration(userId, "consoleproxy.restart", "false");
-        				
-        				//call the consoleproxymanager
-        				if(!_consoleProxyMgr.stopProxy(vmInstance.getId()))
-            			{
-        				    String errorMsg = "There was an error stopping the console proxy id: "+vmInstance.getId()+" ,cannot enable storage maintenance";
-            				s_logger.warn(errorMsg);
-                        	setPoolStateToError(primaryStorage);
-                    		throw new CloudRuntimeException(errorMsg);
-            			}
-        				else if(restart)
-        				{
-    						//Restore config val for consoleproxy.restart to true
-    						_configMgr.updateConfiguration(userId, "consoleproxy.restart", "true");
-    						
-    						if(_consoleProxyMgr.startProxy(vmInstance.getId())==null)
-    						{
-    						    String errorMsg = "There was an error starting the console proxy id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance";
-    							s_logger.warn(errorMsg);
-    			            	setPoolStateToError(primaryStorage);
-    			        		throw new CloudRuntimeException(errorMsg);				
-    						}	  						
-        				}
-        			}
-        			
-        			//if the instance is of type uservm, call the user vm manager
-        			if(vmInstance.getType().equals(VirtualMachine.Type.User))
-        			{
-        				//create a dummy event
-        				if(!_userVmMgr.stopVirtualMachine(userId, vmInstance.getId()))
-        				{
-        				    String errorMsg = "There was an error stopping the user vm id: "+vmInstance.getId()+" ,cannot enable storage maintenance";
-        					s_logger.warn(errorMsg);
-        	            	setPoolStateToError(primaryStorage);
-        	        		throw new CloudRuntimeException(errorMsg);
-        				}
-        			}
-        			
-        			//if the instance is of type secondary storage vm, call the secondary storage vm manager
-        			if(vmInstance.getType().equals(VirtualMachine.Type.SecondaryStorageVm))
-        			{           				
-        				if(!_secStorageMgr.stopSecStorageVm(vmInstance.getId()))
-        				{
-        				    String errorMsg = "There was an error stopping the ssvm id: "+vmInstance.getId()+" ,cannot enable storage maintenance";
-        					s_logger.warn(errorMsg);
-        	            	setPoolStateToError(primaryStorage);
-        	        		throw new CloudRuntimeException(errorMsg);
-        				}
-        				else if(restart)
-        				{
-    						if(_secStorageMgr.startSecStorageVm(vmInstance.getId()) == null)
-    						{
-    						    String errorMsg = "There was an error starting the ssvm id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance";
-    							s_logger.warn(errorMsg);
-    			            	setPoolStateToError(primaryStorage);
-    			        		throw new CloudRuntimeException(errorMsg);
-    						}
-        				}
-        			}
+                
+                //enqueue sp work
+                if(vmInstance.getState().equals(State.Running) || vmInstance.getState().equals(State.Starting) || vmInstance.getState().equals(State.Stopping)){
 
-           			//if the instance is of type domain router vm, call the network manager
-        			if(vmInstance.getType().equals(VirtualMachine.Type.DomainRouter))
-        			{   
-        				if(_routerMgr.stopRouter(vmInstance.getId()) == null)
-        				{
-        				    String errorMsg = "There was an error stopping the domain router id: "+vmInstance.getId()+" ,cannot enable primary storage maintenance";
-        					s_logger.warn(errorMsg);
-        	            	setPoolStateToError(primaryStorage);
-        	        		throw new CloudRuntimeException(errorMsg);
-        				}
-           				else if(restart)
-        				{
-    						if(_routerMgr.startRouter(vmInstance.getId()) == null)
-    						{
-    						    String errorMsg = "There was an error starting the domain router id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance";
-    							s_logger.warn(errorMsg);
-    			            	setPoolStateToError(primaryStorage);
-    			        		throw new CloudRuntimeException(errorMsg);
-    						}
-        				}
+                    try {
+                        StoragePoolWorkVO work = new StoragePoolWorkVO(vmInstance.getId(),primaryStorageId, false, false, _serverId);
+                        _storagePoolWorkDao.persist(work);
+                    } catch (Exception e) {
+                        if(s_logger.isDebugEnabled())
+                            s_logger.debug("Work record already exists, re-using by re-setting values");
+                        StoragePoolWorkVO work = _storagePoolWorkDao.findByPoolIdAndVmId(primaryStorageId, vmInstance.getId());
+                        work.setStartedAfterMaintenance(false);
+                        work.setStoppedForMaintenance(false);
+                        work.setManagementServerId(_serverId);
+                        _storagePoolWorkDao.update(work.getId(), work);
+                    }               
+                }
+            }
+            
+            txn.commit();
+            txn.close();
+
+            //4. Process the queue
+            List<StoragePoolWorkVO> pendingWork = _storagePoolWorkDao.listPendingWorkForPrepareForMaintenanceByPoolId(primaryStorageId);
+            
+        	for(StoragePoolWorkVO work : pendingWork)
+        	{
+        		//shut down the running vms
+        	    VMInstanceVO vmInstance = _vmInstanceDao.findById(work.getVmId());
+        	    
+        	    if(vmInstance == null)
+        	        continue;
+        	    
+        	    //if the instance is of type consoleproxy, call the console proxy
+    			if(vmInstance.getType().equals(VirtualMachine.Type.ConsoleProxy))
+    			{
+    				//make sure it is not restarted again, update config to set flag to false
+    			    if(!restart) {
+    			        _configMgr.updateConfiguration(userId, "consoleproxy.restart", "false");
+    			    }
+    			    
+    				//call the consoleproxymanager
+    			    ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(vmInstance.getId());
+                    if(!_vmMgr.advanceStop(consoleProxy, true, user, account))
+        			{
+    				    String errorMsg = "There was an error stopping the console proxy id: "+vmInstance.getId()+" ,cannot enable storage maintenance";
+        				s_logger.warn(errorMsg);
+                		throw new CloudRuntimeException(errorMsg);
+        			} else {
+        			    //update work status
+        			   work.setStoppedForMaintenance(true);
+        			   _storagePoolWorkDao.update(work.getId(), work);
         			}
-        		}	
+                    
+    				if(restart)
+    				{
+						//Restore config val for consoleproxy.restart to true
+						_configMgr.updateConfiguration(userId, "consoleproxy.restart", "true");
+						
+						if(_vmMgr.advanceStart(consoleProxy, null, user, account) == null)
+						{
+						    String errorMsg = "There was an error starting the console proxy id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance";
+							s_logger.warn(errorMsg);
+			        		throw new CloudRuntimeException(errorMsg);				
+						} else {
+                            //update work status
+                           work.setStartedAfterMaintenance(true);
+                           _storagePoolWorkDao.update(work.getId(), work);    						    
+						}
+    				}
+    			}
+    			
+    			//if the instance is of type uservm, call the user vm manager
+    			if(vmInstance.getType().equals(VirtualMachine.Type.User))
+    			{
+       			    UserVmVO userVm = _userVmDao.findById(vmInstance.getId());
+    				if(!_vmMgr.advanceStop(userVm, true, user, account))
+    				{
+    				    String errorMsg = "There was an error stopping the user vm id: "+vmInstance.getId()+" ,cannot enable storage maintenance";
+    					s_logger.warn(errorMsg);
+    	        		throw new CloudRuntimeException(errorMsg);
+    				} else {
+                        //update work status
+                       work.setStoppedForMaintenance(true);
+                       _storagePoolWorkDao.update(work.getId(), work);
+    				}
+    			}
+    			
+    			//if the instance is of type secondary storage vm, call the secondary storage vm manager
+    			if(vmInstance.getType().equals(VirtualMachine.Type.SecondaryStorageVm))
+    			{   
+    			    SecondaryStorageVmVO secStrgVm = _secStrgDao.findById(vmInstance.getId());
+    				if(!_vmMgr.advanceStop(secStrgVm, true, user, account))
+    				{
+    				    String errorMsg = "There was an error stopping the ssvm id: "+vmInstance.getId()+" ,cannot enable storage maintenance";
+    					s_logger.warn(errorMsg);
+    	        		throw new CloudRuntimeException(errorMsg);
+    				} else {
+                        //update work status
+                       work.setStoppedForMaintenance(true);
+                       _storagePoolWorkDao.update(work.getId(), work);
+    				}
+    				
+    				if(restart)
+    				{
+    				    if(_vmMgr.advanceStart(secStrgVm, null, user, account) == null)
+						{
+						    String errorMsg = "There was an error starting the ssvm id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance";
+							s_logger.warn(errorMsg);
+			        		throw new CloudRuntimeException(errorMsg);
+						} else {
+                            //update work status
+                           work.setStartedAfterMaintenance(true);
+                           _storagePoolWorkDao.update(work.getId(), work);     
+						}
+    				}
+    			}
+
+       			//if the instance is of type domain router vm, call the network manager
+    			if(vmInstance.getType().equals(VirtualMachine.Type.DomainRouter))
+    			{   
+    			    DomainRouterVO domR = _domrDao.findById(vmInstance.getId());
+    				if(!_vmMgr.advanceStop(domR, true, user, account))
+    				{
+    				    String errorMsg = "There was an error stopping the domain router id: "+vmInstance.getId()+" ,cannot enable primary storage maintenance";
+    					s_logger.warn(errorMsg);
+    	        		throw new CloudRuntimeException(errorMsg);
+    				} else {
+                        //update work status
+                       work.setStoppedForMaintenance(true);
+                       _storagePoolWorkDao.update(work.getId(), work);
+    				}
+       				
+    				if(restart)
+    				{
+						if(_vmMgr.advanceStart(domR, null, user, account) == null)
+						{
+						    String errorMsg = "There was an error starting the domain router id: "+vmInstance.getId()+" on another storage pool, cannot enable primary storage maintenance";
+							s_logger.warn(errorMsg);
+			        		throw new CloudRuntimeException(errorMsg);
+						} else {
+                            //update work status
+                            work.setStartedAfterMaintenance(true);
+                            _storagePoolWorkDao.update(work.getId(), work);    
+						}
+    				}
+    			}
+        		
         	}
         	
         	//5. Update the status
-        	primaryStorage.setStatus(Status.Maintenance);
-        	_storagePoolDao.persist(primaryStorage);
-        	return _storagePoolDao.findById(primaryStorageId);
+        	primaryStorage.setStatus(StoragePoolStatus.Maintenance);
+        	_storagePoolDao.update(primaryStorageId,primaryStorage);        	
         	
+        	return _storagePoolDao.findById(primaryStorageId);
         } catch (Exception e) { 
         	if(e instanceof ExecutionException || e instanceof ResourceUnavailableException){
                 s_logger.error("Exception in enabling primary storage maintenance:",e);
@@ -2068,26 +2150,27 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         	setPoolStateToError(primaryStorage);
         	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
         	
-        }finally{
-        	_storagePoolDao.releaseFromLockTable(primaryStorage.getId());					
         }
     }
 
     private void setPoolStateToError(StoragePoolVO primaryStorage) {
-        primaryStorage.setStatus(Status.ErrorInMaintenance);
-        _storagePoolDao.persist(primaryStorage);
+        primaryStorage.setStatus(StoragePoolStatus.ErrorInMaintenance);
+        _storagePoolDao.update(primaryStorage.getId(),primaryStorage);
     }
 
 	@Override
 	@DB
-	public synchronized StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ServerApiException{
+	public StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ServerApiException{
 		Long primaryStorageId = cmd.getId();
 		Long userId = UserContext.current().getCallerUserId();
+	    User user = _userDao.findById(userId);
+	    Account account = UserContext.current().getCaller();
 		StoragePoolVO primaryStorage = null;
     	try {
-    		Transaction.currentTxn();
+    		Transaction txn = Transaction.currentTxn();
+    		txn.start();
         	//1. Get the primary storage record and perform validation check
-        	primaryStorage = _storagePoolDao.acquireInLockTable(primaryStorageId);
+        	primaryStorage = _storagePoolDao.lockRow(primaryStorageId, true);
         	
 			if(primaryStorage == null){
 				String msg = "Unable to obtain lock on the storage pool in cancelPrimaryStorageForMaintenance()";
@@ -2095,82 +2178,111 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 				throw new ExecutionException(msg);
 			}
 			
-			if (primaryStorage.getStatus().equals(Status.Up) || primaryStorage.getStatus().equals(Status.PrepareForMaintenance)) {
+			if (primaryStorage.getStatus().equals(StoragePoolStatus.Up) || primaryStorage.getStatus().equals(StoragePoolStatus.PrepareForMaintenance)) {
 				throw new StorageUnavailableException("Primary storage with id " + primaryStorageId + " is not ready to complete migration, as the status is:" + primaryStorage.getStatus().toString(), primaryStorageId);
 			}
 			
 			//set state to cancelmaintenance
-        	primaryStorage.setStatus(Status.CancelMaintenance);
-    		_storagePoolDao.persist(primaryStorage);
+        	primaryStorage.setStatus(StoragePoolStatus.CancelMaintenance);
+    		_storagePoolDao.update(primaryStorageId,primaryStorage);
+			txn.commit();
+			txn.close();
 			
-			//2. Get a list of all the volumes within this storage pool
-			List<VolumeVO> allVolumes = _volsDao.findByPoolId(primaryStorageId);
+			//2. Get a list of pending work for this queue
+			List<StoragePoolWorkVO> pendingWork = _storagePoolWorkDao.listPendingWorkForCancelMaintenanceByPoolId(primaryStorageId);
 
-			//3. If the volume is not removed AND not destroyed, start the vm corresponding to it
-			for(VolumeVO volume: allVolumes)
+			//3. work through the queue
+			for(StoragePoolWorkVO work: pendingWork)
 			{
-				if((volume.getState() != Volume.State.Destroy) && (volume.getRemoved() == null))
-				{
-					VMInstanceVO vmInstance = _vmInstanceDao.findById(volume.getInstanceId());
 				
-					if(vmInstance.getState().equals(State.Stopping) || vmInstance.getState().equals(State.Stopped))
+				VMInstanceVO vmInstance = _vmInstanceDao.findById(work.getVmId());
+			
+				if(vmInstance == null)
+				    continue;
+				
+				//if the instance is of type consoleproxy, call the console proxy
+				if(vmInstance.getType().equals(VirtualMachine.Type.ConsoleProxy))
+				{
+					
+					ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(vmInstance.getId());
+					if(_vmMgr.advanceStart(consoleProxy, null, user, account) == null)
 					{
-						//if the instance is of type consoleproxy, call the console proxy
-						if(vmInstance.getType().equals(VirtualMachine.Type.ConsoleProxy))
-						{
-							
-							if(_consoleProxyMgr.startProxy(vmInstance.getId()) == null)
-							{
-								String msg = "There was an error starting the console proxy id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
-								s_logger.warn(msg);
-								throw new ExecutionException(msg);
-							}
-						}
-						
-						//if the instance is of type ssvm, call the ssvm manager
-						if(vmInstance.getType().equals(VirtualMachine.Type.SecondaryStorageVm))
-						{
-							
-							if(_secStorageMgr.startSecStorageVm(vmInstance.getId()) == null)
-							{
-								String msg = "There was an error starting the ssvm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
-								s_logger.warn(msg);
-				        		throw new ExecutionException(msg);
-							}
-						}
-						
-						//if the instance is of type user vm, call the user vm manager
-						if(vmInstance.getType().equals(VirtualMachine.Type.User))
-						{
-							
-							try {
-								if(_userVmMgr.startUserVm(vmInstance.getId()) == null)
-								{
-									String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
-									s_logger.warn(msg);
-			    	        		throw new ExecutionException(msg);
-								}
-							} catch (StorageUnavailableException e) {
-								String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
-								s_logger.warn(msg,e);
-				        		throw new ExecutionException(msg);
-							} catch (InsufficientCapacityException e) {
-								String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
-								s_logger.warn(msg,e);
-				        		throw new ExecutionException(msg);				
-							} catch (ConcurrentOperationException e) {
-								String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
-								s_logger.warn(msg,e);
-				            	setPoolStateToError(primaryStorage);
-				        		throw new ExecutionException(msg);
-							} catch (ExecutionException e) {
-								String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
-								s_logger.warn(msg,e);
-				        		throw new ExecutionException(msg);
-							}
-						}    				
+						String msg = "There was an error starting the console proxy id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
+						s_logger.warn(msg);
+						throw new ExecutionException(msg);
+					} else {
+					    //update work queue
+					    work.setStartedAfterMaintenance(true);
+					    _storagePoolWorkDao.update(work.getId(), work);
 					}
 				}
+				
+				//if the instance is of type ssvm, call the ssvm manager
+				if(vmInstance.getType().equals(VirtualMachine.Type.SecondaryStorageVm))
+				{
+				    SecondaryStorageVmVO ssVm = _secStrgDao.findById(vmInstance.getId());
+				    if(_vmMgr.advanceStart(ssVm, null, user, account) == null)
+					{
+						String msg = "There was an error starting the ssvm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
+						s_logger.warn(msg);
+		        		throw new ExecutionException(msg);
+					}else {
+                        //update work queue
+                        work.setStartedAfterMaintenance(true);
+                        _storagePoolWorkDao.update(work.getId(), work);
+                    }
+				}
+				
+				//if the instance is of type ssvm, call the ssvm manager
+                if(vmInstance.getType().equals(VirtualMachine.Type.DomainRouter))
+                {
+                    DomainRouterVO domR = _domrDao.findById(vmInstance.getId());
+                    if(_vmMgr.advanceStart(domR, null, user, account) == null)
+                    {
+                        String msg = "There was an error starting the domR id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
+                        s_logger.warn(msg);
+                        throw new ExecutionException(msg);
+                    }else {
+                        //update work queue
+                        work.setStartedAfterMaintenance(true);
+                        _storagePoolWorkDao.update(work.getId(), work);
+                    }
+                }
+                
+				//if the instance is of type user vm, call the user vm manager
+				if(vmInstance.getType().equals(VirtualMachine.Type.User))
+				{
+                    UserVmVO userVm = _userVmDao.findById(vmInstance.getId());					
+					try {
+						if(_vmMgr.advanceStart(userVm, null, user, account) == null)
+						{
+
+							String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
+							s_logger.warn(msg);
+	    	        		throw new ExecutionException(msg);
+						} else {
+	                        //update work queue
+	                        work.setStartedAfterMaintenance(true);
+	                        _storagePoolWorkDao.update(work.getId(), work);
+						}
+					} catch (StorageUnavailableException e) {
+						String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
+						s_logger.warn(msg,e);
+		        		throw new ExecutionException(msg);
+					} catch (InsufficientCapacityException e) {
+						String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
+						s_logger.warn(msg,e);
+		        		throw new ExecutionException(msg);				
+					} catch (ConcurrentOperationException e) {
+						String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
+						s_logger.warn(msg,e);
+		        		throw new ExecutionException(msg);
+					} catch (ExecutionException e) {
+						String msg = "There was an error starting the user vm id: "+vmInstance.getId()+" on storage pool, cannot complete primary storage maintenance";
+						s_logger.warn(msg,e);
+		        		throw new ExecutionException(msg);
+					}
+				}    				
 			}
 			
 			//Restore config val for consoleproxy.restart to true
@@ -2187,8 +2299,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 			}
 			
 			//Change the storage state back to up
-			primaryStorage.setStatus(Status.Up);
-			_storagePoolDao.persist(primaryStorage);
+			primaryStorage.setStatus(StoragePoolStatus.Up);
+			_storagePoolDao.update(primaryStorageId, primaryStorage);
 			
 			return primaryStorage;
 		} catch (Exception e) {
@@ -2202,8 +2314,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 			else{//all other exceptions
 				throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
 			}
-		}finally{
-			_storagePoolDao.releaseFromLockTable(primaryStorage.getId());			
 		}
 	}
 	
@@ -2663,6 +2773,34 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
             } catch (Exception e) {
                 s_logger.error("Caught the following Exception", e);
+            }
+        }
+    }
+
+    @Override
+    public void onManagementNodeJoined(List<ManagementServerHostVO> nodeList, long selfNodeId) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void onManagementNodeLeft(List<ManagementServerHostVO> nodeList, long selfNodeId) {
+        for (ManagementServerHostVO vo : nodeList) {
+            if(vo.getMsid() == _serverId) {
+                s_logger.info("Cleaning up storage maintenance jobs associated with Management server" + vo.getMsid());
+                List<Long> poolIds = _storagePoolWorkDao.searchForPoolIdsForPendingWorkJobs(vo.getMsid());
+                if(poolIds.size() > 0) {
+                    for(Long poolId : poolIds) {
+                        StoragePoolVO pool = _storagePoolDao.findById(poolId);
+                        //check if pool is in an inconsistent state
+                        if(pool != null && (pool.getStatus().equals(StoragePoolStatus.ErrorInMaintenance) || pool.getStatus().equals(StoragePoolStatus.PrepareForMaintenance) || pool.getStatus().equals(StoragePoolStatus.CancelMaintenance))) {
+                            _storagePoolWorkDao.removePendingJobsOnMsRestart(vo.getMsid(), poolId);
+                            pool.setStatus(StoragePoolStatus.ErrorInMaintenance);
+                            _storagePoolDao.update(poolId, pool);
+                        }
+                            
+                    }
+                }
             }
         }
     }

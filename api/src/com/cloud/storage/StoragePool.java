@@ -103,7 +103,7 @@ public interface StoragePool  {
     /**
      * @return the storage pool status
      */
-	Status getStatus();
+	StoragePoolStatus getStatus();
 	
 	int getPort();
 	

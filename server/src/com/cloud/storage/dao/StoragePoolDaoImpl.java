@@ -31,6 +31,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.host.Status;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolDetailVO;
+import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
@@ -185,7 +186,7 @@ public class StoragePoolDaoImpl extends GenericDaoBase<StoragePoolVO, Long>  imp
     }
     
     @Override
-    public List<StoragePoolVO> listPoolsByStatus(Status status){
+    public List<StoragePoolVO> listPoolsByStatus(StoragePoolStatus status){
     	SearchCriteria<StoragePoolVO> sc = StatusSearch.create();
     	sc.setParameters("status", status);
     	return listBy(sc);

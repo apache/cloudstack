@@ -133,6 +133,11 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.Storage.StorageResourceType;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
@@ -1906,7 +1911,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             _accountMgr.checkAccess(owner, domain);
         }
         //check if we have available pools for vm deployment
-        List<StoragePoolVO> availablePools = _storagePoolDao.listPoolsByStatus(com.cloud.host.Status.Up);
+        List<StoragePoolVO> availablePools = _storagePoolDao.listPoolsByStatus(StoragePoolStatus.Up);
         
         if( availablePools == null || availablePools.size() < 1) {
         	throw new StorageUnavailableException("There are no available pools in the UP state for vm deployment",-1);
