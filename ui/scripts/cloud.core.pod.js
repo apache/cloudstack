@@ -134,8 +134,8 @@ function podJsonToDetailsTab() {
     });	  
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();   
-    buildActionLinkForTab("Edit Pod", podActionMap, $actionMenu, $leftmenuItem1, $thisTab);  
-    buildActionLinkForTab("Delete Pod", podActionMap, $actionMenu, $leftmenuItem1, $thisTab); 
+    buildActionLinkForTab("label.action.edit.pod", podActionMap, $actionMenu, $leftmenuItem1, $thisTab);  
+    buildActionLinkForTab("label.action.delete.pod", podActionMap, $actionMenu, $leftmenuItem1, $thisTab); 
     
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();      
@@ -913,13 +913,13 @@ function bindEventHandlerToDialogAddPool($dialogAddPool) {
 }
 
 var podActionMap = {
-    "Edit Pod": {
+    "label.action.edit.pod": {
         dialogBeforeActionFn: doEditPod  
     },
-    "Delete Pod": {                   
+    "label.action.delete.pod": {                   
         isAsyncJob: false, 
         dialogBeforeActionFn : doDeletePod,        
-        inProcessText: "Deleting Pod....",
+        inProcessText: "label.action.delete.pod.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {       
             $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();                
@@ -1018,7 +1018,7 @@ function doDeletePod($actionLink, $detailsTab, $midmenuItem1) {
 	var id = jsonObj.id;
 		
 	$("#dialog_confirmation")
-	.text("Please confirm you want to delete this pod")
+	.text(dictionary["message.action.delete.pod"])
 	.dialog('option', 'buttons', { 					
 		"Confirm": function() { 			
 			$(this).dialog("close");			
