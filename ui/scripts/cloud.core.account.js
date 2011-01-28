@@ -929,7 +929,13 @@ function doChangePassword($actionLink, $subgridItem) {
 			    data: createURL("command=updateUser&id="+id+"&password="+password),
 				dataType: "json",
 				success: function(json) {					    
-				    $subgridItem.find("#after_action_info").text("Change password action succeeded.");
+				    var label = $actionLink.data("label");	
+                    var label2;
+                    if(label in dictionary)
+                        label2 = dictionary[label];   
+                    else
+                        label2 = label;				    	    
+				    $subgridItem.find("#after_action_info").text(label2 + " - " + g_dictionary["label.succeeded"]);				    
                     $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show(); 				    				       				
 				}
 			});

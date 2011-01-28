@@ -287,11 +287,12 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem) {
 			                        $("body").stopTime(timerKey);				                        
 			                        $spinningWheel.hide();      		                       
 			                        if (result.jobstatus == 1) { // Succeeded 				                        
-			                            $subgridItem.find("#after_action_info").text(label2 + " action succeeded.");
-                                        $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
+			                            $subgridItem.find("#after_action_info").text(label2 + " - " + g_dictionary["label.succeeded"]);
+			                            $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
 			                            afterActionSeccessFn(json, id, $subgridItem);	
 			                        } else if (result.jobstatus == 2) { // Failed
-			                            $subgridItem.find("#after_action_info").text(label2 + " action failed. Reason: " + fromdb(result.jobresult.errortext));
+			                            var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+			                            $subgridItem.find("#after_action_info").text(errorMsg);
                                         $subgridItem.find("#after_action_info_container").removeClass("success").addClass("error").show();			                          
 			                        }											                    
 		                        }
@@ -324,8 +325,8 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem) {
 	        async: false,
 	        success: function(json) {	   
 	            $spinningWheel.hide();   
-	            $subgridItem.find("#after_action_info").text(label2 + " action succeeded.");
-                $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
+	            $subgridItem.find("#after_action_info").text(label2 + " - " + g_dictionary["label.succeeded"]);
+	            $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
                 afterActionSeccessFn(json, id, $subgridItem);    
 	        },
             error: function(XMLHttpResponse) {
