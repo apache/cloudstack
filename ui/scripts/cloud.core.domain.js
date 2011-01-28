@@ -306,8 +306,8 @@ function domainJsonToDetailsTab() {
     $actionMenu.find("#action_list").empty();   
     var noAvailableActions = true;
     if(domainId != 1 && isAdmin()) { //"ROOT" domain is not allowed to edit or delete
-        buildActionLinkForTab("Edit Domain", domainActionMap, $actionMenu, $midmenuItem1, $thisTab);   
-        buildActionLinkForTab("Delete Domain", domainActionMap, $actionMenu, $midmenuItem1, $thisTab);          
+        buildActionLinkForTab("label.action.edit.domain", domainActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+        buildActionLinkForTab("label.action.delete.domain", domainActionMap, $actionMenu, $midmenuItem1, $thisTab);          
         noAvailableActions = false; 
     } 
     // no available actions 
@@ -476,7 +476,7 @@ function domainToResourceLimitsTab() {
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
     if(isAdmin()) {
-        buildActionLinkForTab("Edit Resource Limits", domainResourceLimitsActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+        buildActionLinkForTab("label.action.edit.resource.limits", domainResourceLimitsActionMap, $actionMenu, $midmenuItem1, $thisTab);	
         noAvailableActions = false;		
     }    
     // no available actions 
@@ -547,7 +547,7 @@ function listAdminAccounts(domainId) {
 }		
 
 var domainResourceLimitsActionMap = {  
-    "Edit Resource Limits": {
+    "label.action.edit.resource.limits": {
         dialogBeforeActionFn: doEditResourceLimits
     }
 }   
@@ -671,7 +671,7 @@ function doDeleteDomain($actionLink, $detailsTab, $midmenuItem1) {
 	var id = jsonObj.id;
 		
 	$("#dialog_confirmation")
-	.text("Please confirm you want to delete this domain")
+	.text(dictionary["message.action.delete.domain"])
 	.dialog('option', 'buttons', { 					
 		"Confirm": function() { 			
 			$(this).dialog("close");			
@@ -685,14 +685,14 @@ function doDeleteDomain($actionLink, $detailsTab, $midmenuItem1) {
 }
 
 var domainActionMap = {        
-    "Edit Domain": {
+    "label.action.edit.domain": {
         dialogBeforeActionFn: doEditDomain
     },
-    "Delete Domain": {   
+    "label.action.delete.domain": {   
         isAsyncJob: true,
         dialogBeforeActionFn : doDeleteDomain,          
         asyncJobResponse: "deletedomainresponse",          
-        inProcessText: "Deleting Domain....",
+        inProcessText: "label.action.delete.domain.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {        
             $midmenuItem1.slideUp(function() {                
                 $(this).remove();   

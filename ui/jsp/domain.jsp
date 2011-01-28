@@ -5,6 +5,16 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<script language="javascript">
+dictionary = { 	
+	'label.action.edit.domain' : '<fmt:message key="label.action.edit.domain"/>',
+	'label.action.delete.domain' : '<fmt:message key="label.action.delete.domain"/>',
+	'label.action.delete.domain.processing' : '<fmt:message key="label.action.delete.domain.processing"/>',
+	'message.action.delete.domain' : '<fmt:message key="message.action.delete.domain"/>',
+	'label.action.edit.resource.limits' : '<fmt:message key="label.action.edit.resource.limits"/>'
+};	
+</script>
+
 <!-- domain detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
   
