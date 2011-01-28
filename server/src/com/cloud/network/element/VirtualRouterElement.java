@@ -28,8 +28,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenter.NetworkType;
-import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -50,7 +48,6 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
-import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.PortForwardingRule;
@@ -59,7 +56,6 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
@@ -67,14 +63,14 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
 
 @Local(value=NetworkElement.class)
-public class VirtualRouterElement extends AdapterBase implements NetworkElement, RemoteAccessVpnElement {
+public class VirtualRouterElement extends DhcpElement implements NetworkElement, RemoteAccessVpnElement {
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -110,10 +106,11 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement,
         
         return true;
     }
-
+    
+    
     @Override
-    public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        if (canHandle(config.getGuestType(), dest.getDataCenter())) {
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        if (canHandle(network.getGuestType(), dest.getDataCenter())) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
             }
@@ -121,37 +118,10 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement,
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
             
-            return _routerMgr.addVirtualMachineIntoNetwork(config, nic, uservm, dest, context, false) != null;
+            return _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, false) != null;
         } else {
             return false;
         }
-    }
-
-    @Override
-    public boolean release(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, ReservationContext context) {
-        return true;
-    }
-
-    @Override
-    public boolean shutdown(Network config, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
-        DomainRouterVO router = _routerDao.findByNetworkConfiguration(config.getId());
-        if (router == null) {
-            return true;
-        }
-        if (_routerMgr.stopRouter(router.getId()) != null) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-      
-    @Override
-    public boolean destroy(Network config) throws ConcurrentOperationException, ResourceUnavailableException{
-        DomainRouterVO router = _routerDao.findByNetworkConfiguration(config.getId());
-        if (router == null) {
-            return true;
-        }
-        return _routerMgr.destroyRouter(router.getId());
     }
 
     @Override
@@ -242,7 +212,6 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement,
             return false;
         }
     }
-    
 
     @Override
     public Provider getProvider() {
@@ -287,31 +256,4 @@ public class VirtualRouterElement extends AdapterBase implements NetworkElement,
         
         return capabilities;
     }
-    
-    @Override
-    public boolean restart(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
-        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
-        if (router == null) {
-            s_logger.trace("Can't find domain router in network " + network.getId());
-            return true;
-        }
-        
-        VirtualRouter result = null;
-        if (canHandle(network.getGuestType(), dc)) {
-            if (router.getState() == State.Stopped) {
-                result = _routerMgr.startRouter(router.getId());
-            } else {
-                result = _routerMgr.rebootRouter(router.getId());
-            }
-            if (result == null) {
-                s_logger.warn("Failed to restart domain router " + router + " as a part of netowrk " + network + " restart");
-                return false;
-            } else {
-                return true;
-            }
-        } 
-        return true;
-    }
-    
 }

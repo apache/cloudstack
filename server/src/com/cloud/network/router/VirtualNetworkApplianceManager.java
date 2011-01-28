@@ -62,11 +62,8 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     /**
      * save a vm password on the router.
      * 
-	 * @param routerId the ID of the router to save the password to
-	 * @param vmIpAddress the IP address of the User VM that will use the password
-	 * @param password the password to save to the router
      */
-    boolean savePasswordToRouter(long routerId, String vmIpAddress, String password);
+    boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile) throws ResourceUnavailableException;
     
     boolean destroyRouter(long routerId) throws ResourceUnavailableException, ConcurrentOperationException;
     

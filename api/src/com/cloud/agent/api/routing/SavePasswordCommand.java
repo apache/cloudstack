@@ -23,11 +23,9 @@ public class SavePasswordCommand extends NetworkElementCommand {
 
     String password;
     String vmIpAddress;
-    String routerPrivateIpAddress;
     String vmName;
     
-    protected SavePasswordCommand() {
-    	
+    protected SavePasswordCommand() {	
     }
     
     @Override
@@ -35,10 +33,9 @@ public class SavePasswordCommand extends NetworkElementCommand {
         return true;
     }
     
-    public SavePasswordCommand(String password, String vmIpAddress, String routerPrivateIpAddress, String vmName) {
+    public SavePasswordCommand(String password, String vmIpAddress, String vmName) {
         this.password = password;
         this.vmIpAddress = vmIpAddress;
-        this.routerPrivateIpAddress = routerPrivateIpAddress;
         this.vmName = vmName;
     }
     
@@ -46,16 +43,14 @@ public class SavePasswordCommand extends NetworkElementCommand {
 		return password;
 	}
 	
-	public String getRouterPrivateIpAddress() {
-		return routerPrivateIpAddress;
-	}
-	
 	public String getVmIpAddress() {
 		return vmIpAddress;
 	}
+
+    public String getVmName() {
+        return vmName;
+    }
 	
-	public String getVmName() {
-		return vmName;
-	}
+	
 	
 }

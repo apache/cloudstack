@@ -17,8 +17,6 @@
  */
 package com.cloud.api.commands;
 
-import java.util.Random;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -106,11 +104,10 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd {
     public Long getInstanceId() {
     	return getId();
     }
-	
-    Random _rand = new Random(System.currentTimeMillis());
+
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
-        password = Long.toHexString(_rand.nextLong());
+        password = _mgr.generateRandomPassword();
         UserVm result = _userVmService.resetVMPassword(this, password);
         if (result != null){
             UserVmResponse response = _responseGenerator.createUserVmResponse(result);

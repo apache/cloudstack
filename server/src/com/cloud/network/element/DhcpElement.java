@@ -44,23 +44,25 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.vpn.PasswordResetElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
 
 @Local(value=NetworkElement.class)
-public class DhcpElement extends AdapterBase implements NetworkElement{
+public class DhcpElement extends AdapterBase implements NetworkElement, PasswordResetElement{
     private static final Logger s_logger = Logger.getLogger(DhcpElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -196,5 +198,14 @@ public class DhcpElement extends AdapterBase implements NetworkElement{
             s_logger.trace("Dhcp element doesn't handle network restart for the network " + network);
             return true;
         }
+    }
+    
+    @Override
+    public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws ResourceUnavailableException{
+        
+        @SuppressWarnings("unchecked")
+        VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
+ 
+        return _routerMgr.savePasswordToRouter(network, nic, uservm);
     }
 }

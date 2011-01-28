@@ -165,6 +165,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -414,21 +415,24 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public boolean savePasswordToRouter(final long routerId, final String vmIpAddress, final String password) {
-
-        final DomainRouterVO router = _routerDao.findById(routerId);
-        final String routerPrivateIpAddress = router.getPrivateIpAddress();
-        final String vmName = router.getName();
-        final String encodedPassword = rot13(password);
-        final SavePasswordCommand cmdSavePassword = new SavePasswordCommand(encodedPassword, vmIpAddress, routerPrivateIpAddress, vmName);
-
-        if (router != null && router.getHostId() != null) {
-            final Answer answer = _agentMgr.easySend(router.getHostId(), cmdSavePassword);
-            return (answer != null && answer.getResult());
-        } else {
-            // either the router doesn't exist or router isn't running at all
-            return false;
+    public boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile) throws ResourceUnavailableException{
+        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
+        if (router == null) {
+            s_logger.warn("Unable save password, router doesn't exist in network " + network.getId());
+            throw new CloudRuntimeException("Unable to save password to router");
         }
+        
+        UserVm userVm = profile.getVirtualMachine();
+        String password = (String)profile.getParameter(Param.VmPassword);
+        String encodedPassword = rot13(password);
+        
+        Commands cmds = new Commands(OnError.Continue);
+        SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), userVm.getName());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        cmds.addCommand("password", cmd);
+
+        return sendCommandsToRouter(router, cmds);
     }
     
     
@@ -1090,14 +1094,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new CloudRuntimeException("Didn't start a control port");
         }
 
-        profile.setParameter("control.nic", controlNic);
+        profile.setParameter(VirtualMachineProfile.Param.ControlNic, controlNic);
 
         return true;
     }
 
     @Override
     public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException{
-        NicProfile controlNic = (NicProfile) profile.getParameter("control.nic");
+        NicProfile controlNic = (NicProfile) profile.getParameter(VirtualMachineProfile.Param.ControlNic);
 
         _ovsNetworkMgr.RouterCheckAndCreateTunnel(cmds, profile, dest);
         _ovsNetworkMgr.applyDefaultFlowToRouter(cmds, profile, dest);
@@ -1320,7 +1324,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
         
-        String password = profile.getVirtualMachine().getPassword();
+        String password = (String)profile.getParameter(VirtualMachineProfile.Param.VmPassword);
         String userData = profile.getVirtualMachine().getUserData();
         String sshPublicKey = profile.getVirtualMachine().getDetail("SSH.PublicKey");
         Commands cmds = new Commands(OnError.Stop);
@@ -1339,11 +1343,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlIpAddress);
         dhcpCommand.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         cmds.addCommand("dhcp", dhcpCommand);
-        
+
         if (password != null) {
             final String encodedPassword = rot13(password);
-            cmds.addCommand("password", new SavePasswordCommand(encodedPassword, nic.getIp4Address(), routerControlIpAddress, profile
-                    .getVirtualMachine().getName()));
+            SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), profile.getVirtualMachine().getName());
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+            cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+            cmds.addCommand("password", cmd);
         }
 
         String serviceOffering = _serviceOfferingDao.findById(profile.getServiceOfferingId()).getDisplayText();

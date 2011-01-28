@@ -91,6 +91,7 @@ import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.network.vpn.PasswordResetElement;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -2009,5 +2010,51 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         concierge.updateNetworkProfile(profile);
         
         return profile;
+    }
+    
+    @Override
+    public Network getDefaultNetworkForVm(long vmId) {
+        Nic defaultNic = getDefaultNic(vmId);
+        if (defaultNic == null) {
+            return null;
+        } else {
+            return _networksDao.findById(defaultNic.getNetworkId());
+        }
+    }
+    
+    
+    @Override
+    public Nic getDefaultNic(long vmId) {
+        List<NicVO> nics = _nicDao.listBy(vmId);
+        Nic defaultNic = null;
+        if (nics != null) {
+            for (Nic nic: nics) {
+                if (nic.isDefaultNic()) {
+                    defaultNic = nic;
+                    break;
+                }
+            }
+        } else {
+            s_logger.debug("Unable to find default network for the vm; vm doesn't have any nics");
+            return null;
+        }
+        
+        if (defaultNic == null) {
+            s_logger.debug("Unable to find default network for the vm; vm doesn't have default nic");
+        }
+        
+        return defaultNic;
+        
+    }
+    
+    @Override
+    public List<? extends PasswordResetElement> getPasswordResetElements() {
+        List<PasswordResetElement> elements = new ArrayList<PasswordResetElement>();
+        for (NetworkElement element : _networkElements) {
+            if (element instanceof PasswordResetElement) {
+                elements.add((PasswordResetElement) element);
+            }
+        }
+        return elements;
     }
 }

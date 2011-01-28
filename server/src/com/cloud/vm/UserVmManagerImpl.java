@@ -124,6 +124,7 @@ import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.SecurityGroupManager;
+import com.cloud.network.vpn.PasswordResetElement;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
@@ -310,42 +311,61 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return userVm;
     }
 
-    private boolean resetVMPasswordInternal(ResetVMPasswordCmd cmd, String password) throws ResourceUnavailableException, InsufficientCapacityException{    	
-        
-        return true;
-//        Long vmId = cmd.getId();
-//        Long userId = UserContext.current().getCallerUserId();
-//        UserVmVO vmInstance = _vmDao.findById(vmId);
-//
-//        if (password == null || password.equals("")) {
-//            return false;
-//        }
-//
-//        VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
-//        if (template.getEnablePassword()) {
-//        	if (vmInstance.getDomainRouterId() == null) {
-//                /*TODO: add it for external dhcp mode*/
-//        		return true;
-//            }
-//	        if (_routerMgr.savePasswordToRouter(vmInstance.getDomainRouterId(), vmInstance.getPrivateIpAddress(), password)) {
-//	            // Need to reboot the virtual machine so that the password gets redownloaded from the DomR, and reset on the VM
-//	        	if (rebootVirtualMachine(userId, vmId) == null) {
-//	        		if (vmInstance.getState() == State.Stopped) {
-//	        			return true;
-//	        		}
-//	        		return false;
-//	        	} else {
-//	        		return true;
-//	        	}
-//	        } else {
-//	        	return false;
-//	        }
-//        } else {
-//        	if (s_logger.isDebugEnabled()) {
-//        		s_logger.debug("Reset password called for a vm that is not using a password enabled template");
-//        	}
-//        	return false;
-//        }
+    private boolean resetVMPasswordInternal(ResetVMPasswordCmd cmd, String password) throws ResourceUnavailableException, InsufficientCapacityException{  
+        Long vmId = cmd.getId();
+        Long userId = UserContext.current().getCallerUserId();
+        VMInstanceVO vmInstance = _vmDao.findById(vmId);
+
+        if (password == null || password.equals("")) {
+            return false;
+        }
+
+        VMTemplateVO template = _templateDao.findById(vmInstance.getTemplateId());
+        if (template.getEnablePassword()) {
+            Nic defaultNic = _networkMgr.getDefaultNic(vmId);
+            if (defaultNic == null) {
+                s_logger.error("Unable to reset password for vm " + vmInstance + " as the instance doesn't have default nic");
+                return false;
+            }
+            
+            Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
+            NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null);
+            VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmInstance);
+            vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
+            
+
+            List<? extends PasswordResetElement> elements = _networkMgr.getPasswordResetElements();
+            
+            boolean result = true;
+            for (PasswordResetElement element : elements) {
+                if (!element.savePassword(defaultNetwork, defaultNicProfile, vmProfile)) {
+                    result = false;
+                }
+            }
+            
+            // Need to reboot the virtual machine so that the password gets redownloaded from the DomR, and reset on the VM
+            if (!result) {
+                s_logger.debug("Failed to reset password for the virutal machine; no need to reboot the vm");
+                return false;
+            } else {
+                if (rebootVirtualMachine(userId, vmId) == null) {
+                    if (vmInstance.getState() == State.Stopped) {
+                        s_logger.debug("Vm " + vmInstance + " is stopped, not rebooting it as a part of password reset");
+                        return true;
+                    }
+                    s_logger.warn("Failed to reboot the vm " + vmInstance);
+                    return false;
+                } else {
+                    s_logger.debug("Vm " + vmInstance + " is rebooted successfully as a part of password reset");
+                    return true;
+                }
+            }
+        } else {
+        	if (s_logger.isDebugEnabled()) {
+        		s_logger.debug("Reset password called for a vm that is not using a password enabled template");
+        	}
+        	return false;
+        }
     }
     
     @Override
@@ -2124,7 +2144,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (password == null || password.equals("") || (!validPassword(password))) {
             throw new InvalidParameterValueException("A valid password for this virtual machine was not provided.");
         }
-        vm.setPassword(password);
+
 
         // Check if an SSH key pair was selected for the instance and if so use it to encrypt & save the vm password
         String sshPublicKey = vm.getDetail("SSH.PublicKey");
@@ -2144,13 +2164,21 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	    AccountVO owner = _accountDao.findById(vm.getAccountId());
 	    
 	    try {
-			vm = _itMgr.start(vm, null, caller, owner);
+	        Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>();
+	        params.put(VirtualMachineProfile.Param.VmPassword, password);
+			vm = _itMgr.start(vm, params, caller, owner);
 		} finally {
 			updateVmStateForFailedVmCreation(vm.getId());
 		}
 		
 		_networkGroupMgr.addInstanceToGroups(vm.getId(), cmd.getSecurityGroupList());
 		
+		
+		if (template.getEnablePassword()) {
+		    //this value is not being sent to the backend; need only for api dispaly purposes
+		    vm.setPassword(password);
+		}
+        
 	    return vm;
 	}
 	

@@ -199,7 +199,6 @@ import com.xensource.xenapi.PBD;
 import com.xensource.xenapi.PIF;
 import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.SR;
-import com.xensource.xenapi.Session;
 import com.xensource.xenapi.Task;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.BadServerResponse;
@@ -1261,7 +1260,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     protected Answer execute(final SavePasswordCommand cmd) {
         Connection conn = getConnection();
         final String password = cmd.getPassword();
-        final String routerPrivateIPAddress = cmd.getRouterPrivateIpAddress();
+        final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         final String vmName = cmd.getVmName();
         final String vmIpAddress = cmd.getVmIpAddress();
         final String local = vmName;

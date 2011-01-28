@@ -20,8 +20,6 @@ package com.cloud.api.commands;
 
 import java.util.List;
 
-import javax.naming.InsufficientResourcesException;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -36,7 +34,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -96,10 +93,6 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name="keypair", type=CommandType.STRING, description="name of the ssh key pair used to login to the virtual machine")
     private String sshKeyPairName;
-    
-    // unexposed parameter needed for serializing/deserializing the command
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, expose=false)
-    private String password;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -159,15 +152,6 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         return zoneId;
     }
 
-    // not exposed parameter
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-    
     public List<Long> getNetworkIds() {
         return networkIds;
     }

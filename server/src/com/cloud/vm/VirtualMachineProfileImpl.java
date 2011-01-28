@@ -43,7 +43,7 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     T _vm;
     ServiceOfferingVO _offering;
     VMTemplateVO _template;
-    Map<String, Object> _params;
+    Map<Param, Object> _params;
     List<NicProfile> _nics = new ArrayList<NicProfile>();
     List<VolumeTO> _disks = new ArrayList<VolumeTO>();
     StringBuilder _bootArgs = new StringBuilder();
@@ -52,14 +52,14 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     
     VirtualMachine.Type _type;
     
-    public VirtualMachineProfileImpl(T vm, VMTemplateVO template, ServiceOfferingVO offering, Account owner, Map<String, Object> params) {
+    public VirtualMachineProfileImpl(T vm, VMTemplateVO template, ServiceOfferingVO offering, Account owner, Map<Param, Object> params) {
         _vm = vm;
         _template = template;
         _offering = offering;
         _params = params;
         _owner = owner;
         if (_params == null) {
-            _params = new HashMap<String, Object>();
+            _params = new HashMap<Param, Object>();
         }
         _type = vm.getType();
     }
@@ -91,7 +91,7 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     }
     
     @Override
-    public void setParameter(String name, Object value) {
+    public void setParameter(Param name, Object value) {
         _params.put(name, value);
     }
     
@@ -206,7 +206,7 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
     }
 
     @Override
-    public Object getParameter(String name) {
+    public Object getParameter(Param name) {
         return _params.get(name);
     }
     

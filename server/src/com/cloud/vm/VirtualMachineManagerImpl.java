@@ -183,7 +183,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
             Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
             List<Pair<DiskOfferingVO, Long>> dataDiskOfferings,
             List<Pair<NetworkVO, NicProfile>> networks,
-            Map<String, Object> params,
+            Map<VirtualMachineProfile.Param, Object> params,
             DeploymentPlan plan,
             HypervisorType hyperType,
             Account owner) throws InsufficientCapacityException {
@@ -441,7 +441,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
     }
     
     @Override
-    public <T extends VMInstanceVO> T start(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException {
+    public <T extends VMInstanceVO> T start(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException {
         try {
             return advanceStart(vm, params, caller, account);
         } catch (ConcurrentOperationException e) {
@@ -555,7 +555,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
     }
     
     @Override
-    public <T extends VMInstanceVO> T advanceStart(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    public <T extends VMInstanceVO> T advanceStart(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         long vmId = vm.getId();
         
         VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
@@ -1086,7 +1086,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
     }
     
     @Override
-    public <T extends VMInstanceVO> T reboot(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException {
+    public <T extends VMInstanceVO> T reboot(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException {
         try {
             return advanceReboot(vm, params, caller, account);
         } catch (ConcurrentOperationException e) {
@@ -1095,8 +1095,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
     }
     
     @Override
-    
-    public <T extends VMInstanceVO> T advanceReboot(T vm, Map<String, Object> params, User caller, Account account) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {  
+    public <T extends VMInstanceVO> T advanceReboot(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {  
         T rebootedVm = null;
         
         DataCenter dc = _configMgr.getZone(vm.getDataCenterId());

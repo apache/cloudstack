@@ -1115,7 +1115,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             s_logger.debug("Boot Args for " + profile + ": " + bootArgs);
         }
 
-        profile.setParameter("control.nic", controlNic);
+        profile.setParameter(VirtualMachineProfile.Param.ControlNic, controlNic);
 
         return true;
     }
@@ -1123,7 +1123,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     @Override
     public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<SecondaryStorageVmVO> profile, DeployDestination dest,
             ReservationContext context) {
-        NicProfile controlNic = (NicProfile) profile.getParameter("control.nic");
+        NicProfile controlNic = (NicProfile) profile.getParameter(VirtualMachineProfile.Param.ControlNic);
         CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20);
         cmds.addCommand("checkSsh", check);
 

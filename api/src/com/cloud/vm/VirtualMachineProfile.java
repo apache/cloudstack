@@ -40,6 +40,11 @@ import com.cloud.user.Account;
  */
 public interface VirtualMachineProfile<T extends VirtualMachine> {
     
+    enum Param {
+        VmPassword,  
+        ControlNic,
+    }
+    
     String getHostName();
     
     String getInstanceName();
@@ -59,7 +64,7 @@ public interface VirtualMachineProfile<T extends VirtualMachine> {
     /**
      * @return parameter specific for this type of virtual machine.
      */
-    Object getParameter(String name);
+    Object getParameter(Param name);
     
     /**
      * @return the hypervisor type needed for this virtual machine.
@@ -106,7 +111,7 @@ public interface VirtualMachineProfile<T extends VirtualMachine> {
     
     VirtualMachine.Type getType();
     
-    void setParameter(String name, Object value);
+    void setParameter(Param name, Object value);
 
 	void setBootLoaderType(BootloaderType bootLoader);
 	BootloaderType getBootLoaderType();

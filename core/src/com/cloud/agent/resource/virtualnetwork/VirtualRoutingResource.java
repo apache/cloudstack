@@ -287,7 +287,7 @@ public class VirtualRoutingResource implements Manager {
 
     protected synchronized Answer execute(final SavePasswordCommand cmd) {
         final String password = cmd.getPassword();
-        final String routerPrivateIPAddress = cmd.getRouterPrivateIpAddress();
+        final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         final String vmName = cmd.getVmName();
         final String vmIpAddress = cmd.getVmIpAddress();
         final String local =  vmName;

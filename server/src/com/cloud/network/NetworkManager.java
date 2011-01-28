@@ -36,6 +36,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.vpn.PasswordResetElement;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
@@ -160,4 +161,10 @@ public interface NetworkManager extends NetworkService {
     Nic getNicInNetwork(long vmId, long networkId);
     
     Nic getNicForTraffic(long vmId, TrafficType type);
+    
+    Network getDefaultNetworkForVm(long vmId);
+    
+    Nic getDefaultNic(long vmId);
+    
+    List<? extends PasswordResetElement> getPasswordResetElements();
 }
