@@ -263,7 +263,7 @@
             <div class="content_tabs on" id="tab_details">
                 <fmt:message key="label.details"/></div>
             <div class="content_tabs off" id="tab_ipallocation">
-                <fmt:message key="label.ip.allocation"/></div>
+                <fmt:message key="label.ip.allocations"/></div>
         </div>    
         <!-- Details tab (end)-->
         <div id="tab_content_details">  
@@ -978,7 +978,7 @@
 <!-- Add IP Range for direct netework dialog (begin) -->
 <div id="dialog_add_iprange_to_directnetwork" title="Add IP Range to Direct Network" style="display: none">
     <p>
-		<fmt:message key="add.ip.range.direct.network"/>
+		<fmt:message key="message.add.ip.range.direct.network"/>
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
