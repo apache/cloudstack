@@ -650,6 +650,7 @@ function initVMWizard() {
 	    $template.data("templateId", jsonObj.id);
 	    $template.data("templateType", templateType);
 	    $template.data("templateName", fromdb(jsonObj.displaytext));
+		$template.data("hypervisor", jsonObj.hypervisor);
 	
         $template.find("#icon").removeClass().addClass(getIconForOS(jsonObj.ostypename));
         $template.find("#name").text(fromdb(jsonObj.displaytext));	
@@ -858,6 +859,7 @@ function initVMWizard() {
 			if (zoneObj.networktype == "Advanced") {			    
 			    $thisPopup.find("#step4").find("#for_advanced_zone").show();
 			    $thisPopup.find("#step4").find("#for_basic_zone").hide();	
+				$thisPopup.find("#step4").find("#for_no_network_support").hide();
 			    		    
 				var networkName = "Virtual Network";
 				var networkDesc = "A dedicated virtualized network for your account.  The broadcast domain is contained within a VLAN and all public network access is routed out by a virtual router.";
@@ -1013,17 +1015,18 @@ function initVMWizard() {
 				});
 			} 
 			else {  // Basic Network
-			    $thisPopup.find("#step4").find("#for_basic_zone").show();			    
 			    $thisPopup.find("#step4").find("#for_advanced_zone").hide();	
-			    if(getDirectAttachSecurityGroupsEnabled() == "true" && $selectedVmWizardTemplate.data("hypervisor") != "VmWare" ) {			        
+			    if(getDirectAttachSecurityGroupsEnabled() == "true" && $selectedVmWizardTemplate.data("hypervisor") != "VMware" ) {		
+					$thisPopup.find("#step4").find("#for_basic_zone").show();
+					$thisPopup.find("#step4").find("#for_no_network_support").hide();
 			        $thisPopup.find("#step4").find("#security_group_section").show();
 			        $thisPopup.find("#step4").find("#not_available_message").hide();	
 				    $thisPopup.find("#step5").find("#wizard_review_network").text("Basic Network");
 				}
 				else {
-				    $thisPopup.find("#step4").find("#not_available_message").show();		
-			        $thisPopup.find("#step4").find("#security_group_section").hide();	
-			        $thisPopup.find("#step5").find("#wizard_review_network").text("");			   
+					$thisPopup.find("#step4").find("#for_basic_zone").hide();
+					$thisPopup.find("#step4").find("#for_no_network_support").show();						
+			        $thisPopup.find("#step5").find("#wizard_review_network").text("Basic Network");			   
 				}
 			}
 	    }	
