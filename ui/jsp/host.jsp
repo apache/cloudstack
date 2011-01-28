@@ -5,6 +5,25 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<script language="javascript">
+dictionary = { 	
+	'label.action.enable.maintenance.mode' : '<fmt:message key="label.action.enable.maintenance.mode"/>',
+	'label.action.enable.maintenance.mode.processing' : '<fmt:message key="label.action.enable.maintenance.mode.processing"/>',
+	'message.action.enable.maintenance.mode' : '<fmt:message key="message.action.enable.maintenance.mode"/>',
+	'label.action.cancel.maintenance.mode' : '<fmt:message key="label.action.cancel.maintenance.mode"/>',
+	'label.action.cancel.maintenance.mode.processing' : '<fmt:message key="label.action.cancel.maintenance.mode.processing"/>',
+	'message.action.cancel.maintenance.mode' : '<fmt:message key="message.action.cancel.maintenance.mode"/>',
+	'label.action.force.reconnect' : '<fmt:message key="label.action.force.reconnect"/>',
+	'label.action.force.reconnect.processing' : '<fmt:message key="label.action.force.reconnect.processing"/>',
+	'message.action.force.reconnect' : '<fmt:message key="message.action.force.reconnect"/>',
+	'label.action.remove.host' : '<fmt:message key="label.action.remove.host"/>',
+	'label.action.remove.host.processing' : '<fmt:message key="label.action.remove.host.processing"/>',
+	'message.action.remove.host' : '<fmt:message key="message.action.remove.host"/>',
+	'label.action.update.OS.preference' : '<fmt:message key="label.action.update.OS.preference"/>',
+	'label.action.update.OS.preference.processing' : '<fmt:message key="label.action.update.OS.preference.processing"/>'
+};	
+</script>
+
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
         <img src="images/title_clustericon.gif" /></div>

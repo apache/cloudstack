@@ -145,43 +145,43 @@ function hostJsonToDetailsTab() {
     var noAvailableActions = true;
     
     if (jsonObj.state == 'Up' || jsonObj.state == "Connecting") {
-		buildActionLinkForTab("Enable Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
-	    buildActionLinkForTab("Force Reconnect", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   
-	    buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+		buildActionLinkForTab("label.action.enable.maintenance.mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+	    buildActionLinkForTab("label.action.force.reconnect", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+	    buildActionLinkForTab("label.action.update.OS.preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   
 	    noAvailableActions = false;
 	} 
 	else if(jsonObj.state == 'Down') {
-	    buildActionLinkForTab("Enable Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
-	    buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	    
-        buildActionLinkForTab("Remove Host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+	    buildActionLinkForTab("label.action.enable.maintenance.mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+	    buildActionLinkForTab("label.action.update.OS.preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	    
+        buildActionLinkForTab("label.action.remove.host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
         noAvailableActions = false;
     }	
 	else if(jsonObj.state == "Alert") {
-	    buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab); 
-	    buildActionLinkForTab("Remove Host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   	
+	    buildActionLinkForTab("label.action.update.OS.preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+	    buildActionLinkForTab("label.action.remove.host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);   	
 	    noAvailableActions = false;   
      
 	}	
 	else if (jsonObj.state == "ErrorInMaintenance") {
-	    buildActionLinkForTab("Enable Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
-        buildActionLinkForTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
-        buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	 
+	    buildActionLinkForTab("label.action.enable.maintenance.mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+        buildActionLinkForTab("label.action.cancel.maintenance.mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+        buildActionLinkForTab("label.action.update.OS.preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	 
         noAvailableActions = false;   
     }
 	else if (jsonObj.state == "PrepareForMaintenance") {
-	    buildActionLinkForTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
-        buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	
+	    buildActionLinkForTab("label.action.cancel.maintenance.mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+        buildActionLinkForTab("label.action.update.OS.preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	
         noAvailableActions = false;    
     }
 	else if (jsonObj.state == "Maintenance") {
-	    buildActionLinkForTab("Cancel Maintenance Mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
-        buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	    
-        buildActionLinkForTab("Remove Host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+	    buildActionLinkForTab("label.action.cancel.maintenance.mode", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+        buildActionLinkForTab("label.action.update.OS.preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	    
+        buildActionLinkForTab("label.action.remove.host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
         noAvailableActions = false;
     }
 	else if (jsonObj.state == "Disconnected"){
-	    buildActionLinkForTab("Update OS Preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	    
-        buildActionLinkForTab("Remove Host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+	    buildActionLinkForTab("label.action.update.OS.preference", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  	    
+        buildActionLinkForTab("label.action.remove.host", hostActionMap, $actionMenu, $midmenuItem1, $thisTab);  
         noAvailableActions = false;
     }
 	else {
@@ -484,46 +484,40 @@ function populateForUpdateOSDialog(oscategoryid) {
 
 
 var hostActionMap = {  
-    "Enable Maintenance Mode": {              
+    "label.action.enable.maintenance.mode": {              
         isAsyncJob: true,
         asyncJobResponse: "preparehostformaintenanceresponse",
         dialogBeforeActionFn: doEnableMaintenanceMode,
-        inProcessText: "Enabling Maintenance Mode....",
+        inProcessText: "label.action.enable.maintenance.mode.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {            
             var item = json.queryasyncjobresultresponse.jobresult.host;
-            hostToMidmenu(item, $midmenuItem1);
-            //hostToRightPanel($midmenuItem1);            
-            //$("#right_panel_content #after_action_info").text("We are actively enabling maintenance on your host. Please refresh periodically for an updated status."); 
+            hostToMidmenu(item, $midmenuItem1);           
         }
     },
-    "Cancel Maintenance Mode": {              
+    "label.action.cancel.maintenance.mode": {              
         isAsyncJob: true,
         asyncJobResponse: "cancelhostmaintenanceresponse",
         dialogBeforeActionFn: doCancelMaintenanceMode,
-        inProcessText: "Cancelling Maintenance Mode....",
+        inProcessText: "label.action.cancel.maintenance.mode.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {            
             var item = json.queryasyncjobresultresponse.jobresult.host;  
-            hostToMidmenu(item, $midmenuItem1);  
-            //hostToRightPanel($midmenuItem1);            
-            //$("#right_panel_content #after_action_info").text("We are actively cancelling your scheduled maintenance.  Please refresh periodically for an updated status."); 
+            hostToMidmenu(item, $midmenuItem1);            
         }
     },
-    "Force Reconnect": {              
+    "label.action.force.reconnect": {              
         isAsyncJob: true,
         asyncJobResponse: "reconnecthostresponse",
         dialogBeforeActionFn: doForceReconnect,
-        inProcessText: "Reconnecting....",
+        inProcessText: "label.action.force.reconnect.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {
             var item = json.queryasyncjobresultresponse.jobresult.host;
-            hostToMidmenu(item, $midmenuItem1);  
-            //hostToRightPanel($midmenuItem1);            
-            //$("#right_panel_content #after_action_info").text("We are actively reconnecting your host.  Please refresh periodically for an updated status."); 
+            hostToMidmenu(item, $midmenuItem1);             
         }
     },
-    "Remove Host": {              
+    "label.action.remove.host": {              
         isAsyncJob: false,        
         dialogBeforeActionFn: doRemoveHost,
-        inProcessText: "Removing Host....",
+        inProcessText: "label.action.remove.host.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {    
             $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();
@@ -534,14 +528,13 @@ var hostActionMap = {
             });         
         }
     },    
-    "Update OS Preference": {              
+    "label.action.update.OS.preference": {              
         isAsyncJob: false,        
         dialogBeforeActionFn: doUpdateOSPreference,
-        inProcessText: "Updating OS Preference....",
+        inProcessText: "label.action.update.OS.preference.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {     
             var item = json.updatehostresponse.host;
-            hostToMidmenu(item, $midmenuItem1);      
-            //hostToRightPanel($midmenuItem1);         
+            hostToMidmenu(item, $midmenuItem1);              
         }
     }          
 } 
@@ -550,7 +543,7 @@ function doEnableMaintenanceMode($actionLink, $detailsTab, $midmenuItem1){
     var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_confirmation")
-    .text("Enabling maintenance mode will cause a live migration of all running instances on this host to any available host.")
+    .text(dictionary["message.action.enable.maintenance.mode"])
     .dialog("option", "buttons", {	                    
          "OK": function() {
              $(this).dialog("close");      
@@ -568,7 +561,7 @@ function doCancelMaintenanceMode($actionLink, $detailsTab, $midmenuItem1){
     var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_confirmation")
-    .text("Please confirm you want to cancel maintenance for the host")
+    .text(dictionary["message.action.cancel.maintenance.mode"])
     .dialog("option", "buttons", {	                    
          "OK": function() {
              $(this).dialog("close");      
@@ -586,7 +579,7 @@ function doForceReconnect($actionLink, $detailsTab, $midmenuItem1){
     var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_confirmation")
-    .text("Please confirm you want to force a reconnection for the host")
+    .text(dictionary["message.action.force.reconnect"])
     .dialog("option", "buttons", {	                    
          "OK": function() {
              $(this).dialog("close");      
@@ -604,7 +597,7 @@ function doRemoveHost($actionLink, $detailsTab, $midmenuItem1){
     var jsonObj = $midmenuItem1.data("jsonObj");
        
     $("#dialog_confirmation")
-    .text("Removing last/only host in cluster and reinstalling the host will destroy working environment/database on the host and render the VM Guests unuseable.")
+    .text(dictionary["message.action.remove.host"])
     .dialog("option", "buttons", {	                    
          "OK": function() {
              $(this).dialog("close");      
