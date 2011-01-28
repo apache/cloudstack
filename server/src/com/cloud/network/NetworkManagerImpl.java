@@ -1657,6 +1657,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (ipsToRelease != null && !ipsToRelease.isEmpty()) {
             for (IPAddressVO ip : ipsToRelease) {
                 _ipAddressDao.unassignIpAddress(ip.getAddress());
+                if(ip.getAccountId() != Account.ACCOUNT_ID_SYSTEM){       
+                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ip.getAccountId(), ip.getDataCenterId(), 0, ip.getAddress().toString());
+                    _usageEventDao.persist(usageEvent);
+                }
             }
             
             s_logger.debug("Ip addresses are unassigned successfully as a part of network id=" + networkId + " destroy");
