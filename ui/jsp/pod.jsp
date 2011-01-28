@@ -551,7 +551,7 @@ dictionary = {
    
 <!-- Add IP Range to pod (begin) -->
 <div id="dialog_add_iprange_to_pod" title="Add IP Range to Pod" style="display:none">
-	<fmt:message key="message.add.iprange.to.pod"/>
+	<fmt:message key="message.add.ip.range.to.pod"/>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form5">
 			<ol>				    		

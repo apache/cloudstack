@@ -829,7 +829,7 @@ function bindAddIpRangeToPodButton($leftmenuItem1) {
 					    var item = json.createvlaniprangeresponse.vlan;
 					    var $subgridItem = $("#network_tab_template").clone(true);
 					    podNetworkJsonToTemplate(item, $subgridItem); 	
-					    $subgridItem.find("#after_action_info").text("IP range was added successfully.");
+					    $subgridItem.find("#after_action_info").text(g_dictionary["label.adding.succeeded"]);
                         $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  				                        
 	                    $("#tab_content_ipallocation").find("#tab_container").append($subgridItem.fadeIn("slow"));	
 					},

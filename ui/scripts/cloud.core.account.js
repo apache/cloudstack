@@ -312,8 +312,8 @@ function bindAddUserButton() {
 					    					    
 					    var $subgridItem = $("#user_tab_template").clone(true);	                        
 				        accountUserJSONToTemplate(item, $subgridItem);	
-	                    $subgridItem.find("#after_action_info").text("User was added successfully.");
-                        $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
+	                    $subgridItem.find("#after_action_info").text(g_dictionary["label.adding.succeeded"]);
+	                    $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
                         $("#tab_content_user").find("#tab_container").append($subgridItem.show());  					    
 					},			
                     error: function(XMLHttpResponse) {	
