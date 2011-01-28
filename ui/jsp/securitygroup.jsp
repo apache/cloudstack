@@ -5,6 +5,18 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<script language="javascript">
+dictionary = { 	
+	'label.action.edit.security.group' : '<fmt:message key="label.action.edit.security.group"/>',
+	'label.action.delete.security.group' : '<fmt:message key="label.action.delete.security.group"/>',
+	'label.action.delete.security.group.processing' : '<fmt:message key="label.action.delete.security.group.processing"/>',
+	'message.action.delete.security.group' : '<fmt:message key="message.action.delete.security.group"/>',
+	'label.action.delete.ingress.rule' : '<fmt:message key="label.action.delete.ingress.rule"/>',
+	'label.action.delete.ingress.rule.processing' : '<fmt:message key="label.action.delete.ingress.rule.processing"/>',
+	'message.action.delete.ingress.rule' : '<fmt:message key="message.action.delete.ingress.rule"/>'	
+};	
+</script>
+
 <div class="main_title" id="right_panel_header">
     
     <div class="main_titleicon">

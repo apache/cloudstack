@@ -339,71 +339,12 @@ function initAddIngressRuleDialog() {
     });	 
 }
 
-function doEditSecurityGroup($actionLink, $detailsTab, $midmenuItem1) {       
-    var $readonlyFields  = $detailsTab.find("#name, #displaytext, #tags, #domain");
-    var $editFields = $detailsTab.find("#name_edit, #displaytext_edit, #domain_edit"); 
-             
-    $readonlyFields.hide();
-    $editFields.show();  
-    $detailsTab.find("#cancel_button, #save_button").show();
-    
-    $detailsTab.find("#cancel_button").unbind("click").bind("click", function(event){    
-        $editFields.hide();
-        $readonlyFields.show();   
-        $("#save_button, #cancel_button").hide();       
-        return false;
-    });
-    $detailsTab.find("#save_button").unbind("click").bind("click", function(event){        
-        doEditsecurityGroup2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields);   
-        return false;
-    });   
-}
-
-function doEditSecurityGroup2($actionLink, $detailsTab, $midmenuItem1, $readonlyFields, $editFields) {     
-    var jsonObj = $midmenuItem1.data("jsonObj");
-    var id = jsonObj.id;
-    
-    // validate values   
-    var isValid = true;					
-    isValid &= validateString("Name", $detailsTab.find("#name_edit"), $detailsTab.find("#name_edit_errormsg"), true);		
-    isValid &= validateString("Display Text", $detailsTab.find("#displaytext_edit"), $detailsTab.find("#displaytext_edit_errormsg"), true);				
-    if (!isValid) 
-        return;	
-     
-    var array1 = [];    
-    var name = $detailsTab.find("#name_edit").val();
-    array1.push("&name="+todb(name));
-    
-    var displaytext = $detailsTab.find("#displaytext_edit").val();
-    array1.push("&displayText="+todb(displaytext));
-	
-	var tags = $detailsTab.find("#tags_edit").val();
-	array1.push("&tags="+todb(tags));	
-	
-	var domainid = $detailsTab.find("#domain_edit").val();
-	array1.push("&domainid="+todb(domainid));	
-	
-	$.ajax({
-	    data: createURL("command=updatesecurityGroup&id="+id+array1.join("")),
-		dataType: "json",
-		success: function(json) {			    
-		    var jsonObj = json.updatesecurityGroupresponse.securityGroup;   
-		    securityGroupToMidmenu(jsonObj, $midmenuItem1);
-		    securityGroupToRightPanel($midmenuItem1);	
-		    
-		    $editFields.hide();      
-            $readonlyFields.show();       
-            $("#save_button, #cancel_button").hide();     	  
-		}
-	});
-}
-
 function doDeleteSecurityGroup($actionLink, $detailsTab, $midmenuItem1) {       
     var jsonObj = $midmenuItem1.data("jsonObj");
 	var id = jsonObj.id;
 		
 	$("#dialog_confirmation")
-	.text("Please confirm you want to delete this security group")
+	.text(dictionary["message.action.delete.security.group"])
 	.dialog('option', 'buttons', { 					
 		"Confirm": function() { 			
 			$(this).dialog("close");			
@@ -563,17 +504,17 @@ function securityGroupIngressRuleJSONToTemplate(jsonObj, $template) {
 	var $actionMenu = $actionLink.find("#ingressrule_action_menu");
     $actionMenu.find("#action_list").empty();	
         
-    buildActionLinkForSubgridItem("Delete Ingress Rule", securityGroupIngressRuleActionMap, $actionMenu, $template);	
+    buildActionLinkForSubgridItem("label.action.delete.ingress.rule", securityGroupIngressRuleActionMap, $actionMenu, $template);	
     
     return $template;   
 } 
 
 var securityGroupIngressRuleActionMap = {      
-    "Delete Ingress Rule": {      
+    "label.action.delete.ingress.rule": {      
         isAsyncJob: true,
         asyncJobResponse: "revokesecuritygroupingress",
 		dialogBeforeActionFn : doDeleteIngressRule,
-        inProcessText: "Deleting Ingress Rule....",
+        inProcessText: "label.action.delete.ingress.rule.processing",
         afterActionSeccessFn: function(json, id, $subgridItem) {                 
             $subgridItem.slideUp("slow", function() {
                 $(this).remove();
@@ -584,7 +525,7 @@ var securityGroupIngressRuleActionMap = {
 
 function doDeleteIngressRule($actionLink, $subgridItem) {
 	$("#dialog_info")	
-	.text("Please confirm you want to delete this ingress rule")
+	.text(dictionary["message.action.delete.ingress.rule"])
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 	
@@ -662,10 +603,7 @@ function securityGroupClearDetailsTab() {
     $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
 }
 
-var securityGroupActionMap = {   
-    "Edit Security Group": {
-        dialogBeforeActionFn: doEditSecurityGroup
-    },   
+var securityGroupActionMap = {       
     "Delete Security Group": {               
         api: "deleteSecurityGroup",     
         isAsyncJob: false,  
