@@ -162,8 +162,8 @@ function zoneJsonToDetailsTab() {
     });	  
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();      
-    buildActionLinkForTab("Edit Zone", zoneActionMap, $actionMenu, $leftmenuItem1, $thisTab);    
-    buildActionLinkForTab("Delete Zone", zoneActionMap, $actionMenu, $leftmenuItem1, $thisTab);   
+    buildActionLinkForTab("label.action.edit.zone", zoneActionMap, $actionMenu, $leftmenuItem1, $thisTab);    
+    buildActionLinkForTab("label.action.delete.zone", zoneActionMap, $actionMenu, $leftmenuItem1, $thisTab);   
     
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();      
@@ -339,13 +339,13 @@ function bindAddPodButton($button, $leftmenuItem1) {
 }
 
 var zoneActionMap = {
-    "Edit Zone": {
+    "label.action.edit.zone": {
         dialogBeforeActionFn: doEditZone  
     },
-    "Delete Zone": {                  
+    "label.action.delete.zone": {                  
         isAsyncJob: false,       
         dialogBeforeActionFn : doDeleteZone,  
-        inProcessText: "Deleting Zone....",
+        inProcessText: "label.action.delete.zone.processing",
         afterActionSeccessFn: function(json, $leftmenuItem1, id) {   
             $leftmenuItem1.slideUp(function() {
                 $(this).remove();                                
@@ -473,7 +473,7 @@ function doDeleteZone($actionLink, $detailsTab, $midmenuItem1) {
 	var id = jsonObj.id;
 		
 	$("#dialog_confirmation")
-	.text("Please confirm you want to delete this zone")
+	.text(dictionary["message.action.delete.zone"])
 	.dialog('option', 'buttons', { 					
 		"Confirm": function() { 			
 			$(this).dialog("close");			

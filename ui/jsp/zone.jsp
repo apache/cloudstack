@@ -5,11 +5,20 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<script language="javascript">
+dictionary = { 	
+	'label.action.edit.zone' : '<fmt:message key="label.action.edit.zone"/>',
+	'label.action.delete.zone' : '<fmt:message key="label.action.delete.zone"/>',
+	'label.action.delete.zone.processing' : '<fmt:message key="label.action.delete.zone.processing"/>',
+	'message.action.delete.zone' : '<fmt:message key="message.action.delete.zone"/>'
+};	
+</script>
+
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
         <img src="images/title_zoneicon.gif" /></div>
    <h1>
-        <fmt:message key="label.volume"/>
+        <fmt:message key="label.zone"/>
     </h1>
 </div>
 <div class="contentbox" id="right_panel_content">
