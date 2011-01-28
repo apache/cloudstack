@@ -39,9 +39,6 @@ ALTER TABLE `cloud`.`user` ADD UNIQUE `i_user__api_key`(`api_key`);
 ALTER TABLE `cloud`.`user` ADD CONSTRAINT `fk_user__account_id` FOREIGN KEY `fk_user__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`user` ADD INDEX `i_user__account_id`(`account_id`);
 
-ALTER TABLE `cloud`.`ext_lun_alloc` ADD UNIQUE `i_ext_lun_alloc__target_iqn__lun`(`target_iqn`, `lun`);
-ALTER TABLE `cloud`.`ext_lun_details` ADD CONSTRAINT `fk_ext_lun_details__ext_lun_id` FOREIGN KEY `fk_ext_lun_details__ext_lun_id`(`ext_lun_id`) REFERENCES `ext_lun_alloc`(`id`) ON DELETE CASCADE;
-
 ALTER TABLE `cloud`.`account` ADD CONSTRAINT `fk_account__domain_id` FOREIGN KEY `fk_account__domain_id` (`domain_id`) REFERENCES `domain` (`id`);
 ALTER TABLE `cloud`.`account` ADD INDEX `i_account__domain_id`(`domain_id`);
 
