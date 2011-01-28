@@ -70,7 +70,12 @@
 		'label.adding.failed': '<fmt:message key="label.adding.failed"/>',
         'label.succeeded': '<fmt:message key="label.succeeded"/>',
 		'label.failed': '<fmt:message key="label.failed"/>',
-		'label.error.code': '<fmt:message key="label.error.code"/>',		
+		'label.error.code': '<fmt:message key="label.error.code"/>',	
+		'label.required': '<fmt:message key="label.required"/>',
+		'label.invalid.number': '<fmt:message key="label.invalid.number"/>',	
+		'label.invalid.integer': '<fmt:message key="label.invalid.integer"/>',	
+		'label.minimum': '<fmt:message key="label.minimum"/>',
+		'label.maximum': '<fmt:message key="label.maximum"/>',
 	};	
 	</script>
 </head>

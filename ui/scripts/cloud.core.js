@@ -1502,7 +1502,8 @@ function validateDropDownBox(label, field, errMsgField, appendErrMsg) {
     var errMsg = "";   
     var value = field.val();     
 	if (value == null || value.length == 0) {	   
-	    errMsg = label + " is a required value. ";	   
+	    //errMsg = label + " is a required value. ";	  
+	    errMsg = g_dictionary["label.required"]; 
 		isValid = false;		
 	} 		
 	showErrorInDropdown(isValid, field, errMsgField, errMsg, appendErrMsg);	
@@ -1520,27 +1521,32 @@ function validateNumber(label, field, errMsgField, min, max, isOptional, type) {
          
 	if (value != null && value.length != 0) {
 		if(isNaN(value)) {
-			errMsg = label + " must be a number";
+			//errMsg = label + " must be a number";
+			errMsg = g_dictionary["label.invalid.number"]; 
 			isValid = false;
 		} 
 		else {
 		    if(type == "integer" && (value % 1) != 0) {
-		        errMsg = label + " must be an integer";
+		        //errMsg = label + " must be an integer";
+		        errMsg = g_dictionary["label.invalid.integer"]; 
 				isValid = false;
 		    }
 		
 			if (min != null && value < min) {
-				errMsg = label + " must be a value greater than or equal to " + min;
+				//errMsg = label + " must be a value greater than or equal to " + min;
+				errMsg = g_dictionary["label.minimum"] + ": " + min; 
 				isValid = false;
 			}
 			if (max != null && value > max) {
-				errMsg = label + " must be a value less than or equal to " + max;
+				//errMsg = label + " must be a value less than or equal to " + max;
+				errMsg = g_dictionary["label.maximum"] + ": " + max; 
 				isValid = false;
 			}
 		}
 	}
 	else if(isOptional!=true){  //required field
-		errMsg = label + " is a required value. ";
+		//errMsg = label + " is a required value. ";
+		errMsg = g_dictionary["label.required"]; 
 		isValid = false;
 	}
 	showError(isValid, field, errMsgField, errMsg);	
@@ -1552,7 +1558,8 @@ function validateString(label, field, errMsgField, isOptional, maxLength) {
     var errMsg = "";
     var value = field.val();     
 	if (isOptional!=true && (value == null || value.length == 0)) {	 //required field   
-	    errMsg = label + " is a required value. ";	   
+	    //errMsg = label + " is a required value. ";	  
+	    errMsg = g_dictionary["label.required"];  
 		isValid = false;		
 	} 	
 	else if (value!=null && value.length >= maxLength) {	    
