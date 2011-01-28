@@ -37,8 +37,7 @@ public class DiskProfile {
     private long diskOfferingId;
     private Long templateId;
     private long volumeId;
-
-
+    
     private HypervisorType hyperType;
     
     protected DiskProfile() {

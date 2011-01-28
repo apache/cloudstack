@@ -73,19 +73,6 @@ public interface StorageManager extends Manager {
 	public HostVO getSecondaryStorageHost(long zoneId);
 
 	/**
-	 * This method sends the given command on all the hosts in the primary storage pool given until is succeeds on any one.
-	 * If the command doesn't succeed on any, it return null. All exceptions are swallowed. Any errors are expected be be in
-	 * answer.getDetails(), if it's not null.
-	 * @param poolId        The primary storage pool. The cmd uses this for some reason.
-	 * @param cmd           Any arbitrary command which needs access to the volumes on the given storage pool.
-	 * @param basicErrMsg   The cmd specific error msg to spew out in case of any exception.
-	 * @return The answer for that command, could be success or failure.
-	 */
-	Answer sendToHostsOnStoragePool(Long poolId, Command cmd, String basicErrMsg);
-	Answer sendToHostsOnStoragePool(Long poolId, Command cmd, String basicErrMsg, int retriesPerHost, int pauseBeforeRetry, boolean shouldBeSnapshotCapable, Long vmId );
-	
-
-	/**
 	 * Add a pool to a host
 	 * @param hostId
 	 * @param pool
@@ -137,10 +124,13 @@ public interface StorageManager extends Manager {
 	 * @return true if the volume is on a shared storage pool, false otherwise
 	 */
 	boolean volumeOnSharedStoragePool(VolumeVO volume);
-	
-	Answer[] sendToPool(StoragePool pool, Commands cmds);
-	
-	Answer sendToPool(StoragePool pool, Command cmd);
+
+	Answer sendToPool(long poolId, Command cmd) throws StorageUnavailableException;
+	Answer sendToPool(StoragePool pool, Command cmd) throws StorageUnavailableException;
+	Answer[] sendToPool(long poolId, Commands cmd) throws StorageUnavailableException;
+    Answer[] sendToPool(StoragePool pool, Commands cmds) throws StorageUnavailableException;
+	Pair<Long, Answer[]> sendToPool(StoragePool pool, long[] hostIdsToTryFirst, List<Long> hostIdsToAvoid, Commands cmds) throws StorageUnavailableException;
+	Pair<Long, Answer> sendToPool(StoragePool pool, long[] hostIdsToTryFirst, List<Long> hostIdsToAvoid, Command cmd) throws StorageUnavailableException;
 	
 	/**
 	 * Checks that one of the following is true:
@@ -153,8 +143,6 @@ public interface StorageManager extends Manager {
 	
 	String getVmNameOnVolume(VolumeVO volume);
 	
-	List<Pair<VolumeVO, StoragePoolVO>> isStoredOn(VMInstanceVO vm);
-
 	/**
 	 * Checks if a host has running VMs that are using its local storage pool.
 	 * @return true if local storage is active on the host
@@ -184,7 +172,6 @@ public interface StorageManager extends Manager {
     <T extends VMInstanceVO> DiskProfile allocateRawVolume(VolumeType type, String name, DiskOfferingVO offering, Long size, T vm, Account owner);
     <T extends VMInstanceVO> DiskProfile allocateTemplatedVolume(VolumeType type, String name, DiskOfferingVO offering, VMTemplateVO template, T vm, Account owner);
     
-    Long findHostIdForStoragePool(StoragePool pool);
 	void createCapacityEntry(StoragePoolVO storagePool, long allocated);
 
     

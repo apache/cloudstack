@@ -129,4 +129,25 @@ public class Commands {
         }
         return null;
     }
+    
+    /**
+     * @return For Commands with handler OnError.Continue, one command succeeding is successful.  If not, all commands must succeed to be successful. 
+     */
+    public boolean isSuccessful() {
+        if (_answers == null) {
+            return false;
+        }
+        if (_handler == OnError.Continue) {
+            return true;
+        }
+        for (Answer answer : _answers) {
+            if (_handler == OnError.Continue && answer.getResult()) {
+                return true;
+            } else if (_handler != OnError.Continue && !answer.getResult()) {
+                return false;
+            }
+        }
+        
+        return _handler != OnError.Continue;
+    }
 }

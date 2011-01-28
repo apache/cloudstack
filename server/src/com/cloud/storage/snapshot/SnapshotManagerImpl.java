@@ -34,6 +34,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.BackupSnapshotCommand;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.ManageSnapshotAnswer;
@@ -63,6 +64,7 @@ import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
@@ -75,6 +77,7 @@ import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
@@ -98,6 +101,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
@@ -199,6 +203,36 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         }
         return format;
     }
+    
+    protected Answer sendToPool(Volume vol, Command cmd) {
+        StoragePool pool = _storagePoolDao.findById(vol.getPoolId());
+        VMInstanceVO vm = _vmDao.findById(vol.getInstanceId());
+        
+        long[] hostIdsToTryFirst = null;
+        if (vm != null && vm.getHostId() != null) {
+            hostIdsToTryFirst = new long[] { vm.getHostId() };
+        }
+        
+        List<Long> hostIdsToAvoid = new ArrayList<Long>();
+        for (int retry = _totalRetries; retry >= 0 ; retry--) {
+            try {
+                Pair<Long, Answer> result = _storageMgr.sendToPool(pool, hostIdsToTryFirst, hostIdsToAvoid, cmd);
+                if (result.second().getResult()) {
+                    return result.second();
+                }
+            } catch (StorageUnavailableException e1) {
+                s_logger.warn("Storage unavailable ", e1);
+                return null;
+            }
+            
+            try {
+                Thread.sleep(_pauseInterval * 1000);
+            } catch (InterruptedException e) {
+            }
+        }
+        
+        return null;
+    }
 
     @Override
     public SnapshotVO createSnapshotOnPrimary(VolumeVO volume, Long policyId, Long snapshotId) throws ResourceAllocationException {
@@ -250,9 +284,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         }
 
         ManageSnapshotCommand cmd = new ManageSnapshotCommand(id, volume.getPath(), preSnapshotPath, snapshotName, vmName);
-        String basicErrMsg = "Failed to create snapshot for volume: " + volume.getId();
-        ManageSnapshotAnswer answer = (ManageSnapshotAnswer) _storageMgr.sendToHostsOnStoragePool(volume.getPoolId(),
-                cmd, basicErrMsg, _totalRetries, _pauseInterval, _shouldBeSnapshotCapable, volume.getInstanceId());
+        
+        ManageSnapshotAnswer answer = (ManageSnapshotAnswer)sendToPool(volume, cmd);
+        
         // Update the snapshot in the database
         if ((answer != null) && answer.getResult()) {
             // The snapshot was successfully created
@@ -496,13 +530,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             // By default, assume failed.
             String basicErrMsg = "Failed to backup snapshot id " + snapshot.getId() + " to secondary storage for volume: " + volumeId;
             boolean backedUp = false;
-            BackupSnapshotAnswer answer = (BackupSnapshotAnswer) _storageMgr.sendToHostsOnStoragePool(volume.getPoolId(),
-                                                                                                      backupSnapshotCommand,
-                                                                                                      basicErrMsg,
-                                                                                                      _totalRetries,
-                                                                                                      _pauseInterval,
-                                                                                                      _shouldBeSnapshotCapable,
-                                                                                                      volume.getInstanceId());
+            BackupSnapshotAnswer answer = (BackupSnapshotAnswer)sendToPool(volume, backupSnapshotCommand);
             if (answer != null && answer.getResult()) {
                 backedUpSnapshotUuid = answer.getBackupSnapshotName();
                 if (backedUpSnapshotUuid != null) {
@@ -745,8 +773,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         snapshot.setBackupSnapshotId(null);
         _snapshotDao.update(snapshotId, snapshot);
         details = "Failed to destroy snapshot id:" + snapshotId + " for volume: " + volume.getId();
-        Answer answer = _storageMgr.sendToHostsOnStoragePool(volume.getPoolId(), cmd, details, _totalRetries,
-                _pauseInterval, _shouldBeSnapshotCapable, volume.getInstanceId());
+        Answer answer = sendToPool(volume, cmd);
 
         if ((answer != null) && answer.getResult()) {
 
@@ -826,8 +853,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             accountId = account.getId();
         }
 
-        if(isRecursive == null)
+        if(isRecursive == null) {
             isRecursive = false;
+        }
         
         Object name = cmd.getSnapshotName();
         Object id = cmd.getId();
@@ -850,10 +878,11 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             sb.join("accountSearch", accountSearch, sb.entity().getAccountId(), accountSearch.entity().getId(), JoinType.INNER);
 
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
-            if(isRecursive)
+            if(isRecursive) {
                 domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
-            else
+            } else {
                 domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.EQ);
+            }
             accountSearch.join("domainSearch", domainSearch, accountSearch.entity().getDomainId(), domainSearch.entity().getId(), JoinType.INNER);
         }
 
@@ -885,10 +914,11 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById(domainId);
             SearchCriteria<?> joinSearch = sc.getJoin("accountSearch");
-            if(isRecursive)
+            if(isRecursive) {
                 joinSearch.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-            else
+            } else {
                 joinSearch.setJoinParameters("domainSearch", "path", domain.getPath());
+            }
         }
 
         if (snapshotTypeStr != null) {
@@ -932,7 +962,10 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         	Long poolId = volume.getPoolId();
         	if (poolId != null) {
         	    // Retry only once for this command. There's low chance of failure because of a connection problem.
-        	    answer = _storageMgr.sendToHostsOnStoragePool(poolId, cmd, basicErrMsg, 1, _pauseInterval, _shouldBeSnapshotCapable, volume.getInstanceId());
+        	    try {
+                    answer = _storageMgr.sendToPool(poolId, cmd);
+                } catch (StorageUnavailableException e) {
+                }
         	}
         	else {
         	    s_logger.info("Pool id for volume id: " + volumeId + " belonging to account id: " + accountId + " is null. Assuming the snapshotsDir for the account has already been deleted");

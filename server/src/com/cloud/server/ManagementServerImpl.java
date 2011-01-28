@@ -150,8 +150,8 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -174,6 +174,7 @@ import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -194,20 +195,20 @@ import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.Upload;
+import com.cloud.storage.Upload.Mode;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.Upload.Mode;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -246,10 +247,10 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.MacAddress;
@@ -1694,8 +1695,9 @@ public class ManagementServerImpl implements ManagementServer {
         String accountName = null;
         Boolean isRecursive = cmd.isRecursive();
         
-        if(isRecursive == null)
+        if(isRecursive == null) {
             isRecursive = false;
+        }
         
         if(accountId != null && accountId == 1){
         	//system account should NOT be searchable
@@ -1768,10 +1770,11 @@ public class ManagementServerImpl implements ManagementServer {
             DomainVO domain = _domainDao.findById(domainId);
 
             // I want to join on user_vm.domain_id = domain.id where domain.path like 'foo%'
-            if(isRecursive)
+            if(isRecursive) {
                 sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-            else
+            } else {
                 sc.setJoinParameters("domainSearch", "path", domain.getPath());
+            }
             
             sc.setParameters("nid", 1L);
         } else {
@@ -2249,8 +2252,9 @@ public class ManagementServerImpl implements ManagementServer {
         boolean isAdmin = false;
         Boolean isRecursive = cmd.isRecursive();
         
-        if(isRecursive == null)
+        if(isRecursive == null) {
             isRecursive = false;
+        }
         
         if ((account == null) || isAdmin(account.getType())) {
             isAdmin = true;
@@ -2349,10 +2353,11 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("accountIdEQ", accountId);
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById(domainId);
-            if(isRecursive)
+            if(isRecursive) {
                 sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
-            else
+            } else {
                 sc.setJoinParameters("domainSearch", "path", domain.getPath());
+            }
         }
         if (type != null) {
             sc.setParameters("volumeType", "%" + type + "%");
@@ -3987,6 +3992,7 @@ public class ManagementServerImpl implements ManagementServer {
 		}
 	}
 
+    @Override
     public VMInstanceVO destroySystemVM(DestroySystemVmCmd cmd)  {
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
     
@@ -4263,7 +4269,6 @@ public class ManagementServerImpl implements ManagementServer {
 
         String secondaryStorageURL = _storageMgr.getSecondaryStorageURL(zoneId); 
         StoragePoolVO srcPool = _poolDao.findById(volume.getPoolId());
-        Long sourceHostId = _storageMgr.findHostIdForStoragePool(srcPool);
         List<HostVO> storageServers = _hostDao.listByTypeDataCenter(Host.Type.SecondaryStorage, zoneId);
         HostVO sserver = storageServers.get(0);
 
@@ -4288,7 +4293,12 @@ public class ManagementServerImpl implements ManagementServer {
     
             // Copy the volume from the source storage pool to secondary storage
             CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volume.getPath(), srcPool, secondaryStorageURL, true);
-            CopyVolumeAnswer cvAnswer = (CopyVolumeAnswer) _agentMgr.easySend(sourceHostId, cvCmd);
+            CopyVolumeAnswer cvAnswer = null;
+            try {
+                cvAnswer = (CopyVolumeAnswer) _storageMgr.sendToPool(srcPool, cvCmd);
+            } catch (StorageUnavailableException e) {
+                s_logger.debug("Storage unavailable");
+            }
 
             // Check if you got a valid answer.
             if (cvAnswer == null || !cvAnswer.getResult()) {                

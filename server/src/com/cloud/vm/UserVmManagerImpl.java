@@ -139,6 +139,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.StorageResourceType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
@@ -1440,8 +1441,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // on the storage server to create the template
 
         // This can be sent to a KVM host too.
-        CreatePrivateTemplateAnswer answer = (CreatePrivateTemplateAnswer) _storageMgr.sendToHostsOnStoragePool(volume
-                .getPoolId(), cmd, null);
+        StoragePool pool = _storagePoolDao.findById(volume.getPoolId());
+        CreatePrivateTemplateAnswer answer = null;
+        try {
+            answer = (CreatePrivateTemplateAnswer)_storageMgr.sendToPool(pool, cmd);
+        } catch (StorageUnavailableException e) {
+        }
 
         if ((answer != null) && answer.getResult()) {
             privateTemplate = _templateDao.findById(templateId);
