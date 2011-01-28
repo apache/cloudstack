@@ -698,7 +698,7 @@ function isMiddleMenuShown() {
 // adding middle menu item ***
 function beforeAddingMidMenuItem() {
     var $midmenuItem1 = $("#midmenu_item").clone().attr("id", "midmenu_item_clone");
-	$midmenuItem1.find("#first_row").text("Adding....");    	
+	$midmenuItem1.find("#first_row").text(g_dictionary["label.adding.processing"]);    	
 	$midmenuItem1.find("#second_row").html("&nbsp;");    			
 	$midmenuItem1.find("#content").addClass("inaction"); 
 	$midmenuItem1.find("#spinning_wheel").show();
@@ -712,7 +712,7 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, secondRowText) {
 
     if(isSuccessful == true) {
         $midmenuItem1.find("#info_icon").removeClass("error").show();
-	    $midmenuItem1.data("afterActionInfo", ("Adding succeeded.")); 
+	    $midmenuItem1.data("afterActionInfo", g_dictionary["label.adding.succeeded"]); 
 	    
 	    var $container = $("#midmenu_container");
 	    if($("#midmenu_container").find("#multiple_selection_sub_container").length > 0) {
@@ -731,7 +731,7 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, secondRowText) {
 	    $midmenuItem1.find("#content").addClass("addingfailed");	        	    
 	    $midmenuItem1.find("#icon").attr("src", "images/addingfailed_icon.png");
 	    $midmenuItem1.find("#icon_container").show();	    
-	    $midmenuItem1.find("#first_row").text("Adding failed");	
+	    $midmenuItem1.find("#first_row").text(g_dictionary["label.adding.failed"]);	
 	    
 	    $midmenuItem1.find("#close_icon").show().bind("click", function(event) {	        
 	        $midmenuItem1.slideUp("slow", function() {	            
@@ -1274,7 +1274,8 @@ var ERROR_INTERNET_CANNOT_CONNECT = 12029;
 var ERROR_VMOPS_ACCOUNT_ERROR = 531;
 
 //localization
-var dictionary = {};
+var dictionary = {};   //initialized in each JSP file
+var g_dictionary = {}; //initialized in index.jsp
 
 var g_logger = new Logger();
 $(function() {

@@ -62,6 +62,14 @@
 	<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
 
     <title><fmt:message key="label.cloud.console"/></title>
+    
+    <script language="javascript">
+	g_dictionary = { 	
+		'label.adding.processing' : '<fmt:message key="label.adding.processing"/>',
+		'label.adding.succeeded' : '<fmt:message key="label.adding.succeeded"/>',
+		'label.adding.failed' : '<fmt:message key="label.adding.failed"/>'
+	};	
+	</script>
 </head>
 <body>
 	<!-- Main Login Dialog (begin)-->
