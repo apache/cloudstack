@@ -5,6 +5,20 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<script language="javascript">
+dictionary = { 	
+	'label.action.start.router' : '<fmt:message key="label.action.start.router"/>',
+	'label.action.start.router.processing' : '<fmt:message key="label.action.start.router.processing"/>',
+	'message.action.start.router' : '<fmt:message key="message.action.start.router"/>',
+	'label.action.stop.router' : '<fmt:message key="label.action.stop.router"/>',
+	'label.action.stop.router.processing' : '<fmt:message key="label.action.stop.router.processing"/>',
+	'message.action.stop.router' : '<fmt:message key="message.action.stop.router"/>',
+	'label.action.reboot.router' : '<fmt:message key="label.action.reboot.router"/>',
+	'label.action.reboot.router.processing' : '<fmt:message key="label.action.reboot.router.processing"/>',
+	'message.action.reboot.router' : '<fmt:message key="message.action.reboot.router"/>'
+};	
+</script>
+
 <!-- router detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
      
