@@ -104,6 +104,7 @@ public class ApiConstants {
     public static final String NETWORK_DOMAIN = "networkdomain";
     public static final String NETMASK = "netmask";
     public static final String NEW_NAME = "newname";
+    public static final String NUM_RETRIES = "numretries";
     public static final String OFFER_HA = "offerha";
     public static final String OP = "op";
     public static final String OS_CATEGORY_ID = "oscategoryid";
@@ -116,11 +117,15 @@ public class ApiConstants {
     public static final String POLICY_ID = "policyid";
     public static final String PORTAL = "portal";
     public static final String PORT_FORWARDING_SERVICE_ID = "portforwardingserviceid";
-    public static final String PRIVATE_IP = "privateip";
+    public static final String PRIVATE_INTERFACE = "privateinterface";
+    public static final String PRIVATE_IP = "privateip";    
     public static final String PRIVATE_PORT = "privateport";
+    public static final String PRIVATE_ZONE = "privatezone";
     public static final String PROTOCOL = "protocol";
+    public static final String PUBLIC_INTERFACE = "publicinterface";
     public static final String PUBLIC_IP = "publicip";
     public static final String PUBLIC_PORT = "publicport";
+    public static final String PUBLIC_ZONE = "publiczone";
     public static final String RECEIVED_BYTES = "receivedbytes";
     public static final String REQUIRES_HVM = "requireshvm";
     public static final String RESOURCE_TYPE = "resourcetype";
@@ -148,9 +153,11 @@ public class ApiConstants {
     public static final String TARGET_IQN = "targetiqn";
     public static final String TEMPLATE_FILTER = "templatefilter";
     public static final String TEMPLATE_ID = "templateid";
+    public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
     public static final String TYPE = "type";
     public static final String URL = "url";
+    public static final String USAGE_INTERFACE = "usageinterface";
     public static final String USER_DATA = "userdata";
     public static final String USER_ID = "userid";
     public static final String USERNAME = "username";
