@@ -5,6 +5,17 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<script language="javascript">
+dictionary = { 	
+	'label.action.delete.IP.range' : '<fmt:message key="label.action.delete.IP.range"/>',
+	'label.action.delete.IP.range.processing' : '<fmt:message key="label.action.delete.IP.range.processing"/>',
+	'label.action.delete.firewall' : '<fmt:message key="label.action.delete.firewall"/>',
+	'label.action.delete.firewall.processing' : '<fmt:message key="label.action.delete.firewall.processing"/>',
+	'label.action.delete.load.balancer' : '<fmt:message key="label.action.delete.load.balancer"/>',
+	'label.action.delete.load.balancer.processing' : '<fmt:message key="label.action.delete.load.balancer.processing"/>'
+};	
+</script>
+
 <div class="main_title" id="right_panel_header">
     <div class="main_titleicon">
         <img src="images/title_podicon.gif" /></div>

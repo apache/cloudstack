@@ -247,7 +247,7 @@ function publicNetworkIprangeJsonToTemplate(jsonObj, $template) {
 	var $actionMenu = $actionLink.find("#iprange_action_menu");
     $actionMenu.find("#action_list").empty();	
        
-    buildActionLinkForSubgridItem("Delete IP Range", publicNetworkIpRangeActionMap, $actionMenu, $template);	
+    buildActionLinkForSubgridItem("label.action.delete.IP.range", publicNetworkIpRangeActionMap, $actionMenu, $template);	
 }
 
 function publicNetworkJsonToFirewallTab() {  
@@ -339,14 +339,14 @@ function publicNetworkFirewallJsonToTemplate(jsonObj, $template) {
 	var $actionMenu = $actionLink.find("#firewall_action_menu");
     $actionMenu.find("#action_list").empty();	
        
-    buildActionLinkForSubgridItem("Delete Firewall", publicNetworkFirewallActionMap, $actionMenu, $template);	
+    buildActionLinkForSubgridItem("label.action.delete.firewall", publicNetworkFirewallActionMap, $actionMenu, $template);	
 }
 
 var publicNetworkFirewallActionMap = {     
-    "Delete Firewall": {              
+    "label.action.delete.firewall": {              
         api: "deleteExternalFirewall",     
         isAsyncJob: false,      
-        inProcessText: "Deleting Firewall....",
+        inProcessText: "label.action.delete.firewall.processing",
         afterActionSeccessFn: function(json, id, $subgridItem) {                 
             $subgridItem.slideUp("slow", function() {
                 $(this).remove();
@@ -410,14 +410,14 @@ function publicNetworkLoadBalancerJsonToTemplate(jsonObj, $template) {
 	var $actionMenu = $actionLink.find("#loadbalancer_action_menu");
     $actionMenu.find("#action_list").empty();	
        
-    buildActionLinkForSubgridItem("Delete Load Balancer", publicNetworkLoadBalancerActionMap, $actionMenu, $template);	
+    buildActionLinkForSubgridItem("label.action.delete.load.balancer", publicNetworkLoadBalancerActionMap, $actionMenu, $template);	
 }
 
 var publicNetworkLoadBalancerActionMap = {     
-    "Delete Load Balancer": {              
+    "label.action.delete.load.balancer": {              
         api: "deleteExternalLoadBalancer",     
         isAsyncJob: false,      
-        inProcessText: "Deleting Load Balancer....",
+        inProcessText: "label.action.delete.load.balancer.processing",
         afterActionSeccessFn: function(json, id, $subgridItem) {                 
             $subgridItem.slideUp("slow", function() {
                 $(this).remove();
@@ -771,10 +771,10 @@ function bindAddExternalFirewallButton($button, $midmenuItem1) {
 }
 
 var publicNetworkIpRangeActionMap = {     
-    "Delete IP Range": {              
+    "label.action.delete.IP.range": {              
         api: "deleteVlanIpRange",     
         isAsyncJob: false,   
-        inProcessText: "Deleting IP Range....",
+        inProcessText: "label.action.delete.IP.range.processing",
         afterActionSeccessFn: function(json, id, $subgridItem) {                 
             $subgridItem.slideUp("slow", function() {
                 $(this).remove();
@@ -1054,14 +1054,14 @@ function directNetworkIprangeJsonToTemplate(jsonObj, $template) {
 	var $actionMenu = $actionLink.find("#iprange_action_menu");
     $actionMenu.find("#action_list").empty();	
        
-    buildActionLinkForSubgridItem("Delete IP Range", directNetworkIpRangeActionMap, $actionMenu, $template);
+    buildActionLinkForSubgridItem("label.action.delete.IP.range", directNetworkIpRangeActionMap, $actionMenu, $template);
 }
 
 var directNetworkIpRangeActionMap = {     
-    "Delete IP Range": {              
+    "label.action.delete.IP.range": {              
         api: "deleteVlanIpRange",     
         isAsyncJob: false,   
-        inProcessText: "Deleting IP Range....",
+        inProcessText: "label.action.delete.IP.range.processing",
         afterActionSeccessFn: function(json, id, $subgridItem) {                 
             $subgridItem.slideUp("slow", function() {
                 $(this).remove();
