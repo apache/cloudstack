@@ -1172,9 +1172,10 @@ function initVMWizard() {
 				                            bindClickToMidMenu($midmenuItem1, vmToRightPanel, getMidmenuId);  
 				                            
 				                            if (item.passwordenabled == true) {							                                									        
-										        var secondRowText = "New password is " + item.password;
+										        var secondRowText = dictionary["label.new.password"] + ": " + item.password;
 										        afterAddingMidMenuItem($midmenuItem1, true, secondRowText);
-										        
+										        $midmenuItem1.data("afterActionInfo", secondRowText); 
+										        /*
 										        var afterActionInfo = "Instance " + getVmName(item.name, item.displayname) + " has been created successfully.  New password is " + item.password;
 										        $midmenuItem1.data("afterActionInfo", afterActionInfo); 
 										        
@@ -1184,7 +1185,8 @@ function initVMWizard() {
 		                                            "OK": function() { 
 			                                            $(this).dialog("close"); 
 		                                            } 
-	                                            }).dialog("open");											        
+	                                            }).dialog("open");	
+	                                            */										        
 									        } 	
 									        else {
 									            afterAddingMidMenuItem($midmenuItem1, true, null);
@@ -1311,6 +1313,7 @@ var vmActionMap = {
             var jsonObj = json.queryasyncjobresultresponse.jobresult.virtualmachine;   
             vmToMidmenu(jsonObj, $midmenuItem1);      
             
+            /*
             $("#dialog_info")
             .text("New password of instance " + getVmName(jsonObj.name, jsonObj.displayname) + " is " + fromdb(jsonObj.password))    
 	        .dialog('option', 'buttons', { 	
@@ -1318,8 +1321,9 @@ var vmActionMap = {
 			        $(this).dialog("close"); 
 		        } 
 	        }).dialog("open");	
+	        */
 	        
-	        return "New password is " + fromdb(jsonObj.password);
+	        return dictionary["label.new.password"] + ": " + fromdb(jsonObj.password);
         }
     },       
     "label.action.change.service": {

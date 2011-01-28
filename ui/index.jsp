@@ -65,12 +65,12 @@
     
     <script language="javascript">
 	g_dictionary = { 	
-		'label.adding.processing' : '<fmt:message key="label.adding.processing"/>',
-		'label.adding.succeeded' : '<fmt:message key="label.adding.succeeded"/>',
-		'label.adding.failed' : '<fmt:message key="label.adding.failed"/>',
-        'label.succeeded' : '<fmt:message key="label.succeeded"/>',
-		'label.failed' : '<fmt:message key="label.failed"/>',
-		'label.error.code': '<fmt:message key="label.error.code"/>'
+		'label.adding.processing': '<fmt:message key="label.adding.processing"/>',
+		'label.adding.succeeded': '<fmt:message key="label.adding.succeeded"/>',
+		'label.adding.failed': '<fmt:message key="label.adding.failed"/>',
+        'label.succeeded': '<fmt:message key="label.succeeded"/>',
+		'label.failed': '<fmt:message key="label.failed"/>',
+		'label.error.code': '<fmt:message key="label.error.code"/>',		
 	};	
 	</script>
 </head>
