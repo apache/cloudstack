@@ -97,7 +97,7 @@ function secondaryStorageJsonToDetailsTab() {
     });	  
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();          
-    buildActionLinkForTab("Delete Secondary Storage", secondaryStorageActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+    buildActionLinkForTab("label.action.delete.secondary.storage", secondaryStorageActionMap, $actionMenu, $midmenuItem1, $thisTab);   
     
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();      
@@ -126,10 +126,10 @@ function secondaryStorageClearDetailsTab() {
 }	
 
 var secondaryStorageActionMap = {
-    "Delete Secondary Storage": {   
+    "label.action.delete.secondary.storage": {   
         isAsyncJob: false,   
         dialogBeforeActionFn: doDeleteSecondaryStorage,       
-        inProcessText: "Deleting Secondary Storage....",
+        inProcessText: "label.action.delete.secondary.storage.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {                             
             if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
                 secondaryStorageJsonClearRightPanel();   
@@ -142,7 +142,7 @@ function doDeleteSecondaryStorage($actionLink, $detailsTab, $midmenuItem1) {
     var jsonObj = $midmenuItem1.data("jsonObj");    
        
     $("#dialog_confirmation")	
-    .text("Please confirm you want to delete this secondary storage")
+    .text(dictionary["message.action.delete.secondary.storage"])
 	.dialog('option', 'buttons', { 						
 		"Confirm": function() { 
 		    var $thisDialog = $(this);	

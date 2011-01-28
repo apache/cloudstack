@@ -5,6 +5,14 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<script language="javascript">
+dictionary = { 	
+	'label.action.delete.secondary.storage' : '<fmt:message key="label.action.delete.secondary.storage"/>',
+	'label.action.delete.secondary.storage.processing' : '<fmt:message key="label.action.delete.secondary.storage.processing"/>',
+	'message.action.delete.secondary.storage' : '<fmt:message key="message.action.delete.secondary.storage"/>'
+};	
+</script>
+
 <div class="main_title" id="right_panel_header">
    
     <div class="main_titleicon">
