@@ -967,7 +967,7 @@ function directNetworkJsonToDetailsTab() {
     });	  
     var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();        
-    buildActionLinkForTab("Delete Network", directNetworkActionMap, $actionMenu, $midmenuItem1, $thisTab);	      
+    buildActionLinkForTab("label.action.delete.network", directNetworkActionMap, $actionMenu, $midmenuItem1, $thisTab);	      
         
     $thisTab.find("#tab_container").show(); 
     $thisTab.find("#tab_spinning_wheel").hide();   
@@ -1291,10 +1291,10 @@ function bindAddIpRangeToDirectNetworkButton($button, $midmenuItem1) {
 }
 
 var directNetworkActionMap = {       
-    "Delete Network": {              
+    "label.action.delete.network": {              
         isAsyncJob: false,    
         dialogBeforeActionFn : doDeleteNetwork,        
-        inProcessText: "Deleting Network....",
+        inProcessText: "label.action.delete.network.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();                
@@ -1312,7 +1312,7 @@ function doDeleteNetwork($actionLink, $detailsTab, $midmenuItem1) {
 	var id = jsonObj.id;
 		
 	$("#dialog_confirmation")
-	.text("Please confirm you want to delete this network")
+	.text(dictionary["message.action.delete.network"])
 	.dialog('option', 'buttons', { 					
 		"Confirm": function() { 			
 			$(this).dialog("close");			
