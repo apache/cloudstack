@@ -5,6 +5,11 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<script language="javascript">
+dictionary = { 	
+	'label.action.edit.network.offering' : '<fmt:message key="label.action.edit.network.offering"/>'
+};	
+</script>
 
 <div class="main_title" id="right_panel_header">
     

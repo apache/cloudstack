@@ -22,7 +22,7 @@ function afterLoadGlobalSettingJSP() {
     //actions      
     var $actionList = $("#right_panel_content #tab_content_details #action_link #action_menu").find("#action_list").empty();        
     var $listItem = $("#action_list_item").clone();
-    $listItem.find("#link").text("Edit Global Setting");   
+    $listItem.find("#link").text(dictionary["label.action.edit.global.setting"]);   
     $listItem.bind("click", function(event) {        
         doEditGlobalSetting();
         return false;

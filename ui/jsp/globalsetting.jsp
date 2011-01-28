@@ -5,6 +5,12 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<script language="javascript">
+dictionary = { 	
+	'label.action.edit.global.setting' : '<fmt:message key="label.action.edit.global.setting"/>'
+};	
+</script>
+
 <div class="main_title" id="right_panel_header">
    
     <div class="main_titleicon">

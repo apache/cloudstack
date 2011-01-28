@@ -168,7 +168,7 @@ function networkOfferingJsonToDetailsTab() {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();    
-    buildActionLinkForTab("Edit Network Offering", networkOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
+    buildActionLinkForTab("label.action.edit.network.offering", networkOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
     
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();         
@@ -196,7 +196,7 @@ function networkOfferingClearDetailsTab() {
 }
 
 var networkOfferingActionMap = {   
-    "Edit Network Offering": {
+    "label.action.edit.network.offering": {
         dialogBeforeActionFn: doEditNetworkOffering
     }
 }  
