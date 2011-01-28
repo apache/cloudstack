@@ -2,6 +2,8 @@
 # $Id: save_password_to_domr.sh 9804 2010-06-22 18:36:49Z alex $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/network/domr/save_password_to_domr.sh $
 # @VERSION@
 
+PASSWD_FILE=/var/cache/cloud/passwords
+
 #replace a line in a file of the form key=value
 #   $1 filename
 #   $2 keyname
@@ -42,9 +44,9 @@ done
 
 VIA_SSH="ssh -p 3922 -o StrictHostKeyChecking=no -i $cert root@$DOMR_IP"
 
-$VIA_SSH "if [ ! -f /root/passwords ]; then touch /root/passwords; fi;"
+$VIA_SSH "if [ ! -f $PASSWD_FILE ]; then touch $PASSWD_FILE; fi;"
 
-replace_in_file_on_domr /root/passwords $VM_IP $PASSWORD
+replace_in_file_on_domr $PASSWD_FILE $VM_IP $PASSWORD
 
 if [ $? -ne 0 ]
 then

@@ -2,6 +2,7 @@
 # Usage
 #	save_password -v <user VM IP> -p <password>
 #
+PASSWD_FILE=/var/cache/cloud/passwords
 
 while getopts 'v:p:' OPTION
 do
@@ -18,17 +19,9 @@ do
   esac
 done
 
-if [ ! -f /root/passwords ]; 
-  then 
-    touch /root/passwords; 
-fi
+[ -f $PASSWD_FILE ] ||  touch $PASSWD_FILE
 
-sed -i /$VM_IP/d /root/passwords
-echo "$VM_IP=$PASSWORD" >> /root/passwords
+sed -i /$VM_IP/d $PASSWD_FILE
+echo "$VM_IP=$PASSWORD" >> $PASSWD_FILE
 
-if [ $? -ne 0 ]
-then
-	exit 1
-fi
-
-exit 0
+exit $?
