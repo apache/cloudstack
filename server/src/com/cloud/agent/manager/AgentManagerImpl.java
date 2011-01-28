@@ -610,11 +610,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 					"Please specify a hypervisor");
 		}
 
-		Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType
-				.valueOf(cmd.getHypervisor());
+		Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.getType(cmd.getHypervisor());
 		if (hypervisorType == null) {
-			throw new InvalidParameterValueException(
-					"Please specify a valid hypervisor name");
+			throw new InvalidParameterValueException("Please specify a valid hypervisor name");
 		}
 
 		Cluster.ClusterType clusterType = null;
@@ -2625,7 +2623,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			// If this command is from a KVM agent, or from an agent that has a
 			// null hypervisor type, don't do the CIDR check
 			if (hypervisorType == null || hypervisorType == HypervisorType.KVM
-					|| hypervisorType == HypervisorType.VmWare) {
+					|| hypervisorType == HypervisorType.VMware) {
 				doCidrCheck = false;
 			}
 

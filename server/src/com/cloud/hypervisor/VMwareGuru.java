@@ -38,7 +38,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     
     @Override
     public HypervisorType getHypervisorType() {
-        return HypervisorType.VmWare;
+        return HypervisorType.VMware;
     }
 
     @Override

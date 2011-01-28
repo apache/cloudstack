@@ -63,6 +63,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		s_logger.debug("try to allocate a host from dc:" + plan.getDataCenterId() + ", pod:" + plan.getPodId() + ",cluster:" + plan.getClusterId() +
 				", requested cpu: " + cpu_requested + ", requested ram: " + ram_requested);
 		if (vm.getLastHostId() != null) {
+	
 			HostVO host = _hostDao.findById(vm.getLastHostId());
 			
 			if (host != null && host.getStatus() == Status.Up) {

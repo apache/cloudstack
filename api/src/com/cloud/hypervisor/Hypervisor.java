@@ -24,7 +24,7 @@ public class Hypervisor {
     	Xen,
     	XenServer,
     	KVM,
-    	VmWare,
+    	VMware,
     	VirtualBox,
     	Parralels,
     	Any; /*If you don't care about the hypervisor type*/
@@ -40,8 +40,8 @@ public class Hypervisor {
     			return HypervisorType.XenServer;
     		} else if (hypervisor.equalsIgnoreCase("KVM")) {
     			return HypervisorType.KVM;
-    		} else if (hypervisor.equalsIgnoreCase("VmWare")) {
-    			return HypervisorType.VmWare;
+    		} else if (hypervisor.equalsIgnoreCase("VMware")) {
+    			return HypervisorType.VMware;
     		} else if (hypervisor.equalsIgnoreCase("VirtualBox")) {
     			return HypervisorType.VirtualBox;
     		} else if (hypervisor.equalsIgnoreCase("Parralels")) {

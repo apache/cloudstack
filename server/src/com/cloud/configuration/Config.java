@@ -138,7 +138,7 @@ public enum Config {
 	CPUOverprovisioningFactor("Advanced", ManagementServer.class, String.class, "cpu.overprovisioning.factor", "1", "Used for CPU overprovisioning calculation; available CPU will be (actualCpuCapacity * cpu.overprovisioning.factor)", null),
 	LinkLocalIpNums("Advanced", ManagementServer.class, Integer.class, "linkLocalIp.nums", "10", "The number of link local ip that needed by domR(in power of 2)", null),
 	HypervisorDefaultType("Advanced", ManagementServer.class, String.class, "hypervisor.type", HypervisorType.KVM.toString(), "The type of hypervisor that this deployment will use.", "kvm,xenserver,vmware"),
-	HypervisorList("Advanced", ManagementServer.class, String.class, "hypervisor.list", HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VmWare, "The list of hypervisors that this deployment will use.", "hypervisorList"),
+	HypervisorList("Advanced", ManagementServer.class, String.class, "hypervisor.list", HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VMware, "The list of hypervisors that this deployment will use.", "hypervisorList"),
 	ManagementHostIPAdr("Advanced", ManagementServer.class, String.class, "host", "localhost", "The ip address of management server", null),
 	EventPurgeDelay("Advanced", ManagementServer.class, Integer.class, "event.purge.delay", "0", "Events older than specified number days will be purged", null),
     UseLocalStorage("Premium", ManagementServer.class, Boolean.class, "use.local.storage", "false", "Should we use the local storage if it's available?", null),

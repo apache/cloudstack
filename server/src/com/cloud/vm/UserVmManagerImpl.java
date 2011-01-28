@@ -598,7 +598,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     	if(hostId  == null) {
     		hostId = vm.getLastHostId();
     		HostVO host = _hostDao.findById(hostId);
-    		if(host != null && host.getHypervisorType() == HypervisorType.VmWare) {
+    		if(host != null && host.getHypervisorType() == HypervisorType.VMware) {
                 sendCommand = true;
             }
     	}

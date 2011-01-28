@@ -94,7 +94,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
             return null;
         }
 
-        if(vm.getHypervisorType() == HypervisorType.VmWare && vm.getType() != VirtualMachine.Type.DomainRouter) {
+        if(vm.getHypervisorType() == HypervisorType.VMware && vm.getType() != VirtualMachine.Type.DomainRouter) {
         	NicProfile nicProf = new NicProfile(Nic.ReservationStrategy.Create, null, null, null, null);
             String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
             nicProf.setMacAddress(mac);
@@ -117,7 +117,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
             InsufficientAddressCapacityException {
         assert nic.getTrafficType() == TrafficType.Control;
 
-        if (dest.getHost().getHypervisorType() == HypervisorType.VmWare && vm.getType() == VirtualMachine.Type.DomainRouter) {
+        if (dest.getHost().getHypervisorType() == HypervisorType.VMware && vm.getType() == VirtualMachine.Type.DomainRouter) {
             super.reserve(nic, config, vm, dest, context);
             
             String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
@@ -137,7 +137,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     public boolean release(NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, String reservationId) {
         assert nic.getTrafficType() == TrafficType.Control;
 
-        if (vm.getHypervisorType() == HypervisorType.VmWare && vm.getType() == VirtualMachine.Type.DomainRouter) {
+        if (vm.getHypervisorType() == HypervisorType.VMware && vm.getType() == VirtualMachine.Type.DomainRouter) {
         	super.release(nic, vm, reservationId);
         	return true;
         }

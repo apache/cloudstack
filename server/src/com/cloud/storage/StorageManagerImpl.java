@@ -2209,7 +2209,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 	
 	private boolean sendToVmResidesOn(StoragePoolVO storagePool, Command cmd) {
 		ClusterVO cluster = _clusterDao.findById(storagePool.getClusterId());
-    	if ((cluster.getHypervisorType() == HypervisorType.KVM || cluster.getHypervisorType() == HypervisorType.VmWare) &&
+    	if ((cluster.getHypervisorType() == HypervisorType.KVM || cluster.getHypervisorType() == HypervisorType.VMware) &&
     		((cmd instanceof ManageSnapshotCommand) ||
     		 (cmd instanceof BackupSnapshotCommand))) {
     		return true;
