@@ -28,7 +28,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreateSSHKeyPairCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
-import com.cloud.api.commands.DeletePreallocatedLunCmd;
 import com.cloud.api.commands.DeleteSSHKeyPairCmd;
 import com.cloud.api.commands.DestroySystemVmCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
@@ -51,7 +50,6 @@ import com.cloud.api.commands.ListHostsCmd;
 import com.cloud.api.commands.ListHypervisorsCmd;
 import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListPodsByCmd;
-import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListSSHKeyPairsCmd;
@@ -67,7 +65,6 @@ import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.api.commands.ListZonesByCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
-import com.cloud.api.commands.RegisterPreallocatedLunCmd;
 import com.cloud.api.commands.RegisterSSHKeyPairCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
@@ -184,21 +181,7 @@ public interface ManagementService {
      * @return List of Events.
      */
     List<? extends Event> searchForEvents(ListEventsCmd c);
-    
-    /**
-     * registerPreallocatedLun registers a preallocated lun in our database.
-     * 
-     * @param cmd the API command wrapping the register parameters
-     *   - targetIqn iqn for the storage server.
-     *   - portal portal ip address for the storage server.
-     *   - lun lun #
-     *   - size size of the lun
-     *   - dcId data center to attach to
-     *   - tags tags to attach to the lun
-     * @return the new PreAllocatedLun 
-     */
-    Object registerPreallocatedLun(RegisterPreallocatedLunCmd cmd);
-    
+       
     /**
      * Obtains a list of routers by the specified search criteria.
      * Can search by: "userId", "name", "state", "dataCenterId", "podId", "hostId"
@@ -343,8 +326,6 @@ public interface ManagementService {
      */
     ArrayList<String> getCloudIdentifierResponse(GetCloudIdentifierCmd cmd);
 
-    public List<? extends Object> getPreAllocatedLuns(ListPreallocatedLunsCmd cmd);
-
     boolean updateTemplatePermissions(UpdateTemplatePermissionsCmd cmd);
     boolean updateTemplatePermissions(UpdateIsoPermissionsCmd cmd);
     String[] createApiKeyAndSecretKey(RegisterCmd cmd);
@@ -401,13 +382,6 @@ public interface ManagementService {
      * @return a random password
      */
     String generateRandomPassword();
-    /**
-     * Unregisters a preallocated lun in our database
-     * @param cmd the api command wrapping the id of the lun
-     * @return true if unregistered; false if not.
-     * @throws IllegalArgumentException
-     */
-    boolean unregisterPreallocatedLun(DeletePreallocatedLunCmd cmd) throws IllegalArgumentException;
     
     public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId);
     

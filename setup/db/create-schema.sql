@@ -71,9 +71,7 @@ DROP TABLE IF EXISTS `cloud`.`snapshot_policy`;
 DROP TABLE IF EXISTS `cloud`.`snapshot_policy_ref`;
 DROP TABLE IF EXISTS `cloud`.`snapshot_schedule`;
 DROP TABLE IF EXISTS `cloud`.`op_pod_vlan_alloc`;
-DROP TABLE IF EXISTS `cloud`.`ext_lun_alloc`;
 DROP TABLE IF EXISTS `cloud`.`storage_pool_details`;
-DROP TABLE IF EXISTS `cloud`.`ext_lun_details`;
 DROP TABLE IF EXISTS `cloud`.`cluster`;
 DROP TABLE IF EXISTS `cloud`.`nics`;
 DROP TABLE IF EXISTS `cloud`.`networks`;
@@ -244,25 +242,6 @@ CREATE TABLE `cloud`.`cluster_details` (
   `cluster_id` bigint unsigned NOT NULL COMMENT 'cluster id',
   `name` varchar(255) NOT NULL,
   `value` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`ext_lun_alloc` (
-  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
-  `size` bigint unsigned NOT NULL COMMENT 'virtual size',
-  `portal` varchar(255) NOT NULL COMMENT 'ip or host name to the storage server',
-  `target_iqn` varchar(255) NOT NULL COMMENT 'target iqn',
-  `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id this belongs to',
-  `lun` int NOT NULL COMMENT 'lun',
-  `taken` datetime COMMENT 'time occupied',
-  `volume_id` bigint unsigned COMMENT 'vm taking this lun',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`ext_lun_details` (
-  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
-  `ext_lun_id` bigint unsigned NOT NULL COMMENT 'lun id',
-  `tag` varchar(255) COMMENT 'tags associated with this vm',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

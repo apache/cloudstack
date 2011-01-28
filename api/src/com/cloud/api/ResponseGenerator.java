@@ -44,7 +44,6 @@ import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.PodResponse;
-import com.cloud.api.response.PreallocatedLunResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
@@ -137,8 +136,6 @@ public interface ResponseGenerator {
     VolumeResponse createVolumeResponse(Volume volume);
 
     InstanceGroupResponse createInstanceGroupResponse(InstanceGroup group);
-
-    PreallocatedLunResponse createPreallocatedLunResponse(Object preallocatedLun);
 
     StoragePoolResponse createStoragePoolResponse(StoragePool pool);
 

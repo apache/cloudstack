@@ -113,7 +113,6 @@ import com.cloud.storage.dao.VMTemplatePoolDaoImpl;
 import com.cloud.storage.dao.VMTemplateZoneDaoImpl;
 import com.cloud.storage.dao.VolumeDaoImpl;
 import com.cloud.storage.download.DownloadMonitorImpl;
-import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDaoImpl;
 import com.cloud.storage.secondary.SecondaryStorageManagerImpl;
 import com.cloud.storage.snapshot.SnapshotManagerImpl;
 import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
@@ -234,7 +233,6 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addDao("DetailsDao", DetailsDaoImpl.class);
         addDao("SnapshotPolicyDao", SnapshotPolicyDaoImpl.class);
         addDao("SnapshotScheduleDao", SnapshotScheduleDaoImpl.class);
-        addDao("PreallocatedLunDao", PreallocatedLunDaoImpl.class);
         addDao("ClusterDao", ClusterDaoImpl.class);
         addDao("CertificateDao", CertificateDaoImpl.class);
         addDao("NetworkConfigurationDao", NetworkDaoImpl.class);

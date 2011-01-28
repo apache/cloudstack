@@ -77,7 +77,6 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreateSSHKeyPairCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
-import com.cloud.api.commands.DeletePreallocatedLunCmd;
 import com.cloud.api.commands.DeleteSSHKeyPairCmd;
 import com.cloud.api.commands.DestroySystemVmCmd;
 import com.cloud.api.commands.ExtractVolumeCmd;
@@ -100,7 +99,6 @@ import com.cloud.api.commands.ListHostsCmd;
 import com.cloud.api.commands.ListHypervisorsCmd;
 import com.cloud.api.commands.ListIsosCmd;
 import com.cloud.api.commands.ListPodsByCmd;
-import com.cloud.api.commands.ListPreallocatedLunsCmd;
 import com.cloud.api.commands.ListPublicIpAddressesCmd;
 import com.cloud.api.commands.ListRoutersCmd;
 import com.cloud.api.commands.ListSSHKeyPairsCmd;
@@ -116,7 +114,6 @@ import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.api.commands.ListZonesByCmd;
 import com.cloud.api.commands.RebootSystemVmCmd;
 import com.cloud.api.commands.RegisterCmd;
-import com.cloud.api.commands.RegisterPreallocatedLunCmd;
 import com.cloud.api.commands.RegisterSSHKeyPairCmd;
 import com.cloud.api.commands.StartSystemVMCmd;
 import com.cloud.api.commands.StopSystemVmCmd;
@@ -219,8 +216,6 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
-import com.cloud.storage.preallocatedlun.dao.PreallocatedLunDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.template.TemplateManager;
@@ -325,7 +320,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final AsyncJobManager _asyncMgr;
     private final TemplateManager _tmpltMgr;
     private final int _purgeDelay;
-    private final PreallocatedLunDao _lunDao;
     private final InstanceGroupDao _vmGroupDao;
     private final UploadMonitor _uploadMonitor;
     private final UploadDao _uploadDao;
@@ -352,7 +346,6 @@ public class ManagementServerImpl implements ManagementServer {
     
     protected ManagementServerImpl() {
         ComponentLocator locator = ComponentLocator.getLocator(Name);
-        _lunDao = locator.getDao(PreallocatedLunDao.class);
         _configDao = locator.getDao(ConfigurationDao.class);
         _routerDao = locator.getDao(DomainRouterDao.class);
         _eventDao = locator.getDao(EventDao.class);
@@ -449,45 +442,7 @@ public class ManagementServerImpl implements ManagementServer {
     public StorageStats getStorageStatistics(long hostId) {
         return _statsCollector.getStorageStats(hostId);
     }
-    
-    @Override
-    public PreallocatedLunVO registerPreallocatedLun(RegisterPreallocatedLunCmd cmd) {
-        Long zoneId = cmd.getZoneId();
-        String portal = cmd.getPortal();
-        String targetIqn = cmd.getTargetIqn();
-        Integer lun = cmd.getLun();
-        Long size = cmd.getDiskSize();
-        String t = cmd.getTags();
-
-        String[] tags = null;
-        if (t != null) {
-            tags = t.split(",");
-            for (int i = 0; i < tags.length; i++) {
-                tags[i] = tags[i].trim();
-            }
-        } else {
-            tags = new String[0];
-        }
-        
-        PreallocatedLunVO vo = new PreallocatedLunVO(zoneId, portal, targetIqn, lun, size);
-        return _lunDao.persist(vo, tags);
-    }
-    
-    @Override
-    public boolean unregisterPreallocatedLun(DeletePreallocatedLunCmd cmd) throws IllegalArgumentException {
-        Long id = cmd.getId();
-    	PreallocatedLunVO lun = null;
-    	if ((lun = _lunDao.findById(id)) == null) {
-    		throw new IllegalArgumentException("Unable to find a LUN with ID " + id);
-    	}
-    	
-    	if (lun.getTaken() != null) {
-    		throw new IllegalArgumentException("The LUN is currently in use and cannot be deleted.");
-    	}
-    	
-        return _lunDao.delete(id);
-    }
-
+       
     @Override
     public VolumeStats[] getVolumeStatistics(long[] volIds) {
         return _statsCollector.getVolumeStats(volIds);
@@ -4139,36 +4094,7 @@ public class ManagementServerImpl implements ManagementServer {
         return pendingEvents;
     }
 
-	@Override
-	public List<PreallocatedLunVO> getPreAllocatedLuns(ListPreallocatedLunsCmd cmd)	{
-       Filter searchFilter = new Filter(PreallocatedLunVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-        SearchCriteria<PreallocatedLunVO> sc = _lunDao.createSearchCriteria();
-
-        Object targetIqn = cmd.getTargetIqn();
-        Object scope = cmd.getScope();
-
-        if (targetIqn != null) {
-            sc.addAnd("targetIqn", SearchCriteria.Op.EQ, targetIqn);
-        }
-        
-        if (scope == null || scope.toString().equalsIgnoreCase("ALL")) {
-            return _lunDao.search(sc, searchFilter);
-        } else if(scope.toString().equalsIgnoreCase("ALLOCATED")) {
-        	sc.addAnd("volumeId", SearchCriteria.Op.NNULL);
-        	sc.addAnd("taken", SearchCriteria.Op.NNULL);
-        	
-        	return _lunDao.search(sc, searchFilter);
-        } else if(scope.toString().equalsIgnoreCase("FREE")) {
-        	sc.addAnd("volumeId", SearchCriteria.Op.NULL);
-        	sc.addAnd("taken", SearchCriteria.Op.NULL);
-        	
-        	return _lunDao.search(sc, searchFilter);
-        }
-
-		return null;
-	}
-
-	@Override
+    @Override
 	public boolean checkLocalStorageConfigVal()
 	{
 		String value = _configs.get("use.local.storage");

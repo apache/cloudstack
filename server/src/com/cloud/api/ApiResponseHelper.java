@@ -56,7 +56,6 @@ import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.NicResponse;
 import com.cloud.api.response.PodResponse;
-import com.cloud.api.response.PreallocatedLunResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceLimitResponse;
 import com.cloud.api.response.SecurityGroupResponse;
@@ -135,7 +134,6 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.preallocatedlun.PreallocatedLunVO;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.test.PodZoneConfig;
@@ -856,22 +854,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         groupResponse.setObjectName("instancegroup");
         return groupResponse;
-    }
-
-    @Override
-    public PreallocatedLunResponse createPreallocatedLunResponse(Object result) {
-        PreallocatedLunVO preallocatedLun = (PreallocatedLunVO)result;
-        PreallocatedLunResponse preallocLunResponse = new PreallocatedLunResponse();
-        preallocLunResponse.setId(preallocatedLun.getId());
-        preallocLunResponse.setVolumeId(preallocatedLun.getVolumeId());
-        preallocLunResponse.setZoneId(preallocatedLun.getDataCenterId());
-        preallocLunResponse.setLun(preallocatedLun.getLun());
-        preallocLunResponse.setPortal(preallocatedLun.getPortal());
-        preallocLunResponse.setSize(preallocatedLun.getSize());
-        preallocLunResponse.setTaken(preallocatedLun.getTaken());
-        preallocLunResponse.setTargetIqn(preallocatedLun.getTargetIqn());
-        preallocLunResponse.setObjectName("preallocatedlun");
-        return preallocLunResponse;
     }
 
     @Override
