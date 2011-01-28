@@ -343,11 +343,11 @@ function isoJsonToDetailsTab() {
 		//do nothing
     }
     else {        
-        buildActionLinkForTab("Edit ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+        buildActionLinkForTab("label.action.edit.ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
         noAvailableActions = false;	
         
         if(jsonObj.id != xsToolsIsoId)
-            buildActionLinkForTab("Copy ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	        
+            buildActionLinkForTab("label.action.copy.ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	        
     }
 		
 	// "Create VM"
@@ -361,7 +361,7 @@ function isoJsonToDetailsTab() {
 	    //do nothing
 	}
     else {        
-        buildActionLinkForTab("Create VM", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+        buildActionLinkForTab("label.action.create.vm", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
         noAvailableActions = false;
     }
 	*/
@@ -374,7 +374,7 @@ function isoJsonToDetailsTab() {
 	    //do nothing
 	}
 	else {	    
-	    buildActionLinkForTab("Download ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);		    
+	    buildActionLinkForTab("label.action.download.ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);		    
 	    noAvailableActions = false;
 	}    		   
 	
@@ -386,7 +386,7 @@ function isoJsonToDetailsTab() {
 	    //do nothing
 	}
 	else {	   	    
-	    buildActionLinkForTab("Delete ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+	    buildActionLinkForTab("label.action.delete.ISO", isoActionMap, $actionMenu, $midmenuItem1, $thisTab);	
 	    noAvailableActions = false;
 	}    	
 	
@@ -437,14 +437,14 @@ function isoClearDetailsTab() {
 }
 
 var isoActionMap = {  
-    "Edit ISO": {
+    "label.action.edit.ISO": {
         dialogBeforeActionFn: doEditISO  
     },
-    "Delete ISO": {                  
+    "label.action.delete.ISO": {                  
         isAsyncJob: true,
         asyncJobResponse: "deleteisosresponse",
         dialogBeforeActionFn: doDeleteIso,
-        inProcessText: "Deleting ISO....",
+        inProcessText: "label.action.delete.ISO.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id){    
             $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();                
@@ -455,22 +455,22 @@ var isoActionMap = {
             });           
         }        
     },
-    "Copy ISO": {
+    "label.action.copy.ISO": {
         isAsyncJob: true,
         asyncJobResponse: "copyisoresponse",            
         dialogBeforeActionFn: doCopyIso,
-        inProcessText: "Copying ISO....",
+        inProcessText: "label.action.copy.ISO.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id){}   
     }  
     ,
-    "Create VM": {
+    "label.action.create.vm": {
         isAsyncJob: true,
         asyncJobResponse: "deployvirtualmachineresponse",            
         dialogBeforeActionFn: doCreateVMFromIso,
-        inProcessText: "Creating VM....",
+        inProcessText: "label.action.create.vm.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id){}   
     },
-    "Download ISO": {               
+    "label.action.download.ISO": {               
         dialogBeforeActionFn : doDownloadISO        
     }     
 }   
@@ -574,9 +574,9 @@ function doDeleteIso($actionLink, $detailsTab, $midmenuItem1) {
 	
 	var $dialog1;
 	if(jsonObj.crossZones == true)
-	    $dialog1 = $("#dialog_confirmation").text("The ISO is used by all zones. Please confirm you want to delete it from all zones.");
+	    $dialog1 = $("#dialog_confirmation").text(dictionary["message.action.delete.ISO.for.all.zones"]);
 	else
-	    $dialog1 = $("#dialog_confirmation").text("Please confirm you want to delete the ISO");	
+	    $dialog1 = $("#dialog_confirmation").text(dictionary["message.action.delete.ISO"]);	
 	
 	$dialog1	
 	.dialog('option', 'buttons', { 					

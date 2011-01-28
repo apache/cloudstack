@@ -5,6 +5,20 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<script language="javascript">
+dictionary = { 	
+	'label.action.edit.ISO' : '<fmt:message key="label.action.edit.ISO"/>',
+	'label.action.delete.ISO' : '<fmt:message key="label.action.delete.ISO"/>',
+	'label.action.delete.ISO.processing' : '<fmt:message key="label.action.delete.ISO.processing"/>',
+	'message.action.delete.ISO' : '<fmt:message key="message.action.delete.ISO"/>',
+	'message.action.delete.ISO.for.all.zones' : '<fmt:message key="message.action.delete.ISO.for.all.zones"/>',
+	'label.action.copy.ISO' : '<fmt:message key="label.action.copy.ISO"/>',
+	'label.action.copy.ISO.processing' : '<fmt:message key="label.action.copy.ISO.processing"/>',
+	'label.action.create.vm' : '<fmt:message key="label.action.create.vm"/>',
+	'label.action.create.vm.processing' : '<fmt:message key="label.action.create.vm.processing"/>',
+	'label.action.download.ISO' : '<fmt:message key="label.action.download.ISO"/>'
+};	
+</script>
 
 <!-- ISO detail panel (begin) -->
 <div class="main_title" id="right_panel_header">
