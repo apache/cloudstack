@@ -29,8 +29,10 @@ import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementServer;
 import com.cloud.utils.SerialVersionUID;
 import com.cloud.utils.component.ComponentLocator;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 
-public class CloudStartupServlet extends HttpServlet {
+public class CloudStartupServlet extends HttpServlet implements ServletContextListener {
 	public static final Logger s_logger = Logger.getLogger(CloudStartupServlet.class.getName());
 	
     static final long serialVersionUID = SerialVersionUID.CloudStartupServlet;
@@ -55,5 +57,19 @@ public class CloudStartupServlet extends HttpServlet {
 	    	s_logger.error("Exception starting management server ", e);
 	    	throw new ServletException (e.getMessage());
 	    }
+	}
+	
+	@Override
+	public void contextInitialized(ServletContextEvent sce) {
+	    try {
+	        init();
+	    } catch (ServletException e) {
+	        s_logger.error("Exception starting management server ", e);
+	        throw new RuntimeException(e);
+	    }
+	}
+	
+	@Override
+	public void contextDestroyed(ServletContextEvent sce) {
 	}
 }
