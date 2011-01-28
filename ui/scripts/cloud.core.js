@@ -410,12 +410,14 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
 			                        $midmenuItem1.find("#content").removeClass("inaction");
 			                        $midmenuItem1.find("#spinning_wheel").hide();			                        
 			                        hideDetailsTabActionSpinningWheel(id, inProcessText2, $midmenuItem1);				                        			                       
+			                        
 			                        if (result.jobstatus == 1) { // Succeeded  
 			                            $midmenuItem1.find("#info_icon").removeClass("error").show();
-			                            $midmenuItem1.data("afterActionInfo", (label2 + " action succeeded.")); 			                            
+			                            $midmenuItem1.data("afterActionInfo", (label2 + " - " + g_dictionary["label.succeeded"])); 			                            
 			                            afterActionSeccessFn(json, $midmenuItem1, id);  			                            
 			                        } else if (result.jobstatus == 2) { // Failed				                            
-			                            var errorMsg = label2 + " action failed. Reason: " + fromdb(result.jobresult.errortext);
+			                            //var errorMsg = label2 + " action failed. Reason: " + fromdb(result.jobresult.errortext);
+			                            var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
 			                            handleErrorInMidMenu2(errorMsg, $midmenuItem1, id, inProcessText2); 
 			                        }											                    
 		                        }
@@ -447,7 +449,8 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
 	            $midmenuItem1.find("#content").removeClass("inaction");
 				$midmenuItem1.find("#spinning_wheel").hide();				
 				$midmenuItem1.find("#info_icon").removeClass("error").show();
-			    $midmenuItem1.data("afterActionInfo", (label2 + " action succeeded.")); 		
+			    //$midmenuItem1.data("afterActionInfo", (label2 + " action succeeded.")); 
+			    $midmenuItem1.data("afterActionInfo", (label2 + " - " + g_dictionary["label.succeeded"])); 			
 			    hideDetailsTabActionSpinningWheel(id, inProcessText2, $midmenuItem1);	
 				afterActionSeccessFn(json, $midmenuItem1, id); 		
 	        },
@@ -529,7 +532,7 @@ function copyActionInfoFromMidMenuToRightPanel($midmenuItem1) {
             if(inProcessText in dictionary)
                 $detailsTabSpinningWheel.find("#description").text(dictionary[inProcessText]);   
             else
-                $detailsTabSpinningWheel.find("#description").text(label);  
+                $detailsTabSpinningWheel.find("#description").text(inProcessText);  
             $detailsTabSpinningWheel.show();  
         }
     }
