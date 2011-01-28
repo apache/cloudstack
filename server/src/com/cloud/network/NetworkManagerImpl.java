@@ -1656,15 +1656,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId);
         if (ipsToRelease != null && !ipsToRelease.isEmpty()) {
             for (IPAddressVO ip : ipsToRelease) {
-                if (!releasePublicIpAddress(ip.getAddress(), ip.getAccountId(), callerUserId)) {
-                    s_logger.warn("Failed to deallocate ip address as a part of network id=" + networkId + " destroy");
-                    success = false;
-                }
+                _ipAddressDao.unassignIpAddress(ip.getAddress());
             }
             
-            if (success) {
-                s_logger.debug("Ip addresses are deallocated successfully as a part of network id=" + networkId + " destroy");
-            }
+            s_logger.debug("Ip addresses are unassigned successfully as a part of network id=" + networkId + " destroy");
         }
         
         for (NetworkElement element : _networkElements) {
