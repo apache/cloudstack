@@ -2008,6 +2008,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
+<<<<<<< Updated upstream
     public Network getDefaultNetworkForVm(long vmId) {
         Nic defaultNic = getDefaultNic(vmId);
         if (defaultNic == null) {
@@ -2052,4 +2053,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         return elements;
     }
+=======
+    public boolean zoneIsConfiguredForExternalNetworking(long zoneId) {
+		DataCenterVO zone = _dcDao.findById(zoneId);
+		return (zone.getGatewayProvider().equals(Network.Provider.ExternalFirewall.getName()) &&
+				zone.getFirewallProvider().equals(Network.Provider.ExternalFirewall.getName()) && 
+				zone.getLoadBalancerProvider().equals(Network.Provider.ExternalLoadBalancer.getName()));
+	}
+>>>>>>> Stashed changes
 }
