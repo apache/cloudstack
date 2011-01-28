@@ -16,14 +16,15 @@ inject_into_iso() {
   local newpubkey=$2
   local backup=${isofile}.bak
   local tmpiso=${TMP}/$1
+  [ ! -f $isofile ] && echo "$(basename $0): Could not find systemvm iso patch file $isofile" && return 1
+  mount -o loop $isofile $MOUNTPATH 
+  [ $? -ne 0 ] && echo "$(basename $0): Failed to mount original iso $isofile" && return 1
+  diff -q $MOUNTPATH/authorized_keys $newpubkey &> /dev/null && return 0
+  cp -b $isofile $backup
+  [ $? -ne 0 ] && echo "$(basename $0): Failed to backup original iso $isofile" && return 1
   rm -rf $TMPDIR
   mkdir -p $TMPDIR
   [ ! -d $TMPDIR  ] && echo "$(basename $0): Could not find/create temporary dir $TMPDIR" && return 1
-  [ ! -f $isofile ] && echo "$(basename $0): Could not find systemvm iso patch file $isofile" && return 1
-  cp -b $isofile $backup
-  [ $? -ne 0 ] && echo "$(basename $0): Failed to backup original iso $isofile" && return 1
-  mount -o loop $isofile $MOUNTPATH 
-  [ $? -ne 0 ] && echo "$(basename $0): Failed to mount original iso $isofile" && return 1
   cp -fr $MOUNTPATH/* $TMPDIR/
   [ $? -ne 0 ] && echo "$(basename $0): Failed to copy from original iso $isofile" && return 1
   cp $newpubkey $TMPDIR/authorized_keys
@@ -39,6 +40,7 @@ inject_into_iso() {
 
 copy_priv_key() {
   local newprivkey=$1
+  diff -q $newprivkey $(dirname $0)/id_rsa.cloud && return 0
   cp -fb $newprivkey $(dirname $0)/id_rsa.cloud && chmod 0600 $(dirname $0)/id_rsa.cloud
   return $?
 }
