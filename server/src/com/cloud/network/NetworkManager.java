@@ -162,13 +162,12 @@ public interface NetworkManager extends NetworkService {
     
     Nic getNicForTraffic(long vmId, TrafficType type);
     
-<<<<<<< Updated upstream
     Network getDefaultNetworkForVm(long vmId);
     
     Nic getDefaultNic(long vmId);
     
     List<? extends PasswordResetElement> getPasswordResetElements();
-=======
-    public boolean zoneIsConfiguredForExternalNetworking(long zoneId);
->>>>>>> Stashed changes
+
+    boolean zoneIsConfiguredForExternalNetworking(long zoneId);
+
 }
