@@ -219,7 +219,7 @@ function doDeleteDiskOffering($actionLink, $detailsTab, $midmenuItem1) {
 	var id = jsonObj.id;
 		
 	$("#dialog_confirmation")
-	.text("Please confirm you want to delete this disk offering")
+	.text(dictionary["message.action.delete.disk.offering"])
 	.dialog('option', 'buttons', { 					
 		"Confirm": function() { 			
 			$(this).dialog("close");			
@@ -303,8 +303,8 @@ function diskOfferingJsonToDetailsTab() {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();    
-    buildActionLinkForTab("Edit Disk Offering", diskOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
-    buildActionLinkForTab("Delete Disk Offering", diskOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
+    buildActionLinkForTab("label.action.edit.disk.offering", diskOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
+    buildActionLinkForTab("label.action.delete.disk.offering", diskOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
     
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();         
@@ -341,14 +341,14 @@ function diskOfferingClearDetailsTab() {
 }
 
 var diskOfferingActionMap = {   
-    "Edit Disk Offering": {
+    "label.action.edit.disk.offering": {
         dialogBeforeActionFn: doEditDiskOffering
     },   
-    "Delete Disk Offering": {              
+    "label.action.delete.disk.offering": {              
         api: "deleteDiskOffering",     
         isAsyncJob: false,   
         dialogBeforeActionFn : doDeleteDiskOffering,              
-        inProcessText: "Deleting disk offering....",
+        inProcessText: "label.action.delete.disk.offering.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();   

@@ -5,6 +5,15 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 
+<script language="javascript">
+dictionary = { 	
+	'label.action.edit.disk.offering' : '<fmt:message key="label.action.edit.disk.offering"/>',
+	'label.action.delete.disk.offering' : '<fmt:message key="label.action.delete.disk.offering"/>',
+	'label.action.delete.disk.offering.processing' : '<fmt:message key="label.action.delete.disk.offering.processing"/>',
+	'message.action.delete.disk.offering' : '<fmt:message key="message.action.delete.disk.offering"/>'
+};	
+</script>
+
 <div class="main_title" id="right_panel_header">
     
     <div class="main_titleicon">

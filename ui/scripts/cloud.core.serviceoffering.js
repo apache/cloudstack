@@ -217,7 +217,7 @@ function doDeleteServiceOffering($actionLink, $detailsTab, $midmenuItem1) {
 	var id = jsonObj.id;
 		
 	$("#dialog_confirmation")
-	.text("Please confirm you want to delete this service offering")
+	.text(dictionary["message.action.delete.service.offering"])
 	.dialog('option', 'buttons', { 					
 		"Confirm": function() { 			
 			$(this).dialog("close");			
@@ -306,8 +306,8 @@ function serviceOfferingJsonToDetailsTab() {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();      
-    buildActionLinkForTab("Edit Service Offering", serviceOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	
-    buildActionLinkForTab("Delete Service Offering", serviceOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);
+    buildActionLinkForTab("label.action.edit.service.offering", serviceOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+    buildActionLinkForTab("label.action.delete.service.offering", serviceOfferingActionMap, $actionMenu, $midmenuItem1, $thisTab);
     
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();    	
@@ -341,14 +341,14 @@ function serviceOfferingClearDetailsTab() {
 }
 
 var serviceOfferingActionMap = {    
-    "Edit Service Offering": {
+    "label.action.edit.service.offering": {
         dialogBeforeActionFn: doEditServiceOffering
     }, 
-    "Delete Service Offering": {              
+    "label.action.delete.service.offering": {              
         api: "deleteServiceOffering",     
         isAsyncJob: false,  
         dialogBeforeActionFn : doDeleteServiceOffering,               
-        inProcessText: "Deleting service offering....",
+        inProcessText: "label.action.delete.service.offering.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {
             $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();                
