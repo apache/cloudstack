@@ -432,7 +432,7 @@ dictionary = {
             <li>
             	<label for="cluster_hypervisor"><fmt:message key="label.hypervisor"/>:</label>
                 <select class="select" id="cluster_hypervisor">
-                    <option value="XenServer" SELECTED>Xen Server</option>		
+                    <option value="Xen Server" SELECTED>Xen Server</option>		
                     <option value="KVM">KVM</option>										
                     <option value="VmWare">VMware</option>										
                 </select>
