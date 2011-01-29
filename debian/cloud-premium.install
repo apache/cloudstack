@@ -4,5 +4,4 @@
 /etc/cloud/management/components-premium.xml
 /usr/share/cloud/setup/create-database-premium.sql
 /usr/share/cloud/setup/create-schema-premium.sql
-/usr/lib/cloud/agent/vms/systemvm-premium.iso
 /usr/lib/cloud/agent/premium-scripts/*
