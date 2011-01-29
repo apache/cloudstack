@@ -191,7 +191,6 @@
       <zipfileset dir="${console-proxy.dist.dir}" filemode="555">
         <include name="**/*.sh" />
         <include name="**/certs/" />
-        <include name="**/cloud-console-proxy-premium.jar" />
       </zipfileset>
       <zipfileset dir="${scripts.dir}/storage/secondary" prefix="scripts/storage/secondary" filemode="555">
         <exclude name="**/.project" />

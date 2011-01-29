@@ -61,8 +61,6 @@
   <property name="dep.cache.dir" location="${target.dir}/dep-cache" />
   <property name="build.log" location="${target.dir}/ant_verbose.txt" />
 
-  <property name="proprietary.dir" location="${base.dir}/cloudstack-proprietary" />
-
   <property name="thirdparty.dir" location="${base.dir}/thirdparty" />
   <property name="deps.dir" location="${base.dir}/deps" />
 
@@ -114,9 +112,6 @@
   <!-- directories for testing -->
   <property name="test.target.dir" location="${target.dir}/test" />
   <property name="test.classes.dir" location="${test.target.dir}/classes" />
-
-  <property name="premium.dir" location="${proprietary.dir}/premium" />
-  <property name="core-premium.dir" location="${proprietary.dir}/core-premium" />
 
   <!-- directories for branding -->
   <property name="branding.dir" location="${build.dir}/deploy/branding/${branding.name}" />

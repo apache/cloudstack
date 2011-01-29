@@ -223,11 +223,9 @@ then
   fi
 fi
 
-cpfile=$(dirname $0)/../../../../console-proxy-premium.zip
+cpfile=$(dirname $0)/../../../../console-proxy.zip
 [ -f $cpfile ] || $(dirname $0)/../../../../console-proxy.zip
-[ -f $cpfile ] || $(dirname $0)/../../console-proxy-premium.zip
 [ -f $cpfile ] || $(dirname $0)/../../console-proxy.zip
-[ -f $cpfile ] || $(dirname $0)/console-proxy-premium.zip
 [ -f $cpfile ] || $(dirname $0)/console-proxy.zip
 if [[ "$template" == "domP" &&  -f $cpfile ]]
 then
