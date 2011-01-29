@@ -335,17 +335,11 @@ public class LibvirtStorageResource {
     }
     
     public StorageVol copyVolume(StoragePool destPool, LibvirtStorageVolumeDef destVol, StorageVol srcVol) throws LibvirtException {
-        if (_computingResource.isCentosHost()) {
-            /*define a volume, then override the file*/
-            
-            StorageVol vol = destPool.storageVolCreateXML(destVol.toString(), 0);
-            String srcPath = srcVol.getKey();
-            String destPath = vol.getKey();
-            Script.runSimpleBashScript("cp " + srcPath + " " + destPath );
-            return vol;
-        } else {
-            return destPool.storageVolCreateXMLFrom(destVol.toString(), srcVol, 0);
-        }
+        StorageVol vol = destPool.storageVolCreateXML(destVol.toString(), 0);
+        String srcPath = srcVol.getKey();
+        String destPath = vol.getKey();
+        Script.runSimpleBashScript("cp " + srcPath + " " + destPath );
+        return vol;
     }
     
     public LibvirtStoragePoolDef getStoragePoolDef(Connect conn, StoragePool pool) throws LibvirtException {

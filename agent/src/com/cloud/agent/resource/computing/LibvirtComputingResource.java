@@ -1834,7 +1834,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
 	
 	protected Answer execute(StopCommand cmd) {
-	    StopAnswer answer = null;
         final String vmName = cmd.getVmName();
         
         Long bytesReceived = new Long(0);
@@ -1854,14 +1853,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (result != null && result2 != null) {
                 result = result2 + result;
             }
-            
+            state = State.Stopped;
             return new StopAnswer(cmd, result, 0, bytesSent, bytesReceived);
         } catch (LibvirtException e) {
         	return new StopAnswer(cmd, e.getMessage());
         } finally {
-            if (answer == null || !answer.getResult()) {
-                synchronized(_vms) {
+            synchronized(_vms) {
+                if (state != null) {
                     _vms.put(vmName, state);
+                } else {
+                    _vms.remove(vmName);
                 }
             }
         }

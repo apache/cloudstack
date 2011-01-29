@@ -45,6 +45,8 @@ public class KVMGuestOsMapper {
 		s_mapper.put("Red Hat Enterprise Linux 5.4 (64-bit)", "Red Hat Enterprise Linux 5.4");
 		s_mapper.put("Red Hat Enterprise Linux 5.5 (32-bit)", "Red Hat Enterprise Linux 5.5");
 		s_mapper.put("Red Hat Enterprise Linux 5.5 (64-bit)", "Red Hat Enterprise Linux 5.5");
+		s_mapper.put("Red Hat Enterprise Linux 6.0 (32-bit)", "Red Hat Enterprise Linux 6.0");
+		s_mapper.put("Red Hat Enterprise Linux 6.0 (64-bit)", "Red Hat Enterprise Linux 6.0");
 		s_mapper.put("Fedora 13", "Fedora 13");
 		s_mapper.put("Fedora 12", "Fedora 12");
 		s_mapper.put("Fedora 11", "Fedora 11");
