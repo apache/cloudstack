@@ -142,7 +142,7 @@
 										<div id="lang_menu" class="loginoptions_dropdown" style="display:none;">
 											<ul>
 												<li id="en"><fmt:message key="label.lang.english"/></li>
-												<li id="zh"><fmt:message key="label.lang.chinese"/></li>
+												<li id="zh_CN"><fmt:message key="label.lang.chinese"/></li>
 											</ul>
 										</div>
                                     </div>

@@ -90,7 +90,7 @@ $(document).ready(function() {
 	
 	// Setup Language option
 	if ($.cookie("lang") != null) {
-		$("#lang_button p").text($.cookie("lang.name"));
+		$("#lang_button p").text($("#lang_button #lang_menu #"+$.cookie("lang")));
 	}
 	
 	$("#lang_button").click(function(event) {
@@ -106,7 +106,6 @@ $(document).ready(function() {
 		var target = $(event.target);
 		var id = target.attr("id");
 		$.cookie("lang", id);
-		$.cookie("lang.name", target.text());
 		location.replace('/client');
 		return false;
 	});
