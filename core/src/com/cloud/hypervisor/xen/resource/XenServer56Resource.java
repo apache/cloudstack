@@ -72,7 +72,7 @@ import com.xensource.xenapi.VLAN;
 import com.xensource.xenapi.VM;
 
 @Local(value = ServerResource.class)
-public class XenServer56Resource extends XenServerResource {
+public class XenServer56Resource extends CitrixResourceBase {
     private final static Logger s_logger = Logger.getLogger(XenServer56Resource.class);
     protected int _heartbeatInterval = 60;
 
@@ -88,6 +88,12 @@ public class XenServer56Resource extends XenServerResource {
             return super.executeRequest(cmd);
         }
     }
+    
+    @Override
+    protected void setMemory(Connection conn, VM vm, long memsize) throws XmlRpcException, XenAPIException {
+        vm.setMemoryLimits(conn, memsize, memsize, memsize, memsize);
+    }   
+    
 
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {

@@ -39,12 +39,16 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.HostEnvironment;
 import com.cloud.host.HostInfo;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -54,8 +58,8 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.xen.resource.CitrixResourceBase;
 import com.cloud.hypervisor.xen.resource.XcpServerResource;
 import com.cloud.hypervisor.xen.resource.XenServer56FP1Resource;
+import com.cloud.hypervisor.xen.resource.XenServer56Resource;
 import com.cloud.hypervisor.xen.resource.XenServerConnectionPool;
-import com.cloud.hypervisor.xen.resource.XenServerResource;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ServerResource;
@@ -74,6 +78,8 @@ import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.Session;
 import com.xensource.xenapi.Types.SessionAuthenticationFailed;
 import com.xensource.xenapi.Types.XenAPIException;
+import com.cloud.agent.api.SetupCommand;
+import com.cloud.agent.api.SetupAnswer;
 
 @Local(value=Discoverer.class)
 public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, Listener {
@@ -86,6 +92,15 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     protected XenServerConnectionPool _connPool;
     protected boolean _checkHvm;
     protected String _guestNic;
+    protected boolean _setupMultipath;
+    private String _minProductVersion;
+    private String _minXapiVersion;
+    private String _minXenVersion;
+    private String _maxProductVersion;
+    private String _maxXapiVersion;
+    private String _maxXenVersion;
+
+
 
     @Inject protected AlertManager _alertMgr;
     @Inject protected AgentManager _agentMgr;
@@ -366,7 +381,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         	return new XcpServerResource();
         
         if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.0")) 
-        	return new XenServerResource();
+        	return new XenServer56Resource();
         
         if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.100")) 
             return new XenServer56FP1Resource();
@@ -378,7 +393,27 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     }
     
     protected void serverConfig() {
+        _minXenVersion = _params.get(Config.XenMinVersion.key());
+        if (_minXenVersion == null) {
+            _minXenVersion = "3.3.1";
+        }
         
+        _minProductVersion = _params.get(Config.XenProductMinVersion.key());
+        if (_minProductVersion == null) {
+            _minProductVersion = "5.5.0";
+        }
+        
+        _minXapiVersion = _params.get(Config.XenXapiMinVersion.key());
+        if (_minXapiVersion == null) {
+            _minXapiVersion = "1.3";
+        }
+   
+        _maxXenVersion = _params.get(Config.XenMaxVersion.key());
+        _maxProductVersion = _params.get(Config.XenProductMaxVersion.key());
+        _maxXapiVersion = _params.get(Config.XenXapiMaxVersion.key());
+        
+        String value = _params.get(Config.XenSetupMultipath.key());
+        _setupMultipath = Boolean.parseBoolean(value);
     }
     
     @Override
@@ -468,6 +503,50 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
 
     @Override
     public void processConnect(HostVO agent, StartupCommand cmd) throws ConnectionException {
+        if (!(cmd instanceof StartupRoutingCommand )) {
+            return;
+        }       
+        long agentId = agent.getId();
+        
+        StartupRoutingCommand startup = (StartupRoutingCommand)cmd;
+        if (startup.getHypervisorType() != HypervisorType.XenServer) {
+            s_logger.debug("Not XenServer so moving on.");
+            return;
+        }
+        
+        HostVO host = _hostDao.findById(agentId);
+        if (host.isSetup()) {
+            return;
+        }
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Setting up host " + agentId);
+        }
+        HostEnvironment env = new HostEnvironment();
+        
+        SetupCommand setup = new SetupCommand(env);
+        if (_setupMultipath) {
+            setup.setMultipathOn();
+        }
+        try {
+            SetupAnswer answer = (SetupAnswer)_agentMgr.send(agentId, setup);
+            if (answer != null && answer.getResult()) {
+                host.setSetup(true);
+                host.setLastPinged((System.currentTimeMillis()>>10) - 5 * 60 );
+                _hostDao.update(host.getId(), host);
+                if ( answer.needReconnect() ) {
+                    throw new ConnectionException(false, "Reinitialize agent after setup.");
+                }
+                return;
+            } else {
+                s_logger.warn("Unable to setup agent " + agentId + " due to " + ((answer != null)?answer.getDetails():"return null"));
+            }
+        } catch (AgentUnavailableException e) {
+            s_logger.warn("Unable to setup agent " + agentId + " because it became unavailable.", e);
+        } catch (OperationTimedoutException e) {
+            s_logger.warn("Unable to setup agent " + agentId + " because it timed out", e);
+        }
+        throw new ConnectionException(true, "Reinitialize agent after setup.");
     }
 
     @Override

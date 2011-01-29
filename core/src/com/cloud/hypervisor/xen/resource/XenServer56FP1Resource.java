@@ -35,7 +35,7 @@ import com.xensource.xenapi.Types.XenAPIException;
 
 
 @Local(value=ServerResource.class)
-public class XenServer56FP1Resource extends CitrixResourceBase {
+public class XenServer56FP1Resource extends XenServer56Resource {
     private static final Logger s_logger = Logger.getLogger(XenServer56FP1Resource.class);
     
     public XenServer56FP1Resource() {
@@ -46,12 +46,7 @@ public class XenServer56FP1Resource extends CitrixResourceBase {
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
     	return CitrixHelper.getXenServer56FP1GuestOsType(stdType);
     }
-
-    @Override
-    protected void setMemory(Connection conn, VM vm, long memsize) throws XmlRpcException, XenAPIException {
-        vm.setMemoryLimits(conn, memsize, memsize, memsize, memsize);
-    }   
-    
+   
     @Override
     protected List<File> getPatchFiles() {      
         List<File> files = new ArrayList<File>();
