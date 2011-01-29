@@ -100,14 +100,8 @@
   <property name="console-viewer.dir" location="${base.dir}/console-viewer" />
   <property name="console-viewer.dist.dir" location="${dist.dir}/console-viewer" />
 
-  <property name="usage.dir" location="${proprietary.dir}/usage" />
-  <property name="usage.dist.dir" location="${dist.dir}/usage" />
   <property name="test.target.dir" location="${target.dir}/test" />
   <property name="test.classes.dir" location="${test.target.dir}/classes" />
-  <property name="testclient.jar" value="cloud-test.jar" />
-
-  <property name="testclient.dir" location="${proprietary.dir}/test" />
-  <property name="testclient.dist.dir" location="${dist.dir}/test" />
 
   <property name="tools.dir" location="${base.dir}/tools" />
   <!--  <property name="antcontrib.dir" location="${tools.dir}/tools/ant/apache-ant-1.8.0/lib" />-->
@@ -134,9 +128,6 @@
   <property name="console-common.jar" value="cloud-console-common.jar" />
   <property name="console-proxy.jar" value="cloud-console-proxy.jar" />
   <property name="api.jar" value="cloud-api.jar"/>
-  <property name="usage.jar" value="cloud-usage.jar" />
-  <property name="core-premium.jar" value="cloud-core-extras.jar"/>
-  <property name="premium.jar" value="cloud-server-extras.jar" />
 
   <!--
 		Import information about the build version and company information
@@ -550,119 +541,6 @@
     <gzip destfile="${dist.dir}/cloud-scripts.tgz" src="${dist.dir}/patch.tar"/>
     <delete file="${dist.dir}/patch.tar"/>
     <delete dir="${dist.dir}/build-patch"/>
-  </target>
-
-  <path id="usage.classpath">
-    <path refid="thirdparty.classpath" />
-    <path refid="dist.classpath" />
-  </path>
-  <target name="compile-usage" depends="-init, compile-utils, compile-core, compile-server, compile-premium" description="Compile the usage server">
-    <compile-java jar.name="${usage.jar}" top.dir="${usage.dir}" classpath="usage.classpath" />
-  </target>
-
-  <target name="build-usage" depends="-init, compile-console-proxy, compile-usage">
-    <mkdir dir="${usage.dist.dir}/bin" />
-    <mkdir dir="${usage.dist.dir}/conf" />
-
-    <copy todir="${usage.dist.dir}/bin">
-      <fileset dir="${usage.dir}/scripts">
-        <include name="usageserver.sh" />
-      </fileset>
-    </copy>
-    <copy overwrite="true" todir="${usage.dist.dir}/lib">
-      <fileset dir="${jar.dir}">
-        <include name="${usage.jar}" />
-      </fileset>
-    </copy>
-  </target>
-
-  <target name="-init-test" depends="-init">
-    <mkdir dir="${test.target.dir}" />
-    <mkdir dir="${test.classes.dir}" />
-  </target>
-
-  <path id="testclient.classpath">
-    <path refid="thirdparty.classpath" />
-    <path refid="dist.classpath" />
-  </path>
-  <target name="compile-testclient" depends="-init-test, compile-utils, compile-premium" description="Compile the test client.">
-    <echo message="src is ${testclient.dir}"/>
-    <compile-java jar.name="${testclient.jar}" top.dir="${testclient.dir}" classpath="testclient.classpath" />
-  </target>
-
-  <target name="build-testclient" depends="-init-test, compile-testclient">
-    <mkdir dir="${testclient.dist.dir}/src" />
-    <mkdir dir="${testclient.dist.dir}/conf" />
-    <mkdir dir="${testclient.dist.dir}/metadata" />
-    <mkdir dir="${testclient.dist.dir}/usage" />
-
-    <copy todir="${testclient.dist.dir}/src">
-      <fileset dir="${jar.dir}">
-        <include name="${testclient.jar}" />
-        <include name="${utils.jar}" />
-      </fileset>
-      <fileset dir="${thirdparty.dir}">
-        <include name="commons-httpclient-3.1.jar" />
-        <include name="commons-logging-1.1.1.jar" />
-        <include name="commons-codec-1.4.jar" />
-        <include name="log4j-1.2.15.jar" />
-        <include name="apache-log4j-extras-1.0.jar" />
-        <include name="trilead-ssh2-build213.jar" />
-        <include name="mysql-connector-java-5.1.7-bin.jar" />
-      </fileset>
-    </copy>
-    <copy overwrite="true" todir="${testclient.dist.dir}/conf">
-      <fileset dir="${testclient.dir}/conf">
-        <include name="log4j.properties" />
-        <include name="templates.sql" />
-        <include name="deploy.xml" />
-        <include name="config.xml" />
-        <include name="tool.properties" />
-      </fileset>
-    </copy>
-
-    <copy overwrite="true" todir="${testclient.dist.dir}/scripts">
-      <fileset dir="${testclient.dir}/scripts" />
-    </copy>
-
-    <copy overwrite="true" todir="${testclient.dist.dir}/metadata">
-      <fileset dir="${testclient.dir}/metadata" />
-    </copy>
-
-    <copy todir="${testclient.dist.dir}/usage" overwrite="true">
-      <fileset dir="${testclient.dir}/scripts/usage" />
-    </copy>
-
-    <copy overwrite="true" todir="${testclient.dist.dir}">
-      <fileset dir="${testclient.dir}/conf/">
-        <include name="deploy.properties" />
-      </fileset>
-    </copy>
-
-    <chmod file="${testclient.dist.dir}/deploy.sh" perm="uog+xr" />
-    <chmod file="${testclient.dist.dir}/cleanup.sh" perm="uog+xr" />
-    <chmod file="${testclient.dist.dir}/cleanparallel.sh" perm="uog+xr" />
-  </target>
-
-  <path id="core-premium.classpath">
-    <path refid="thirdparty.classpath" />
-    <path refid="dist.classpath" />
-  </path>
-  <target name="compile-core-premium" depends="-init, compile-utils, compile-core, compile-server" description="Compile the premium business logic.">
-     <!-- compile-server is now added because core-premium imports a class com.cloud.configuration.Config that is only in server.jar.  These are the kinds of
-     bugs that are only discovered with a parallel compilation mode.  You are welcome. -->
-    <compile-java jar.name="${core-premium.jar}" top.dir="${core-premium.dir}" classpath="core-premium.classpath" />
-  </target>
-
-  <path id="premium.classpath">
-    <path refid="thirdparty.classpath" />
-    <path refid="dist.classpath" />
-  </path>
-  <target name="compile-premium" depends="-init, compile-utils, compile-core-premium, compile-server, compile-console-proxy" description="Compile the premium business logic.">
-    <compile-java jar.name="${premium.jar}" top.dir="${premium.dir}" classpath="premium.classpath" />
-  </target>
-
-  <target name="build-premium" depends="build-opensource, compile-premium, build-usage">
   </target>
 
   <target name="help">

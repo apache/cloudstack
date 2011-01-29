@@ -139,13 +139,7 @@
     </zip>
   </target>
 
-  <target name="conditional-build-premium" if="build.premium" >
-	  <antcall target="build-usage"/>
-	  <antcall target="build-testclient"/>
-	  <antcall target="build-premium" />
-  </target>
-
-  <target name="build-all" depends="build-opensource, build-ui, build-war-oss, conditional-build-premium">
+  <target name="build-all" depends="build-opensource, build-ui, build-war-oss">
   </target>
 
   <target name="build-war-oss" depends="-init-package" description="Compile the GWT client UI and builds WAR file.">
