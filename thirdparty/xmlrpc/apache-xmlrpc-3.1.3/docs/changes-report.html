@@ -1,0 +1,794 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+
+
+
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>ws-xmlrpc - Changes in Apache XML-RPC</title>
+    <style type="text/css" media="all">
+      @import url("./css/maven-base.css");
+      @import url("./css/maven-theme.css");
+      @import url("./css/site.css");
+    </style>
+    <link rel="stylesheet" href="./css/print.css" type="text/css" media="print" />
+        <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+      </head>
+  <body class="composite">
+    <div id="banner">
+                  <a href="" id="bannerLeft">
+    
+                                            <img src="images/xmlrpc-logo.gif" alt="" />
+    
+            </a>
+                    <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="breadcrumbs">
+          
+  
+
+  
+    
+  
+  
+    
+            <div class="xleft">
+        Last Published: 2010-02-06
+                      </div>
+            <div class="xright">            <a href="http://www.apache.org/" class="externalLink">Apache</a>
+            |
+                <a href="../">Webservices</a>
+            |
+                <a href="">XML-RPC</a>
+            
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="leftColumn">
+      <div id="navcolumn">
+           
+  
+
+  
+    
+  
+  
+    
+                   <h5>XML-RPC</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="index.html">Overview</a>
+          </li>
+              
+    <li class="none">
+                    <a href="download.html">Download</a>
+          </li>
+              
+    <li class="none">
+              <strong>Changes</strong>
+        </li>
+              
+    <li class="none">
+                    <a href="mail-lists.html">Mailing Lists</a>
+          </li>
+              
+    <li class="none">
+                    <a href="contributing.html">Contributing</a>
+          </li>
+              
+    <li class="none">
+                    <a href="xmlrpc2">XML-RPC 2</a>
+          </li>
+              
+    <li class="none">
+                    <a href="links.html">Links</a>
+          </li>
+          </ul>
+              <h5>Documentation</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="client.html">Client Classes</a>
+          </li>
+              
+    <li class="none">
+                    <a href="server.html">Server Side XML-RPC</a>
+          </li>
+              
+    <li class="none">
+                    <a href="extensions.html">Vendor Extensions</a>
+          </li>
+              
+    <li class="none">
+                    <a href="ssl.html">SSL</a>
+          </li>
+              
+    <li class="none">
+                    <a href="introspection.html">Introspection</a>
+          </li>
+              
+    <li class="none">
+                    <a href="advanced.html">Advanced Techniques</a>
+          </li>
+              
+    <li class="none">
+                    <a href="types.html">XML-RPC Types</a>
+          </li>
+              
+    <li class="none">
+                    <a href="faq.html">FAQ</a>
+          </li>
+              
+    <li class="none">
+                    <a href="apidocs/index.html">Javadocs</a>
+          </li>
+          </ul>
+              <h5>Project Documentation</h5>
+            <ul>
+              
+                
+              
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-info.html">Project Information</a>
+                </li>
+              
+                
+              
+            
+            
+      
+              
+            <li class="expanded">
+                    <a href="project-reports.html">Project Reports</a>
+                  <ul>
+                  
+    <li class="none">
+              <strong>Changes Report</strong>
+        </li>
+                  
+    <li class="none">
+                    <a href="rat-report.html">RAT Report</a>
+          </li>
+              </ul>
+        </li>
+          </ul>
+                                           <a href="http://maven.apache.org/" title="Built by Maven" class="poweredBy">
+            <img alt="Built by Maven" src="./images/logos/maven-feather.png"></img>
+          </a>
+                       
+  
+
+  
+    
+  
+  
+    
+        </div>
+    </div>
+    <div id="bodyColumn">
+      <div id="contentBox">
+        <div class="section"><h2><a name="Changes_in_Apache_XML-RPC"></a>Changes in Apache XML-RPC</h2>
+<div class="section"><h3><a name="Release_History"></a>Release History</h3>
+<table class="bodyTable"><tr class="a"><th>Version</th>
+<th>Date</th>
+<th>Description</th>
+</tr>
+<tr class="b"><td><a href="#a3.1.3">3.1.3</a></td>
+<td>2010-Feb-06</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a3.1.2">3.1.2</a></td>
+<td>2009-Apr-19</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a3.1.1">3.1.1</a></td>
+<td>2008-Aug-10</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a3.1">3.1</a></td>
+<td>2007-Aug-31</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a3.0">3.0</a></td>
+<td>30-Aug-2006</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a3.0rc1">3.0rc1</a></td>
+<td>27-Jul-2006</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a3.0b1">3.0b1</a></td>
+<td>24-Jun-2006</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a3.0a1">3.0a1</a></td>
+<td>17-Feb-2005</td>
+<td></td>
+</tr>
+<tr class="b"><td><a href="#a2.0.2">2.0.2</a></td>
+<td>Not yet released</td>
+<td></td>
+</tr>
+<tr class="a"><td><a href="#a2.0.1">2.0.1</a></td>
+<td>28-Dec-2005</td>
+<td></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3><a name="a3.1.3"></a>Release 3.1.3 - 2010-Feb-06</h3>
+<table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The version number in the clients user agent string is now
+        updated automatically.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Fixed a deadlock in the ThreadPool. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-168">XMLRPC-168</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The ClientFactory is now supporting an empty remote class. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-174">XMLRPC-174</a>. Thanks to <a class="externalLink" href="mailto:livnats@gmail.com">Livnat Peer</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/add.gif" alt="add" /></td>
+<td>Added support for configured timeouts to the XmlRpcSun15HttpTransport class. Thanks to <a class="externalLink" href="mailto:gamaliel@fastmail.fm">Gam</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Fixed a potential security hole: The client has been able to include server side resources
+        into the request by using external entities. Thanks to <a class="externalLink" href="mailto:johan.hagre@home.se">Johan Hôgre</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3><a name="a3.1.2"></a>Release 3.1.2 - 2009-Apr-19</h3>
+<table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Eliminated a possible race condition in the ThreadPool. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-162">XMLRPC-162</a>. Thanks to <a class="externalLink" href="mailto:markg@nortel.com">Mark Gertsvolf</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The ThreadPool could create more threads than configured. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-161">XMLRPC-161</a>. Thanks to <a class="externalLink" href="mailto:markg@nortel.com">Mark Gertsvolf</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Weakened the access control in the WebServer class in order to make
+        subclassing easier. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-160">XMLRPC-160</a>. Thanks to <a class="externalLink" href="mailto:jbaldassari at gmail dot com">James Baldassari</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Improved the handling of HTTP status codes that indicate an error. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-159">XMLRPC-159</a>. Thanks to <a class="externalLink" href="mailto:brandond@alum.mit.edu">Brandon DuRette</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Fixed a possible NPE in case of a malformed HTTP request in the WebServer. Thanks to <a class="externalLink" href="mailto:Alan.Burlison@sun.com">Alan Burlison</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The webserver's connection timeout wasn't applied to the ServletWebServer. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-166">XMLRPC-166</a>. Thanks to <a class="externalLink" href="mailto:Alan.Burlison@sun.com">Alan Burlison</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>A client could prevent other clients from connecting by not sending any data. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-166">XMLRPC-166</a>. Thanks to <a class="externalLink" href="mailto:Alan.Burlison@sun.com">Alan Burlison</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The platforms default encoding has been used at some point when decoding HTTP headers. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-164">XMLRPC-164</a>. Thanks to <a class="externalLink" href="mailto:hackwurth@mac.com">Greg Wurth</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3><a name="a3.1.1"></a>Release 3.1.1 - 2008-Aug-10</h3>
+<table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The XmlRpcCommonsTransport is now always declaring its entities as repeatable. Thanks to <a class="externalLink" href="mailto:p.balazs@gmail.com">Póka Balázs</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/add.gif" alt="add" /></td>
+<td>It is now possible to set the clients user-agent header in the client configuration. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-149">XMLRPC-149</a>. Thanks to <a class="externalLink" href="mailto:andreas.sahlbach@gmail.com">Andreas Sahlbach</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Ensured that the server replies with a spec compliant request, if the client uses the
+        content-length header. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-148">XMLRPC-148</a>. Thanks to <a class="externalLink" href="mailto:andreas.sahlbach@gmail.com">Andreas Sahlbach</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The XmlRpcSunHttpTransportFactory wasn't thread safe. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-150">XMLRPC-150</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/add.gif" alt="add" /></td>
+<td>Added support for javax.net.ssl.SSLSocketFactory and javax.net.Proxy. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-101">XMLRPC-101</a>. Thanks to <a class="externalLink" href="mailto:ckjfveronelli@fibertel.com.ar">Julio Francisco Veronelli</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Added some clarification on the handling of Object[] and java.util.List to
+        the page on "XML-RPC Data Types". Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-151">XMLRPC-151</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Minor grammar improvements. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-157">XMLRPC-157</a>. Thanks to <a class="externalLink" href="mailto:kaytiong@gmail.com">Kay Tiong Khoo</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/add.gif" alt="add" /></td>
+<td>Added the XmlRpcErrorHandler, which allows to customize the error logging.
+        This allows, for example, to minimize the logging for business exceptions. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-156">XMLRPC-156</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Documented, that called methods are choosen based on their signature.
+        In particular, multiple methods with the same name are supported. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-155">XMLRPC-155</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Fixed the FAQ entry on how to obtain the clients IP address. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-158">XMLRPC-158</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3><a name="a3.1"></a>Release 3.1 - 2007-Aug-31</h3>
+<table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/add.gif" alt="add" /></td>
+<td>Introduced the "enabledForExceptions" property.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/add.gif" alt="add" /></td>
+<td>Added support for void methods, if extensions are turned on.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/add.gif" alt="add" /></td>
+<td>Added PropertyHandlerMapping.load(ClassLoader, Map). Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-118">XMLRPC-118</a>. Thanks to <a class="externalLink" href="mailto:pfnguyen@hanhuy.com">Perry Nguyen</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/add.gif" alt="add" /></td>
+<td>The authentication handler, type converter and requestprocessor factories
+        are now configurable as properties of the XmlRpcServlet. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-117">XMLRPC-117</a>. Thanks to <a class="externalLink" href="mailto:jimisola@jimisola.com">Jimisola Laursen</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/add.gif" alt="add" /></td>
+<td>Atomic properties of XmlRpcServer are now configurable as init parameters
+        in the XmlRpcServlet. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-116">XMLRPC-116</a>. Thanks to <a class="externalLink" href="mailto:jimisola@jimisola.com">Jimisola Laursen</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Reworked the WebServer/ThreadPool framework in order to ensure a clean
+        shutdown.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The configuration framework, as introduced by XMLRPC-116, was applicable
+		to the configuration only, and not to the XmlRpcServlet, or the
+		XmlRpcServletServer. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-124">XMLRPC-124</a>. Thanks to <a class="externalLink" href="mailto:jimisola@jimisola.com">Jimisola Laursen</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/add.gif" alt="add" /></td>
+<td>Introduced the method AbstractReflectiveHandlerMapping.isHandlerMethod().
+        This should allow users to prevent remote invocation of certain methods,
+        for example initialization stuff.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/add.gif" alt="add" /></td>
+<td>The ClientFactory is now able to use a custom name for the remote
+        handler. So far, it was always using the interface name. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-126">XMLRPC-126</a>. Thanks to <a class="externalLink" href="mailto:prokopiev@stc.donpac.ru">Eugene Prokopiev</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/add.gif" alt="add" /></td>
+<td>It is now possible to have other objects than strings as
+        map keys. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-127">XMLRPC-127</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/add.gif" alt="add" /></td>
+<td>Made extending the XmlRpcCommonsTransportFactory easier. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-131">XMLRPC-131</a>. Thanks to <a class="externalLink" href="mailto:steffenp@gmx.de">Steffen Pingel</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/add.gif" alt="add" /></td>
+<td>Added support for redirects. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-132">XMLRPC-132</a>. Thanks to <a class="externalLink" href="mailto:anorman@piczoinc.com">Andrew Norman</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Fixed an invalid example in the "advanced" document. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-136">XMLRPC-136</a>. Thanks to <a class="externalLink" href="mailto:linke.mario@web.de">Mario Linke</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>An invalid dateTime value is now causing a more informative
+        error message. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-140">XMLRPC-140</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The redirect handling (XMLRPC-132) wasn't actually working,
+        because it treated an URI as a charset name. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-144">XMLRPC-144</a>. Thanks to <a class="externalLink" href="mailto:sc1478@att.com">Steve Cohen</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Address matching in the Webserver wasn't actually working,
+        because casting of integers to bytes was implemented wrong. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-145">XMLRPC-145</a>. Thanks to <a class="externalLink" href="mailto:gamaliel@fastmail.fm">Gamaliel Amaudruz</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Make the HttpClient creation in XmlRpcCommonsTransport and the
+        URLConnection creation in XmlRpcSunHttpTransport protected.
+        This is required for cookie support.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The WebServer was producing invalid error responses, if contentLengthOptional
+        was set.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>If the server was throwing an XmlRpcException, then the fault code and fault
+        string weren't given to the client. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-113">XMLRPC-113</a>. Thanks to <a class="externalLink" href="mailto:Juha.Syrjala@hiq.fi">Juha Syrjala</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The WebServer replies with an HTTP error 401 now, if the
+        client uses chunked encoding. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-114">XMLRPC-114</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The properties "Extension-Name", "Specification-Vendor", "Specification-Version",
+        "Specification-Title", "Implementation-Vendor-Id",
+        "Implementation-Vendor" and "Implementation-Version" are now
+		present in the MANIFEST files. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-74">XMLRPC-74</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>An NPE was thrown, if the clients request didn't contain a "params" element. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-115">XMLRPC-115</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The method TimingOutCallback.waitForResponse is now checking, whether
+        a response has already arrived before waiting. Thanks to <a class="externalLink" href="mailto:jonathan.oexner@alum.wpi.edu">Jonathan Oexner</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Fixed a serious performance problem, if the XML parser was sending large
+		content in small pieces. This could happen, for example, if the content
+		contained a large number of character entities. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-119">XMLRPC-119</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The configuration of the reply timeout in the commons transport was wrong. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-120">XMLRPC-120</a>. Thanks to <a class="externalLink" href="mailto:Juho.Yli-Krekola@iki.fi">Juho Yli-Krekola</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The DateParser is now treating an empty string as null. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-133">XMLRPC-133</a>. Thanks to <a class="externalLink" href="mailto:c.wolters@gmx.de">Carsten Wolters</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Fixed a broken link referring to an "SSL with Jetty" HOW-TO. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-134">XMLRPC-134</a>. Thanks to <a class="externalLink" href="mailto:sirboderafael@gmail.com">Sir Bode Rafael</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The XmlRpcRequestParser and XmlRpcResponseParser didn't reset
+        their internal state within startDocument(). Consequently, they
+        haven't been reusable. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-141">XMLRPC-141</a>. Thanks to <a class="externalLink" href="mailto:mcneill@streambase.com">Keith McNeill</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3><a name="a3.0"></a>Release 3.0 - 30-Aug-2006</h3>
+<table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Fixed the spelling of CharSetXmlWriterFactory, which made
+        the class basically useless. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-100">XMLRPC-100</a>. Thanks to <a class="externalLink" href="mailto:matt@knowledgeview.co.uk">Matt Preston</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Fixed that the WebServer didn't wait before retrying to
+        bind to the server socket. Thanks to <a class="externalLink" href="mailto:stanislav.miklik@gmail.com">Stanislav Miklik</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Fixed an endless loop, if the WebServer threw a BindException. Thanks to <a class="externalLink" href="mailto:stanislav.miklik@gmail.com">Stanislav Miklik</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>A NullPointerException was triggered, if the BasicEncoding was set to null. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-104">XMLRPC-104</a>. Thanks to <a class="externalLink" href="mailto:landonf@threerings.net">Landon Fuller</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Basic authentication didn't work, if the base64 encoded string with
+		user name and password contained more than 72 characters. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-104">XMLRPC-104</a>. Thanks to <a class="externalLink" href="mailto:landonf@threerings.net">Landon Fuller</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Basic authentication didn't work with the commons http transport,
+        because the commons httpclient wasn't configured to send credentials
+        by default. (It was waiting for a challenge.)</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Basic authentication didn't work with the commons http transport,
+        if user name or password contained non-ASCII characters. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-105">XMLRPC-105</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The releaseWorker() method wasn't called for the server. Thanks to <a class="externalLink" href="mailto:randall@magpieti.com">Randall Bryant</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Fixed a bug in the web servers thread pool, which caused that
+        threads haven't been reused.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Documentation improvements Thanks to <a class="externalLink" href="mailto:jmclaurin@petronworld.com">Jason McLaurin</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/add.gif" alt="add" /></td>
+<td>Added documentation on custom data types.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/add.gif" alt="add" /></td>
+<td>The XmlRpcLiteHttpTransport is now creating a socket
+        in a protected methods. This allows to switch to
+        alternative socket implementations. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-107">XMLRPC-107</a>. Thanks to <a class="externalLink" href="mailto:Catalin.Hritcu@gmail.com">Catalin Hritcu</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>More documentation fixes. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-108">XMLRPC-108</a>. Thanks to <a class="externalLink" href="mailto:Catalin.Hritcu@gmail.com">Catalin Hritcu</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Fixed an invalid FAQ example. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-109">XMLRPC-109</a>. Thanks to <a class="externalLink" href="mailto:Catalin.Hritcu@gmail.com">Catalin Hritcu</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3><a name="a3.0rc1"></a>Release 3.0rc1 - 27-Jul-2006</h3>
+<table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Added a missing "synchronized" to the TimingOutCallback. Thanks to <a class="externalLink" href="mailto:Alan.Burlison@sun.com">Alan Burlison</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Fixed an invalid index, that caused the ReflectiveXmlRpcHandler to fail
+        detecting a method. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-94">XMLRPC-94</a>. Thanks to <a class="externalLink" href="mailto:rhavyn@gmail.com">Chris Conrad</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/add.gif" alt="add" /></td>
+<td>Added documentation for accessing an SSL server. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-93">XMLRPC-93</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/add.gif" alt="add" /></td>
+<td>A null parameter list is now treated as an empty object array. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-96">XMLRPC-96</a>. Thanks to <a class="externalLink" href="mailto:jimisola@jimisola.com">Jimisola Laursen</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The type long was missing in types.apt. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-97">XMLRPC-97</a>. Thanks to <a class="externalLink" href="mailto:jimisola@jimisola.com">Jimisola Laursen</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3><a name="a3.0b1"></a>Release 3.0b1 - 24-Jun-2006</h3>
+<table class="bodyTable"><tr class="b"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="a"><td><img src="images/add.gif" alt="add" /></td>
+<td>Add connectionTimeout and replyTimeout in RPC clients.
+        CommonsTransport support connection and reply timeout, liteHttpTransport only support reply timeout</td>
+<td><a href="team-list.html#hgomez">hgomez</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The value created by HttpUtil.encodeBasicAuthentication(...)
+        was terminated with a line feed, which is invalid for
+        use in HTTP headers. Thanks to <a class="externalLink" href="mailto:mludha@gmail.com">Marek Ludha</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/add.gif" alt="add" /></td>
+<td>add support for BigDecimal and BigInteger in extensions.</td>
+<td><a href="team-list.html#hgomez">hgomez</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Nested object arrays could not be parsed. Thanks to <a class="externalLink" href="mailto:Walter.Mundt@coleengineering.com">Walter Mundt</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The "string" tag could not be parsed. Thanks to <a class="externalLink" href="mailto:Walter.Mundt@coleengineering.com">Walter Mundt</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/add.gif" alt="add" /></td>
+<td>Added the DynamicHandlerMapping. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-76">XMLRPC-76</a>. Thanks to <a class="externalLink" href="mailto:Walter.Mundt@coleengineering.com">Walter Mundt</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>XmlRpcException.printStackTrace() was throwing
+          an NPE, if no linked exception was present. Thanks to <a class="externalLink" href="mailto:Walter.Mundt@coleengineering.com">Walter Mundt</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/add.gif" alt="add" /></td>
+<td>The project is now splitted into three jar files:
+        common, client, and server.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The Base64 encoder doesn't accept buffers of length 0. Such a buffer
+        was passed, if the byte array to encode has itself length 0. Thanks to <a class="externalLink" href="mailto:bkarp@cs.ucl.ac.uk">Brad Karp</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>HTTP/1.0 requires a content-length header. The Lite HTTP transport
+        doesn't support HTTP/1.1, so it refuses the "contentLengthOptional"
+        setting from now on. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-79">XMLRPC-79</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/add.gif" alt="add" /></td>
+<td>Added support for initializable handlers. Thanks to <a class="externalLink" href="mailto:mspetrovic@gmail.com">Mark Petrovic</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/add.gif" alt="add" /></td>
+<td>Added the TimingOutCallback, which allows to abort a request,
+        if the server doesn't reply within a given time. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-56">XMLRPC-56</a>. Thanks to <a class="externalLink" href="mailto:kweiner@gmail.com">Ken Weiner</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Fixed that dateTime values must not include timezone values.</td>
+<td><a href="team-list.html#hgomez">hgomez</a></td>
+</tr>
+<tr class="b"><td><img src="images/add.gif" alt="add" /></td>
+<td>The XmlRpcServlet allows to configure its "enabledForExtensions"
+        value as an init parameter. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-84">XMLRPC-84</a>. Thanks to <a class="externalLink" href="mailto:2nis@aktiv-design.com">Denis Carniel</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/add.gif" alt="add" /></td>
+<td>It is now possible to create and initialize handler objects per
+        request.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>Added partial support for automatic conversion of object arrays
+        to lists, or vectors. Same for maps to hash tables, or properties. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-89">XMLRPC-89</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3><a name="a3.0a1"></a>Release 3.0a1 - 17-Feb-2005</h3>
+<table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/add.gif" alt="add" /></td>
+<td>Complete rewrite, adding vendor extensions:
+        Streaming mode, support for all primitive Java types,
+        nulls, DOM elements, and JAXB objects.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3><a name="a2.0.2"></a>Release 2.0.2 - Not yet released</h3>
+<table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>A missing increment in LiteXmlRpcTransport.initConnection()
+        prevented, that the method could finally fail, resulting
+        in a never ending loop. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-67">XMLRPC-67</a>. Thanks to <a class="externalLink" href="mailto:mike at blueoak.com">Mike Bailey</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+</table>
+</div>
+<div class="section"><h3><a name="a2.0.1"></a>Release 2.0.1 - 28-Dec-2005</h3>
+<table class="bodyTable"><tr class="a"><th>Type</th>
+<th>Changes</th>
+<th>By</th>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The Webserver class was unable to handle basic authentication,
+	      because the BASE64 codec wasn't initialized. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-68">XMLRPC-68</a>. Thanks to <a class="externalLink" href="mailto:johan at oskarsson.nu">Johan Oskarson</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The characters 0x20, 0xe000, and 0x10000 have been escaped
+      	  without reason. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-69">XMLRPC-69</a>. Thanks to <a class="externalLink" href="mailto:claude at utlco.com">Claude Zervas</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/fix.gif" alt="fix" /></td>
+<td>The wrong version of commons-codec was downloaded by build.xml. Fixes <a class="externalLink" href="http://issues.apache.org/jira/ViewIssue.jspa?key=XMLRPC-73">XMLRPC-73</a>. Thanks to <a class="externalLink" href="mailto:Thomas.Mohaupt at gmail.com">Thomas Mohaupt</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/add.gif" alt="add" /></td>
+<td>Added the CommonsXmlRpcTransportFactory. Thanks to <a class="externalLink" href="mailto:jimisola@jimisola.com">Jimisola Laursen</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="b"><td><img src="images/add.gif" alt="add" /></td>
+<td>Added the possibility to specify a timezone for interpreting
+          incoming date values. Thanks to <a class="externalLink" href="mailto:henry.story@bblfish.net">Henry Story</a>.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+<tr class="a"><td><img src="images/add.gif" alt="add" /></td>
+<td>Upgrade to commons-httpclient 3.0.</td>
+<td><a href="team-list.html#jochen">jochen</a></td>
+</tr>
+</table>
+</div>
+</div>
+
+      </div>
+    </div>
+    <div class="clear">
+      <hr/>
+    </div>
+    <div id="footer">
+      <div class="xright">&#169;  
+          2001-2010
+    
+          The Apache Software Foundation
+          
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+  </body>
+</html>

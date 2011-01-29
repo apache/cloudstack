@@ -1,0 +1,402 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+
+
+
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>ws-xmlrpc - Advanced Programming Topics</title>
+    <style type="text/css" media="all">
+      @import url("./css/maven-base.css");
+      @import url("./css/maven-theme.css");
+      @import url("./css/site.css");
+    </style>
+    <link rel="stylesheet" href="./css/print.css" type="text/css" media="print" />
+        <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+      </head>
+  <body class="composite">
+    <div id="banner">
+                  <a href="" id="bannerLeft">
+    
+                                            <img src="images/xmlrpc-logo.gif" alt="" />
+    
+            </a>
+                    <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="breadcrumbs">
+          
+  
+
+  
+    
+  
+  
+    
+            <div class="xleft">
+        Last Published: 2010-02-06
+                      </div>
+            <div class="xright">            <a href="http://www.apache.org/" class="externalLink">Apache</a>
+            |
+                <a href="../">Webservices</a>
+            |
+                <a href="">XML-RPC</a>
+            
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="leftColumn">
+      <div id="navcolumn">
+           
+  
+
+  
+    
+  
+  
+    
+                   <h5>XML-RPC</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="index.html">Overview</a>
+          </li>
+              
+    <li class="none">
+                    <a href="download.html">Download</a>
+          </li>
+              
+    <li class="none">
+                    <a href="changes-report.html">Changes</a>
+          </li>
+              
+    <li class="none">
+                    <a href="mail-lists.html">Mailing Lists</a>
+          </li>
+              
+    <li class="none">
+                    <a href="contributing.html">Contributing</a>
+          </li>
+              
+    <li class="none">
+                    <a href="xmlrpc2">XML-RPC 2</a>
+          </li>
+              
+    <li class="none">
+                    <a href="links.html">Links</a>
+          </li>
+          </ul>
+              <h5>Documentation</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="client.html">Client Classes</a>
+          </li>
+              
+    <li class="none">
+                    <a href="server.html">Server Side XML-RPC</a>
+          </li>
+              
+    <li class="none">
+                    <a href="extensions.html">Vendor Extensions</a>
+          </li>
+              
+    <li class="none">
+                    <a href="ssl.html">SSL</a>
+          </li>
+              
+    <li class="none">
+                    <a href="introspection.html">Introspection</a>
+          </li>
+              
+    <li class="none">
+              <strong>Advanced Techniques</strong>
+        </li>
+              
+    <li class="none">
+                    <a href="types.html">XML-RPC Types</a>
+          </li>
+              
+    <li class="none">
+                    <a href="faq.html">FAQ</a>
+          </li>
+              
+    <li class="none">
+                    <a href="apidocs/index.html">Javadocs</a>
+          </li>
+          </ul>
+              <h5>Project Documentation</h5>
+            <ul>
+              
+                
+              
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-info.html">Project Information</a>
+                </li>
+              
+                
+              
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-reports.html">Project Reports</a>
+                </li>
+          </ul>
+                                           <a href="http://maven.apache.org/" title="Built by Maven" class="poweredBy">
+            <img alt="Built by Maven" src="./images/logos/maven-feather.png"></img>
+          </a>
+                       
+  
+
+  
+    
+  
+  
+    
+        </div>
+    </div>
+    <div id="bodyColumn">
+      <div id="contentBox">
+        <p>This page describes some advanced topics.</p>
+<div class="section"><h2>Dynamic proxies</h2>
+<p>Dynamic proxies are an extremely comfortable way of Client programming. Basically, the idea is as follows: All request processors on the server side are splitted into interface and implementation. The interfaces are shared between client and server, typically within some common jar file. Now, rather than using the <a href="apidocs/org/apache/xmlrpc/client/XmlRpcClient.html">XmlRpcClient</a> directly, the programmer creates an instance of <a href="apidocs/org/apache/xmlrpc/client/util/ClientFactory.html">ClientFactory</a>, which is configured with an <a href="apidocs/org/apache/xmlrpc/client/XmlRpcClient.html">XmlRpcClient</a>.</p>
+<p>The <a href="apidocs/org/apache/xmlrpc/client/util/ClientFactory.html">factory</a> can take an interface as input and returns an implementation, which internally calls the server by using the <a href="apidocs/org/apache/xmlrpc/client/XmlRpcClient.html">XmlRpcClient</a>.</p>
+<p>Perhaps some code shows more than words. First of all, let's create a request processor interface.</p>
+<div class="source"><pre>    package com.foo;
+
+    public interface Adder {
+      public int add(int pNum1, int pNum2);
+    }</pre>
+</div>
+<p>The server contains the request processors implementation:</p>
+<div class="source"><pre>    package com.foo;
+
+    public class AdderImpl implements Adder {
+      public int add(int pNum1, int pNum2) {
+        return pNum1 + pNum2;
+      }
+    }</pre>
+</div>
+<p>And here is how the client would use this:</p>
+<div class="source"><pre>    import com.foo.Adder;
+    import java.net.URL;
+    import org.apache.xmlrpc.client.XmlRpcClient;
+    import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
+    import org.apache.xmlrpc.client.util.ClientFactory;
+
+    XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
+    config.setServerURL(new URL(&quot;http://127.0.0.1:8080/xmlrpc&quot;));
+    XmlRpcClient client = new XmlRpcClient();
+    client.setConfig(config);
+    ClientFactory factory = new ClientFactory(client);
+    Adder adder = (Adder) factory.newInstance(Adder.class);
+    int sum = adder.add(2, 4);</pre>
+</div>
+<div class="section"><h3>Exception handling</h3>
+<p>Currently, exceptions are a problem: If the server throws an exception (for example an IOException), then the client receives an XmlRpcException. Consequently, the generated implementation will attempt to throw the XmlRpcException.</p>
+<p>Unfortunately, the method signature will of course contain an IOException, but rarely an XmlRpcException. As the XmlRpcException cannot be thrown, it is converted into an UndeclaredThrowableException.</p>
+<p>This is no problem, if you are prepared for runtime exceptions by enclosing your code with proper exception handlers. (Of course, the exception handlers may be in a calling method.) Only if you want to catch the exception (for example, because you expect an error at a certain point), then you need to consider, which exception is being trapped: If the method exposes XmlRpcException, then you'll need to catch the XmlRpcException. Otherwise, it's UndeclaredThrowableException.</p>
+<p>It is recommended to use the property enabledForExceptions. If this property is set, then the server will attempt to convert the exception into a byte array, which is transmitted to the client. The client will be able to convert the byte array back into an exception and throw that, as if it came right out of the client. Note, that this approach may cause security and privacy issues, because the serialized exception may, in theory, contain arbitrary objects.</p>
+</div>
+<div class="section"><h3>Cookie handling</h3>
+<p>Cookie has not yet been generalized. In other words, it depends on the transport.</p>
+<ul><li>The XmlRpcLiteHttpTransport doesn't have support for cookies. * The XmlRpcSunHttpTransport requires hand written code for setting and getting the cookies or using a cookie library. (The latter is recommended, of course.) In either way, you've got to use a custom transport and overwrite the methods newURLConnection(URL), initHttpHeaders(XmlRpcRequest), and close():<div class="source"><pre>    import java.net.URLConnection;
+    import org.apache.xmlrpc.client.XmlRpcClient;
+    import org.apache.xmlrpc.client.XmlRpcSunHttpTransport;
+    import org.apache.xmlrpc.client.XmlRpcTransport;
+    import org.apache.xmlrpc.client.XmlRpcTransportFactory;
+
+    final XmlRpcClient client = new XmlRpcClient();
+    XmlRpcTransportFactory factory = new XmlRpcTransportFactory(){
+        public XmlRpcTransport getTransport(){
+            private URLConnection conn;
+            protected URLConnection newURLConnection(URL pURL) throws IOException {
+                conn = super.newURLConnection(pURL);
+                return conn;
+            }
+            protected void initHttpHeaders(XmlRpcRequest pRequest) {
+                super.initHttpHeaders(pRequest);
+                setCookies(conn);
+            }
+            protected void close() throws XmlRpcClientException {
+                getCookies(conn);
+            }
+            private void setCookies(URLConnection pConn) {
+                // Implement me ...
+            }
+            private void getCookies(URLConnection pConn) {
+                // Implement me ...
+            }
+        }
+    };
+    client.setTransportFactory(factory);</pre>
+</div>
+</li>
+<li>The XmlRpcCommonsHttpTransport requires that the HttpClient is being reused. (By default, a new HttpClient is created for any connection.) To reuse the HttpClient, set it on the transport factory:<div class="source"><pre>    import org.apache.commons.httpclient.HttpClient;
+    import org.apache.commons.httpclient.HttpState;
+    import org.apache.xmlrpc.client.XmlRpcClient;
+    import org.apache.xmlrpc.client.XmlRpcCommonsTransport;
+    import org.apache.xmlrpc.client.XmlRpcCommonsTransportFactory;
+
+    final XmlRpcClient client = new XmlRpcClient();
+    final HttpClient httpClient = new HttpClient();
+    final XmlRpcCommonsTransportFactory factory = new XmlRpcCommonsTransportFactory(client);
+    factory.setHttpClient(httpClient);
+    client.setTransportFactory(factory);
+    final HttpState httpState = client.getState();</pre>
+</div>
+<p>Cookies may now be read or set on the httpState object.</p>
+<p>Note, that this means losing the XmlRpcClients multithreading abilities! The factory above is obviously bound to the HttpClient, which must be bound to a thread. If you need to set cookies initially, overwrite the transport method initHttpHeaders(XmlRpcRequest) as well.</p>
+</li>
+</ul>
+</div>
+<div class="section"><h3>Custom data types</h3>
+<p>Apache XML-RPC was built with extensibility in mind. In particular, it was written to support custom data types.</p>
+<p>The data type handling is completely left to the <a href="apidocs/org/apache/xmlrpc/common/TypeFactory.html">TypeFactory</a>. In other words, adding support for custom data types is as simple as providing your own type factory. This is typically done by subclassing <a href="apidocs/org/apache/xmlrpc/common/TypeFactoryImpl.html">TypeFactoryImpl</a>.</p>
+<p>We'll illustrate the concept by creating a type factory, which uses a non-standard date format for transmitting date values. First of all, we've got to implement the subclass:</p>
+<div class="source"><pre>    import java.text.DateFormat;
+    import java.text.SimpleDateFormat;
+    import org.apache.xmlrpc.common.TypeFactoryImpl;
+    import org.apache.xmlrpc.common.XmlRpcController;
+    import org.apache.xmlrpc.parser.DateParser;
+    import org.apache.xmlrpc.parser.TypeParser;
+    import org.apache.xmlrpc.serializer.DateSerializer;
+    import org.apache.xmlrpc.serializer.TypeSerializer;
+    import org.apache.ws.commons.util.NamespaceContextImpl;
+
+    public class MyTypeFactory extends TypeFactoryImpl {
+        public MyTypeFactory(XmlRpcController pController) {
+            super(pController);
+        }
+
+        private DateFormat newFormat() {
+            return new SimpleDateFormat(&quot;yyyy-MM-dd HH:mm:ss.SSS&quot;);
+        }
+
+        public TypeParser getParser(XmlRpcStreamConfig pConfig, NamespaceContextImpl pContext, String pURI, String pLocalName) {
+            if (DateSerializer.DATE_TAG.equals(pLocalName)) {
+                return new DateParser(pFormat);
+            } else {
+                return super.getParser(pConfig, pContext, pURI, pLocalName);
+            }
+        }
+
+        public TypeSerializer getSerializer(XmlRpcStreamConfig pConfig, Object pObject) throws SAXException {
+            if (pObject instanceof Date) {
+                return new DateSerializer(newFormat());
+            } else {
+                return super.getSerializer(pConfig, pObject);
+            }
+        }
+    }</pre>
+</div>
+<p>On the client side, we've got to tell the <a href="apidocs/org/apache/xmlrpc/client/XmlRpcClient.html">XmlRpcClient</a> to use the new factory. That's as simple as typing</p>
+<div class="source"><pre>    XmlRpcClient client = new XmlRpcClient();
+    client.setTypeFactory(new MyTypeFactory());</pre>
+</div>
+<p>Things are a little bit more difficult on the server side. Basically all we need to do is setting the type factory on the <a href="apidocs/org/apache/xmlrpc/server/XmlRpcServer.html">XmlRpcServer</a>. The question is, how to obtain the server object. That depends on the environment. If you are using the XmlRpcServlet, then you've got to derive a subclass:</p>
+<div class="source"><pre>    import org.apache.xmlrpc.webserver.XmlRpcServletServer;
+    import org.apache.xmlrpc.webserver.XmlRpcServlet;
+
+    public class MyXmlRpcServlet extends XmlRpcServlet {
+        protected XmlRpcServletServer newXmlRpcServer(ServletConfig pConfig) {
+            XmlRpcServletServer server = super.newXmlRpcServer(pConfig);
+            server.setTypeFactory(new MyTypeFactory(server));
+            return server;
+        }
+    }</pre>
+</div>
+<p>And, if you are using the <a href="apidocs/org/apache/xmlrpc/webserver/WebServer.html">WebServer</a>, you've got to override a similar method:</p>
+<div class="source"><pre>    import java.net.InetAddress;
+    import org.apache.xmlrpc.server.XmlRpcStreamServer;
+    import org.apache.xmlrpc.webserver.WebServer;
+    
+    public class MyWebServer extends WebServer {
+        public MyWebServer(int pPort) {
+            super(pPort);
+        }
+
+        public MyWebServer(int pPort, InetAddress pAddr) {
+            super(pPort, pAddr);
+        }
+
+            protected XmlRpcStreamServer newXmlRpcStreamServer() {
+                XmlRpcStreamServer server = new ConnectionServer();
+                server.setTypeFactory(new MyTypeFactory());
+                return server;
+            }
+        }</pre>
+</div>
+</div>
+</div>
+
+      </div>
+    </div>
+    <div class="clear">
+      <hr/>
+    </div>
+    <div id="footer">
+      <div class="xright">&#169;  
+          2001-2010
+    
+          The Apache Software Foundation
+          
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+  </body>
+</html>

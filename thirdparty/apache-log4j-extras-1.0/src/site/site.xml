@@ -1,0 +1,72 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+-->
+<project name="Extras">
+  <bannerLeft>
+    <name>Logging Services</name>
+    <src>images/ls-logo.jpg</src>
+    <href>http://logging.apache.org/</href>
+  </bannerLeft>
+  <bannerRight>
+    <name>Apache log4j</name>
+    <src>images/logo.jpg</src>
+    <href>http://logging.apache.org/log4j</href>
+  </bannerRight>
+  <body>
+    <breadcrumbs>
+      <item name="Apache" href="http://www.apache.org/"/>
+      <item name="Logging Services" href="http://logging.apache.org/"/>
+      <item name="log4j" href="http://logging.apache.org/log4j/"/>
+      <item name="Companions"  href="http://logging.apache.org/log4j/companions/"/>
+      <item name="extras"  href="http://logging.apache.org:80/log4j/companions/extras/"/>
+    </breadcrumbs>
+  
+	<menu name="Get extras">
+	   <item name="Download" href="/download.html"/>
+	   <item name="Changes" href="/changes-report.html"/>
+	   <item name="License" href="/license.html"/>
+	</menu>
+
+	<menu name="About extras">
+	   <item name="What is it?" href="/index.html"/>
+	   <item name="Roadmap" href="/roadmap.html"/>
+	   <item name="JavaDoc" href="/apidocs/index.html"/>
+	</menu>
+
+	<menu name="Community">
+		<item name="Mailing Lists" href="/mail-lists.html"/>
+		<item name="Issue Tracking" href="/issue-tracking.html"/>
+	</menu>
+	
+	<menu name="Development">
+		<item name="Repository" href="/source-repository.html"/>
+		<item name="Cross Reference" href="/jxr.html"/>
+		<item name="Dependencies" href="/dependencies.html"/>
+		<item name="Continuous Integration" href="/integration.html"/>
+		<item name="Duplication" href="/cpd.html"/>
+		<item name="PMD" href="/pmd.html"/>
+	</menu>
+
+	<menu name="Apache">
+		<item name="Home" href="http://www.apache.org"/>	
+		<item name="Sponsorship" href="http://www.apache.org/foundation/sponsorship.html"/>
+		<item name="Thanks" href="http://www.apache.org/foundation/thanks.html"/>
+		<item name="Conferences" href="http://www.apachecon.com"/>
+	</menu>
+
+  </body>
+</project>

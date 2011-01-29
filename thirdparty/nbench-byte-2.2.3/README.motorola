@@ -1,0 +1,29 @@
+The information in this file is old and no longer valid. It seems that
+the GNU C library has caught up with Motorola's libmoto, and now
+performance is just as good (or better) without libmoto. I'll include
+the old notice out of historical reasons only. Currently libmoto is
+available at ftp://ftp.mcg.mot.com/pub/SPS/PowerPC/software/mklinux/libmoto/,
+but this is subject to change and not under my control.
+
+February 18, 2003
+Uwe F. Mayer
+
+---------------------------------------------------------------------------
+
+If you have a Motorola CPU or equivalent:
+
+When linked with the 'libmoto' (floating point library from Motorola)
+the results you obtain are much better. (FPU index of 0.896 versus
+1.910 in one example.)
+
+The Motorola math library is currently available at:
+http://www.mot.com/SPS/PowerPC/support/rsw_customer_support/mklinux/libmoto/libmoto_reg_mkdev.html
+
+If you have a Motorola CPU and you submit a result then please let me
+know whether you used libmoto or not. Please read the file README.submit.
+
+I do not have a Motorola CPU, and I can't help you with installing the
+library either.
+
+December 3, 1997
+Uwe F. Mayer

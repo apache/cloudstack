@@ -1,0 +1,4 @@
+sprintf(buffer,"C compiler          : %CCVERSION%\n");
+output_string(buffer);
+sprintf(buffer,"libc                : %LIBCVERSION%\n");
+output_string(buffer);

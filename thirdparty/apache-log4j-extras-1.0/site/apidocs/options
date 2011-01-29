@@ -1,0 +1,16 @@
+-classpath '/home/ubuntu/apache-log4j-extras_rc5/target/checkout/target/classes:/home/ubuntu/.m2/repository/log4j/log4j/1.2.9/log4j-1.2.9.jar' -protected
+-sourcepath
+'/home/ubuntu/apache-log4j-extras_rc5/target/checkout/src/main/java'
+-author
+-bottom
+'Copyright &copy; 2007 <a href="http://www.apache.org">Apache Software Foundation</a>. All Rights Reserved.'
+-charset
+'ISO-8859-1'
+-d
+'/home/ubuntu/apache-log4j-extras_rc5/target/checkout/target/site/apidocs'
+-doctitle
+'Apache Extras Companion for log4j 1.2. 1.0 API'
+-use
+-version
+-windowtitle
+'Apache Extras Companion for log4j 1.2. 1.0 API'

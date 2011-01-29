@@ -1,0 +1,121 @@
+<html>
+<head>
+    <title>ATL 3.0 test page for object UltraVncAxObj</title>
+
+    <script language="JavaScript">
+
+function onControlReady()
+{
+	var ctrl = document.getElementById( "UltraVncAxObj" );
+	if(ctrl.IsInitialized)
+	{
+		ctrl.object.Server = "192.168.1.73";
+		ctrl.object.Password = "password";
+		// alert( "going to connect to " + ctrl.object.Server + "..." );
+		try
+		{
+			ctrl.object.Connect ();
+		}
+		catch( e )
+		{
+			alert( "connect exception: " + e.message );
+		}
+	} 
+	else
+	{
+		setTimeout(onControlReady, 1000);
+	}
+}
+
+function OnControlLoad ()
+{
+	var ctrl = document.getElementById( "UltraVncAxObj" );
+
+	if ( ctrl != null && ctrl.readyState == 4 )
+	{
+		ctrl.attachEvent( "OnConnected", new Function ( "ShowDiscButton(true);" ) );
+		ctrl.attachEvent( "OnDisconnected", new Function ( "reason", "ShowDiscButton(false);" ) );
+
+		setTimeout(onControlReady, 1000);
+	}
+}
+
+function OnHideButton ()
+{
+	var ctrl = document.getElementById( "UltraVncAxObj" );
+
+    if ( ctrl != null )
+    {
+        if ( ctrl.style.display != "none" )
+        {
+            ctrl.style.display = "none";
+            document.all.btnHide.value = " Show ";
+        }
+        else
+        {
+            ctrl.style.display = "inline";
+            document.all.btnHide.value = " Hide ";
+        }
+    }
+}
+
+function ShowDiscButton (vis)
+{
+    var btn1 = window.document.getElementById( "btnDisconnect" );
+    var btn2 = window.document.getElementById( "btnFileTransfer" );
+    var btn3 = window.document.getElementById( "btnAbout" );
+    
+    var visStr = ( (vis==false) ? "none" : "block" );
+    
+    btn1.style.display = visStr;
+    btn2.style.display = visStr;
+    btn3.style.display = visStr;
+}
+
+function OnDisconnectButton ()
+{
+	var ctrl = document.getElementById( "UltraVncAxObj" );
+    if ( ctrl != null )
+        ctrl.Disconnect ();
+}
+
+function OnCommandBtn ( cmdText )
+{
+	var ctrl = document.getElementById( "UltraVncAxObj" );
+    if ( ctrl != null )
+        ctrl.ExecuteCommand( cmdText )
+}
+
+    </script>
+
+</head>
+<body>
+    <table cellspacing='2px' cellpadding='0' border='0'>
+        <tr>
+            <td>
+                <input type='button' style='font-weight: normal; font-family: tahoma; font-size: 11px;
+                    height: 20px' value=' Hide ' onclick='OnHideButton();' id='btnHide' />
+            </td>
+            <td>
+                <input type='button' style='font-weight: normal; font-family: tahoma; font-size: 11px;
+                    height: 20px; display: none;' value=' Disconnect ' onclick='OnDisconnectButton();'
+                    id='btnDisconnect' />
+            </td>
+            <td>
+                <input type='button' style='font-weight: normal; font-family: tahoma; font-size: 11px;
+                    height: 20px; display: none;' value=' File Transfer ' onclick='OnCommandBtn("FileTransfer");'
+                    id='btnFileTransfer' />
+            </td>
+            <td>
+                <input type='button' style='font-weight: normal; font-family: tahoma; font-size: 11px;
+                    height: 20px; display: none;' value=' About ' onclick='OnCommandBtn("About");'
+                    id='btnAbout' />
+            </td>
+        </tr>
+    </table>
+    <br />
+    <object language="JavaScript" id="UltraVncAxObj" onreadystatechange="OnControlLoad();"
+        width="100%" height="100%" classid="CLSID:36D64AE5-6626-4DDE-A958-2FF1D46D4424">
+    </object>
+</body>
+</html>

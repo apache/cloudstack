@@ -1,0 +1,4 @@
+sprintf(buffer,"C compiler          : gcc version 2.7.2.3\n");
+output_string(buffer);
+sprintf(buffer,"libc                : libc.so.5.4.38\n");
+output_string(buffer);

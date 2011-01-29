@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pmd version="3.9" timestamp="2007-08-25T10:15:01.201" elapsedTime="0s">
+<file name="/home/ubuntu/apache-log4j-extras_rc5/target/checkout/src/main/java/org/apache/log4j/extras/DOMConfigurator.java">
+<violation line="846" rule="CollapsibleIfStatements" ruleset="Basic Rules" package="org.apache.log4j.extras" class="DOMConfigurator" method="parse" externalInfoUrl="http://pmd.sourceforge.net/rules/basic.html#CollapsibleIfStatements" priority="3">
+These nested if statements could be combined
+</violation>
+</file>
+<file name="/home/ubuntu/apache-log4j-extras_rc5/target/checkout/src/main/java/org/apache/log4j/helpers/MDCKeySetExtractor.java">
+<violation line="23" rule="UnusedImports" ruleset="Import Statement Rules" package="org.apache.log4j.helpers" externalInfoUrl="http://pmd.sourceforge.net/rules/imports.html#UnusedImports" priority="4">
+Avoid unused imports such as 'java.lang.reflect.InvocationTargetException'
+</violation>
+</file>
+<file name="/home/ubuntu/apache-log4j-extras_rc5/target/checkout/src/main/java/org/apache/log4j/pattern/PropertiesPatternConverter.java">
+<violation line="22" rule="UnusedImports" ruleset="Import Statement Rules" package="org.apache.log4j.pattern" externalInfoUrl="http://pmd.sourceforge.net/rules/imports.html#UnusedImports" priority="4">
+Avoid unused imports such as 'java.io.ByteArrayInputStream'
+</violation>
+<violation line="23" rule="UnusedImports" ruleset="Import Statement Rules" package="org.apache.log4j.pattern" externalInfoUrl="http://pmd.sourceforge.net/rules/imports.html#UnusedImports" priority="4">
+Avoid unused imports such as 'java.io.ByteArrayOutputStream'
+</violation>
+<violation line="24" rule="UnusedImports" ruleset="Import Statement Rules" package="org.apache.log4j.pattern" externalInfoUrl="http://pmd.sourceforge.net/rules/imports.html#UnusedImports" priority="4">
+Avoid unused imports such as 'java.io.ObjectInputStream'
+</violation>
+<violation line="25" rule="UnusedImports" ruleset="Import Statement Rules" package="org.apache.log4j.pattern" externalInfoUrl="http://pmd.sourceforge.net/rules/imports.html#UnusedImports" priority="4">
+Avoid unused imports such as 'java.io.ObjectOutputStream'
+</violation>
+</file>
+<file name="/home/ubuntu/apache-log4j-extras_rc5/target/checkout/src/main/java/org/apache/log4j/rule/RuleFactory.java">
+<violation line="20" rule="UnusedImports" ruleset="Import Statement Rules" package="org.apache.log4j.rule" externalInfoUrl="http://pmd.sourceforge.net/rules/imports.html#UnusedImports" priority="4">
+Avoid unused imports such as 'java.lang.reflect.InvocationTargetException'
+</violation>
+<violation line="21" rule="UnusedImports" ruleset="Import Statement Rules" package="org.apache.log4j.rule" externalInfoUrl="http://pmd.sourceforge.net/rules/imports.html#UnusedImports" priority="4">
+Avoid unused imports such as 'java.lang.reflect.Method'
+</violation>
+<violation line="25" rule="UnusedImports" ruleset="Import Statement Rules" package="org.apache.log4j.rule" externalInfoUrl="http://pmd.sourceforge.net/rules/imports.html#UnusedImports" priority="4">
+Avoid unused imports such as 'org.apache.log4j.LogManager'
+</violation>
+</file>
+</pmd>

@@ -1,0 +1,50 @@
+December 3, 1993
+================
+
+DEC Unix 4.0 or DEC OSF1 and gcc
+--------------------------------
+Compiles cleanly if you don't use -funroll-loops with gcc-2.7.2.3 or earlier
+
+DEC UNIX 4.0 or DEC OSF1 and cc
+-------------------------------
+CC = cc
+CFLAGS = -O3
+LINKFLAGS = -s -non_shared
+
+Compiles cleanly.
+
+SunOS and gcc
+-------------
+Compiles cleanly
+
+SunOS and cc
+------------
+CC = cc
+CFLAGS = -O3 -s
+
+Compiles with one warning during compilation of nbench1.c
+
+"/usr/ucbinclude/strings.h", line 48: warning: identifier redeclared: strlen
+        current : function() returning int
+        previous: function() returning uint : "/usr/include/string.h", line 98
+
+HP-UX and gcc
+-------------
+Compiles with one warning during compilation of sysspec.c
+
+In file included from /usr/local/lib/gcc-lib/hppa1.1-hp-hpux9.05/2.7.2.1/include/malloc.h:9,
+                 from sysspec.h:37,
+                 from sysspec.c:37:
+/usr/local/lib/gcc-lib/hppa1.1-hp-hpux9.05/2.7.2.1/include/sys/types.h:117: warning: empty declaration
+/usr/local/lib/gcc-lib/hppa1.1-hp-hpux9.05/2.7.2.1/include/sys/types.h:118: warning: empty declaration
+
+DEC Ultrix and cc
+-----------------
+CC = cc
+CFLAGS = -O2
+LINKFLAGS = -s
+
+Compiles with a warning about the correct usage of cut when running sysinfo.sh
+cut: Usage: cut [-s] [-d<char>] {-c<list> | -f<list>} file ...
+cut: Usage: cut [-s] [-d<char>] {-c<list> | -f<list>} file ...
+

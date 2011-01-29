@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+-->
+<log4j:configuration xmlns:log4j='http://jakarta.apache.org/log4j/'>
+  <appender name="A1" class="org.apache.log4j.FileAppender">
+
+    <param name="File"   value="temp" />
+    <param name="Append" value="false" />
+    <param name="encoding" value="UTF-8"/>
+
+      <layout class="org.apache.log4j.xml.XSLTLayout">
+        <xsl:transform xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                       xmlns:log4j='http://jakarta.apache.org/log4j/'
+                       xmlns:atom="http://www.w3.org/2005/Atom"
+                       xmlns:log="http://www.example.org/log"
+                       xsl:version="1.0">
+
+           <xsl:output method="xml" indent="yes" encoding="UTF-16"/>
+
+           <xsl:apply-templates select="/"/>
+
+           <xsl:template match="/">
+               <xsl:apply-templates/>
+           </xsl:template>
+
+            <xsl:template match="log4j:event">
+                <atom:entry>
+                    <atom:title type="text">HTTPAppender log record</atom:title>
+                    <atom:updated><xsl:value-of select="@time"/></atom:updated>
+                    <log:logger><xsl:value-of select="@logger"/></log:logger>
+                    <log:level><xsl:value-of select="@level"/></log:level>
+                    <log:thread><xsl:value-of select="@thread"/></log:thread>
+                    <xsl:apply-templates/>
+                </atom:entry>
+            </xsl:template>
+
+            <xsl:template match="log4j:message">
+                <log:message>
+                    <xsl:apply-templates/>
+                </log:message>
+            </xsl:template>
+
+            <xsl:template match="log4j:NDC">
+                <log:NDC>
+                    <xsl:apply-templates/>
+                </log:NDC>
+            </xsl:template>
+
+            <xsl:template match="log4j:throwable">
+                <log:throwable>
+                    <xsl:apply-templates/>
+                </log:throwable>
+            </xsl:template>
+
+            <xsl:template match="log4j:locationInfo">
+                <log:locationInfo class="{@class}" method="{@method}"
+                                    file="{@file}"  line="{@line}"/>
+            </xsl:template>
+
+            <xsl:template match="log4j:properties">
+                <log:properties>
+                    <xsl:apply-templates/>
+                </log:properties>
+            </xsl:template>
+
+            <xsl:template match="log4j:data">
+                <log:data name="{@name}" value="{@value}"/>
+            </xsl:template>
+
+            <xsl:template match="text()">
+                <xsl:value-of select="."/>
+            </xsl:template>
+
+        </xsl:transform>
+    </layout>
+  </appender>
+
+
+  <!-- Prevent internal log4j DEBUG messages from polluting the output. -->
+  <logger name="org.apache.log4j.joran"><level value="INFO" /></logger>
+  <logger name="org.apache.log4j.joran.action.PriorityAction"><level value="ERROR" /></logger>
+  <logger name="org.apache.log4j.config"><level value="INFO" /></logger>
+  <logger name="org.apache.log4j.FileAppender"><level value="INFO" /></logger>
+
+  <root>
+    <level value ="debug" />
+    <appender-ref ref="A1" />
+  </root>
+
+</log4j:configuration>

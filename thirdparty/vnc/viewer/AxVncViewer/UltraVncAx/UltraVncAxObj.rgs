@@ -1,0 +1,39 @@
+HKCR
+{
+	VmopsVNC.VmopsVNC.1 = s 'VMOps VNC ActiveX Object 1.0.0.1'
+	{
+		CLSID = s '{39C57AE1-6734-449a-AD3C-77154CD41468}'
+	}
+	VmopsVNC.VmopsVNC = s 'VMOps VNC ActiveX Object 1.0.0.1'
+	{
+		CLSID = s '{39C57AE1-6734-449a-AD3C-77154CD41468}'
+		CurVer = s 'VmopsVNC.VmopsVNC.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {39C57AE1-6734-449a-AD3C-77154CD41468} = s 'VmopsVNC.VmopsVNC.1'
+		{
+			ProgID = s 'VmopsVNC.VmopsVNC.1'
+			VersionIndependentProgID = s 'VmopsVNC.VmopsVNC'
+			ForceRemove 'Programmable'
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			ForceRemove 'Control'
+			ForceRemove 'Insertable'
+			ForceRemove 'ToolboxBitmap32' = s '%MODULE%, 101'
+			'MiscStatus' = s '0'
+			{
+			    '1' = s '131473'
+			}
+			'TypeLib' = s '{987AD05D-338A-4E92-991B-F30C31824968}'
+			'Version' = s '1.0'
+			'Implemented Categories'
+			{
+				'{7DD95801-9882-11CF-9FA9-00AA006C42C4}'
+				'{7DD95802-9882-11CF-9FA9-00AA006C42C4}'
+			}
+		}
+	}
+}

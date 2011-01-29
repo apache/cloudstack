@@ -1,0 +1,21 @@
+<log4j:event xmlns:log4j="http://jakarta.apache.org/log4j/" logger="org.apache.log4j.xml.XSLTLayoutTestCase" time="yyyy-MM-ddTHH:mm:ss.SSSZ" timestamp="XXX" level="DEBUG" thread="main">
+<log4j:message>hi</log4j:message>
+</log4j:event>
+<log4j:event xmlns:log4j="http://jakarta.apache.org/log4j/" logger="org.apache.log4j.xml.XSLTLayoutTestCase" time="yyyy-MM-ddTHH:mm:ss.SSSZ" timestamp="XXX" level="DEBUG" thread="main">
+<log4j:message/>
+</log4j:event>
+<log4j:event xmlns:log4j="http://jakarta.apache.org/log4j/" logger="org.apache.log4j.xml.XSLTLayoutTestCase" time="yyyy-MM-ddTHH:mm:ss.SSSZ" timestamp="XXX" level="DEBUG" thread="main">
+<log4j:message>hi</log4j:message>
+<log4j:throwable>java.lang.Exception
+	at org.apache.log4j.xml.XSLTLayoutTestCase.testNull(X)
+	at java.lang.reflect.Method.invoke(X)
+	at junit.framework.TestCase.runTest(X)
+	at junit.framework.TestCase.runBare(X)
+	at junit.framework.TestResult$1.protect(X)
+	at junit.framework.TestResult.runProtected(X)
+	at junit.framework.TestResult.run(X)
+	at junit.framework.TestCase.run(X)
+	at junit.framework.TestSuite.runTest(X)
+	at junit.framework.TestSuite.run(X)
+</log4j:throwable>
+</log4j:event>

@@ -1,0 +1,27 @@
+# ------------- Borland C++ 5.5 (Win32) -------------
+
+CC=bcc32
+LIB=tlib
+
+CFLAGS= -v- -O2 -3 -tWM -q -w-8004 -w-8057
+LIBFLAGS= /C
+
+OBJS=adler32.obj compress.obj crc32.obj deflate.obj gzio.obj infblock.obj \
+	infcodes.obj inflate.obj inftrees.obj infutil.obj inffast.obj \
+	trees.obj uncompr.obj zutil.obj
+
+pOBJS=+adler32.obj+compress.obj+crc32.obj+deflate.obj+gzio.obj+infblock.obj \
+	+infcodes.obj+inflate.obj+inftrees.obj+infutil.obj+inffast.obj \
+	+trees.obj+uncompr.obj+zutil.obj
+
+.autodepend
+.c.obj:
+        $(CC) -c $(CFLAGS) $<
+
+zlib.lib: $(OBJS)
+        @if exist $@ del $@
+        $(LIB) $@ $(LIBFLAGS) $(pOBJS)
+
+clean:
+	del *.obj *.lib
+

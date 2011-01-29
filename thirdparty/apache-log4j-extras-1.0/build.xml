@@ -1,0 +1,184 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+-->
+
+<!--
+
+This is a minimal build file to support Gump.
+Use of Maven to build this component is recommended.
+
+Specify -Dcompanion.jar=foo.jar to test a previously prepared jar.
+
+-->
+<project default="test">
+    <!--  use build.properties file or command line to override these properties  -->
+    <property file="build.properties"/>
+	
+	<!--  project details  -->
+    <property name="project.name" value="apache-log4j-extras"/>
+    <property name="project.title" value="Apache Extras Companion for log4j 1.2."/>
+    <property name="project.version" value="1.0"/>
+    <property name="project.jar" value="${project.name}-${project.version}.jar"/>
+    
+    <!--  Location of local Maven 2 repository   -->
+    <property name="m2_repo" location="${user.home}/.m2/repository"/>
+
+	<!--  Versions for dependencies   -->
+    <property name="log4j.version" value="1.2.9"/>
+    <property name="junit.version" value="3.8.1"/>
+	
+	<!--  Dependency locations - assumed to be in Maven 2 repository   -->
+    <property name="junit.jar" 
+       location="${m2_repo}/junit/junit/${junit.version}/junit-${junit.version}.jar"/>
+    <property name="log4j.jar" 
+       location="${m2_repo}/log4j/log4j/${log4j.version}/log4j-${log4j.version}.jar"/>
+
+    <!--   Java compiler settings   -->
+    <property name="javac.source" value="1.2"/>
+    <property name="javac.target" value="1.1"/>   
+    <property name="javac.deprecation" value="true"/>
+    <property name="javac.debug" value="true"/>
+	
+    <property name="svnrepo.url" value="https://svn.apache.org/repos/asf"/>
+	<property name="svnsite.url" value="${svnrepo.url}/logging/site/trunk/docs/log4j/companions/extras"/>
+	<available property="svn-available" file="target/site-deploy/.svn"/>
+	
+       
+    <target name="init"/>
+    
+    <target name="clean" depends="init" description="Clean up generated files">
+    	<delete dir="target"/>
+    </target>
+    
+    
+    <target name="compile" depends="init" unless="companion.jar" description="Compile implementation files">
+        <mkdir dir="target/classes"/>
+    	<javac destdir="target/classes"
+           srcdir="src/main/java"
+    	   deprecation="${javac.deprecation}"
+    	   debug="${javac.debug}"
+    	   target="${javac.target}"
+    	   source="${javac.source}"
+    	   classpath="${log4j.jar}"/>
+    	<copy todir="target/classes">
+    	    <fileset dir="src/main/resources"/>
+    	</copy>
+    </target>
+    
+    <target name="jar" depends="compile" unless="companion.jar" description="Create jar">
+    	<jar destfile="target/${project.jar}"
+    	     basedir="target/classes">
+    	  	<manifest>
+    			<attribute name="Built-By" value="${user.name}"/>
+    			<section name="common">
+      				<attribute name="Implementation-Title" value="${project.title}"/>
+      				<attribute name="Implementation-Version" value="${project.version}"/> 
+      				<attribute name="Implementation-Vendor" value="Apache Software Foundation"/>
+    			</section>
+    		</manifest>    	     
+    	</jar>
+    </target>    
+
+    <target name="test-compile" depends="jar" description="Compile test files">
+	    <property name="companion.jar" value="target/${project.jar}"/>
+		<mkdir dir="target/test-classes"/>
+    	<javac destdir="target/test-classes"
+           srcdir="src/test/java"
+    	   deprecation="${javac.deprecation}"
+    	   debug="${javac.debug}"
+    	   target="${javac.target}"
+    	   source="${javac.source}"
+    	   classpath="${log4j.jar}:${junit.jar}:${companion.jar}"/>
+    	<copy todir="target/test-classes">
+    		<fileset dir="src/test/resources"/>
+    	</copy>
+    </target>    
+
+
+    <target name="test" depends="test-compile" description="Run unit tests">
+    	<junit printsummary="yes" fork="yes" dir="target">
+    	    <classpath path="target/test-classes:${companion.jar}:${log4j.jar}"/>
+    		<batchtest>
+    			<fileset dir="src/test/java/">
+    				<include name="**/*TestCase.java"/>
+    				<include name="**/*Test.java"/>
+    			</fileset>
+    	    </batchtest>
+    	    <formatter type="plain" usefile="false"/>
+    	</junit>
+    </target>    
+
+
+	<target name="checkout-site" unless="svn-available">
+		<exec executable="svn">
+			<arg value="co"/>
+			<arg value="${svnsite.url}"/>
+			<arg value="target/site-deploy"/>
+		</exec>
+	</target>
+
+	<target name="update-site" if="svn-available">
+		<exec executable="svn" dir="target/site-deploy" failonerror="true">
+			<arg value="update"/>
+		</exec>
+	</target>
+
+	<target name="post-site" depends="checkout-site, update-site"/>
+	
+
+        <target name="mime=html">
+            <exec executable="svn">
+		<arg value="propset"/>
+                <arg value="svn:mime-type"/>
+                <arg value="text/html"/>
+                <arg value="${src.html}"/>
+            </exec>
+        </target>
+
+        <target name="mime=css">
+            <exec executable="svn">
+		<arg value="propset"/>
+                <arg value="svn:mime-type"/>
+                <arg value="text/css"/>
+                <arg value="${src.css}"/>
+            </exec>
+        </target>
+	
+
+	<target name="site-deploy">
+		<!-- Add any new files (and generate innocuous warnings for the existing content)  -->
+                <delete file="target/site-deploy/svn-commit.tmp~"/>
+		<exec executable="bash" dir="target/site-deploy" failonerror="true">
+			<arg line='-c "svn add --force *"'/>
+		</exec>
+                <taskdef name="foreach" classname="net.sf.antcontrib.logic.ForEach" />
+                <foreach target="mime=html" param="src.html">
+                        <path>
+                                <fileset dir="target/site-deploy" includes="**/*.html"/>
+                        </path>
+                </foreach>
+                <foreach target="mime=css" param="src.css">
+                        <path>
+                                <fileset dir="target/site-deploy" includes="**/*.css"/>
+                        </path>
+                </foreach>
+		<!--  requires that SVN_EDITOR, VISUAL or EDITOR being set to edit commit description -->
+		<exec executable="svn" dir="target/site-deploy" failonerror="true">
+		    <arg value="commit"/>
+		</exec>
+	</target>
+</project>

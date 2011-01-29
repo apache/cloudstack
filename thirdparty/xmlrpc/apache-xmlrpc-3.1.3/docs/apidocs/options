@@ -1,0 +1,22 @@
+-classpath
+'C:/workspace/ws-xmlrpc-3.1/target/checkout/target/classes;C:/workspace/ws-xmlrpc-3.1/target/checkout/common/target/classes;C:/workspace/ws-xmlrpc-3.1/target/checkout/client/target/classes;C:/workspace/ws-xmlrpc-3.1/target/checkout/server/target/classes;C:/workspace/ws-xmlrpc-3.1/target/checkout/dist/target/classes;C:/Documents and Settings/jwi/.m2/repository/xml-apis/xml-apis/1.0.b2/xml-apis-1.0.b2.jar;C:/Documents and Settings/jwi/.m2/repository/jaxme/jaxmeapi/0.5.1/jaxmeapi-0.5.1.jar;C:/Documents and Settings/jwi/.m2/repository/org/apache/ws/commons/util/ws-commons-util/1.0.2/ws-commons-util-1.0.2.jar'
+-encoding
+'UTF-8'
+-protected
+-sourcepath
+'C:/workspace/ws-xmlrpc-3.1/target/checkout/common/src/main/java;C:/workspace/ws-xmlrpc-3.1/target/checkout/client/src/main/java;C:/workspace/ws-xmlrpc-3.1/target/checkout/server/src/main/java'
+-author
+-bottom
+'Copyright &#169; 2001-2010 <a href="http://www.apache.org/">The Apache Software Foundation</a>. All Rights Reserved.'
+-charset
+'UTF-8'
+-d
+'C:/workspace/ws-xmlrpc-3.1/target/checkout/target/site/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'Apache XML-RPC 3.1.3 API'
+-use
+-version
+-windowtitle
+'Apache XML-RPC 3.1.3 API'

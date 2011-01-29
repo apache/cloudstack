@@ -1,0 +1,484 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+
+
+
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>ws-xmlrpc - FAQ</title>
+    <style type="text/css" media="all">
+      @import url("./css/maven-base.css");
+      @import url("./css/maven-theme.css");
+      @import url("./css/site.css");
+    </style>
+    <link rel="stylesheet" href="./css/print.css" type="text/css" media="print" />
+        <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+      </head>
+  <body class="composite">
+    <div id="banner">
+                  <a href="" id="bannerLeft">
+    
+                                            <img src="images/xmlrpc-logo.gif" alt="" />
+    
+            </a>
+                    <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="breadcrumbs">
+          
+  
+
+  
+    
+  
+  
+    
+            <div class="xleft">
+        Last Published: 2010-02-06
+                      </div>
+            <div class="xright">            <a href="http://www.apache.org/" class="externalLink">Apache</a>
+            |
+                <a href="../">Webservices</a>
+            |
+                <a href="">XML-RPC</a>
+            
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="leftColumn">
+      <div id="navcolumn">
+           
+  
+
+  
+    
+  
+  
+    
+                   <h5>XML-RPC</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="index.html">Overview</a>
+          </li>
+              
+    <li class="none">
+                    <a href="download.html">Download</a>
+          </li>
+              
+    <li class="none">
+                    <a href="changes-report.html">Changes</a>
+          </li>
+              
+    <li class="none">
+                    <a href="mail-lists.html">Mailing Lists</a>
+          </li>
+              
+    <li class="none">
+                    <a href="contributing.html">Contributing</a>
+          </li>
+              
+    <li class="none">
+                    <a href="xmlrpc2">XML-RPC 2</a>
+          </li>
+              
+    <li class="none">
+                    <a href="links.html">Links</a>
+          </li>
+          </ul>
+              <h5>Documentation</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="client.html">Client Classes</a>
+          </li>
+              
+    <li class="none">
+                    <a href="server.html">Server Side XML-RPC</a>
+          </li>
+              
+    <li class="none">
+                    <a href="extensions.html">Vendor Extensions</a>
+          </li>
+              
+    <li class="none">
+                    <a href="ssl.html">SSL</a>
+          </li>
+              
+    <li class="none">
+                    <a href="introspection.html">Introspection</a>
+          </li>
+              
+    <li class="none">
+                    <a href="advanced.html">Advanced Techniques</a>
+          </li>
+              
+    <li class="none">
+                    <a href="types.html">XML-RPC Types</a>
+          </li>
+              
+    <li class="none">
+              <strong>FAQ</strong>
+        </li>
+              
+    <li class="none">
+                    <a href="apidocs/index.html">Javadocs</a>
+          </li>
+          </ul>
+              <h5>Project Documentation</h5>
+            <ul>
+              
+                
+              
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-info.html">Project Information</a>
+                </li>
+              
+                
+              
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-reports.html">Project Reports</a>
+                </li>
+          </ul>
+                                           <a href="http://maven.apache.org/" title="Built by Maven" class="poweredBy">
+            <img alt="Built by Maven" src="./images/logos/maven-feather.png"></img>
+          </a>
+                       
+  
+
+  
+    
+  
+  
+    
+        </div>
+    </div>
+    <div id="bodyColumn">
+      <div id="contentBox">
+        <div class="section"><h2><a name="top">FAQ</a></h2>
+<ol type="1"><li><a href="#arrays">Why do I receive a ClassCastException, if the server returns an array?</a></li>
+<li><a href="#compression_request">How do I enable request compression?</a></li>
+<li><a href="#compression_response">How do I enable response compression?</a></li>
+<li><a href="#timeout_callback">Is it possible to specify a timeout, after which the
+        client stops waiting for the servers response?</a></li>
+<li><a href="#nonstandard_date_format">I've got a server, which is expecting a non-standard
+        date format. How can I ensure, that my date values have the
+        right format?</a></li>
+<li><a href="#nonstandard_double_format">I've got a server, which is expecting a non-standard
+        double format. How can I ensure, that my double values have the
+        right format?</a></li>
+<li><a href="#java_version">I am using Java 1.4 (or Java 1.5, or later). Can I use
+        javax.net.ssl.SSLSocketFactory? (Or the java.net.Proxy?)</a></li>
+</ol>
+<ol type="1"><li><a href="#logging">How do I reduce the servers error logging?</a></li>
+<li><a href="#streaming_mode">How do I enable streaming mode?</a></li>
+<li><a href="#basic_authentication">How do I configure the server for basic authentication?</a></li>
+<li><a href="#handler_initialization">How do I initalize the request processors?</a></li>
+<li><a href="#client_ip">How to I get the clients IP address in a handler?</a></li>
+<li><a href="#client_ip_webserver">How to I get the clients IP address in a handler when using the WebServer class?</a></li>
+</ol>
+</div>
+<dl><dt><a name="arrays">Why do I receive a ClassCastException, if the server returns an array?</a></dt>
+<dd>
+        <p>The problem is typically caused by code like the following:</p>
+        <div class="source"><pre>
+    Integer[] result = server.execute(&quot;Server.foo&quot;, param);
+        </pre>
+</div>
+
+        <p>The problem is in the fact, that the XML-RPC response tells
+          the client, that the server returns an array. It doesn't tell
+          what type the array has. In other words, the client will
+          always receive an object array. The workaround is to use
+          code like the following:</p>
+        <div class="source"><pre>
+    Object[] result = (Integer[])server.execute(&quot;Server.foo&quot;, param);
+    for (int i = 0;  i &lt; result.length;  i++) {
+        Integer num = (Integer) result[i];
+        ...
+    }
+        </pre>
+</div>
+
+
+      <table border="0"><tr><td align="right"><a href="#top">[top]</a></td></tr></table><hr />
+</dd>
+<dt><a name="compression_request">How do I enable request compression?</a></dt>
+<dd>
+        <p>That's simple: Set the properties "enabledForExtensions"
+          and "gzipCompressing". That said, note the following
+          hints:</p>
+        <ul>
+          <li>Setting these properties will only work, if the XML-RPC
+            server is aware of request compression. Compression is a
+            violation of the XML-RPC specification, so typically the
+            server will refuse the request, unless it is an Apache
+            XML-RPC server with version 2 or later. (Apache XML-RPC 2
+            supports request compression, although it was officially
+            designed to be strictly compliant to the XML-RPC specification.
+            However, noone was aware, that compression violates the
+            specification. :-)</li>
+          <li>Compressing the request doesn't mean that the response
+            will also be compressed. You need to request response
+            compression to achieve that.</li>
+          <li>Additionally, be aware of the following: Compression
+            depends on HTTP/1.1 features. In particular, you must
+            not use the LiteHttpTransport.</li>
+       </ul>
+      <table border="0"><tr><td align="right"><a href="#top">[top]</a></td></tr></table><hr />
+</dd>
+<dt><a name="compression_response">How do I enable response compression?</a></dt>
+<dd>
+        <p>That's as simple as enabling request compression: Set the
+          properties "enabledForExtensions" and "gzipRequesting".
+          That said, note the following hints:</p>
+        <ul>
+          <li>Requesting gzip compression is a standard HTTP feature.
+            In other words, you may safely request compression from
+            any XML-RPC server, even if it doesn't run Apache XML-RPC.
+           </li>
+          <li>However, requesting compression doesn't necessarily mean,
+            that the response *is* compressed. It depends on the server.</li>
+          <li>Additionally, be aware of the following: Compression
+            depends on HTTP/1.1 features. In particular, you must
+            not use the LiteHttpTransport.</li>
+       </ul>
+      <table border="0"><tr><td align="right"><a href="#top">[top]</a></td></tr></table><hr />
+</dd>
+<dt><a name="timeout_callback">Is it possible to specify a timeout, after which the
+        client stops waiting for the servers response?</a></dt>
+<dd>
+        <p>Yes, use the class TimingOutCallback.</p>
+        <div class="source"><pre>
+    // Wait for 10 seconds.
+    TimingOutCallback callback = new TimingOutCallback(10 * 1000);
+    XmlRpcClient client = new XmlRpcClient(url);
+    client.executeAsync(methodName, params, callback);
+    try {
+        return callback.waitForResponse();
+    } catch (TimeoutException e) {
+        System.out.println(&quot;No response from server.&quot;);
+    } catch (Exception e) {
+        System.out.println(&quot;Server returned an error message.&quot;);
+    }
+        </pre>
+</div>
+
+      <table border="0"><tr><td align="right"><a href="#top">[top]</a></td></tr></table><hr />
+</dd>
+<dt><a name="nonstandard_date_format">I've got a server, which is expecting a non-standard
+        date format. How can I ensure, that my date values have the
+        right format?</a></dt>
+<dd>
+        <p>You've got to use a special type factory. An example is
+          contained in the documentation on
+          {{{advanced.html}advanced topics}}.</p>
+      <table border="0"><tr><td align="right"><a href="#top">[top]</a></td></tr></table><hr />
+</dd>
+<dt><a name="nonstandard_double_format">I've got a server, which is expecting a non-standard
+        double format. How can I ensure, that my double values have the
+        right format?</a></dt>
+<dd>
+        <p>You've got to use a special type factory. An example is
+          contained in the documentation on
+          {{{advanced.html}advanced topics}}.</p>
+      <table border="0"><tr><td align="right"><a href="#top">[top]</a></td></tr></table><hr />
+</dd>
+<dt><a name="java_version">I am using Java 1.4 (or Java 1.5, or later). Can I use
+        javax.net.ssl.SSLSocketFactory? (Or the java.net.Proxy?)</a></dt>
+<dd>
+        <p>Yes, you can. Use the org.apache.xmlrpc.client.XmlRpcSun14HttpTransportFactory.
+          (Or the org.apache.xmlrpc.client.XmlRpcSun15HttpTransportFactory.)</p>
+        <p>The XmlRpcClient will detect the Java version you are using and
+          automatically create the respective factory. In other words, all you
+          need to do is cast the XmlRpcTransportFactory to the proper class.
+          For example:</p>
+<div class="source"><pre>
+    XmlRpcClient myClient;
+    XmlRpcTransportFactory factory = myClient.getTransportFactory();
+    ((XmlRpcSun15HttpTransportFactory) factory).setProxy(String pHost, int pPort);
+</pre>
+</div>
+
+        <p>With the Lite HTTP transport factory, things are slightly different:
+          You have to explicitly create an instance of XmlRpcLite14HttpTransportFactory.</p>
+      <table border="0"><tr><td align="right"><a href="#top">[top]</a></td></tr></table></dd>
+</dl>
+<dl><dt><a name="logging">How do I reduce the servers error logging?</a></dt>
+<dd>Create a subclass of XmlRpcErrorLogger and set it on the
+        XmlRpcStreamServer.<table border="0"><tr><td align="right"><a href="#top">[top]</a></td></tr></table><hr />
+</dd>
+<dt><a name="streaming_mode">How do I enable streaming mode?</a></dt>
+<dd>
+        <p>Set the property "enabledForExtensions". Note, that enabling
+          the streaming mode doesn't mean, that all responses are served
+          in streaming mode. It depends on the clients:</p>
+        <ul>
+          <li>If a client sends a content-length header, then the server
+            assumes, that the client is a traditional XML-RPC application
+            and doesn't support the vendor extensions from Apache XML-RPC.
+            Consequently, the server assumes, that it needs to set the
+            content-length header itself and disables the streaming mode
+            for that particular request.</li>
+          <li>However, if the client doesn't send a content-length header,
+            then the server assumes that it will be able to accept any
+            standard HTTP/1.1 request and enable the streaming mode.
+            Streaming mode means, in particular, that the response will
+            not contain a content-length header.</li>
+       </ul>
+      <table border="0"><tr><td align="right"><a href="#top">[top]</a></td></tr></table><hr />
+</dd>
+<dt><a name="basic_authentication">How do I configure the server for basic authentication?</a></dt>
+<dd>
+        <p>Basically you've got to provide an AuthenticationHandler.
+          See the {{{server.html}server documentation}} for an example.</p>
+      <table border="0"><tr><td align="right"><a href="#top">[top]</a></td></tr></table><hr />
+</dd>
+<dt><a name="handler_initialization">How do I initalize the request processors?</a></dt>
+<dd>
+        <p>The PropertyHandlerMapping assumes, that request processors are
+          POJO's (plain old java objects). However, this is not always
+          desirable. For example, sometimes it is assumed that handlers
+          need to be initialized by the servlet, which is configured through
+          parameters.</p>
+        <p>The recommended solution is to configure your server with a
+          special request processor factory.</p>
+<div class="source"><pre>
+public interface InitializableRequestProcessor {
+    void init(HttpServlet pServlet) throws XmlRpcException;
+}
+
+public class MyXmlRpcServlet extends XmlRpcServlet {
+    protected PropertyHandlerMapping newPropertyHandlerMapping(URL url) throws IOException, XmlRpcException {
+        PropertyHandlerMapping mapping = new PropertyHandlerMapping();
+	    RequestProcessorFactoryFactory factory = new RequestSpecificProcessorFactoryFactory(){
+	        protected Object newRequestProcessor(Class pClass, XmlRpcRequest pRequest) {
+	            InitializableRequestProcessor proc = super.newRequestProcessor(pClass, pRequest);
+	            proc.init(MyXmlRpcServlet.this);
+	            return proc;
+	        }
+	    };
+	    mapping.setRequestProcessorFactoryFactory(mapping);
+	    mapping.load(Thread.currentThread().getContextClassLoader(), url);
+	    return mapping;
+	}
+    
+}
+</pre>
+</div>
+
+      <table border="0"><tr><td align="right"><a href="#top">[top]</a></td></tr></table><hr />
+</dd>
+<dt><a name="client_ip">How to I get the clients IP address in a handler?</a></dt>
+<dd>
+        <p>That's a similar question than the question on initializing handlers.
+          The main difference is, that in this case you want to initialize the
+          handler with any request. In other words, you might achieve the goal
+          by creating a RequestProcessorFactoryFactory, that provides the
+          necessary details. However, there is an easier solution, which we
+          will demonstrate here: Use a ThreadLocal.</p>
+        <p>The class ThreadLocal allows to create information at some point
+          in the source code and use this information at one or more completely
+          different and decoupled places. The only assumption is, that you
+          are in the same thread. This is exactly our situation: We create
+          the information when processing of the XML-RPC request starts
+          and read it within the handler.</p>
+        <p>In the example below, you'd obtain the clients IP address by
+          writing <code>ClientInfoServlet.getClientIpAddress()</code>.</p>
+        <div class="source"><pre>
+public static class ClientInfoServlet extends XmlRpcServlet {
+    private static ThreadLocal clientIpAddress = new ThreadLocal();
+
+    public static String getClientIpAddress() {
+        return (String) clientIpAddress.get();
+    }
+
+    public void doPost(HttpServletRequest pRequest, HttpServletResponse pResponse)
+            throws IOException, ServletException {
+        clientIpAddress.set(pRequest.getRemoteAddr());
+        super.doPost(pRequest, pResponse);
+    }
+}
+        </pre>
+</div>
+
+      <table border="0"><tr><td align="right"><a href="#top">[top]</a></td></tr></table><hr />
+</dd>
+<dt><a name="client_ip_webserver">How to I get the clients IP address in a handler when using the WebServer class?</a></dt>
+<dd>
+        Use the ServletWebServer class and see the answer to the previous question.
+      <table border="0"><tr><td align="right"><a href="#top">[top]</a></td></tr></table></dd>
+</dl>
+
+      </div>
+    </div>
+    <div class="clear">
+      <hr/>
+    </div>
+    <div id="footer">
+      <div class="xright">&#169;  
+          2001-2010
+    
+          The Apache Software Foundation
+          
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<!-- declare the libraries needed to build the snark project -->
+<project name="library-dependencies">
+  <fileset dir="${libs.dir}" id="snark.libs">
+    <include name="retroweaver-all-1.2.2.jar"/>
+  </fileset>
+</project>

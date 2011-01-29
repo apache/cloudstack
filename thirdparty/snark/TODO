@@ -1,0 +1,22 @@
+- BEncode
+  - Byte array length indicator can overflow.
+  - Support really big BigNums (only 256 chars allowed now)
+  - Better BEValue toString(). Uses stupid heuristic now for debugging.
+  - Implemented bencoding.
+  - Remove application level hack to calculate sha1 hash for metainfo
+    (But can it be done as efficiently?)
+
+- Storage
+  - Check file name filter.
+
+- TrackerClient
+  - Support undocumented &numwant= request.
+
+- Tracker
+  - Dispose of peers after some time.
+
+- PeerCoordinator
+  - Disconnect from other seeds as soon as you are a seed yourself.
+
+- Text UI
+  - Make it completely silent.

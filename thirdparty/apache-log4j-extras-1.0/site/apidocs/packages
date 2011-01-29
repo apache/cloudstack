@@ -1,0 +1,11 @@
+org.apache.log4j.xml
+org.apache.log4j.helpers
+org.apache.log4j.varia
+org.apache.log4j.filter
+org.apache.log4j.extras
+org.apache.log4j.rolling.helper
+org.apache.log4j.rolling
+org.apache.log4j.rule
+org.apache.log4j.spi
+org.apache.log4j.pattern
+org.apache.log4j

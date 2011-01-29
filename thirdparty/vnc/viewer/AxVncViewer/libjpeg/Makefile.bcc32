@@ -1,0 +1,52 @@
+# Makefile for Independent JPEG Group's software
+
+# This makefile is for command-line Borland C++ 5.5 compiler (Win32).
+# It builds the IJG library as a statically linkable library (.LIB).
+
+CC=bcc32
+LIB=tlib
+
+CFLAGS= -v- -O2 -3 -tWM -q -w-8004 -w-8057
+LIBFLAGS= /C
+
+# Put here the object file name for the correct system-dependent memory
+# manager file.  For NT we suggest jmemnobs.obj, which expects the OS to
+# provide adequate virtual memory.
+SYSDEPMEM=jmemnobs.obj
+
+# End of configurable options.
+
+OBJS=jcomapi.obj jutils.obj jerror.obj jmemmgr.obj $(SYSDEPMEM) \
+	jcapimin.obj jcapistd.obj jctrans.obj jcparam.obj jdatadst.obj \
+	jcinit.obj jcmaster.obj jcmarker.obj jcmainct.obj jcprepct.obj \
+	jccoefct.obj jccolor.obj jcsample.obj jchuff.obj jcphuff.obj \
+	jcdctmgr.obj jfdctfst.obj jfdctflt.obj jfdctint.obj \
+	jdapimin.obj jdapistd.obj jdtrans.obj jdatasrc.obj \
+	jdmaster.obj jdinput.obj jdmarker.obj jdhuff.obj jdphuff.obj \
+	jdmainct.obj jdcoefct.obj jdpostct.obj jddctmgr.obj jidctfst.obj \
+	jidctflt.obj jidctint.obj jidctred.obj jdsample.obj jdcolor.obj \
+	jquant1.obj jquant2.obj jdmerge.obj
+
+pOBJS=+jcomapi.obj +jutils.obj +jerror.obj +jmemmgr.obj +$(SYSDEPMEM) \
+	+jcapimin.obj +jcapistd.obj +jctrans.obj +jcparam.obj +jdatadst.obj \
+	+jcinit.obj +jcmaster.obj +jcmarker.obj +jcmainct.obj +jcprepct.obj \
+	+jccoefct.obj +jccolor.obj +jcsample.obj +jchuff.obj +jcphuff.obj \
+	+jcdctmgr.obj +jfdctfst.obj +jfdctflt.obj +jfdctint.obj \
+	+jdapimin.obj +jdapistd.obj +jdtrans.obj +jdatasrc.obj \
+	+jdmaster.obj +jdinput.obj +jdmarker.obj +jdhuff.obj +jdphuff.obj \
+	+jdmainct.obj +jdcoefct.obj +jdpostct.obj +jddctmgr.obj +jidctfst.obj \
+	+jidctflt.obj +jidctint.obj +jidctred.obj +jdsample.obj +jdcolor.obj \
+	+jquant1.obj +jquant2.obj +jdmerge.obj
+
+.autodepend
+.c.obj:
+	$(CC) -c $(CFLAGS) $<
+
+libjpeg.lib: $(OBJS)
+        @if exist $@ del $@
+        $(LIB) $@ $(LIBFLAGS) $(pOBJS)
+        @if exist libjpeg.bak del libjpeg.bak
+
+clean:
+	del *.obj *.lib
+

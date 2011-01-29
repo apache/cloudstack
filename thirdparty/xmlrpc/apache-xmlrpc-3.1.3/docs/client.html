@@ -1,0 +1,427 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+
+
+
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>ws-xmlrpc - The Apache XML-RPC Client</title>
+    <style type="text/css" media="all">
+      @import url("./css/maven-base.css");
+      @import url("./css/maven-theme.css");
+      @import url("./css/site.css");
+    </style>
+    <link rel="stylesheet" href="./css/print.css" type="text/css" media="print" />
+        <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+      </head>
+  <body class="composite">
+    <div id="banner">
+                  <a href="" id="bannerLeft">
+    
+                                            <img src="images/xmlrpc-logo.gif" alt="" />
+    
+            </a>
+                    <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="breadcrumbs">
+          
+  
+
+  
+    
+  
+  
+    
+            <div class="xleft">
+        Last Published: 2010-02-06
+                      </div>
+            <div class="xright">            <a href="http://www.apache.org/" class="externalLink">Apache</a>
+            |
+                <a href="../">Webservices</a>
+            |
+                <a href="">XML-RPC</a>
+            
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="leftColumn">
+      <div id="navcolumn">
+           
+  
+
+  
+    
+  
+  
+    
+                   <h5>XML-RPC</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="index.html">Overview</a>
+          </li>
+              
+    <li class="none">
+                    <a href="download.html">Download</a>
+          </li>
+              
+    <li class="none">
+                    <a href="changes-report.html">Changes</a>
+          </li>
+              
+    <li class="none">
+                    <a href="mail-lists.html">Mailing Lists</a>
+          </li>
+              
+    <li class="none">
+                    <a href="contributing.html">Contributing</a>
+          </li>
+              
+    <li class="none">
+                    <a href="xmlrpc2">XML-RPC 2</a>
+          </li>
+              
+    <li class="none">
+                    <a href="links.html">Links</a>
+          </li>
+          </ul>
+              <h5>Documentation</h5>
+            <ul>
+              
+    <li class="none">
+              <strong>Client Classes</strong>
+        </li>
+              
+    <li class="none">
+                    <a href="server.html">Server Side XML-RPC</a>
+          </li>
+              
+    <li class="none">
+                    <a href="extensions.html">Vendor Extensions</a>
+          </li>
+              
+    <li class="none">
+                    <a href="ssl.html">SSL</a>
+          </li>
+              
+    <li class="none">
+                    <a href="introspection.html">Introspection</a>
+          </li>
+              
+    <li class="none">
+                    <a href="advanced.html">Advanced Techniques</a>
+          </li>
+              
+    <li class="none">
+                    <a href="types.html">XML-RPC Types</a>
+          </li>
+              
+    <li class="none">
+                    <a href="faq.html">FAQ</a>
+          </li>
+              
+    <li class="none">
+                    <a href="apidocs/index.html">Javadocs</a>
+          </li>
+          </ul>
+              <h5>Project Documentation</h5>
+            <ul>
+              
+                
+              
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-info.html">Project Information</a>
+                </li>
+              
+                
+              
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-reports.html">Project Reports</a>
+                </li>
+          </ul>
+                                           <a href="http://maven.apache.org/" title="Built by Maven" class="poweredBy">
+            <img alt="Built by Maven" src="./images/logos/maven-feather.png"></img>
+          </a>
+                       
+  
+
+  
+    
+  
+  
+    
+        </div>
+    </div>
+    <div id="bodyColumn">
+      <div id="contentBox">
+        <div class="section"><h2>The XmlRpcClient</h2>
+<p>Before talking to an XML-RPC server, you need an instance of <a href="apidocs/org/apache/xmlrpc/client/XmlRpcClient.html">XmlRpcClient</a>.</p>
+<p>The XmlRpcClient is a stateless, thread safe object. The clients configuration occurs by setting the following objects:</p>
+<table class="bodyTable"><tbody><tr class="a"><td align="left">Name</td>
+<td align="left">Description</td>
+</tr>
+<tr class="b"><td align="left">ClientConfig</td>
+<td align="left">This object is an instance of<br />
+<a href="apidocs/org/apache/xmlrpc/client/XmlRpcClientConfig.html"><br />
+XmlRpcClientConfig</a>. It has a lot of atomic properties,<br />
+that specify details like server URL, credentials, character<br />
+set, and the like.</td>
+</tr>
+<tr class="a"><td align="left">TransportFactory</td>
+<td align="left">The task of the transport factory is to create an object,<br />
+which uses the client configuration for talking to the<br />
+server. For example, there is a transport factory, which<br />
+uses the java.net classes. Another example is a transport<br />
+factory based on the Jakarta Commons Http Client. However,<br />
+transport factories don't need to use HTTP: An excellent<br />
+example is the local transport factory, which talks to an<br />
+embedded server. This last factory is, of course, very<br />
+useful for debugging.</td>
+</tr>
+<tr class="b"><td align="left">XmlWriterFactory</td>
+<td align="left">The XmlWriter is an object, which creates XML for you.<br />
+Typically, you do not need to care for this object, because<br />
+the defaults should be fine. However, it is useful, if you<br />
+need a special XML syntax.</td>
+</tr>
+</tbody>
+</table>
+<p>So, let's have a look at a first example:</p>
+<div class="source"><pre>    import org.apache.xmlrpc.client.XmlRpcClient;
+    import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
+
+    XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
+    config.setServerURL(new URL(&quot;http://127.0.0.1:8080/xmlrpc&quot;));
+    XmlRpcClient client = new XmlRpcClient();
+    client.setConfig(config);
+    Object[] params = new Object[]{new Integer(33), new Integer(9)};
+    Integer result = (Integer) client.execute(&quot;Calculator.add&quot;, params);</pre>
+</div>
+<p>In other words, we invoke the remote method <i>Calculator.add</i>, passing the arguments 2 and 3. Hopefully, we know <i>the answer</i>. :-) </p>
+</div>
+<div class="section"><h2>The Transport Factory</h2>
+<p>The above example uses the java.net.URLConnection classes to talk to the server. What, if you'd prefer to use the <a href="http://jakarta.apache.org/commons/httpclient" class="externalLink"> Jakarta HTTP Client</a>? There's basically just a single line, you'd need to add:</p>
+<div class="source"><pre>    import org.apache.xmlrpc.client.XmlRpcClient;
+    import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
+    import org.apache.xmlrpc.client.XmlRpcCommonsTransportFactory;
+
+    XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
+    config.setServerURL(new URL(&quot;http://127.0.0.1:8080/XmlRpcServlet&quot;));
+    XmlRpcClient client = new XmlRpcClient();
+    client.setTransportFactory(new XmlRpcCommonsTransportFactory(client));
+    client.setConfig(config);
+    Object[] params = new Object[]{new Integer(2), new Integer(3)};
+    Integer result = (Integer) client.execute(&quot;Calculator.add&quot;, params);</pre>
+</div>
+<p>In other words, the transport factory determines the way, how the client communicates with the server. The most important transport factories are:</p>
+<table class="bodyTable"><tbody><tr class="a"><td align="left">Name</td>
+<td align="left">Description</td>
+</tr>
+<tr class="b"><td align="left">XmlRpcSunHttpTransportFactory</td>
+<td align="left">This is the default factory, connecting<br />
+to an HTTP server using the<br />
+<tt>java.net.HttpURLConnection</tt>.</td>
+</tr>
+<tr class="a"><td align="left">XmlRpcCommonsTransportFactory</td>
+<td align="left">Another HTTP transport factory, which<br />
+uses the Jakarta Commons HttpClient.<br />
+The main advantage over the default<br />
+factory is, that the Commons HttpClient<br />
+allows direct access to the result<br />
+document. This allows a much lower<br />
+memory profile.</td>
+</tr>
+<tr class="b"><td align="left">XmlRpcLiteHttpTransportFactory</td>
+<td align="left">Yet another HTTP transport factory, which<br />
+is based on an own and very lightweight<br />
+HTTP client. It is possibly the fastest<br />
+of the HTTP transport factories. On the<br />
+other hand, it doesn't support HTTP/1.1,<br />
+thus cannot use keepalive connections.</td>
+</tr>
+<tr class="a"><td align="left">XmlRpcLocalTransportFactory</td>
+<td align="left">This transport factory has an embedded<br />
+XML-RPC server, which is invoked via<br />
+direct Java calls. This is particularly<br />
+useful for debugging and development.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section"><h2>The Client Configuration</h2>
+<p>The transport factory uses the clients configuration. Obviously, the clients configuration depends on the transport factory. In particular, different transport factories depend on different configuration types:</p>
+<ul><li>The HTTP transport factories need an instance of <tt>org.apache.xmlrpc.client.XmlRpcHttpClientConfig</tt>.</li>
+<li>The local transport factory requires an instance of<p><tt>org.apache.xmlrpc.client.XmlRpcLocalClientConfig</tt>.</p>
+</li>
+</ul>
+<p>For convenience, you can simply use the <tt>org.apache.xmlrpc.client.XmlRpcClientConfigImpl</tt>, which implements both interfaces.</p>
+<p>Let's have a look at the various properties, which HTTP client configurations accept:</p>
+<table class="bodyTable"><tbody><tr class="b"><td align="left">Property Name</td>
+<td align="left">Description</td>
+</tr>
+<tr class="a"><td align="left">basicUserName<br />
+basicPassword</td>
+<td align="left">The user name and password, if your HTTP server<br />
+requires basic authentication.</td>
+</tr>
+<tr class="b"><td align="left">basicEncoding</td>
+<td align="left">Specifies the encoding being used to create the<br />
+base 64 encoded Authorization header, which is<br />
+being used for basic authentication.<br />
+By default, the value of the encoding property<br />
+is used. The encoding property itself defaults to<br />
+UTF-8.</td>
+</tr>
+<tr class="a"><td align="left">contentLengthOptional</td>
+<td align="left">Enables the faster and memory saving streaming<br />
+mode: The client will not set the content-length<br />
+header and the request is directly written to the<br />
+HTTP requests output stream. The XML-RPC<br />
+specification requires setting a content-length<br />
+header. For that reason, the streaming mode is<br />
+only available, if the property<br />
+enabledForExtensions is set was well.</td>
+</tr>
+<tr class="b"><td align="left">enabledForExceptions</td>
+<td align="left">Whether the client should request, that the<br />
+server returns exceptions as serializable objects.<br />
+If the server does, then the client will<br />
+deserialize such exceptions and throw them, as<br />
+if they had been cause within the clients code.</td>
+</tr>
+<tr class="a"><td align="left">enabledForExtensions</td>
+<td align="left">Whether the vendor extensions of Apache XML-RPC<br />
+should be enabled. By default, Apache XML-RPC is<br />
+strictly compliant to the XML-RPC specification.<br />
+Unfortunately, this specification has serious<br />
+limitations. For example, it requires setting a<br />
+content-length header. This enforces writing the<br />
+XML-RPC request and response to byte arrays,<br />
+before sending them over the net.<br />
+Vendor extensions include the very fast and<br />
+memory saving streaming mode (by disabling the<br />
+content-length header), the compression of<br />
+request and/or response. In particular, a lot of<br />
+additional data types may be transmitted, when<br />
+extensions are enabled: longs, shorts, bytes,<br />
+floats, DOM nodes, instances of<br />
+java.io.Serializable, or JAXB objects.</td>
+</tr>
+<tr class="b"><td align="left">encoding</td>
+<td align="left">Sets the encoding, which is used for creating the<br />
+XML-RPC request. The default encoding is UTF-8.<br />
+Typically, the encoding is also used for the<br />
+basic authentications, if any. However, you may<br />
+specify a different encoding for the credentials<br />
+using the basicEncoding property.</td>
+</tr>
+<tr class="a"><td align="left">gzipCompressing</td>
+<td align="left">Whether the XML-RPC request should be compressed.<br />
+Request compression is violating the XML-RPC<br />
+specification, that's why gzipCompressing is only<br />
+available, if the enabledForExtension property is<br />
+also set. For the same reason, you should not<br />
+assume, that the server is able to handle<br />
+compressed requests, unless you know, that the<br />
+server is itself running version 3 of<br />
+Apache XML-RPC.</td>
+</tr>
+<tr class="b"><td align="left">gzipRequesting</td>
+<td align="left">Requests, that the server will be compressing the<br />
+response. Response compression is violating the<br />
+XML-RPC specification. Therefore, this feature is<br />
+only available, if the enabledForExtension<br />
+property is set. Also, do not assume, that the<br />
+server will actually compress the response,<br />
+unless it is an Apache XML-RPC 3 server.</td>
+</tr>
+</tbody>
+</table>
+<p>And these properties are for configuring the local transport factory:</p>
+<table class="bodyTable"><tbody><tr class="a"><td align="left">Property Name</td>
+<td align="left">Description</td>
+</tr>
+<tr class="b"><td align="left">xmlRpcServer</td>
+<td align="left">This is the embedded XML-RPC server, which is<br />
+called to execute the clients requests.<br />
+Obviously, this is an extremely fast transport.<br />
+However, its main use is for debugging and<br />
+development.</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+      </div>
+    </div>
+    <div class="clear">
+      <hr/>
+    </div>
+    <div id="footer">
+      <div class="xright">&#169;  
+          2001-2010
+    
+          The Apache Software Foundation
+          
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+  </body>
+</html>

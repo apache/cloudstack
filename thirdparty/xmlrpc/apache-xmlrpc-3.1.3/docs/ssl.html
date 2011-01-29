@@ -1,0 +1,298 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+
+
+
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>ws-xmlrpc - Using SSL</title>
+    <style type="text/css" media="all">
+      @import url("./css/maven-base.css");
+      @import url("./css/maven-theme.css");
+      @import url("./css/site.css");
+    </style>
+    <link rel="stylesheet" href="./css/print.css" type="text/css" media="print" />
+        <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+      </head>
+  <body class="composite">
+    <div id="banner">
+                  <a href="" id="bannerLeft">
+    
+                                            <img src="images/xmlrpc-logo.gif" alt="" />
+    
+            </a>
+                    <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="breadcrumbs">
+          
+  
+
+  
+    
+  
+  
+    
+            <div class="xleft">
+        Last Published: 2010-02-06
+                      </div>
+            <div class="xright">            <a href="http://www.apache.org/" class="externalLink">Apache</a>
+            |
+                <a href="../">Webservices</a>
+            |
+                <a href="">XML-RPC</a>
+            
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="leftColumn">
+      <div id="navcolumn">
+           
+  
+
+  
+    
+  
+  
+    
+                   <h5>XML-RPC</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="index.html">Overview</a>
+          </li>
+              
+    <li class="none">
+                    <a href="download.html">Download</a>
+          </li>
+              
+    <li class="none">
+                    <a href="changes-report.html">Changes</a>
+          </li>
+              
+    <li class="none">
+                    <a href="mail-lists.html">Mailing Lists</a>
+          </li>
+              
+    <li class="none">
+                    <a href="contributing.html">Contributing</a>
+          </li>
+              
+    <li class="none">
+                    <a href="xmlrpc2">XML-RPC 2</a>
+          </li>
+              
+    <li class="none">
+                    <a href="links.html">Links</a>
+          </li>
+          </ul>
+              <h5>Documentation</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="client.html">Client Classes</a>
+          </li>
+              
+    <li class="none">
+                    <a href="server.html">Server Side XML-RPC</a>
+          </li>
+              
+    <li class="none">
+                    <a href="extensions.html">Vendor Extensions</a>
+          </li>
+              
+    <li class="none">
+              <strong>SSL</strong>
+        </li>
+              
+    <li class="none">
+                    <a href="introspection.html">Introspection</a>
+          </li>
+              
+    <li class="none">
+                    <a href="advanced.html">Advanced Techniques</a>
+          </li>
+              
+    <li class="none">
+                    <a href="types.html">XML-RPC Types</a>
+          </li>
+              
+    <li class="none">
+                    <a href="faq.html">FAQ</a>
+          </li>
+              
+    <li class="none">
+                    <a href="apidocs/index.html">Javadocs</a>
+          </li>
+          </ul>
+              <h5>Project Documentation</h5>
+            <ul>
+              
+                
+              
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-info.html">Project Information</a>
+                </li>
+              
+                
+              
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-reports.html">Project Reports</a>
+                </li>
+          </ul>
+                                           <a href="http://maven.apache.org/" title="Built by Maven" class="poweredBy">
+            <img alt="Built by Maven" src="./images/logos/maven-feather.png"></img>
+          </a>
+                       
+  
+
+  
+    
+  
+  
+    
+        </div>
+    </div>
+    <div id="bodyColumn">
+      <div id="contentBox">
+        <p>This page describes how to configure a client for using SSL (aka https). Server configuration is out of this documents scope, because it clearly depends on the webserver. We refer, for example, to the <a href="http://tomcat.apache.org/tomcat-5.5-doc/ssl-howto.html" class="externalLink"> Tomcat SSL HowTo</a> or to the FAQ entry on <a href="http://docs.codehaus.org/display/JETTY/How+to+configure+SSL" class="externalLink"> SSL with Jetty</a>.</p>
+<div class="section"><h2>Background</h2>
+<p>Client configuration for SSL is not as simple as one might expect. This is surprising, because using SSL with a browser is as simple as typing in an https URL into the browsers input field.</p>
+<p>Thus, the first thing to keep in mind: Never start with Apache XML-RPC as a client. It is much better to create a simple static page and point your browser to the static pages URL. If you get this working, then you may assume that all remaining problems rest with the client.</p>
+<p>If you did that, you may have noticed, that the browser brings up a warning, that your web server is &quot;not trusted&quot;. This is typically the case, if you did not buy a certificate: For the case of simplicity, developers are typically creating a so-called &quot;self-signed certificate&quot;.</p>
+<p>And that's exactly your most likely problem: Like pressing the browsers button to &quot;Accept the certificate&quot; (temporarily or permanently), you've got to tell your Java client, that you want to accept the certificate.</p>
+</div>
+<div class="section"><h2>Choose the right URL</h2>
+<p>Typically, your server may be accessible with multiple URL's. For example, on my machine the following URL's will all reach the same servlet:</p>
+<p>https://mcjwi.eur.ad.sag/xmlrpc https://localhost/xmlrpc https://127.0.0.1/xmlrpc</p>
+<p>Unfortunately, at most one will work in the most cases. The question is: How do I choose the right one?</p>
+<p>The answer is given by the certificate field CN. For example, my self certified key looks like this:</p>
+<p>Owner: CN=mcjwi.eur.ad.sag, OU=-, O=-, L=-, ST=-, C=- Issuer: CN=mcjwi.eur.ad.sag, OU=-, O=-, L=-, ST=-, C=-</p>
+<p>Note, that you've got to pick a proper CN when generating the certificate! If you are self-certifying the key and the keytool asks you for your own name: Ignore it. In your case the proper reply is the host name.</p>
+</div>
+<div class="section"><h2>The quick and dirty solution</h2>
+<p>Yes, there is a quick and dirty solution: Just tell your client, that you want to accept any certificate, regardless of issuer and host. This can be done by installing a custom TrustManager and a HostnameVerifier. Add the following code to your clients initialization:</p>
+<div class="source"><pre>    import java.security.cert.X509Certificate;
+
+    import javax.net.ssl.HostnameVerifier;
+    import javax.net.ssl.HttpsURLConnection;
+    import javax.net.ssl.SSLContext;
+    import javax.net.ssl.SSLSession;
+    import javax.net.ssl.TrustManager;
+    import javax.net.ssl.X509TrustManager;
+
+    // Create a trust manager that does not validate certificate chains
+    TrustManager[] trustAllCerts = new TrustManager[] {
+        new X509TrustManager() {
+            public X509Certificate[] getAcceptedIssuers() {
+                return null;
+            }
+ 
+            public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                // Trust always
+            }
+ 
+            public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                // Trust always
+            }
+        }
+    };
+ 
+    // Install the all-trusting trust manager
+    SSLContext sc = SSLContext.getInstance(&quot;SSL&quot;);
+    // Create empty HostnameVerifier
+    HostnameVerifier hv = new HostnameVerifier() {
+                public boolean verify(String arg0, SSLSession arg1) {
+                        return true;
+                }
+    };
+
+    sc.init(null, trustAllCerts, new java.security.SecureRandom());
+    HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+    HttpsURLConnection.setDefaultHostnameVerifier(hv);</pre>
+</div>
+</div>
+<div class="section"><h2>The recommended solution</h2>
+<p>Needless to say, the quick and dirty solution may is insecure, because it can your requests can be intercepted by a man-in-the-middle attack. Fortunately, there is also a clean solution: Import the servers public key into your truststore.</p>
+<p>As a first step, you've got to obtain the servers public key. Assuming, that the key is in your keystore, you may export it by running</p>
+<div class="source"><pre>    keytool -export -alias tomcat -rfc -file tomcat.crt</pre>
+</div>
+<p>This example would export the public key named &quot;tomcat&quot; (which is used by Tomcat) into the file &quot;tomcat.crt&quot;. The key would be read from your default keystore, which is the file .keystore in your home directory (something like &quot;c:\Documents and Settings\jwi\.keystore&quot; on windows or &quot;/home/jwi/.keystore&quot; on Linux/Unix).</p>
+<p>Obviously, this first step must be done on the server. The second step would be to create a truststore on your client by importing the file &quot;tomcat.crt&quot;:</p>
+<div class="source"><pre>    keytool -import -alias servercert -file tomcat.crt -keystore truststore</pre>
+</div>
+<p>The option &quot;-keystore truststore&quot; specifies a file name. Of course, this may as well be an absolute path.</p>
+</div>
+
+      </div>
+    </div>
+    <div class="clear">
+      <hr/>
+    </div>
+    <div id="footer">
+      <div class="xright">&#169;  
+          2001-2010
+    
+          The Apache Software Foundation
+          
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+  </body>
+</html>

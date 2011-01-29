@@ -1,0 +1,10 @@
+sprintf(buffer,"**System used for compilation:\n");
+output_string(buffer);
+sprintf(buffer,"**Linux mimi 2.0.31 #5 Thu Oct 23 10:02:08 CDT 1997 i486\n");
+output_string(buffer);
+sprintf(buffer,"**C compiler: gcc version 2.7.2.3\n");
+output_string(buffer);
+sprintf(buffer,"**libc: libc.so.5.4.38\n");
+output_string(buffer);
+sprintf(buffer,"**Date of compilation: Thu Nov 20 10:04:43 CST 1997\n");
+output_string(buffer);

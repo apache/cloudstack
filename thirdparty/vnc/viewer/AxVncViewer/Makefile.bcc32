@@ -1,0 +1,99 @@
+# This makefile is for command-line Borland C++ 5.5 compiler (Win32).
+# It builds vncviewer.exe.
+
+CC=bcc32
+LD=ilink32
+
+CFLAGS= -v- -O2 -3 -tWM -xd- -q -w-8004 -w-8057 -w-8066 -w-8027 -I".." -Iomnithread -DXMD_H -DWIN32
+LDFLAGS= /c /Tpe /aa /Gn /B:0x400000
+
+OBJS=zrle.obj \
+AboutBox.obj \
+AccelKeys.obj \
+AuthDialog.obj \
+Buildtime.obj \
+ClientConnection.obj \
+ClientConnectionUltra.obj \
+..\lzo\minilzo.obj \
+bmpFlasher.obj \
+ClientConnectionClipboard.obj \
+ClientConnectionCopyRect.obj \
+ClientConnectionCoRRE.obj \
+ClientConnectionCursor.obj \
+ClientConnectionFile.obj \
+ClientConnectionFullScreen.obj \
+ClientConnectionCacheRect.obj \
+ClientConnectionHextile.obj \ 
+ClientConnectionRaw.obj \
+ClientConnectionRRE.obj \
+ClientConnectionTight.obj \
+ClientConnectionZlibHex.obj \
+ClientConnectionZlib.obj \
+..\DSMPlugin\DSMPlugin.obj \
+TextChat.obj \
+buildtime.obj \
+d3des.obj \
+Daemon.obj \
+Exception.obj \
+FileTransfer.obj \
+Flasher.obj \
+KeyMap.obj \
+Log.obj \
+MRU.obj \
+SessionDialog.obj \
+stdhdrs.obj \
+vncauth.obj \
+VNCOptions.obj \
+vncviewer.obj \
+VNCviewerApp.obj \
+VNCviewerApp32.obj \
+omnithread\omnithread.obj \
+..\zipunzip32\zipunzip32.obj
+
+LIBS=..\zlib\zlib.lib ..\rdr\rdr.lib ..\libjpeg\libjpeg.lib
+
+RES=res\vncviewer.res
+
+.autodepend
+.c.obj:
+	$(CC) -c $(CFLAGS) $<
+.cpp.obj:
+	$(CC) -c $(CFLAGS) $<
+
+vncviewer.exe: $(OBJS) $(LIBS) $(RES)
+	$(LD) $(LDFLAGS) c0w32 $(OBJS), $@, , $(LIBS) import32 cw32mt, , $(RES)
+
+..\zlib\zlib.lib:
+	cd ..
+	cd zlib
+	make -fMakefile.bcc32 -l -s
+	cd ..
+	cd vncviewer
+
+..\rdr\rdr.lib:
+	cd ..
+	cd rdr
+	make -fMakefile.bcc32 -l -s
+	cd ..
+	cd vncviewer
+
+..\libjpeg\libjpeg.lib:
+	cd ..
+	cd libjpeg
+	make -fMakefile.bcc32 -l -s
+	cd ..
+	cd vncviewer
+
+omnithread\omnithread.obj:
+	cd omnithread
+	build-bcc32.bat
+	cd ..
+
+res\vncviewer.res:
+	cd res
+	build-bcc32.bat
+	cd ..
+
+clean:
+	del *.obj vncviewer.exe
+

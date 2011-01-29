@@ -294,16 +294,6 @@ The Cloud.com test package contains a suite of automated tests
 that the very much appreciated QA team at Cloud.com constantly
 uses to help increase the quality of the Cloud.com Stack.
 
-%package premium-deps
-Summary:   Cloud.com premium library dependencies
-Requires: java >= 1.6.0
-Provides: %{name}-deps = %{version}-%{release}
-Group:     System Environment/Libraries
-Obsoletes: vmops-premium-deps < %{version}-%{release}
-%description premium-deps
-This package contains the certified software components required to run
-the premium edition of the Cloud.com Stack.
-
 %package premium
 Summary:   Cloud.com premium components
 Obsoletes: vmops-premium < %{version}-%{release}
@@ -501,6 +491,8 @@ fi
 %{_javadir}/%{name}-bcprov-jdk16-1.45.jar
 %{_javadir}/%{name}-jsch-0.1.42.jar
 
+%defattr(0644,root,root,0755)
+%{_javadir}/%{name}-premium/*.jar
 
 %files core
 %defattr(0644,root,root,0755)
@@ -524,9 +516,7 @@ fi
 %files client
 %defattr(0644,root,root,0775)
 %{_sysconfdir}/%{name}/management/*
-%if %{_premium}
-%exclude %{_sysconfdir}/%{name}/management/*premium*
-%endif
+%{_sysconfdir}/%{name}/management/*premium*
 %config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-%{name}.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6.conf
@@ -594,19 +584,10 @@ fi
 %{_libdir}/%{name}/test/*
 %{_sysconfdir}/%{name}/test/*
 
-%files premium-deps
-%defattr(0644,root,root,0755)
-%{_javadir}/%{name}-premium/*.jar
-
 %files premium
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-core-extras.jar
 %{_javadir}/%{name}-server-extras.jar
-%{_sysconfdir}/%{name}/management/commands-ext.properties
-%{_sysconfdir}/%{name}/management/components-premium.xml
-%{_libdir}/%{name}/agent/vms/systemvm-premium.iso
-%{_datadir}/%{name}/setup/create-database-premium.sql
-%{_datadir}/%{name}/setup/create-schema-premium.sql
 # maintain the following list in sync with files agent-scripts
 %{_libdir}/%{name}/agent/premium-scripts/*
 

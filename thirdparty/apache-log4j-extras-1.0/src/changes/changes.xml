@@ -1,0 +1,35 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+-->
+<document>
+  <properties>
+    <title>apache-log4j-extras</title>
+  </properties>
+  <body>
+    <release version="1.0" date="2007-08-25" description="Initial release">
+	  <action issue="42783" type="add">Create an "extras" companion for log4j 1.2</action>
+	  <action issue="42251" type="add">Backport log4j 1.3 rolling file appender for use with log4j 1.2.</action>
+      <action issue="42099" type="add">ExpressionFilter backport.</action>
+      <action issue="43151" type="add">Add TimeFilter.</action>
+      <action issue="43077" type="add">Add XSLTLayout.</action>
+      <action issue="42589" type="add">Parameterized logging for log4j 1.2.</action>
+      <action issue="32572" type="add">FilterBasedTriggeringPolicy now usable with SMTPAppender.</action>
+      <action issue="40937" type="add">Avoid Turkish-i problem in ExpressionFilter.</action>
+      <action issue="42257" type="add">Enhance DOMConfigurator to delegate unrecognized elements to created objects.</action>
+    </release>
+  </body>
+</document>

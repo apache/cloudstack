@@ -1,0 +1,131 @@
+$Id: RELEASE_NOTES.txt,v 1.16 2006/03/01 01:52:03 gregluck Exp $
+
+
+Release Notes For ehcache version 1.5.0
+=======================================
+
+Introduction
+============
+Ehcache is a pure Java, in-process cache with the following features:
+
+   1. Fast.
+   2. Simple.
+   3. Multiple eviction policies: LRU, LFU and FIFO.
+   4. Caches can be in memory or on disk.
+   5. Disk Stores can be persistent between VM restarts.
+   6. Distributed caching using multicast and RMI, with a pluggable API.
+   7. Cache and CacheManager listeners
+   8. Supports multiple Caches per CacheManager, and multiple CacheManagers per application.
+   9. Acts as a pluggable cache for Hibernate 3.1, 3 and 2.1.
+   10. Small foot print. Both in terms of size and memory requirements.
+   11. Minimal dependencies apart from J2SE.
+   12. Fully documented. See the online Documentation and the online JavaDoc.
+   13. Comprehensive Test Coverage. See the clover test report.
+   14. Available under the Apache 1.1 license. EHCache's copyright and licensing has been reviewed and approved by the Apache Software Foundation, making EHCache suitable for use in Apache projects.
+   15. Production tested. EHCache is used on a large and very busy eCommerce site.
+   16. Web caching, pull-through caches and other common caching implementations are provided in the ehcache-constructs module.
+   17. Full JMX monitoring implementation
+   18. Complete implementation of the draft JCACHE (JSR107) specification.
+
+Java Requirements
+=================
+
+    Ehcache supports 1.4, 1.5 and 1.6 at runtime. Ehcache final releases are compiled with -target 1.4.
+    This produces Java class data, version 48.0.
+
+    Because of an {{{http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4267864}RMI bug}}, in JDKs before JDK1.5
+    ehcache is limited to one CacheManager operating in distributed mode per virtual machine.
+    (The bug limits the number of RMI registries to one per virtual machine). Because this is the expected deployment
+    configuration, however, ther should be no practical effect.
+
+    On JDK1.5 and higher it is possible to have multiple CacheManagers per VM each participating in the same or different clusters.
+    Indeed the replication tests do this with 5 CacheManagers on the same VM all run from JUnit.
+
+Dependencies
+============
+
+
+Mandatory Dependencies
+----------------------
+
+Commons Logging
+
+    Ehcache requires {{{http://jakarta.apache.org/commons/logging/}commons-logging}} commons-logging is a very common dependency, and is therefore not included in the distribution.
+
+    It is included in the tarball and the maven dependencies.
+
+
+Backport Concurrent
+
+    Backport Concurrent is a dependency for use of the JCache API. Rather than using the library which maven will pull down, users should consider
+    using a version which matches their JDK version. See {{http://dcl.mathcs.emory.edu/util/backport-util-concurrent}}.
+
+    The Java 4 version, which is compatible with Java 4 - 6 is included in the tarball and the maven dependencies.
+
+Optional Dependencies
+---------------------
+
+JMX
+
+    The management package of ehcache requires JMX. Version 1.3 or higher will work. This is optional and only required if you are using the
+    <<<ManagementService>>>.
+
+    Of course JDK1.5 has it built in.
+
+Commons collections
+
+    This is optional. Use it if you are using ehcache with Terracotta. They have a limitation which prevents them from using
+    the build in JDK one.
+
+    It can be turned on using by setting the system property <<<net.sf.ehcache.useLRUMap>>> to true.
+
+Maven POM snippet
+=================
+
+
+     Ehcache releases are placed in the central Maven repository.
+
+     The Maven snippet for ehcache 1.4.0, for example, is:
+
+
+     <dependency>
+        <groupId>net.sf.ehcache</groupId>
+        <artifactId>ehcache</artifactId>
+        <version>1.4.0</version>
+     </dependency>
+
+
+Installation
+============
+Place the ehcache.jar into your classpath. Ensure the required dependencies are in the classpath.
+
+Create an ehcache.xml configuration from the one supplied in the distribution and place it in your classpath.
+
+The ehcache-remote-debugger.jar is a tool to be used for distributed debugging. Do not install it in
+your project. See http://ehcache.sourceforge.net/documentation/logging.html for how to use it.
+
+
+Documentation
+=============
+See http://ehcache.sourceforge.net/documentation for full documentation.
+
+The JavaDoc is in the distribution and also online at http://ehcache.sourceforge.net/javadoc.
+
+Compatibility With Ehcache 1.1
+==============================
+1. Due to an internal reorganisation in the code base the DiskStore path will default to java.io.tmp when the ehcache-1.1
+constructor is used.
+
+2. APIs are the same. CacheException is now a runtime exception. Additionally, IOException is no longer thrown.
+This does not cause a runtime error but will cause a compile time error if clients are recompiled against ehcache. In
+this case change the code to not catch an IOException. Catching CacheException is optional.
+
+Known Issues
+============
+
+1. Due to a limitation in RMI, JDK1.5 or higher is required to run multiple distributed CacheManagers on the same machine.
+   Normally distributed caching is used between machines, so this should be a very rare issue.
+
+2. There are a number of known issues and workarounds for Tomcat. See the Using Ehcache with Tomcat chapter in the online documentation.
+
+3. See the FAQ online for more.

@@ -1,0 +1,259 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+
+
+
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>ws-xmlrpc - Apache XML-RPC Vendor Extensions</title>
+    <style type="text/css" media="all">
+      @import url("./css/maven-base.css");
+      @import url("./css/maven-theme.css");
+      @import url("./css/site.css");
+    </style>
+    <link rel="stylesheet" href="./css/print.css" type="text/css" media="print" />
+        <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+      </head>
+  <body class="composite">
+    <div id="banner">
+                  <a href="" id="bannerLeft">
+    
+                                            <img src="images/xmlrpc-logo.gif" alt="" />
+    
+            </a>
+                    <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="breadcrumbs">
+          
+  
+
+  
+    
+  
+  
+    
+            <div class="xleft">
+        Last Published: 2010-02-06
+                      </div>
+            <div class="xright">            <a href="http://www.apache.org/" class="externalLink">Apache</a>
+            |
+                <a href="../">Webservices</a>
+            |
+                <a href="">XML-RPC</a>
+            
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="leftColumn">
+      <div id="navcolumn">
+           
+  
+
+  
+    
+  
+  
+    
+                   <h5>XML-RPC</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="index.html">Overview</a>
+          </li>
+              
+    <li class="none">
+                    <a href="download.html">Download</a>
+          </li>
+              
+    <li class="none">
+                    <a href="changes-report.html">Changes</a>
+          </li>
+              
+    <li class="none">
+                    <a href="mail-lists.html">Mailing Lists</a>
+          </li>
+              
+    <li class="none">
+                    <a href="contributing.html">Contributing</a>
+          </li>
+              
+    <li class="none">
+                    <a href="xmlrpc2">XML-RPC 2</a>
+          </li>
+              
+    <li class="none">
+                    <a href="links.html">Links</a>
+          </li>
+          </ul>
+              <h5>Documentation</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="client.html">Client Classes</a>
+          </li>
+              
+    <li class="none">
+                    <a href="server.html">Server Side XML-RPC</a>
+          </li>
+              
+    <li class="none">
+              <strong>Vendor Extensions</strong>
+        </li>
+              
+    <li class="none">
+                    <a href="ssl.html">SSL</a>
+          </li>
+              
+    <li class="none">
+                    <a href="introspection.html">Introspection</a>
+          </li>
+              
+    <li class="none">
+                    <a href="advanced.html">Advanced Techniques</a>
+          </li>
+              
+    <li class="none">
+                    <a href="types.html">XML-RPC Types</a>
+          </li>
+              
+    <li class="none">
+                    <a href="faq.html">FAQ</a>
+          </li>
+              
+    <li class="none">
+                    <a href="apidocs/index.html">Javadocs</a>
+          </li>
+          </ul>
+              <h5>Project Documentation</h5>
+            <ul>
+              
+                
+              
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-info.html">Project Information</a>
+                </li>
+              
+                
+              
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-reports.html">Project Reports</a>
+                </li>
+          </ul>
+                                           <a href="http://maven.apache.org/" title="Built by Maven" class="poweredBy">
+            <img alt="Built by Maven" src="./images/logos/maven-feather.png"></img>
+          </a>
+                       
+  
+
+  
+    
+  
+  
+    
+        </div>
+    </div>
+    <div id="bodyColumn">
+      <div id="contentBox">
+        <div class="section"><h2>Introduction</h2>
+<p>The <a href="http://www.xmlrpc.com/spec" class="externalLink">XML-RPC specification</a> has been published in 1999. In the past 6 years, it was subject to some minor corrections. Some things have been made clearer. However, it hasn't really changed or evolved. Dave Winer, the XML-RPC specifications author, has always rejected any suggestions in that direction. Of course, he did so with a good reason: One of XML-RPC's major targets was portability over arbitrary platforms and programming languages. Clearly, this target has been met and any further development would mean putting this at risk. </p>
+<p>On the other hand, this is most unfortunate: Obeying the specification means accepting really serious limitations. For example, one cannot even use all of Java's primitive data types, although nowadays they have equivalents in almost any programming language. Possibly even more important is the requirement to send a content-length header: HTTP/1.1 and its chunk encoding are the definite standard in 2005 for both HTTP clients and servers. Consequently, the content-length header is, at best, superfluos. Of course, having an additional header wouldn't be too much of a problem. But calculating the header value enforces, that request and response are written to byte arrays, before actually sending them. This is both slow and memory consuming.</p>
+<p>Version 3 of Apache XML-RPC is a compromise: By default it still meets the specification. However, you <b>may</b> enable additional features, called vendor extensions. Of course, these features only work, if you have a streaming version of Apache XML-RPC on both sides. In practice, it occurs very frequently, that both sides are controlled by the same people. Besides, the vendor extensions are documented very clearly here: Adding these features to an existing XML-RPC library would mean almost no effort, so possibly someone does. You'r welcome.</p>
+<p>But the purpose of this document is more than documentation: It is also to receive feedback and discuss the extensions specification and implementation. Nothing is fixed, and everything can be changed.</p>
+</div>
+<div class="section"><h2>Enabling extensions</h2>
+<p>Vendor extensions cannot be used, unless they are explicitly enabled. In some cases, you have to enable specific features, for example request compression. But in all cases, you need to enable the use of vendor extensions at all, because that is the step, where you knowingly say: &quot;I know, I am now in violation of the original XML-RPC specification.&quot;</p>
+<p>For that reasons, both server and client have a property <tt>enabledForExtensions</tt> in their respective configuration. Setting this property to true enables the extensions. </p>
+</div>
+<div class="section"><h2>Streaming Mode</h2>
+<p>Putting the client or the server into streaming mode means, that data being sent to the other side is almost directly written to the network connection. (Besides, of course, using a moderately sized <tt>BufferedOutputStream</tt>, because one would not want to have a network connection for any <tt>write()</tt> call.)</p>
+<p>In particular, the request, or response, isn't written to a <tt>ByteArrayOutputStream</tt> internally. Without streaming mode, this is always the case. But there is more: For example, the base64 encoder is also writing directly without internal buffering. (There are few other base64 encoders around, which support streaming mode.)</p>
+<p>To enable streaming mode on the client, set the properties <tt>enabledForExtensions</tt> and <tt>contentLengthOptional</tt>. This will take care for the request, which is being sent to the server.</p>
+<p>On the server, things are a little bit more complicated. Currently, the server behaves as follows: If streaming mode is disabled, then the server will always behave like a standard XML-RPC server. Otherwise, the server will verify, whether the client sends a content-length header. If so, then the server assumes that the client is able to accept a missing content-length header in the response as well. Otherwise, the server will still disable streaming for this particular requests. In other words, traditional clients will still receive a traditional response and one server can serve both data types.</p>
+</div>
+<div class="section"><h2>Compression</h2>
+<p>HTTP Request compression is a standard HTTP feature and works by using the HTTP headers <tt>Accept-Encoding</tt> and <tt>Content-Encoding</tt>. In other words, it is quite likely, that request compression is supported by your HTTP client or server library. For example, the Apache httpd does so by using the <tt>mod_deflate</tt> module.</p>
+<p>Of course, it's more convenient to have the XML-RPC library doing this. If the client should compress the response, then you need to set the properties <tt>enabledForExtensions</tt> and <tt>gzipCompressing</tt>. The XML-RPC request will be compressed (on-the-fly in streaming mode, of course) and the HTTP header <tt>Content-Encoding</tt> will be set to <tt>gzip</tt>. Needless to say, you may only do so, if the server is ready to accept such requests.</p>
+<p>Compressing the request doesn't mean that the response is compressed as well. First of all, the server will only send a compressed response, if the server property <tt>enabledForExtensions</tt> is set. Additionally, the server will read the HTTP header <tt>Accept-Encoding</tt>: If it doesn't contain <tt>gzip</tt> encoding, then compression cannot take place. In other words, the client must send this header. You need to set the client properties <tt>enabledForCompression</tt> and <tt>gzipRequesting</tt> to achieve that.</p>
+</div>
+<div class="section"><h2>Data Types</h2>
+<p>Enabling vendor extensions means also, that several additional data types may be sent. (See <a href="./types.html">Data Types</a> for details.) These different data types require an extension of the XML-RPC network protocol.</p>
+<p>All of these data types are using a special XML namespace. Using this namespace is a clear indication, that these data types are in violation to the XML-RPC specification.</p>
+<p>For example, sending an integer value looks like the following: ---------------------------------------------------------------------------- <i>i4</i>347<i>/i4</i> ---------------------------------------------------------------------------- 32 bit integers are valid data types in XML-RPC. So we do not need to use a separate namespace here. 64 bit integers aren't valid XML-RPC data types. So we need to use our namespace when sending them: ---------------------------------------------------------------------------- <i>i8 xmlns=&quot;http://ws.apache.org/xmlrpc/namespaces/extensions&quot;</i>78934<i>/i8</i> ----------------------------------------------------------------------------</p>
+</div>
+<div class="section"><h2>Exception Handling</h2>
+<p>If the server property &quot;enabledForExceptions&quot; is turned on, then the server will convert exceptions into a byte array and send them to the client within a &quot;faultCause&quot; message.</p>
+</div>
+
+      </div>
+    </div>
+    <div class="clear">
+      <hr/>
+    </div>
+    <div id="footer">
+      <div class="xright">&#169;  
+          2001-2010
+    
+          The Apache Software Foundation
+          
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+  </body>
+</html>

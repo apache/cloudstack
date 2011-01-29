@@ -1,0 +1,456 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+
+
+
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>ws-xmlrpc - The Apache XML-RPC Server</title>
+    <style type="text/css" media="all">
+      @import url("./css/maven-base.css");
+      @import url("./css/maven-theme.css");
+      @import url("./css/site.css");
+    </style>
+    <link rel="stylesheet" href="./css/print.css" type="text/css" media="print" />
+        <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+      </head>
+  <body class="composite">
+    <div id="banner">
+                  <a href="" id="bannerLeft">
+    
+                                            <img src="images/xmlrpc-logo.gif" alt="" />
+    
+            </a>
+                    <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="breadcrumbs">
+          
+  
+
+  
+    
+  
+  
+    
+            <div class="xleft">
+        Last Published: 2010-02-06
+                      </div>
+            <div class="xright">            <a href="http://www.apache.org/" class="externalLink">Apache</a>
+            |
+                <a href="../">Webservices</a>
+            |
+                <a href="">XML-RPC</a>
+            
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="leftColumn">
+      <div id="navcolumn">
+           
+  
+
+  
+    
+  
+  
+    
+                   <h5>XML-RPC</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="index.html">Overview</a>
+          </li>
+              
+    <li class="none">
+                    <a href="download.html">Download</a>
+          </li>
+              
+    <li class="none">
+                    <a href="changes-report.html">Changes</a>
+          </li>
+              
+    <li class="none">
+                    <a href="mail-lists.html">Mailing Lists</a>
+          </li>
+              
+    <li class="none">
+                    <a href="contributing.html">Contributing</a>
+          </li>
+              
+    <li class="none">
+                    <a href="xmlrpc2">XML-RPC 2</a>
+          </li>
+              
+    <li class="none">
+                    <a href="links.html">Links</a>
+          </li>
+          </ul>
+              <h5>Documentation</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="client.html">Client Classes</a>
+          </li>
+              
+    <li class="none">
+              <strong>Server Side XML-RPC</strong>
+        </li>
+              
+    <li class="none">
+                    <a href="extensions.html">Vendor Extensions</a>
+          </li>
+              
+    <li class="none">
+                    <a href="ssl.html">SSL</a>
+          </li>
+              
+    <li class="none">
+                    <a href="introspection.html">Introspection</a>
+          </li>
+              
+    <li class="none">
+                    <a href="advanced.html">Advanced Techniques</a>
+          </li>
+              
+    <li class="none">
+                    <a href="types.html">XML-RPC Types</a>
+          </li>
+              
+    <li class="none">
+                    <a href="faq.html">FAQ</a>
+          </li>
+              
+    <li class="none">
+                    <a href="apidocs/index.html">Javadocs</a>
+          </li>
+          </ul>
+              <h5>Project Documentation</h5>
+            <ul>
+              
+                
+              
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-info.html">Project Information</a>
+                </li>
+              
+                
+              
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-reports.html">Project Reports</a>
+                </li>
+          </ul>
+                                           <a href="http://maven.apache.org/" title="Built by Maven" class="poweredBy">
+            <img alt="Built by Maven" src="./images/logos/maven-feather.png"></img>
+          </a>
+                       
+  
+
+  
+    
+  
+  
+    
+        </div>
+    </div>
+    <div id="bodyColumn">
+      <div id="contentBox">
+        <div class="section"><h2>Server-side XML-RPC</h2>
+<p>If you have read and understood the previous document about the <a href="./client.html">Apache XML-RPC client</a>, then the server isn't too much news.</p>
+<p>First of all, there is an object, called the XmlRpcServer. This objects purpose is to receive and execute XML-RPC calls by the clients. The XmlRpcServer <b>can</b> be embedded into a servlet container, or another HTTP server (for example, the minimal web server, that comes with XML-RPC), but it doesn't need to. Take the local transport as an example: In that case the XML-RPC server is simply embedded into the client application.</p>
+<p>Like the XmlRpcClient, the XmlRpcServer needs a configuration, which is given by the XmlRpcServerConfigImpl object.</p>
+</div>
+<div class="section"><h2>The XML-RPC Servlet</h2>
+<p>The easiest way to create an XML-RPC Server is the XmlRpcServlet, which has an automatically embedded instance of XmlRpcServer. This servlet allows you to create a server within 10 minutes or so:</p>
+<ol type="1"><li>Create a class, or a set of classes, which are implementing the remote procedure calls. Here's an example of such a class:<div class="source"><pre>    package org.apache.xmlrpc.demo;
+    public class Calculator {
+                public int add(int i1, int i2) {
+                        return i1 + i2;
+                }
+                public int subtract(int i1, int i2) {
+                        return i1 - i2;
+                }
+    }</pre>
+</div>
+<p>This class has two public, non-static methods, which should be available to the clients.</p>
+</li>
+<li>Create a property file, which contains at least one property. The property name is arbitrary, and the property value is the fully qualified name of the Calculator class. For example, like that:<div class="source"><pre>    Calculator=org.apache.xmlrpc.demo.Calculator</pre>
+</div>
+<p>The property file must be called <tt>XmlRpcServlet.properties</tt>, and it must be located in the package org.apache.xmlrpc.webserver. In other words, you would typically put it into the directory org/apache/xmlrpc/webserver and add it to your jar file.</p>
+</li>
+<li>Add entries like the following to your war files web.xml:<div class="source"><pre>    &lt;servlet&gt;
+        &lt;servlet-name&gt;XmlRpcServlet&lt;/servlet-name&gt;
+        &lt;servlet-class&gt;org.apache.xmlrpc.webserver.XmlRpcServlet&lt;/servlet-class&gt;
+        &lt;init-param&gt;
+          &lt;param-name&gt;enabledForExtensions&lt;/param-name&gt;
+          &lt;param-value&gt;true&lt;/param-value&gt;
+          &lt;description&gt;
+            Sets, whether the servlet supports vendor extensions for XML-RPC.
+          &lt;/description&gt;
+        &lt;/init-param&gt;
+    &lt;/servlet&gt;
+    &lt;servlet-mapping&gt;
+        &lt;servlet-name&gt;XmlRpcServlet&lt;/servlet-name&gt;
+        &lt;url-pattern&gt;/xmlrpc&lt;/url-pattern&gt;
+    &lt;/servlet-mapping&gt;</pre>
+</div>
+</li>
+</ol>
+<p>That's it! You have just created your first XML-RPC server. :-)</p>
+</div>
+<div class="section"><h2>The Server configuration</h2>
+<p>Unlike in the case of the clients configuration, there isn't much to configure on the server. The reason is, that most things depend on the client and the HTTP headers, which are received by the client. There is one very important property to configure, though:</p>
+<table class="bodyTable"><tbody><tr class="a"><td align="left">Property Name</td>
+<td align="left">Description</td>
+</tr>
+<tr class="b"><td align="left">enabledForExceptions</td>
+<td align="left">If the server catches an exception, and this<br />
+property is set, then the server will convert<br />
+the exception into a byte array (by using an<br />
+ObjectOutputStream) and return the exception to<br />
+the client. Note, that this may have privacy<br />
+or even security implications, because Exceptions<br />
+may contain arbitrary Java objects, which you<br />
+possibly do not want to be sent to the client.</td>
+</tr>
+<tr class="a"><td align="left">enabledForExtensions</td>
+<td align="left">Whether the vendor extensions of Apache XML-RPC<br />
+should be enabled. By default, Apache XML-RPC is<br />
+strictly compliant to the XML-RPC specification.<br />
+Enabling this property doesn't indicate, that the<br />
+server is unable to serve requests by standard<br />
+clients: In contrary, the servers behaviour<br />
+depends on the client. Setting this property to<br />
+true will only advice the server, that it <b>may</b><br />
+accept requests, which ask for vendor extensions.<br />
+For example, if a client sends a content-length<br />
+header, then the server assumes, that the client<br />
+<b>wants</b> a content-length header in the request<br />
+and disables the streaming mode.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section"><h2>Basic Authentication</h2>
+<p>Basic authentication is frequently used to authenticate and authorize users. Within Apache XML-RPC, basic authentication is done by the <a href="apidocs/org/apache/xmlrpc/XmlRpcHandler.html">XmlRpcHandler</a>. The handler receives an instance of <a href="apidocs/org/apache/xmlrpc/XmlRpcRequest.html">XmlRpcRequest</a>. This object has a method <tt>getConfig()</tt>, which returns an instance of <a href="apidocs/org/apache/xmlrpc/XmlRpcRequestConfig.html">XmlRpcRequestConfig</a>.</p>
+<p>If you are running within a HTTP server, then the request configuration may be casted to an instance of <a href="apidocs/org/apache/xmlrpc/common/XmlRpcHttpRequestConfig.html">XmlRpcHttpRequestConfig</a>. This object has methods <tt>getBasicUserName()</tt>, and <tt>getBasicPassword()</tt>, which provide the necessary details.</p>
+<p>In other words: Your task is to provide your own instance of <a href="apidocs/org/apache/xmlrpc/server/XmlRpcHandlerMapping.html">XmlRpcHandlerMapping</a>, which creates your own handlers. And your own handlers are responsible to validate the basic authentication details.</p>
+<p>Here's an example servlet, which overrides the default <a href="apidocs/org/apache/xmlrpc/server/PropertyHandlerMapping.html">PropertyHandlerMapping</a>.</p>
+<div class="source"><pre>  public class MyServlet extends XmlRpcServlet {
+          private boolean isAuthenticated(String pUserName, String pPassword) {
+              return &quot;foo&quot;.equals(pUserName) &amp;&amp; &quot;bar&quot;.equals(pPassword);
+          }
+          protected XmlRpcHandlerMapping newXmlRpcHandlerMapping() throws XmlRpcException {
+              PropertyHandlerMapping mapping
+                  = (PropertyHandlerMapping) super.newXmlRpcHandlerMapping();
+              AbstractReflectiveHandlerMapping.AuthenticationHandler handler =
+                  new AbstractReflectiveHandlerMapping.AuthenticationHandler(){
+                          public boolean isAuthorized(XmlRpcRequest pRequest){
+                              XmlRpcHttpRequestConfig config =
+                                  (XmlRpcHttpRequestConfig) pRequest.getConfig();
+                              return isAuthenticated(config.getBasicUserName(),
+                                  config.getBasicPassword());
+                          };
+                  };
+              mapping.setAuthenticationHandler(handler);
+              return mapping;
+          }
+  }</pre>
+</div>
+</div>
+<div class="section"><h2>The WebServer class</h2>
+<p>The <a href="apidocs/org/apache/xmlrpc/webserver/WebServer.html">WebServer</a> is a minimal HTTP server, that might be used as an embedded web server.</p>
+<p>Use of the WebServer has grown very popular amongst users of Apache XML-RPC. Why this is the case, can hardly be explained, because the WebServer is at best a workaround, compared to full blown servlet engines like Tomcat or Jetty. For example, under heavy load it will almost definitely be slower than a real servlet engine, because it does neither support proper keepalive (multiple requests per physical connection) nor chunked mode (in other words, it cannot stream requests).</p>
+<p>If you still insist in using the WebServer, it is recommended to use its subclass, the <a href="apidocs/org/apache/xmlrpc/webserver/ServletWebServer.html">ServletWebServer</a> instead, which offers a minimal subset of the servlet API. In other words, you keep yourself the option to migrate to a real servlet engine later.</p>
+<p>Use of the WebServer goes roughly like this: First of all, create a property file (for example &quot;MyHandlers.properties&quot;) and add it to your jar file. The property keys are handler names and the property values are the handler classes. Once that is done, create an instance of WebServer.</p>
+<div class="source"><pre>  package org.apache.xmlrpc.demo.webserver;
+
+  import java.net.InetAddress;
+
+  import org.apache.xmlrpc.common.TypeConverterFactoryImpl;
+  import org.apache.xmlrpc.demo.webserver.proxy.impls.AdderImpl;
+  import org.apache.xmlrpc.server.PropertyHandlerMapping;
+  import org.apache.xmlrpc.server.XmlRpcServer;
+  import org.apache.xmlrpc.server.XmlRpcServerConfigImpl;
+  import org.apache.xmlrpc.webserver.WebServer;
+
+  public class Server {
+      private static final int port = 8080;
+
+      public static void main(String[] args) throws Exception {
+          WebServer webServer = new WebServer(port);
+        
+          XmlRpcServer xmlRpcServer = webServer.getXmlRpcServer();
+        
+          PropertyHandlerMapping phm = new PropertyHandlerMapping();
+          /* Load handler definitions from a property file.
+           * The property file might look like:
+           *   Calculator=org.apache.xmlrpc.demo.Calculator
+           *   org.apache.xmlrpc.demo.proxy.Adder=org.apache.xmlrpc.demo.proxy.AdderImpl
+           */
+          phm.load(Thread.currentThread().getContextClassLoader(),
+                   &quot;MyHandlers.properties&quot;);
+
+          /* You may also provide the handler classes directly,
+           * like this:
+           * phm.addHandler(&quot;Calculator&quot;,
+           *     org.apache.xmlrpc.demo.Calculator.class);
+           * phm.addHandler(org.apache.xmlrpc.demo.proxy.Adder.class.getName(),
+           *     org.apache.xmlrpc.demo.proxy.AdderImpl.class);
+           */
+          xmlRpcServer.setHandlerMapping(phm);
+        
+          XmlRpcServerConfigImpl serverConfig =
+              (XmlRpcServerConfigImpl) xmlRpcServer.getConfig();
+          serverConfig.setEnabledForExtensions(true);
+          serverConfig.setContentLengthOptional(false);
+
+          webServer.start();
+      }
+  }</pre>
+</div>
+<p>The Calculator class can be found above. The Adder and AdderImpl classes can be found in the <a href="advanced.html">proxy example</a>.</p>
+<p>Jimisola Laursen, who provided the above example, has also supplied an example for the client:</p>
+<div class="source"><pre>  package org.apache.xmlrpc.demo.client;
+
+  import java.net.MalformedURLException;
+  import java.net.URL;
+
+  import org.apache.xmlrpc.XmlRpcException;
+  import org.apache.xmlrpc.client.XmlRpcClient;
+  import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
+  import org.apache.xmlrpc.client.XmlRpcCommonsTransportFactory;
+  import org.apache.xmlrpc.client.util.ClientFactory;
+  import org.apache.xmlrpc.demo.proxy.Adder;
+
+  public class Client {
+      public static void main(String[] args) throws Exception {
+          // create configuration
+          XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
+          config.setServerURL(new URL(&quot;http://127.0.0.1:8080/xmlrpc&quot;));
+          config.setEnabledForExtensions(true);  
+          config.setConnectionTimeout(60 * 1000);
+          config.setReplyTimeout(60 * 1000);
+
+          XmlRpcClient client = new XmlRpcClient();
+        
+          // use Commons HttpClient as transport
+          client.setTransportFactory(
+              new XmlRpcCommonsTransportFactory(client));
+          // set configuration
+          client.setConfig(config);
+
+          // make the a regular call
+          Object[] params = new Object[]
+              { new Integer(2), new Integer(3) };
+          Integer result = (Integer) client.execute(&quot;Calculator.add&quot;, params);
+          System.out.println(&quot;2 + 3 = &quot; + result);
+        
+          // make a call using dynamic proxy
+          ClientFactory factory = new ClientFactory(client);
+          Adder adder = (Adder) factory.newInstance(Adder.class);
+          int sum = adder.add(2, 4);
+          System.out.println(&quot;2 + 4 = &quot; + sum);
+      }
+  }</pre>
+</div>
+</div>
+<div class="section"><h2>The ServletWebServer class</h2>
+<p>This is a subclass of the standalone WebServer, which offers a minimal servlet API. It is recommended to use this class, rather than the WebServer, because it offers you a smooth migration path to a full blown servlet engine.</p>
+<p>Use of the <a href="apidocs/org/apache/xmlrpc/webserver/ServletWebServer.html">ServletWebServer</a> goes like this: First of all, create a servlet. It may be an instance of <a name="alink_XmlRpcServlet">@link XmlRpcServlet</a> or a subclass thereof. Note, that servlets are stateless: One servlet may be used by multiple threads (aka requests) concurrently. In other words, the servlet must not have any instance variables, other than those which are read only after the servlets initialization.</p>
+<p>The XmlRpcServlet is by default using a property file named <tt>org/apache/xmlrpc/server/webserver/XmlRpcServlet.properties</tt>. See the <a href="apidocs/org/apache/xmlrpc/server/PropertyHandlerMapping.html">PropertyHandlerMapping</a> for details on the property file.</p>
+<div class="source"><pre>  package org.apache.xmlrpc.demo.webserver;
+
+  import java.net.InetAddress;
+
+  import org.apache.xmlrpc.common.TypeConverterFactoryImpl;
+  import org.apache.xmlrpc.demo.webserver.proxy.impls.AdderImpl;
+  import org.apache.xmlrpc.server.PropertyHandlerMapping;
+  import org.apache.xmlrpc.server.XmlRpcServer;
+  import org.apache.xmlrpc.server.XmlRpcServerConfigImpl;
+  import org.apache.xmlrpc.webserver.ServletWebServer;
+
+  public class ServletServer {
+      private static final int port = 8080;
+
+      public static void main(String[] args) throws Exception {
+          XmlRpcServlet servlet = new XmlRpcServlet();
+          ServletWebServer webServer = new ServletWebServer(servlet, port);
+          webServer.start();
+      }
+  }</pre>
+</div>
+</div>
+
+      </div>
+    </div>
+    <div class="clear">
+      <hr/>
+    </div>
+    <div id="footer">
+      <div class="xright">&#169;  
+          2001-2010
+    
+          The Apache Software Foundation
+          
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Main-Class: ConsoleProxy
+Class-Path: ../../log4j-1.2.15.jar ../../gson-1.2.3.jar
+

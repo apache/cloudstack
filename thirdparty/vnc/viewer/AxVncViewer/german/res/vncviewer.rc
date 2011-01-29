@@ -1,0 +1,1008 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// German (Germany) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
+#ifdef _WIN32
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// 24
+//
+
+IDR_MANIFEST            24      DISCARDABLE     "vncviewer.exe.manifest"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_TRAY                ICON    DISCARDABLE     "idr_tray.ico"
+IDI_NET                 ICON    DISCARDABLE     "B46.ico"
+IDI_MAINICON            ICON    DISCARDABLE     "vncviewer.ico"
+IDI_FILE                ICON    DISCARDABLE     "file.ico"
+IDI_DIR                 ICON    DISCARDABLE     "dir.ico"
+IDI_DRIVE               ICON    DISCARDABLE     "drive.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_TRAYMENU MENU DISCARDABLE 
+BEGIN
+    POPUP "t"
+    BEGIN
+        MENUITEM "neue Verbindung",             ID_NEWCONN
+        MENUITEM "Default-Verbindungseinstellungen", IDC_OPTIONBUTTON
+        MENUITEM SEPARATOR
+        MENUITEM "Über VNCviewer  ",            IDD_APP_ABOUT
+        MENUITEM SEPARATOR
+        MENUITEM "schließe VNC-Server",         ID_CLOSEDAEMON
+    END
+END
+
+IDR_tbMENU MENU DISCARDABLE 
+BEGIN
+    POPUP "Rightclick menu for FullScreenCaption"
+    BEGIN
+        MENUITEM "Restore",                     IDC_NULL
+        MENUITEM "Minimieren",                  IDC_NULL
+        MENUITEM SEPARATOR
+        MENUITEM "Schlieáen",                   IDC_NULL
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_OPTIONDIALOG DIALOGEX 0, 0, 325, 211
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Verbindungseinstellungen"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    GROUPBOX        "Format und Kodierung ",IDC_STATIC,1,2,150,156
+    CONTROL         "Automatisch, abhängig von der Verbindungsgeschwindigkeit",
+                    IDC_AUTODETECT,"Button",BS_AUTOCHECKBOX | BS_MULTILINE | 
+                    WS_TABSTOP,7,12,136,16
+    CONTROL         "ZRLE",IDC_ZRLERADIO,"Button",BS_AUTORADIOBUTTON,9,35,32,
+                    10
+    CONTROL         "Tight",IDC_TIGHTRADIO,"Button",BS_AUTORADIOBUTTON,43,35,
+                    30,10
+    CONTROL         "Zlib (+xor)",IDC_ZLIBRADIO,"Button",BS_AUTORADIOBUTTON,
+                    9,45,47,10
+    CONTROL         "ZlibHex",IDC_ZLIBHEXRADIO,"Button",BS_AUTORADIOBUTTON,9,
+                    55,55,10
+    CONTROL         "Hextile",IDC_HEXTILERADIO,"Button",BS_AUTORADIOBUTTON,9,
+                    65,37,10
+    CONTROL         "RRE",IDC_RRERADIO,"Button",BS_AUTORADIOBUTTON,9,75,31,
+                    10
+    CONTROL         "CoRRE",IDC_CORRERADIO,"Button",BS_AUTORADIOBUTTON,9,85,
+                    40,10
+    CONTROL         "Raw",IDC_RAWRADIO,"Button",BS_AUTORADIOBUTTON,9,95,27,
+                    10
+    CONTROL         "Ultra",IDC_ULTRA,"Button",BS_AUTORADIOBUTTON,44,94,28,
+                    10
+    CONTROL         "Max. Farben",IDC_FULLCOLORS_RADIO,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,84,35,55,10
+    CONTROL         "256 Farben",IDC_256COLORS_RADIO,"Button",
+                    BS_AUTORADIOBUTTON,84,45,52,10
+    CONTROL         "64 Farben",IDC_64COLORS_RADIO,"Button",
+                    BS_AUTORADIOBUTTON,84,55,48,10
+    CONTROL         "8 Farben",IDC_8COLORS_RADIO,"Button",BS_AUTORADIOBUTTON,
+                    84,65,44,10
+    CONTROL         "8 Dark Farben",IDC_8GREYCOLORS_RADIO,"Button",
+                    BS_AUTORADIOBUTTON,84,75,58,10
+    CONTROL         "4 Grey Farben",IDC_4GREYCOLORS_RADIO,"Button",
+                    BS_AUTORADIOBUTTON,84,85,61,10
+    CONTROL         "Black && White",IDC_2GREYCOLORS_RADIO,"Button",
+                    BS_AUTORADIOBUTTON,84,95,57,10
+    CONTROL         "Benutze CopyRect encoding",ID_SESSION_SET_CRECT,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,110,136,10
+    CONTROL         "Benutze kodierten Pufferspeicher ",ID_SESSION_SET_CACHE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,121,118,10
+    CONTROL         "Zip/Tight Kompression:  ",IDC_ALLOW_COMPRESSLEVEL,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,132,101,10
+    EDITTEXT        IDC_COMPRESSLEVEL,130,131,14,12,ES_AUTOHSCROLL
+    CONTROL         "JPEG (Fest) - Qualität: ",IDC_ALLOW_JPEG,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,144,102,10
+    EDITTEXT        IDC_QUALITYLEVEL,130,144,14,12,ES_AUTOHSCROLL
+    GROUPBOX        "Verschiedenes",IDC_STATIC,1,160,150,48
+    CONTROL         "Mehrfachnutzung zulassen",IDC_SHARED,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,171,137,10
+    CONTROL         "Bei Verbindung Statusfenster anzeigen",
+                    IDC_BELLDEICONIFY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    7,183,137,8
+    CONTROL         "Zwischenablage sperren ",IDC_DISABLECLIPBOARD,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,7,193,138,10
+    GROUPBOX        "Maustasten ",IDC_STATIC,156,2,165,37
+    CONTROL         "3 Tasten emulieren",IDC_EMULATECHECK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,162,15,117,10
+    CONTROL         "Maustasten 2 und 3 tauschen ",ID_SESSION_SWAPMOUSE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,162,26,128,10
+    GROUPBOX        "Mauszeiger",IDC_STATIC,156,41,165,47
+    CONTROL         "Zeige Remote-Cursor",IDC_CSHAPE_ENABLE_RADIO,"Button",
+                    BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,162,52,116,10
+    CONTROL         "Mauszeiger steuern ",IDC_CSHAPE_DISABLE_RADIO,"Button",
+                    BS_AUTORADIOBUTTON,162,63,122,10
+    CONTROL         "Remote-Cursor nicht zeigen ",IDC_CSHAPE_IGNORE_RADIO,
+                    "Button",BS_AUTORADIOBUTTON,162,74,128,10
+    GROUPBOX        "Anzeige ",IDC_STATIC,156,90,165,78
+    CONTROL         "Zeige Toolbar  ",IDC_SHOWTOOLBAR,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,162,101,76,10
+    CONTROL         "Nur ansehen (die Eingaben werden ignoriert) ",
+                    IDC_VIEWONLY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,162,
+                    113,153,10
+    CONTROL         "Vollbildmodus ",IDC_FULLSCREEN,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,162,126,127,8
+    LTEXT           "Viewer-Maßstab :",IDC_STATIC,162,139,57,8
+    CONTROL         "Auto",IDC_SCALING,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,
+                    222,139,30,10
+    COMBOBOX        IDC_SCALE_CB,278,137,30,117,CBS_DROPDOWN | 
+                    CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Server-Schirm skalieren :",IDC_STATIC,162,153,80,8
+    EDITTEXT        IDC_SERVER_SCALE,278,152,14,12,ES_AUTOHSCROLL
+    CONTROL         "256 Farben",IDC_8BITCHECK,"Button",BS_AUTOCHECKBOX | 
+                    NOT WS_VISIBLE | WS_TABSTOP,157,173,50,10
+    DEFPUSHBUTTON   "&Ok",IDOK,212,193,50,14
+    PUSHBUTTON      "&Abbruch",IDCANCEL,270,193,50,14
+    EDITTEXT        IDC_SCALE_NUM,275,100,15,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    NOT WS_VISIBLE
+    CTEXT           "%",IDC_STATIC,310,140,8,8,0,WS_EX_TRANSPARENT
+    EDITTEXT        IDC_SCALE_DEN,293,100,14,12,ES_AUTOHSCROLL | ES_NUMBER | 
+                    NOT WS_VISIBLE
+    LTEXT           "1  /",IDC_STATIC,260,153,12,8
+    LTEXT           "durch ",IDC_STATIC,260,140,14,8
+    GROUPBOX        "",IDC_STATIC,5,27,71,80
+    GROUPBOX        "",IDC_STATIC,79,27,68,80
+END
+
+IDD_FILETRANSFER_DLG DIALOGEX 0, 0, 555, 414
+STYLE DS_3DLOOK | DS_CENTER | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_POPUP | 
+    WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+CAPTION "Dateiübertragung - VMOpsVNC "
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "&Ok",IDOK,248,23,59,14,NOT WS_VISIBLE
+    PUSHBUTTON      "Schließen",IDCANCEL,247,340,60,14
+    PUSHBUTTON      "Senden >> ",IDC_UPLOAD_B,247,103,60,14,BS_CENTER | 
+                    BS_FLAT
+    PUSHBUTTON      "<< Empfangen ",IDC_DOWNLOAD_B,247,120,60,14,BS_CENTER | 
+                    BS_FLAT
+    CONTROL         "Progress1",IDC_PROGRESS,"msctls_progress32",WS_BORDER,
+                    45,388,410,9
+    CTEXT           "LOKALER RECHNER",IDC_LM_STATIC,105,3,94,13,
+                    SS_CENTERIMAGE,WS_EX_CLIENTEDGE
+    PUSHBUTTON      "Stop",IDC_ABORT_B,247,142,60,14,BS_FLAT | NOT 
+                    WS_VISIBLE
+    EDITTEXT        IDC_CURR_LOCAL,3,17,238,12,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_CURR_REMOTE,314,17,238,12,ES_AUTOHSCROLL | 
+                    ES_READONLY
+    PUSHBUTTON      "lokale Laufwerke",IDC_LOCAL_ROOT_B,262,1,40,9,BS_FLAT | 
+                    NOT WS_VISIBLE
+    PUSHBUTTON      "Remote-Laufwerke",IDC_REMOTE_ROOT_B,262,10,36,9,BS_FLAT | 
+                    NOT WS_VISIBLE
+    CONTROL         "List2 ",IDC_LOCAL_FILELIST,"SysListView32",LVS_REPORT | 
+                    LVS_SHOWSELALWAYS | LVS_SORTASCENDING | LVS_AUTOARRANGE | 
+                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,3,31,238,324
+    CONTROL         "List3 ",IDC_REMOTE_FILELIST,"SysListView32",LVS_REPORT | 
+                    LVS_SHOWSELALWAYS | LVS_SORTASCENDING | LVS_AUTOARRANGE | 
+                    LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,314,31,238,324
+    COMBOBOX        IDC_LOCAL_DRIVECB,4,3,98,171,CBS_DROPDOWNLIST | 
+                    CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_REMOTE_DRIVECB,313,3,98,172,CBS_DROPDOWNLIST | 
+                    WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "\\",IDC_LOCAL_ROOTB,204,3,17,12
+    PUSHBUTTON      "..",IDC_LOCAL_UPB,224,3,17,12
+    CONTROL         "",IDC_LOCAL_STATUS,"Static",SS_LEFTNOWORDWRAP | 
+                    WS_GROUP,3,359,238,10,WS_EX_STATICEDGE
+    CONTROL         "",IDC_REMOTE_STATUS,"Static",SS_LEFTNOWORDWRAP | 
+                    WS_GROUP,314,359,238,10,WS_EX_STATICEDGE
+    PUSHBUTTON      "\\",IDC_REMOTE_ROOTB,514,3,17,12
+    PUSHBUTTON      "..",IDC_REMOTE_UPB,534,3,17,12
+    LTEXT           "",IDC_GLOBAL_STATUS,485,389,64,8,0,WS_EX_RIGHT
+    LTEXT           "Fortschritt:  ",IDC_PR_STATIC,4,388,32,8
+    COMBOBOX        IDC_HISTORY_CB,45,372,507,71,CBS_DROPDOWNLIST | 
+                    CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "History:",IDC_HS_STATIC,4,374,26,8
+    CTEXT           "REMOTE-RECHNER ",IDC_RM_STATIC,415,3,95,13,
+                    SS_CENTERIMAGE,WS_EX_CLIENTEDGE
+    PUSHBUTTON      "Löschen ",IDC_DELETE_B,247,203,60,14,BS_FLAT
+    PUSHBUTTON      "Neuer Ordner",IDC_NEWFOLDER_B,247,221,60,14,BS_FLAT
+    PUSHBUTTON      "Minimieren",IDC_HIDE_B,247,323,60,14
+    LTEXT           "",IDC_PERCENT,459,389,17,8
+    PUSHBUTTON      "Wiederernennen",IDC_RENAME_B,247,238,60,14,BS_FLAT
+END
+
+IDD_SESSION_DLG DIALOG DISCARDABLE  0, 0, 245, 206
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Verbindung "
+FONT 8, "MS Sans Serif"
+BEGIN
+    COMBOBOX        IDC_HOSTNAME_EDIT,76,4,120,66,CBS_DROPDOWN | 
+                    CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
+    DEFPUSHBUTTON   "Verbinden",IDOK,199,33,41,23
+    PUSHBUTTON      "&Abbruch",IDCANCEL,200,61,40,14
+    PUSHBUTTON      "Optionen ",IDC_OPTIONBUTTON,200,117,40,15
+    CONTROL         108,IDC_STATIC,"Static",SS_BITMAP,3,2,24,24
+    LTEXT           "(host:display oder host::port) ",IDC_STATIC,83,19,108,8
+    GROUPBOX        "Schnell-Optionen",IDC_STATIC,4,29,191,104
+    GROUPBOX        "",IDC_STATIC,4,134,237,42
+    CONTROL         "Benutze Plugin",IDC_PLUGIN_CHECK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,12,145,66,10
+    COMBOBOX        IDC_PLUGINS_COMBO,78,143,118,55,CBS_DROPDOWN | CBS_SORT | 
+                    WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Info",IDC_PLUGIN_BUTTON,200,143,36,12
+    CONTROL         "AUTO (Beste Einstellungen automatisch wählen)",
+                    IDC_DYNAMIC,"Button",BS_AUTORADIOBUTTON,13,42,177,10
+    CONTROL         "ULTRA         (>2Mbit/s)- Experimental",
+                    IDC_ULTRA_LAN_RB,"Button",BS_AUTORADIOBUTTON,13,54,176,
+                    10
+    CONTROL         "LAN              (> 1Mbit/s) - Maximale Farben  ",
+                    IDC_LAN_RB,"Button",BS_AUTORADIOBUTTON,13,66,176,10
+    CONTROL         "MITTEL        (128 - 256bit/s) - 256 Farben ",
+                    IDC_MEDIUM_RB,"Button",BS_AUTORADIOBUTTON,13,78,176,10
+    CONTROL         "MODEM       (19 - 256Kbit/s) - 64 Farben ",IDC_MODEM_RB,
+                    "Button",BS_AUTORADIOBUTTON,13,90,177,10
+    CONTROL         "LANGSAM   (< 19kKbit/s) - 256 Farben",IDC_SLOW_RB,
+                    "Button",BS_AUTORADIOBUTTON,13,102,176,10
+    CONTROL         "Nur Ansehen ",IDC_VIEWONLY_CHECK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,13,118,47,10
+    PUSHBUTTON      "...",IDC_LOADPROFILE_B,200,4,13,12
+    CONTROL         "Automatische Skalierung",IDC_AUTOSCALING_CHECK,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,66,118,127,10
+    LTEXT           "VNC Server: ",IDC_STATIC,34,7,40,8
+    CONTROL         "Benutze Proxy",IDC_PROXY_CHECK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,12,160,66,10
+    EDITTEXT        IDC_PROXY_EDIT,78,158,117,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "Delete saved settings",IDC_DELETE,152,185,84,12,
+                    BS_MULTILINE
+    CONTROL         "Save connection settings as default",
+                    IDC_SETDEFAULT_CHECK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,12,187,128,10
+    GROUPBOX        "",IDC_STATIC,4,177,237,25
+END
+
+IDD_SERVINFO_DLG DIALOG DISCARDABLE  0, 0, 224, 170
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "RFB Serverinformationen "
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "&Ok",IDOK,167,149,50,14
+    EDITTEXT        IDC_SERVINFO_EDIT,7,7,210,134,ES_MULTILINE | 
+                    ES_AUTOHSCROLL | ES_READONLY
+END
+
+IDD_AUTH_DIALOG DIALOG DISCARDABLE  101, 66, 214, 63
+STYLE DS_MODALFRAME | DS_3DLOOK | WS_POPUP | WS_VISIBLE | WS_CAPTION
+CAPTION " VMOpsVNC Authentication"
+FONT 8, "MS Sans Serif"
+BEGIN
+    EDITTEXT        IDD_USER_NAME,118,6,82,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_PASSWD_EDIT,118,22,82,14,ES_PASSWORD | 
+                    ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "Anmelden ",IDOK,90,42,54,15
+    PUSHBUTTON      "&Abbruch",IDCANCEL,150,42,50,15
+    RTEXT           "Username:",IDC_STATIC,58,10,57,8
+    RTEXT           "Password:",IDC_STATIC,58,26,57,8
+    CONTROL         156,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE | 
+                    SS_SUNKEN,8,10,48,42
+END
+
+IDD_CUSTUM_KEY DIALOG DISCARDABLE  0, 0, 224, 53
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION " Send Custom Key (Experimental ...)"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "&senden ",IDOK,167,7,50,14
+    PUSHBUTTON      "&Abbruch ",IDCANCEL,167,32,50,14
+    EDITTEXT        IDC_CUSTOM_KEY,100,7,51,14,ES_AUTOHSCROLL
+    CONTROL         "ALT GR ",IDC_ALTGR,"Button",BS_AUTORADIOBUTTON,54,26,38,
+                    9
+    CONTROL         "STRG",IDC_STRG,"Button",BS_AUTORADIOBUTTON,100,26,35,9
+    CONTROL         "ALT ",IDC_ALT,"Button",BS_AUTORADIOBUTTON,54,37,26,9
+    CONTROL         "NORMAL ",IDC_NORMAL,"Button",BS_AUTORADIOBUTTON,100,37,
+                    45,9
+    LTEXT           "TastenCode (dezimal): ",IDC_STATIC,7,9,87,12
+END
+
+IDD_STATUS DIALOGEX 0, 0, 198, 129
+STYLE DS_MODALFRAME | DS_3DLOOK | WS_MINIMIZEBOX | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_TOOLWINDOW
+CAPTION "VNC Viewer - Verbindungsstatus"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "Schließen",IDCLOSE,140,114,50,14
+    GROUPBOX        "Verbindung",IDC_STATIC,4,0,186,68
+    GROUPBOX        "Verkehr ",IDC_STATIC,4,69,186,42
+    LTEXT           "Port:",IDC_STATIC,13,23,52,9
+    LTEXT           "Bytes gesendet ",IDC_STATIC,7,82,63,9
+    RTEXT           "Bytes empfangen ",IDC_STATIC,117,82,68,9
+    RTEXT           "gesendet ",IDC_SEND,6,98,64,9
+    RTEXT           "empfangen ",IDC_RECEIVED,113,98,72,9
+    RTEXT           "Port ",IDC_PORT,96,23,89,9
+    ICON            IDI_NET,IDC_STATIC,89,78,20,20
+    CONTROL         167,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE,71,
+                    86,13,1,WS_EX_TRANSPARENT
+    CONTROL         167,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE,109,
+                    86,13,1,WS_EX_TRANSPARENT
+    CONTROL         166,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE,105,
+                    98,1,10,WS_EX_TRANSPARENT
+    LTEXT           "VNC Server: ",IDC_STATIC,13,12,64,9
+    RTEXT           "Server-Name ",IDC_VNCSERVER,94,12,91,9
+    LTEXT           "Status: ",IDC_STATIC,13,34,52,9
+    RTEXT           "Verbindung getrennt",IDC_STATUS,44,34,141,9
+    PUSHBUTTON      "&Abbruch",IDQUIT,5,114,50,14
+    LTEXT           "Geschwindigkeit: ",IDC_STATIC,13,56,64,8
+    RTEXT           "123",IDC_SPEED,81,56,62,8
+    RTEXT           "kbit/s ",IDC_STATIC,147,56,38,8
+    RTEXT           "",IDC_ENCODER,65,45,120,8
+    LTEXT           "Kodierer: ",IDC_STATIC,13,45,63,8
+END
+
+IDD_AUTH_DIALOG1 DIALOG DISCARDABLE  101, 66, 234, 58
+STYLE DS_MODALFRAME | DS_3DLOOK | WS_POPUP | WS_VISIBLE | WS_CAPTION
+CAPTION "VNC Authentisierung "
+FONT 8, "MS Sans Serif"
+BEGIN
+    EDITTEXT        IDC_PASSWD_EDIT,136,13,82,14,ES_PASSWORD | 
+                    ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "Anmelden ",IDOK,108,37,54,15
+    PUSHBUTTON      "&Abbruch",IDCANCEL,168,37,50,15
+    RTEXT           "Password:",-1,65,16,61,8
+    CONTROL         156,-1,"Static",SS_BITMAP | SS_CENTERIMAGE | SS_SUNKEN,6,
+                    6,50,42
+END
+
+IDD_FTPARAM_DLG DIALOG DISCARDABLE  0, 0, 241, 60
+STYLE DS_SYSMODAL | DS_MODALFRAME | DS_3DLOOK | WS_POPUP | WS_CAPTION
+CAPTION "Ft Param-Dialog "
+FONT 8, "MS Sans Serif"
+BEGIN
+    EDITTEXT        IDC_FTPARAM_EDIT,10,21,224,14,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "&Ok ",IDOK,128,42,50,14
+    PUSHBUTTON      "&Abbruch",IDCANCEL,184,42,50,14
+    LTEXT           "FT Param-Anmerkung. bitte irgendetwas eintragen  ",
+                    IDC_FTPARAMCOMMENT,9,7,225,8
+END
+
+IDD_AUTH_DIALOG2 DIALOG DISCARDABLE  101, 66, 214, 113
+STYLE DS_MODALFRAME | DS_3DLOOK | WS_POPUP | WS_VISIBLE | WS_CAPTION
+CAPTION " VMOpsVNC Authentication - Unsecure Transmission"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LTEXT           "With the current UltraVNC server version, the password you provide is not transferred securely, except if you are using the encryption DSMPlugin.\r\nPlease update the UltraVNC server on the remote computer to v1.0.2 for secure password transmission.",
+                    IDC_STATIC,8,3,196,49
+    EDITTEXT        IDD_USER_NAME,118,57,82,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_PASSWD_EDIT,118,73,82,14,ES_PASSWORD | 
+                    ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "Anmelden ",IDOK,89,92,54,15
+    PUSHBUTTON      "&Abbruch",IDCANCEL,150,92,50,15
+    RTEXT           "Username:",IDC_STATIC,58,60,57,8
+    RTEXT           "Password:",IDC_STATIC,58,76,57,8
+    CONTROL         156,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE | 
+                    SS_SUNKEN,8,60,48,42
+END
+
+IDD_TEXTCHAT_DLG DIALOGEX 0, 0, 307, 177
+STYLE DS_MODALFRAME | DS_3DLOOK | DS_CENTER | WS_POPUP | WS_CAPTION
+CAPTION " Chat - VMOpsVNC"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    EDITTEXT        IDC_INPUTAREA_EDIT,4,135,255,39,ES_MULTILINE | 
+                    ES_AUTOVSCROLL | ES_WANTRETURN | NOT WS_BORDER | 
+                    WS_VSCROLL,WS_EX_STATICEDGE
+    PUSHBUTTON      "Schließen",IDCANCEL,264,163,39,11
+    CONTROL         "",IDC_CHATAREA_EDIT,"RICHEDIT",ES_MULTILINE | 
+                    ES_AUTOVSCROLL | ES_READONLY | ES_WANTRETURN | 
+                    WS_VSCROLL | WS_TABSTOP,3,3,300,129,WS_EX_STATICEDGE
+    PUSHBUTTON      "&Senden ",IDC_SEND_B,264,135,39,14,BS_CENTER | 
+                    BS_MULTILINE
+    DEFPUSHBUTTON   "",IDOK,299,0,8,6,NOT WS_VISIBLE
+    PUSHBUTTON      "Minimieren",IDC_HIDE_B,264,152,39,11
+END
+
+IDD_APP_ABOUT DIALOG DISCARDABLE  0, 0, 289, 159
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Über VNCviewer  "
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "&Ok ",IDOK,8,137,62,14
+    CONTROL         156,IDC_STATIC,"Static",SS_BITMAP | SS_CENTERIMAGE | 
+                    SS_SUNKEN,8,7,62,54
+    LTEXT           "VMOpsVNC Win32 Viewer v1.0.2",IDC_STATIC,86,6,197,11
+    LTEXT           "Mehr Information und Links bei: \nhttp://ultravnc.sf.net ",
+                    IDC_STATIC,86,133,197,19
+    LTEXT           "Copyright © 2008 VMOps Inc.\nCopyright © 2001-2002 Sam - eSVNC \nCopyright © 1999-2002 Rudi D. V. - VdaccVNC \nCopyright © 1999-2002 Const. Kaplinsky - TightVNC \nCopyright © 2002 RealVNC Ltd. - RealVNC\n",
+                    IDC_STATIC,86,30,200,40
+    LTEXT           "Built:",IDC_STATIC,87,17,15,10
+    LTEXT           "BuildTime",IDC_BUILDTIME,120,17,98,10
+    LTEXT           "Copyright © 2002 VNC QuickDesk\nCopyright © 1999-2002 Tridia Corporation - TridiaVNC \nCopyright © 1994-2001 AT&&T Laboratories Cambridge/Olivetti Research Ltd. - VNC",
+                    IDC_STATIC,86,70,203,33
+    LTEXT           "Copyright © 1990-2002 Info-ZIP\nCopyright © 1996-2002 Markus Franz Xaver Johannes Oberhumer - Mini LZO library",
+                    IDC_STATIC,85,102,198,24
+END
+
+IDD_FTCONFIRM_DLG DIALOG DISCARDABLE  0, 0, 178, 86
+STYLE DS_SYSMODAL | DS_MODALFRAME | DS_3DLOOK | WS_POPUP | WS_CAPTION
+CAPTION "Dialog"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "Yes",IDC_YES_B,4,65,39,14
+    PUSHBUTTON      "No",IDC_NO_B,92,65,40,14
+    LTEXT           "Confirm message here",IDC_FTPCONFIRMCOMMENT,4,8,163,53
+    PUSHBUTTON      "Yes for All",IDC_YESALL_B,46,65,40,14
+    PUSHBUTTON      "No for all",IDC_NOALL_B,135,65,39,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    IDD_OPTIONDIALOG, DIALOG
+    BEGIN
+        RIGHTMARGIN, 320
+        VERTGUIDE, 164
+        HORZGUIDE, 168
+    END
+
+    IDD_FILETRANSFER_DLG, DIALOG
+    BEGIN
+        RIGHTMARGIN, 505
+        VERTGUIDE, 215
+        VERTGUIDE, 274
+        VERTGUIDE, 279
+        VERTGUIDE, 486
+        BOTTOMMARGIN, 260
+    END
+
+    IDD_SESSION_DLG, DIALOG
+    BEGIN
+        VERTGUIDE, 10
+        VERTGUIDE, 232
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 203
+        HORZGUIDE, 17
+    END
+
+    IDD_SERVINFO_DLG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 217
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 163
+    END
+
+    IDD_AUTH_DIALOG, DIALOG
+    BEGIN
+        LEFTMARGIN, 2
+        RIGHTMARGIN, 209
+        VERTGUIDE, 8
+        VERTGUIDE, 43
+        VERTGUIDE, 56
+        VERTGUIDE, 58
+        VERTGUIDE, 81
+        VERTGUIDE, 115
+        VERTGUIDE, 118
+        VERTGUIDE, 190
+        BOTTOMMARGIN, 58
+        HORZGUIDE, 20
+        HORZGUIDE, 36
+        HORZGUIDE, 52
+        HORZGUIDE, 57
+    END
+
+    IDD_CUSTUM_KEY, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 217
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 46
+    END
+
+    IDD_STATUS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 191
+        VERTGUIDE, 185
+        VERTGUIDE, 190
+        TOPMARGIN, 7
+    END
+
+    IDD_AUTH_DIALOG1, DIALOG
+    BEGIN
+        LEFTMARGIN, 2
+        RIGHTMARGIN, 229
+        VERTGUIDE, 6
+        VERTGUIDE, 43
+        VERTGUIDE, 49
+        VERTGUIDE, 65
+        VERTGUIDE, 81
+        VERTGUIDE, 108
+        VERTGUIDE, 118
+        VERTGUIDE, 218
+        BOTTOMMARGIN, 53
+        HORZGUIDE, 25
+        HORZGUIDE, 27
+        HORZGUIDE, 36
+        HORZGUIDE, 52
+        HORZGUIDE, 57
+    END
+
+    IDD_FTPARAM_DLG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 234
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 53
+    END
+
+    IDD_AUTH_DIALOG2, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 92
+    END
+
+    IDD_TEXTCHAT_DLG, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 166
+    END
+
+    IDD_APP_ABOUT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        VERTGUIDE, 86
+        VERTGUIDE, 94
+        VERTGUIDE, 108
+        VERTGUIDE, 283
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 152
+        HORZGUIDE, 29
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDD_SESSION_DLG DLGINIT
+BEGIN
+    IDC_HOSTNAME_EDIT, 0x403, 1, 0
+"\000" 
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_BITMAP1             BITMAP  DISCARDABLE     "bitmap1.bmp"
+IDB_BITMAP2             BITMAP  DISCARDABLE     "hoch.bmp"
+IDB_BITMAP3             BITMAP  DISCARDABLE     "quer.bmp"
+IDB_STAT_BACK           BITMAP  DISCARDABLE     "stat\\back.bmp"
+IDB_STAT_BOTH           BITMAP  DISCARDABLE     "stat\\both.bmp"
+IDB_STAT_FRONT          BITMAP  DISCARDABLE     "stat\\front.bmp"
+IDB_STAT_NONE           BITMAP  DISCARDABLE     "stat\\none.bmp"
+IDB_BITMAP8             BITMAP  DISCARDABLE     "stat\\bitmap8.bmp"
+IDB_VNC64               BITMAP  DISCARDABLE     "vnc64.BMP"
+IDB_BITMAP7             BITMAP  DISCARDABLE     "bitmap2.bmp"
+IDB_BITMAP9             BITMAP  DISCARDABLE     "stat\\bitmap9.bmp"
+IDB_CLOSE               BITMAP  DISCARDABLE     "stat\\closeup.bmp"
+IDB_MAXIMIZE            BITMAP  DISCARDABLE     "stat\\maximizeup.bmp"
+IDB_MINIMIZE            BITMAP  DISCARDABLE     "stat\\minimizeup.bmp"
+IDB_PINDOWN             BITMAP  DISCARDABLE     "stat\\pindown.bmp"
+IDB_PINUP               BITMAP  DISCARDABLE     "stat\\pinup.bmp"
+IDB_VNC32               BITMAP  DISCARDABLE     "vnc32.BMP"
+IDB_BITMAP11            BITMAP  DISCARDABLE     "stat\\flash.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Cursor
+//
+
+IDC_CURSOR1             CURSOR  DISCARDABLE     "cursorsel.cur"
+IDC_DOTCURSOR           CURSOR  DISCARDABLE     "cursor1.cur"
+IDC_NOCURSOR            CURSOR  DISCARDABLE     "nocursor.cur"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDR_TRAY                "VMOpsVNC Viewer listening"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_CLOSEDAEMON          "Verbindungsdienst stoppen"
+    ID_SHOWWINDOW           "Verbindungsfenster anzeigen"
+    ID_NEWCONN              "manuelle Verbindung erstellen"
+    ID_BUTTON_CAD           "STRG+ALT+ENTF zum Host schicken"
+    ID_BUTTON_FTRANS        "Dateiübertragung"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_BUTTON_DINPUT        "Tasten sperren"
+    ID_BUTTON_DBUTTON       "Remotemaus und -tastatur sperren"
+    ID_BUTTON_SW            "Wähle SW"
+    ID_BUTTON_DESKTOP       "Wähle Desktop"
+    IDS_WARNING             "WARNUNG: Diese Verbindung verwendet evtl. keine Verschlüsselung oder sonstiges. Bitte benutzen Sie sie nicht um wichtige oder geheime Daten zu übertragen, solange Sie nicht sicher sind, daß die Verbindung sicher ist.\n\n"
+    IDS_A1                  "Fehler beim Laden der Tastaturlayouts"
+    IDS_A2                  "VMOpsVNC Info"
+    IDS_A3                  "Fehler beim Erstellen des Serverdienstes:\n\r"
+    IDS_A4                  "möglicherweise läuft bereits ein anderer VNCViewer?"
+    IDS_A5                  "VNCViewer Fehler"
+    IDS_B1                  "Error initialising sockets library"
+    IDS_B2                  "Client list overflow!"
+    IDS_B3                  "VNC error"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDC_OPTIONBUTTON        "Optionen für neue Verbindung"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_C1                  "Failed to open clipboard\n"
+    IDS_C2                  "Failed to empty clipboard\n"
+    IDS_C3                  "Failed to close clipboard\n"
+    IDS_D1                  "Argument error"
+    IDS_D2                  "Invalid scale factor - resetting to normal scale"
+    IDS_D3                  "Invalid listen port specified"
+    IDS_D4                  "No scaling factor specified"
+    IDS_D5                  "Invalid scaling specified"
+    IDS_D6                  "No timeout specified"
+    IDS_D7                  "Invalid timeout specified"
+    IDS_D8                  "No fuzz specified"
+    IDS_D9                  "Invalid fuzz specified"
+    IDS_D10                 "No delay specified"
+    IDS_D11                 "Invalid delay specified"
+    IDS_D12                 "No loglevel specified"
+    IDS_D13                 "Invalid loglevel specified"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_D14                 "No logfile specified"
+    IDS_D15                 "Invalid logfile specified"
+    IDS_D16                 "No config file specified"
+    IDS_D17                 "Can't open specified config file for reading."
+    IDS_D18                 "No encoding specified"
+    IDS_D19                 "Invalid encoding specified"
+    IDS_D20                 "No compression level specified"
+    IDS_D21                 "Invalid compression level specified"
+    IDS_D22                 "No image quality level specified"
+    IDS_D23                 "Invalid image quality level specified"
+    IDS_D24                 "No password specified"
+    IDS_D25                 "No serverscale denominator specified"
+    IDS_D26                 "No quick option number specified"
+    IDS_D27                 "No DSM plugin specified ('PluginName.dsm')"
+    IDS_D28                 "Invalid VNC server specified."
+    IDS_E1                  "Unable to load the Rich Edit (RICHED32.DLL) control!"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_E2                  "Rich Edit Dll Loading"
+    IDS_F1                  "The Plugin cannot be loaded.\n\rPlease check its integrity."
+    IDS_F3                  "Plugin Activation"
+    IDS_F4                  "NoPassword,viewer"
+    IDS_F5                  "The Plugin cannot be loaded.\n\rPlease check its name integrity."
+    IDS_F6                  "Plugin Loading"
+    IDS_F7                  "The Plugin cannot be Initialized.\n\rPlease check its name integrity."
+    IDS_F8                  "Invalid VNC server specified.\n\rServer should be of the form host:display."
+    IDS_F10                 "Connection setup"
+    IDS_F11                 "kein Plugin gefunden."
+    IDS_G1                  "Error creating Flasher socket"
+    IDS_G2                  "Error binding Flasher socket"
+    IDS_G3                  "Error when Flasher tries to listen"
+    IDS_H1                  " > WARNING: File Transfer is Disabled on the Remote Machine"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_H2                  " > WARNING: File Transfer is Disabled on the Remote Machine"
+    IDS_H3                  "File Transfer permission denied on the Server: disabled or unknown user or version incompatibility"
+    IDS_H4                  " Connected..."
+    IDS_H5                  "Transfer interrupted by user"
+    IDS_H6                  "Transfer completed"
+    IDS_H7                  "Transfer interrupted by user"
+    IDS_H8                  " > Browsing The Local Directory. Please Wait..."
+    IDS_H9                  " > ERROR: Media is not present in the Local Drive."
+    IDS_H10                 " > ERROR: Media is not present in the Remote Drive."
+    IDS_H11                 " > Browsing The Remote Directory. Please Wait..."
+    IDS_H12                 " ERROR: File"
+    IDS_H13                 " is not accessible on Remote Machine"
+    IDS_H14                 "ERROR: Insufficient free space on Local Drive for"
+    IDS_H15                 "Receiving File"
+    IDS_H16                 "cannot be created on Local Machine"
+    IDS_H17                 "File"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_H18                 "successfully RECEIVED..."
+    IDS_H19                 "ERROR: Transfer of File"
+    IDS_H20                 "failed on Remote Machine. Canceled."
+    IDS_H21                 "ERROR: Access problem with file"
+    IDS_H22                 "Sending File"
+    IDS_H23                 "ERROR: Access problem with file"
+    IDS_H24                 "cannot be created on Remote Machine"
+    IDS_H25                 "ERROR: -> This file"
+    IDS_H26                 "may be locked or the remote disk space insufficient"
+    IDS_H27                 "successfully SENT..."
+    IDS_H28                 "failed on Local Machine. Canceled"
+    IDS_H29                 "Unable to create the Folder"
+    IDS_H30                 "on the Remote Machine"
+    IDS_H31                 "Folder"
+    IDS_H32                 "has been created on the Remote Machine"
+    IDS_H33                 "Unable to delete the File"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_H34                 "has been deleted on the Remote Machine"
+    IDS_H35                 "Dateiübertragung mit "
+    IDS_H36                 "verbunden "
+    IDS_H37                 "Connecting. Please Wait..."
+    IDS_H38                 "already exists on REMOTE machine.\n Do you want to overwrite it or resume the transfer ?\n"
+    IDS_H39                 "Dateiübertragungs-Warnung"
+    IDS_H40                 "File(s)/Folder(s) selected for transfer"
+    IDS_H41                 "Starting Transfer. Sending"
+    IDS_H42                 "File(s)/Folder(s) to Remote Machine"
+    IDS_H43                 "already exists on LOCAL machine.\n Do you want to overwrite it or resume the transfer ?\n"
+    IDS_H44                 "Starting Transfer. Receiving"
+    IDS_H45                 "File(s)/Folder(s) from Remote Machine "
+    IDS_H46                 "Please select a file to delete. \nOnly one file can be deleted at a time."
+    IDS_H47                 "File Deletion Warning"
+    IDS_H48                 "Are you sure you want to Delete the LOCAL File"
+    IDS_H49                 "Unable to delete the Local File"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_H50                 "has been Deleted"
+    IDS_H51                 "Are you sure you want to Delete the REMOTE File"
+    IDS_H52                 "Please enter new Local Folder Name:"
+    IDS_H53                 "Unable to create the Local Folder"
+    IDS_H54                 "Local Folder"
+    IDS_H55                 "has been created"
+    IDS_H56                 "Please enter new Remote Folder Name:"
+    IDS_H57                 "File Transfer"
+    IDS_I1                  "Error creating Daemon socket"
+    IDS_I2                  "Error binding Daemon socket"
+    IDS_I3                  "Error when Daemon listens"
+    IDS_J1                  "To exit from full-screen mode, use Ctrl-Esc Esc and then\r\nright-click on the vncviewer taskbar icon to see the menu."
+    IDS_J2                  "VNCviewer full-screen mode"
+    IDS_K2                  "Error saving file"
+    IDS_K1                  "Invalid filename"
+    IDS_K3                  "Do you want to save the password in this file?\n\r If you say Yes, anyone with access to this file could access your session\n\r and (potentially) discover your VNC password."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_K4                  "Security warning"
+    IDS_K5                  "Error reading host name from file"
+    IDS_K6                  "Config file error"
+    IDS_K7                  "Error reading port number from file"
+    IDS_L1                  "unknown"
+    IDS_L2                  "STRG+ALT+ENTF zum Host schicken"
+    IDS_L3                  "Vollbildmodus umschalten (AN/AUS)"
+    IDS_L4                  "Verbindungsoptionen anzeigen"
+    IDS_L5                  "Bildschirm aktualisieren"
+    IDS_L6                  "Sende START  (Strg+Esc) zum Server"
+    IDS_L7                  "Sende benutzerdefiniertes Zeichen"
+    IDS_L8                  "Zeige Statusfenster"
+    IDS_L9                  "Schließe Verbindung"
+    IDS_L10                 "verstecke Toolbar"
+    IDS_L11                 "Remote-Steuerung und 'Schwarzer Bildschirm' umschalten (AN/AUS)"
+    IDS_L12                 "Öffne Dateiübertragung "
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_L13                 "Wähle einzelnes Fenster"
+    IDS_L14                 "Wähle kompletten Desktop"
+    IDS_L15                 "Chat Öffnen"
+    IDS_L16                 "Dateiübertragung ... \tStrg+Alt+F7"
+    IDS_L17                 "Chat  \tStrg+Alt+F8"
+    IDS_L18                 "Toolbar zeigen  \tStrg+Alt+F9"
+    IDS_L19                 "Remoteeingabe sperren/Monitor dunkelschalten"
+    IDS_L20                 "Remoteeingabe freigeben/Monitor aktivieren"
+    IDS_L21                 "Verbindungsoptionen  \tStrg+Alt+F6 "
+    IDS_L22                 "Verbindungs-Info"
+    IDS_L23                 "Aktualisieren"
+    IDS_L24                 "Vollbildschirm \tStrg+Alt+F12 "
+    IDS_L25                 "Skalierte Anzeige  \tStrg+Alt+F10 "
+    IDS_L26                 "Skalierung auf 50 Prozent \tStrg+Alt+F11 "
+    IDS_L27                 "&Fuzzy Anzeige"
+    IDS_L28                 "&Normale Anzeige \tStrg+F11 "
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_L29                 "Echtfarben"
+    IDS_L30                 "256 Farben"
+    IDS_L31                 "STRG+ALT+ENTF senden \tStrg+Alt+F4"
+    IDS_L32                 "STRG+ESC (Startmenü) senden "
+    IDS_L33                 "STRG drücken"
+    IDS_L34                 "STRG loslassen"
+    IDS_L35                 "ALT-Taste drücken"
+    IDS_L36                 "ALT-Taste loslassen"
+    IDS_L37                 "Neue Verbindung"
+    IDS_L38                 "Verbindung speichern unter  \tStrg+Alt+F5"
+    IDS_L39                 "&About VNC Viewer..."
+    IDS_L40                 "Serverdienst beenden"
+    IDS_L41                 "DSMPlugin kann nicht konfiguriert werden "
+    IDS_L42                 "Benutzerabbruch"
+    IDS_L43                 "verbinde"
+    IDS_L44                 "Verbindung fehlgeschlagen !"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_L45                 "Namensauflösung"
+    IDS_L46                 "Namensauflösung fehlgeschlagen !"
+    IDS_L47                 "verbinde zum Server "
+    IDS_L48                 "Verbindung zum Server fehlgeschlagen !"
+    IDS_L49                 "verbunden "
+    IDS_L50                 "Error disabling Nagle's algorithm"
+    IDS_L51                 "Dieser Server verwendet ein veraltetes Authentisierungsschema das nicht mehr unterstützt wird !"
+    IDS_L52                 "Protocol Version error"
+    IDS_L53                 "leeres Kennwort"
+    IDS_L54                 "Authentisierung abgebrochen"
+    IDS_L55                 "Kennwort angenommen "
+    IDS_L56                 "Falsches Kennwort"
+    IDS_L57                 "VNC Authentisierung fehlgeschlagen!"
+    IDS_L58                 "VNC Authentisierung fehlgeschlagen - zu viele Versuche! "
+    IDS_L59                 "Unknown VNC authentication result!"
+    IDS_L60                 "unbekanntes Authentisierung-Schema"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_L61                 "Error creating local image of screen."
+    IDS_L62                 "Bitte warten - Startbildschirm wird geladen "
+    IDS_L63                 "Unhandled SetColormap message type received!\n"
+    IDS_L64                 "Unhandled message type received!\n"
+    IDS_L65                 "WriteExact: DSMPlugin-RestoreBuffer Alloc Error."
+    IDS_L66                 "WriteExact: DSMPlugin-RestoreBuffer Error."
+    IDS_L67                 "Verbindung getrennt"
+    IDS_L68                 "WriteExact: DSMPlugin-TransformBuffer Error."
+    IDS_L69                 "WriteExact: Socket error while writing."
+    IDS_L70                 "Insufficient memory to allocate network buffer."
+    IDS_L71                 "Insufficient memory to allocate zlib buffer."
+    IDS_L72                 "VNCViewer-Status für "
+    IDS_L73                 "VNCViewer-Status "
+    IDS_L74                 "keine Verbindung"
+    IDS_L75                 "Sind Sie sicher, daß sie das Programm beenden möchten?"
+    IDS_L76                 "VNCViewer wird geschlossen"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_L77                 "der Remote-Server unterstützt keine Dateiübertragung !"
+    IDS_L78                 "Funktion auf der Gegenseite nicht vorhanden"
+    IDS_L79                 "Das Dateiübertragungsfenster ist schon geöffnet"
+    IDS_L80                 "Dateiübertragungs-Warnung"
+    IDS_L81                 "der Remote-Server unterstützt kein Chatten !"
+    IDS_L82                 "Funktion auf der Gegenseite nicht vorhanden"
+    IDS_L83                 "Das Chat-Fenster ist schon geöffnet"
+    IDS_L84                 "Chat-Warnung"
+    IDS_L85                 "bitte zuerst das Dateiübertragungsfenster schließen"
+    IDS_L86                 "bitte zuerst das Chat-Fenster schließen"
+    IDS_L87                 "bitte zuerst das Verbindungsoptionen-Fenster schließen"
+    IDS_L88                 "Warnung"
+    IDS_L89                 "Vermittele Protokoll-Version.."
+    IDS_L90                 "Kennwort verlangt"
+    IDS_L91                 "Anschluß ausgefallen"
+    IDS_L92                 "keine Authentisierung benötigt..."
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_H58                 "File(s)/Folder(s)"
+    IDS_H59                 "Decompressing Folder"
+    IDS_H60                 "after reception. Please Wait..."
+    IDS_H61                 "Remote Folder"
+    IDS_H62                 "ERROR during decompression of received Remote Folder (missing UnZip32.dll ?)"
+    IDS_H63                 "Aborted."
+    IDS_H64                 "Compressing Local Folder"
+    IDS_H65                 "for transfer. Please Wait..."
+    IDS_H66                 "Local Folder"
+    IDS_H67                 "successfully compressed."
+    IDS_H68                 "ERROR during compression of Local Folder (missing Zip32.dll ?)"
+    IDS_H69                 "Transfer Aborted."
+    IDS_H70                 "successfully SENT."
+    IDS_H71                 "The REMOTE Folder"
+    IDS_H72                 "already exists.\n Are you sure you want to OVERWRITE it as well as ALL its Files and SubFolders ?"
+    IDS_H73                 "The LOCAL Folder"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_M1                  "One File or Directory can be renamed at a time"
+    IDS_M2                  "File & Directory Rename Warning"
+    IDS_M3                  "File & Directory Rename"
+    IDS_M4                  "Please enter the new name:"
+    IDS_M5                  "ERROR: Rename failed for "
+    IDS_M6                  "Renamed LOCAL"
+    IDS_M7                  "to"
+    IDS_M8                  "Renamed REMOTE"
+END
+
+#endif    // German (Germany) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

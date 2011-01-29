@@ -1,0 +1,33 @@
+# ------------- Borland C++ 5.5 (Win32) -------------
+
+CC=bcc32
+LIB=tlib
+
+CFLAGS= -v- -O2 -3 -tWM -q -P -xd- -w-8004 -w-8057
+LIBFLAGS= /C
+
+OBJS=FdInStream.obj FdOutStream.obj InStream.obj NullOutStream.obj \
+       ZlibInStream.obj ZlibOutStream.obj
+
+pOBJS=+FdInStream.obj+FdOutStream.obj+InStream.obj+NullOutStream.obj \
+       +ZlibInStream.obj+ZlibOutStream.obj
+
+LIBS=..\zlib\zlib.lib
+
+.autodepend
+.cxx.obj:
+	$(CC) -c $(CFLAGS) $<
+
+rdr.lib: $(OBJS) $(LIBS)
+	 @if exist $@ del $@
+	 $(LIB) $@ $(LIBFLAGS) $(pOBJS)
+
+..\zlib\zlib.lib:
+	cd ..
+	cd zlib
+	make -fMakefile.bcc32 -l -s
+	cd ..
+
+clean:
+	del *.obj *.lib
+

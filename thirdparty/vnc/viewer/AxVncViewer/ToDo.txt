@@ -1,0 +1,8 @@
+Things to do
+------------
+
+Allow full mouse-button remapping for left-handers.
+Allow arbitrary key remapping?
+Add option to hide local 'dot' cursor.
+Some way of specifying password on command line - dangerous.
+

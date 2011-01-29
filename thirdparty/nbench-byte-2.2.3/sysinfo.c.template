@@ -1,0 +1,10 @@
+sprintf(buffer,"**System used for compilation:\n");
+output_string(buffer);
+sprintf(buffer,"**%SYSTEM%\n");
+output_string(buffer);
+sprintf(buffer,"**C compiler: %CCVERSION%\n");
+output_string(buffer);
+sprintf(buffer,"**libc: %LIBCVERSION%\n");
+output_string(buffer);
+sprintf(buffer,"**Date of compilation: %DATE%\n");
+output_string(buffer);

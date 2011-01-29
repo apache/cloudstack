@@ -1,0 +1,33 @@
+I plan on posting a digest of results in case people mail me any.
+The URL will be linked to
+
+http://www.tux.org/~mayer/linux/bmark.html
+
+If you want to submit, then run the benchmark (use your own
+compilation, I don't care with what flags or compiler, but I want all
+numbers from a single benchmark run) and fill in the template as given
+in the example below:
+
+CPU                             : AMD 5x86P75 (486DX4/133MHz)
+L2 CACHE                        : 256 KB
+OS                              : Linux 2.0.32
+C COMPILER                      : gcc 2.7.2.3
+LIBC                            : libc-5.4.38
+Pentium 90 INTEGER INDEX        : 1.051
+Pentium 90 FLOATING-POINT INDEX : 0.450
+AMD K6/233 MEMORY INDEX         : 0.337
+AMD K6/233 INTEGER INDEX        : 0.238
+AMD K6/233 FLOATING-POINT INDEX : 0.230
+
+Any other format is fine as long as it contains the same info (write
+"unknown" or "?" for data you don't know). For example, you could just
+cut the summary from the output of nbench and mail it together with
+cache, CPU, and OS info in case it is not already present. Please do
+not email me the complete output of nbench, or any other unnecessarily
+long email, as this just eats up my hard-disk space.  However, long
+collections of results are of course welcome.
+
+Send your result to mayer@tux.org
+
+Uwe F. Mayer
+February 18, 2003

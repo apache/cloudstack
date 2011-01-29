@@ -1,0 +1,138 @@
+December 7, 1997
+
+This file contains a few results so you may compare your machine.
+If you read this much after December 1997 then the results herein
+are probably obsolete.
+
+For a longer and hopefully more up-to-date list of results consult
+http://www.tux.org/~mayer/linux/bmark.html
+This web site, however, currently lists the old Pentium 90 indices!
+
+The indices below are with respect to the new AMD K6/233 baseline.
+
+OS                  : DEC Ultrix 4.4
+C compiler          : cc
+libc                : unknown version
+CPU                 : mips R6000
+L2 cache            : ?
+MEMORY INDEX        : 0.029
+INTEGER INDEX       : 0.046
+FLOATING-POINT INDEX: 0.077
+
+OS                  : LINUX 2.0.31
+C compiler          : gcc version 2.7.2.3
+libc                : libc.so.5.4.38
+CPU                 : Intel 486DX2/66 MHz
+L2 cache            : 256 KB
+MEMORY INDEX        : 0.098
+INTEGER INDEX       : 0.141
+FLOATING-POINT INDEX: 0.116
+
+OS                  : LINUX 2.0.32
+C compiler          : gcc version 2.7.2.3
+libc                : libc.so.5.4.38
+CPU                 : AMD 5x86P75 (486DX4/133MHz)
+L2 cache            : 256 KB
+MEMORY INDEX        : 0.234
+INTEGER INDEX       : 0.286
+FLOATING-POINT INDEX: 0.249
+
+OS                  : OSF1 V3.2 214
+C compiler          : cc
+libc                : unknown version
+CPU                 : 21064 alpha (DEC 3000 MODEL 300, year 1993)
+L2 cache            : 256 KB
+MEMORY INDEX        : 0.358
+INTEGER INDEX       : 0.362
+FLOATING-POINT INDEX: 0.656
+
+OS                  : HP-UX A.09.05
+C compiler          : gcc version 2.7.2.1
+libc                : unknown version
+CPU                 : 9000/715
+L2 cache            : ?
+MEMORY INDEX        : 0.208
+INTEGER INDEX       : 0.369
+FLOATING-POINT INDEX: 0.516
+
+OS                  : LINUX 2.0.31
+C compiler          : gcc version 2.7.2.3
+libc                : libc.so.5.4.38
+CPU                 : Intel Pentium 133 MHz
+L2 cache            : 512 KB
+MEMORY INDEX        : 0.383
+INTEGER INDEX       : 0.444
+FLOATING-POINT INDEX: 0.632
+
+OS                  : SunOS 5.5.1
+C compiler          : cc
+libc                : unknown version
+CPU                 : SUN-Ultra-Enterprise-2 sparc
+L2 cache            : ?
+MEMORY INDEX        : 0.417
+INTEGER INDEX       : 0.546
+FLOATING-POINT INDEX: 1.028
+
+OS                  : LINUX 2.0.29
+C compiler          : gcc version 2.7.2.3
+libc                : libc.so.5.4.38
+CPU                 : Cyrix 6x86L PR200+ (at 2 x 75 = 150 MHz)
+L2 cache            : 256 KB
+MEMORY INDEX        : 0.666
+INTEGER INDEX       : 0.599
+FLOATING-POINT INDEX: 0.508
+
+OS                  : LINUX 2.0.31
+C compiler          : gcc version 2.7.2.3
+libc                : libc.so.5.4.38
+CPU                 : Intel Pentium MMX 200 MHz
+L2 cache            : 512 KB
+MEMORY INDEX        : 0.601
+INTEGER INDEX       : 0.636
+FLOATING-POINT INDEX: 0.970
+
+OS                  : LINUX 2.0.31
+C compiler          : gcc version 2.7.2.3
+libc                : libc.so.5.4.38
+CPU                 : Intel 686 PentiumPro 200 MHz
+L2 cache            : 256 KB (internal)
+MEMORY INDEX        : 0.699
+INTEGER INDEX       : 0.732
+FLOATING-POINT INDEX: 1.140
+
+OS                  : LINUX 2.0.29
+C compiler          : gcc version 2.7.2.3
+libc                : libc.so.5.4.38
+CPU                 : Cyrix 6x86MX PR233 (at 2.5 x 75 = 187.5 MHz)
+L2 cache            : 512 KB
+MEMORY INDEX        : 0.861
+INTEGER INDEX       : 0.773
+FLOATING-POINT INDEX: 0.730
+
+OS                  : LINUX 2.0.32
+C compiler          : gcc version 2.7.2.3
+libc                : libc.so.5.4.38
+CPU                 : AMD K6/233
+L2 cache            : 512 KB
+MEMORY INDEX        : 1.000
+INTEGER INDEX       : 1.000
+FLOATING-POINT INDEX: 1.000
+
+OS                  : LINUX 2.0.31
+C compiler          : gcc version 2.7.2.3
+libc                : libc.so.5.4.38
+CPU                 : Intel 686 Pentium II 300 MHz
+L2 cache            : 512 KB
+MEMORY INDEX        : 1.255
+INTEGER INDEX       : 1.093
+FLOATING-POINT INDEX: 1.842
+
+OS                  : DEC UNIX 4.0b 564
+C compiler          : cc
+libc                : unknown version
+CPU                 : 21164 Alpha 300 MHz (dual CPU)
+L2 cache            : 96 KB
+L3 cache            : 4 MB per CPU
+MEMORY INDEX        : 0.973
+INTEGER INDEX       : 1.124
+FLOATING-POINT INDEX: 3.237

@@ -1,0 +1,353 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+
+
+
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>ws-xmlrpc - XML-RPC Data Types</title>
+    <style type="text/css" media="all">
+      @import url("./css/maven-base.css");
+      @import url("./css/maven-theme.css");
+      @import url("./css/site.css");
+    </style>
+    <link rel="stylesheet" href="./css/print.css" type="text/css" media="print" />
+        <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+      </head>
+  <body class="composite">
+    <div id="banner">
+                  <a href="" id="bannerLeft">
+    
+                                            <img src="images/xmlrpc-logo.gif" alt="" />
+    
+            </a>
+                    <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="breadcrumbs">
+          
+  
+
+  
+    
+  
+  
+    
+            <div class="xleft">
+        Last Published: 2010-02-06
+                      </div>
+            <div class="xright">            <a href="http://www.apache.org/" class="externalLink">Apache</a>
+            |
+                <a href="../">Webservices</a>
+            |
+                <a href="">XML-RPC</a>
+            
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="leftColumn">
+      <div id="navcolumn">
+           
+  
+
+  
+    
+  
+  
+    
+                   <h5>XML-RPC</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="index.html">Overview</a>
+          </li>
+              
+    <li class="none">
+                    <a href="download.html">Download</a>
+          </li>
+              
+    <li class="none">
+                    <a href="changes-report.html">Changes</a>
+          </li>
+              
+    <li class="none">
+                    <a href="mail-lists.html">Mailing Lists</a>
+          </li>
+              
+    <li class="none">
+                    <a href="contributing.html">Contributing</a>
+          </li>
+              
+    <li class="none">
+                    <a href="xmlrpc2">XML-RPC 2</a>
+          </li>
+              
+    <li class="none">
+                    <a href="links.html">Links</a>
+          </li>
+          </ul>
+              <h5>Documentation</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="client.html">Client Classes</a>
+          </li>
+              
+    <li class="none">
+                    <a href="server.html">Server Side XML-RPC</a>
+          </li>
+              
+    <li class="none">
+                    <a href="extensions.html">Vendor Extensions</a>
+          </li>
+              
+    <li class="none">
+                    <a href="ssl.html">SSL</a>
+          </li>
+              
+    <li class="none">
+                    <a href="introspection.html">Introspection</a>
+          </li>
+              
+    <li class="none">
+                    <a href="advanced.html">Advanced Techniques</a>
+          </li>
+              
+    <li class="none">
+              <strong>XML-RPC Types</strong>
+        </li>
+              
+    <li class="none">
+                    <a href="faq.html">FAQ</a>
+          </li>
+              
+    <li class="none">
+                    <a href="apidocs/index.html">Javadocs</a>
+          </li>
+          </ul>
+              <h5>Project Documentation</h5>
+            <ul>
+              
+                
+              
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-info.html">Project Information</a>
+                </li>
+              
+                
+              
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-reports.html">Project Reports</a>
+                </li>
+          </ul>
+                                           <a href="http://maven.apache.org/" title="Built by Maven" class="poweredBy">
+            <img alt="Built by Maven" src="./images/logos/maven-feather.png"></img>
+          </a>
+                       
+  
+
+  
+    
+  
+  
+    
+        </div>
+    </div>
+    <div id="bodyColumn">
+      <div id="contentBox">
+        <div class="section"><h2>Data Types</h2>
+<p>The <a href="http://www.xmlrpc.com/spec" class="externalLink">XML-RPC specification</a> defines the following available data types:</p>
+<table class="bodyTable"><tbody><tr class="a"><td align="left">Java Type</td>
+<td align="left">XML Tag Name</td>
+<td align="left">Description</td>
+</tr>
+<tr class="b"><td align="left">Integer</td>
+<td align="left"><i>i4</i>, or<br />
+<i>int</i></td>
+<td align="left">A 32-bit, signed, and non-null,<br />
+integer value.</td>
+</tr>
+<tr class="a"><td align="left">Boolean</td>
+<td align="left"><i>boolean</i></td>
+<td align="left">A non-null, boolean value (0, or<br />
+1).</td>
+</tr>
+<tr class="b"><td align="left">String</td>
+<td align="left"><i>string</i></td>
+<td align="left">A string, non-null.</td>
+</tr>
+<tr class="a"><td align="left">Double</td>
+<td align="left"><i>double</i></td>
+<td align="left">A signed, non-null, double<br />
+precision, floating point number.<br />
+(64 bit)</td>
+</tr>
+<tr class="b"><td align="left">java.util.Date</td>
+<td align="left"><i>dateTime.iso8601</i></td>
+<td align="left">A pseudo ISO8601 timestamp, like<br />
+19980717T14:08:55. However,<br />
+compared to a true ISO8601 value,<br />
+milliseconds, and time zone<br />
+informations are missing.</td>
+</tr>
+<tr class="a"><td align="left">byte[]</td>
+<td align="left"><i>base64</i></td>
+<td align="left">A base64 encoded byte array.</td>
+</tr>
+<tr class="b"><td align="left">java.util.Map</td>
+<td align="left"><i>struct</i></td>
+<td align="left">A key value pair. The keys are<br />
+strings. The values may be any<br />
+valid data type, including another<br />
+map.</td>
+</tr>
+<tr class="a"><td align="left">Object[]<br />
+java.util.List</td>
+<td align="left"><i>array</i></td>
+<td align="left">An array of objects. The array<br />
+elements may be any valid data<br />
+type, including another array.<br />
+The server may return other arrays (for<br />
+example String[]) or lists (using<br />
+generics). However, the client will<br />
+always return an Object[], because<br />
+the XML-RPC protocol doesn't include<br />
+between different array types.</td>
+</tr>
+</tbody>
+</table>
+<p>If the property <tt>enabledForExtensions</tt> is set, then additional data types become valid. (Both client and server do support this property.)</p>
+<table class="bodyTable"><tbody><tr class="b"><td align="left">Java Type</td>
+<td align="left">XML Tag Name</td>
+<td align="left">Description</td>
+</tr>
+<tr class="a"><td align="left">None</td>
+<td align="left"><i>ex:nil</i></td>
+<td align="left">A typeless null value.</td>
+</tr>
+<tr class="b"><td align="left">Byte</td>
+<td align="left"><i>ex:i1</i></td>
+<td align="left">A 8-bit, signed, and non-null,<br />
+integer value.</td>
+</tr>
+<tr class="a"><td align="left">Float</td>
+<td align="left"><i>ex:float</i></td>
+<td align="left">A signed, non-null, double<br />
+precision, floating point number.<br />
+(32 bit)</td>
+</tr>
+<tr class="b"><td align="left">Long</td>
+<td align="left"><i>ex:i8</i></td>
+<td align="left">A 64-bit, signed, and non-null,<br />
+integer value.</td>
+</tr>
+<tr class="a"><td align="left">org.w3c.dom.Node</td>
+<td align="left"><i>ex:dom</i></td>
+<td align="left">A DOM node, which is being<br />
+transmitted as an embedded XML<br />
+fragment.</td>
+</tr>
+<tr class="b"><td align="left">Short</td>
+<td align="left"><i>ex:i2</i></td>
+<td align="left">A 16-bit, signed, and non-null,<br />
+integer value.</td>
+</tr>
+<tr class="a"><td align="left">java.io.Serializable</td>
+<td align="left"><i>ex:serializable</i></td>
+<td align="left">An object, which is converted into<br />
+a serialized representation and<br />
+transmitted as a base 64 encoded<br />
+byte array.</td>
+</tr>
+<tr class="b"><td align="left">BigDecimal</td>
+<td align="left"><i>ex:bigdecimal</i></td>
+<td align="left">A BigDecimal</td>
+</tr>
+<tr class="a"><td align="left">BigInteger</td>
+<td align="left"><i>ex:biginteger</i></td>
+<td align="left">A BigInteger</td>
+</tr>
+<tr class="b"><td align="left">java.util.Calendar</td>
+<td align="left"><i>ex:dateTime</i></td>
+<td align="left">Unlike the dateTime.iso8601 type,<br />
+this is a full blown xs:dateTime<br />
+value. In particular, it includes<br />
+milliseconds, and timezone settings.</td>
+</tr>
+</tbody>
+</table>
+<p>In the above table, the prefix <tt>ex</tt> refers to the namespace URI <tt>http://ws.apache.org/xmlrpc/namespaces/extensions</tt>.</p>
+</div>
+
+      </div>
+    </div>
+    <div class="clear">
+      <hr/>
+    </div>
+    <div id="footer">
+      <div class="xright">&#169;  
+          2001-2010
+    
+          The Apache Software Foundation
+          
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+[version]
+signature="$CHICAGO$"
+AdvancedINF=2.0
+
+[Add.Code]
+vmopsvnc.dll=vmopsvnc.dll
+
+[vmopsvnc.dll]
+file-win32-x86=thiscab
+clsid={39C57AE1-6734-449a-AD3C-77154CD41468}
+FileVersion=1,0,0,1
+RegisterServer=yes
+

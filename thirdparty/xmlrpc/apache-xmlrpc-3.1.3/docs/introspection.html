@@ -1,0 +1,261 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+
+
+
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>ws-xmlrpc - Advanced Programming Topics</title>
+    <style type="text/css" media="all">
+      @import url("./css/maven-base.css");
+      @import url("./css/maven-theme.css");
+      @import url("./css/site.css");
+    </style>
+    <link rel="stylesheet" href="./css/print.css" type="text/css" media="print" />
+        <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+      </head>
+  <body class="composite">
+    <div id="banner">
+                  <a href="" id="bannerLeft">
+    
+                                            <img src="images/xmlrpc-logo.gif" alt="" />
+    
+            </a>
+                    <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="breadcrumbs">
+          
+  
+
+  
+    
+  
+  
+    
+            <div class="xleft">
+        Last Published: 2010-02-06
+                      </div>
+            <div class="xright">            <a href="http://www.apache.org/" class="externalLink">Apache</a>
+            |
+                <a href="../">Webservices</a>
+            |
+                <a href="">XML-RPC</a>
+            
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="leftColumn">
+      <div id="navcolumn">
+           
+  
+
+  
+    
+  
+  
+    
+                   <h5>XML-RPC</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="index.html">Overview</a>
+          </li>
+              
+    <li class="none">
+                    <a href="download.html">Download</a>
+          </li>
+              
+    <li class="none">
+                    <a href="changes-report.html">Changes</a>
+          </li>
+              
+    <li class="none">
+                    <a href="mail-lists.html">Mailing Lists</a>
+          </li>
+              
+    <li class="none">
+                    <a href="contributing.html">Contributing</a>
+          </li>
+              
+    <li class="none">
+                    <a href="xmlrpc2">XML-RPC 2</a>
+          </li>
+              
+    <li class="none">
+                    <a href="links.html">Links</a>
+          </li>
+          </ul>
+              <h5>Documentation</h5>
+            <ul>
+              
+    <li class="none">
+                    <a href="client.html">Client Classes</a>
+          </li>
+              
+    <li class="none">
+                    <a href="server.html">Server Side XML-RPC</a>
+          </li>
+              
+    <li class="none">
+                    <a href="extensions.html">Vendor Extensions</a>
+          </li>
+              
+    <li class="none">
+                    <a href="ssl.html">SSL</a>
+          </li>
+              
+    <li class="none">
+              <strong>Introspection</strong>
+        </li>
+              
+    <li class="none">
+                    <a href="advanced.html">Advanced Techniques</a>
+          </li>
+              
+    <li class="none">
+                    <a href="types.html">XML-RPC Types</a>
+          </li>
+              
+    <li class="none">
+                    <a href="faq.html">FAQ</a>
+          </li>
+              
+    <li class="none">
+                    <a href="apidocs/index.html">Javadocs</a>
+          </li>
+          </ul>
+              <h5>Project Documentation</h5>
+            <ul>
+              
+                
+              
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-info.html">Project Information</a>
+                </li>
+              
+                
+              
+      
+            
+      
+            
+      
+              
+        <li class="collapsed">
+                    <a href="project-reports.html">Project Reports</a>
+                </li>
+          </ul>
+                                           <a href="http://maven.apache.org/" title="Built by Maven" class="poweredBy">
+            <img alt="Built by Maven" src="./images/logos/maven-feather.png"></img>
+          </a>
+                       
+  
+
+  
+    
+  
+  
+    
+        </div>
+    </div>
+    <div id="bodyColumn">
+      <div id="contentBox">
+        <p>Apache XML-RPC supports XML-RPC introspection, as specified by <a href="http://scripts.incutio.com/xmlrpc/introspection.html" class="externalLink"> http://scripts.incutio.com/xmlrpc/introspection.html</a>. This page describes how to configure the XML-RPC server for introspection.</p>
+<div class="section"><h2>What is introspection?</h2>
+<p>Introspection is the servers ability to provide metadata to the client. The client may ask &quot;What method names does the server offer?&quot;, &quot;How do I invoke method 'foo'?&quot;, or &quot;Can you give me help on method 'foo'?&quot;.</p>
+<p>The client does so by invoking the special methods &quot;system.listMethods&quot;, &quot;system.methodSignature&quot; and &quot;system.methodHelp&quot;. These are described in detail in the non-official specification for XML-RPC introspection, which you'll find at <a href="http://scripts.incutio.com/xmlrpc/introspection.html" class="externalLink"> http://scripts.incutio.com/xmlrpc/introspection.html</a>.</p>
+</div>
+<div class="section"><h2>How do I configure the server for introspection?</h2>
+<p>The server requires a special mapping. Basically, you simply add a &quot;system&quot; handler, which is implemented by the class <tt>XmlRpcSystemImpl</tt>. Here's how you would do that in the <tt>XmlRpcServlet</tt>:</p>
+<div class="source"><pre>    public class MyXmlRpcServlet extends XmlRpcServlet {
+                protected XmlRpcHandlerMapping newXmlRpcHandlerMapping()
+                        throws XmlRpcException {
+                        PropertyHandlerMapping mapping =
+                            (PropertyHandlerMapping) newXmlRpcHandlerMapping();
+                        XmlRpcSystemImpl.addSystemHandler(mapping);
+                }
+    }</pre>
+</div>
+<p>Quite similar, you would override a protected method, if you prefer using the <tt>WebServer</tt> class:</p>
+<div class="source"><pre>    public class MyWebServer extends WebServer {
+        public MyWebServer(int pPort) {
+            super(pPort);
+        }
+
+                protected XmlRpcStreamServer newXmlRpcStreamServer(){
+                        XmlRpcStreamServer xmlRpcStreamServer = new ConnectionServer();
+                        PropertyHandlerMapping mapping = (PropertyHandlerMapping) xmlRpcStreamServer.getHandlerMapping();
+                        XmlRpcSystemImpl.addSystemHandler(mapping);
+                        return xmlRpcStreamServer;
+                }
+    }</pre>
+</div>
+</div>
+
+      </div>
+    </div>
+    <div class="clear">
+      <hr/>
+    </div>
+    <div id="footer">
+      <div class="xright">&#169;  
+          2001-2010
+    
+          The Apache Software Foundation
+          
+  
+
+  
+    
+  
+  
+    
+  </div>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+  </body>
+</html>

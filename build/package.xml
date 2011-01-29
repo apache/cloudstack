@@ -139,7 +139,13 @@
     </zip>
   </target>
 
-  <target name="build-all" depends="build-opensource, build-ui, build-war-oss">
+  <target name="conditional-build-premium" if="build.premium" >
+	  <antcall target="build-usage"/>
+	  <antcall target="build-testclient"/>
+	  <antcall target="build-premium" />
+  </target>
+
+  <target name="build-all" depends="build-opensource, build-ui, build-war-oss, conditional-build-premium">
   </target>
 
   <target name="build-war-oss" depends="-init-package" description="Compile the GWT client UI and builds WAR file.">
@@ -188,13 +194,10 @@
         <include name="${core.jar}" />
         <include name="${api.jar}" />
       </zipfileset>
-      <zipfileset dir="${console-proxy.dist.dir}">
-        <exclude name="**/*.sh" />
-        <exclude name="**/certs/" />
-        <exclude name="**/cloud-console-proxy-premium.jar" />
-      </zipfileset>
       <zipfileset dir="${console-proxy.dist.dir}" filemode="555">
         <include name="**/*.sh" />
+        <include name="**/certs/" />
+        <include name="**/cloud-console-proxy-premium.jar" />
       </zipfileset>
       <zipfileset dir="${scripts.dir}/storage/secondary" prefix="scripts/storage/secondary" filemode="555">
         <exclude name="**/.project" />

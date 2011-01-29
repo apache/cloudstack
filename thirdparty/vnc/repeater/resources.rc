@@ -1,0 +1,250 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
+#include "resources.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Dutch (Belgium) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NLB)
+#ifdef _WIN32
+LANGUAGE LANG_DUTCH, SUBLANG_DUTCH_BELGIAN
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_MYICON              ICON    DISCARDABLE     "winvnc.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDM_TRAYMENU MENU DISCARDABLE 
+BEGIN
+    POPUP "Ooops?"
+    BEGIN
+        MENUITEM "&About",                      IDM_ABOUT
+        MENUITEM "&Settings",                   IDM_SETTINGS
+        MENUITEM "&Log",                        IDM_LOG
+        MENUITEM SEPARATOR
+        MENUITEM "E&xit",                       IDM_EXIT
+    END
+END
+
+IDM_MAINMENU MENU DISCARDABLE 
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "&Save As",                    IDM_SAVEAS
+        MENUITEM SEPARATOR
+        MENUITEM "&Close",                      IDM_CLOSE
+    END
+    POPUP "&Options"
+    BEGIN
+        MENUITEM "&Settings",                   IDM_SETTINGS
+    END
+    MENUITEM "&About",                      IDM_ABOUT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+ID_SETTINGS DIALOG DISCARDABLE  0, 0, 395, 262
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "PcHelpware Repeater Rel1.0"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "Save",IDOK,322,241,54,14,WS_GROUP
+    EDITTEXT        IDC_ACCEPTPORT,12,7,40,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_LISTENPORT,12,26,40,14,ES_AUTOHSCROLL
+    LTEXT           "Listen port Viewer",IDC_STATIC,55,10,57,8
+    LTEXT           "Listen Port Server",IDC_Listen,55,30,57,8
+    EDITTEXT        IDC_EDITALLOW,12,57,143,39,ES_MULTILINE | WS_HSCROLL
+    EDITTEXT        IDC_EDITREFUSE,12,116,143,38,ES_MULTILINE | WS_HSCROLL
+    CONTROL         "Enable Mode I",IDC_ENABLE2,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,149,19,62,10
+    LTEXT           "Only Allow Connection to Server",IDC_STATIC,12,45,102,8
+    LTEXT           "Refuse connections to Server",IDC_STATIC,12,102,95,8
+    CONTROL         "",IDC_ALLOW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,124,
+                    44,16,8
+    CONTROL         "",IDC_REFUSE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,124,
+                    103,16,8
+    PUSHBUTTON      "CANCEL",IDCANCEL,256,241,50,14
+    EDITTEXT        IDC_PORTSERVER,115,168,40,14,ES_AUTOHSCROLL
+    LTEXT           "Restrict access to server port\n0 = All ports\n0 is needed for Mode II",
+                    IDC_STATIC,12,164,96,31
+    CONTROL         "Enable Mode II",IDC_ENABLE,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,149,31,64,10
+    EDITTEXT        IDC_EDITREFUSE2,12,219,215,38,ES_MULTILINE | WS_HSCROLL
+    LTEXT           "Only allow ID (nr;nr;nr)",IDC_STATIC,12,202,89,8
+    CONTROL         "",IDC_REFUSE2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,124,
+                    202,16,8
+    CONTROL         "Enbale proxy(443)",IDC_ENABLE3,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,149,7,73,10
+    CONTROL         "Enable dynamic ip service",IDC_ENABLE4,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,242,227,98,10
+    LTEXT           "Enable Proxy:  Viewer and server use the same port 443.  This options is used by the https mode from server and viewer",
+                    IDC_STATIC,232,7,150,32
+    LTEXT           "Enable dynamic service: This service use port 5912 (Fix).  Using the dynamic service you can easy connect to a viewer with a dynamic ipaddress.  The servce record the relationship between ""dynalias name"" and dynamic ip address.",
+                    IDC_STATIC,232,44,150,58
+    LTEXT           "Mode I: Only used by SC",IDC_STATIC,231,107,150,15
+    LTEXT           "Mode II: Can be used by SC and PcHelpware.",IDC_STATIC,
+                    231,127,150,16
+    LTEXT           "<<<< 0 is NEEDED for mode II",IDC_STATIC,157,171,109,8
+    LTEXT           "More Info\nhttp://www.uvnc.com/pchelpware/index.html",
+                    IDC_STATIC,231,148,153,18
+END
+
+ID_ABOUT DIALOG DISCARDABLE  0, 0, 202, 36
+STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION
+CAPTION "About UltraVnc Repeater"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,143,10,32,14,WS_GROUP
+    ICON            IDI_MYICON,-1,8,6,20,20
+    LTEXT           "PcHelpware Repeater Rel 1.00",-1,39,4,102,8
+    LTEXT           "© Team UltraVnc 2005",-1,39,15,102,8
+    LTEXT           "All Rights Reserved",-1,39,25,102,8
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""resources.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    ID_SETTINGS, DIALOG
+    BEGIN
+        RIGHTMARGIN, 392
+        VERTGUIDE, 12
+        VERTGUIDE, 65
+        VERTGUIDE, 101
+        VERTGUIDE, 124
+        VERTGUIDE, 155
+        VERTGUIDE, 162
+        BOTTOMMARGIN, 257
+        HORZGUIDE, 210
+    END
+
+    ID_ABOUT, DIALOG
+    BEGIN
+        VERTGUIDE, 39
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,1,0,4
+ PRODUCTVERSION 1,1,0,4
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "081304b0"
+        BEGIN
+            VALUE "Comments", "\0"
+            VALUE "CompanyName", " \0"
+            VALUE "FileDescription", "distributer\0"
+            VALUE "FileVersion", "1, 1, 0, 4\0"
+            VALUE "InternalName", "distributer\0"
+            VALUE "LegalCopyright", "Copyright © 2005\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "distributer.exe\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "  distributer\0"
+            VALUE "ProductVersion", "1, 1, 0, 4\0"
+            VALUE "SpecialBuild", "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x813, 1200
+    END
+END
+
+#endif    // !_MAC
+
+#endif    // Dutch (Belgium) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

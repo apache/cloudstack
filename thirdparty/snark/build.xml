@@ -1,0 +1,214 @@
+<?xml version="1.0" standalone="yes"?>
+<!-- build configuration -->
+<project name="snark" default="compile" basedir=".">
+
+  <!-- import overriding properties -->
+  <property file="build.properties"/>
+
+  <!-- configuration parameters -->
+  <property name="app.name"       value="snark"/>
+  <property name="deploy.dir"     value="dist"/>
+  <property name="savedoc.dir"    value="docs"/>
+  <property name="lib.version"    value="0.6"/>
+
+  <!-- derived properties -->  
+  <property name="javadoc.home"   value="${deploy.dir}/docs"/>
+  <property name="classes.dir"    value="${deploy.dir}/classes"/>
+
+  <!-- import the library dependencies -->
+  <property name="libs.dir" value="../../dist/lib"/>
+  <import file="libs-incl.xml"/>
+
+  <!-- declare our classpath business -->
+  <path id="classpath">
+    <pathelement location="${classes.dir}"/>
+    <fileset dir="${deploy.dir}/lib" includes="*.jar"/>
+  </path>
+
+  <!-- checks to see which packages are available -->
+  <target name="check-available">
+    <echo level="info" message="The packages required for building are listed below."/>
+    <echo level="info" message="A package followed by 'true' indicates that the package"/>
+    <echo level="info" message="is present. One followed by '${package.present}' indicates"/>
+    <echo level="info" message="that it was not found. Jar files can be placed into the"/>
+    <echo level="info" message="lib/ directory or placed in the directory referenced"/>
+    <echo level="info" message="by your JAVA_LIBS environment variable."/>
+
+    <echo level="info" message=""/>
+    <echo level="info" message="------------------------------------------"/>
+    <echo level="info" message="GTK+ libraries - http://java-gnome.sourceforge.net/"/>
+    <echo level="info" message="------------------------------------------"/>
+    <available property="glib.present"
+     classname="org.gnu.glib.GObject" classpathref="classpath"/>
+    <echo level="info" message="GLib: ${glib.present}"/>
+    <available property="gtk+.present"
+     classname="org.gnu.gtk.Gtk" classpathref="classpath"/>
+    <echo level="info" message="GTK+: ${gtk+.present}"/>
+    <available property="gnome.present"
+     classname="org.gnu.gnome.App" classpathref="classpath"/>
+    <echo level="info" message="GNOME: ${gnome.present}"/>
+</target>
+
+  <!-- combines package availability into build controls -->
+  <target name="compute-builds" depends="check-available">
+    <echo level="info" message="The packages that will be built are listed below. One"/>
+    <echo level="info" message="followed by 'true' indicates that it will be built. One"/>
+    <echo level="info" message="followed by '${build.package}' indicates that it will"/>
+    <echo level="info" message="not be built. If a package is not being built, one or"/>
+    <echo level="info" message="more of its dependencies could not be located."/>
+
+    <condition property="build.interface.gtk">
+      <and>
+        <isset property="glib.present"/>
+        <isset property="gtk+.present"/>
+        <isset property="gnome.present"/>
+      </and>
+    </condition>
+    <echo level="info" message="org.klomp.snark.gtk: ${build.interface.gtk}"/>
+  </target>
+
+  <!-- prepares the application directories -->
+  <target name="prepare">
+    <mkdir dir="${deploy.dir}"/>
+    <mkdir dir="${deploy.dir}/lib"/>
+    <mkdir dir="${classes.dir}"/>
+    <mkdir dir="${javadoc.home}"/>
+    <copy todir="${classes.dir}">
+      <fileset dir="src/java" includes="**/*.properties"/>
+      <fileset dir="src/java" includes="**/*.tmpl"/>
+    </copy>
+    <copy todir="${deploy.dir}/lib">
+      <fileset dir="lib" includes="**/*.jar"/>
+    </copy>
+    <copy todir="${deploy.dir}/lib" flatten="true">
+      <fileset refid="${app.name}.libs"/>
+    </copy>
+  </target>
+
+  <!-- cleans out the intermediate build files -->
+  <target name="clean">
+    <delete dir="${deploy.dir}/classes"/>
+    <delete dir="${deploy.dir}/docs"/>
+  </target>
+
+  <!-- wipes the entire build directory clean -->
+  <target name="distclean" depends="clean">
+    <delete dir="${deploy.dir}"/>
+  </target>
+
+  <!-- build the java class files -->
+  <target name="compile" depends="prepare,compute-builds">
+    <javac srcdir="src/java" destdir="${classes.dir}"
+           debug="on" optimize="{$build.optimize}" deprecation="on"
+           source="1.5" target="1.5">
+      <classpath refid="classpath"/>
+      <exclude name="org/klomp/snark/gtk/**" unless="build.interface.gtk"/>
+      <compilerarg value="-Xlint:unchecked"/>
+    </javac>
+  </target>
+
+  <!-- build the javadoc documentation -->
+  <target name="javadoc" depends="prepare,compute-builds">
+    <javadoc sourcepath="src/java" packagenames="org.klomp.*"
+             destdir="${javadoc.home}" stylesheetfile="docs/stylesheet.css"
+             additionalparam="-breakiterator"
+             link="http://www.threerings.net/code/snark/snark/docs/api">
+      <classpath refid="classpath"/>
+      <link href="http://java.sun.com/j2se/1.5/docs/api/"/>
+    </javadoc>
+  </target>
+
+  <!-- builds the javadocs and stuffs them in a directory where they -->
+  <!-- won't be blown away when we do "clean" next time -->
+  <target name="savedoc" depends="javadoc">
+    <delete dir="${savedoc.dir}/api"/>
+    <copy todir="${savedoc.dir}/api">
+      <fileset dir="${javadoc.home}" includes="**/*"/>
+    </copy>
+  </target>
+
+  <!-- a target for rebuilding everything -->
+  <target name="all"
+          depends="clean,prepare,compile,javadoc,dist"/>
+
+  <!-- builds our distribution files (war and jar) -->
+  <target name="dist" depends="prepare,compile">
+    <!-- build our various jar files -->
+    <jar destfile="${deploy.dir}/${app.name}.jar" manifest="lib/manifest.mf">
+      <fileset dir="${classes.dir}" includes="org/klomp/**"
+        excludes="org/klomp/snark/gtk/**"/>
+    </jar>
+    <jar destfile="${deploy.dir}/${app.name}-gtk.jar"
+        manifest="lib/manifest-gtk.mf">
+      <fileset dir="${classes.dir}" includes="org/klomp/**"/>
+    </jar>
+  </target>
+
+  <!-- Uses gcj to prepare a native binary -->
+  <target name="ndist" depends="dist">
+    <exec dir="${deploy.dir}" executable="gcj">
+      <arg line="-classpath" />
+      <arg pathref="classpath" />
+      <arg line="-o snark" />
+      <arg line="--main=org.klomp.snark.cmd.SnarkApplication" />
+      <arg line="snark.jar"/>
+    </exec>
+  </target>
+
+  <!-- a helper task for 'retro' -->
+  <target name="vweave">
+    <!-- various bits used by the retroweaver tasks -->
+    <taskdef name="weave" classpathref="classpath"
+           classname="com.rc.retroweaver.ant.RetroWeaverTask"/>
+    <property name="inpre" value="${deploy.dir}/${app.name}"/>
+    <property name="outpre" value="${deploy.dir}/retro/${app.name}"/>
+
+    <path id="retrocp">
+      <pathelement location="/usr/local/jdk1.4/jre/lib/rt.jar"/>
+      <fileset dir="lib" includes="**/*.jar"/>
+      <fileset dir="${deploy.dir}/retro" includes="*.jar"/>
+    </path>
+    <weave inputjar="${inpre}-${which}.jar" outputjar="${outpre}-${which}.jar"
+           failonerror="true">
+      <classpath refid="retrocp"/>
+    </weave>
+  </target>
+
+  <!-- converts our 1.5 code to a 1.4 compatible format -->
+  <target name="retro" depends="dist">
+    <mkdir dir="${deploy.dir}/retro"/>
+
+    <!-- we weave everything a first time without verification so that -->
+    <!-- interdependencies will resolve the second time -->
+    <weave inputjar="${inpre}-base.jar" outputjar="${outpre}-base.jar"/>
+    <weave inputjar="${inpre}-distrib.jar" outputjar="${outpre}-distrib.jar"/>
+
+    <!-- now weave again with the verifier to check for unweavable 1.5isms -->
+    <antcall target="vweave"><param name="which" value="base"/></antcall>
+    <antcall target="vweave"><param name="which" value="distrib"/></antcall>
+  </target>
+
+  <!-- creates a tarball and zipfile for source distribution -->
+  <target name="distrib">
+     <echo level="info" message="You may want to stop and run 'ant savedoc' first."/>
+     <echo level="info" message="Building ${lib.version} tar.gz distribution..."/>
+     <tar destfile="snark-${lib.version}.tar.gz" compression="gzip">
+       <tarfileset dir=".." mode="0664" dirmode="0775">
+         <include name="snark/**"/>
+         <exclude name="snark/dist/**"/>
+         <exclude name="snark/code/**"/>
+         <exclude name="snark/snark-*.*"/>
+       </tarfileset>
+     </tar>
+     <echo level="info" message="Building ${lib.version} zip distribution..."/>
+     <zip destfile="narya-${lib.version}.zip">
+       <fileset dir="..">
+         <include name="snark/**"/>
+         <exclude name="snark/dist/**"/>
+         <exclude name="snark/code/**"/>
+         <exclude name="snark/snark-*.*"/>
+       </fileset>
+     </zip>
+  </target>
+
+</project>

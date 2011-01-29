@@ -1,0 +1,42 @@
+This is about BYTE's beta version of the native-algorithm benchmark
+
+December 16, 1996:
+
+The source for DOS is obtainable at http://www.byte.com/bmark/bmark.htm
+Linux adaptation written by Uwe F. Mayer <mayer@tux.org>
+
+February 7, 1997:
+
+added -DSOLARIS flag to support solaris
+
+November 11, 1997:
+
+added index split suggested by Andrew D. Balsa
+re-baselined to a Linux machine
+added checking of CPU-type at run-time (cpuinfo.c)
+increased maximal number of loops in some tests
+removed -DSOLARIS flag, works now automatically (this also removed the
+  compiler warnings about redefined types and leads to a 20% faster
+  code for "Bitfield" if compiled with -funroll-loops!)
+
+November 13-19, 1997:
+
+changed debugging information
+changed random number generator to be always 32 bits even on 64 bit OSs
+added data resets to Bitfield and Huffman
+created this Changes file
+added debug code for Bitfield
+
+December 6, 1997:
+
+got rid of cpuinfo.c
+added a RESULTS file
+
+December 7, 1997:
+
+fixed the statistical analysis used to compute the confidence coefficient
+fixed a bug in the DEBUG routine of "Assignment"
+
+December 11, 1997
+added some entries to RESULTS
+
