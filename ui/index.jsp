@@ -76,6 +76,9 @@
 		'label.invalid.integer': '<fmt:message key="label.invalid.integer"/>',	
 		'label.minimum': '<fmt:message key="label.minimum"/>',
 		'label.maximum': '<fmt:message key="label.maximum"/>',
+		'label.character': '<fmt:message key="label.character"/>',
+		'label.double.quotes.are.not.allowed': '<fmt:message key="label.double.quotes.are.not.allowed"/>',
+		'label.example': '<fmt:message key="label.example"/>',
 	};	
 	</script>
 </head>

@@ -1563,11 +1563,13 @@ function validateString(label, field, errMsgField, isOptional, maxLength) {
 		isValid = false;		
 	} 	
 	else if (value!=null && value.length >= maxLength) {	    
-	    errMsg = label + " must be less than " + maxLength + " characters";	   
+	    //errMsg = label + " must be less than " + maxLength + " characters";	 
+	    errMsg = g_dictionary["label.maximum"] + ": " + max + " " + g_dictionary["label.character"];   
 		isValid = false;		
 	} 	
 	else if(value!=null && value.indexOf('"')!=-1) {
-	    errMsg = "Double quotes are not allowed.";	   
+	    //errMsg = "Double quotes are not allowed";	
+	    errMsg = g_dictionary["label.double.quotes.are.not.allowed"];   
 		isValid = false;	
 	}
 	showError(isValid, field, errMsgField, errMsg);	
@@ -1584,7 +1586,8 @@ function validateIp(label, field, errMsgField, isOptional) {
         myregexp = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;	   
         var isMatch = myregexp.test(value);
         if(!isMatch) {
-            errMsg = label + " should be like 75.52.126.11";	   
+            //errMsg = label + " should be like 75.52.126.11";	   
+            errMsg = g_dictionary["label.example"] + ": 75.52.126.11";
 	        isValid = false;		
 	    }
 	}	 	
@@ -1602,7 +1605,8 @@ function validateCIDR(label, field, errMsgField, isOptional) {
         myregexp = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}$/;	   
         var isMatch = myregexp.test(value);
         if(!isMatch) {
-            errMsg = label + " should be like 10.1.1.0/24";	   
+            //errMsg = label + " should be like 10.1.1.0/24";	   
+            errMsg = g_dictionary["label.example"] + ": 10.1.1.0/24";
 	        isValid = false;		
 	    }
 	}	
@@ -1610,6 +1614,7 @@ function validateCIDR(label, field, errMsgField, isOptional) {
 	return isValid;
 }
 
+/*
 function validateFilename(label, field, errMsgField, isOptional) {  
     if(validateString(label, field, errMsgField, isOptional) == false)
         return;        
@@ -1627,6 +1632,7 @@ function validateFilename(label, field, errMsgField, isOptional) {
 	showError(isValid, field, errMsgField, errMsg);	
 	return isValid;
 }
+*/
 
 function validatePath(label, field, errMsgField, isOptional) {  
     if(validateString(label, field, errMsgField, isOptional) == false)
