@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.manager.AgentManagerImpl;
+import com.cloud.agent.manager.ClusteredAgentManagerImpl;
 import com.cloud.alert.AlertManagerImpl;
 import com.cloud.alert.dao.AlertDaoImpl;
 import com.cloud.async.AsyncJobExecutorContextImpl;
@@ -36,12 +37,14 @@ import com.cloud.async.dao.SyncQueueItemDaoImpl;
 import com.cloud.capacity.CapacityManagerImpl;
 import com.cloud.capacity.dao.CapacityDaoImpl;
 import com.cloud.certificate.dao.CertificateDaoImpl;
+import com.cloud.cluster.ClusterManagerImpl;
 import com.cloud.cluster.DummyClusterManagerImpl;
 import com.cloud.cluster.dao.ManagementServerHostDaoImpl;
 import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.configuration.dao.ResourceCountDaoImpl;
 import com.cloud.configuration.dao.ResourceLimitDaoImpl;
 import com.cloud.consoleproxy.AgentBasedStandaloneConsoleProxyManager;
+import com.cloud.consoleproxy.ConsoleProxyManagerImpl;
 import com.cloud.dao.EntityManager;
 import com.cloud.dao.EntityManagerImpl;
 import com.cloud.dc.ClusterDetailsDaoImpl;
@@ -131,6 +134,7 @@ import com.cloud.utils.component.ComponentLibrary;
 import com.cloud.utils.component.ComponentLocator.ComponentInfo;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.ClusteredVirtualMachineManagerImpl;
 import com.cloud.vm.ItWorkDaoImpl;
 import com.cloud.vm.UserVmManagerImpl;
 import com.cloud.vm.VirtualMachineManagerImpl;
@@ -315,6 +319,11 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addManager("OvsNetworkManager", OvsNetworkManagerImpl.class);
         addManager("OvsTunnelManager", OvsTunnelManagerImpl.class);
         addManager("Capacity Manager", CapacityManagerImpl.class);
+        addManager("Cluster Manager", ClusterManagerImpl.class);
+        addManager("ClusteredAgentManager", ClusteredAgentManagerImpl.class);
+        addManager("VirtualMachineManager", ClusteredVirtualMachineManagerImpl.class);
+        ComponentInfo<? extends Manager> info = addManager("ConsoleProxyManager", ConsoleProxyManagerImpl.class);
+        info.addParameter("consoleproxy.sslEnabled", "true");
     }
 
     protected <T> List<ComponentInfo<Adapter>> addAdapterChain(Class<T> interphace, List<Pair<String, Class<? extends T>>> adapters) {
