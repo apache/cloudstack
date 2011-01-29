@@ -129,7 +129,8 @@ function afterLoadIpJSP() {
 	    $("#tab_content_port_range #grid_content").append($template.show());		
 	    
 	    var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
-	    $spinningWheel.find("#description").text("Adding....");	
+	    //$spinningWheel.find("#description").text("Adding....");	
+	    $spinningWheel.find("#description").text(g_dictionary["label.adding.processing"]);	
         $spinningWheel.show();   
 	    	    
 	    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");       
@@ -225,7 +226,7 @@ function afterLoadIpJSP() {
 	    $("#tab_content_port_forwarding #grid_content").append($template.show());		
 	    
 	    var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
-	    $spinningWheel.find("#description").text("Adding....");	
+	    $spinningWheel.find("#description").text(g_dictionary["label.adding.processing"]);	
         $spinningWheel.show();   
 	    	    
 	    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");       
@@ -323,7 +324,7 @@ function afterLoadIpJSP() {
 		$("#tab_content_load_balancer #grid_content").append($template.show());		
 		
 		var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
-	    $spinningWheel.find("#description").text("Adding load balancer rule....");	
+	    $spinningWheel.find("#description").text(g_dictionary["label.adding.processing"]);	
         $spinningWheel.show();            			 
 		 			
 		var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");        
@@ -1372,9 +1373,9 @@ function portRangeJsonToTemplate(jsonObj, $template) {
     $template.find("#row_container #protocol").text(fromdb(jsonObj.protocol));      
     ipSetRuleState(fromdb(jsonObj.state), $template.find("#row_container #state"));
                 
-    $template.find("#revoke_link").unbind("click").bind("click", function(event){   		                    
+    $template.find("#delete_link").unbind("click").bind("click", function(event){   		                    
         var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");		
-        $spinningWheel.find("#description").text("Revoking....");	
+        $spinningWheel.find("#description").text(g_dictionary["label.deleting.processing"]);	
         $spinningWheel.show();   
              
         $.ajax({
@@ -1402,7 +1403,7 @@ function portRangeJsonToTemplate(jsonObj, $template) {
 											$(this).remove();													
 										});									
 									} else if (result.jobstatus == 2) { // Failed		
-									    $("#dialog_error").text("Revoking Port Range rule failed.").dialog("open");											
+									    $("#dialog_error").text(g_dictionary["label.deleting.failed"]).dialog("open");											
 									}							                    
 		                        }
 	                        },
@@ -1473,9 +1474,9 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
     var $rowContainer = $template.find("#row_container");      
     var $rowContainerEdit = $template.find("#row_container_edit");    
     		    
-    $template.find("#revoke_link").unbind("click").bind("click", function(event){   		                    
+    $template.find("#delete_link").unbind("click").bind("click", function(event){   		                    
         var $spinningWheel = $rowContainer.find("#spinning_wheel");		
-        $spinningWheel.find("#description").text("Revoking....");	
+        $spinningWheel.find("#description").text(g_dictionary["label.deleting.processing"]);	
         $spinningWheel.show();   
              
         $.ajax({
@@ -1503,7 +1504,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
 											$(this).remove();													
 										});									
 									} else if (result.jobstatus == 2) { // Failed		
-									    $("#dialog_error").text("Revoking port forwarding rule failed.").dialog("open");											
+									    $("#dialog_error").text(g_dictionary["label.deleting.failed"]).dialog("open");											
 									}							                    
 		                        }
 	                        },
@@ -1526,16 +1527,21 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
         return false;
     });
     
+    /*
     $template.find("#edit_link").unbind("click").bind("click", function(event){   		    
         $rowContainer.hide();
         $rowContainerEdit.show();
     });
+    */
     
+    /*
     $template.find("#cancel_link").unbind("click").bind("click", function(event){   		    
         $rowContainer.show();
         $rowContainerEdit.hide();
     });
+    */
     
+    /*
     $template.find("#save_link").unbind("click").bind("click", function(event){          		       
         // validate values		    
 	    var isValid = true;					    
@@ -1543,7 +1549,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
 	    if (!isValid) return;		    		        
 	    
         var $spinningWheel = $rowContainerEdit.find("#spinning_wheel");	                     
-        $spinningWheel.find("#description").text("Saving....");	
+        $spinningWheel.find("#description").text(g_dictionary["label.saving.processing"]);	
         $spinningWheel.show();  
 	    
         var publicPort = $rowContainerEdit.find("#public_port").text();
@@ -1601,6 +1607,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
 			 }
 		 });                   
     });   
+    */
 }	  
 
 function refreshCreatePortForwardingRow() {       
@@ -1714,7 +1721,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
             $managementArea.hide();
         
         var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
-	    $spinningWheel.find("#description").text("Deleting load balancer rule....");	
+	    $spinningWheel.find("#description").text(g_dictionary["label.deleting.processing"]);	
         $spinningWheel.show();           
                     
 		$.ajax({
@@ -1736,12 +1743,13 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 									return; //Job has not completed
 								} else {
 									$("body").stopTime(timerKey);
+									$spinningWheel.hide();   
 									if (result.jobstatus == 1) { // Succeeded												
 										$template.slideUp("slow", function() {
 											$(this).remove();													
 										});
-									} else if (result.jobstatus == 2) { // Failed
-										$spinningWheel.hide();   
+									} else if (result.jobstatus == 2) { // Failed										
+										$("#dialog_error").text(g_dictionary["label.deleting.failed"]).dialog("open");
 									}
 								}
 							},
@@ -1781,7 +1789,7 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 	        return;		    		        
 	    
 	    var $spinningWheel = $template.find("#row_container_edit").find("#spinning_wheel");	
-	    $spinningWheel.find("#description").text("Saving load balancer rule....");	
+	    $spinningWheel.find("#description").text(g_dictionary["label.saving.processing"]);	
         $spinningWheel.show();     
 	        		    	       
         var name = $rowContainerEdit.find("#name").val();  	

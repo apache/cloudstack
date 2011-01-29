@@ -611,7 +611,7 @@ dictionary = {
         </div>        
         <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles">
-                <a id="revoke_link" href="#" style="float:left;"><fmt:message key="label.revoke"/> </a>                            
+                <a id="delete_link" href="#" style="float:left;"><fmt:message key="label.delete"/> </a>                            
             </div>
         </div>
         <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
@@ -645,7 +645,7 @@ dictionary = {
         </div>        
         <div class="grid_row_cell" style="width: 15%;">
             <div class="row_celltitles">
-                <a id="revoke_link" href="#" style="float:left;"><fmt:message key="label.revoke"/> </a>
+                <a id="delete_link" href="#" style="float:left;"><fmt:message key="label.delete"/> </a>
                 <!--  
                 <a id="edit_link" href="#" style="float:left; margin-left:15px;">Edit</a>
                 -->                
