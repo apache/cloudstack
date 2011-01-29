@@ -41,9 +41,10 @@ def build_utils_docs ():
 # ant only needs to be reinvoked if the version with build number changes
 # we here trim all the depended targets from the target list:
 def build_jars ():
-	Implementation_Version = bld.env.VERSION
-	buildnumber = Utils.getbuildnumber()
-	if buildnumber: Implementation_Version += "." + buildnumber
+	if Options.options.VERNUM:
+		Implementation_Version = Options.options.VERNUM
+	else:
+		Implementation_Version = "2.2"
 
 	# this is to trigger recompilation / cache avoidance if the relevant environment for ant changes
 	ant_args = [
@@ -53,8 +54,8 @@ def build_jars ():
 		"-Ddist.dir=%s" % distdir,
 		"-Dbase.dir=%s" % sourcedir,
 		"-f %s" % Utils.relpath (_join(sourcedir, "build.xml")),
-		"-Dimpl.version=%s" % Utils.getbuildnumber (),
 	]
+
 	if buildpremium:
 		ant_args.append("-Dbuild.premium=true")
 

@@ -4,7 +4,6 @@
 # DISABLE the post-percentinstall java repacking and line number stripping
 # we need to find a way to just disable the java repacking and line number stripping, but not the autodeps
 
-%define _ver 2.1.97
 %define _rel 1
 
 Name:      cloud
@@ -342,7 +341,7 @@ echo Doing open source build
 %define _localstatedir /var
 %define _sharedstatedir /var/lib
 ./waf configure --prefix=%{_prefix} --libdir=%{_libdir} --bindir=%{_bindir} --javadir=%{_javadir} --sharedstatedir=%{_sharedstatedir} --localstatedir=%{_localstatedir} --sysconfdir=%{_sysconfdir} --mandir=%{_mandir} --docdir=%{_docdir}/%{name}-%{version} --with-tomcat=%{_datadir}/tomcat6 --tomcat-user=%{name} --fast --build-number=%{_ver}-%{release}
-./waf build --build-number=%{?_build_number}
+./waf build --build-number=%{?_build_number} --package-version=%{_ver}
 
 %install
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
