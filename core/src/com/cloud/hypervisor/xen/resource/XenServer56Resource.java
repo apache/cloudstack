@@ -492,7 +492,6 @@ public class XenServer56Resource extends CitrixResourceBase {
     protected SetupAnswer execute(SetupCommand cmd) {
         Connection conn = getConnection();
         try {
-            callHostPluginPremium(conn, "setupXenServer");
             cleanupTemplateSR(conn);
             Host host = Host.getByUuid(conn, _host.uuid);
             try {

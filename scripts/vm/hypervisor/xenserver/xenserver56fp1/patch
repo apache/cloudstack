@@ -40,5 +40,4 @@ setup_heartbeat_file.sh=..,0755,/opt/xensource/bin
 check_heartbeat.sh=..,0755,/opt/xensource/bin
 xenheartbeat.sh=..,0755,/opt/xensource/bin
 launch_hb.sh=..,0755,/opt/xensource/bin
-setupXenServer.sh=..,0755,/opt/xensource/bin
 vmopspremium=..,0755,/etc/xapi.d/plugins
