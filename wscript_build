@@ -310,7 +310,8 @@ def build_xml_api_description ():
 			str = 'target/jar/cloud-%s.jar' % i
 			sources.append (str)
 		sources.append ("client/tomcatconf/commands.properties.in")
-		sources.append("client/tomcatconf/commands-ext.properties.in")
+		if buildpremium:
+			sources.append("cloudstack-proprietary/premium/tomcatconf/commands-ext.properties.in")
 
 		buildproducts = []
 		for i in sources:
