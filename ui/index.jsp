@@ -143,6 +143,7 @@
 											<ul>
 												<li id="en"><fmt:message key="label.lang.english"/></li>
 												<li id="zh_CN"><fmt:message key="label.lang.chinese"/></li>
+												<li id="ja"><fmt:message key="label.lang.japanese"/></li>
 											</ul>
 										</div>
                                     </div>
