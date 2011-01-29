@@ -588,15 +588,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return null;
         }
         
-        // Change permissions for the mountpoint
-        script = new Script(!_inSystemVM, "chmod", _timeout, s_logger);
-        script.add("777", mountPoint);
-        script.add("-R");
-        result = script.execute();
-        if (result != null) {
-            s_logger.warn("Unable to set permissions for " + mountPoint + " due to " + result);
-            return null;
-        }
+        
         
         // XXX: Adding the check for creation of snapshots dir here. Might have to move it somewhere more logical later.
         if (!checkForSnapshotsDir(mountPoint)) {
