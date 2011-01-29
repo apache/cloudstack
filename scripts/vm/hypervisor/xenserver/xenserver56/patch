@@ -21,7 +21,6 @@ setupxenserver.sh=..,0755,/opt/xensource/bin
 make_migratable.sh=..,0755,/opt/xensource/bin
 setup_iscsi.sh=..,0755,/opt/xensource/bin
 cloud-setup-bonding.sh=..,0755,/opt/xensource/bin
-version=..,0755,/opt/xensource/bin
 pingtest.sh=../../..,0755,/opt/xensource/bin
 dhcp_entry.sh=../../../../network/domr/,0755,/opt/xensource/bin
 ipassoc.sh=../../../../network/domr/,0755,/opt/xensource/bin

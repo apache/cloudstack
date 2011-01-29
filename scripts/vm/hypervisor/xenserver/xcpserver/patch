@@ -27,7 +27,6 @@ make_migratable.sh=..,0755,/opt/xensource/bin
 networkUsage.sh=..,0755,/opt/xensource/bin
 find_bond.sh=..,0755,/opt/xensource/bin
 setup_iscsi.sh=..,0755,/opt/xensource/bin
-version=..,0755,/opt/xensource/bin
 setup_heartbeat_sr.sh=..,0755,/opt/xensource/bin
 check_heartbeat.sh=..,0755,/opt/xensource/bin
 xenheartbeat.sh=..,0755,/opt/xensource/bin
