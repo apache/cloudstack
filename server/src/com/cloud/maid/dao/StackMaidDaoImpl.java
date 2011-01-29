@@ -40,39 +40,55 @@ public class StackMaidDaoImpl extends GenericDaoBase<StackMaidVO, Long> implemen
 
     @DB
 	public void pushCleanupDelegate(long msid, int seq, String delegateClzName, Object context) {
-		StackMaidVO delegateItem = new StackMaidVO();
-		delegateItem.setMsid(msid);
-		delegateItem.setThreadId(Thread.currentThread().getId());
-		delegateItem.setSeq(seq);
-		delegateItem.setDelegate(delegateClzName);
-		delegateItem.setContext(SerializerHelper.toSerializedStringOld(context));
-		delegateItem.setCreated(DateUtil.currentGMTTime());
-		
-		super.persist(delegateItem);
+        
+        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        try {
+    		StackMaidVO delegateItem = new StackMaidVO();
+    		delegateItem.setMsid(msid);
+    		delegateItem.setThreadId(Thread.currentThread().getId());
+    		delegateItem.setSeq(seq);
+    		delegateItem.setDelegate(delegateClzName);
+    		delegateItem.setContext(SerializerHelper.toSerializedStringOld(context));
+    		delegateItem.setCreated(DateUtil.currentGMTTime());
+    		
+    		super.persist(delegateItem);
+        } finally {
+            txn.close();
+        }
 	}
 
     @DB
 	public StackMaidVO popCleanupDelegate(long msid) {
-        SearchCriteria<StackMaidVO> sc = popSearch.create();
-        sc.setParameters("msid", msid);
-        sc.setParameters("threadId", Thread.currentThread().getId());
-        
-		Filter filter = new Filter(StackMaidVO.class, "seq", false, 0L, (long)1);
-		List<StackMaidVO> l = listIncludingRemovedBy(sc, filter);
-		if(l != null && l.size() > 0) {
-			expunge(l.get(0).getId());
-			return l.get(0);
-		}
+        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        try {
+            SearchCriteria<StackMaidVO> sc = popSearch.create();
+            sc.setParameters("msid", msid);
+            sc.setParameters("threadId", Thread.currentThread().getId());
+            
+    		Filter filter = new Filter(StackMaidVO.class, "seq", false, 0L, (long)1);
+    		List<StackMaidVO> l = listIncludingRemovedBy(sc, filter);
+    		if(l != null && l.size() > 0) {
+    			expunge(l.get(0).getId());
+    			return l.get(0);
+    		}
+        } finally {
+            txn.close();
+        }
 		
 		return null;
 	}
 	
     @DB
 	public void clearStack(long msid) {
-        SearchCriteria<StackMaidVO> sc = clearSearch.create();
-        sc.setParameters("msid", msid);
-        
-        expunge(sc);
+        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        try {
+            SearchCriteria<StackMaidVO> sc = clearSearch.create();
+            sc.setParameters("msid", msid);
+            
+            expunge(sc);
+        } finally {
+            txn.close();
+        }
 	}
     
     @DB
@@ -80,7 +96,7 @@ public class StackMaidDaoImpl extends GenericDaoBase<StackMaidVO, Long> implemen
     	List<StackMaidVO> l = new ArrayList<StackMaidVO>();
     	String sql = "select * from stack_maid where msid=? order by msid asc, thread_id asc, seq desc";
     	
-        Transaction txn = Transaction.currentTxn();;
+        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement(sql);
@@ -94,6 +110,8 @@ public class StackMaidDaoImpl extends GenericDaoBase<StackMaidVO, Long> implemen
         	s_logger.error("unexcpected exception " + e.getMessage(), e);
         } catch (Throwable e) {
         	s_logger.error("unexcpected exception " + e.getMessage(), e);
+        } finally {
+            txn.close();
         }
         return l;
     }
@@ -104,7 +122,7 @@ public class StackMaidDaoImpl extends GenericDaoBase<StackMaidVO, Long> implemen
     	List<StackMaidVO> l = new ArrayList<StackMaidVO>();
     	String sql = "select * from stack_maid where created < ? order by msid asc, thread_id asc, seq desc";
     	
-        Transaction txn = Transaction.currentTxn();;
+        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement(sql);
@@ -119,6 +137,8 @@ public class StackMaidDaoImpl extends GenericDaoBase<StackMaidVO, Long> implemen
         	s_logger.error("unexcpected exception " + e.getMessage(), e);
         } catch (Throwable e) {
         	s_logger.error("unexcpected exception " + e.getMessage(), e);
+        } finally {
+            txn.close();
         }
         return l;
     }

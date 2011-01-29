@@ -76,7 +76,7 @@ public class StackMaidManagerImpl implements StackMaidManager {
 			
 			public void reallyRun() {
 				try {
-					Date cutTime = new Date(DateUtil.currentGMTTime().getTime() - 3600000);
+					Date cutTime = new Date(DateUtil.currentGMTTime().getTime() - 7200000);
 					List<StackMaidVO> l = _maidDao.listLeftoversByCutTime(cutTime);
 					cleanupLeftovers(l);
 				} catch(Throwable e) {

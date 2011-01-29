@@ -88,7 +88,9 @@ public class Transaction {
     public static Transaction currentTxn() {
         Transaction txn = tls.get();
         assert txn != null : "No Transaction on stack.  Did you mark the method with @DB?";
-        assert checkAnnotation(3, txn) : "Did you even read the guide to use Transaction...IOW...other people's code? Try method can't be private.  What about @DB? hmmm... could that be it? " + txn.toString();
+        
+        // loosen the requirement to let people use explicit transaction management (i.e., in Unit tests) 
+        // assert checkAnnotation(3, txn) : "Did you even read the guide to use Transaction...IOW...other people's code? Try method can't be private.  What about @DB? hmmm... could that be it? " + txn.toString();
         return txn;
     }
     

@@ -66,6 +66,11 @@ public class StackMaid {
 		pop(msid_setby_manager, savePoint);
 	}
 	
+	public void pop() {
+	    if(currentSeq > 0)
+	        pop(currentSeq -1);
+	}
+	
 	/**
 	 * must be called within thread context
 	 * @param currentMsid
@@ -78,12 +83,6 @@ public class StackMaid {
 	}
 	
 	public void exitCleanup() {
-/*
-		assert(msid_setby_manager != 0) : "Fatal, make sure StackMaidManager is loaded";
-		if(msid_setby_manager == 0)
-			s_logger.error("Fatal, make sure StackMaidManager is loaded");
-*/			
-		
 		exitCleanup(msid_setby_manager);
 	}
 	
