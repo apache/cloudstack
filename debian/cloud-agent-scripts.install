@@ -6,7 +6,6 @@
 /usr/lib/cloud/agent/scripts/vm/pingtest.sh
 /usr/lib/cloud/agent/scripts/vm/hypervisor/kvm/*
 /usr/lib/cloud/agent/scripts/vm/hypervisor/versions.sh
-/usr/lib/cloud/agent/scripts/vm/hypervisor/xen/*
 /usr/lib/cloud/agent/scripts/vm/hypervisor/xenserver/*
 /usr/lib/cloud/agent/vms/systemvm.zip
 /usr/lib/cloud/agent/vms/systemvm.iso
