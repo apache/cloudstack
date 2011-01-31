@@ -515,7 +515,9 @@ fi
 %files client
 %defattr(0644,root,root,0775)
 %{_sysconfdir}/%{name}/management/*
-%{_sysconfdir}/%{name}/management/*premium*
+%if %{_premium}
+%exclude %{_sysconfdir}/%{name}/management/*premium*
+%endif
 %config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %{_sysconfdir}/%{name}/management/log4j-%{name}.xml
 %config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6.conf
@@ -589,6 +591,10 @@ fi
 %{_javadir}/%{name}-server-extras.jar
 # maintain the following list in sync with files agent-scripts
 %{_libdir}/%{name}/agent/premium-scripts/*
+%{_sysconfdir}/%{name}/management/commands-ext.properties
+%{_sysconfdir}/%{name}/management/components-premium.xml
+%{_datadir}/%{name}/setup/create-database-premium.sql
+%{_datadir}/%{name}/setup/create-schema-premium.sql
 
 %files usage
 %defattr(0644,root,root,0775)
