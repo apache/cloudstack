@@ -507,8 +507,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         
         String pubKey = _configDao.getValue("ssh.publickey");
         String prvKey = _configDao.getValue("ssh.privatekey");
-        writeKeyToDisk(homeDir + "/.ssh/id_rsa", prvKey);
-        writeKeyToDisk(homeDir + "/.ssh/id_rsa.pub", pubKey);
+        writeKeyToDisk(prvKey, homeDir + "/.ssh/id_rsa");
+        writeKeyToDisk(pubKey, homeDir + "/.ssh/id_rsa.pub");
     }
 
     protected void injectSshKeysIntoSystemVmIsoPatch(String publicKeyPath, String privKeyPath) {
