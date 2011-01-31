@@ -158,8 +158,10 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExecutionException;
@@ -756,6 +758,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         HostTemplateStatesSearch.done();
         
         _serverId = ((ManagementServer)ComponentLocator.getComponent(ManagementServer.Name)).getId();
+        
+        UpHostsInPoolSearch = _storagePoolHostDao.createSearchBuilder(Long.class);
+        SearchBuilder<HostVO> hostSearch = _hostDao.createSearchBuilder();
+        hostSearch.and("status", hostSearch.entity().getStatus(), Op.EQ);
+        UpHostsInPoolSearch.join("hosts", hostSearch, hostSearch.entity().getId(), UpHostsInPoolSearch.entity().getHostId(), JoinType.INNER);
+        UpHostsInPoolSearch.and("pool", UpHostsInPoolSearch.entity().getPoolId(), Op.EQ);
+        UpHostsInPoolSearch.done();
         
         return true;
     }
