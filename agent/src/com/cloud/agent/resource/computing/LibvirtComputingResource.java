@@ -1591,7 +1591,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return command.execute();
     }
     
-	private Answer execute(MigrateCommand cmd) {
+	private synchronized Answer execute(MigrateCommand cmd) {
 		String vmName = cmd.getVmName();
     	
 		State state = null;
