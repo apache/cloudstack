@@ -26,6 +26,20 @@
     initDialog("dialog_add_pod", 370);      
     initDialog("dialog_add_host_in_zone_page"); 
 	initDialog("dialog_add_pool_in_zone_page");
+      
+    $.ajax({
+        data: createURL("command=listHypervisors"),
+        dataType: "json",
+        success: function(json) {            
+            var items = json.listhypervisorsresponse.hypervisor;
+            var $hypervisorDropdown = $("#dialog_add_external_cluster_in_zone_page").find("#cluster_hypervisor");
+            if(items != null && items.length > 0) {                
+                for(var i=0; i<items.length; i++) {                    
+                    $hypervisorDropdown.append("<option value='"+fromdb(items[i].name)+"'>"+fromdb(items[i].name)+"</option>");
+                }
+            }
+        }    
+    });    
         
     //switch between different tabs in zone page    
     var tabArray = [$("#tab_details")];

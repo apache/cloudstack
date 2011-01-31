@@ -619,6 +619,20 @@ function initAddPodShortcut() {
 function initAddClusterShortcut() {
     var $dialogAddCluster = $("#dialog_add_external_cluster_in_resource_page");
 
+    $.ajax({
+        data: createURL("command=listHypervisors"),
+        dataType: "json",
+        success: function(json) {            
+            var items = json.listhypervisorsresponse.hypervisor;
+            var $hypervisorDropdown = $dialogAddCluster.find("#cluster_hypervisor");
+            if(items != null && items.length > 0) {                
+                for(var i=0; i<items.length; i++) {                    
+                    $hypervisorDropdown.append("<option value='"+fromdb(items[i].name)+"'>"+fromdb(items[i].name)+"</option>");
+                }
+            }
+        }    
+    }); 
+
     var $zoneDropdown = $dialogAddCluster.find("#zone_dropdown");
     var $podDropdown = $dialogAddCluster.find("#pod_dropdown");    	
     

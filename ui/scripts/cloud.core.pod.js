@@ -30,6 +30,20 @@
     initDialog("dialog_add_pool");	
     bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	 
     
+    $.ajax({
+        data: createURL("command=listHypervisors"),
+        dataType: "json",
+        success: function(json) {            
+            var items = json.listhypervisorsresponse.hypervisor;
+            var $hypervisorDropdown = $("#dialog_add_external_cluster").find("#cluster_hypervisor");
+            if(items != null && items.length > 0) {                
+                for(var i=0; i<items.length; i++) {                    
+                    $hypervisorDropdown.append("<option value='"+fromdb(items[i].name)+"'>"+fromdb(items[i].name)+"</option>");
+                }
+            }
+        }    
+    });   
+    
     //switch between different tabs 
     var tabArray = [$("#tab_details"), $("#tab_ipallocation")];
     var tabContentArray = [$("#tab_content_details"), $("#tab_content_ipallocation")];
