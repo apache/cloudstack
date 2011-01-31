@@ -760,6 +760,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         _serverId = ((ManagementServer)ComponentLocator.getComponent(ManagementServer.Name)).getId();
         
         UpHostsInPoolSearch = _storagePoolHostDao.createSearchBuilder(Long.class);
+        UpHostsInPoolSearch.selectField(UpHostsInPoolSearch.entity().getHostId());
         SearchBuilder<HostVO> hostSearch = _hostDao.createSearchBuilder();
         hostSearch.and("status", hostSearch.entity().getStatus(), Op.EQ);
         UpHostsInPoolSearch.join("hosts", hostSearch, hostSearch.entity().getId(), UpHostsInPoolSearch.entity().getHostId(), JoinType.INNER);
