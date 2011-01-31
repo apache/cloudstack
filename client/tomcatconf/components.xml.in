@@ -49,6 +49,9 @@
             <adapter name="DirectNetworkGuru" class="com.cloud.network.guru.DirectNetworkGuru"/>
             <adapter name="DirectPodBasedNetworkGuru" class="com.cloud.network.guru.DirectPodBasedNetworkGuru"/>
         </adapters>
+        <adapters key="com.cloud.cluster.ClusterServiceAdapter">
+            <adapter name="ClusterService" class="com.cloud.cluster.ClusterServiceServletAdapter"/>
+        </adapters>
         <adapters key="com.cloud.storage.secondary.SecondaryStorageVmAllocator">
             <adapter name="Balance" class="com.cloud.storage.secondary.SecondaryStorageVmDefaultAllocator"/>
         </adapters>
