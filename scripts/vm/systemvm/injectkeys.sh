@@ -44,7 +44,7 @@ copy_priv_key() {
   return $?
 }
 
-mkdir -p $MOUNTPATH
+sudo mkdir -p $MOUNTPATH
 
 [ $# -ne 3 ] && echo "Usage: $(basename $0)  <new public key file> <new private key file> <systemvm iso path>" && exit 3
 newpubkey=$1
