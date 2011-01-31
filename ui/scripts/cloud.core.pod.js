@@ -286,14 +286,14 @@ function refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId) {
         async: false,
         success: function(json) {			            
             var items = json.listclustersresponse.cluster;
-            var clusterSelect = dialogAddHost.find("#cluster_select").empty();		
+            var $clusterSelect = dialogAddHost.find("#cluster_select").empty();		
             if(items != null && items.length > 0) {		                                        
                 for(var i=0; i<items.length; i++) {	
                     clustersUnderOnePod[fromdb(items[i].id)] = items[i];
                     if(clusterId != null && items[i].id == clusterId)
-                        clusterSelect.append("<option value='" + fromdb(items[i].id) + "' selected>" + fromdb(items[i].name) + "</option>");	
+                        $clusterSelect.append("<option value='" + fromdb(items[i].id) + "' selected>" + fromdb(items[i].name) + "</option>");	
                     else               
-                        clusterSelect.append("<option value='" + fromdb(items[i].id) + "'>" + fromdb(items[i].name) + "</option>");		
+                        $clusterSelect.append("<option value='" + fromdb(items[i].id) + "'>" + fromdb(items[i].name) + "</option>");		
                 }    
             }            
         }
@@ -611,88 +611,91 @@ function bindAddHostButton($leftmenuItem1) {
 
 function bindAddPrimaryStorageButton($leftmenuItem1) {    
     var $button = $("#add_primarystorage_button");  
-    $button.unbind("click").bind("click", function(event) {          
-        dialogAddPool = $("#dialog_add_pool");  
-        dialogAddPool.find("#info_container").hide();	
-             
-        var zoneId, podId, sourceClusterId;        
-        if(currentRightPanelJSP == "jsp/pod.jsp") { 
-            var podObj = $leftmenuItem1.data("jsonObj");  
-            zoneId = podObj.zoneid;
-            podId = podObj.id;
-            dialogAddPool.find("#zone_name").text(fromdb(podObj.zonename));  
-            dialogAddPool.find("#pod_name").text(fromdb(podObj.name)); 
-        }        
-        else if(currentRightPanelJSP == "jsp/cluster.jsp") {
-            var clusterObj = $leftmenuItem1.data("jsonObj");   
-            zoneId = clusterObj.zoneid;
-            podId = clusterObj.podid;    
-            sourceClusterId = clusterObj.id;   
-            dialogAddPool.find("#zone_name").text(fromdb(clusterObj.zonename));  
-            dialogAddPool.find("#pod_name").text(fromdb(clusterObj.podname)); 
-        }          
-        else if(currentRightPanelJSP == "jsp/primarystorage.jsp") {
-            var clusterObj = $leftmenuItem1.data("clusterObj");   
-            zoneId = clusterObj.zoneid;
-            podId = clusterObj.podid;    
-            sourceClusterId = clusterObj.id;    
-            dialogAddPool.find("#zone_name").text(fromdb(clusterObj.zonename));  
-            dialogAddPool.find("#pod_name").text(fromdb(clusterObj.podname)); 
+    $dialogAddPool = $("#dialog_add_pool");  
+     
+    var zoneId, podId, sourceClusterId;        
+    if(currentRightPanelJSP == "jsp/pod.jsp") { 
+        var podObj = $leftmenuItem1.data("jsonObj");  
+        zoneId = podObj.zoneid;
+        podId = podObj.id;
+        $dialogAddPool.find("#zone_name").text(fromdb(podObj.zonename));  
+        $dialogAddPool.find("#pod_name").text(fromdb(podObj.name)); 
+    }        
+    else if(currentRightPanelJSP == "jsp/cluster.jsp") {
+        var clusterObj = $leftmenuItem1.data("jsonObj");   
+        zoneId = clusterObj.zoneid;
+        podId = clusterObj.podid;    
+        sourceClusterId = clusterObj.id;   
+        $dialogAddPool.find("#zone_name").text(fromdb(clusterObj.zonename));  
+        $dialogAddPool.find("#pod_name").text(fromdb(clusterObj.podname)); 
+    }          
+    else if(currentRightPanelJSP == "jsp/primarystorage.jsp") {
+        var clusterObj = $leftmenuItem1.data("clusterObj");   
+        zoneId = clusterObj.zoneid;
+        podId = clusterObj.podid;    
+        sourceClusterId = clusterObj.id;    
+        $dialogAddPool.find("#zone_name").text(fromdb(clusterObj.zonename));  
+        $dialogAddPool.find("#pod_name").text(fromdb(clusterObj.podname)); 
+    }
+                                         
+    var $clusterSelect = $("#dialog_add_pool").find("#pool_cluster").empty();			            
+    var mapClusters = {};        
+    $.ajax({
+	    data: createURL("command=listClusters&podid=" + podId),
+	    async: false,
+	    dataType: "json",
+        success: function(json) {                             
+            var items = json.listclustersresponse.cluster;
+            if(items != null && items.length > 0) {		
+            	mapClusters = {};
+                for(var i=0; i<items.length; i++) {
+                	mapClusters["cluster_"+items[i].id] = items[i];
+                    if(sourceClusterId != null && items[i].id == sourceClusterId)
+                        $clusterSelect.append("<option value='" + items[i].id + "' selected>" + fromdb(items[i].name) + "</option>");	
+                    else               
+                        $clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		
+                }	               
+            }			            
         }
-                                             
-        var clusterSelect = $("#dialog_add_pool").find("#pool_cluster").empty();			            
-        var mapClusters = {};        
-	    $.ajax({
-		    data: createURL("command=listClusters&podid=" + podId),
-		    async: false,
-		    dataType: "json",
-	        success: function(json) {                             
-	            var items = json.listclustersresponse.cluster;
-	            if(items != null && items.length > 0) {		
-	            	mapClusters = {};
-	                for(var i=0; i<items.length; i++) {
-	                	mapClusters["cluster_"+items[i].id] = items[i];
-	                    if(sourceClusterId != null && items[i].id == sourceClusterId)
-	                        clusterSelect.append("<option value='" + items[i].id + "' selected>" + fromdb(items[i].name) + "</option>");	
-	                    else               
-	                        clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		
-	                }	               
-	            }			            
-	        }
-	    });	
-	    
-	    $("#pool_cluster", dialogAddPool).unbind("change").bind("change", function() {
-	    	var curOption = $(this).val();
-	    	if(!curOption)
-	    		return false;
-	    	
-	    	var $protocolSelector = $("#add_pool_protocol", dialogAddPool);	    	
-	    	var objCluster = mapClusters['cluster_'+curOption];
-	    	
-	    	if(objCluster == null)
-   	            return;
-	    	
-	    	if(objCluster.hypervisortype == "KVM") {
-	    		$protocolSelector.empty();
-	    		$protocolSelector.append('<option value="nfs">NFS</option>');
-	    	} else if(objCluster.hypervisortype == "XenServer") {
-	    		$protocolSelector.empty();
-    			$protocolSelector.append('<option value="nfs">NFS</option>');
-    			$protocolSelector.append('<option value="iscsi">ISCSI</option>');
-	    	} else if(objCluster.hypervisortype == "VMware") {
-	    		$protocolSelector.empty();
-    			$protocolSelector.append('<option value="nfs">NFS</option>');
-    			$protocolSelector.append('<option value="vmfs">VMFS datastore</option>');
-	    	}
-	    	
-	    	$protocolSelector.change();
-	    }).change();
+    });	
+    	    
+    $dialogAddPool.find("#pool_cluster").unbind("change").bind("change", function() {
+    	var curOption = $(this).val();
+    	if(!curOption)
+    		return false;
+    	
+    	var $protocolSelector = $dialogAddPool.find("#add_pool_protocol");	
+    	var objCluster = mapClusters['cluster_'+curOption];
+    	
+    	if(objCluster == null)
+            return;
+    	
+    	if(objCluster.hypervisortype == "KVM") {
+    		$protocolSelector.empty();
+    		$protocolSelector.append('<option value="nfs">NFS</option>');
+    		$protocolSelector.append('<option value="sharedMountPoint">sharedMountPoint</option>');
+    	} else if(objCluster.hypervisortype == "XenServer") {
+    		$protocolSelector.empty();
+			$protocolSelector.append('<option value="nfs">NFS</option>');
+			$protocolSelector.append('<option value="iscsi">ISCSI</option>');
+    	} else if(objCluster.hypervisortype == "VMware") {
+    		$protocolSelector.empty();
+			$protocolSelector.append('<option value="nfs">NFS</option>');
+			$protocolSelector.append('<option value="vmfs">VMFS datastore</option>');
+    	}
+    	
+    	$protocolSelector.change();
+    });
+	 
+    $button.unbind("click").bind("click", function(event) {           
+        $dialogAddPool.find("#info_container").hide();	        
+	    $dialogAddPool.find("#pool_cluster").change();
 	    
         $("#dialog_add_pool")
 	    .dialog('option', 'buttons', { 				    
 		    "Add": function() { 	
 		    	var $thisDialog = $(this);
-		    	
+		    			    	
 			    // validate values
 				var protocol = $thisDialog.find("#add_pool_protocol").val();
 				
@@ -734,13 +737,21 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
 					if(path.substring(0,1)!="/")
 						path = "/" + path; 
 					url = nfsURL(server, path);
-				} else if (protocol == "vmfs") {
+				} 
+				else if (protocol == "sharedMountPoint") {
+					var path = trim($thisDialog.find("#add_pool_path").val());
+					if(path.substring(0,1)!="/")
+						path = "/" + path; 
+					url = sharedMountPointURL(server, path);
+				} 
+				else if (protocol == "vmfs") {
 					var path = trim($thisDialog.find("#add_pool_vmfs_dc").val());
 					if(path.substring(0,1)!="/")
 						path = "/" + path; 
 					path += "/" + trim($thisDialog.find("#add_pool_vmfs_ds").val())
 					url = vmfsURL("dummy", path);
-				} else {
+				} 
+				else {
 					var iqn = trim($thisDialog.find("#add_pool_iqn").val());
 					if(iqn.substring(0,1)!="/")
 						iqn = "/" + iqn; 
@@ -872,6 +883,15 @@ function nfsURL(server, path) {
 	return url;
 }
 
+function sharedMountPointURL(server, path) {
+    var url;
+    if(server.indexOf("://")==-1)
+	    url = "sharedMountPoint://" + server + path;
+	else
+	    url = server + path;
+	return url;
+}
+
 function vmfsURL(server, path) {
     var url;
     if(server.indexOf("://")==-1)
@@ -897,17 +917,29 @@ function bindEventHandlerToDialogAddPool($dialogAddPool) {
     		$('li[input_group="nfs"]', $dialogAddPool).show();
     		$('li[input_group="iscsi"]', $dialogAddPool).hide();
     		$('li[input_group="vmfs"]', $dialogAddPool).hide();
-    	} else if($(this).val() == "iscsi") {
+    		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", false).val("");
+    	} 
+    	else if($(this).val() == "iscsi") {
     		$("#add_pool_server_container", $dialogAddPool).show();
     		$('li[input_group="nfs"]', $dialogAddPool).hide();
     		$('li[input_group="iscsi"]', $dialogAddPool).show();
     		$('li[input_group="vmfs"]', $dialogAddPool).hide();
-    	} else if($(this).val() == "vmfs") {
+    		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", false).val("");
+    	} 
+    	else if($(this).val() == "vmfs") {
     		$("#add_pool_server_container", $dialogAddPool).hide();
     		$('li[input_group="nfs"]', $dialogAddPool).hide();
     		$('li[input_group="iscsi"]', $dialogAddPool).hide();
-    		$('li[input_group="vmfs"]', $dialogAddPool).show();
+    		$('li[input_group="vmfs"]', $dialogAddPool).show();   
+    		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", false).val(""); 		
     	}
+    	else if($(this).val() == "sharedMountPoint") {  //"sharedMountPoint" show the same fields as "nfs" does.
+    		$("#add_pool_server_container", $dialogAddPool).show();
+    		$('li[input_group="nfs"]', $dialogAddPool).show();
+    		$('li[input_group="iscsi"]', $dialogAddPool).hide();
+    		$('li[input_group="vmfs"]', $dialogAddPool).hide();
+    		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", true).val("localhost");
+    	} 
 
 /*    
 		if ($(this).val() == "iscsi") {
