@@ -19,3 +19,4 @@ cloud-*.tar.bz2
 build.number
 api.log.*.gz
 cloud.log.*.*
+deps/cloud.userlibraries
