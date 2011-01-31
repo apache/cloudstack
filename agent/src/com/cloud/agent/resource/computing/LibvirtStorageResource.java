@@ -60,13 +60,14 @@ public class LibvirtStorageResource {
     
     public boolean deleteStoragePool(Connect conn, StorageFilerTO spt) throws LibvirtException {
         StoragePool pool = getStoragePool(conn, spt.getUuid());
+        LibvirtStoragePoolDef spd = getStoragePoolDef(conn, pool);
         
         synchronized (getStoragePool(pool.getUUIDString())) {
             pool.destroy();
             pool.undefine();
         }
         
-        LibvirtStoragePoolDef spd = getStoragePoolDef(conn, pool);
+       
         
         if (spd.getPoolType() == poolType.NETFS) {
             KVMHABase.NfsStoragePool sp = new KVMHABase.NfsStoragePool(spt.getUuid(),
@@ -270,6 +271,7 @@ public class LibvirtStorageResource {
                                                              pool.getHost(), pool.getPath(), pool.getPath());
         StoragePool sp = null;
         try {
+            s_logger.debug(spd.toString());
             addStoragePool(pool.getUuid());
             synchronized (getStoragePool(pool.getUuid())) {
                 sp = conn.storagePoolDefineXML(spd.toString(), 0);
