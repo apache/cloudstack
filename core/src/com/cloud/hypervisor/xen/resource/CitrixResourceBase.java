@@ -1993,6 +1993,23 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         throw new CloudRuntimeException("Com'on no control domain?  What the crap?!#@!##$@");
     }
 
+    protected void cleanupHaltedVms(Connection conn) throws XenAPIException, XmlRpcException {
+        Host host = Host.getByUuid(conn, _host.uuid);
+        Set<VM> vms = host.getResidentVMs(conn);
+        
+        for (VM vm : vms) {
+            try {
+                if (VmPowerState.HALTED.equals(vm.getPowerState(conn))) {
+                    vm.destroy(conn);
+                }
+            } catch (XenAPIException e) {
+                s_logger.warn("Unable to cleanup " + vm);
+            } catch (XmlRpcException e) {
+                s_logger.warn("Unable to cleanup " + vm);
+            }
+        }
+    }
+
     protected HashMap<String, State> sync() {
         HashMap<String, State> newStates;
         HashMap<String, State> oldStates = null;
@@ -3779,6 +3796,16 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         }
 
         setupLinkLocalNetwork();
+
+        try {
+            cleanupHaltedVms(getConnection());
+        } catch (XenAPIException e) {
+            s_logger.warn("Unable to cleanup halted vms", e);
+            return null;
+        } catch (XmlRpcException e) {
+            s_logger.warn("Unable to cleanup halted vms", e);
+            return null;
+        }
         
         StartupRoutingCommand cmd = new StartupRoutingCommand();
         
