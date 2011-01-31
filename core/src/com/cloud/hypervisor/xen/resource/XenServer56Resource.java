@@ -111,6 +111,9 @@ public class XenServer56Resource extends CitrixResourceBase {
         }
         File file = new File(patchfilePath);
         files.add(file);
+
+        // no premimum overriding anymore after FOSS/premium merge
+/*        
         patch = "premium-scripts/vm/hypervisor/xenserver/xenserver56/patch";
         patchfilePath = Script.findScript("", patch);
         if (patchfilePath == null) {
@@ -118,6 +121,7 @@ public class XenServer56Resource extends CitrixResourceBase {
         }
         file = new File(patchfilePath);
         files.add(file);
+*/        
         return files;
     }
 
