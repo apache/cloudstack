@@ -803,18 +803,28 @@ function bindAddHostButtonOnZonePage($button, zoneId, zoneName) {
 }      
 
 function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
-    $button.show();
-
-	var $dialogAddPool = $("#dialog_add_pool_in_zone_page");    
+    var $dialogAddPool = $("#dialog_add_pool_in_zone_page");    
+	$dialogAddPool.find("#zone_name").text(zoneName);  
 	
-    // if hypervisor is KVM, limit the server option to NFS for now
-	// TODO: Fix this to use the hypervisor from the cluster
-    //if (getHypervisorType() == 'kvm') 
-	//    $dialogAddPool.find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
     bindEventHandlerToDialogAddPool($dialogAddPool);	
-       
-	var $podSelect = $dialogAddPool.find("#pod_dropdown");
+    
+    var $podSelect = $dialogAddPool.find("#pod_dropdown");    
+    $.ajax({
+        data: createURL("command=listPods&zoneid="+zoneId),
+        dataType: "json",
+        async: false,
+        success: function(json) {            
+            var pods = json.listpodsresponse.pod;   
+            $podSelect.empty(); 
+            if(pods != null && pods.length > 0) {
+                for(var i=0; i<pods.length; i++)
+                    $podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 	
+            }              
+        }        
+    });          
+           	
     var mapClusters = {};
+    
     $podSelect.unbind("change").bind("change", function(event) {	        
         var podId = $(this).val();
         if(podId == null || podId.length == 0)
@@ -856,6 +866,7 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
     	if(objCluster.hypervisortype == "KVM") {
     		$protocolSelector.empty();
     		$protocolSelector.append('<option value="nfs">NFS</option>');
+    		$protocolSelector.append('<option value="sharedMountPoint">sharedMountPoint</option>');
     	} else if(objCluster.hypervisortype == "XenServer") {
     		$protocolSelector.empty();
 			$protocolSelector.append('<option value="nfs">NFS</option>');
@@ -867,29 +878,12 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
     	}
     	
     	$protocolSelector.change();
-    }).change();
+    });    
     
-    
-    $button.unbind("click").bind("click", function(event) { 
-        $dialogAddPool.find("#zone_name").text(zoneName);        
-        $dialogAddPool.find("#zone_dropdown").change(); //refresh cluster dropdown (do it here to avoid race condition)     
+    $button.unbind("click").bind("click", function(event) {         
         $dialogAddPool.find("#info_container").hide();	
-     
-        $.ajax({
-            data: createURL("command=listPods&zoneid="+zoneId),
-            dataType: "json",
-            async: false,
-            success: function(json) {            
-                var pods = json.listpodsresponse.pod;   
-                $podSelect.empty(); 
-                if(pods != null && pods.length > 0) {
-                    for(var i=0; i<pods.length; i++)
-                        $podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 	
-                }                
-                $podSelect.change();    
-            }        
-        });          
-              
+        $podSelect.change();       
+                   
         $("#dialog_add_pool_in_zone_page")
 	    .dialog('option', 'buttons', { 				    
 		    "Add": function() { 	
@@ -945,13 +939,21 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
 					if(path.substring(0,1)!="/")
 						path = "/" + path; 
 					url = nfsURL(server, path);
-				} else if (protocol == "vmfs") {
+				} 
+				else if (protocol == "sharedMountPoint") {
+					var path = trim($thisDialog.find("#add_pool_path").val());
+					if(path.substring(0,1)!="/")
+						path = "/" + path; 
+					url = sharedMountPointURL(server, path);
+				} 
+				else if (protocol == "vmfs") {
 					var path = trim($thisDialog.find("#add_pool_vmfs_dc").val());
 					if(path.substring(0,1)!="/")
 						path = "/" + path; 
 					path += "/" + trim($thisDialog.find("#add_pool_vmfs_ds").val())
 					url = vmfsURL("dummy", path);
-				} else {
+				} 
+				else {
 					var iqn = trim($thisDialog.find("#add_pool_iqn").val());
 					if(iqn.substring(0,1)!="/")
 						iqn = "/" + iqn; 
