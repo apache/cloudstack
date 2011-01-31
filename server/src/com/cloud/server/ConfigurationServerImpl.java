@@ -467,6 +467,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 s_logger.info("Keypairs already in database, skip updating local copy (not running as cloud user)");
             }
         }
+    
+        
         if (userid.startsWith("cloud")){
             s_logger.info("Going to update systemvm iso with generated keypairs if needed");
             injectSshKeysIntoSystemVmIsoPatch(pubkeyfile.getAbsolutePath(), privkeyfile.getAbsolutePath());
@@ -514,12 +516,17 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     protected void injectSshKeysIntoSystemVmIsoPatch(String publicKeyPath, String privKeyPath) {
         String injectScript = "scripts/vm/systemvm/injectkeys.sh";    
         String scriptPath = Script.findScript("" , injectScript);
+        String systemVmIsoPath = Script.findScript("", "vms/systemvm.iso");
         if ( scriptPath == null ) {
             throw new CloudRuntimeException("Unable to find key inject script " + injectScript);
+        }
+        if (systemVmIsoPath == null) {
+            throw new CloudRuntimeException("Unable to find systemvm iso vms/systemvm.iso");
         }
         final Script command  = new Script(scriptPath,  s_logger);
         command.add(publicKeyPath);
         command.add(privKeyPath);
+        command.add(systemVmIsoPath);
        
         final String result = command.execute();
         if (result != null) {

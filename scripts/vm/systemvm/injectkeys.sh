@@ -6,13 +6,12 @@
 #set -x
 
 TMP=${HOME}/tmp
-SYSTEMVM_PATCH_DIR=../../../vms/
 MOUNTPATH=/mnt/cloud/systemvm
 TMPDIR=${TMP}/cloud/systemvm
 
 
 inject_into_iso() {
-  local isofile=${SYSTEMVM_PATCH_DIR}/$1
+  local isofile=${systemvmpath}
   local newpubkey=$2
   local backup=${isofile}.bak
   local tmpiso=${TMP}/$1
@@ -47,9 +46,10 @@ copy_priv_key() {
 
 mkdir -p $MOUNTPATH
 
-[ $# -ne 2 ] && echo "Usage: $(basename $0)  <new public key file> <new private key file>" && exit 3
+[ $# -ne 3 ] && echo "Usage: $(basename $0)  <new public key file> <new private key file> <systemvm iso path>" && exit 3
 newpubkey=$1
 newprivkey=$2
+systemvmpath=$3
 [ ! -f $newpubkey ] && echo "$(basename $0): Could not open $newpubkey" && exit 3
 [ ! -f $newprivkey ] && echo "$(basename $0): Could not open $newprivkey" && exit 3
 
