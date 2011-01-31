@@ -2111,13 +2111,24 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			createPatchVbd(conn, vmName, vm, vmSpec);
 		}
 	}
+	
+	private VolumeTO getVolume(VirtualMachineTO vmSpec, VolumeType type) {
+	    VolumeTO volumes[] = vmSpec.getDisks();
+	    for (VolumeTO volume : volumes) {
+	        if (volume.getType() == type) {
+	            return volume;
+	        }
+	    }
+	    return null;
+	}
 
 	private void createPatchVbd(Connect conn, String vmName, LibvirtVMDef vm, VirtualMachineTO vmSpec) throws LibvirtException, InternalErrorException {
 		
 		List<DiskDef> disks = vm.getDevices().getDisks();
 		DiskDef rootDisk = disks.get(0);
-	
-		StorageVol tmplVol = _storageResource.createTmplDataDisk(conn, rootDisk.getDiskPath(), 10L * 1024 * 1024);
+		VolumeTO rootVol = getVolume(vmSpec, VolumeType.ROOT);
+		StoragePool pool = _storageResource.getStoragePool(conn, rootVol.getPoolUuid());
+		StorageVol tmplVol = _storageResource.createTmplDataDisk(conn, pool, 10L * 1024 * 1024);
 		String datadiskPath = tmplVol.getKey();
 		
 		/*add patch disk*/

@@ -16,6 +16,7 @@ import org.libvirt.StorageVol;
 import org.libvirt.StoragePoolInfo.StoragePoolState;
 
 import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.resource.computing.KVMHABase.PoolType;
 import com.cloud.agent.resource.computing.LibvirtStoragePoolDef.poolType;
 import com.cloud.agent.resource.computing.LibvirtStorageVolumeDef.volFormat;
@@ -148,12 +149,10 @@ public class LibvirtStorageResource {
     }
    
     
-    public StorageVol createTmplDataDisk(Connect conn, String rootkPath, long size) throws LibvirtException, InternalErrorException {
+    public StorageVol createTmplDataDisk(Connect conn, StoragePool pool, long size) throws LibvirtException, InternalErrorException {
         /*create a templ data disk, to contain patches*/
-        StorageVol rootVol = conn.storageVolLookupByKey(rootkPath);
-        StoragePool rootPool = rootVol.storagePoolLookupByVolume();
         LibvirtStorageVolumeDef volDef = new LibvirtStorageVolumeDef(UUID.randomUUID().toString(), size, volFormat.RAW, null, null);
-        StorageVol dataVol =  rootPool.storageVolCreateXML(volDef.toString(), 0);
+        StorageVol dataVol =  pool.storageVolCreateXML(volDef.toString(), 0);
 
         /*Format/create fs on this disk*/
         final Script command = new Script(_createvmPath, _timeout, s_logger);
