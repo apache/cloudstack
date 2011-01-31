@@ -566,7 +566,27 @@ dictionary = {
             <div class="row_celltitles" id="privatezone">
             </div>
         </div>
-    </div>     
+    </div>      
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.numretries"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="numretries">
+            </div>
+        </div>
+    </div>       
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.timeout.in.second"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="timeout">
+            </div>
+        </div>
+    </div>         
 </div>
 <!--  External Firewall template (end) -->
 
@@ -657,7 +677,17 @@ dictionary = {
             <div class="row_celltitles" id="privateinterface">
             </div>
         </div>
-    </div>     
+    </div>      
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.numretries"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="numretries">
+            </div>
+        </div>
+    </div>         
 </div>
 <!--  Load Balancer template (end) -->
 
@@ -985,7 +1015,21 @@ dictionary = {
                 <input class="text" type="text" id="private_zone" />
                 <div id="private_zone_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
-            </li>        
+            </li>    
+            <li>
+                <label>
+                    <fmt:message key="label.numretries"/>:</label>
+                <input class="text" type="text" id="numretries" />
+                <div id="numretries_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>               
+            <li>
+                <label>
+                    <fmt:message key="label.timeout.in.second"/>:</label>
+                <input class="text" type="text" id="timeout" />
+                <div id="timeout_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>       
         </ol>
         </form>
     </div>
@@ -1052,7 +1096,13 @@ dictionary = {
                 <div id="private_interface_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>       
-            
+            <li>
+                <label>
+                    <fmt:message key="label.numretries"/>:</label>
+                <input class="text" type="text" id="numretries" />
+                <div id="numretries_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>      
         </ol>
         </form>
     </div>

@@ -333,7 +333,9 @@ function publicNetworkFirewallJsonToTemplate(jsonObj, $template) {
     $template.find("#privateinterface").text(fromdb(jsonObj.privateinterface));      
     $template.find("#usageinterface").text(fromdb(jsonObj.usageinterface));      
     $template.find("#publiczone").text(fromdb(jsonObj.publiczone));      
-    $template.find("#privatezone").text(fromdb(jsonObj.privatezone));      
+    $template.find("#privatezone").text(fromdb(jsonObj.privatezone));         
+    $template.find("#numretries").text(fromdb(jsonObj.numretries));
+    $template.find("#timeout").text(fromdb(jsonObj.timeout));
           
     var $actionLink = $template.find("#firewall_action_link");		
 	$actionLink.bind("mouseover", function(event) {
@@ -409,7 +411,8 @@ function publicNetworkLoadBalancerJsonToTemplate(jsonObj, $template) {
     $template.find("#username").text(fromdb(jsonObj.username));      
     $template.find("#publicinterface").text(fromdb(jsonObj.publicinterface));      
     $template.find("#privateinterface").text(fromdb(jsonObj.privateinterface));      
-       
+    $template.find("#numretries").text(fromdb(jsonObj.numretries));
+      
     var $actionLink = $template.find("#loadbalancer_action_link");		
 	$actionLink.bind("mouseover", function(event) {
         $(this).find("#loadbalancer_action_menu").show();    
@@ -666,7 +669,9 @@ function bindAddExternalFirewallButton($button, $midmenuItem1) {
 				isValid &= validateString("Private Interface", $thisDialog.find("#private_interface"), $thisDialog.find("#private_interface_errormsg"), true);  //optinal				
 				isValid &= validateString("Usage Interface", $thisDialog.find("#usage_interface"), $thisDialog.find("#usage_interface_errormsg"), true);  //optinal				
 				isValid &= validateString("Public Zone", $thisDialog.find("#public_zone"), $thisDialog.find("#public_zone_errormsg"), true);  //optinal
-				isValid &= validateString("Private Zone", $thisDialog.find("#private_zone"), $thisDialog.find("#private_zone_errormsg"), true);  //optinal
+				isValid &= validateString("Private Zone", $thisDialog.find("#private_zone"), $thisDialog.find("#private_zone_errormsg"), true);  //optinal				
+				isValid &= validateInteger("Number of Retries", $thisDialog.find("#numretries"), $thisDialog.find("#numretries_errormsg"), null, null, true);  //optinal
+				isValid &= validateInteger(" Timeout(seconds)", $thisDialog.find("#timeout"), $thisDialog.find("#timeout_errormsg"), null, null, true);  //optinal
 				if (!isValid) 
 				    return;		
 				 			    						
@@ -753,6 +758,30 @@ function bindAddExternalFirewallButton($button, $midmenuItem1) {
 				    url.push("privateZone="+privateZone); 	
 				}			
 				
+				var numretries = $thisDialog.find("#numretries").val();
+				if(numretries != null && numretries.length > 0) {
+				    if(isQuestionMarkAdded == false) {
+				        url.push("?");
+				        isQuestionMarkAdded = true;
+				    }
+				    else {
+				        url.push("&");
+				    }  		
+				    url.push("numretries="+numretries); 	
+				}		
+				
+				var timeout = $thisDialog.find("#timeout").val();
+				if(timeout != null && timeout.length > 0) {
+				    if(isQuestionMarkAdded == false) {
+				        url.push("?");
+				        isQuestionMarkAdded = true;
+				    }
+				    else {
+				        url.push("&");
+				    }  		
+				    url.push("timeout="+timeout); 	
+				}		
+				
 				array1.push("&url="+todb(url.join("")));		
 				//*** construct URL (end)	***					
 										
@@ -822,6 +851,7 @@ function bindAddLoadBalancerButton($button, $midmenuItem1) {
 				isValid &= validateString("Password", $thisDialog.find("#password"), $thisDialog.find("#password_errormsg"), false);  //required				
 				isValid &= validateString("Public Interface", $thisDialog.find("#public_interface"), $thisDialog.find("#public_interface_errormsg"), true);  //optinal
 				isValid &= validateString("Private Interface", $thisDialog.find("#private_interface"), $thisDialog.find("#private_interface_errormsg"), true);  //optinal
+				isValid &= validateInteger("Number of Retries", $thisDialog.find("#numretries"), $thisDialog.find("#numretries_errormsg"), null, null, true);  //optinal
 				if (!isValid) 
 				    return;		
 				 			    						
@@ -871,6 +901,18 @@ function bindAddLoadBalancerButton($button, $midmenuItem1) {
 				    }  		
 				    url.push("privateInterface="+privateInterface); 
 				}
+				
+				var numretries = $thisDialog.find("#numretries").val();
+				if(numretries != null && numretries.length > 0) {
+				    if(isQuestionMarkAdded == false) {
+				        url.push("?");
+				        isQuestionMarkAdded = true;
+				    }
+				    else {
+				        url.push("&");
+				    }  		
+				    url.push("numretries="+numretries); 	
+				}		
 				  				
 				array1.push("&url="+todb(url.join("")));		
 				//*** construct URL (end)	***					
