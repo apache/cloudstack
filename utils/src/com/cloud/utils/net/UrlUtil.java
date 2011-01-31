@@ -25,7 +25,7 @@ import java.util.Map;
 public class UrlUtil {
     public final static Map<String, String> parseQueryParameters(String query) {
         HashMap<String, String> values = new HashMap<String, String>();
-        parseQueryParameters(query, values);
+        parseQueryParameters(query, false, values);
         
         return values;
     }
@@ -38,7 +38,7 @@ public class UrlUtil {
         return parseQueryParameters(url.getQuery());
     }
     
-    public final static void parseQueryParameters(String query, Map<String, String> params) {
+    public final static void parseQueryParameters(String query, boolean lowercaseKeys, Map<String, String> params) {
         if (query == null) {
             return;
         }
@@ -50,6 +50,11 @@ public class UrlUtil {
         String[] parts = query.split("&");
         for (String part : parts) {
             String[] tokens = part.split("=");
+            
+            if (lowercaseKeys) {
+            	tokens[0] = tokens[0].toLowerCase();
+            }
+            
             params.put(tokens[0], tokens[1]);
         }
     }
