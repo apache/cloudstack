@@ -39,7 +39,7 @@ import com.cloud.utils.db.Transaction;
 @Local(value={UserStatisticsDao.class})
 public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long> implements UserStatisticsDao {
     private static final Logger s_logger = Logger.getLogger(UserStatisticsDaoImpl.class);
-    private static final String ACTIVE_AND_RECENTLY_DELETED_SEARCH = "SELECT us.id, us.data_center_id, us.account_id, us.public_ip_address, us.host_id, us.net_bytes_received, us.net_bytes_sent, us.current_bytes_received, us.current_bytes_sent " +
+    private static final String ACTIVE_AND_RECENTLY_DELETED_SEARCH = "SELECT us.id, us.data_center_id, us.account_id, us.public_ip_address, us.host_id, us.host_type, us.net_bytes_received, us.net_bytes_sent, us.current_bytes_received, us.current_bytes_sent " +
                                                                      "FROM user_statistics us, account a " +
                                                                      "WHERE us.account_id = a.id AND (a.removed IS NULL OR a.removed >= ?) " +
                                                                      "ORDER BY us.id";

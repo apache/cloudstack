@@ -343,7 +343,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Creating statistics for the owner: " + ownerId);
                 }
-                stats = new UserStatisticsVO(ownerId, dcId, null, null);
+                stats = new UserStatisticsVO(ownerId, dcId, null, null, null);
                 _userStatsDao.persist(stats);
             }
             txn.commit();

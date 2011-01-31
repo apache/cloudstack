@@ -45,6 +45,9 @@ public class UserStatisticsVO {
 	@Column(name="host_id")
 	private Long hostId;
 	
+	@Column(name="host_type")
+    private String hostType;
+	
 	@Column(name="net_bytes_received")
 	private long netBytesReceived;
 	
@@ -60,11 +63,12 @@ public class UserStatisticsVO {
 	protected UserStatisticsVO() {
 	}
 	
-	public UserStatisticsVO(long accountId, long dcId, String publicIpAddress, Long hostId) {
+	public UserStatisticsVO(long accountId, long dcId, String publicIpAddress, Long hostId, String hostType) {
 		this.accountId = accountId;
 		this.dataCenterId = dcId;
 		this.publicIpAddress = publicIpAddress;
 		this.hostId = hostId;
+		this.hostType = hostType;
 		this.netBytesReceived = 0;
 		this.netBytesSent = 0;
 		this.currentBytesReceived = 0;
@@ -122,4 +126,8 @@ public class UserStatisticsVO {
 	public void setNetBytesSent(long netBytesSent) {
 		this.netBytesSent = netBytesSent;
 	}
+
+    public String getHostType() {
+        return hostType;
+    }
 }
