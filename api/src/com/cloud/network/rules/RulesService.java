@@ -19,14 +19,14 @@ package com.cloud.network.rules;
 
 import java.util.List;
 
+import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
-import com.cloud.utils.net.Ip;
 
 public interface RulesService {
-    List<? extends PortForwardingRule> searchForIpForwardingRules(Ip ip,  Long id, Long vmId, Long start, Long size);
+    List<? extends PortForwardingRule> searchForIpForwardingRules(Long ipId,  Long id, Long vmId, Long start, Long size);
 
     /**
      * Creates a port forwarding rule between two ip addresses or between
@@ -53,10 +53,12 @@ public interface RulesService {
      */
     public List<? extends PortForwardingRule> listPortForwardingRules(ListPortForwardingRulesCmd cmd);
 
-    boolean applyPortForwardingRules(Ip ip, Account caller) throws ResourceUnavailableException;
+    boolean applyPortForwardingRules(long ipAdddressId, Account caller) throws ResourceUnavailableException;
     
-    boolean enableOneToOneNat(Ip ipAddress, long vmId) throws NetworkRuleConflictException;
+    boolean enableOneToOneNat(long ipAddressId, long vmId) throws NetworkRuleConflictException;
     
-    boolean disableOneToOneNat(Ip ipAddress);
+    boolean disableOneToOneNat(long ipAddressId);
+    
+    List<PortForwardingRuleTO> buildPortForwardingTOrules(List<? extends PortForwardingRule> pfRules);
     
 }

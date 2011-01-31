@@ -36,8 +36,11 @@ public class IpForwardingRuleResponse extends BaseResponse {
 
     @SerializedName("virtualmachinedisplayname") @Param(description="the VM display name for the port forwarding rule")
     private String virtualMachineDisplayName;
+    
+    @SerializedName(ApiConstants.IP_ADDRESS_ID) @Param(description="the public ip address id for the port forwarding rule")
+    private Long publicIpAddressId;
 
-    @SerializedName("ipaddress") @Param(description="the public ip address for the port forwarding rule")
+    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the public ip address for the port forwarding rule")
     private String publicIpAddress;
     
     @SerializedName(ApiConstants.START_PORT) @Param(description="the start port of the rule")
@@ -119,5 +122,13 @@ public class IpForwardingRuleResponse extends BaseResponse {
 
     public void setEndPort(Integer endPort) {
         this.endPort = endPort;
+    }
+
+    public Long getPublicIpAddressId() {
+        return publicIpAddressId;
+    }
+
+    public void setPublicIpAddressId(Long publicIpAddressId) {
+        this.publicIpAddressId = publicIpAddressId;
     }
 }

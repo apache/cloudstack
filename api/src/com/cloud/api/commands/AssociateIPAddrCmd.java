@@ -22,11 +22,13 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.IPAddressResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -35,10 +37,11 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Acquires and associates a public IP to an account.", responseObject=IPAddressResponse.class)
-public class AssociateIPAddrCmd extends BaseCmd {
+public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateIPAddrCmd.class.getName());
     private static final String s_name = "associateipaddressresponse";
 
@@ -93,7 +96,22 @@ public class AssociateIPAddrCmd extends BaseCmd {
         assert (networks.size() <= 1) : "Too many virtual networks.  This logic should be obsolete";
         return networks.get(0).getId();
     }
+    
+    @Override
+    public long getEntityOwnerId() {
+        Account caller = UserContext.current().getCaller();
+        return _accountService.finalizeOwner(caller, accountName, domainId).getAccountId();
+    }
 
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_NET_IP_ASSIGN;
+    }
+    
+    @Override
+    public String getEventDescription() {
+        return  "associating ip to network id: " + getNetworkId() + " in zone " + getZoneId();
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -107,6 +125,28 @@ public class AssociateIPAddrCmd extends BaseCmd {
 
     public static String getResultObjectName() {
     	return "addressinfo";
+    }
+    
+    @Override
+    public void create(){
+        try {
+            IpAddress ip = _networkService.allocateIP(this);
+            if (ip != null) {
+                this.setEntityId(ip.getId());
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to allocate ip address");
+            }
+        } catch (ResourceAllocationException ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
+        } catch (ConcurrentOperationException ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        } catch (InsufficientAddressCapacityException ex) {
+            s_logger.info(ex);
+            s_logger.trace(ex);
+            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
+        }
     }
     
     @Override

@@ -17,6 +17,7 @@
  */
 package com.cloud.agent.api.to;
 
+import com.cloud.network.IpAddress;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.State;
 
@@ -28,7 +29,7 @@ import com.cloud.network.rules.FirewallRule.State;
  *      sent multiple times to the destination.  If the rule is not on 
  *      the destination, the answer to a revoke rule should be successful.
  *   2. alreadyAdded - the rule has been successfully added before.  Rules
- *      in this state are sent for completeness and optomization.
+ *      in this state are sent for completeness and optimization.
  *   3. neither - the rule is to be added but it might have been added before.
  *      If the rule already exists on the destination, the destination should
  *      reply the rule is successfully applied.
@@ -62,8 +63,8 @@ public class FirewallRuleTO {
         this.isOneToOneNat = isOneToOneNat;
     }
     
-    public FirewallRuleTO(FirewallRule rule) {
-        this(rule.getId(), rule.getSourceIpAddress().addr(), rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getState()==State.Revoke, rule.getState()==State.Active, rule.isOneToOneNat());
+    public FirewallRuleTO(FirewallRule rule, String srcIp) {
+        this(rule.getId(), srcIp, rule.getProtocol(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getState()==State.Revoke, rule.getState()==State.Active, rule.isOneToOneNat());
     }
     
     public long getId() {

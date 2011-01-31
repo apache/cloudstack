@@ -262,7 +262,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             addr.setAssociatedWithNetworkId(networkId);
         }
 
-        if (!_ipAddressDao.update(addr.getAddress(), addr)) {
+        if (!_ipAddressDao.update(addr.getId(), addr)) {
             throw new CloudRuntimeException("Found address to allocate but unable to update: " + addr);
         }
         if(owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM){
@@ -321,7 +321,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 ip = fetchNewPublicIp(dcId, null, vlanId, owner, VlanType.VirtualNetwork, network.getId(), true, false);
                 sourceNat = ip.ip();
                 sourceNat.setState(IpAddress.State.Allocated);
-                _ipAddressDao.update(sourceNat.getAddress(), sourceNat);
+                _ipAddressDao.update(sourceNat.getId(), sourceNat);
 
                 // Increment the number of public IPs for this accountId in the database
                 _accountMgr.incrementResourceCount(ownerId, ResourceType.public_ip);
@@ -426,9 +426,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (addr.getState() == IpAddress.State.Allocating) {
                     addr.setState(IpAddress.State.Allocated);
                     addr.setAssociatedWithNetworkId(network.getId());
-                    _ipAddressDao.update(addr.getAddress(), addr);
+                    _ipAddressDao.update(addr.getId(), addr);
                 } else if (addr.getState() == IpAddress.State.Releasing) {
-                    _ipAddressDao.unassignIpAddress(addr.getAddress());
+                    _ipAddressDao.unassignIpAddress(addr.getId());
                 }
             }
         }
@@ -445,10 +445,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         return _networksDao.listBy(owner.getId(), zoneId, GuestIpType.Virtual);
     }
-
-    @Override
-    @DB
-    public IpAddress associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException, ConcurrentOperationException {
+    
+    @Override @DB
+    public IpAddress allocateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException{
         String accountName = cmd.getAccountName();
         long domainId = cmd.getDomainId();
         Long zoneId = cmd.getZoneId();
@@ -473,8 +472,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         PublicIp ip = null;
-        boolean success = false;
-
+        
         Transaction txn = Transaction.currentTxn();
         Account accountToLock = null;
         try {
@@ -513,36 +511,59 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.debug("Got " + ipAddress + " to assign for account " + owner.getId() + " in zone " + network.getDataCenterId());
 
             txn.commit();
-
-            success = applyIpAssociations(network, false);
-            if (success) {
-                s_logger.debug("Successfully associated ip address " + ip + " for account " + owner.getId() + " in zone " + network.getDataCenterId());
-            } else {
-                s_logger.warn("Failed to associate ip address " + ip + " for account " + owner.getId() + " in zone " + network.getDataCenterId());
-            }
-
-            return ip;
-        } catch (ResourceUnavailableException e) {
-            s_logger.error("Unable to associate ip address due to resource unavailable exception", e);
-            return null;
         } finally {
             if (accountToLock != null) {
                 _accountDao.releaseFromLockTable(ownerId);
                 s_logger.debug("Associate IP address lock released");
             }
+        }
+        
+        return ip;
+    }
 
+    @Override @DB
+    public IpAddress associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException, ConcurrentOperationException {
+        Account caller = UserContext.current().getCaller();
+        Account owner = null;
+        
+        IpAddress ipToAssoc = getIp(cmd.getEntityId());
+        if (ipToAssoc != null) {
+            _accountMgr.checkAccess(caller, ipToAssoc);
+            owner = _accountMgr.getAccount(ipToAssoc.getAccountId());
+        } else {
+            s_logger.debug("Unable to find ip address by id: " + cmd.getEntityId());
+            return null;
+        }
+        
+        Network network = _networksDao.findById(ipToAssoc.getAssociatedWithNetworkId());
+
+        IpAddress ip = _ipAddressDao.findById(cmd.getEntityId());
+        boolean success = false;
+        try {
+            success = applyIpAssociations(network, false);
+            if (success) {
+                s_logger.debug("Successfully associated ip address " + ip.getAddress().addr() + " for account " + owner.getId() + " in zone " + network.getDataCenterId());
+            } else {
+                s_logger.warn("Failed to associate ip address " + ip.getAddress().addr() + " for account " + owner.getId() + " in zone " + network.getDataCenterId());
+            }
+            return ip;
+        } catch (ResourceUnavailableException e) {
+            s_logger.error("Unable to associate ip address due to resource unavailable exception", e);
+            return null;
+        } finally {
+            Transaction txn = Transaction.currentTxn();
             if (!success) {
                 if (ip != null) {
                     try {
                         s_logger.warn("Failed to associate ip address " + ip);
-                        _ipAddressDao.markAsUnavailable(ip.getAddress(), ip.getAccountId());
+                        _ipAddressDao.markAsUnavailable(ip.getId());
                         applyIpAssociations(network, true);
                     } catch (Exception e) {
                         s_logger.warn("Unable to disassociate ip address for recovery", e);
                     }
                     txn.start();
-                    _ipAddressDao.unassignIpAddress(ip.getAddress());
-                    _accountMgr.decrementResourceCount(ownerId, ResourceType.public_ip);
+                    _ipAddressDao.unassignIpAddress(ip.getId());
+                    _accountMgr.decrementResourceCount(owner.getId(), ResourceType.public_ip);
 
                     txn.commit();
                 }
@@ -551,20 +572,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public boolean releasePublicIpAddress(Ip addr, long ownerId, long userId) {
-        IPAddressVO ip = _ipAddressDao.markAsUnavailable(addr, ownerId);
-        assert (ip != null) : "Unable to mark the ip address " + addr + " owned by " + ownerId + " as unavailable.";
+    public boolean releasePublicIpAddress(long addrId, long ownerId, long userId) {
+        IPAddressVO ip = _ipAddressDao.markAsUnavailable(addrId);
+        assert (ip != null) : "Unable to mark the ip address id=" + addrId + " owned by " + ownerId + " as unavailable.";
         if (ip == null) {
             return true;
         }
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Releasing ip " + addr + "; sourceNat = " + ip.isSourceNat());
+            s_logger.debug("Releasing ip id=" + addrId + "; sourceNat = " + ip.isSourceNat());
         }
 
         boolean success = true;
         try {
-            if (!_rulesMgr.revokeAllRules(addr, userId)) {
+            if (!_rulesMgr.revokeAllRules(addrId, userId)) {
                 s_logger.warn("Unable to revoke all the port forwarding rules for ip " + ip);
                 success = false;
             }
@@ -573,7 +594,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             success = false;
         }
 
-        if (!_lbMgr.removeAllLoadBalanacers(addr)) {
+        if (!_lbMgr.removeAllLoadBalanacers(addrId)) {
             s_logger.warn("Unable to revoke all the load balancer rules for ip " + ip);
             success = false;
         }
@@ -591,10 +612,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         if (success) {
-            _ipAddressDao.unassignIpAddress(addr);
-            s_logger.debug("released a public ip: " + addr);    
+            _ipAddressDao.unassignIpAddress(addrId);
+            s_logger.debug("released a public ip id=" + addrId);    
             if(ownerId != Account.ACCOUNT_ID_SYSTEM){       
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ownerId, ip.getDataCenterId(), 0, addr.toString());
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ownerId, ip.getDataCenterId(), addrId, null);
                 _usageEventDao.persist(usageEvent);
             }
 
@@ -1099,8 +1120,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return _nicDao.listBy(vm.getId());
     }
 
-    private Account findAccountByIpAddress(Ip ipAddress) {
-        IPAddressVO address = _ipAddressDao.findById(ipAddress);
+    private Account findAccountByIpAddress(Long ipAddressId) {
+        IPAddressVO address = _ipAddressDao.findById(ipAddressId);
         if ((address != null) && (address.getAllocatedToAccountId() != null)) {
             return _accountMgr.getActiveAccount(address.getAllocatedToAccountId());
         }
@@ -1134,18 +1155,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         Long userId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller();
-        Ip ipAddress = cmd.getIpAddress();
+        Long ipAddressId = cmd.getIpAddressId();
 
         // Verify input parameters
-        Account accountByIp = findAccountByIpAddress(ipAddress);
+        Account accountByIp = findAccountByIpAddress(ipAddressId);
         if (accountByIp == null) {
-            throw new InvalidParameterValueException("Unable to find account owner for ip " + ipAddress);
+            throw new InvalidParameterValueException("Unable to find account owner for ip " + ipAddressId);
         }
 
         Long accountId = accountByIp.getId();
         if (!_accountMgr.isAdmin(caller.getType())) {
             if (caller.getId() != accountId.longValue()) {
-                throw new PermissionDeniedException("account " + caller.getAccountName() + " doesn't own ip address " + ipAddress);
+                throw new PermissionDeniedException("account " + caller.getAccountName() + " doesn't own ip address id=" + ipAddressId);
             }
         } else {
             Domain domain = _domainDao.findById(accountByIp.getDomainId());
@@ -1153,7 +1174,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         try {
-            IPAddressVO ipVO = _ipAddressDao.findById(ipAddress);
+            IPAddressVO ipVO = _ipAddressDao.findById(ipAddressId);
             if (ipVO == null) {
                 return false;
             }
@@ -1171,7 +1192,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 // FIXME: is the user visible in the admin account's domain????
                 if (!BaseCmd.isAdmin(account.getType())) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("permission denied disassociating IP address " + ipAddress + "; acct: " + accountId + "; ip (acct / dc / dom / alloc): " + ipVO.getAllocatedToAccountId() + " / " + ipVO.getDataCenterId() + " / "
+                        s_logger.debug("permission denied disassociating IP address id=" + ipAddressId + "; acct: " + accountId + "; ip (acct / dc / dom / alloc): " + ipVO.getAllocatedToAccountId() + " / " + ipVO.getDataCenterId() + " / "
                                 + ipVO.getAllocatedInDomainId() + " / " + ipVO.getAllocatedTime());
                     }
                     throw new PermissionDeniedException("User/account does not own supplied address");
@@ -1193,10 +1214,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             // Check for account wide pool. It will have an entry for account_vlan_map.
             if (_accountVlanMapDao.findAccountVlanMap(accountId, ipVO.getVlanId()) != null) {
-                throw new PermissionDeniedException(ipAddress + " belongs to Account wide IP pool and cannot be disassociated");
+                throw new PermissionDeniedException("Ip address id=" + ipAddressId + " belongs to Account wide IP pool and cannot be disassociated");
             }
 
-            return releasePublicIpAddress(ipAddress, accountId, userId);
+            return releasePublicIpAddress(ipAddressId, accountId, userId);
 
         } catch (PermissionDeniedException pde) {
             throw pde;
@@ -1656,7 +1677,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId);
         if (ipsToRelease != null && !ipsToRelease.isEmpty()) {
             for (IPAddressVO ip : ipsToRelease) {
-                _ipAddressDao.unassignIpAddress(ip.getAddress());
+                _ipAddressDao.unassignIpAddress(ip.getId());
                 if(ip.getAccountId() != Account.ACCOUNT_ID_SYSTEM){       
                     UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ip.getAccountId(), ip.getDataCenterId(), 0, ip.getAddress().toString());
                     _usageEventDao.persist(usageEvent);
@@ -1896,8 +1917,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public PublicIpAddress getPublicIpAddress(Ip ip) {
-        IPAddressVO addr = _ipAddressDao.findById(ip);
+    public PublicIpAddress getPublicIpAddress(long ipAddressId) {
+        IPAddressVO addr = _ipAddressDao.findById(ipAddressId);
         if (addr == null) {
             return null;
         }
@@ -1997,8 +2018,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public IpAddress getIp(Ip ip) {
-        return _ipAddressDao.findById(ip);
+    public IpAddress getIp(long ipAddressId) {
+        return _ipAddressDao.findById(ipAddressId);
     }
     
     @Override

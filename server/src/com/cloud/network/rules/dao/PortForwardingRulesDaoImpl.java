@@ -28,7 +28,6 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.net.Ip;
 
 @Local(value=PortForwardingRulesDao.class)
 public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRuleVO, Long> implements PortForwardingRulesDao {
@@ -44,7 +43,7 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
-        AllFieldsSearch.and("ip", AllFieldsSearch.entity().getSourceIpAddress(), Op.EQ);
+        AllFieldsSearch.and("ipId", AllFieldsSearch.entity().getSourceIpAddressId(), Op.EQ);
         AllFieldsSearch.and("protocol", AllFieldsSearch.entity().getProtocol(), Op.EQ);
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
         AllFieldsSearch.and("vmId", AllFieldsSearch.entity().getVirtualMachineId(), Op.EQ);
@@ -52,11 +51,11 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
         AllFieldsSearch.done();
         
         ApplicationSearch = createSearchBuilder();
-        ApplicationSearch.and("ip", ApplicationSearch.entity().getSourceIpAddress(), Op.EQ);
+        ApplicationSearch.and("ipId", ApplicationSearch.entity().getSourceIpAddressId(), Op.EQ);
         ApplicationSearch.and("state", ApplicationSearch.entity().getState(), Op.NEQ);
         
         ActiveRulesSearch = createSearchBuilder();
-        ActiveRulesSearch.and("ip", ActiveRulesSearch.entity().getSourceIpAddress(), Op.EQ);
+        ActiveRulesSearch.and("ipId", ActiveRulesSearch.entity().getSourceIpAddressId(), Op.EQ);
         ActiveRulesSearch.and("state", ActiveRulesSearch.entity().getState(), Op.NEQ);
         ActiveRulesSearch.done();
         
@@ -71,9 +70,9 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
     }
 
     @Override
-    public List<PortForwardingRuleVO> listForApplication(Ip ip) {
+    public List<PortForwardingRuleVO> listForApplication(long ipId) {
         SearchCriteria<PortForwardingRuleVO> sc = ApplicationSearch.create();
-        sc.setParameters("ip", ip);
+        sc.setParameters("ipId", ipId);
         sc.setParameters("state", State.Staged);
         
         return listBy(sc, null);
@@ -87,29 +86,29 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
     }
 
     @Override
-    public List<PortForwardingRuleVO> listByIpAndNotRevoked(Ip ip) {
+    public List<PortForwardingRuleVO> listByIpAndNotRevoked(long ipId) {
         SearchCriteria<PortForwardingRuleVO> sc = ActiveRulesSearch.create();
-        sc.setParameters("ip", ip);
+        sc.setParameters("ipId", ipId);
         sc.setParameters("state", State.Revoke);
         
         return listBy(sc, null);
     }
     
     @Override
-    public List<PortForwardingRuleVO> listByIp(Ip ip) {
+    public List<PortForwardingRuleVO> listByIp(long ipId) {
         SearchCriteria<PortForwardingRuleVO> sc = ActiveRulesSearch.create();
-        sc.setParameters("ip", ip);
+        sc.setParameters("ipId", ipId);
         
         return listBy(sc, null);
     }
     
     @Override
-    public List<PortForwardingRuleVO> searchNatRules(Ip ip, Long id, Long vmId, Long startIndex, Long pageSize) {
+    public List<PortForwardingRuleVO> searchNatRules(Long ipId, Long id, Long vmId, Long startIndex, Long pageSize) {
         Filter searchFilter = new Filter(PortForwardingRuleVO.class, "id", true, startIndex, pageSize);
         SearchCriteria<PortForwardingRuleVO> sc = AllFieldsSearch.create();
 
-        if (ip != null) {
-            sc.setParameters("ip", ip);
+        if (ipId != null) {
+            sc.setParameters("ipId", ipId);
         }
         
         if (id != null) {

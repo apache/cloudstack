@@ -23,13 +23,13 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.network.RemoteAccessVpn;
-import com.cloud.utils.net.Ip;
 
 @Implementation(description="Lists remote access vpns", responseObject=RemoteAccessVpnResponse.class)
 public class ListRemoteAccessVpnsCmd extends BaseListCmd {
@@ -47,8 +47,8 @@ public class ListRemoteAccessVpnsCmd extends BaseListCmd {
     @Parameter(name="domainid", type=CommandType.LONG, description="the domain ID of the remote access vpn rule. If used with the account parameter, lists remote access vpns for the account in the specified domain.")
     private Long domainId;
 
-    @Parameter(name="publicip", type=CommandType.STRING, required=true, description="public ip address of the vpn server")
-    private String publicIp;
+    @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.LONG, required=true, description="public ip address id of the vpn server")
+    private Long publicIpId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -62,8 +62,8 @@ public class ListRemoteAccessVpnsCmd extends BaseListCmd {
         return domainId;
     }
     
-    public Ip getPublicIp() {
-        return new Ip(publicIp);
+    public Long getPublicIpId() {
+        return publicIpId;
     }
 
     /////////////////////////////////////////////////////

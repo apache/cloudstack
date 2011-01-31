@@ -20,6 +20,7 @@ package com.cloud.network.router;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
@@ -88,7 +89,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     boolean associateIP (Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException;
     
     boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException;
-    boolean applyPortForwardingRules(Network network, List<PortForwardingRule> rules) throws AgentUnavailableException;
+    boolean applyPortForwardingRules(Network network, List<PortForwardingRuleTO> rules) throws AgentUnavailableException;
     
     String[] applyVpnUsers(Network network, List<? extends VpnUser> users) throws ResourceUnavailableException;
     

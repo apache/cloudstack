@@ -670,7 +670,7 @@ public class DatabaseConfig {
     	pzc.modifyVlan(zoneName, true, vlanId, gateway, netmask, vlanPodName, vlanType, publicIpRange, 0);
     	
     	long vlanDbId = pzc.getVlanDbId(zoneName, vlanId);
-    	iprc.saveIPRange("public", -1, zoneDbId, vlanDbId, startIP, endIP);
+    	iprc.saveIPRange("public", -1, zoneDbId, vlanDbId, startIP, endIP, 1L);
         
     }
 
@@ -732,7 +732,7 @@ public class DatabaseConfig {
     	
 		if (privateIpRange != null) {
 			// Save the IP address range
-			iprc.saveIPRange("private", id, dataCenterId, -1, startIP, endIP);
+			iprc.saveIPRange("private", id, dataCenterId, -1, startIP, endIP, null);
 		}
 
     }

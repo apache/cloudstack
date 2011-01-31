@@ -29,7 +29,6 @@ import com.cloud.api.response.LoadBalancerResponse;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.UserContext;
-import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 
 @Implementation(description="Creates a load balancer rule", responseObject=LoadBalancerResponse.class)
@@ -54,8 +53,8 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
     @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.INTEGER, required=true, description="the private port of the private ip address/virtual machine where the network traffic will be load balanced to")
     private Integer privatePort;
 
-    @Parameter(name=ApiConstants.PUBLIC_IP, type=CommandType.STRING, required=true, description="public ip address from where the network traffic will be load balanced from")
-    private String publicIp;
+    @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.LONG, required=true, description="public ip address id from where the network traffic will be load balanced from")
+    private Long publicIpId;
 
     @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.INTEGER, required=true, description="the public port from where the network traffic will be load balanced from")
     private Integer publicPort;
@@ -83,8 +82,8 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
         return privatePort;
     }
 
-    public String getPublicIp() {
-        return publicIp;
+    public Long getPublicIpId() {
+        return publicIpId;
     }
 
     public Integer getPublicPort() {
@@ -130,8 +129,8 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
     }
 
     @Override
-    public Ip getSourceIpAddress() {
-        return new Ip(publicIp);
+    public long getSourceIpAddressId() {
+        return publicIpId;
     }
 
     @Override

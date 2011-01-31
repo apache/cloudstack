@@ -17,6 +17,7 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -29,8 +30,11 @@ public class LoadBalancerResponse extends BaseResponse {
 
     @SerializedName("description") @Param(description="the description of the load balancer")
     private String description;
+    
+    @SerializedName(ApiConstants.PUBLIC_IP_ID) @Param(description="the public ip address id")
+    private Long publicIpId;
 
-    @SerializedName("publicip") @Param(description="the public ip address")
+    @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="the public ip address")
     private String publicIp;
 
     @SerializedName("publicport") @Param(description="the public port")
@@ -141,4 +145,13 @@ public class LoadBalancerResponse extends BaseResponse {
     public void setState(String state) {
         this.state = state;
     }
+
+    public Long getPublicIpId() {
+        return publicIpId;
+    }
+
+    public void setPublicIpId(Long publicIpId) {
+        this.publicIpId = publicIpId;
+    }
+    
 }

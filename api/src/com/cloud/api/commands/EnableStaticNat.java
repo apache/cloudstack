@@ -27,7 +27,6 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.utils.net.Ip;
 
 @Implementation(description="Enables static nat for given ip address", responseObject=SuccessResponse.class)
 public class EnableStaticNat extends BaseCmd{
@@ -39,8 +38,8 @@ public class EnableStaticNat extends BaseCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the public IP address for which static nat feature is being enabled")
-    private String ipAddress;
+    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, required=true, description="the public IP address id for which static nat feature is being enabled")
+    private Long ipAddressId;
 
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=true, description="the ID of the virtual machine for enabling static nat feature")
     private Long virtualMachineId;
@@ -49,8 +48,8 @@ public class EnableStaticNat extends BaseCmd{
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getIpAddress() {
-        return ipAddress;
+    public Long getIpAddressId() {
+        return ipAddressId;
     }
 
     public Long getVirtualMachineId() {
@@ -69,7 +68,7 @@ public class EnableStaticNat extends BaseCmd{
     @Override
     public void execute(){ 
         try {
-            boolean result = _rulesService.enableOneToOneNat(new Ip(ipAddress), virtualMachineId);
+            boolean result = _rulesService.enableOneToOneNat(ipAddressId, virtualMachineId);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);

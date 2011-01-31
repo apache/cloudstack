@@ -18,7 +18,6 @@
 package com.cloud.network.rules;
 
 import com.cloud.acl.ControlledEntity;
-import com.cloud.utils.net.Ip;
 
 public interface FirewallRule extends ControlledEntity {
     enum Purpose {
@@ -46,11 +45,6 @@ public interface FirewallRule extends ControlledEntity {
     String getXid();
     
     /**
-     * @return public ip address.
-     */
-    Ip getSourceIpAddress();
-    
-    /**
      * @return first port of the source port range.
      */
     int getSourcePortStart();
@@ -72,4 +66,6 @@ public interface FirewallRule extends ControlledEntity {
     long getNetworkId();
     
     boolean isOneToOneNat();
+    
+    long getSourceIpAddressId();
 }

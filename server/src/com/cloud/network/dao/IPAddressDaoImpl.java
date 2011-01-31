@@ -43,7 +43,7 @@ import com.cloud.utils.net.Ip;
 
 @Local(value = { IPAddressDao.class })
 @DB
-public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Ip> implements IPAddressDao {
+public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implements IPAddressDao {
     private static final Logger s_logger = Logger.getLogger(IPAddressDaoImpl.class);
 
     protected final SearchBuilder<IPAddressVO> AllFieldsSearch;
@@ -57,6 +57,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Ip> implements
     // make it public for JUnit test
     public IPAddressDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
         AllFieldsSearch.and("dataCenterId", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
         AllFieldsSearch.and("ipAddress", AllFieldsSearch.entity().getAddress(), Op.EQ);
         AllFieldsSearch.and("vlan", AllFieldsSearch.entity().getVlanId(), Op.EQ);
@@ -138,7 +139,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Ip> implements
         ip.setSourceNat(sourceNat);
         ip.setState(State.Allocated);
 
-        if (!update(ip.getAddress(), ip)) {
+        if (!update(ip.getId(), ip)) {
             throw new CloudRuntimeException("How can I lock the row but can't update it: " + ip.getAddress());
         }
 
@@ -147,7 +148,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Ip> implements
     }
 
     @Override
-    public void unassignIpAddress(Ip ipAddress) {
+    public void unassignIpAddress(long ipAddressId) {
         IPAddressVO address = createForUpdate();
         address.setAllocatedToAccountId(null);
         address.setAllocatedInDomainId(null);
@@ -157,7 +158,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Ip> implements
         address.setAssociatedWithVmId(null);
         address.setState(State.Free);
         address.setAssociatedWithNetworkId(null);
-        update(ipAddress, address);
+        update(ipAddressId, address);
     }
 
     @Override
@@ -165,6 +166,14 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Ip> implements
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         return listBy(sc);
+    }
+    
+    @Override
+    public IPAddressVO findByAccountAndIp(long accountId, String ipAddress) {
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("ipAddress", ipAddress);
+        return findOneBy(sc);
     }
 
     @Override
@@ -235,10 +244,9 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Ip> implements
     }
 
     @Override @DB
-    public IPAddressVO markAsUnavailable(Ip ipAddress, long ownerId) {
+    public IPAddressVO markAsUnavailable(long ipAddressId) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
-        sc.setParameters("accountId", ownerId);
-        sc.setParameters("ipAddress", ipAddress);
+        sc.setParameters("id", ipAddressId);
         
         IPAddressVO ip = createForUpdate();
         ip.setState(State.Releasing);

@@ -21,10 +21,9 @@ import java.util.List;
 
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.net.Ip;
 
 public interface PortForwardingRulesDao extends GenericDao<PortForwardingRuleVO, Long> {
-    List<PortForwardingRuleVO> listForApplication(Ip ip);
+    List<PortForwardingRuleVO> listForApplication(long ipId);
     
     /**
      * Find all port forwarding rules that have not been revoked.
@@ -32,11 +31,11 @@ public interface PortForwardingRulesDao extends GenericDao<PortForwardingRuleVO,
      * @param ip ip address 
      * @return List of PortForwardingRuleVO
      */
-    List<PortForwardingRuleVO> listByIpAndNotRevoked(Ip ip);
+    List<PortForwardingRuleVO> listByIpAndNotRevoked(long ipId);
     
-    List<PortForwardingRuleVO> listByIp(Ip ip);
+    List<PortForwardingRuleVO> listByIp(long ipId);
     
-    List<PortForwardingRuleVO> searchNatRules(Ip ip, Long id, Long vmId, Long startIndex, Long pageSize);
+    List<PortForwardingRuleVO> searchNatRules(Long ipId, Long id, Long vmId, Long startIndex, Long pageSize);
 
 	List<PortForwardingRuleVO> listByVm(Long vmId);
 	

@@ -68,4 +68,9 @@ public interface IpAddress extends ControlledEntity {
     Long getAssociatedWithNetworkId();
     
     Long getAssociatedWithVmId();
+    
+    /**
+     * @return database id.
+     */
+    long getId();
 }

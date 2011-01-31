@@ -21,7 +21,7 @@ import com.cloud.agent.api.to.LoadBalancerTO;
 
 /**
  * LoadBalancerConfigCommand sends the load balancer configuration
- * to the load balancer.  Isn't that kinda obvious?
+ * to the load balancer.
  */
 public class LoadBalancerConfigCommand extends NetworkElementCommand {
     LoadBalancerTO[] loadBalancers;
@@ -30,7 +30,7 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
         
     }
     
-    public LoadBalancerConfigCommand( LoadBalancerTO[] loadBalancers) {
+    public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers) {
     	this.loadBalancers = loadBalancers;
     }
     

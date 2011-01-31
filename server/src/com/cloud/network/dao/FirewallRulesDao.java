@@ -23,21 +23,20 @@ import java.util.List;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.net.Ip;
 
 /*
  * Data Access Object for user_ip_address and ip_forwarding tables
  */
 public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
-    List<FirewallRuleVO> listByIpAndNotRevoked(Ip ip, Boolean isOneToOneNat);
+    List<FirewallRuleVO> listByIpAndNotRevoked(long ipAddressId, Boolean isOneToOneNat);
     
     boolean setStateToAdd(FirewallRuleVO rule);
     
     boolean revoke(FirewallRuleVO rule);
     
-    boolean releasePorts(Ip ip, String protocol, FirewallRule.Purpose purpose, int[] ports);
+    boolean releasePorts(long ipAddressId, String protocol, FirewallRule.Purpose purpose, int[] ports);
     
-    List<FirewallRuleVO> listByIpAndPurpose(Ip ip, FirewallRule.Purpose purpose);
+    List<FirewallRuleVO> listByIpAndPurpose(long ipAddressId, FirewallRule.Purpose purpose);
     
 //	public List<PortForwardingRuleVO> listIPForwarding(String publicIPAddress, boolean forwarding);
 //	public List<PortForwardingRuleVO> listIPForwarding(String publicIPAddress, String port, boolean forwarding);

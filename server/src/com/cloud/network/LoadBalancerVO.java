@@ -26,7 +26,6 @@ import javax.persistence.Table;
 
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.LoadBalancer;
-import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 
 @Entity
@@ -53,8 +52,8 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
     public LoadBalancerVO() { 
     }
 
-    public LoadBalancerVO(String xId, String name, String description, Ip srcIp, int srcPort, int dstPort, String algorithm, long networkId, long accountId, long domainId) {
-        super(xId, srcIp, srcPort, NetUtils.TCP_PROTO, networkId, accountId, domainId, Purpose.LoadBalancing, false);
+    public LoadBalancerVO(String xId, String name, String description, long srcIpId, int srcPort, int dstPort, String algorithm, long networkId, long accountId, long domainId) {
+        super(xId, srcIpId, srcPort, NetUtils.TCP_PROTO, networkId, accountId, domainId, Purpose.LoadBalancing, false);
         this.name = name;
         this.description = description;
         this.algorithm = algorithm;

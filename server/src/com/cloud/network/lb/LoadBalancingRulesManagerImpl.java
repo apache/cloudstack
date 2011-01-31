@@ -71,7 +71,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmVO;
@@ -111,14 +110,13 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
     @Override @DB
     public boolean assignToLoadBalancer(long loadBalancerId, List<Long> instanceIds) {
-        UserContext caller = UserContext.current();
+        UserContext ctx = UserContext.current();
+        Account caller = ctx.getCaller();
 
         LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
         if (loadBalancer == null) {
             throw new InvalidParameterValueException("Failed to assign to load balancer " + loadBalancerId + ", the load balancer was not found.");
         }
-        
-        _accountMgr.checkAccess(caller.getCaller(), loadBalancer);
 
         List<LoadBalancerVMMapVO> mappedInstances = _lb2VmMapDao.listByLoadBalancerId(loadBalancerId, false);
         Set<Long> mappedInstanceIds = new HashSet<Long>();
@@ -138,7 +136,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
                 throw new InvalidParameterValueException("Invalid instance id: " + instanceId);
             }
             
-            _accountMgr.checkAccess(caller.getCaller(), vm);
+            _rulesMgr.checkRuleAndUserVm(loadBalancer, vm, caller);
             
             if (vm.getAccountId() != loadBalancer.getAccountId()) {
                 throw new PermissionDeniedException("Cannot add virtual machines that do not belong to the same owner.");
@@ -305,12 +303,12 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     public LoadBalancer createLoadBalancerRule(LoadBalancer lb) throws NetworkRuleConflictException {
         UserContext caller = UserContext.current();
 
-        Ip srcIp = lb.getSourceIpAddress();
+        long ipId = lb.getSourceIpAddressId();
 
         // make sure ip address exists
-        IPAddressVO ipAddr = _ipAddressDao.findById(srcIp);
+        IPAddressVO ipAddr = _ipAddressDao.findById(ipId);
         if (ipAddr == null || !ipAddr.readyToUse()) {
-            throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address " + srcIp);
+            throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id" + ipId);
         }
 
         int srcPortStart = lb.getSourcePortStart();
@@ -345,7 +343,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             networkId = ipAddr.getAssociatedWithNetworkId();
         }
         _accountMgr.checkAccess(caller.getCaller(), ipAddr);
-        LoadBalancerVO newRule = new LoadBalancerVO(lb.getXid(), lb.getName(), lb.getDescription(), lb.getSourceIpAddress(), lb.getSourcePortEnd(),
+        LoadBalancerVO newRule = new LoadBalancerVO(lb.getXid(), lb.getName(), lb.getDescription(), lb.getSourceIpAddressId(), lb.getSourcePortEnd(),
                 lb.getDefaultPortStart(), lb.getAlgorithm(), networkId, ipAddr.getAccountId(), ipAddr.getDomainId());
 
         newRule = _lbDao.persist(newRule);
@@ -355,7 +353,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             if (!_rulesDao.setStateToAdd(newRule)) {
                 throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
             }
-            s_logger.debug("Load balancer " + newRule.getId() + " for Ip address " +  srcIp + ", public port " + srcPortStart + ", private port " + defPortStart+ " is added successfully.");
+            s_logger.debug("Load balancer " + newRule.getId() + " for Ip address id=" +  ipId + ", public port " + srcPortStart + ", private port " + defPortStart+ " is added successfully.");
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_LOAD_BALANCER_CREATE, ipAddr.getAllocatedToAccountId(), ipAddr.getDataCenterId(), newRule.getId(), null);
             _usageEventDao.persist(usageEvent);
             return newRule;
@@ -364,7 +362,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             if (e instanceof NetworkRuleConflictException) {
                 throw (NetworkRuleConflictException) e;
             }
-            throw new CloudRuntimeException("Unable to add rule for " + newRule.getSourceIpAddress(), e);
+            throw new CloudRuntimeException("Unable to add rule for ip address id=" + newRule.getSourceIpAddressId(), e);
         }
     }
 
@@ -397,8 +395,8 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     }
 
     @Override
-    public boolean removeAllLoadBalanacers(Ip ip) {   
-        List<FirewallRuleVO> rules = _rulesDao.listByIpAndNotRevoked(ip, null);
+    public boolean removeAllLoadBalanacers(long ipId) {   
+        List<FirewallRuleVO> rules = _rulesDao.listByIpAndNotRevoked(ipId, null);
         if (rules != null)
         s_logger.debug("Found " + rules.size() + " lb rules to cleanup");
         for (FirewallRule rule : rules) {
@@ -1209,7 +1207,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             }
         }
 
-        IPAddressVO addr = _ipAddressDao.findById(loadBalancer.getSourceIpAddress());
+        IPAddressVO addr = _ipAddressDao.findById(loadBalancer.getSourceIpAddressId());
         List<UserVmVO> userVms = _vmDao.listVirtualNetworkInstancesByAcctAndZone(loadBalancer.getAccountId(), addr.getDataCenterId(), loadBalancer.getNetworkId());
 
         for (UserVmVO userVm : userVms) {
@@ -1240,11 +1238,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
-        String ipString = cmd.getPublicIp();
-        Ip ipAddress = null;
-        if (ipString != null) {
-            ipAddress = new Ip(cmd.getPublicIp());
-        }
+        Long ipId = cmd.getPublicIpId();
         
         if (accountName != null && domainId != null) {
             owner = _accountDao.findActiveAccount(accountName, domainId);
@@ -1271,7 +1265,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         SearchBuilder<LoadBalancerVO> sb = _lbDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        sb.and("sourceIpAddress", sb.entity().getSourceIpAddress(), SearchCriteria.Op.EQ);
+        sb.and("sourceIpAddress", sb.entity().getSourceIpAddressId(), SearchCriteria.Op.EQ);
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
         sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
 
@@ -1298,8 +1292,8 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             sc.setParameters("id", id);
         }
 
-        if (ipAddress != null) {
-            sc.setParameters("sourceIpAddress", ipAddress);
+        if (ipId != null) {
+            sc.setParameters("sourceIpAddress", ipId);
         }
 
         if (instanceId != null) {

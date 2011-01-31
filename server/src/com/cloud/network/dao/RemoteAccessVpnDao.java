@@ -23,11 +23,10 @@ import java.util.List;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.net.Ip;
 
-public interface RemoteAccessVpnDao extends GenericDao<RemoteAccessVpnVO, Ip> {
-    RemoteAccessVpnVO findByPublicIpAddress(String ipAddress);
-    RemoteAccessVpnVO findByPublicIpAddressAndState(String ipAddress, RemoteAccessVpn.State state);
+public interface RemoteAccessVpnDao extends GenericDao<RemoteAccessVpnVO, Long> {
+    RemoteAccessVpnVO findByPublicIpAddress(long ipAddressId);
+    RemoteAccessVpnVO findByPublicIpAddressAndState(long ipAddressId, RemoteAccessVpn.State state);
     RemoteAccessVpnVO findByAccountAndNetwork(Long accountId, Long zoneId);
     List<RemoteAccessVpnVO> findByAccount(Long accountId);
 }

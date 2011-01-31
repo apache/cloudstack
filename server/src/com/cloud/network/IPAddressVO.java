@@ -24,6 +24,8 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
@@ -38,6 +40,11 @@ import com.cloud.utils.net.Ip;
 @Entity
 @Table(name=("user_ip_address"))
 public class IPAddressVO implements IpAddress {
+    @Id
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @Column(name="id")
+    long id;
+    
 	@Column(name="account_id")
 	private Long allocatedToAccountId = null;
 
@@ -73,6 +80,9 @@ public class IPAddressVO implements IpAddress {
 	
 	@Column(name="mac_address")
 	private long macAddress;
+	
+	@Column(name="source_network_id")
+    private Long sourceNetworkId;
 	
 	@Column(name="network_id")
 	private Long associatedWithNetworkId;
@@ -206,5 +216,18 @@ public class IPAddressVO implements IpAddress {
     public String toString() {
 	    return new StringBuilder("Ip[").append(address).append("-").append(dataCenterId).append("]").toString();
 	}
+	
+	@Override
+    public long getId() {
+        return id;
+    }
+
+    public Long getSourceNetworkId() {
+        return sourceNetworkId;
+    }
+
+    public void setSourceNetworkId(Long sourceNetworkId) {
+        this.sourceNetworkId = sourceNetworkId;
+    }
 
 }

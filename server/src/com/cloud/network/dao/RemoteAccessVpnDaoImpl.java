@@ -29,10 +29,9 @@ import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.net.Ip;
 
 @Local(value={RemoteAccessVpnDao.class})
-public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Ip> implements RemoteAccessVpnDao {
+public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Long> implements RemoteAccessVpnDao {
     private static final Logger s_logger = Logger.getLogger(RemoteAccessVpnDaoImpl.class);
     
     private final SearchBuilder<RemoteAccessVpnVO> AllFieldsSearch;
@@ -42,15 +41,15 @@ public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Ip
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("ipAddress", AllFieldsSearch.entity().getServerAddress(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("ipAddress", AllFieldsSearch.entity().getServerAddressId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
 
     @Override
-    public RemoteAccessVpnVO findByPublicIpAddress(String ipAddress) {
+    public RemoteAccessVpnVO findByPublicIpAddress(long ipAddressId) {
         SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
-        sc.setParameters("ipAddress", ipAddress);
+        sc.setParameters("ipAddress", ipAddressId);
         return findOneBy(sc);
     }
 
@@ -70,9 +69,9 @@ public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Ip
 	}
 	
 	@Override
-	public RemoteAccessVpnVO findByPublicIpAddressAndState(String ipAddress, RemoteAccessVpn.State state) {
+	public RemoteAccessVpnVO findByPublicIpAddressAndState(long ipAddressId, RemoteAccessVpn.State state) {
 	    SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
-        sc.setParameters("ipAddress", ipAddress);
+        sc.setParameters("ipAddress", ipAddressId);
         sc.setParameters("state", state);
         return findOneBy(sc);
 	}

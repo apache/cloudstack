@@ -26,7 +26,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.net.Ip;
 
 
 /**
@@ -34,7 +33,7 @@ import com.cloud.utils.net.Ip;
  */
 public interface RulesManager extends RulesService {
     
-    boolean applyPortForwardingRules(Ip ip, boolean continueOnError);
+    boolean applyPortForwardingRules(long ipAddressId, boolean continueOnError);
     
     /**
      * detectRulesConflict finds conflicts in networking rules.  It checks for
@@ -56,10 +55,11 @@ public interface RulesManager extends RulesService {
     void detectRulesConflict(FirewallRule newRule, IpAddress ipAddress) throws NetworkRuleConflictException;
     
     void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller) throws InvalidParameterValueException, PermissionDeniedException;
+    void checkRuleAndUserVm(FirewallRule rule, UserVm userVm, Account caller) throws InvalidParameterValueException, PermissionDeniedException;
     
-    boolean revokeAllRules(Ip ip, long userId) throws ResourceUnavailableException;
+    boolean revokeAllRules(long ipId, long userId) throws ResourceUnavailableException;
     
-    List<? extends FirewallRule> listFirewallRulesByIp(Ip ip);
+    List<? extends FirewallRule> listFirewallRulesByIp(long ipAddressId);
     
     /**
      * Returns a list of port forwarding rules that are ready for application
@@ -67,14 +67,14 @@ public interface RulesManager extends RulesService {
      * @param ip
      * @return List of PortForwardingRule
      */
-    List<? extends PortForwardingRule> listPortForwardingRulesForApplication(Ip ip);
+    List<? extends PortForwardingRule> listPortForwardingRulesForApplication(long ipId);
     
     List<? extends PortForwardingRule> gatherPortForwardingRulesForApplication(List<? extends IpAddress> addrs);
 
 	boolean revokePortForwardingRule(long vmId);
 	
 	FirewallRule[] reservePorts(IpAddress ip, String protocol, FirewallRule.Purpose purpose, int... ports) throws NetworkRuleConflictException;
-	boolean releasePorts(Ip ip, String protocol, FirewallRule.Purpose purpose, int... ports);
+	boolean releasePorts(long ipId, String protocol, FirewallRule.Purpose purpose, int... ports);
 	
 	List<? extends PortForwardingRule> listByNetworkId(long networkId);
 }

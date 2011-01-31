@@ -17,13 +17,18 @@
  */
 package com.cloud.api.response;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class RemoteAccessVpnResponse extends BaseResponse {
-    @SerializedName("publicip") @Param(description="the public ip address of the vpn server")
+    
+    @SerializedName(ApiConstants.PUBLIC_IP_ID) @Param(description="the public ip address of the vpn server")
+    private Long publicIpId;
+    
+    @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="the public ip address of the vpn server")
     private String publicIp;
-
+    
     @SerializedName("iprange") @Param(description="the range of ips to allocate to the clients")
     private String ipRange;
 
@@ -99,4 +104,13 @@ public class RemoteAccessVpnResponse extends BaseResponse {
     public void setState(String state) {
         this.state = state;
     }
+
+    public Long getPublicIpId() {
+        return publicIpId;
+    }
+
+    public void setPublicIpId(Long publicIpId) {
+        this.publicIpId = publicIpId;
+    }
+    
 }

@@ -161,11 +161,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 				}
 			}
 			
-			// If this is a premium environment, set the network type to be "vlan"
-			if (_configDao.isPremium()) {
-//				_configDao.update("network.type", "vlan");
-//				s_logger.debug("ConfigurationServer changed the network type to \"vlan\".");
-				
+			if (_configDao.isPremium()) {		
 				// Default value is set as KVM because of FOSS build, when we are
 				// running under premium, autoset to XenServer if we know it is from FOSS settings
 				

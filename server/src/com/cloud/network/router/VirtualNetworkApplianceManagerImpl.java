@@ -55,6 +55,7 @@ import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
+import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.UpgradeRouterCmd;
@@ -1145,13 +1146,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 createAssociateIPCommands(router, publicIps, cmds, 0);   
                 
                 //Re-apply port forwarding rules for all public ips
-                List<PortForwardingRuleVO> rulesToReapply = new ArrayList<PortForwardingRuleVO>();
+                List<PortForwardingRuleTO> rulesToReapply = new ArrayList<PortForwardingRuleTO>();
                 List<RemoteAccessVpn> vpns = new ArrayList<RemoteAccessVpn>();
                 
                 for (PublicIpAddress ip : publicIps) {
-                    List<PortForwardingRuleVO> rules = _pfRulesDao.listForApplication(ip.getAddress());
-                    rulesToReapply.addAll(rules);
-                    RemoteAccessVpn vpn = _vpnDao.findById(ip.getAddress());
+                    List<? extends PortForwardingRule> rules = _pfRulesDao.listForApplication(ip.getId());
+                    if (rules != null){     
+                        rulesToReapply.addAll(_rulesMgr.buildPortForwardingTOrules(rules));
+                    }
+                    RemoteAccessVpn vpn = _vpnDao.findById(ip.getId());
                     if (vpn != null) {
                         vpns.add(vpn);
                     }
@@ -1277,7 +1280,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new ResourceUnavailableException("Failed to delete remote access VPN: domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
         }
             Commands cmds = new Commands(OnError.Continue);
-            RemoteAccessVpnCfgCommand removeVpnCmd = new RemoteAccessVpnCfgCommand(false, vpn.getServerAddress().addr(), vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey());
+            IpAddress ip = _networkMgr.getIp(vpn.getServerAddressId());
+            
+            RemoteAccessVpnCfgCommand removeVpnCmd = new RemoteAccessVpnCfgCommand(false, ip.getAddress().addr(), vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey());
             removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
             removeVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
             cmds.addCommand(removeVpnCmd);
@@ -1508,8 +1513,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
     }
     
-    private void createApplyPortForwardingRulesCommands(List<? extends PortForwardingRule> rules, DomainRouterVO router, Commands cmds) {
-        
+    private void createApplyPortForwardingRulesCommands(List<PortForwardingRuleTO> rules, DomainRouterVO router, Commands cmds) {
         SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(rules);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
@@ -1524,7 +1528,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             boolean revoked = (rule.getState().equals(FirewallRule.State.Revoke));
             String protocol = rule.getProtocol();
             String algorithm = rule.getAlgorithm();
-            String srcIp = rule.getSourceIpAddress().addr();
+            
+            String srcIp =  _networkMgr.getIp(rule.getSourceIpAddressId()).getAddress().addr();
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
             LoadBalancerTO lb = new LoadBalancerTO(srcIp, srcPort, protocol, algorithm, revoked, false, destinations);
@@ -1554,7 +1559,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         addUsersCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
         addUsersCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         
-        RemoteAccessVpnCfgCommand startVpnCmd = new RemoteAccessVpnCfgCommand(true, vpn.getServerAddress().addr(),
+        IpAddress ip = _networkMgr.getIp(vpn.getServerAddressId());
+        
+        RemoteAccessVpnCfgCommand startVpnCmd = new RemoteAccessVpnCfgCommand(true, ip.getAddress().addr(),
                 vpn.getLocalIp(), vpn.getIpRange(), vpn.getIpsecPresharedKey());
         startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
         startVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
@@ -1673,7 +1680,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public boolean applyPortForwardingRules(Network network, List<PortForwardingRule> rules) throws AgentUnavailableException {
+    public boolean applyPortForwardingRules(Network network, List<PortForwardingRuleTO> rules) throws AgentUnavailableException {
         DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
         
         Commands cmds = new Commands(OnError.Continue);

@@ -1777,7 +1777,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 		checkPublicIpRangeErrors(zoneId, vlanId, vlanGateway, vlanNetmask, startIP, endIP);
 
 		// Throw an exception if any of the following is true:
-		// 1. Another VLAN in the same zone has a different tag but the same subnet as the new VLAN
+		// 1. Another VLAN in the same zone has a different tag but the same subnet as the new VLAN. Make an exception for the case when both vlans are Direct.
 		// 2. Another VLAN in the same zone that has the same tag and subnet as the new VLAN has IPs that overlap with the IPs being added
 		// 3. Another VLAN in the same zone that has the same tag and subnet as the new VLAN has a different gateway than the new VLAN
 		List<VlanVO> vlans = _vlanDao.listByZone(zone.getId());
@@ -1791,7 +1791,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 				otherVlanEndIP = otherVlanIpRange[1];
 			}
 			
-			if (!vlanId.equals(vlan.getVlanTag()) && newVlanSubnet.equals(otherVlanSubnet)) {
+			if (!vlanId.equals(vlan.getVlanTag()) && newVlanSubnet.equals(otherVlanSubnet) && !allowIpRangeOverlap(vlan, forVirtualNetwork, networkId)) {
 				throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag() + " in zone " + zone.getName() + " has the same subnet. Please specify a different gateway/netmask.");
 			}
 			
@@ -1832,7 +1832,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 		VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId);
 		vlan = _vlanDao.persist(vlan);
 		
-		if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId())) {
+		if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId(), networkId)) {
 			deletePublicIPRange(vlan.getId());
 			_vlanDao.expunge(vlan.getId());
 			throw new CloudRuntimeException("Failed to save IP range. Please contact Cloud Support."); //It can be Direct IP or Public IP.
@@ -2004,13 +2004,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 	}
     
 	@DB
-    protected boolean savePublicIPRange(String startIP, String endIP, long zoneId, long vlanDbId) {
+    protected boolean savePublicIPRange(String startIP, String endIP, long zoneId, long vlanDbId, long sourceNetworkid) {
         long startIPLong = NetUtils.ip2Long(startIP);
         long endIPLong = NetUtils.ip2Long(endIP);
 	    Transaction txn = Transaction.currentTxn();
 	    txn.start();
 	    IPRangeConfig config = new IPRangeConfig();
-	    config.savePublicIPRange(txn, startIPLong, endIPLong, zoneId, vlanDbId);
+	    config.savePublicIPRange(txn, startIPLong, endIPLong, zoneId, vlanDbId, sourceNetworkid);
 	    txn.commit();
 	    return true;
 	}
@@ -2674,5 +2674,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Override
     public ClusterVO getCluster(long id) {
         return _clusterDao.findById(id);
+    }
+    
+    private boolean allowIpRangeOverlap(VlanVO vlan, boolean forVirtualNetwork, long networkId) {
+        Network vlanNetwork = _networkMgr.getNetwork(vlan.getNetworkId());
+        Network network = _networkMgr.getNetwork(networkId);
+        if (vlan.getVlanType() == VlanType.DirectAttached && !forVirtualNetwork && network.getAccountId() != vlanNetwork.getAccountId()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

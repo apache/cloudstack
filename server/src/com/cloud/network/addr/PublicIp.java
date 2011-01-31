@@ -164,7 +164,7 @@ public class PublicIp implements PublicIpAddress {
     
     @Override
     public long getId() {
-        return _vlan.getId();
+        return _addr.getId();
     }
     
     @Override

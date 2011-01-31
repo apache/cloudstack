@@ -20,20 +20,19 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.RemoteAccessVpnResponse;
-import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-import com.cloud.utils.net.Ip;
 
 @Implementation(description="Creates a l2tp/ipsec remote access vpn", responseObject=RemoteAccessVpnResponse.class)
 public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
@@ -44,8 +43,8 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name="publicip", type=CommandType.STRING, required=true, description="public ip address of the vpn server")
-    private String publicIp;
+    @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.LONG, required=true, description="public ip address id of the vpn server")
+    private Long publicIpId;
 
     @Parameter(name="iprange", type=CommandType.STRING, required=false, description="the range of ip addresses to allocate to vpn clients. The first ip in the range will be taken by the vpn server")
     private String ipRange;
@@ -60,8 +59,8 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
     
-    public String getPublicIp() {
-		return publicIp;
+    public Long getPublicIpId() {
+		return publicIpId;
 	}
 
 	public String getAccountName() {
@@ -70,10 +69,6 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 
 	public Long getDomainId() {
 		return domainId;
-	}
-
-	public void setPublicIp(String publicIp) {
-		this.publicIp = publicIp;
 	}
 
 	public String getIpRange() {
@@ -116,7 +111,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 
 	@Override
 	public String getEventDescription() {
-		return "Create Remote Access VPN for account " + getEntityOwnerId() + " using public " + publicIp;
+		return "Create Remote Access VPN for account " + getEntityOwnerId() + " using public ip id=" + publicIpId;
 	}
 
 	@Override
@@ -127,9 +122,9 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() {
         try {
-            RemoteAccessVpn vpn = _ravService.createRemoteAccessVpn(new Ip(publicIp), ipRange);
+            RemoteAccessVpn vpn = _ravService.createRemoteAccessVpn(publicIpId, ipRange);
             if (vpn != null) {
-                this.setEntityId(vpn.getServerAddress().longValue());
+                this.setEntityId(vpn.getServerAddressId());
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create remote access vpn");
             }
@@ -143,17 +138,10 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute(){
         try {
-            RemoteAccessVpn result = _ravService.startRemoteAccessVpn(new Ip(getEntityId()));
+            RemoteAccessVpn result = _ravService.startRemoteAccessVpn(publicIpId);
             if (result != null) {
-                RemoteAccessVpnResponse response = new RemoteAccessVpnResponse();
-                response.setPublicIp(result.getServerAddress().toString());
-                response.setIpRange(result.getIpRange());
-                response.setAccountName(_entityMgr.findById(Account.class, result.getAccountId()).getAccountName());
-                response.setDomainId(result.getDomainId());
-                response.setDomainName(_entityMgr.findById(Domain.class, result.getDomainId()).getName());
-                response.setObjectName("remoteaccessvpn");
+                RemoteAccessVpnResponse response = _responseGenerator.createRemoteAccessVpnResponse(result);
                 response.setResponseName(getCommandName());
-                response.setPresharedKey(result.getIpsecPresharedKey());
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create remote access vpn");

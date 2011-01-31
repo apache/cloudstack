@@ -20,7 +20,6 @@ package com.cloud.agent.api.routing;
 import java.util.List;
 
 import com.cloud.agent.api.to.PortForwardingRuleTO;
-import com.cloud.network.rules.PortForwardingRule;
 
 public class SetPortForwardingRulesCommand extends NetworkElementCommand {
     PortForwardingRuleTO[] rules;
@@ -28,11 +27,11 @@ public class SetPortForwardingRulesCommand extends NetworkElementCommand {
     protected SetPortForwardingRulesCommand() {
     }
     
-    public SetPortForwardingRulesCommand(List<? extends PortForwardingRule> pfRules) {
+    public SetPortForwardingRulesCommand(List<? extends PortForwardingRuleTO> pfRules) {
         rules = new PortForwardingRuleTO[pfRules.size()];
         int i = 0;
-        for (PortForwardingRule rule : pfRules) {
-            rules[i++] = new PortForwardingRuleTO(rule);
+        for (PortForwardingRuleTO rule : pfRules) {
+            rules[i++] = rule;
         }
     }
     

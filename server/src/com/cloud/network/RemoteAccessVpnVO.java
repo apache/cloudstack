@@ -20,12 +20,8 @@ package com.cloud.network;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import com.cloud.utils.net.Ip;
 
 @Entity
 @Table(name=("remote_access_vpn"))
@@ -40,9 +36,8 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     private long domainId;
 
     @Id
-    @Column(name="vpn_server_addr")
-    @Enumerated(value=EnumType.ORDINAL)
-    private Ip serverAddress;
+    @Column(name="vpn_server_addr_id")
+    private long serverAddressId;
     
     @Column(name="local_ip")
     private String localIp;
@@ -58,9 +53,9 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
 
     public RemoteAccessVpnVO() { }
 
-    public RemoteAccessVpnVO(long accountId, long domainId, long networkId, Ip publicIp, String localIp, String ipRange,  String presharedKey) {
+    public RemoteAccessVpnVO(long accountId, long domainId, long networkId, long publicIpId, String localIp, String ipRange,  String presharedKey) {
         this.accountId = accountId;
-        this.serverAddress = publicIp;
+        this.serverAddressId = publicIpId;
         this.ipRange = ipRange;
         this.ipsecPresharedKey = presharedKey;
         this.localIp = localIp;
@@ -83,12 +78,12 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
         return accountId;
     }
     
-	@Override
-    public Ip getServerAddress() {
-		return serverAddress;
-	}
+    @Override
+	public long getServerAddressId() {
+        return serverAddressId;
+    }
 
-	@Override
+    @Override
     public String getIpRange() {
 		return ipRange;
 	}

@@ -42,7 +42,6 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
-import com.cloud.utils.net.Ip;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -87,7 +86,7 @@ public interface NetworkManager extends NetworkService {
      * @param ipAddress
      * @return true if it did; false if it didn't
      */
-    public boolean releasePublicIpAddress(Ip ipAddress, long ownerId, long userId);
+    public boolean releasePublicIpAddress(long id, long ownerId, long userId);
     
     /**
      * Lists IP addresses that belong to VirtualNetwork VLANs
@@ -131,7 +130,7 @@ public interface NetworkManager extends NetworkService {
 	
 	List<? extends RemoteAccessVpnElement> getRemoteAccessVpnElements();
 	
-	PublicIpAddress getPublicIpAddress(Ip ipAddress);
+	PublicIpAddress getPublicIpAddress(long ipAddressId);
 	
 	List<? extends Vlan> listPodVlans(long podId);
 

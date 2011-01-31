@@ -24,11 +24,11 @@ import com.cloud.network.IPAddressVO;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.Ip;
 
-public interface IPAddressDao extends GenericDao<IPAddressVO, Ip> {
+public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
 	
-    IPAddressVO markAsUnavailable(Ip ipAddress, long ownerId);
+    IPAddressVO markAsUnavailable(long ipAddressId);
     
-	void unassignIpAddress(Ip ipAddress);	
+	void unassignIpAddress(long ipAddressId);	
 
 	List<IPAddressVO> listByAccount(long accountId);
 	
@@ -45,4 +45,6 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Ip> {
 	int countIPsForDashboard(long dcId, boolean onlyCountAllocated);
 	
 	List<IPAddressVO> listByAssociatedVmId(long vmId);
+	
+	IPAddressVO findByAccountAndIp(long accountId, String ipAddress);
 }

@@ -29,7 +29,6 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
-import com.cloud.utils.net.Ip;
 
 @Implementation(description="Disables static rule for given ip address", responseObject=SuccessResponse.class)
 public class DisableStaticNat extends BaseAsyncCmd {
@@ -40,15 +39,15 @@ public class DisableStaticNat extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the public IP address for which static nat feature is being disableed")
-    private String ipAddress;
+    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, required=true, description="the public IP address id for which static nat feature is being disableed")
+    private Long ipAddressId;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getIpAddress() {
-        return ipAddress;
+    public Long getIpAddress() {
+        return ipAddressId;
     }
     
     /////////////////////////////////////////////////////
@@ -66,17 +65,17 @@ public class DisableStaticNat extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  ("Disabling static nat for ip=" + ipAddress);
+        return  ("Disabling static nat for ip id=" + ipAddressId);
     }
     
     @Override
     public long getEntityOwnerId() {
-        return _entityMgr.findById(IpAddress.class, ipAddress).getAccountId();
+        return _entityMgr.findById(IpAddress.class, ipAddressId).getAccountId();
     }
     
     @Override
     public void execute() throws ResourceUnavailableException {
-        boolean result = _rulesService.disableOneToOneNat(new Ip(ipAddress));
+        boolean result = _rulesService.disableOneToOneNat(ipAddressId);
         
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

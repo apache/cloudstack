@@ -28,7 +28,6 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.RemoteAccessVpn;
-import com.cloud.utils.net.Ip;
 
 @Implementation(description="Destroys a l2tp/ipsec remote access vpn", responseObject=SuccessResponse.class)
 public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
@@ -39,8 +38,8 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name="publicip", type=CommandType.STRING, required=true, description="public ip address of the vpn server")
-    private String publicIp;
+    @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.LONG, required=true, description="public ip address id of the vpn server")
+    private Long publicIpId;
     
     // unexposed parameter needed for events logging
     @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, expose=false)
@@ -61,14 +60,14 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
 	@Override
 	public long getEntityOwnerId() {
 	    if (ownerId == null) {
-	        ownerId = _entityMgr.findById(RemoteAccessVpn.class, new Ip(publicIp)).getAccountId();
+	        ownerId = _entityMgr.findById(RemoteAccessVpn.class, publicIpId).getAccountId();
 	    }
 	    return ownerId;
     }
 
 	@Override
 	public String getEventDescription() {
-		return "Delete Remote Access VPN for account " + getEntityOwnerId() + " for  " + publicIp;
+		return "Delete Remote Access VPN for account " + getEntityOwnerId() + " for  ip id=" + publicIpId;
 	}
 
 	@Override
@@ -78,7 +77,7 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        _ravService.destroyRemoteAccessVpn(new Ip(publicIp), getStartEventId());
+        _ravService.destroyRemoteAccessVpn(publicIpId, getStartEventId());
     }
 	
 }

@@ -79,6 +79,7 @@ public class ApiConstants {
     public static final String INTERNAL_DNS2 = "internaldns2";
     public static final String INTERVAL_TYPE = "intervaltype";
     public static final String IP_ADDRESS = "ipaddress";
+    public static final String IP_ADDRESS_ID = "ipaddressid";
     public static final String IP_AVAILABLE = "ipavailable";
     public static final String IP_LIMIT = "iplimit";
     public static final String IP_TOTAL = "iptotal";
@@ -123,6 +124,7 @@ public class ApiConstants {
     public static final String PRIVATE_ZONE = "privatezone";
     public static final String PROTOCOL = "protocol";
     public static final String PUBLIC_INTERFACE = "publicinterface";
+    public static final String PUBLIC_IP_ID = "publicipid";
     public static final String PUBLIC_IP = "publicip";
     public static final String PUBLIC_PORT = "publicport";
     public static final String PUBLIC_ZONE = "publiczone";

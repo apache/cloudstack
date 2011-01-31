@@ -23,6 +23,9 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 public class IPAddressResponse extends BaseResponse {
+    @SerializedName("id") @Param(description="public IP address id")
+    private Long id;
+    
     @SerializedName("ipaddress") @Param(description="public IP address")
     private String ipAddress;
 
@@ -208,5 +211,13 @@ public class IPAddressResponse extends BaseResponse {
 
     public void setVirtualMachineDisplayName(String virtualMachineDisplayName) {
         this.virtualMachineDisplayName = virtualMachineDisplayName;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 }

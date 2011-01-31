@@ -53,8 +53,8 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the load balancer rule")
     private String loadBalancerRuleName;
 
-    @Parameter(name=ApiConstants.PUBLIC_IP, type=CommandType.STRING, description="the public IP address of the load balancer rule	")
-    private String publicIp;
+    @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.LONG, description="the public IP address id of the load balancer rule	")
+    private Long publicIpId;
 
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, description="the ID of the virtual machine of the load balancer rule")
     private Long virtualMachineId;
@@ -79,8 +79,8 @@ public class ListLoadBalancerRulesCmd extends BaseListCmd {
         return loadBalancerRuleName;
     }
 
-    public String getPublicIp() {
-        return publicIp;
+    public Long getPublicIpId() {
+        return publicIpId;
     }
 
     public Long getVirtualMachineId() {

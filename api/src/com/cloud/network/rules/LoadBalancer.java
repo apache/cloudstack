@@ -23,7 +23,6 @@ package com.cloud.network.rules;
  */
 public interface LoadBalancer extends FirewallRule {
 
-
     String getName();
 
     String getDescription();

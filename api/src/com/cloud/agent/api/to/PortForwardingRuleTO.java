@@ -33,8 +33,8 @@ public class PortForwardingRuleTO extends FirewallRuleTO {
         super();
     }
     
-    public PortForwardingRuleTO(PortForwardingRule rule) {
-        super(rule);
+    public PortForwardingRuleTO(PortForwardingRule rule, String srcIp) {
+        super(rule, srcIp);
         this.dstIp = rule.getDestinationIpAddress().addr();
         this.dstPortRange = new int[] { rule.getDestinationPortStart(), rule.getDestinationPortEnd() };
     }

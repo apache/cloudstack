@@ -47,8 +47,8 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the public IP address of the forwarding rule, already associated via associateIp")
-    private String ipAddress;
+    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, required=true, description="the public IP address id of the forwarding rule, already associated via associateIp")
+    private Long ipAddressId;
     
     @Parameter(name=ApiConstants.START_PORT, type=CommandType.INTEGER, required=true, description="the start port for the rule")
     private Integer startPort;
@@ -64,8 +64,8 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getIpAddress() {
-        return ipAddress;
+    public Long getIpAddressId() {
+        return ipAddressId;
     }
     
     public int getStartPort() {
@@ -89,7 +89,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
     public void execute(){ 
         boolean result;
         try {
-            result = _rulesService.applyPortForwardingRules(new Ip(ipAddress), UserContext.current().getCaller());
+            result = _rulesService.applyPortForwardingRules(ipAddressId, UserContext.current().getCaller());
         } catch (Exception e) {
             s_logger.error("Unable to apply port forwarding rules", e);
             _rulesService.revokePortForwardingRule(getEntityId(), true);
@@ -137,7 +137,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
 
     @Override
     public String getEventDescription() {
-        return  ("Creating an ipforwarding 1:1 NAT rule for "+ipAddress+" with virtual machine:"+ getVirtualMachineId());
+        return  ("Creating an ipforwarding 1:1 NAT rule for "+ipAddressId+" with virtual machine:"+ getVirtualMachineId());
     }
 
     @Override
@@ -151,8 +151,8 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
     }
 
     @Override
-    public Ip getSourceIpAddress() {
-        return new Ip(ipAddress);
+    public long getSourceIpAddressId() {
+        return ipAddressId;
     }
 
     @Override
@@ -225,13 +225,14 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
     
     @Override
     public long getVirtualMachineId() {
-        IpAddress ip = _networkService.getIp(new Ip(ipAddress));
+        IpAddress ip = _networkService.getIp(ipAddressId);
         if (ip == null) {
-            throw new InvalidParameterValueException("Ip address " + ipAddress + " doesn't exist in the system");
+            throw new InvalidParameterValueException("Ip address id=" + ipAddressId + " doesn't exist in the system");
+        } else if (ip.isOneToOneNat() && ip.getAssociatedWithVmId() != null){
+            return _networkService.getIp(ipAddressId).getAssociatedWithVmId();
         } else {
-            return _networkService.getIp(new Ip(ipAddress)).getAssociatedWithVmId();
-        }
-        
+            throw new InvalidParameterValueException("Ip address id=" + ipAddressId + " doesn't have 1-1 Nat feature enabled");
+        }  
     }
 
 }

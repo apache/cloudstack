@@ -29,8 +29,8 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, required=true, description="the protocol for the port fowarding rule. Valid values are TCP or UDP.")
     private String protocol;
 
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the IP address of the port forwarding rule")
-    private String publicIp;
+    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, required=true, description="the IP address id of the port forwarding rule")
+    private Long publicIpId;
 
     @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.STRING, required=true, description="the public port of the port forwarding rule")
     private String publicPort;
@@ -54,8 +54,8 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
         return protocol;
     }
 
-    public String getPublicIp() {
-        return publicIp;
+    public Long getPublicIpId() {
+        return publicIpId;
     }
 
     public String getPublicPort() {
@@ -77,7 +77,7 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        IpAddress addr = _entityMgr.findById(IpAddress.class, getPublicIp());
+        IpAddress addr = _entityMgr.findById(IpAddress.class, getPublicIpId());
         if (addr != null) {
             return addr.getAllocatedToAccountId();
         }

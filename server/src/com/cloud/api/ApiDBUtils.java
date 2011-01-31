@@ -348,8 +348,8 @@ public class ApiDBUtils {
         return _hostDao.findById(hostId);
     }
 
-    public static IPAddressVO findIpAddressById(String address) {
-        return _ipAddressDao.findById(new Ip(address));
+    public static IPAddressVO findIpAddressById(long addressId) {
+        return _ipAddressDao.findById(addressId);
     }
 
     public static GuestOSCategoryVO getHostGuestOSCategory(long hostId) {

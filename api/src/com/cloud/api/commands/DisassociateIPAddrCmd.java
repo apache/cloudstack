@@ -25,7 +25,6 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
-import com.cloud.utils.net.Ip;
 
 @Implementation(description="Disassociates an ip address from the account.", responseObject=SuccessResponse.class)
 public class DisassociateIPAddrCmd extends BaseCmd {
@@ -37,15 +36,15 @@ public class DisassociateIPAddrCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the public ip address to disassociate")
-    private String ipAddress;
+    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, required=true, description="the id of the public ip address to disassociate")
+    private Long ipAddressId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Ip getIpAddress() {
-        return new Ip(ipAddress);
+    public Long getIpAddressId() {
+        return ipAddressId;
     }
 
     /////////////////////////////////////////////////////

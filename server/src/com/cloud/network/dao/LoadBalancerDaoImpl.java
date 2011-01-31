@@ -50,12 +50,12 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
 
     protected LoadBalancerDaoImpl() {
         ListByIp  = createSearchBuilder();
-        ListByIp.and("ipAddress", ListByIp.entity().getSourceIpAddress(), SearchCriteria.Op.EQ);
+        ListByIp.and("ipAddressId", ListByIp.entity().getSourceIpAddressId(), SearchCriteria.Op.EQ);
         ListByIp.and("networkId", ListByIp.entity().getNetworkId(), SearchCriteria.Op.EQ);
         ListByIp.done();
 
         IpAndPublicPortSearch = createSearchBuilder();
-        IpAndPublicPortSearch.and("ipAddress", IpAndPublicPortSearch.entity().getSourceIpAddress(), SearchCriteria.Op.EQ);
+        IpAndPublicPortSearch.and("ipAddressId", IpAndPublicPortSearch.entity().getSourceIpAddressId(), SearchCriteria.Op.EQ);
         IpAndPublicPortSearch.and("publicPort", IpAndPublicPortSearch.entity().getSourcePortStart(), SearchCriteria.Op.EQ);
         IpAndPublicPortSearch.done();
 
@@ -87,9 +87,9 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
     }
 
     @Override
-    public List<LoadBalancerVO> listByIpAddress(String ipAddress) {
+    public List<LoadBalancerVO> listByIpAddress(long ipAddressId) {
         SearchCriteria<LoadBalancerVO> sc = ListByIp.create();
-        sc.setParameters("ipAddress", ipAddress);
+        sc.setParameters("ipAddressId", ipAddressId);
         return listBy(sc);
     }
     
@@ -101,9 +101,9 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
     }
 
     @Override
-    public LoadBalancerVO findByIpAddressAndPublicPort(String ipAddress, String publicPort) {
+    public LoadBalancerVO findByIpAddressAndPublicPort(long ipAddressId, String publicPort) {
         SearchCriteria<LoadBalancerVO> sc = IpAndPublicPortSearch.create();
-        sc.setParameters("ipAddress", ipAddress);
+        sc.setParameters("ipAddressId", ipAddressId);
         sc.setParameters("publicPort", publicPort);
         return findOneBy(sc);
     }

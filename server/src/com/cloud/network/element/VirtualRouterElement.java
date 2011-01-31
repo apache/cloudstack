@@ -49,6 +49,7 @@ import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
@@ -81,6 +82,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
     @Inject NetworkOfferingDao _networkOfferingDao;
     @Inject VirtualNetworkApplianceManager _routerMgr;
     @Inject ConfigurationManager _configMgr;
+    @Inject RulesManager _rulesMgr;
     @Inject UserVmManager _userVmMgr;
     @Inject UserVmDao _userVmDao;
     @Inject DomainRouterDao _routerDao;
@@ -137,7 +139,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
                 throw new CloudRuntimeException("Unable to apply firewall rules");
             }
             
-            if (router.getState() == State.Running || router.getState() == State.Starting) {
+            if (router.getState() == State.Running) {
                 if (rules != null && !rules.isEmpty()) {
                     if (rules.get(0).getPurpose() == Purpose.LoadBalancing) {
                         //for load balancer we have to resend all lb rules for the network
@@ -150,8 +152,8 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
                         }
                         
                         return _routerMgr.applyLBRules(config, lbRules);
-                    } else if (rules.get(0).getPurpose() == Purpose.PortForwarding) {
-                        return _routerMgr.applyPortForwardingRules(config, (List<PortForwardingRule>)rules);
+                    } else if (rules.get(0).getPurpose() == Purpose.PortForwarding) { 
+                        return _routerMgr.applyPortForwardingRules(config, _rulesMgr.buildPortForwardingTOrules((List<PortForwardingRule>)rules));
                     }
                 } else {
                     return true;

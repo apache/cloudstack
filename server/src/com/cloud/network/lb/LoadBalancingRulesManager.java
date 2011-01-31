@@ -20,10 +20,9 @@ package com.cloud.network.lb;
 import java.util.List;
 
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
-import com.cloud.utils.net.Ip;
 
 public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
-    boolean removeAllLoadBalanacers(Ip ip);
+    boolean removeAllLoadBalanacers(long ipId);
     List<LbDestination> getExistingDestinations(long lbId);
     
     /**

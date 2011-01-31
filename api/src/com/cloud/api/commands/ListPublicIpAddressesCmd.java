@@ -46,12 +46,15 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.ALLOCATED_ONLY, type=CommandType.BOOLEAN, description="limits search results to allocated public IP addresses")
     private Boolean allocatedOnly;
-
+    
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="lists all public IP addresses by domain ID. If used with the account parameter, lists all public IP addresses by account for specified domain.")
     private Long domainId;
 
     @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="the virtual network for the IP address")
     private Boolean forVirtualNetwork;
+    
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="lists ip address by id")
+    private Long id;
 
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="lists the specified IP address")
     private String ipAddress;
@@ -65,6 +68,9 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
+    public Long getId() {
+        return id;
+    }
 
     public String getAccountName() {
         return accountName;

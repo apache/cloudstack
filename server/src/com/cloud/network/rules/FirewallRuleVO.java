@@ -34,7 +34,6 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.net.Ip;
 
 @Entity
 @Table(name="firewall_rules")
@@ -56,9 +55,8 @@ public class FirewallRuleVO implements FirewallRule {
     @Column(name="account_id", updatable=false)
     long accountId;
     
-    @Column(name="ip_address", updatable=false)
-    @Enumerated(value=EnumType.ORDINAL)
-    Ip sourceIpAddress;
+    @Column(name="ip_address_id", updatable=false)
+    long sourceIpAddressId;
     
     @Column(name="start_port", updatable=false)
     int sourcePortStart;
@@ -107,8 +105,8 @@ public class FirewallRuleVO implements FirewallRule {
     }
 
     @Override
-    public Ip getSourceIpAddress() {
-        return sourceIpAddress;
+    public long getSourceIpAddressId() {
+        return sourceIpAddressId;
     }
 
     @Override
@@ -152,14 +150,14 @@ public class FirewallRuleVO implements FirewallRule {
     protected FirewallRuleVO() {
     }
     
-    public FirewallRuleVO(String xId, Ip srcIp, int portStart, int portEnd, String protocol, long networkId, long accountId, long domainId, Purpose purpose, boolean isOneToOneNat) {
+    public FirewallRuleVO(String xId, long ipAddressId, int portStart, int portEnd, String protocol, long networkId, long accountId, long domainId, Purpose purpose, boolean isOneToOneNat) {
         this.xId = xId;
         if (xId == null) {
             this.xId = UUID.randomUUID().toString();
         }
         this.accountId = accountId;
         this.domainId = domainId;
-        this.sourceIpAddress = srcIp;
+        this.sourceIpAddressId = ipAddressId;
         this.sourcePortStart = portStart;
         this.sourcePortEnd = portEnd;
         this.protocol = protocol;
@@ -169,8 +167,8 @@ public class FirewallRuleVO implements FirewallRule {
         this.oneToOneNat = isOneToOneNat;
     }
     
-    public FirewallRuleVO(String xId, Ip srcIp, int port, String protocol, long networkId, long accountId, long domainId, Purpose purpose, boolean isOneToOneNat) {
-        this(xId, srcIp, port, port, protocol, networkId, accountId, domainId, purpose, isOneToOneNat);
+    public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId, long domainId, Purpose purpose, boolean isOneToOneNat) {
+        this(xId, ipAddressId, port, port, protocol, networkId, accountId, domainId, purpose, isOneToOneNat);
     }
     
     @Override

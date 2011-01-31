@@ -46,7 +46,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         super();
         
         AllFieldsSearch = createSearchBuilder();
-        AllFieldsSearch.and("ip", AllFieldsSearch.entity().getSourceIpAddress(), Op.EQ);
+        AllFieldsSearch.and("ipId", AllFieldsSearch.entity().getSourceIpAddressId(), Op.EQ);
         AllFieldsSearch.and("protocol", AllFieldsSearch.entity().getProtocol(), Op.EQ);
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
         AllFieldsSearch.and("purpose", AllFieldsSearch.entity().getPurpose(), Op.EQ);
@@ -57,24 +57,24 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         AllFieldsSearch.done();
         
         IpNotRevokedSearch = createSearchBuilder();
-        IpNotRevokedSearch.and("ip", IpNotRevokedSearch.entity().getSourceIpAddress(), Op.EQ);
+        IpNotRevokedSearch.and("ipId", IpNotRevokedSearch.entity().getSourceIpAddressId(), Op.EQ);
         IpNotRevokedSearch.and("state", IpNotRevokedSearch.entity().getState(), Op.NEQ);
         IpNotRevokedSearch.and("oneToOneNat", IpNotRevokedSearch.entity().isOneToOneNat(), Op.EQ);
         IpNotRevokedSearch.done();
         
         ReleaseSearch = createSearchBuilder();
         ReleaseSearch.and("protocol", ReleaseSearch.entity().getProtocol(), Op.EQ);
-        ReleaseSearch.and("ip", ReleaseSearch.entity().getSourceIpAddress(), Op.EQ);
+        ReleaseSearch.and("ipId", ReleaseSearch.entity().getSourceIpAddressId(), Op.EQ);
         ReleaseSearch.and("purpose", ReleaseSearch.entity().getPurpose(), Op.EQ);
         ReleaseSearch.and("ports", ReleaseSearch.entity().getSourcePortStart(), Op.IN);
         ReleaseSearch.done();
         
     }
     @Override
-    public boolean releasePorts(Ip ip, String protocol, FirewallRule.Purpose purpose, int[] ports) {
+    public boolean releasePorts(long ipId, String protocol, FirewallRule.Purpose purpose, int[] ports) {
         SearchCriteria<FirewallRuleVO> sc = ReleaseSearch.create();
         sc.setParameters("protocol", protocol);
-        sc.setParameters("ip", ip);
+        sc.setParameters("ipId", ipId);
         sc.setParameters("purpose", purpose);
         sc.setParameters("ports", ports);
         
@@ -83,18 +83,18 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     }
     
     @Override
-    public List<FirewallRuleVO> listByIpAndPurpose(Ip ip, FirewallRule.Purpose purpose) {
+    public List<FirewallRuleVO> listByIpAndPurpose(long ipId, FirewallRule.Purpose purpose) {
         SearchCriteria<FirewallRuleVO> sc = ReleaseSearch.create();
-        sc.setParameters("ip", ip);
+        sc.setParameters("ipId", ipId);
         sc.setParameters("purpose", purpose);
         
         return listBy(sc);
     }
 
     @Override
-    public List<FirewallRuleVO> listByIpAndNotRevoked(Ip ip, Boolean isOneToOneNat) {
+    public List<FirewallRuleVO> listByIpAndNotRevoked(long ipId, Boolean isOneToOneNat) {
         SearchCriteria<FirewallRuleVO> sc = IpNotRevokedSearch.create();
-        sc.setParameters("ip", ip);
+        sc.setParameters("ipId", ipId);
         sc.setParameters("state", State.Revoke);
         if (isOneToOneNat != null) {
             sc.setParameters("oneToOneNat", isOneToOneNat);

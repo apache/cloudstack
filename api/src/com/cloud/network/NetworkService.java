@@ -32,7 +32,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.utils.net.Ip;
 
 
 public interface NetworkService {
@@ -40,6 +39,8 @@ public interface NetworkService {
     List<? extends Network> getVirtualNetworksOwnedByAccountInZone(String accountName, long domainId, long zoneId);
     
     List<? extends NetworkOffering> listNetworkOfferings();
+    
+    IpAddress allocateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException;
     /**
      * Associates a public IP address for a router.
      * @param cmd - the command specifying ipAddress
@@ -59,7 +60,7 @@ public interface NetworkService {
     
     Network getNetwork(long networkId);
     
-    IpAddress getIp(Ip ip);
+    IpAddress getIp(long id);
     
     NetworkProfile getNetworkProfile(long networkId);
     

@@ -612,6 +612,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         long zoneId = ipAddress.getDataCenterId();
 
         IPAddressResponse ipResponse = new IPAddressResponse();
+        ipResponse.setId(ipAddress.getId());
         ipResponse.setIpAddress(ipAddress.getAddress().toString());
         if (ipAddress.getAllocatedTime() != null) {
             ipResponse.setAllocated(ipAddress.getAllocatedTime());
@@ -675,7 +676,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         lbResponse.setId(loadBalancer.getId());
         lbResponse.setName(loadBalancer.getName());
         lbResponse.setDescription(loadBalancer.getDescription());
-        lbResponse.setPublicIp(loadBalancer.getSourceIpAddress().toString());
+        lbResponse.setPublicIpId(loadBalancer.getSourceIpAddressId());
+        lbResponse.setPublicIp(ApiDBUtils.findIpAddressById(loadBalancer.getSourceIpAddressId()).getAddress().addr());
         lbResponse.setPublicPort(Integer.toString(loadBalancer.getSourcePortStart()));
         lbResponse.setPrivatePort(Integer.toString(loadBalancer.getDefaultPortStart()));
         lbResponse.setAlgorithm(loadBalancer.getAlgorithm());
@@ -924,8 +926,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setPrivatePort(Integer.toString(fwRule.getDestinationPortStart()));
         response.setProtocol(fwRule.getProtocol());
         response.setPublicPort(Integer.toString(fwRule.getSourcePortStart()));
-        response.setPublicIpAddress(fwRule.getSourceIpAddress().toString());
-        if (fwRule.getSourceIpAddress() != null && fwRule.getDestinationIpAddress() != null) {
+        
+        IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
+        response.setPublicIpAddressId(ip.getId());
+        response.setPublicIpAddress(ip.getAddress().addr());
+        
+        if (ip != null && fwRule.getDestinationIpAddress() != null) {
             UserVm vm = ApiDBUtils.findUserVmById(fwRule.getVirtualMachineId());
             if(vm != null){
             	response.setVirtualMachineId(vm.getId());
@@ -948,8 +954,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         IpForwardingRuleResponse response = new IpForwardingRuleResponse();
         response.setId(fwRule.getId());
         response.setProtocol(fwRule.getProtocol());
-        response.setPublicIpAddress(fwRule.getSourceIpAddress().addr());
-        if (fwRule.getSourceIpAddress() != null && fwRule.getDestinationIpAddress() != null) {
+        
+        IpAddress ip = ApiDBUtils.findIpAddressById(fwRule.getSourceIpAddressId());
+        response.setPublicIpAddressId(ip.getId());
+        response.setPublicIpAddress(ip.getAddress().addr());
+        
+        if (ip != null && fwRule.getDestinationIpAddress() != null) {
             UserVm vm = ApiDBUtils.findUserVmById(fwRule.getVirtualMachineId());
             if(vm != null){//vm might be destroyed
             	response.setVirtualMachineId(vm.getId());
@@ -1299,7 +1309,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public RemoteAccessVpnResponse createRemoteAccessVpnResponse(RemoteAccessVpn vpn) {
         RemoteAccessVpnResponse vpnResponse = new RemoteAccessVpnResponse();
-        vpnResponse.setPublicIp(vpn.getServerAddress().toString());
+        vpnResponse.setPublicIpId(vpn.getServerAddressId());
+        vpnResponse.setPublicIp(ApiDBUtils.findIpAddressById(vpn.getServerAddressId()).getAddress().addr());
         vpnResponse.setIpRange(vpn.getIpRange());
         vpnResponse.setPresharedKey(vpn.getIpsecPresharedKey());
         vpnResponse.setDomainId(vpn.getDomainId());
@@ -1310,10 +1321,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             vpnResponse.setDomainName(ApiDBUtils.findDomainById(accountTemp.getDomainId()).getName());
         }      
         vpnResponse.setState(vpn.getState().toString());
-
         vpnResponse.setObjectName("remoteaccessvpn");
-       
-
+      
         return vpnResponse;
     }
 

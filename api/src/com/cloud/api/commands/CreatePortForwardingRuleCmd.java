@@ -45,8 +45,8 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the IP address of the port forwarding rule")
-    private String ipAddress;
+    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, required=true, description="the IP address id of the port forwarding rule")
+    private Long ipAddressId;
 
     @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.INTEGER, required=true, description="the private port of the port forwarding rule")
     private Integer privatePort;
@@ -65,8 +65,8 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getIpAddress() {
-        return ipAddress;
+    public Long getIpAddressId() {
+        return ipAddressId;
     }
 
     public Integer getPrivatePort() {
@@ -103,7 +103,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
         boolean success = false;
         PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
         try {
-            success = _rulesService.applyPortForwardingRules(rule.getSourceIpAddress(), callerContext.getCaller());
+            success = _rulesService.applyPortForwardingRules(rule.getSourceIpAddressId(), callerContext.getCaller());
             
             //State is different after the rule is applied, so get new object here
             rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
@@ -133,8 +133,8 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
     }
 
     @Override
-    public Ip getSourceIpAddress() {
-        return new Ip(ipAddress.trim());
+    public long getSourceIpAddressId() {
+        return ipAddressId;
     }
 
     @Override
@@ -212,7 +212,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
 
     @Override
     public String getEventDescription() {
-        return  ("Creating an port forwarding  rule for "+ipAddress+" with virtual machine:"+virtualMachineId);
+        return  ("Creating an port forwarding  rule for "+ipAddressId+" with virtual machine:"+virtualMachineId);
     }
 
     @Override

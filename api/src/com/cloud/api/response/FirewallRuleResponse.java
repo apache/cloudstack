@@ -42,8 +42,11 @@ public class FirewallRuleResponse extends BaseResponse {
 
     @SerializedName("virtualmachinedisplayname") @Param(description="the VM display name for the port forwarding rule")
     private String virtualMachineDisplayName;
+    
+    @SerializedName(ApiConstants.IP_ADDRESS_ID) @Param(description="the public ip address id for the port forwarding rule")
+    private Long publicIpAddressId;
 
-    @SerializedName("ipaddress") @Param(description="the public ip address for the port forwarding rule")
+    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the public ip address for the port forwarding rule")
     private String publicIpAddress;
     
     @SerializedName("state") @Param(description="the state of the rule")
@@ -119,5 +122,13 @@ public class FirewallRuleResponse extends BaseResponse {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public Long getPublicIpAddressId() {
+        return publicIpAddressId;
+    }
+
+    public void setPublicIpAddressId(Long publicIpAddressId) {
+        this.publicIpAddressId = publicIpAddressId;
     }
 }
