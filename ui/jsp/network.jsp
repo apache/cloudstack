@@ -496,19 +496,77 @@ dictionary = {
             <div class="row_celltitles" id="id">
             </div>
         </div>
-    </div>  
-    <!-- 
+    </div>       
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 <fmt:message key="label.ip"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="url">
+            <div class="row_celltitles" id="ip">
             </div>
         </div>
     </div>  
-     --> 
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.username"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="username">
+            </div>
+        </div>
+    </div>       
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.public.interface"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="publicinterface">
+            </div>
+        </div>
+    </div>  
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.private.interface"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="privateinterface">
+            </div>
+        </div>
+    </div>       
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.usage.interface"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="usageinterface">
+            </div>
+        </div>
+    </div>  
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.public.zone"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="publiczone">
+            </div>
+        </div>
+    </div>       
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.private.zone"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="privatezone">
+            </div>
+        </div>
+    </div>     
 </div>
 <!--  External Firewall template (end) -->
 
@@ -560,18 +618,46 @@ dictionary = {
             </div>
         </div>
     </div>   
-    <!--  
     <div class="grid_rows even">
         <div class="grid_row_cell" style="width: 20%;">
             <div class="row_celltitles">
                 <fmt:message key="label.ip"/>:</div>
         </div>
         <div class="grid_row_cell" style="width: 79%;">
-            <div class="row_celltitles" id="url">
+            <div class="row_celltitles" id="ip">
             </div>
         </div>
     </div>  
-    -->      
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.username"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="username">
+            </div>
+        </div>
+    </div>       
+    <div class="grid_rows even">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.public.interface"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="publicinterface">
+            </div>
+        </div>
+    </div>  
+    <div class="grid_rows odd">
+        <div class="grid_row_cell" style="width: 20%;">
+            <div class="row_celltitles">
+                <fmt:message key="label.private.interface"/>:</div>
+        </div>
+        <div class="grid_row_cell" style="width: 79%;">
+            <div class="row_celltitles" id="privateinterface">
+            </div>
+        </div>
+    </div>     
 </div>
 <!--  Load Balancer template (end) -->
 

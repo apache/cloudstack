@@ -283,6 +283,7 @@ function publicNetworkJsonToFirewallTab() {
     });       
 }
 
+/*
 function publicNetworkParseUrl(url, $template) {
     if(url == null) 
         return;
@@ -319,13 +320,21 @@ function publicNetworkParseUrl(url, $template) {
         }
     }    
 }
+*/
 
 function publicNetworkFirewallJsonToTemplate(jsonObj, $template) {    
     $template.data("jsonObj", jsonObj);
     $template.attr("id", "publicNetworkFirewall_" + jsonObj.id);  
     $template.find("#id").text(fromdb(jsonObj.id));          
-    publicNetworkParseUrl(jsonObj.url, $template);    
-       
+    //publicNetworkParseUrl(jsonObj.url, $template);    
+    $template.find("#ip").text(fromdb(jsonObj.ipaddress));        
+    $template.find("#username").text(fromdb(jsonObj.username));      
+    $template.find("#publicinterface").text(fromdb(jsonObj.publicinterface));      
+    $template.find("#privateinterface").text(fromdb(jsonObj.privateinterface));      
+    $template.find("#usageinterface").text(fromdb(jsonObj.usageinterface));      
+    $template.find("#publiczone").text(fromdb(jsonObj.publiczone));      
+    $template.find("#privatezone").text(fromdb(jsonObj.privatezone));      
+          
     var $actionLink = $template.find("#firewall_action_link");		
 	$actionLink.bind("mouseover", function(event) {
         $(this).find("#firewall_action_menu").show();    
@@ -395,8 +404,12 @@ function publicNetworkLoadBalancerJsonToTemplate(jsonObj, $template) {
         
     $template.find("#grid_header_title").text(fromdb(jsonObj.url));    
     $template.find("#id").text(fromdb(jsonObj.id));   
-    publicNetworkParseUrl(jsonObj.url, $template);      
-   
+    //publicNetworkParseUrl(jsonObj.url, $template);      
+    $template.find("#ip").text(fromdb(jsonObj.ipaddress));        
+    $template.find("#username").text(fromdb(jsonObj.username));      
+    $template.find("#publicinterface").text(fromdb(jsonObj.publicinterface));      
+    $template.find("#privateinterface").text(fromdb(jsonObj.privateinterface));      
+       
     var $actionLink = $template.find("#loadbalancer_action_link");		
 	$actionLink.bind("mouseover", function(event) {
         $(this).find("#loadbalancer_action_menu").show();    
