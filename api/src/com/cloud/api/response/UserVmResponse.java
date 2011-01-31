@@ -145,7 +145,18 @@ public class UserVmResponse extends BaseResponse {
     @SerializedName("nic")  @Param(description="the list of nics associated with vm", responseObject = NicResponse.class)
     private List<NicResponse> nics;
     
-    public Long getObjectId() {
+    @SerializedName("hypervisor") @Param(description="the hypervisor on which the template runs")
+    private String hypervisor;
+    
+    public String getHypervisor() {
+		return hypervisor;
+	}
+
+	public void setHypervisor(String hypervisor) {
+		this.hypervisor = hypervisor;
+	}
+
+	public Long getObjectId() {
     	return getId();
     }
     

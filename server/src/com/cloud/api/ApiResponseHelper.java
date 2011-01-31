@@ -1021,6 +1021,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             userVmResponse.setHostName(ApiDBUtils.findHostById(userVm.getHostId()).getName());
         }
 
+        if(userVm.getHypervisorType() != null){
+        	userVmResponse.setHypervisor(userVm.getHypervisorType().toString());
+        }
         // Template Info
         VMTemplateVO template = ApiDBUtils.findTemplateById(userVm.getTemplateId());
         if (template != null) {
