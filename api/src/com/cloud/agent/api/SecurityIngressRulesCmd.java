@@ -17,8 +17,6 @@
  */
 package com.cloud.agent.api;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 public class SecurityIngressRulesCmd extends Command {
 	public static class IpPortAndProto {
@@ -124,19 +122,6 @@ public class SecurityIngressRulesCmd extends Command {
 		return ruleBuilder.toString();
 	}
 	
-	public String toJson() {
-		GsonBuilder gBuilder = new GsonBuilder();
-		Gson json = gBuilder.create();
-		return json.toJson(this);
-	}
-	
-	public static SecurityIngressRulesCmd fromJson(String jsonString) {
-		GsonBuilder gBuilder = new GsonBuilder();
-		Gson json = gBuilder.create();
-		return json.fromJson(jsonString, SecurityIngressRulesCmd.class);
-	}
-
-
 	public String getSignature() {
 		return signature;
 	}

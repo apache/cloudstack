@@ -21,19 +21,13 @@ package com.cloud.agent.api;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
-import com.google.gson.annotations.Expose;
-
 public class SecStorageFirewallCfgCommand extends Command {
-	private static final Logger s_logger = Logger.getLogger(SecStorageFirewallCfgCommand.class);
-
 
 	public static class PortConfig {
-		@Expose boolean add;
-		@Expose String sourceIp;
-		@Expose String port;
-		@Expose String intf;
+		boolean add;
+		String sourceIp;
+		String port;
+		String intf;
 		public PortConfig(String sourceIp, String port, boolean add, String intf) {
 			this.add = add;
 			this.sourceIp = sourceIp;
@@ -57,7 +51,6 @@ public class SecStorageFirewallCfgCommand extends Command {
 		}
 	}
 	
-	@Expose
 	private List<PortConfig> portConfigs = new ArrayList<PortConfig>();
 	
 	public SecStorageFirewallCfgCommand() {
