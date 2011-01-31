@@ -143,11 +143,8 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         }
         
         _dcDao.releaseLinkLocalIpAddress(nic.getId(), reservationId);
-        nic.setIp4Address(null);
-        nic.setMacAddress(null);
-        nic.setNetmask(null);
-        nic.setFormat(null);
-        nic.setGateway(null);
+        
+        nic.deallocate();
         
         return true;
     }

@@ -724,49 +724,57 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
     protected <T extends VMInstanceVO> boolean cleanup(VirtualMachineGuru<T> guru, VirtualMachineProfile<T> profile, ItWorkVO work, boolean force, User user, Account account) {
         T vm = profile.getVirtualMachine();
         State state = vm.getState();
+        s_logger.debug("Cleaning up resources for the vm " + vm + " in " + state + " state");
         if (state == State.Starting) {
             Step step = work.getStep();
             if (step == Step.Start && !force) {
+                s_logger.warn("Unable to cleanup vm " + vm + "; work state is incorrect: " + step);
                 return false;
             }
-            
             
             if (step == Step.Started || step == Step.Start) {
                 if (vm.getHostId() != null) {
                     if (!sendStop(guru, profile, force)) {
+                        s_logger.warn("Failed to stop vm " + vm + " in " + State.Starting + " state as a part of cleanup process");
                         return false;
                     }
                 }
             }
             
             if (step != Step.Release && step != Step.Prepare && step != Step.Started && step != Step.Start) {
+                s_logger.debug("Cleanup is not needed for vm " + vm + "; work state is incorrect: " + step);
                 return true;
             }
         } else if (state == State.Stopping) {
             if (vm.getHostId() != null) {
                 if (!sendStop(guru, profile, force)) {
+                    s_logger.warn("Failed to stop vm " + vm + " in " + State.Stopping + " state as a part of cleanup process");
                     return false;
                 }
             }
         } else if (state == State.Migrating) {
             if (vm.getHostId() != null) {
                 if (!sendStop(guru, profile, force)) {
+                    s_logger.warn("Failed to stop vm " + vm + " in " + State.Migrating + " state as a part of cleanup process");
                     return false;
                 }
             } 
             if (vm.getLastHostId() != null) {
                 if (!sendStop(guru, profile, force)) {
+                    s_logger.warn("Failed to stop vm " + vm + " in " + State.Migrating + " state as a part of cleanup process");
                     return false;
                 }
             }
         } else if (state == State.Running) {
             if (!sendStop(guru, profile, force)) {
+                s_logger.warn("Failed to stop vm " + vm + " in " + State.Running + " state as a part of cleanup process");
                 return false;
             }
         }
         
         _networkMgr.release(profile, force);
         _storageMgr.release(profile);
+        s_logger.debug("Successfully cleanued up resources for the vm " + vm + " in " + state + " state");
         return true;
     }
 

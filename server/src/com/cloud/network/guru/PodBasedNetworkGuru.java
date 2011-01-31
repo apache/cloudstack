@@ -96,7 +96,6 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         nic.setBroadcastType(BroadcastDomainType.Native);
         nic.setBroadcastUri(null);
         nic.setIsolationUri(null);
-        nic.setFormat(AddressFormat.Ip4);
         
         s_logger.debug("Allocated a nic " + nic + " for " + vm);
     }

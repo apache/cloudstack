@@ -119,7 +119,6 @@ import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
@@ -650,106 +649,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         return VirtualMachineName.getRouterId(vmName);
     }
-
-//    @Override
-//    public HostVO prepareForMigration(final DomainRouterVO router) throws StorageUnavailableException {
-//        final long routerId = router.getId();
-//        final boolean mirroredVols = router.isMirroredVols();
-//        final DataCenterVO dc = _dcDao.findById(router.getDataCenterId());
-//        final HostPodVO pod = _podDao.findById(router.getPodId());
-//        final ServiceOfferingVO offering = _serviceOfferingDao.findById(router.getServiceOfferingId());
-//        StoragePoolVO sp = _storageMgr.getStoragePoolForVm(router.getId());
-//
-//        final List<VolumeVO> vols = _volsDao.findCreatedByInstance(routerId);
-//
-//        final String[] storageIps = new String[2];
-//        final VolumeVO vol = vols.get(0);
-//        storageIps[0] = vol.getHostIp();
-//        if (mirroredVols && (vols.size() == 2)) {
-//            storageIps[1] = vols.get(1).getHostIp();
-//        }
-//
-//        final PrepareForMigrationCommand cmd = new PrepareForMigrationCommand(router.getInstanceName(), router.getVnet(), storageIps, vols,
-//                mirroredVols);
-//
-//        HostVO routingHost = null;
-//        final HashSet<Host> avoid = new HashSet<Host>();
-//
-//        final HostVO fromHost = _hostDao.findById(router.getHostId());
-//        if (fromHost.getHypervisorType() != HypervisorType.KVM && fromHost.getClusterId() == null) {
-//            s_logger.debug("The host is not in a cluster");
-//            return null;
-//        }
-//        avoid.add(fromHost);
-//
-//        while ((routingHost = (HostVO) _agentMgr.findHost(Host.Type.Routing, dc, pod, sp, offering, _template, router, fromHost, avoid)) != null) {
-//            avoid.add(routingHost);
-//            if (s_logger.isDebugEnabled()) {
-//                s_logger.debug("Trying to migrate router to host " + routingHost.getName());
-//            }
-//
-//            if (!_storageMgr.share(router, vols, routingHost, false)) {
-//                s_logger.warn("Can not share " + vol.getPath() + " to " + router.getName());
-//                throw new StorageUnavailableException("Can not share " + vol.getPath() + " to " + router.getName(), sp.getId());
-//            }
-//
-//            final Answer answer = _agentMgr.easySend(routingHost.getId(), cmd);
-//            if (answer != null && answer.getResult()) {
-//                return routingHost;
-//            }
-//
-//            _storageMgr.unshare(router, vols, routingHost);
-//        }
-//
-//        return null;
-//    }
-//
-//    @Override
-//    public boolean migrate(final DomainRouterVO router, final HostVO host) {
-//        final HostVO fromHost = _hostDao.findById(router.getHostId());
-//
-//        if (!_itMgr.stateTransitTo(router, VirtualMachine.Event.MigrationRequested, router.getHostId())) {
-//            s_logger.debug("State for " + router.toString() + " has changed so migration can not take place.");
-//            return false;
-//        }
-//
-//        final MigrateCommand cmd = new MigrateCommand(router.getInstanceName(), host.getPrivateIpAddress(), false);
-//        final Answer answer = _agentMgr.easySend(fromHost.getId(), cmd);
-//        if (answer == null) {
-//            return false;
-//        }
-//
-//        final List<VolumeVO> vols = _volsDao.findCreatedByInstance(router.getId());
-//        if (vols.size() == 0) {
-//            return true;
-//        }
-//
-//        _storageMgr.unshare(router, vols, fromHost);
-//
-//        return true;
-//    }
-//
-//    @Override
-//    public boolean completeMigration(final DomainRouterVO router, final HostVO host) throws OperationTimedoutException, AgentUnavailableException {
-//        final CheckVirtualMachineCommand cvm = new CheckVirtualMachineCommand(router.getInstanceName());
-//        final CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) _agentMgr.send(host.getId(), cvm);
-//        if (answer == null || !answer.getResult()) {
-//            s_logger.debug("Unable to complete migration for " + router.getId());
-//            _itMgr.stateTransitTo(router, VirtualMachine.Event.AgentReportStopped, null);
-//            return false;
-//        }
-//
-//        final State state = answer.getState();
-//        if (state == State.Stopped) {
-//            s_logger.warn("Unable to complete migration as we can not detect it on " + host.getId());
-//            _itMgr.stateTransitTo(router, VirtualMachine.Event.AgentReportStopped, null);
-//            return false;
-//        }
-//
-//        _itMgr.stateTransitTo(router, VirtualMachine.Event.OperationSucceeded, host.getId());
-//
-//        return true;
-//    }
 
     protected class RouterCleanupTask implements Runnable {
 

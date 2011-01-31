@@ -924,6 +924,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         vo.setState(Nic.State.Allocated);
         return deviceId;
     }
+    
+    
+    protected void applyProfileToNicForRelease(NicVO vo, NicProfile profile) {
+        vo.setGateway(profile.getGateway());
+        vo.setAddressFormat(profile.getFormat());
+        vo.setIp4Address(profile.getIp4Address());
+        vo.setIp6Address(profile.getIp6Address());
+        vo.setMacAddress(profile.getMacAddress());
+        vo.setReservationStrategy(profile.getReservationStrategy());
+        vo.setBroadcastUri(profile.getBroadCastUri());
+        vo.setIsolationUri(profile.getIsolationUri());
+        vo.setNetmask(profile.getNetmask());
+    }
 
     protected NicTO toNicTO(NicVO nic, NicProfile profile, NetworkVO config) {
         NicTO to = new NicTO();
@@ -1100,6 +1113,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     _nicDao.update(nic.getId(), nic);
                     NicProfile profile = new NicProfile(nic, network, null, null, null);
                     if (concierge.release(profile, vmProfile, nic.getReservationId())) {
+                        applyProfileToNicForRelease(nic, profile);
                         nic.setState(Nic.State.Allocated);
                         if (originalState == Nic.State.Reserved) {
                             updateNic(nic, network.getId(), -1);
