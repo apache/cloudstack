@@ -316,7 +316,7 @@ function bindAddClusterButton($leftmenuItem1) {
         }
 
         dialogAddCluster.find("#cluster_hypervisor").change(function() {
-        	if($(this).val() == "VmWare") {
+        	if($(this).val() == "VMware") {
         		$('li[input_group="vmware"]', dialogAddCluster).show();
         		dialogAddCluster.find("#type_dropdown").change();
         	} else {
@@ -341,12 +341,12 @@ function bindAddClusterButton($leftmenuItem1) {
 
 			    var hypervisor = $thisDialog.find("#cluster_hypervisor").val();
 			    var clusterType="CloudManaged";
-			    if(hypervisor == "VmWare")
+			    if(hypervisor == "VMware")
 			    	clusterType = $thisDialog.find("#type_dropdown").val();
 	            
 		        // validate values
 		        var isValid = true;
-		        if(hypervisor == "VmWare" && clusterType != "CloudManaged") {
+		        if(hypervisor == "VMware" && clusterType != "CloudManaged") {
 			        isValid &= validateString("vCenter Server", $thisDialog.find("#cluster_hostname"), $thisDialog.find("#cluster_hostname_errormsg"));
 			        isValid &= validateString("vCenter user", $thisDialog.find("#cluster_username"), $thisDialog.find("#cluster_username_errormsg"));
 			        isValid &= validateString("Password", $thisDialog.find("#cluster_password"), $thisDialog.find("#cluster_password_errormsg"));	
@@ -366,7 +366,7 @@ function bindAddClusterButton($leftmenuItem1) {
 		        array1.push("&podId="+podId);
 
 		        var clusterName = trim($thisDialog.find("#cluster_name").val());
-		        if(hypervisor == "VmWare" && clusterType != "CloudManaged") {
+		        if(hypervisor == "VMware" && clusterType != "CloudManaged") {
 			        
 			        var username = trim($thisDialog.find("#cluster_username").val());
 			        array1.push("&username="+todb(username));
@@ -443,7 +443,7 @@ function bindAddHostButton($leftmenuItem1) {
         if(clusterId == null)
             return;        
         var clusterObj = clustersUnderOnePod[clusterId];                    
-    	if(clusterObj.hypervisortype == "VmWare") {
+    	if(clusterObj.hypervisortype == "VMware") {
     		$('li[input_group="vmware"]', dialogAddHost).show();
     		$('li[input_group="general"]', dialogAddHost).hide();
     	} else {
@@ -483,7 +483,7 @@ function bindAddHostButton($leftmenuItem1) {
         
         /*          
         dialogAddHost.find("#host_hypervisor").change(function() {
-        	if($(this).val() == "VmWare") {
+        	if($(this).val() == "VMware") {
         		$('li[input_group="vmware"]', dialogAddHost).show();
         		$('li[input_group="general"]', dialogAddHost).hide();
         	} else {
@@ -514,7 +514,7 @@ function bindAddHostButton($leftmenuItem1) {
 				if(clusterId != null) {
 				    clusterObj = clustersUnderOnePod[clusterId];    
                     hypervisor = clusterObj.hypervisortype;                     
-				    if(hypervisor == "VmWare") {
+				    if(hypervisor == "VMware") {
 			            isValid &= validateString("vCenter Address", $thisDialog.find("#host_vcenter_address"), $thisDialog.find("#host_vcenter_address_errormsg"));
 			            isValid &= validateString("vCenter User", $thisDialog.find("#host_vcenter_username"), $thisDialog.find("#host_vcenter_username_errormsg"));
 			            isValid &= validateString("vCenter Password", $thisDialog.find("#host_vcenter_password"), $thisDialog.find("#host_vcenter_password_errormsg"));	
@@ -539,7 +539,7 @@ function bindAddHostButton($leftmenuItem1) {
                 var clustertype = clusterObj.clustertype;
                 array1.push("&clustertype=" + clustertype);	
 		        	
-			    if(hypervisor == "VmWare") {
+			    if(hypervisor == "VMware") {
 			        var username = trim($thisDialog.find("#host_vcenter_username").val());
 			        array1.push("&username="+todb(username));
 					
@@ -679,7 +679,7 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
 	    		$protocolSelector.empty();
     			$protocolSelector.append('<option value="nfs">NFS</option>');
     			$protocolSelector.append('<option value="iscsi">ISCSI</option>');
-	    	} else if(objCluster.hypervisortype == "VmWare") {
+	    	} else if(objCluster.hypervisortype == "VMware") {
 	    		$protocolSelector.empty();
     			$protocolSelector.append('<option value="nfs">NFS</option>');
     			$protocolSelector.append('<option value="vmfs">VMFS datastore</option>');

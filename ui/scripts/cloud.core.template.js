@@ -75,7 +75,7 @@ function afterLoadTemplateJSP() {
 	    
 	    if(selectedHypervisorType == "XenServer")
 	        formatSelect.append("<option value='VHD'>VHD</option>");	    
-	    else if(selectedHypervisorType == "VmWare")
+	    else if(selectedHypervisorType == "VMware")
 	        formatSelect.append("<option value='OVA'>OVA</option>");
 	    else if(selectedHypervisorType == "KVM")
 	        formatSelect.append("<option value='QCOW2'>QCOW2</option>");
