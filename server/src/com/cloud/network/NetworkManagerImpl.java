@@ -762,8 +762,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         try {
 
-            if (predefined == null || (predefined.getBroadcastUri() == null && predefined.getBroadcastDomainType() != BroadcastDomainType.Vlan)) {
+            if (predefined == null || (predefined.getCidr() == null && predefined.getBroadcastUri() == null && predefined.getBroadcastDomainType() != BroadcastDomainType.Vlan)) {
                 List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
+                if (configs.size() > 0) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
+                    }
+                    return configs;
+                }
+            } else if (predefined != null && predefined.getCidr() != null && predefined.getBroadcastUri() == null && predefined.getBroadcastUri() == null) {
+                List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId(), predefined.getCidr());
                 if (configs.size() > 0) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
@@ -1444,8 +1452,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 txn.rollback();
                 throw new CloudRuntimeException("Fail to create a network");
             } else {
-                network = networks.get(0);
+                if (networks.size() > 0 && networks.get(0).getGuestType() == GuestIpType.Virtual && networks.get(0).getTrafficType() == TrafficType.Guest) {
+                    Network defaultGuestNetwork = networks.get(0);
+                    for (Network nw : networks) {
+                        if (nw.getCidr() != null && nw.getCidr().equals(zone.getGuestNetworkCidr())) {
+                            defaultGuestNetwork = nw;
+                        }
+                    }
+                    network = defaultGuestNetwork;
+                } else {
+                    network = networks.get(0);
+                }
+                
                 networkId = networks.get(0).getId();
+                
                 if (network.getGuestType() == GuestIpType.Virtual) {
                     s_logger.debug("Creating a source natp ip for " + network);
                     PublicIp ip = assignSourceNatIpAddress(owner, network, userId);

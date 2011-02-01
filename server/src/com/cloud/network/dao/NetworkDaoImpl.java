@@ -76,6 +76,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         join.and("account", join.entity().getAccountId(), Op.EQ);
         AccountSearch.join("accounts", join, AccountSearch.entity().getId(), join.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
         AccountSearch.and("datacenter", AccountSearch.entity().getDataCenterId(), Op.EQ);
+        AccountSearch.and("cidr", AccountSearch.entity().getCidr(), Op.EQ);
         AccountSearch.done();
     
         RelatedConfigSearch = createSearchBuilder();
@@ -132,12 +133,24 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         return listBy(sc);
     }
     
+    
     @Override
     public List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId) {
         SearchCriteria<NetworkVO> sc = AccountSearch.create();
         sc.setParameters("offering", offeringId);
         sc.setJoinParameters("accounts", "account", accountId);
         sc.setParameters("datacenter", dataCenterId);
+        
+        return listBy(sc);
+    }
+    
+    @Override
+    public List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId, String cidr) {
+        SearchCriteria<NetworkVO> sc = AccountSearch.create();
+        sc.setParameters("offering", offeringId);
+        sc.setJoinParameters("accounts", "account", accountId);
+        sc.setParameters("datacenter", dataCenterId);
+        sc.setParameters("cidr", cidr);
         
         return listBy(sc);
     }

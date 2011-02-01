@@ -29,6 +29,7 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     List<NetworkVO> listBy(long accountId);
     List<NetworkVO> listByOwner(long ownerId);
     List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId);
+    List<NetworkVO> listBy(long accountId, long offeringId, long dataCenterId, String cidr);
     List<NetworkVO> listBy(long accountId, long dataCenterId, GuestIpType type);
     NetworkVO persist(NetworkVO network, boolean gc);
     void addAccountToNetwork(long networkId, long accountId);
