@@ -154,7 +154,8 @@
 										<div id="theme_menu" class="loginoptions_dropdown" style="display:none;">
 											<ul>
 												<li id="theme_default"><fmt:message key="label.theme.default"/></li>
-												<li id="custom/custom1/css/custom1.css"><fmt:message key="label.theme.grey"/></li>
+												<li id="custom1"><fmt:message key="label.theme.grey"/></li>
+												<li id="custom2"><fmt:message key="label.theme.lightblue"/></li>
 											</ul>
 										</div>
                                     </div>

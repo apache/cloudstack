@@ -42,12 +42,13 @@ $(document).ready(function() {
 	// Setup custom theme
 	var $currentTheme = null;
 	if ($.cookie("theme") != null) {
+		var theme = $.cookie("theme");
 		$currentTheme = $("<link>").appendTo("head").attr({
 			rel: "stylesheet",
 			type: "text/css",
-			href: $.cookie("theme")
+			href: "custom/"+theme+"/css/"+theme+".css"
 		});
-		$("#theme_button p").text($.cookie("theme.name"));
+		$("#theme_button p").text($("#theme_button #theme_menu #"+theme).text());
 	}
 	$("#theme_button").click(function(event) {
 		var $menu = $(this).find("#theme_menu");
@@ -70,17 +71,15 @@ $(document).ready(function() {
 			$currentTheme = $("<link>").appendTo("head").attr({
 				rel: "stylesheet",
 				type: "text/css",
-				href: id
+				href: "custom/"+id+"/css/"+id+".css"
 			});
 			name = target.text();
-			$.cookie("theme.name", name);
 			$.cookie("theme", id);
 		} else {
 			if ($currentTheme != null) {
 				$currentTheme.remove();
 			}
 			$.cookie("theme", null);
-			$.cookie("theme.name", null);
 			name = "Default Theme";
 		}
 		$("#theme_button p").text(name);
@@ -90,7 +89,7 @@ $(document).ready(function() {
 	
 	// Setup Language option
 	if ($.cookie("lang") != null) {
-		$("#lang_button p").text($("#lang_button #lang_menu #"+$.cookie("lang")));
+		$("#lang_button p").text($("#lang_button #lang_menu #"+$.cookie("lang")).text());
 	}
 	
 	$("#lang_button").click(function(event) {
