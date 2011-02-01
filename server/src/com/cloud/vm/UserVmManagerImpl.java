@@ -107,6 +107,7 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
@@ -2385,6 +2386,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         String accountName = cmd.getAccountName();
         Long accountId = null;
         Boolean isRecursive = cmd.isRecursive();
+        String hypervisor = cmd.getHypervisor();
         List<DomainVO> domainsToSearchForVms = new ArrayList<DomainVO>();
         boolean isAdmin = false;
         String path = null;
@@ -2444,6 +2446,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (path != null) {
             c.addCriteria(Criteria.PATH, path);
         }
+        
+       	if (HypervisorType.getType(hypervisor) != HypervisorType.None){
+       		c.addCriteria(Criteria.HYPERVISOR, hypervisor);
+       	}else if (hypervisor != null){
+       		throw new InvalidParameterValueException("Invalid HypervisorType " + hypervisor);
+       	}
 
         // ignore these search requests if it's not an admin
         if (isAdmin == true) {
@@ -2463,6 +2471,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     private List<UserVmVO> recursivelySearchForVms(ListVMsCmd cmd, String path, boolean isAdmin, List<DomainVO> domainToSearchWithin, Long accountId) {
     
         List<UserVmVO> result = new ArrayList<UserVmVO>();
+        String hypervisor = cmd.getHypervisor();
         for(DomainVO domain : domainToSearchWithin) {
             
             Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -2485,6 +2494,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 c.addCriteria(Criteria.PODID, cmd.getPodId());
                 c.addCriteria(Criteria.HOSTID, cmd.getHostId());
             }
+            
+            if (HypervisorType.getType(hypervisor) != HypervisorType.None){
+           		c.addCriteria(Criteria.HYPERVISOR, hypervisor);
+           	}else if (hypervisor != null){
+           		throw new InvalidParameterValueException("Invalid HypervisorType " + hypervisor);
+           	}
             
             if (accountId != null) {
                 c.addCriteria(Criteria.ACCOUNTID, new Object[] {accountId});
@@ -2522,6 +2537,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Object useVirtualNetwork = c.getCriteria(Criteria.FOR_VIRTUAL_NETWORK);
         Object path = c.getCriteria(Criteria.PATH);
         Object networkId = c.getCriteria(Criteria.NETWORKID);
+        Object hypervisor = c.getCriteria(Criteria.HYPERVISOR);
         
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -2533,6 +2549,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         sb.and("stateNIN", sb.entity().getState(), SearchCriteria.Op.NIN);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
+        sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("hostIdIN", sb.entity().getHostId(), SearchCriteria.Op.IN);
         
@@ -2636,6 +2653,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
 
+        if (hypervisor != null){
+        	sc.setParameters("hypervisorType", hypervisor);
+        }
         if ((isAdmin != null) && ((Boolean) isAdmin != true)) {
             sc.setParameters("stateNIN", "Destroyed", "Expunging");
         }

@@ -26,6 +26,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.UserVmResponse;
 import com.cloud.async.AsyncJob;
@@ -76,6 +77,9 @@ public class ListVMsCmd extends BaseListCmd {
     
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="list by network id")
     private Long networkId;
+
+    @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the target hypervisor for the template")
+    private String hypervisor;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -132,6 +136,10 @@ public class ListVMsCmd extends BaseListCmd {
     public Boolean isRecursive() {
         return recursive;
     }
+        
+    public String getHypervisor() {
+		return hypervisor;
+	}
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -143,8 +151,8 @@ public class ListVMsCmd extends BaseListCmd {
     public AsyncJob.Type getInstanceType() {
     	return AsyncJob.Type.VirtualMachine;
     }
-    
-    @Override
+
+	@Override
     public void execute(){
         List<? extends UserVm> result = _userVmService.searchForUserVMs(this);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();

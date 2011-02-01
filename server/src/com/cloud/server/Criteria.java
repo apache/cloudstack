@@ -79,6 +79,7 @@ public class Criteria {
     public static final String GROUP = "group";
     public static final String EMPTY_GROUP = "emptyGroup";
     public static final String NETWORKID = "networkId";
+    public static final String HYPERVISOR = "hypervisor";
 
 	public Criteria(String orderBy, Boolean ascending, Long offset, Long limit) {
 		this.offset = offset;
