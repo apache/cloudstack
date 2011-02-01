@@ -211,6 +211,7 @@
     <copy todir="${scripts.target.dir}">
       <fileset dir="${scripts.dir}">
         <include name="**/*"/>
+		<exclude name="**/fsimage.so"/>
         <exclude name="**/.*" />
         <exclude name="**/network/domr/mth/" />
         <exclude name="**/network/domr/kvm/" />
@@ -222,6 +223,10 @@
       <filterset>
         <filter token="VERSION" value="${impl.version}"/>
       </filterset>
+
+      <fileset dir="${scripts.dir}">
+        <include name="**/fsimage.so"/>
+      </fileset>
     </copy>
   </target>
 
