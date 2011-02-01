@@ -41,7 +41,7 @@
             <adapter name="Balance" class="com.cloud.consoleproxy.ConsoleProxyBalanceAllocator"/>
         </adapters>
         <adapters key="com.cloud.network.guru.NetworkGuru">
-            <adapter name="ExternalGuestNetworkGuru" class="com.cloud.network.guru.ExternalGuestNetworkGuru"/>
+            <adapter name="GuestNetworkGuru" class="com.cloud.network.guru.GuestNetworkGuru"/>
             <adapter name="OvsGuestNetworkGuru" class="com.cloud.network.guru.OvsGuestNetworkGuru"/>
             <adapter name="PublicNetworkGuru" class="com.cloud.network.guru.PublicNetworkGuru"/>
             <adapter name="PodBasedNetworkGuru" class="com.cloud.network.guru.PodBasedNetworkGuru"/>
