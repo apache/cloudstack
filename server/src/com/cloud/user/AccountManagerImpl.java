@@ -1500,6 +1500,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
     
     public Account finalizeOwner(Account caller, String accountName, Long domainId) {
+        //don't default the owner to the system account
+        if (caller.getId() == Account.ACCOUNT_ID_SYSTEM && (accountName == null || domainId == null)) {
+            throw new InvalidParameterValueException("Account and domainId are needed for resource creation");
+        }
+        
         if (isAdmin(caller.getType()) && accountName != null && domainId != null) {          
             DomainVO domain = _domainDao.findById(domainId);
             if (domain == null) {
