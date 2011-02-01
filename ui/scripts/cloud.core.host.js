@@ -185,7 +185,7 @@ function hostJsonToDetailsTab() {
         noAvailableActions = false;
     }
 	else {
-	    alert("Unsupported Host State: " + jsonObj.state);
+	    //alert("Unsupported Host State: " + jsonObj.state);
 	} 
         
     // no available actions 

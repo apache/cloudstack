@@ -169,7 +169,7 @@ function primarystorageJsonToDetailsTab() {
         buildActionLinkForTab("label.action.delete.primary.storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);          
     }
 	else {
-	    alert("Unsupported Host State: " + jsonObj.state);
+	    //alert("Unsupported Host State: " + jsonObj.state);
 	}      
     
     $thisTab.find("#tab_spinning_wheel").hide();    
