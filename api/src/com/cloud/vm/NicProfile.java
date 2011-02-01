@@ -95,10 +95,6 @@ public class NicProfile {
         this.mode = mode;
     }
 
-    public void setVmId(long vmId) {
-        this.vmId = vmId;
-    }
-    
     public void setDeviceId(int deviceId) {
         this.deviceId = deviceId;
     }
@@ -259,5 +255,10 @@ public class NicProfile {
         this.netmask = null;
         this.dns1 = null;
         this.dns2 = null;
+    }
+    
+    @Override
+    public String toString() {
+        return new StringBuilder("NicProfile[").append(id).append("-").append(vmId).append("-").append(reservationId).toString();
     }
 }

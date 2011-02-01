@@ -342,7 +342,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             host.enable(conn);
             return true;
         } catch (Exception e) {
-            String msg = "Catch Exception " + e.getClass().getName() + " : Enable host(" + _host.uuid + ") in pool(" + conn.getPoolUuid() + ") failed due to "
+            String msg = "Catch Exception " + e.getClass().getName() + " : Enable " + _host + " in pool(" + _host.pool + ") failed due to "
                     + e.toString();
             s_logger.warn(msg);
         }
@@ -1950,104 +1950,6 @@ public abstract class CitrixResourceBase implements ServerResource {
             s_logger.warn("Unable to prepare for migration ", e);
             return new PrepareForMigrationAnswer(cmd, e);
         }
-        
-        /*
-         * 
-         * String result = null;
-         * 
-         * List<VolumeVO> vols = cmd.getVolumes(); result = mountwithoutvdi(vols, cmd.getMappings()); if (result !=
-         * null) { return new PrepareForMigrationAnswer(cmd, false, result); }
-         */
-//        final String vmName = cmd.getVmName();
-//        try {
-//            Set<Host> hosts = Host.getAll(conn);
-//            // workaround before implementing xenserver pool
-//            // no migration
-//            if (hosts.size() <= 1) {
-//                return new PrepareForMigrationAnswer(cmd, false, "not in a same xenserver pool");
-//            }
-//            // if the vm have CD
-//            // 1. make iosSR shared
-//            // 2. create pbd in target xenserver
-//            SR sr = getISOSRbyVmName(conn, cmd.getVmName());
-//            if (sr != null) {
-//                Set<PBD> pbds = sr.getPBDs(conn);
-//                boolean found = false;
-//                for (PBD pbd : pbds) {
-//                    if (Host.getByUuid(conn, _host.uuid).equals(pbd.getHost(conn))) {
-//                        found = true;
-//                        break;
-//                    }
-//                }
-//                if (!found) {
-//                    sr.setShared(conn, true);
-//                    PBD pbd = pbds.iterator().next();
-//                    PBD.Record pbdr = new PBD.Record();
-//                    pbdr.deviceConfig = pbd.getDeviceConfig(conn);
-//                    pbdr.host = Host.getByUuid(conn, _host.uuid);
-//                    pbdr.SR = sr;
-//                    PBD newpbd = PBD.create(conn, pbdr);
-//                    newpbd.plug(conn);
-//                }
-//            }
-//            Set<VM> vms = VM.getByNameLabel(conn, vmName);
-//            if (vms.size() != 1) {
-//                String msg = "There are " + vms.size() + " " + vmName;
-//                s_logger.warn(msg);
-//                return new PrepareForMigrationAnswer(cmd, false, msg);
-//            }
-//
-//            VM vm = vms.iterator().next();
-//
-//            // check network
-//            Set<VIF> vifs = vm.getVIFs(conn);
-//            for (VIF vif : vifs) {
-//                Network network = vif.getNetwork(conn);
-//                Set<PIF> pifs = network.getPIFs(conn);
-//                long vlan = -1;
-//                PIF npif = null;
-//                for (PIF pif : pifs) {
-//                    try {
-//                        vlan = pif.getVLAN(conn);
-//                        if (vlan != -1 ) {
-//                            VLAN vland = pif.getVLANMasterOf(conn);
-//                            npif = vland.getTaggedPIF(conn);
-//                        }
-//                        break;
-//                    }catch (Exception e) {
-//                        continue;
-//                    }
-//                }
-//                if (npif == null)  {
-//                    continue;
-//                }
-//                network = npif.getNetwork(conn);
-//                String nwuuid = network.getUuid(conn);
-//                
-//                String pifuuid = null;
-//                if(nwuuid.equalsIgnoreCase(_host.privateNetwork)) {
-//                    pifuuid = _host.privatePif;
-//                } else if(nwuuid.equalsIgnoreCase(_host.publicNetwork)) {
-//                    pifuuid = _host.publicPif;
-//                } else {
-//                    continue;
-//                }
-//                Network vlanNetwork = enableVlanNetwork(conn, vlan, pifuuid);
-//
-//                if (vlanNetwork == null) {
-//                    throw new InternalErrorException("Failed to enable VLAN network with tag: " + vlan);
-//                }
-//            }
-//
-//            synchronized (_vms) {
-//                _vms.put(cmd.getVmName(), State.Migrating);
-//            }
-//            return new PrepareForMigrationAnswer(cmd, true, null);
-//        } catch (Exception e) {
-//            String msg = "catch exception " + e.getMessage();
-//            s_logger.warn(msg, e);
-//            return new PrepareForMigrationAnswer(cmd, false, msg);
-//        }
     }
 
     public PrimaryStorageDownloadAnswer execute(final PrimaryStorageDownloadCommand cmd) {
@@ -3929,17 +3831,17 @@ public abstract class CitrixResourceBase implements ServerResource {
     }
     
 
-    private void pbdPlug(Connection conn, PBD pbd) {
-        String pbdUuid = "";
-        String hostAddr = "";
+    private void pbdPlug(Connection conn, PBD pbd, String uuid) {
         try {
-            pbdUuid = pbd.getUuid(conn);
-            hostAddr = pbd.getHost(conn).getAddress(conn);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Plugging in PBD " + uuid + " for " + _host);
+            }
             pbd.plug(conn);
         } catch (Exception e) {
-            String msg = "PBD " + pbdUuid + " is not attached! and PBD plug failed due to "
-            + e.toString() + ". Please check this PBD in host : " + hostAddr;
+            String msg = "PBD " + uuid + " is not attached! and PBD plug failed due to "
+            + e.toString() + ". Please check this PBD in " + _host;
             s_logger.warn(msg, e);
+            throw new CloudRuntimeException(msg);
         }
     }
 
@@ -3952,42 +3854,42 @@ public abstract class CitrixResourceBase implements ServerResource {
                 s_logger.warn(msg);
                 return false;
             }
-            Set<Host> hosts = null;
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Checking " + srr.nameLabel + " or SR " + srr.uuid + " on " + _host);
+            }
             if (srr.shared) {
-                hosts = Host.getAll(conn);
+                Host host = Host.getByUuid(conn, _host.uuid);
 
-                for (Host host : hosts) {
-                    boolean found = false;
-                    for (PBD pbd : pbds) {
-                        if (host.equals(pbd.getHost(conn))) {
-                            PBD.Record pbdr = pbd.getRecord(conn);
-                            if (!pbdr.currentlyAttached) {
-                                pbdPlug(conn, pbd); 
-                            }
-                            pbds.remove(pbd);
-                            found = true;
-                            break;
+                boolean found = false;
+                for (PBD pbd : pbds) {
+                    if (host.equals(pbd.getHost(conn))) {
+                        PBD.Record pbdr = pbd.getRecord(conn);
+                        if (!pbdr.currentlyAttached) {
+                            pbdPlug(conn, pbd, pbdr.uuid); 
                         }
+                        pbds.remove(pbd);
+                        found = true;
+                        break;
                     }
-                    if (!found) {
-                        PBD.Record pbdr = srr.PBDs.iterator().next().getRecord(conn);
-                        pbdr.host = host;
-                        pbdr.uuid = "";
-                        PBD pbd = PBD.create(conn, pbdr);
-                        pbdPlug(conn, pbd); 
-                    }
+                }
+                if (!found) {
+                    PBD.Record pbdr = srr.PBDs.iterator().next().getRecord(conn);
+                    pbdr.host = host;
+                    pbdr.uuid = "";
+                    PBD pbd = PBD.create(conn, pbdr);
+                    pbdPlug(conn, pbd, pbd.getUuid(conn)); 
                 }
             } else {
                 for (PBD pbd : pbds) {
                     PBD.Record pbdr = pbd.getRecord(conn);
                     if (!pbdr.currentlyAttached) {
-                        pbdPlug(conn, pbd);
+                        pbdPlug(conn, pbd, pbdr.uuid);
                     }
                 }
             }
 
         } catch (Exception e) {
-            String msg = "checkSR failed host:" + _host.uuid + " due to " + e.toString();
+            String msg = "checkSR failed host:" + _host + " due to " + e.toString();
             s_logger.warn(msg, e);
             return false;
         }
@@ -5607,7 +5509,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         } else if (srs.size() == 1) {
             SR sr = srs.iterator().next();
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("SR retrieved for " + pool.getId() + " is mapped to " + sr.toString());
+                s_logger.debug("SR retrieved for " + pool.getId());
             }
 
             if (checkSR(conn, sr)) {
@@ -5907,6 +5809,11 @@ public abstract class CitrixResourceBase implements ServerResource {
         public String pool;
         public int speed;
         public int cpus;
+        
+        @Override
+        public String toString() {
+            return new StringBuilder("XS[").append(uuid).append("-").append(ip).append("]").toString();
+        }
     }
 
     /*Override by subclass*/

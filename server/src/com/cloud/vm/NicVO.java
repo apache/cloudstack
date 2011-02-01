@@ -295,4 +295,9 @@ public class NicVO implements Nic {
     public void setCreated(Date created) {
         this.created = created;
     }
+    
+    @Override
+    public String toString() {
+        return new StringBuilder("Nic[").append(id).append("-").append(instanceId).append("-").append(reservationId).append("-").append(ip4Address).append("]").toString();
+    }
 }
