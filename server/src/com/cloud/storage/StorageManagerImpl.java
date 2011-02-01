@@ -1620,7 +1620,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         List<Long> hostIds = _storagePoolHostDao.customSearch(sc, null);
         Collections.shuffle(hostIds);
         if (hostIdsToTryFirst != null) {
-            for (int i = hostIdsToTryFirst.length; i >= 0; i--) {
+            for (int i = hostIdsToTryFirst.length - 1; i >= 0; i--) {
                 if (hostIds.remove(hostIdsToTryFirst[i])) {
                     hostIds.add(0, hostIdsToTryFirst[i]);
                 }
