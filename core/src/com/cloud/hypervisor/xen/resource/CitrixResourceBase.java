@@ -863,13 +863,6 @@ public abstract class CitrixResourceBase implements ServerResource {
 
             SR.Record srr = sr.getRecord(conn);
 
-            for( VDI vdi : srr.VDIs ) {
-                VDI.Record vdir = vdi.getRecord(conn);
-                if(vdir.nameLabel.contains("systemvm-premium")){
-                    _host.systemvmisouuid = vdir.uuid;
-                    break;
-                }                       
-            }
             if(  _host.systemvmisouuid == null ) {
                 for( VDI vdi : srr.VDIs ) {
                     VDI.Record vdir = vdi.getRecord(conn);
