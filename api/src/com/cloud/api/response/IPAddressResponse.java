@@ -19,6 +19,7 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -76,6 +77,9 @@ public class IPAddressResponse extends BaseResponse {
     
     @SerializedName("networkid") @Param(description="the ID of the Network where ip belongs to")
     private Long networkId;
+    
+    @SerializedName(ApiConstants.STATE) @Param(description="State of the ip address. Can be: Allocatin, Allocated and Releasing")
+    private String state;
     
     public String getIpAddress() {
         return ipAddress;
@@ -219,5 +223,13 @@ public class IPAddressResponse extends BaseResponse {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 }

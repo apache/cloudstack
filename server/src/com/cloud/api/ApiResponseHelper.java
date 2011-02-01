@@ -658,6 +658,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         
         ipResponse.setNetworkId(networkId);
+        ipResponse.setState(ipAddress.getState().toString());
         
         // show this info to admin only
         Account account = UserContext.current().getCaller();
