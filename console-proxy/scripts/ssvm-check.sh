@@ -11,7 +11,7 @@
 echo ================================================
 DNSSERVER=`egrep '^nameserver' /etc/resolv.conf  | awk '{print $2}'| head -1`
 echo "First DNS server is " $DNSSERVER
-ping -c 2 -w 2 $DNSSERVER
+ping -c 2  $DNSSERVER
 if [ $? -eq 0 ]
 then
     echo "Good: Can ping DNS server"
@@ -61,7 +61,7 @@ else
     echo "Try manually mounting from inside the VM"
     NFSSERVER=`awk '{print $17}' /proc/cmdline|awk -F= '{print $2}'|awk -F: '{print $1}'`
     echo "NFS server is " $NFSSERVER
-    ping -c 2 -w 2 $NFSSERVER
+    ping -c 2  $NFSSERVER
     if [ $? -eq 0 ]
     then
 	echo "Good: Can ping NFS server"
