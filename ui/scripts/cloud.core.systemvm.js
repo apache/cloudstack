@@ -116,7 +116,16 @@ function systemvmJsonToDetailsTab() {
         $(this).find("#action_menu").show();    
         return false;
     });
-    $actionLink.bind("mouseout", function(event) {       
+    $actionLink.bind("mouseout", function(event) {          
+        var $thisElement = $(this)[0];
+	    var relatedTarget1 = event.relatedTarget;
+	    while(relatedTarget1 != null && relatedTarget1.nodeName != "BODY" && relatedTarget1 != $thisElement) {
+	        relatedTarget1 = relatedTarget1.parentNode;
+	    }    	
+	    if(relatedTarget1 == $thisElement) { 
+	        return;        
+        }
+        
         $(this).find("#action_menu").hide();    
         return false;
     });	  
