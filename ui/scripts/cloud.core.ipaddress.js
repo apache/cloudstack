@@ -155,20 +155,18 @@ function afterLoadIpJSP() {
 	    $("#tab_content_port_range #grid_content").append($template.show());		
 	    
 	    var $spinningWheel = $template.find("#row_container").find("#spinning_wheel");	
-	    //$spinningWheel.find("#description").text("Adding....");	
 	    $spinningWheel.find("#description").text(g_dictionary["label.adding.processing"]);	
         $spinningWheel.show();   
 	    	    
 	    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");       
-        var ipObj = $midmenuItem1.data("jsonObj");            	        
-		var ipAddress = ipObj.ipaddress;
-				
-	    var startPort = $createPortRangeRow.find("#start_port").val();
+        var ipObj = $midmenuItem1.data("jsonObj");          	        
+		
+		var startPort = $createPortRangeRow.find("#start_port").val();
 	    var endPort = $createPortRangeRow.find("#end_port").val();
 	    var protocol = $createPortRangeRow.find("#protocol").val();
 	   	    
 	    var array1 = [];
-        array1.push("&ipaddress="+ipAddress);           
+        array1.push("&ipaddressid="+ipObj.id);           
         array1.push("&startPort="+startPort);
         array1.push("&endPort="+endPort);
         array1.push("&protocol="+protocol);
@@ -257,7 +255,6 @@ function afterLoadIpJSP() {
 	    	    
 	    var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");       
         var ipObj = $midmenuItem1.data("jsonObj");            	        
-		var ipAddress = ipObj.ipaddress;
 				
 	    var publicPort = $createPortForwardingRow.find("#public_port").val();
 	    var privatePort = $createPortForwardingRow.find("#private_port").val();
@@ -265,7 +262,7 @@ function afterLoadIpJSP() {
 	    var virtualMachineId = $createPortForwardingRow.find("#vm").val();		   
 	    		    
 	    var array1 = [];
-        array1.push("&ipaddress="+ipAddress);           
+        array1.push("&ipaddressid="+ipObj.id);           
         array1.push("&publicport="+publicPort);
         array1.push("&privateport="+privatePort);
         array1.push("&protocol="+protocol);
@@ -528,17 +525,12 @@ function ipJsonToPortRangeTab() {
         ipClearPortRangeTab();
         return;   
     }
-        
-    var networkObj = $midmenuItem1.data("networkObj");
-      
-    var ipAddress = ipObj.ipaddress;
-    if(ipAddress == null || ipAddress.length == 0)
-        return;    
-   
+    
     var $thisTab = $("#right_panel_content #tab_content_port_range");  
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   		
-
+    
+    var networkObj = $midmenuItem1.data("networkObj");  
     if(networkObj != null) {
         var firewallServiceObj = ipFindNetworkServiceByName("Firewall", networkObj);
         if(firewallServiceObj != null) {
@@ -556,7 +548,7 @@ function ipJsonToPortRangeTab() {
     refreshCreatePortRangeRow();         
            		
     $.ajax({
-        data: createURL("command=listIpForwardingRules&ipaddress=" + ipAddress),
+        data: createURL("command=listIpForwardingRules&ipaddressid=" + ipObj.id),
         dataType: "json",        
         success: function(json) {	                                       
             var items = json.listipforwardingrulesresponse.ipforwardingrule;              
@@ -586,18 +578,13 @@ function ipJsonToPortForwardingTab() {
     if(ipObj == null) {
         ipClearPortForwardingTab();
         return;   
-    }
-        
-    var networkObj = $midmenuItem1.data("networkObj");
-      
-    var ipAddress = ipObj.ipaddress;
-    if(ipAddress == null || ipAddress.length == 0)
-        return;    
-   
+    }           
+    
     var $thisTab = $("#right_panel_content #tab_content_port_forwarding");  
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   		
 
+    var networkObj = $midmenuItem1.data("networkObj");
     if(networkObj != null) {
         var firewallServiceObj = ipFindNetworkServiceByName("Firewall", networkObj);
         if(firewallServiceObj != null) {
@@ -615,7 +602,7 @@ function ipJsonToPortForwardingTab() {
     refreshCreatePortForwardingRow();         
            		
     $.ajax({
-        data: createURL("command=listPortForwardingRules&ipaddress=" + ipAddress),
+        data: createURL("command=listPortForwardingRules&ipaddressid=" + ipObj.id),
         dataType: "json",        
         success: function(json) {	                                    
             var items = json.listportforwardingrulesresponse.portforwardingrule;              
@@ -1114,16 +1101,14 @@ function ipJsonToDetailsTab() {
     
     var networkObj = $midmenuItem1.data("networkObj");
     
-    var ipaddress = ipObj.ipaddress;   
-    if(ipaddress == null || ipaddress.length == 0)
-        return;
-    
+    var id = ipObj.id;   
+        
     var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
          
     $.ajax({
-        data: createURL("command=listPublicIpAddresses&ipaddress="+ipaddress),
+        data: createURL("command=listPublicIpAddresses&id="+id),
         dataType: "json",
         async: false,
         success: function(json) {  
@@ -1336,8 +1321,7 @@ function doReleaseIp($actionLink, $detailsTab, $midmenuItem1) {
 }
 
 function doEnableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {    
-    var jsonObj = $midmenuItem1.data("jsonObj");
-    var id = jsonObj.id;
+    var ipObj = $midmenuItem1.data("jsonObj");
     
     $("#dialog_enable_static_NAT")    
 	.dialog('option', 'buttons', { 						
@@ -1351,8 +1335,8 @@ function doEnableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {
 		
 		    $thisDialog.dialog("close");	
 		    
-			var apiCommand = "command=enableStaticNat&ipaddressid="+id+"&virtualmachineid="+vmId;
-            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+			var apiCommand = "command=enableStaticNat&ipaddressid="+ipObj.id+"&virtualmachineid="+vmId;
+            doActionToTab(ipObj.id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
@@ -1361,8 +1345,7 @@ function doEnableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {
 }
 
 function doDisableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {  
-    var jsonObj = $midmenuItem1.data("jsonObj");
-    var id = jsonObj.id;
+    var ipObj = $midmenuItem1.data("jsonObj");
     
     $("#dialog_info")
     .text(dictionary["message.action.disable.static.NAT"])    
@@ -1370,8 +1353,8 @@ function doDisableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {
 		"Confirm": function() { 		    
 		    $(this).dialog("close");	
 		    
-			var apiCommand = "command=disableStaticNat&ipaddressid="+id;
-            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+			var apiCommand = "command=disableStaticNat&ipaddressid="+ipObj.id;
+            doActionToTab(ipObj.id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
@@ -1555,89 +1538,7 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
         });    
                  
         return false;
-    });
-    
-    /*
-    $template.find("#edit_link").unbind("click").bind("click", function(event){   		    
-        $rowContainer.hide();
-        $rowContainerEdit.show();
-    });
-    */
-    
-    /*
-    $template.find("#cancel_link").unbind("click").bind("click", function(event){   		    
-        $rowContainer.show();
-        $rowContainerEdit.hide();
-    });
-    */
-    
-    /*
-    $template.find("#save_link").unbind("click").bind("click", function(event){          		       
-        // validate values		    
-	    var isValid = true;					    
-	    isValid &= validateInteger("Private Port", $rowContainerEdit.find("#private_port"), $rowContainerEdit.find("#private_port_errormsg"), 1, 65535);				
-	    if (!isValid) return;		    		        
-	    
-        var $spinningWheel = $rowContainerEdit.find("#spinning_wheel");	                     
-        $spinningWheel.find("#description").text(g_dictionary["label.saving.processing"]);	
-        $spinningWheel.show();  
-	    
-        var publicPort = $rowContainerEdit.find("#public_port").text();
-        var privatePort = $rowContainerEdit.find("#private_port").val();
-        var protocol = $rowContainerEdit.find("#protocol").text();
-        var virtualMachineId = $rowContainerEdit.find("#vm").val();		   
-	    		    
-        var array1 = [];
-        array1.push("&ipaddress="+ipAddress);    
-        array1.push("&privateport="+privatePort);
-        array1.push("&publicport="+publicPort);
-        array1.push("&protocol="+protocol);
-        array1.push("&virtualmachineid=" + virtualMachineId);
-                      
-        $.ajax({
-             data: createURL("command=updatePortForwardingRule"+array1.join("")),
-			 dataType: "json",
-			 success: function(json) {					    									 
-				var jobId = json.updateportforwardingruleresponse.jobid;					        
-		        var timerKey = "updateportforwardingruleJob"+jobId;
-		        
-                $("body").everyTime(2000, timerKey, function() {
-				    $.ajax({
-					   data: createURL("command=queryAsyncJobResult&jobId="+jobId),
-					    dataType: "json",
-					    success: function(json) {										       						   
-						    var result = json.queryasyncjobresultresponse;									    
-						    if (result.jobstatus == 0) {
-							    return; //Job has not completed
-						    } else {											    
-							    $("body").stopTime(timerKey);
-							    if (result.jobstatus == 1) { // Succeeded							
-							        var item = result.jobresult.portforwardingrule;    	
-                                    portForwardingJsonToTemplate(item,$template);
-                                    $spinningWheel.hide(); 	     
-                                    $rowContainerEdit.hide();
-                                    $rowContainer.show();                                                      
-							    } else if (result.jobstatus == 2) { //Fail
-							        $spinningWheel.hide(); 		
-						            $("#dialog_alert").text(fromdb(result.jobresult.errortext)).dialog("open");											    					    
-							    }
-						    }
-					    },
-					    error: function(XMLHttpResponse) {	
-					        handleError(XMLHttpResponse);								        
-						    $("body").stopTime(timerKey);
-						    $spinningWheel.hide(); 									    								    
-					    }
-				    });
-			    }, 0);							 
-			 },
-			 error: function(XMLHttpResponse) {
-			     handleError(XMLHttpResponse);		
-			     $spinningWheel.hide(); 						 
-			 }
-		 });                   
-    });   
-    */
+    });    
 }	  
 
 function refreshCreatePortForwardingRow() {       
