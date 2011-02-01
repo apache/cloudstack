@@ -1753,6 +1753,10 @@ function vmJsonToDetailsTab(){
 		buildActionLinkForTab("label.action.change.service", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);	
 		noAvailableActions = false;			    					
 	}
+	else if (jsonObj.state == 'Error') {	
+	    buildActionLinkForTab("label.action.destroy.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
+	    noAvailableActions = false;	
+	}
 			
 	// no available actions 
 	if(noAvailableActions == true) {

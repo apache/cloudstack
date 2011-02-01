@@ -15,7 +15,10 @@ dictionary = {
 	'message.action.stop.systemvm' : '<fmt:message key="message.action.stop.systemvm"/>',
 	'label.action.reboot.systemvm' : '<fmt:message key="label.action.reboot.systemvm"/>',
 	'label.action.reboot.systemvm.processing' : '<fmt:message key="label.action.reboot.systemvm.processing"/>',
-	'message.action.reboot.systemvm' : '<fmt:message key="message.action.reboot.systemvm"/>'
+	'message.action.reboot.systemvm' : '<fmt:message key="message.action.reboot.systemvm"/>',
+	'label.action.destroy.systemvm': '<fmt:message key="label.action.destroy.systemvm"/>',
+    'label.action.destroy.systemvm.processing': '<fmt:message key="label.action.destroy.systemvm.processing"/>',
+    'message.action.destroy.systemvm': '<fmt:message key="message.action.destroy.systemvm"/>'
 };	
 </script>
 

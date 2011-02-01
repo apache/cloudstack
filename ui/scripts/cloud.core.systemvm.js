@@ -122,14 +122,28 @@ function systemvmJsonToDetailsTab() {
     });	  
     var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();   
+	var noAvailableActions = true;
 	
-	if (jsonObj.state == 'Running') {	//Show "Stop System VM", "Reboot System VM"
+	if (jsonObj.state == 'Running') {	
 	    buildActionLinkForTab("label.action.stop.systemvm", systemVmActionMap, $actionMenu, $midmenuItem1, $thisTab);     
-        buildActionLinkForTab("label.action.reboot.systemvm", systemVmActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+        buildActionLinkForTab("label.action.reboot.systemvm", systemVmActionMap, $actionMenu, $midmenuItem1, $thisTab);           
+        buildActionLinkForTab("label.action.destroy.systemvm", systemVmActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+        noAvailableActions = false;	  
 	} 
-	else if (jsonObj.state == 'Stopped') { //show "Start System VM"	    
+	else if (jsonObj.state == 'Stopped') { 
 	    buildActionLinkForTab("label.action.start.systemvm", systemVmActionMap, $actionMenu, $midmenuItem1, $thisTab); 
-	}  
+	    buildActionLinkForTab("label.action.destroy.systemvm", systemVmActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+	    noAvailableActions = false;	 
+	} 
+	else if (jsonObj.state == 'Error') {
+	    buildActionLinkForTab("label.action.destroy.systemvm", systemVmActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+	    noAvailableActions = false;	
+	} 
+	
+	// no available actions 
+	if(noAvailableActions == true) {
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	 
 	
 	$thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();      
@@ -197,6 +211,17 @@ var systemVmActionMap = {
             var jsonObj = json.queryasyncjobresultresponse.jobresult.systemvm;              
             systemvmToMidmenu(jsonObj, $midmenuItem1);                
         }
+    },
+     "label.action.destroy.systemvm": {                
+        isAsyncJob: true,  
+        asyncJobResponse: "destroysystemvmresponse",
+        dialogBeforeActionFn : doDestroySystemVM,      
+        inProcessText: "label.action.destroy.systemvm.processing",
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {  
+            $midmenuItem1.slideUp("slow", function() {
+                   
+            });          
+        }
     }
 }   
 
@@ -257,3 +282,20 @@ function doRebootSystemVM($actionLink, $detailsTab, $midmenuItem1) {
     }).dialog("open");
 }   
 
+function doDestroySystemVM($actionLink, $detailsTab, $midmenuItem1) {       
+    var jsonObj = $midmenuItem1.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text(dictionary["message.action.destroy.systemvm"])
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");			
+			var apiCommand = "command=destroySystemVm&id="+id;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
