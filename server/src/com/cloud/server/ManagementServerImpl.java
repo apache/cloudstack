@@ -2442,6 +2442,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
+       
 
         if ((account == null) || isAdmin(account.getType())) {
             // validate domainId before proceeding
@@ -2477,12 +2478,14 @@ public class ManagementServerImpl implements ManagementServer {
         Object vlan = cmd.getVlanId();
         Object keyword = cmd.getKeyword();
         Object forVirtualNetwork  = cmd.isForVirtualNetwork();
+        Object ipId = cmd.getId();
 
         SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
         sb.and("accountIdEQ", sb.entity().getAllocatedToAccountId(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("address", sb.entity().getAddress(), SearchCriteria.Op.EQ);
         sb.and("vlanDbId", sb.entity().getVlanId(), SearchCriteria.Op.EQ);
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
 
         if ((accountId == null) && (domainId != null)) {
             // if accountId isn't specified, we can do a domain match for the admin case
@@ -2516,6 +2519,10 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (zone != null) {
             sc.setParameters("dataCenterId", zone);
+        }
+        
+        if (ipId != null) {
+            sc.setParameters("id", ipId);
         }
 
         if ((address == null) && (keyword != null)) {
