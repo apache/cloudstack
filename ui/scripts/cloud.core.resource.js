@@ -1641,11 +1641,7 @@ function initUpdateConsoleCertButton($midMenuAddLink2) {
 
 function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel) { 
 	var $dialogAddPool = $("#dialog_add_pool_in_resource_page");    
-	
-    // if hypervisor is KVM, limit the server option to NFS for now
-	// TODO: Fix this to use the hypervisor from the cluster
-    //if (getHypervisorType() == 'kvm') 
-	//    $dialogAddPool.find("#add_pool_protocol").empty().html('<option value="nfs">NFS</option>');	
+	    
     bindEventHandlerToDialogAddPool($dialogAddPool);	
     
     $dialogAddPool.find("#zone_dropdown").bind("change", function(event) {
@@ -1710,6 +1706,7 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
     	if(objCluster.hypervisortype == "KVM") {
     		$protocolSelector.empty();
     		$protocolSelector.append('<option value="nfs">NFS</option>');
+    		$protocolSelector.append('<option value="sharedMountPoint">sharedMountPoint</option>');
     	} else if(objCluster.hypervisortype == "XenServer") {
     		$protocolSelector.empty();
 			$protocolSelector.append('<option value="nfs">NFS</option>');
@@ -1721,8 +1718,7 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
     	}
     	
     	$protocolSelector.change();
-    }).change();
-    
+    });    
        
     $("#add_primarystorage_shortcut").unbind("click").bind("click", function(event) { 
         $dialogAddPool.find("#zone_dropdown").change(); //refresh cluster dropdown (do it here to avoid race condition)     
@@ -1741,7 +1737,7 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 		        isValid &= validateDropDownBox("Pod", $thisDialog.find("#pod_dropdown"), $thisDialog.find("#pod_dropdown_errormsg"));						    
 			    isValid &= validateDropDownBox("Cluster", $thisDialog.find("#cluster_select"), $thisDialog.find("#cluster_select_errormsg"), false);  //required, reset error text					    				
 			    isValid &= validateString("Name", $thisDialog.find("#add_pool_name"), $thisDialog.find("#add_pool_name_errormsg"));
-				if (protocol == "nfs") {
+				if (protocol == "nfs" || protocol == "sharedMountPoint") {
 				    isValid &= validateString("Server", $thisDialog.find("#add_pool_nfs_server"), $thisDialog.find("#add_pool_nfs_server_errormsg"));	
 					isValid &= validateString("Path", $thisDialog.find("#add_pool_path"), $thisDialog.find("#add_pool_path_errormsg"));	
 				} else if(protocol == "iscsi") {
@@ -1785,13 +1781,21 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 					if(path.substring(0,1)!="/")
 						path = "/" + path; 
 					url = nfsURL(server, path);
-				} else if(protocol == "vmfs") {
+				}
+				else if (protocol == "sharedMountPoint") {
+					var path = trim($thisDialog.find("#add_pool_path").val());
+					if(path.substring(0,1)!="/")
+						path = "/" + path; 
+					url = sharedMountPointURL(server, path);
+				}  
+				else if(protocol == "vmfs") {
 					var path = trim($thisDialog.find("#add_pool_vmfs_dc").val());
 					if(path.substring(0,1)!="/")
 						path = "/" + path; 
 					path += "/" + trim($thisDialog.find("#add_pool_vmfs_ds").val())
 					url = vmfsURL("dummy", path);
-				} else {
+				} 
+				else {
 					var iqn = trim($thisDialog.find("#add_pool_iqn").val());
 					if(iqn.substring(0,1)!="/")
 						iqn = "/" + iqn; 
