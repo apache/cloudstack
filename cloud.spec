@@ -304,7 +304,6 @@ Provides: %{name}-premium-vendor-zynga = %{version}-%{release}
 Obsoletes: %{name}-premium-vendor-zynga < %{version}-%{release}
 Requires: java >= 1.6.0
 Requires: %{name}-utils = %{version}-%{release}
-Requires: %{name}-premium-deps
 License:   CSL 1.1
 Group:     System Environment/Libraries
 %description premium
