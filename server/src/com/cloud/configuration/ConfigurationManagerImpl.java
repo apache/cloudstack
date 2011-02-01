@@ -1673,22 +1673,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         VlanType vlanType = forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
-        
-
-        //check for hypervisor type to be xenserver
-		String hypervisorType = _configDao.getValue("hypervisor.type");
-				
-		if(hypervisorType.equalsIgnoreCase("xenserver")) {
-	    	//check for the vlan being added before going to db, to see if it is untagged
-	    	if(vlanType.toString().equalsIgnoreCase("VirtualNetwork") && vlanId.equalsIgnoreCase(Vlan.UNTAGGED))
-	    	{
-	    		if(_configDao.getValue("xen.public.network.device") == null || _configDao.getValue("xen.public.network.device").equals(""))
-	    		{
-	    			throw new CloudRuntimeException("For adding an untagged IP range, please set up xen.public.network.device");
-	    		}
-	    	}
-		}
-
+      
         //ACL check
         checkAccess(account, zone);
 

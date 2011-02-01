@@ -60,7 +60,6 @@ import com.cloud.utils.db.Transaction;
 @Local(value={VMTemplateDao.class})
 public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implements VMTemplateDao {
     private static final Logger s_logger = Logger.getLogger(VMTemplateDaoImpl.class);
-    private HypervisorType _defaultHyperType;
     
     @Inject
     VMTemplateZoneDao _templateZoneDao;
@@ -241,7 +240,6 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		tmpltZoneSearch.done();
 		TmpltsInZoneSearch.done();
 			
-		_defaultHyperType = HypervisorType.getType(_configDao.getValue("hypervisor.type"));
 		return result;
 	}
 

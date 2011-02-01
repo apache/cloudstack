@@ -343,7 +343,6 @@ public class ManagementServerImpl implements ManagementServer {
     
     private final Map<String, Boolean> _availableIdsMap;
 
-    private final boolean _isHypervisorSnapshotCapable = false;
     private String _hashKey = null;    
     
     protected ManagementServerImpl() {
@@ -4081,14 +4080,6 @@ public class ManagementServerImpl implements ManagementServer {
         return groupVO;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean isHypervisorSnapshotCapable() {
-        return _isHypervisorSnapshotCapable;
-    }
-    
     @Override
     public List<EventVO> listPendingEvents(int entryTime, int duration) {
         Calendar calMin = Calendar.getInstance();

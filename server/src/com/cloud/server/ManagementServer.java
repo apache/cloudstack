@@ -514,11 +514,6 @@ public interface ManagementServer extends ManagementService {
      */
     SecurityGroupVO findNetworkGroupById(long networkGroupId);
 
-	/**
-	 * Is the hypervisor snapshot capable.
-	 * @return True if the hypervisor.type is XenServer
-	 */
-	boolean isHypervisorSnapshotCapable();
 	List<String> searchForStoragePoolDetails(long poolId, String value);
 	
 	boolean checkLocalStorageConfigVal(); 

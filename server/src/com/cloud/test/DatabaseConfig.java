@@ -341,7 +341,6 @@ public class DatabaseConfig {
         s_defaultConfigurationValues.put("use.local.storage", "false");
         s_defaultConfigurationValues.put("init", "false");
 //        s_defaultConfigurationValues.put("network.type", "vnet");
-        s_defaultConfigurationValues.put("hypervisor.type", "kvm");
     }
     
     protected DatabaseConfig() {
