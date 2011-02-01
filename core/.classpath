@@ -6,5 +6,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/api"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/core-deps"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/utils-deps"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/deps"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
