@@ -920,7 +920,7 @@
         <div class="ui_dialog_loader">
         </div>
         <p>
-            <fmt:message key="label"/>....</p>
+            <fmt:message key="label.adding"/>....</p>
     </div>
     <!--Confirmation msg box-->
     <!--Note: for error msg, just have to add error besides everything for eg. add error(class) next to ui_dialog_messagebox error, ui_dialog_msgicon error, ui_dialog_messagebox_text error.  -->
