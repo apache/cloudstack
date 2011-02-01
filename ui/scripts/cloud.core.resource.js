@@ -493,12 +493,12 @@ function initAddPodShortcut() {
   
     $("#add_pod_shortcut").unbind("click").bind("click", function(event) {           
         $dialogAddPod.find("#info_container").hide();	
-        //$dialogAddPod.find("#add_pod_name, #dd_pod_gateway,#add_pod_netmask,#add_pod_startip,add_pod_endip").val("");
         		
         $dialogAddPod
         .dialog('option', 'buttons', { 				
 	        "Add": function() {		
 	            var $thisDialog = $(this);
+				$thisDialog.find("#info_container").hide();  
 						
 		        // validate values
 		        var isValid = true;	
@@ -554,7 +554,8 @@ function initAddPodShortcut() {
 			            var podTotal = parseInt($("#pod_total").text());
 		                podTotal++;
 		                $("#pod_total").text(podTotal.toString());  
-			                                    
+			             
+			            /*                        
                         forceLogout = false;  // We don't force a logout if pod(s) exit.
 				        if (forceLogout) {
 					        $("#dialog_confirmation")
@@ -566,6 +567,7 @@ function initAddPodShortcut() {
 							        } 
 						        }).dialog("open");
 				        }
+				        */
 				            
 				        //Create IP Range 
                         if($thisDialog.find("#guestip_container").css("display") != "none") {       
@@ -713,6 +715,7 @@ function initAddClusterShortcut() {
         $dialogAddCluster.dialog('option', 'buttons', { 				
 	        "Add": function() { 
 	            var $thisDialog = $(this);		            
+	            $thisDialog.find("#info_container").hide();  
 	            			   
 		        // validate values
 			    var hypervisor = $thisDialog.find("#cluster_hypervisor").val();
@@ -1572,6 +1575,8 @@ function initUpdateConsoleCertButton($midMenuAddLink2) {
 		.dialog('option', 'buttons', {
 			"Add": function() {
 				var $thisDialog = $(this);
+				$thisDialog.find("#info_container").hide();  
+				
 				var isValid = true;					
 				isValid &= validateString("SSL Certificate", $thisDialog.find("#update_cert"), $thisDialog.find("#update_cert_errormsg"), false, 4096);
 				if (!isValid) return;	
@@ -1727,6 +1732,7 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 	    .dialog('option', 'buttons', { 				    
 		    "Add": function() { 	
 		    	var $thisDialog = $(this);
+		    	$thisDialog.find("#info_container").hide();  
 		    	
 			    // validate values
 				var protocol = $thisDialog.find("#add_pool_protocol").val();
