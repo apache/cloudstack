@@ -1227,8 +1227,10 @@ function ipClearDetailsTab() {
     var $thisTab = $("#right_panel_content #tab_content_details");   
        
     $thisTab.find("#grid_header_title").text("");    
+    $thisTab.find("#id").text("");
     $thisTab.find("#ipaddress").text("");
     $thisTab.find("#zonename").text("");
+    $thisTab.find("#state").text("");
     $thisTab.find("#vlanname").text("");   
     $thisTab.find("#source_nat").text("");
     $thisTab.find("#network_type").text("");    
@@ -1264,7 +1266,7 @@ var ipActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
             $midmenuItem1.slideUp("slow", function(){
                 $(this).remove();                    
-                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#ipaddress").text()) {
+                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
                     clearRightPanel();
                     ipClearRightPanel();
                 }
@@ -1276,10 +1278,10 @@ var ipActionMap = {
         isAsyncJob: false,        
         dialogBeforeActionFn: doEnableStaticNAT,
         inProcessText: "label.action.enable.static.NAT.processing",
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {  //id is ipaddress         
-            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#ipaddress").text()) {  //id is ipaddress          
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {    
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {   
                  $.ajax({
-                    data: createURL("command=listPublicIpAddresses&ipaddress="+id), //id is ipaddress  
+                    data: createURL("command=listPublicIpAddresses&id="+id),  
                     dataType: "json",
                     async: false,
                     success: function(json) {  
@@ -1297,10 +1299,10 @@ var ipActionMap = {
         asyncJobResponse: "disablestaticnatresponse",
         dialogBeforeActionFn: doDisableStaticNAT,
         inProcessText: "label.action.disable.static.NAT.processing",
-        afterActionSeccessFn: function(json, $midmenuItem1, id) {  //id is ipaddress        
-            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#ipaddress").text()) {  //id is ipaddress  
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {       
+            if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {  
                 $.ajax({
-                    data: createURL("command=listPublicIpAddresses&ipaddress="+id), //id is ipaddress  
+                    data: createURL("command=listPublicIpAddresses&id="+id), 
                     dataType: "json",
                     async: false,
                     success: function(json) {  
@@ -1317,15 +1319,15 @@ var ipActionMap = {
 
 function doReleaseIp($actionLink, $detailsTab, $midmenuItem1) {      
     var jsonObj = $midmenuItem1.data("jsonObj");
-    var ipaddress = jsonObj.ipaddress;
+    var id = jsonObj.id;
     
     $("#dialog_confirmation")
     .text(dictionary["message.action.release.ip"])	
 	.dialog('option', 'buttons', { 						
 		"Confirm": function() { 
 		    $(this).dialog("close");			
-			var apiCommand = "command=disassociateIpAddress&ipaddress="+ipaddress;
-            doActionToTab(ipaddress, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+			var apiCommand = "command=disassociateIpAddress&id="+id;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
@@ -1335,7 +1337,7 @@ function doReleaseIp($actionLink, $detailsTab, $midmenuItem1) {
 
 function doEnableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {    
     var jsonObj = $midmenuItem1.data("jsonObj");
-    var ipaddress = jsonObj.ipaddress;
+    var id = jsonObj.id;
     
     $("#dialog_enable_static_NAT")    
 	.dialog('option', 'buttons', { 						
@@ -1349,8 +1351,8 @@ function doEnableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {
 		
 		    $thisDialog.dialog("close");	
 		    
-			var apiCommand = "command=enableStaticNat&ipaddress="+ipaddress+"&virtualmachineid="+vmId;
-            doActionToTab(ipaddress, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+			var apiCommand = "command=enableStaticNat&ipaddressid="+id+"&virtualmachineid="+vmId;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
@@ -1360,7 +1362,7 @@ function doEnableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {
 
 function doDisableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {  
     var jsonObj = $midmenuItem1.data("jsonObj");
-    var ipaddress = jsonObj.ipaddress;
+    var id = jsonObj.id;
     
     $("#dialog_info")
     .text(dictionary["message.action.disable.static.NAT"])    
@@ -1368,8 +1370,8 @@ function doDisableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {
 		"Confirm": function() { 		    
 		    $(this).dialog("close");	
 		    
-			var apiCommand = "command=disableStaticNat&ipaddress="+ipaddress;
-            doActionToTab(ipaddress, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
+			var apiCommand = "command=disableStaticNat&ipaddressid="+id;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
