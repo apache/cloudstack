@@ -155,7 +155,7 @@ public enum Config {
 	HostCapacityCheckerWait("Advanced", ManagementServer.class, Integer.class, "host.capacity.checker.wait", "3600", "Seconds to wait before starting host capacity background checker", null),
 	HostCapacityCheckerInterval("Advanced", ManagementServer.class, Integer.class, "host.capacity.checker.interval", "3600", "Seconds to wait before recalculating host's capacity", null),
 	VmHostCapacityReleaseInterval("Advanced", ManagementServer.class, Integer.class, "vm.resource.release.interval", "86400", "Seconds to wait before release VM's cpu and memory when VM in stopped state", null),
-	
+	VmStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.stats.interval", "60000", "The interval in milliseconds when vm stats are retrieved from agents.", null),
 	VmTransitionWaitInterval("Advanced", ManagementServer.class, Integer.class, "vm.tranisition.wait.interval", "3600", "Seconds to wait before taking over a VM in transition state", null),
 	
 	ControlCidr("Advanced", ManagementServer.class, String.class, "control.cidr", "169.254.0.0/16", "Changes the cidr for the control network traffic.  Defaults to using link local.  Must be unique within pods", null),

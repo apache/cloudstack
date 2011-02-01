@@ -525,9 +525,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             float cpuUtil = (float) hostStats.getCpuUtilization();
             cpuUsed = decimalFormat.format(cpuUtil) + "%";
             hostResponse.setCpuUsed(cpuUsed);
-            // hostResponse.setAverageLoad(Double.doubleToLongBits(hostStats.getAverageLoad()));
-            hostResponse.setNetworkKbsRead(Double.doubleToLongBits(hostStats.getNetworkReadKBs()));
-            hostResponse.setNetworkKbsWrite(Double.doubleToLongBits(hostStats.getNetworkWriteKBs()));
+            hostResponse.setNetworkKbsRead((new Double(hostStats.getNetworkReadKBs())).longValue());
+            hostResponse.setNetworkKbsWrite((new Double(hostStats.getNetworkWriteKBs())).longValue());
         }
 
         if (host.getType() == Host.Type.Routing) {
