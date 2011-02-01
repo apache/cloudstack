@@ -449,7 +449,7 @@ public class IPRangeConfig {
     	return problemIPs;
     }
     
-	public Vector<String> savePublicIPRange(Transaction txn, long startIP, long endIP, long zoneId, long vlanDbId, long sourceNetworkId) {
+	public Vector<String> savePublicIPRange(Transaction txn, long startIP, long endIP, long zoneId, long vlanDbId, Long sourceNetworkId) {
 		String insertSql = "INSERT INTO `cloud`.`user_ip_address` (public_ip_address, data_center_id, vlan_db_id, mac_address, source_network_id) VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?), ?)";
 		String updateSql = "UPDATE `cloud`.`data_center` set mac_address = mac_address+1 where id=?";
 		Vector<String> problemIPs = new Vector<String>();

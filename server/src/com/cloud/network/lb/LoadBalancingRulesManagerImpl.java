@@ -368,26 +368,47 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
     @Override
     public boolean applyLoadBalancerConfig(long lbRuleId) throws ResourceUnavailableException {
+        List<LoadBalancerVO> lbs = new ArrayList<LoadBalancerVO>(1);
+        lbs.add(_lbDao.findById(lbRuleId));
+        return applyLoadBalancerRules(lbs); 
+    }
+    
+    @Override
+    public boolean applyLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException {
+        List<LoadBalancerVO> lbs = _lbDao.listByNetworkId(networkId);
+        
+        if (lbs != null) {
+           return applyLoadBalancerRules(lbs);
+        } else {
+            s_logger.info("Network id=" + networkId + " doesn't have load balancer rules, nothing to apply"); 
+            return true;
+        }
+    }
+    
+    private boolean applyLoadBalancerRules(List<LoadBalancerVO> lbs) throws ResourceUnavailableException{
         
         List<LoadBalancingRule> rules = new ArrayList<LoadBalancingRule>();
-        LoadBalancerVO lb = _lbDao.findById(lbRuleId);
-        List<LbDestination> dstList = getExistingDestinations(lb.getId());
-        
-        if (dstList != null && !dstList.isEmpty()) {
-            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
-            rules.add(loadBalancing);
-
-            if (!_networkMgr.applyRules(rules, false)) {
-                s_logger.debug("LB rules are not completely applied");
-                return false;
-            } 
+        for (LoadBalancerVO lb : lbs) {
+            List<LbDestination> dstList = getExistingDestinations(lb.getId());
             
+            if (dstList != null && !dstList.isEmpty()) {
+                LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
+                rules.add(loadBalancing);
+            }
+        }
+        
+        if (!_networkMgr.applyRules(rules, false)) {
+            s_logger.debug("LB rules are not completely applied");
+            return false;
+        } 
+        
+        for (LoadBalancerVO lb : lbs) {
             if (lb.getState() == FirewallRule.State.Revoke) {
                 _lbDao.remove(lb.getId());
                 s_logger.debug("LB " + lb.getId() + " is successfully removed");
             } else if (lb.getState() == FirewallRule.State.Add) {
                 lb.setState(FirewallRule.State.Active);
-                s_logger.debug("LB rule " + lbRuleId + " state is set to Active");
+                s_logger.debug("LB rule " + lb.getId() + " state is set to Active");
                 _lbDao.persist(lb);
             }
         }

@@ -48,10 +48,11 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.RulesManager;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -64,8 +65,8 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -104,7 +105,9 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
             return false;
         }
         
-        _routerMgr.deployVirtualRouter(guestConfig, dest, context.getAccount());
+        Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
+        params.put(VirtualMachineProfile.Param.RestartNetwork, true);
+        _routerMgr.deployVirtualRouter(guestConfig, dest, context.getAccount(), params);
         
         return true;
     }
@@ -123,6 +126,35 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
             return _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, false) != null;
         } else {
             return false;
+        }
+    }
+    
+    @Override
+    public boolean restart(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
+        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
+        DeployDestination dest = new DeployDestination(dc, null, null, null);
+        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
+        if (router == null) {
+            s_logger.trace("Can't find virtual router element in network " + network.getId());
+            return true;
+        }
+        
+        VirtualRouter result = null;
+        if (canHandle(network.getGuestType(), dest.getDataCenter())) {
+            if (router.getState() == State.Stopped) {
+                result = _routerMgr.startRouter(router.getId(), false);
+            } else {
+                result = _routerMgr.rebootRouter(router.getId(), false);
+            }
+            if (result == null) {
+                s_logger.warn("Failed to restart virtual router element " + router + " as a part of netowrk " + network + " restart");
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            s_logger.trace("Virtual router element doesn't handle network restart for the network " + network);
+            return true;
         }
     }
 

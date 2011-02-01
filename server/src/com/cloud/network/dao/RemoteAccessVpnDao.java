@@ -29,4 +29,5 @@ public interface RemoteAccessVpnDao extends GenericDao<RemoteAccessVpnVO, Long> 
     RemoteAccessVpnVO findByPublicIpAddressAndState(long ipAddressId, RemoteAccessVpn.State state);
     RemoteAccessVpnVO findByAccountAndNetwork(Long accountId, Long zoneId);
     List<RemoteAccessVpnVO> findByAccount(Long accountId);
+    List<RemoteAccessVpnVO> listByNetworkId(Long networkId);
 }

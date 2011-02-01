@@ -33,7 +33,9 @@ import com.cloud.uservm.UserVm;
  */
 public interface RulesManager extends RulesService {
     
-    boolean applyPortForwardingRules(long ipAddressId, boolean continueOnError);
+    boolean applyPortForwardingRules(long ipAddressId, boolean continueOnError, Account caller);
+    
+    boolean applyPortForwardingRulesForNetwork(long networkId, boolean continueOnError, Account caller);
     
     /**
      * detectRulesConflict finds conflicts in networking rules.  It checks for
@@ -76,5 +78,5 @@ public interface RulesManager extends RulesService {
 	FirewallRule[] reservePorts(IpAddress ip, String protocol, FirewallRule.Purpose purpose, int... ports) throws NetworkRuleConflictException;
 	boolean releasePorts(long ipId, String protocol, FirewallRule.Purpose purpose, int... ports);
 	
-	List<? extends PortForwardingRule> listByNetworkId(long networkId);
+	List<PortForwardingRuleVO> listByNetworkId(long networkId);
 }

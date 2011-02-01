@@ -36,15 +36,15 @@ public class DisassociateIPAddrCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, required=true, description="the id of the public ip address to disassociate")
-    private Long ipAddressId;
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the id of the public ip address to disassociate")
+    private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getIpAddressId() {
-        return ipAddressId;
+        return id;
     }
 
     /////////////////////////////////////////////////////

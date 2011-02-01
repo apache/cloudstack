@@ -353,7 +353,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         boolean success = false;
         
         if (apply) {
-            success = applyPortForwardingRules(rule.getSourceIpAddressId(), true);
+            success = applyPortForwardingRules(rule.getSourceIpAddressId(), true, caller);
         } else {
             success = true;
         }
@@ -430,20 +430,12 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         return _forwardingDao.search(sc, filter);
     }
 
-    @Override 
-    public boolean applyPortForwardingRules(long ipId, boolean continueOnError) {
-        try {
-            return applyPortForwardingRules(ipId, continueOnError, null);
-        } catch (ResourceUnavailableException e) {
-            s_logger.warn("Unable to reapply port forwarding rules for Ip id=" + ipId);
-            return false;
-        }
-    }
-    
-    protected boolean applyPortForwardingRules(long ipId, boolean continueOnError, Account caller) throws ResourceUnavailableException {
+   
+    @Override
+    public boolean applyPortForwardingRules(long ipId, boolean continueOnError, Account caller){
         List<PortForwardingRuleVO> rules = _forwardingDao.listForApplication(ipId);
         if (rules.size() == 0) {
-            s_logger.debug("There are no rules to apply for ip id=" + ipId);
+            s_logger.debug("There are no firwall rules to apply for ip id=" + ipId);
             return true;
         }
 
@@ -451,21 +443,57 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             _accountMgr.checkAccess(caller, rules.toArray(new PortForwardingRuleVO[rules.size()]));
         }
         
-        if (!_networkMgr.applyRules(rules, continueOnError)) {
-            s_logger.debug("Rules are not completely applied");
+        try {
+            if (!applyRules(rules, continueOnError)) {
+                return false;
+            }
+        } catch (ResourceUnavailableException ex) {
+            s_logger.warn("Failed to apply firewall rules due to ", ex);
             return false;
         }
         
-        for (PortForwardingRuleVO rule : rules) {
-            if (rule.getState() == FirewallRule.State.Revoke) {
-                _forwardingDao.remove(rule.getId());
-            } else if (rule.getState() == FirewallRule.State.Add) {
-                rule.setState(FirewallRule.State.Active);
-                _forwardingDao.update(rule.getId(), rule);
+        return true;
+    }
+    
+    @Override
+    public boolean applyPortForwardingRulesForNetwork(long networkId, boolean continueOnError, Account caller){
+        List<PortForwardingRuleVO> rules = listByNetworkId(networkId);
+        if (rules.size() == 0) {
+            s_logger.debug("There are no firewall rules to apply for network id=" + networkId);
+            return true;
+        }
+
+        if (caller != null) {
+            _accountMgr.checkAccess(caller, rules.toArray(new PortForwardingRuleVO[rules.size()]));
+        }
+        
+        try {
+            if (!applyRules(rules, continueOnError)) {
+                return false;
             }
+        } catch (ResourceUnavailableException ex) {
+            s_logger.warn("Failed to apply firewall rules due to ", ex);
+            return false;
         }
         
         return true;
+    }
+    
+    private boolean applyRules(List<PortForwardingRuleVO> rules, boolean continueOnError) throws ResourceUnavailableException{
+        if (!_networkMgr.applyRules(rules, continueOnError)) {
+            s_logger.warn("Rules are not completely applied");
+            return false;
+        } else {
+            for (PortForwardingRuleVO rule : rules) {
+                if (rule.getState() == FirewallRule.State.Revoke) {
+                    _forwardingDao.remove(rule.getId());
+                } else if (rule.getState() == FirewallRule.State.Add) {
+                    rule.setState(FirewallRule.State.Active);
+                    _forwardingDao.update(rule.getId(), rule);
+                }
+            }
+            return true;
+        }
     }
     
     @Override
@@ -593,7 +621,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
     
     @Override
-    public List<? extends PortForwardingRule> listByNetworkId(long networkId) {
+    public List<PortForwardingRuleVO> listByNetworkId(long networkId) {
         return _forwardingDao.listByNetworkId(networkId);
     }
     
@@ -636,7 +664,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             }
         }
         
-        if (applyPortForwardingRules(ipId, true)) {
+        if (applyPortForwardingRules(ipId, true, caller)) {
             ipAddress.setOneToOneNat(false);
             ipAddress.setAssociatedWithVmId(null);
             _ipAddressDao.update(ipAddress.getId(), ipAddress);

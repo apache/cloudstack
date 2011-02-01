@@ -191,7 +191,8 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
 
     @Override
     public long getDomainId() {
-        throw new UnsupportedOperationException("Don't call me");
+        IpAddress ip = _networkService.getIp(ipAddressId);
+        return ip.getDomainId();
     }
 
     @Override
@@ -215,7 +216,8 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
 
     @Override
     public long getAccountId() {
-        throw new UnsupportedOperationException("Get the account id from network");
+        IpAddress ip = _networkService.getIp(ipAddressId);
+        return ip.getAccountId();
     }
     
     @Override

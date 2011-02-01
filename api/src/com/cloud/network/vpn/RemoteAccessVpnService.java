@@ -40,5 +40,7 @@ public interface RemoteAccessVpnService {
     
     List<? extends RemoteAccessVpn> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd);
     List<? extends VpnUser> searchForVpnUsers(ListVpnUsersCmd cmd);
+    
+    List<? extends RemoteAccessVpn> listRemoteAccessVpns(long networkId);
 
 }

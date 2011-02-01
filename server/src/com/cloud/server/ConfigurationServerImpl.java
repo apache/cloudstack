@@ -60,12 +60,14 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.guru.ControlNetworkGuru;
 import com.cloud.network.guru.DirectPodBasedNetworkGuru;
@@ -81,6 +83,8 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
+import com.cloud.test.DatabaseConfig;
+import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.PasswordGenerator;
@@ -106,6 +110,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     private final DataCenterDao _dataCenterDao;
     private final NetworkDao _networkDao;
     private final VlanDao _vlanDao;
+    private final IPAddressDao _ipAddressDao;
 
 	
 	public ConfigurationServerImpl() {
@@ -121,9 +126,10 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         _dataCenterDao = locator.getDao(DataCenterDao.class);
         _networkDao = locator.getDao(NetworkDao.class);
         _vlanDao = locator.getDao(VlanDao.class);
+        _ipAddressDao = locator.getDao(IPAddressDao.class);
 	}
 
-	@Override
+	@Override @DB
     public void persistDefaultValues() throws InvalidParameterValueException, InternalErrorException {
 		
 		// Create system user and admin user
@@ -220,15 +226,33 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 	        //Create default networks
 	        createDefaultNetworks();
 	        
+	        //Create userIpAddress ranges
+	        
+	        
 	        //Update existing vlans with networkId
+	        Transaction txn = Transaction.currentTxn();
+	        
 	        List<VlanVO> vlans = _vlanDao.listAll();
 	        if (vlans != null && !vlans.isEmpty()) {
 	            for (VlanVO vlan : vlans) {
 	                if (vlan.getNetworkId().longValue() == 0) {
 	                    updateVlanWithNetworkId(vlan);
 	                }
+	                
+	                //Create vlan user_ip_address range
+	                String ipPange = vlan.getIpRange();
+	                String[] range = ipPange.split("-");
+	                String startIp = range[0];
+	                String endIp = range[1];
+	                
+	                txn.start();
+	                IPRangeConfig config = new IPRangeConfig();
+	                long startIPLong = NetUtils.ip2Long(startIp);
+	                long endIPLong = NetUtils.ip2Long(endIp);
+	                config.savePublicIPRange(txn, startIPLong, endIPLong, vlan.getDataCenterId(), vlan.getId(), vlan.getNetworkId());
+	                txn.commit();
 	            }
-	        }
+ 	        }
 		}
 
 		// store the public and private keys in the database

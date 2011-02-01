@@ -32,6 +32,8 @@ public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
 
 	List<IPAddressVO> listByAccount(long accountId);
 	
+	List<IPAddressVO> listByVlanId(long vlanId);
+	
 	List<IPAddressVO> listByDcIdIpAddress(long dcId, String ipAddress);
 	
 	List<IPAddressVO> listByAssociatedNetwork(long networkId);

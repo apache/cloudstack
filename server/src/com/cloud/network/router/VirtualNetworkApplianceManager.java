@@ -35,7 +35,6 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
@@ -76,9 +75,9 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 	DomainRouterVO getRouter(long accountId, long zoneId);
 	DomainRouterVO getRouter(String publicIpAddress);
 	
-	VirtualRouter deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
+	VirtualRouter deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
 	
-	VirtualRouter deployDhcp(Network guestNetwork, DeployDestination dest, Account owner) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
+	VirtualRouter deployDhcp(Network guestNetwork, DeployDestination dest, Account owner, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
 	
 	boolean startRemoteAccessVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
 	

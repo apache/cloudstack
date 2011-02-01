@@ -670,7 +670,7 @@ public class DatabaseConfig {
     	pzc.modifyVlan(zoneName, true, vlanId, gateway, netmask, vlanPodName, vlanType, publicIpRange, 0);
     	
     	long vlanDbId = pzc.getVlanDbId(zoneName, vlanId);
-    	iprc.saveIPRange("public", -1, zoneDbId, vlanDbId, startIP, endIP, 1L);
+    	iprc.saveIPRange("public", -1, zoneDbId, vlanDbId, startIP, endIP, null);
         
     }
 
@@ -1176,7 +1176,6 @@ public class DatabaseConfig {
     		}
     		return name;
     	}
-        
     }
     
     public static List<String> genReturnList(String success, String message) {

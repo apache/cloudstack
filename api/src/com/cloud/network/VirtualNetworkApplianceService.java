@@ -32,7 +32,7 @@ public interface VirtualNetworkApplianceService{
      * @return DomainRouter object
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    VirtualRouter startRouter(long routerId) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    VirtualRouter startRouter(long routerId, boolean restartNetwork) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
     
     /**
      * Reboots domain router
@@ -40,7 +40,7 @@ public interface VirtualNetworkApplianceService{
      * @return router if successful
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    VirtualRouter rebootRouter(long routerId) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    VirtualRouter rebootRouter(long routerId, boolean restartNetwork) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
     
     VirtualRouter upgradeRouter(UpgradeRouterCmd cmd);
     

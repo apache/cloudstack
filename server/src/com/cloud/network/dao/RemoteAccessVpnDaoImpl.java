@@ -75,4 +75,11 @@ public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Lo
         sc.setParameters("state", state);
         return findOneBy(sc);
 	}
+	
+	@Override
+	public List<RemoteAccessVpnVO> listByNetworkId(Long networkId) {
+	    SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
+        sc.setParameters("networkId", networkId);
+        return listBy(sc);
+	}
 }

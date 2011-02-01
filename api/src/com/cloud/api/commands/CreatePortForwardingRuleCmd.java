@@ -30,6 +30,7 @@ import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddress;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -175,7 +176,8 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
 
     @Override
     public long getDomainId() {
-        throw new UnsupportedOperationException("Get the domain id from network");
+        IpAddress ip = _networkService.getIp(ipAddressId);
+        return ip.getDomainId();
     }
 
     @Override
@@ -217,7 +219,8 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
 
     @Override
     public long getAccountId() {
-        throw new UnsupportedOperationException("Get the account id from network");
+        IpAddress ip = _networkService.getIp(ipAddressId);
+        return ip.getAccountId();
     }
     
     @Override

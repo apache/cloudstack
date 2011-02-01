@@ -19,6 +19,7 @@ package com.cloud.network.lb;
 
 import java.util.List;
 
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 
 public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
@@ -31,4 +32,6 @@ public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
      * @return true if removal is successful
      */
     boolean removeVmFromLoadBalancers(long vmId);
+    
+    boolean applyLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException;
 }

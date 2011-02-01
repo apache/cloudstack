@@ -224,4 +224,9 @@ public class VirtualMachineProfileImpl<T extends VMInstanceVO> implements Virtua
 	public BootloaderType getBootLoaderType() {
 		return this._bootloader;
 	}
+	
+	@Override
+	public Map<Param, Object> getParameters() {
+	    return _params;
+	}
 }

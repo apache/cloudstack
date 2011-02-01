@@ -169,6 +169,13 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     }
     
     @Override
+    public List<IPAddressVO> listByVlanId(long vlanId) {
+        SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vlan", vlanId);
+        return listBy(sc);
+    }
+    
+    @Override
     public IPAddressVO findByAccountAndIp(long accountId, String ipAddress) {
         SearchCriteria<IPAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);

@@ -18,6 +18,7 @@
 package com.cloud.vm;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -43,6 +44,7 @@ public interface VirtualMachineProfile<T extends VirtualMachine> {
     enum Param {
         VmPassword,  
         ControlNic,
+        RestartNetwork,
     }
     
     String getHostName();
@@ -115,4 +117,6 @@ public interface VirtualMachineProfile<T extends VirtualMachine> {
 
 	void setBootLoaderType(BootloaderType bootLoader);
 	BootloaderType getBootLoaderType();
+	
+	Map<Param, Object> getParameters();
 }

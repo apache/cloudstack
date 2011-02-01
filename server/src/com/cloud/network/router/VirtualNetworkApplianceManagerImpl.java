@@ -523,7 +523,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public VirtualRouter rebootRouter(long routerId) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public VirtualRouter rebootRouter(long routerId, boolean restartNetwork) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         Account account = UserContext.current().getCaller();
 
         // verify parameters
@@ -545,7 +545,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         s_logger.debug("Stopping and starting router " + router + " as a part of router reboot");
         
         if (stopRouter(routerId) != null) {
-            return startRouter(routerId);
+            return startRouter(routerId, restartNetwork);
         } else {
             throw new CloudRuntimeException("Failed to reboot router " + router);
         }
@@ -766,7 +766,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public VirtualRouter deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner) throws InsufficientCapacityException,
+    public VirtualRouter deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         long dcId = dest.getDataCenter().getId();
 
@@ -828,14 +828,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         State state = router.getState();
         if (state != State.Starting && state != State.Running) {
-            router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount());
+            router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
         }
         
         return router;
     }
 
     @Override
-    public VirtualRouter deployDhcp(Network guestNetwork, DeployDestination dest, Account owner) throws InsufficientCapacityException,
+    public VirtualRouter deployDhcp(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params) throws InsufficientCapacityException,
             StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException {
         long dcId = dest.getDataCenter().getId();
 
@@ -883,7 +883,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         State state = router.getState();
         if (state != State.Starting && state != State.Running) {
-            router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount());
+            router = this.start(router, _accountService.getSystemUser(), _accountService.getSystemAccount(), params);
         }
         return router;
     }
@@ -1020,9 +1020,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         _routerDao.update(router.getId(), router);
        
-        
         //The commands should be sent for domR only, skip for DHCP
-        if (router.getRole() == VirtualRouter.Role.DHCP_FIREWALL_LB_PASSWD_USERDATA) {
+        if (router.getRole() == VirtualRouter.Role.DHCP_FIREWALL_LB_PASSWD_USERDATA && ((Boolean)profile.getParameter(Param.RestartNetwork))== true) {
+            s_logger.debug("Resending ipAssoc, port forwarding, load balancing rules as a part of Virtual router start");
             long networkId = router.getNetworkId();
             long ownerId = router.getAccountId();
             long zoneId = router.getDataCenterId();
@@ -1189,10 +1189,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return sendCommandsToRouter(router, cmds);
     }
 
-    private DomainRouterVO start(DomainRouterVO router, User user, Account caller) throws StorageUnavailableException, InsufficientCapacityException,
+    private DomainRouterVO start(DomainRouterVO router, User user, Account caller, Map<Param, Object> params) throws StorageUnavailableException, InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting router " + router);
-        if (_itMgr.start(router, null, user, caller) != null) {
+        if (_itMgr.start(router, params, user, caller) != null) {
             return _routerDao.findById(router.getId());
         } else {
             return null;
@@ -1213,7 +1213,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     public VirtualRouter addVirtualMachineIntoNetwork(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest,
             ReservationContext context, Boolean startDhcp) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         
-        VirtualRouter router = startDhcp ? deployDhcp(network, dest, profile.getOwner()) : deployVirtualRouter(network, dest, profile.getOwner());
+        VirtualRouter router = startDhcp ? deployDhcp(network, dest, profile.getOwner(), profile.getParameters()) : deployVirtualRouter(network, dest, profile.getOwner(), profile.getParameters());
 
         _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
         
@@ -1342,7 +1342,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public VirtualRouter startRouter(long routerId) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
+    public VirtualRouter startRouter(long routerId, boolean restartNetwork) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException {
         Account account = UserContext.current().getCaller();
 
         // verify parameters
@@ -1353,8 +1353,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         _accountMgr.checkAccess(account, router);
 
         UserVO user = _userDao.findById(UserContext.current().getCallerUserId());
-        
-        return this.start(router, user, account);
+        Map<Param, Object> params = new HashMap<Param, Object>();
+        if (restartNetwork) {
+            params.put(Param.RestartNetwork, true);
+        } else {
+            params.put(Param.RestartNetwork, false);
+        }
+        return this.start(router, user, account, params);
     }
 
     private void createAssociateIPCommands(final DomainRouterVO router, final List<? extends PublicIpAddress> ips, Commands cmds, long vmId) {  

@@ -49,7 +49,6 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -95,7 +94,10 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
         if (!canHandle(network.getGuestType(), dest, offering.getTrafficType())) {
             return false;
         }
-        _routerMgr.deployDhcp(network, dest, context.getAccount());
+        
+        Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
+        params.put(VirtualMachineProfile.Param.RestartNetwork, true);
+        _routerMgr.deployDhcp(network, dest, context.getAccount(), params);
         return true;
     }
 
@@ -109,7 +111,8 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
             
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>)vm;
-            
+            Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
+            params.put(VirtualMachineProfile.Param.RestartNetwork, true);
             return _routerMgr.addVirtualMachineIntoNetwork(network, nic, uservm, dest, context, true) != null;
         } else {
             return false;
@@ -184,9 +187,9 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
         VirtualRouter result = null;
         if (canHandle(network.getGuestType(), dest, offering.getTrafficType())) {
             if (router.getState() == State.Stopped) {
-                result = _routerMgr.startRouter(router.getId());
+                result = _routerMgr.startRouter(router.getId(), false);
             } else {
-                result = _routerMgr.rebootRouter(router.getId());
+                result = _routerMgr.rebootRouter(router.getId(), false);
             }
             if (result == null) {
                 s_logger.warn("Failed to restart dhcp element " + router + " as a part of netowrk " + network + " restart");

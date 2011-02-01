@@ -559,5 +559,10 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     public String getName() {
         return _name;
     }
+    
+    @Override
+    public List<? extends RemoteAccessVpn> listRemoteAccessVpns(long networkId) {
+        return _remoteAccessVpnDao.listByNetworkId(networkId);
+    }
 
 }
