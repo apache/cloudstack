@@ -285,20 +285,16 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Inject
     OvsTunnelManager _ovsTunnelMgr;
 
-    long _routerTemplateId = -1;
     int _routerRamSize;
     int _retry = 2;
     String _domain;
     String _instance;
-    String _defaultHypervisorType;
     String _mgmt_host;
 
     int _routerCleanupInterval = 3600;
     int _routerStatsInterval = 300;
     private ServiceOfferingVO _offering;
     String _networkDomain;
-
-    private VMTemplateVO _template;
 
     ScheduledExecutorService _executor;
 
@@ -571,8 +567,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String value = configs.get("start.retry");
         _retry = NumbersUtil.parseInt(value, 2);
 
-        _defaultHypervisorType = _configDao.getValue(Config.HypervisorDefaultType.key());
-
         value = configs.get("router.stats.interval");
         _routerStatsInterval = NumbersUtil.parseInt(value, 300);
 
@@ -591,7 +585,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         _networkDomain = configs.get("guest.domain.suffix");
 
-        s_logger.info("Router configurations: " + "ramsize=" + _routerRamSize + "; templateId=" + _routerTemplateId);
+        s_logger.info("Router configurations: " + "ramsize=" + _routerRamSize);
 
         final UserStatisticsDao statsDao = locator.getDao(UserStatisticsDao.class);
         if (statsDao == null) {
@@ -607,12 +601,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 Network.GuestIpType.Virtual, useLocalStorage, true, null, true);
         _offering.setUniqueName("Cloud.Com-SoftwareRouter");
         _offering = _serviceOfferingDao.persistSystemServiceOffering(_offering);
-        _template = _templateDao.findRoutingTemplate();
-        if (_template == null) {
-            s_logger.error("Unable to find system vm template.");
-        } else {
-            _routerTemplateId = _template.getId();
-        }
 
         _systemAcct = _accountService.getSystemAccount();
 
@@ -930,10 +918,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             gatewayNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
             networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
             networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
-
-            router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), _template.getId(),
-                    _template.getHypervisorType(), _template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA(), guestNetwork.getNetworkDomain());
-            router = _itMgr.allocate(router, _template, _offering, networks, plan, null, owner);
+            
+            /*Before starting router, already know the hypervisor type*/
+            VMTemplateVO template = _templateDao.findRoutingTemplate(dest.getCluster().getHypervisorType());
+            router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(),
+                    template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA(), guestNetwork.getNetworkDomain());
+            router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
         }
 
         State state = router.getState();
@@ -983,10 +973,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
             networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
 
-            router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), _template.getId(),
-                    _template.getHypervisorType(), _template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA(), guestNetwork.getNetworkDomain());
+            /*Before starting router, already know the hypervisor type*/
+            VMTemplateVO template = _templateDao.findRoutingTemplate(dest.getCluster().getHypervisorType());
+            
+            router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(),
+                    template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA(), guestNetwork.getNetworkDomain());
             router.setRole(Role.DHCP_USERDATA);
-            router = _itMgr.allocate(router, _template, _offering, networks, plan, null, owner);
+            router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
         }
         State state = router.getState();
         if (state != State.Starting && state != State.Running) {

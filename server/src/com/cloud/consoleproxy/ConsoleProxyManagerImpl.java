@@ -197,7 +197,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private ConsoleProxyListener _listener;
 
     private ServiceOfferingVO _serviceOffering;
-    private VMTemplateVO _template;
     
     NetworkOfferingVO _publicNetworkOffering;
     NetworkOfferingVO _managementNetworkOffering;
@@ -597,9 +596,16 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         for (NetworkOfferingVO offering : offerings) {
             networks.add(new Pair<NetworkVO, NicProfile>(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false, false).get(0), null));
         }
-        ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, _template.getId(), _template.getHypervisorType(), _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), 0);
+        
+        VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId);
+        if (template == null) {
+            s_logger.debug("Can't find a template to start");
+            throw new CloudRuntimeException("Insufficient capacity exception");
+        }
+        
+        ConsoleProxyVO proxy = new ConsoleProxyVO(id, _serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), 0);
         try {
-            proxy = _itMgr.allocate(proxy, _template, _serviceOffering, networks, plan, null, systemAcct);
+            proxy = _itMgr.allocate(proxy, template, _serviceOffering, networks, plan, null, systemAcct);
         } catch (InsufficientCapacityException e) {
             s_logger.warn("InsufficientCapacity", e);
             throw new CloudRuntimeException("Insufficient capacity exception", e);
@@ -1084,7 +1090,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     public boolean isZoneReady(Map<Long, ZoneHostInfo> zoneHostInfoMap, long dataCenterId) {
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
         if (zoneHostInfo != null && isZoneHostReady(zoneHostInfo)) {
-            VMTemplateVO template = _templateDao.findConsoleProxyTemplate();
+            VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId);
             HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(dataCenterId);
             boolean templateReady = false;
 
@@ -1384,11 +1390,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 useLocalStorage, true, null, true);
         _serviceOffering.setUniqueName("Cloud.com-ConsoleProxy");
         _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
-        _template = _templateDao.findConsoleProxyTemplate();
-        if (_template == null) {
-            throw new ConfigurationException("Unable to find the template for console proxy VMs");
-        }
-        
+
         _capacityScanScheduler.scheduleAtFixedRate(getCapacityScanTask(), STARTUP_DELAY, _capacityScanInterval, TimeUnit.MILLISECONDS);
         
         if (s_logger.isInfoEnabled()) {

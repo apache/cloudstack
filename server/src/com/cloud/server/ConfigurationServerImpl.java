@@ -168,11 +168,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 				
 				// Default value is set as KVM because of FOSS build, when we are
 				// running under premium, autoset to XenServer if we know it is from FOSS settings
-				String value = _configDao.getValue(Config.HypervisorDefaultType.key());
-				if (value == null || value.equalsIgnoreCase(HypervisorType.KVM.toString())) {
-					_configDao.update("hypervisor.type", "xenserver");
-					s_logger.debug("ConfigurationServer changed the hypervisor type to \"xenserver\".");
-				}
 				
 				_configDao.update("secondary.storage.vm", "true");
 				s_logger.debug("ConfigurationServer made secondary storage vm required.");

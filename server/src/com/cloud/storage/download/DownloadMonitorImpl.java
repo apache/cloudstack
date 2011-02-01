@@ -392,7 +392,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		
 		Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
 		List<VMTemplateVO> allTemplates = _templateDao.listAllInZone(storageHost.getDataCenterId());
-		List<VMTemplateVO> rtngTmplts = _templateDao.listAllRoutingTemplates();
+		List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
 		List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
 
 		if (rtngTmplts != null) {

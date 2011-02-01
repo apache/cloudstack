@@ -22,6 +22,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -36,6 +37,9 @@ import org.apache.log4j.Logger;
 
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.DomainVO;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
@@ -62,6 +66,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     VMTemplateZoneDao _templateZoneDao;
     @Inject
     ConfigurationDao  _configDao;
+    @Inject
+    HostDao   _hostDao;
 
     private final String SELECT_ALL = "SELECT t.id, t.unique_name, t.name, t.public, t.featured, t.type, t.hvm, t.bits, t.url, t.format, t.created, t.account_id, " +
                                        "t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones, t.hypervisor_type FROM vm_template t";
@@ -128,22 +134,12 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
     
 	@Override
-	public List<VMTemplateVO> listAllRoutingTemplates() {
+	public List<VMTemplateVO> listAllSystemVMTemplates() {
 		SearchCriteria<VMTemplateVO> sc = tmpltTypeSearch.create();
 		sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
 		return listBy(sc);
 	}
 
-	@Override
-	public VMTemplateVO findRoutingTemplate() {
-		return findSystemVMTemplate();
-	}
-	
-	@Override
-	public VMTemplateVO findConsoleProxyTemplate() {
-		return findSystemVMTemplate();
-	}
-	
 	@Override
 	public List<VMTemplateVO> listReadyTemplates() {
 		SearchCriteria<VMTemplateVO> sc = createSearchCriteria();
@@ -215,7 +211,14 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		
 		tmpltTypeHyperSearch = createSearchBuilder();
 		tmpltTypeHyperSearch.and("templateType", tmpltTypeHyperSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
-		tmpltTypeHyperSearch.and("hypervisor_type", tmpltTypeHyperSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+		SearchBuilder<HostVO> hostHyperSearch = _hostDao.createSearchBuilder();
+		hostHyperSearch.and("type", hostHyperSearch.entity().getType(), SearchCriteria.Op.EQ);
+		hostHyperSearch.and("zoneId", hostHyperSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+		hostHyperSearch.groupBy(hostHyperSearch.entity().getHypervisorType());
+		
+		tmpltTypeHyperSearch.join("tmplHyper", hostHyperSearch, hostHyperSearch.entity().getHypervisorType(), tmpltTypeHyperSearch.entity().getHypervisorType(), JoinBuilder.JoinType.INNER);
+		hostHyperSearch.done();
+		tmpltTypeHyperSearch.done();
 		
 		tmpltTypeSearch = createSearchBuilder();
 		tmpltTypeSearch.and("templateType", tmpltTypeSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
@@ -431,29 +434,26 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		return listBy(sc);
 	}
 	
-	private VMTemplateVO findSystemVMTemplate() {
+	@Override
+	public VMTemplateVO findSystemVMTemplate(long zoneId) {
 		SearchCriteria<VMTemplateVO> sc = tmpltTypeHyperSearch.create();
 		sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
-		sc.setParameters("hypervisor_type", _defaultHyperType.toString());
-		VMTemplateVO tmplt = findOneBy(sc);
-		
-		if (tmplt == null) {
-			/*Can't find it? We'd like to prefer xenserver */
-			if (_defaultHyperType != HypervisorType.XenServer) {
-				sc = tmpltTypeHyperSearch.create();
-				sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
-				sc.setParameters("hypervisor_type", HypervisorType.XenServer.toString());
-				tmplt = findOneBy(sc);
-				
-				/*Still can't find it? return a random one*/
-				if (tmplt == null) {
-					sc = tmpltTypeSearch.create();
-					sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
-					tmplt = findOneBy(sc);
-				}
-			}
-		}
-		
-		return tmplt;
+		sc.setJoinParameters("tmplHyper",  "type", Host.Type.Routing);
+		sc.setJoinParameters("tmplHyper", "zoneId", zoneId);
+
+		List<VMTemplateVO> tmplts = listBy(sc);
+		Collections.shuffle(tmplts);
+		return tmplts.get(0);
+	}
+	
+	@Override
+	public VMTemplateVO findRoutingTemplate(HypervisorType type) {
+	    List<VMTemplateVO> templates = listAllSystemVMTemplates();
+	    for (VMTemplateVO template : templates) {
+	        if (template.getHypervisorType() == type) {
+	            return template;
+	        }
+	    }
+	    return null;
 	}
 }

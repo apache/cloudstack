@@ -415,9 +415,12 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             		throw new IllegalArgumentException("Please specify a valid zone.");
             	}
             }
-            VMTemplateVO systemvmTmplt = _tmpltDao.findRoutingTemplate();
-            if (systemvmTmplt.getName().equalsIgnoreCase(name) || systemvmTmplt.getDisplayText().equalsIgnoreCase(displayText)) {
-            	throw new IllegalArgumentException("Cannot use reserved names for templates");
+           
+            List<VMTemplateVO> systemvmTmplts = _tmpltDao.listAllSystemVMTemplates();
+            for (VMTemplateVO template : systemvmTmplts) {
+                if (template.getName().equalsIgnoreCase(name) || template.getDisplayText().equalsIgnoreCase(displayText)) {
+                    throw new IllegalArgumentException("Cannot use reserved names for templates");
+                }
             }
             
             return create(userId, accountId, zoneId, name, displayText, isPublic, featured, isExtractable, imgfmt, diskType, uri, chksum, requiresHvm, bits, enablePassword, guestOSId, bootable, hypervisorType);

@@ -179,7 +179,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     private SecondaryStorageListener _listener;
 
     private ServiceOfferingVO _serviceOffering;
-    private VMTemplateVO _template;
+
     @Inject
     private ConfigurationDao _configDao;
     @Inject
@@ -431,10 +431,17 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             s_logger.info("Unable to setup due to concurrent operation. " + e);
             return new HashMap<String, Object>();
         }
-        SecondaryStorageVmVO secStorageVm = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, _template.getId(),
-                _template.getHypervisorType(), _template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId());
+        
+        VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId);
+        if (template == null) {
+            s_logger.debug("Can't find a template to start");
+            throw new CloudRuntimeException("Insufficient capacity exception");
+        }
+        
+        SecondaryStorageVmVO secStorageVm = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, template.getId(),
+                template.getHypervisorType(), template.getGuestOSId(), dataCenterId, systemAcct.getDomainId(), systemAcct.getId());
         try {
-            secStorageVm = _itMgr.allocate(secStorageVm, _template, _serviceOffering, networks, plan, null, systemAcct);
+            secStorageVm = _itMgr.allocate(secStorageVm, template, _serviceOffering, networks, plan, null, systemAcct);
         } catch (InsufficientCapacityException e) {
             s_logger.warn("InsufficientCapacity", e);
             throw new CloudRuntimeException("Insufficient capacity exception", e);
@@ -667,7 +674,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     public boolean isZoneReady(Map<Long, ZoneHostInfo> zoneHostInfoMap, long dataCenterId) {
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
         if (zoneHostInfo != null && (zoneHostInfo.getFlags() & RunningHostInfoAgregator.ZoneHostInfo.ROUTING_HOST_MASK) != 0) {
-            VMTemplateVO template = _templateDao.findConsoleProxyTemplate();
+            VMTemplateVO template = _templateDao.findSystemVMTemplate(dataCenterId);
             HostVO secHost = _hostDao.findSecondaryStorageHost(dataCenterId);
             if (secHost == null) {
                 if (s_logger.isDebugEnabled()) {
@@ -815,10 +822,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 Network.GuestIpType.Virtual, _useLocalStorage, true, null, true);
         _serviceOffering.setUniqueName("Cloud.com-SecondaryStorage");
         _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
-        _template = _templateDao.findConsoleProxyTemplate();
-        if (_template == null && _useServiceVM) {
-            throw new ConfigurationException("Unable to find the template for secondary storage vm VMs");
-        }
 
         if (_useServiceVM) {
             _capacityScanScheduler.scheduleAtFixedRate(getCapacityScanTask(), STARTUP_DELAY, _capacityScanInterval, TimeUnit.MILLISECONDS);

@@ -173,7 +173,7 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
 	}
 	
 	 public Map<String, TemplateInfo> getDefaultSystemVmTemplateInfo() {	        
-	        List<VMTemplateVO> tmplts = _tmpltDao.listAllRoutingTemplates();
+	        List<VMTemplateVO> tmplts = _tmpltDao.listAllSystemVMTemplates();
 	        Map<String, TemplateInfo> tmpltInfo = new HashMap<String, TemplateInfo>();
 	        if (tmplts != null) {
 	        	for (VMTemplateVO tmplt : tmplts) {

@@ -50,9 +50,9 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long> {
 	public VMTemplateVO findByTemplateNameAccountId(String templateName, Long accountId);
 
 	//public void update(VMTemplateVO template);
-	public VMTemplateVO findRoutingTemplate();
-	public List<VMTemplateVO> listAllRoutingTemplates();
-	public VMTemplateVO findConsoleProxyTemplate();
+
+	public List<VMTemplateVO> listAllSystemVMTemplates();
+
 	public List<VMTemplateVO> listDefaultBuiltinTemplates();
 	public String getRoutingTemplateUniqueName();
 	public List<VMTemplateVO> findIsosByIdAndPath(Long domainId, Long accountId, String path);
@@ -66,5 +66,7 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long> {
 	
 	public List<VMTemplateVO> listByHypervisorType(HypervisorType hyperType);
 	public List<VMTemplateVO> publicIsoSearch();
+    VMTemplateVO findSystemVMTemplate(long zoneId);
+    VMTemplateVO findRoutingTemplate(HypervisorType type);
 	
 }
