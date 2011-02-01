@@ -1135,9 +1135,11 @@ function ipJsonToDetailsTab() {
         }
     });        
    
-    $thisTab.find("#grid_header_title").text(fromdb(ipObj.ipaddress));       
+    $thisTab.find("#grid_header_title").text(fromdb(ipObj.ipaddress));     
+    $thisTab.find("#id").text(fromdb(ipObj.id));    
     $thisTab.find("#ipaddress").text(fromdb(ipObj.ipaddress));
-    $thisTab.find("#zonename").text(fromdb(ipObj.zonename));
+    $thisTab.find("#zonename").text(fromdb(ipObj.zonename));    
+    $thisTab.find("#state").text(fromdb(ipObj.state));    
     $thisTab.find("#vlanname").text(fromdb(ipObj.vlanname));    
     setBooleanReadField(ipObj.issourcenat, $thisTab.find("#source_nat")); 
     setNetworkTypeField(ipObj.forvirtualnetwork, $thisTab.find("#network_type"));  
