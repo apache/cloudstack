@@ -2233,9 +2233,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	}
 	
 	protected synchronized String attachOrDetachDisk(Connect conn, boolean attach, String vmName, String sourceFile) throws LibvirtException, InternalErrorException {
-		if (isCentosHost()) {
-			return "disk hotplug is not supported by hypervisor";
-		}
 		String diskDev = null;
 		SortedMap<String, String> diskMaps = null;
 		Domain dm = null;
