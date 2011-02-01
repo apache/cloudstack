@@ -887,9 +887,8 @@ function initAddHostShortcut() {
         .dialog('option', 'buttons', { 				
 	        "Add": function() { 
 	            var $thisDialog = $(this);		            
-	            			   
-		        //var clusterRadio = $thisDialog.find("input[name=cluster]:checked").val();				
-			
+	            $thisDialog.find("#info_container").hide();  			   
+		       
 		        // validate values
 		        var isValid = true;	
 		        isValid &= validateDropDownBox("Zone", $thisDialog.find("#zone_dropdown"), $thisDialog.find("#zone_dropdown_errormsg"));	
