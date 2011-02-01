@@ -149,7 +149,9 @@ public class ClusterManagerImpl implements ClusterManager {
     
     @Override
     public void broadcast(long agentId, Command[] cmds) {
-    	List<ManagementServerHostVO> peers = _mshostDao.getActiveList(new Date());
+		Date cutTime = DateUtil.currentGMTTime();
+
+    	List<ManagementServerHostVO> peers = _mshostDao.getActiveList(new Date(cutTime.getTime() - heartbeatThreshold));
     	for (ManagementServerHostVO peer : peers) {
     		String peerName = Long.toString(peer.getMsid());
     		if (getSelfPeerName().equals(peerName)) {
@@ -516,7 +518,7 @@ public class ClusterManagerImpl implements ClusterManager {
     	    		
         			_mshostDao.update(_mshostId, DateUtil.currentGMTTime());
         			peerScan();
-			    } catch (Exception e) {
+			    } catch (Throwable e) {
 			        s_logger.error("Problem with the cluster heartbeat!", e);
 			    }
 			}
