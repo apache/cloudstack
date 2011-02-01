@@ -2586,7 +2586,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         txn.start();
         for (VolumeVO vol : volumesForVm) {
             if (vol.getVolumeType().equals(VolumeType.ROOT)) {
-                destroyVolume(vol);
+                //This check is for VM in Error state (volume is already destroyed)
+                if(!vol.getState().equals(Volume.State.Destroy))
+                    destroyVolume(vol);
                 toBeExpunged.add(vol);
             } else {
                 if (s_logger.isDebugEnabled()) {

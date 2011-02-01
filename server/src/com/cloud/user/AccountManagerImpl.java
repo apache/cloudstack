@@ -72,6 +72,7 @@ import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.server.Criteria;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -848,7 +849,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             // Mark the account's volumes as destroyed
             List<VolumeVO> volumes = _volumeDao.findDetachedByAccount(accountId);
             for (VolumeVO volume : volumes) {
-                _storageMgr.destroyVolume(volume);
+                if(!volume.getState().equals(Volume.State.Destroy))//This check if for account with vm in error state; when a vm is in error state the vols are already destroyed on that account
+                    _storageMgr.destroyVolume(volume);
             }
             
             //Cleanup security groups
