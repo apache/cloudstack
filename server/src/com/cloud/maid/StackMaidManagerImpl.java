@@ -51,8 +51,8 @@ public class StackMaidManagerImpl implements StackMaidManager {
 	
 	private void cleanupLeftovers(List<StackMaidVO> l) {
 		for(StackMaidVO maid : l) {
-			StackMaid.doCleanup(maid);
-			_maidDao.expunge(maid.getId());
+			if(StackMaid.doCleanup(maid))
+				_maidDao.expunge(maid.getId());
 		}
 	}
 	

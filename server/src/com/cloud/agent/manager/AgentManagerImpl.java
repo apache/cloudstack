@@ -612,7 +612,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 
 		Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.getType(cmd.getHypervisor());
 		if (hypervisorType == null) {
-			throw new InvalidParameterValueException("Please specify a valid hypervisor name");
+			s_logger.error("Unable to resolve " + cmd.getHypervisor() + " to a valid supported hypervisor type");
+			throw new InvalidParameterValueException("Unable to resolve " + cmd.getHypervisor() + " to a supported ");
 		}
 
 		Cluster.ClusterType clusterType = null;
@@ -625,8 +626,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 
 		Discoverer discoverer = getMatchingDiscover(hypervisorType);
 		if (discoverer == null) {
-			throw new InvalidParameterValueException(
-					"Please specify a valid hypervisor");
+			
+			throw new InvalidParameterValueException("Could not find corresponding resource manager for " + cmd.getHypervisor());
 		}
 
 		List<ClusterVO> result = new ArrayList<ClusterVO>();
@@ -664,8 +665,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 				uri = new URI(UriUtils.encodeURIComponent(url));
 				if (uri.getScheme() == null) {
 					throw new InvalidParameterValueException(
-							"uri.scheme is null " + url
-									+ ", add http:// as a prefix");
+							"uri.scheme is null " + url + ", add http:// as a prefix");
 				} else if (uri.getScheme().equalsIgnoreCase("http")) {
 					if (uri.getHost() == null
 							|| uri.getHost().equalsIgnoreCase("")

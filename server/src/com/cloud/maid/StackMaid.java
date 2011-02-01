@@ -8,7 +8,8 @@ import org.apache.log4j.Logger;
 import com.cloud.maid.dao.StackMaidDao;
 import com.cloud.maid.dao.StackMaidDaoImpl;
 import com.cloud.serializer.SerializerHelper;
-import com.cloud.utils.ActionDelegate;
+import com.cloud.utils.CleanupDelegate;
+import com.cloud.utils.db.Transaction;
 
 public class StackMaid {
     protected final static Logger s_logger = Logger.getLogger(StackMaid.class);
@@ -42,6 +43,16 @@ public class StackMaid {
 	
 	public Object getContext(String key) {
 		return context.get(key);
+	}
+	
+	public void expungeMaidItem(long maidId) {
+		// this is a bit ugly, but when it is not loaded by component locator, this is just a workable way for now
+		Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+		try {
+			maidDao.expunge(maidId);
+		} finally {
+			txn.close();
+		}
 	}
 
 	public int push(String delegateClzName, Object context) {
@@ -98,13 +109,15 @@ public class StackMaid {
 		context.clear();
 	}
 	
-	public static void doCleanup(StackMaidVO maid) {
+	public static boolean doCleanup(StackMaidVO maid) {
 		if(maid.getDelegate() != null) {
 			try {
 				Class<?> clz = Class.forName(maid.getDelegate());
 				Object delegate = clz.newInstance();
-				if(delegate instanceof ActionDelegate) {
-					((ActionDelegate)delegate).action(SerializerHelper.fromSerializedString(maid.getContext()));
+				if(delegate instanceof CleanupDelegate) {
+					return ((CleanupDelegate)delegate).cleanup(SerializerHelper.fromSerializedString(maid.getContext()), maid);
+				} else {
+					assert(false);
 				}
 			} catch (final ClassNotFoundException e) {
 				s_logger.error("Unable to load StackMaid delegate class: " + maid.getDelegate(), e);
@@ -117,6 +130,9 @@ public class StackMaid {
             } catch (final IllegalAccessException e) {
             	s_logger.error("Illegal access exception when loading resource: " + maid.getDelegate());
             } 
+            
+            return false;
 		}
+		return true;
 	}
 }
