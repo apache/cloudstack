@@ -349,7 +349,7 @@ echo Doing open source build
 
 %clean
 
-#[ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
+[ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 
 
 %preun client
