@@ -722,7 +722,7 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, secondRowText) {
 	    var $container = $("#midmenu_container");
 	    if($("#midmenu_container").find("#multiple_selection_sub_container").length > 0) {
 	        $container = $("#midmenu_container").find("#multiple_selection_sub_container");
-	        $midmenuItem1.appendTo("#midmenu_container #multiple_selection_sub_container"); 
+	        $("#midmenu_container #multiple_selection_sub_container").prepend($midmenuItem1);
 	    }
 	    	        
 		var $noItemsAvailable = $container.find("#midmenu_container_no_items_available");
