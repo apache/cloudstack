@@ -223,11 +223,12 @@
       <filterset>
         <filter token="VERSION" value="${impl.version}"/>
       </filterset>
-
+   </copy>
+   <copy todir="${scripts.target.dir}">
       <fileset dir="${scripts.dir}">
         <include name="**/fsimage.so"/>
       </fileset>
-    </copy>
+   </copy>
   </target>
 
   <target name="build-ui" depends="-init" description="Builds the UI">
