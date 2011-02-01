@@ -2371,13 +2371,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         for (VolumeVO vol : vols) {
             Volume.State state = vol.getState();
             if (state == Volume.State.Ready) {
-
-                if (vol.getPoolId() == null) {
-                    s_logger.warn("Found volume:" + vol.getId() + " with no storage pool associated with it");
-                    throw new StorageUnavailableException("Volume " + vol
-                            + " has no storage pool associated with it, and the pool id associated with it is:", vol.getPoolId());
-                }
-
                 StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
                 if (pool.getRemoved() != null || pool.isInMaintenance()) {
                     if (vol.isRecreatable()) {
@@ -2405,7 +2398,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 }
                 recreateVols.add(vol);
             } else {
-                throw new StorageUnavailableException("Volume " + vol + " can not be used", vol.getPoolId());
+                //the pool id here can potentially be null if the volume was never associated with any pool id (bug: 7899)
+                throw new StorageUnavailableException("Volume " + vol + " can not be used", vol.getPoolId() != null ? vol.getPoolId() : null);
             }
         }
 
