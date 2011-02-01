@@ -278,6 +278,23 @@ public abstract class CitrixResourceBase implements ServerResource {
         s_statesTable.put(Types.VmPowerState.UNRECOGNIZED, State.Unknown);
     }
     
+
+    protected void cleanupHaltedVms(Connection conn) throws XenAPIException, XmlRpcException {
+        Host host = Host.getByUuid(conn, _host.uuid);
+        Set<VM> vms = host.getResidentVMs(conn);
+        
+        for (VM vm : vms) {
+            try {
+                if (VmPowerState.HALTED.equals(vm.getPowerState(conn))) {
+                    vm.destroy(conn);
+                }
+            } catch (XenAPIException e) {
+                s_logger.warn("Unable to cleanup " + vm);
+            } catch (XmlRpcException e) {
+                s_logger.warn("Unable to cleanup " + vm);
+            }
+        }
+    }
     
     protected boolean isRefNull(XenAPIObject object) {
         return (object == null || object.toWireString().equals("OpaqueRef:NULL"));
@@ -3724,6 +3741,16 @@ public abstract class CitrixResourceBase implements ServerResource {
             return null;
         }
 
+        try {
+            cleanupHaltedVms(conn);
+        } catch (XenAPIException e) {
+            s_logger.warn("Unable to cleanup halted vms", e);
+            return null;
+        } catch (XmlRpcException e) {
+            s_logger.warn("Unable to cleanup halted vms", e);
+            return null;
+        }
+        
         StartupRoutingCommand cmd = new StartupRoutingCommand();
         fillHostInfo(conn, cmd);
 
