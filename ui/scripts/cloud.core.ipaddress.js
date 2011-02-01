@@ -92,20 +92,46 @@ function afterLoadIpJSP() {
 				
 				$.ajax({
 				    data: createURL("command=associateIpAddress&zoneid="+zoneid),
-					dataType: "json",
-					success: function(json) {						   
-					    var item = json.associateipaddressresponse.ipaddress;					 
-					    ipToMidmenu(item, $midmenuItem1);
-						bindClickToMidMenu($midmenuItem1, ipToRightPanel, ipGetMidmenuId);  
-						afterAddingMidMenuItem($midmenuItem1, true);	
-	            				
-					},
-					error: function(XMLHttpResponse) {
+				    dataType: "json",
+				    success: function(json) {						        
+				        var jobId = json.associateipaddressresponse.jobid;				        
+				        var timerKey = "associateIpJob_"+jobId;
+							    
+				        $("body").everyTime(2000, timerKey, function() {
+						    $.ajax({
+							    data: createURL("command=queryAsyncJobResult&jobId="+jobId),
+							    dataType: "json",
+							    success: function(json) {										       						   
+								    var result = json.queryasyncjobresultresponse;
+								    if (result.jobstatus == 0) {
+									    return; //Job has not completed
+								    } else {											    
+									    $("body").stopTime(timerKey);
+									    if (result.jobstatus == 1) {
+										    // Succeeded										    							   
+										    ipToMidmenu(result.jobresult.ipaddress, $midmenuItem1);
+						                    bindClickToMidMenu($midmenuItem1, ipToRightPanel, ipGetMidmenuId);  
+						                    afterAddingMidMenuItem($midmenuItem1, true);	                            
+									    } else if (result.jobstatus == 2) {
+									        afterAddingMidMenuItem($midmenuItem1, false, g_dictionary["label.adding.failed"]);										        								   				    
+									    }
+								    }
+							    },
+							    error: function(XMLHttpResponse) {
+								    $("body").stopTime(timerKey);
+									handleError(XMLHttpResponse, function() {
+										afterAddingMidMenuItem($midmenuItem1, false, parseXMLHttpResponse(XMLHttpResponse));
+									});
+							    }
+						    });
+					    }, 0);						    					
+				    },
+				    error: function(XMLHttpResponse) {
 						handleError(XMLHttpResponse, function() {
-							afterAddingMidMenuItem($midmenuItem1, false, parseXMLHttpResponse(XMLHttpResponse));
+							afterAddingMidMenuItem($midmenuItem1, false, parseXMLHttpResponse(XMLHttpResponse));	
 						});
-					}						
-				});
+				    }
+			    });
 			},
 			"Cancel": function() { 
 				$(this).dialog("close"); 

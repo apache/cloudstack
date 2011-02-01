@@ -163,7 +163,7 @@ function afterLoadVolumeJSP() {
 							    
 				        $("body").everyTime(2000, timerKey, function() {
 						    $.ajax({
-							    data: createURL("command=queryAsyncJobResult&jobId="+json.createvolumeresponse.jobid),
+							    data: createURL("command=queryAsyncJobResult&jobId="+jobId),
 							    dataType: "json",
 							    success: function(json) {										       						   
 								    var result = json.queryasyncjobresultresponse;
@@ -177,7 +177,7 @@ function afterLoadVolumeJSP() {
 						                    bindClickToMidMenu($midmenuItem1, volumeToRightPanel, getMidmenuId);  
 						                    afterAddingMidMenuItem($midmenuItem1, true);	         
 									    } else if (result.jobstatus == 2) {
-									        afterAddingMidMenuItem($midmenuItem1, false, fromdb(result.jobresult.errortext));										        								   				    
+									        afterAddingMidMenuItem($midmenuItem1, false, g_dictionary["label.adding.failed"]);										        								   				    
 									    }
 								    }
 							    },
