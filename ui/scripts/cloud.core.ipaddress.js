@@ -352,16 +352,14 @@ function afterLoadIpJSP() {
 		 			
 		var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");        
         var ipObj = $midmenuItem1.data("jsonObj");
-       
-		var ipAddress = ipObj.ipaddress;
-		 	 
+       	 
 	    var name = createLoadBalancerRow.find("#name").val();  
 	    var publicPort = createLoadBalancerRow.find("#public_port").val();
 	    var privatePort = createLoadBalancerRow.find("#private_port").val();
 	    var algorithm = createLoadBalancerRow.find("#algorithm_select").val();  
 	    		   
 	    var array1 = [];
-        array1.push("&publicip="+ipAddress);    
+        array1.push("&publicipid="+ipObj.id);    
         array1.push("&name="+todb(name));              
         array1.push("&publicport="+publicPort);
         array1.push("&privateport="+privatePort);
@@ -633,17 +631,12 @@ function ipJsonToLoadBalancerTab() {
         ipClearLoadBalancerTab();
         return;
     }
-   
-    var networkObj = $midmenuItem1.data("networkObj");
-   
-    var ipAddress = ipObj.ipaddress;
-    if(ipAddress == null || ipAddress.length == 0)
-        return;          
-    
+       
     var $thisTab = $("#right_panel_content #tab_content_load_balancer");  
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
-		
+	
+	var networkObj = $midmenuItem1.data("networkObj");   	
     if(networkObj != null) {		
 	    var lbServiceObj = ipFindNetworkServiceByName("Lb", networkObj);
 	    if(lbServiceObj != null) {
@@ -664,7 +657,7 @@ function ipJsonToLoadBalancerTab() {
     refreshCreateLoadBalancerRow();            
         
     $.ajax({
-        data: createURL("command=listLoadBalancerRules&publicip="+ipAddress),
+        data: createURL("command=listLoadBalancerRules&publicipid="+ipObj.id),
         dataType: "json",
         success: function(json) {		                    
             var items = json.listloadbalancerrulesresponse.loadbalancerrule;  
@@ -692,7 +685,7 @@ function showEnableVPNDialog($thisTab) {
 			var $thisDialog = $(this);
 			$spinningWheel = $thisDialog.find("#spinning_wheel").show();
 			$.ajax({
-				data: createURL("command=createRemoteAccessVpn&publicip="+ipObj.ipaddress+"&account="+ipObj.account+"&domainid="+ipObj.domainid+"&zoneid="+ipObj.zoneid),
+				data: createURL("command=createRemoteAccessVpn&publicipid="+ipObj.id+"&account="+ipObj.account+"&domainid="+ipObj.domainid+"&zoneid="+ipObj.zoneid),
 				dataType: "json",
 				success: function(json) {
 					var jobId = json.createremoteaccessvpnresponse.jobid;
@@ -765,19 +758,13 @@ function ipJsonToVPNTab() {
         ipClearVPNTab();
         return;
     }
-	
-	var ipAddress = ipObj.ipaddress;
-	if(ipAddress == null || ipAddress.length == 0) {
-	    ipClearVPNTab();
-	    return;
-	}
-	
+		
 	var $thisTab = $("#right_panel_content").find("#tab_content_vpn");  	
 	$thisTab.find("#tab_spinning_wheel").show();    
     $thisTab.find("#tab_container").hide();   
 		
 	$.ajax({
-        data: createURL("command=listRemoteAccessVpns&publicip="+ipAddress),
+        data: createURL("command=listRemoteAccessVpns&publicipid="+ipObj.id),
         dataType: "json",
         success: function(json) {		                    
             var items = json.listremoteaccessvpnsresponse.remoteaccessvpn;  
@@ -820,7 +807,7 @@ function showVpnUsers(presharedkey, publicip) {
 				var $thisDialog = $(this);
 				$spinningWheel = $thisDialog.find("#spinning_wheel").show();
 				$.ajax({
-					data: createURL("command=deleteRemoteAccessVpn&publicip="+ipObj.ipaddress+"&account="+ipObj.account+"&domainid="+ipObj.domainid+"&zoneid="+ipObj.zoneid),
+					data: createURL("command=deleteRemoteAccessVpn&publicipid="+ipObj.id+"&account="+ipObj.account+"&domainid="+ipObj.domainid+"&zoneid="+ipObj.zoneid),
 					dataType: "json",
 					success: function(json) {
 						var jobId = json.deleteremoteaccessvpnresponse.jobid;
