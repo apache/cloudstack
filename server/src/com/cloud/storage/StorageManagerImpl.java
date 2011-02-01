@@ -1530,9 +1530,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         _volsDao.update(volume, Volume.Event.Destroy);
         long volumeId = volume.getId();
 
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volumeId,
-                volume.getName(), null, null, null);
-        _usageEventDao.persist(usageEvent);
+        if(volume.getPoolId() != null){
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volumeId,
+                    volume.getName(), null, null, null);
+            _usageEventDao.persist(usageEvent);
+        }
 
         // Delete the recurring snapshot policies for this volume.
         _snapshotMgr.deletePoliciesForVolume(volumeId);
