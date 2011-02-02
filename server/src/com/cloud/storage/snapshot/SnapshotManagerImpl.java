@@ -697,7 +697,10 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 	        s_logger.debug("Calling deleteSnapshot for snapshotId: " + snapshotId + " and policyId " + policyId);
 	    }
 	    SnapshotVO lastSnapshot = null;
+	    SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
         _snapshotDao.remove(snapshotId);
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), 0L, snapshotId, snapshot.getName(), null, null, 0L);
+        _usageEventDao.persist(usageEvent);
         long lastId = snapshotId;
         boolean destroy = false;
         while( true ) {
@@ -787,11 +790,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 details = answer.getDetails();
             }
             s_logger.error(details);
-        }
-
-        if(success){
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), volume.getDataCenterId(), snapshotId, snapshot.getName(), null, null, volume.getSize());
-            _usageEventDao.persist(usageEvent);
         }
 
         return success;
