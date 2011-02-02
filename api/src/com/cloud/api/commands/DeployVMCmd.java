@@ -33,6 +33,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
@@ -244,7 +245,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             s_logger.info(ex);
             s_logger.trace(ex);
             throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
-        } 
+		}       
     }
 
     @Override
@@ -266,7 +267,10 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         }  catch (ConcurrentOperationException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        } 
+        } catch (ResourceAllocationException ex) {
+		    s_logger.warn("Exception: ", ex);
+		    throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
+        }    
     }
 
 }

@@ -91,7 +91,7 @@ public interface UserVmService {
      */
     Volume detachVolumeFromVM(DetachVolumeCmd cmmd);
     
-    UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
     UserVm stopVirtualMachine(StopVMCmd cmd) throws ServerApiException, ConcurrentOperationException;
     UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException;
     UserVm updateVirtualMachine(UpdateVMCmd cmd);
@@ -127,7 +127,7 @@ public interface UserVmService {
      * @throws PermissionDeniedException if the caller doesn't have any access rights to the VM.
      * @throws InvalidParameterValueException if the parameters are incorrect. 
      */
-    UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException;
+    UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
     
     /**
      * Starts the virtual machine created from createVirtualMachine.

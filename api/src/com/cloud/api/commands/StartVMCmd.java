@@ -30,6 +30,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.user.Account;
@@ -118,6 +119,9 @@ public class StartVMCmd extends BaseAsyncCmd {
         }catch (ExecutionException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        }
+        } catch (ResourceAllocationException ex) {
+		    s_logger.warn("Exception: ", ex);
+		    throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
+        }            
     }
 }
