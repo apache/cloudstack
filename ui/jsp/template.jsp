@@ -16,7 +16,8 @@ dictionary = {
 	'label.action.copy.template.processing' : '<fmt:message key="label.action.copy.template.processing"/>',
 	'label.action.create.vm' : '<fmt:message key="label.action.create.vm"/>',
 	'label.action.create.vm.processing' : '<fmt:message key="label.action.create.vm.processing"/>',
-	'label.action.download.template' : '<fmt:message key="label.action.download.template"/>'
+	'label.action.download.template' : '<fmt:message key="label.action.download.template"/>',
+	'message.download.template': '<fmt:message key="message.download.template"/>'
 };	
 </script>
 

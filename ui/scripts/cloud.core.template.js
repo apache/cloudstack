@@ -761,11 +761,13 @@ function doDownloadTemplate($actionLink, $detailsTab, $midmenuItem1) {
 		                            $infoContainer.removeClass("error");
 		                            $infoContainer.find("#icon,#info").removeClass("error");
 		                            var url = decodeURIComponent(json.queryasyncjobresultresponse.jobresult.template.url);	
-		                            var htmlMsg = "Please click <a href='" + url + "'>" + url + "</a>" + " to download template";                          
-		                            $infoContainer.find("#info").html(htmlMsg);
+		                            var htmlMsg = dictionary["message.download.template"];		                            
+		                            var htmlMsg2 = htmlMsg.replace(/#/g, url);       
+		                            $infoContainer.find("#info").html(htmlMsg2);
 		                            $infoContainer.show();		                        
-		                        } else if (result.jobstatus == 2) { // Failed	
-		                            handleErrorInDialog2(fromdb(result.jobresult.errortext), $dialogDownloadTemplate);		                        
+		                        } else if (result.jobstatus == 2) { // Failed			                            	                            		                            
+		                            var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+			                        handleErrorInDialog2(errorMsg, $dialogDownloadTemplate);		                        
 		                        }											                    
 	                        }
                         },

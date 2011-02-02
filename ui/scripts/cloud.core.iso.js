@@ -731,14 +731,8 @@ function doDownloadISO($actionLink, $detailsTab, $midmenuItem1) {
 		                            var htmlMsg2 = htmlMsg.replace(/#/g, url);                        
 		                            $infoContainer.find("#info").html(htmlMsg2);
 		                            $infoContainer.show();		                        
-		                        } else if (result.jobstatus == 2) { // Failed			                            
-		                            var label = $actionLink.data("label");	
-                                    var label2;
-                                    if(label in dictionary)
-                                        label2 = dictionary[label];
-                                    else
-                                        label2 = label;   		                            		                            
-		                            var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+		                        } else if (result.jobstatus == 2) { // Failed                            
+		                            var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
 			                        handleErrorInDialog2(errorMsg, $dialogDownloadISO);		                        
 		                        }											                    
 	                        }
