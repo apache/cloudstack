@@ -626,7 +626,7 @@ function initAddClusterShortcut() {
         dataType: "json",
         success: function(json) {            
             var items = json.listhypervisorsresponse.hypervisor;
-            var $hypervisorDropdown = $dialogAddCluster.find("#cluster_hypervisor");
+            var $hypervisorDropdown = $dialogAddCluster.find("#cluster_hypervisor").empty();
             if(items != null && items.length > 0) {                
                 for(var i=0; i<items.length; i++) {                    
                     $hypervisorDropdown.append("<option value='"+fromdb(items[i].name)+"'>"+fromdb(items[i].name)+"</option>");
