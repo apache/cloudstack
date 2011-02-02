@@ -399,7 +399,7 @@
             <div class="zonepopup_maincontentarea">
                 <div class="zonepopup_titlebox">
                     <h2>
-						<fmt:message key="label.zone.step.3.title"/>
+						<fmt:message key="label.zone.step.4.title"/>
                     </h2>
                     <p>                        
                     </p>
