@@ -284,7 +284,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         //Save usage event
         if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), isSourceNat, addr.getAddress().toString());
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), isSourceNat);
             _usageEventDao.persist(usageEvent);
         }
         
@@ -302,7 +302,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         _ipAddressDao.unassignIpAddress(addr.getId());
         if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, owner.getId(), addr.getDataCenterId(), isSourceNat, addr.getAddress().toString());
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, owner.getId(), addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), isSourceNat);
             _usageEventDao.persist(usageEvent);
         }
         
