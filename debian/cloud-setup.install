@@ -1,5 +1,6 @@
 /usr/bin/cloud-setup-databases
 /usr/bin/cloud-migrate-databases
+/usr/bin/get_password_from_domr
 /usr/share/cloud/setup/*.sql
 /usr/share/cloud/setup/deploy-db-dev.sh
 /usr/share/cloud/setup/server-setup.xml

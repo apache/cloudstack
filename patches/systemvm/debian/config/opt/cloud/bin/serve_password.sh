@@ -37,7 +37,7 @@ do
 		break
 	fi
 
-	request=$(echo $input | grep "VM Request:" | cut -d: -f2 | sed 's/^[ \t]*//')
+	request=$(echo $input | grep "VM_Request:" | cut -d: -f2 | sed 's/^[ \t]*//')
 
 	if [ "$request" != "" ]
 	then
