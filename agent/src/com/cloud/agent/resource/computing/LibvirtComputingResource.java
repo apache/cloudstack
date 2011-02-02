@@ -1638,6 +1638,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 				_vms.put(vmName, state);
 			}
 		} else {
+		    destroy_network_rules_for_vm(vmName);
 			cleanupVM(conn, vmName, getVnetId(VirtualMachineName.getVnet(vmName)));
 		}
 
@@ -3291,10 +3292,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     
     private Answer execute(NetworkRulesSystemVmCommand cmd) {
         boolean success = false;
-        if (cmd.getType() != VirtualMachine.Type.User) {
-            success = default_network_rules_for_systemvm(cmd.getVmName());
-        }
-        
+
+        success = default_network_rules_for_systemvm(cmd.getVmName());
+      
         return new Answer(cmd, success, "");
     }
 }

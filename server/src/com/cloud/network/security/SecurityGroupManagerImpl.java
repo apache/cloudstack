@@ -302,6 +302,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	}
 
 	protected void handleVmStarted(VMInstanceVO vm) {
+	    if (vm.getType() != VirtualMachine.Type.User || !_enabled)
+	        return;
 		Set<Long> affectedVms = getAffectedVmsForVmStart(vm);
 		scheduleRulesetUpdateToHosts(affectedVms, true, null);
 	}
@@ -413,11 +415,15 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	}
 	
 	protected void handleVmStopped(VMInstanceVO vm) {
+	    if (vm.getType() != VirtualMachine.Type.User || !_enabled)
+            return;
 		Set<Long> affectedVms = getAffectedVmsForVmStop(vm);
 		scheduleRulesetUpdateToHosts(affectedVms, true, null);
 	}
 	
 	protected void handleVmMigrated(VMInstanceVO vm) {
+	    if (vm.getType() == VirtualMachine.Type.User )
+            return;
 	    NetworkRulesSystemVmCommand nrc = new NetworkRulesSystemVmCommand(vm.getInstanceName(), vm.getType());
 	    Commands cmds = new Commands(nrc);
 	    try {
@@ -828,6 +834,9 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
+	    /*register state listener, no matter security group is enabled or not*/
+	    VirtualMachine.State.getStateMachine().registerListener(this);
+	    
 		String enabled =_configDao.getValue("direct.attach.security.groups.enabled");
 		if ("true".equalsIgnoreCase(enabled)) {
 			_enabled = true;
@@ -841,8 +850,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         _serverId = ((ManagementServer)ComponentLocator.getComponent(ManagementServer.Name)).getId();
         _executorPool = Executors.newScheduledThreadPool(10, new NamedThreadFactory("NWGRP"));
         _cleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NWGRP-Cleanup"));
-
-        VirtualMachine.State.getStateMachine().registerListener(this);
+        
  		return true;
 	}
 
@@ -1309,7 +1317,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
     @Override
     public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status) {
-        if (!_enabled || !status || vm.getType() != VirtualMachine.Type.User) {
+        if (!status) {
             return false;
         }
 

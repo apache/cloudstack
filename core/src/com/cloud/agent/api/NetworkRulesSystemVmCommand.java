@@ -22,9 +22,6 @@ public class NetworkRulesSystemVmCommand extends Command {
      */
     
      private String vmName;
-     private long vmId;
-     private String pubIp;
-     private String mac;
      private VirtualMachine.Type type;
     
      protected NetworkRulesSystemVmCommand() {
@@ -33,30 +30,12 @@ public class NetworkRulesSystemVmCommand extends Command {
     
      public NetworkRulesSystemVmCommand(String vmName, VirtualMachine.Type type) {
          this.vmName = vmName;
-     }
-     
-     public NetworkRulesSystemVmCommand(String vmName, long vmId, String publicIP, String mac, VirtualMachine.Type type) {
-         this.vmName = vmName;
-         this.vmId = vmId;
-         this.pubIp = publicIP;
-         this.mac = mac;
          this.type = type;
      }
+     
     
      public String getVmName() {
          return vmName;
-     }
-     
-     public long getVmId() {
-         return vmId;
-     }
-     
-     public String getIp() {
-         return pubIp;
-     }
-    
-     public String getMac() {
-         return mac;
      }
      
      public VirtualMachine.Type getType() {
