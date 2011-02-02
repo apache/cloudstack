@@ -56,8 +56,7 @@ dictionary = {
                         </ul>
                     </div>
                 </div>
-                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
-                display: none;">
+                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999; display: none;">
                     <div class="gridheader_loader" id="Div1">
                     </div>
                     <p id="description">
@@ -146,8 +145,7 @@ dictionary = {
                    <p><fmt:message key="label.loading"/> &hellip;</p>    
               </div>               
         </div>
-        <div class="grid_container">                   
-        
+        <div class="grid_container">          
             <div class="grid_header">
         	    <div id="grid_header_title" class="grid_header_title"></div>
                 <div id="action_link" class="grid_actionbox"><p>Actions</p>
@@ -157,8 +155,7 @@ dictionary = {
                         </ul>
                     </div>
                 </div>
-                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999;
-                display: none;">
+                <div class="gridheader_loaderbox" id="spinning_wheel" style="border: 1px solid #999; display: none;">
                     <div class="gridheader_loader" id="Div1">
                     </div>
                     <p id="description">
