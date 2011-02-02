@@ -1616,7 +1616,7 @@ public class StorageManagerImpl implements StorageManager {
             capacity.setUsedCapacity(used);
             _capacityDao.update(capacity.getId(), capacity);
         }
-        s_logger.debug("Successfully set Capacity - " +storagePool.getCapacityBytes()+ " for CAPACITY_TYPE_STORAGE, DataCenterId - " +storagePool.getDataCenterId()+ ", HostOrPoolId - " +storagePool.getId()+ ", PodId " +storagePool.getPodId());
+        s_logger.trace("Successfully set Capacity - " +storagePool.getCapacityBytes()+ " for CAPACITY_TYPE_STORAGE, DataCenterId - " +storagePool.getDataCenterId()+ ", HostOrPoolId - " +storagePool.getId()+ ", PodId " +storagePool.getPodId());
         capacitySC = _capacityDao.createSearchCriteria();
         capacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, storagePool.getId());
         capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, storagePool.getDataCenterId());
@@ -1648,7 +1648,7 @@ public class StorageManagerImpl implements StorageManager {
             	_capacityDao.update(capacity.getId(), capacity);
             }
         }
-        s_logger.debug("Successfully set Capacity - " +storagePool.getCapacityBytes()* _overProvisioningFactor+ " for CAPACITY_TYPE_STORAGE_ALLOCATED, DataCenterId - " +storagePool.getDataCenterId()+ ", HostOrPoolId - " +storagePool.getId()+ ", PodId " +storagePool.getPodId());
+        s_logger.trace("Successfully set Capacity - " +storagePool.getCapacityBytes()* _overProvisioningFactor+ " for CAPACITY_TYPE_STORAGE_ALLOCATED, DataCenterId - " +storagePool.getDataCenterId()+ ", HostOrPoolId - " +storagePool.getId()+ ", PodId " +storagePool.getPodId());
     }
 
     @Override

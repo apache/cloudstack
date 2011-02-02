@@ -769,8 +769,8 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public User getUser(long userId) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Retrieiving user with id: " + userId);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Retrieving user with id: " + userId);
         }
 
         UserVO user = _userDao.getUser(userId);
