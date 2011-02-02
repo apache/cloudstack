@@ -245,6 +245,7 @@ function bindAddPodButton($button, $leftmenuItem1) {
         .dialog('option', 'buttons', { 				
 	        "Add": function() {		
 	            var $thisDialog = $(this);
+				$thisDialog.find("#info_container").hide();  
 						
 		        // validate values
 		        var isValid = true;					
@@ -549,6 +550,7 @@ function bindAddClusterButtonOnZonePage($button, zoneId, zoneName) {
         $dialogAddCluster.dialog('option', 'buttons', { 				
 	        "Add": function() { 
 	            var $thisDialog = $(this);		            
+	            $thisDialog.find("#info_container").hide();  
 	            			   
 		        // validate values
 			    var hypervisor = $thisDialog.find("#cluster_hypervisor").val();
@@ -698,6 +700,7 @@ function bindAddHostButtonOnZonePage($button, zoneId, zoneName) {
         .dialog('option', 'buttons', { 				
 	        "Add": function() { 
 	            var $thisDialog = $(this);		            
+	    		$thisDialog.find("#info_container").hide();  
 	    			   
 			    //var hypervisor = $thisDialog.find("#host_hypervisor").val();
 		        //var clusterRadio = $thisDialog.find("input[name=cluster]:checked").val();				
@@ -892,6 +895,7 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
 	    .dialog('option', 'buttons', { 				    
 		    "Add": function() { 	
 		    	var $thisDialog = $(this);
+		    	$thisDialog.find("#info_container").hide();  
 		    	
 			    // validate values
 				var protocol = $thisDialog.find("#add_pool_protocol").val();
