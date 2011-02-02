@@ -46,25 +46,6 @@ function hostGetSearchParams() {
 	return moreCriteria.join("");          
 }
 
-function hostToMidmenu(jsonObj, $midmenuItem1) {    
-    $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
-    $midmenuItem1.data("jsonObj", jsonObj);      
-    
-    var $iconContainer = $midmenuItem1.find("#icon_container").show(); 
-    $iconContainer.find("#icon").attr("src", "images/midmenuicon_host.png");   
-       
-    $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25));
-	$midmenuItem1.find("#second_row").text(jsonObj.ipaddress.substring(0,25)); 
-    
-    updateHostStateInMidMenu(jsonObj, $midmenuItem1);   
-}
-
-function hostToRightPanel($midmenuItem1) {       
-    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);  
-    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);        
-    hostJsonToDetailsTab();   
-}
-
 function afterLoadHostJSP() {    
     initDialog("dialog_add_host");    
     initDialog("dialog_update_os");
@@ -81,6 +62,25 @@ function afterLoadHostJSP() {
 function hostRefreshDataBinding() {
     var $hostNode = $selectedSubMenu.parent(); 
     bindAddHostButton($hostNode);      
+}
+
+function hostToMidmenu(jsonObj, $midmenuItem1) {    
+    $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
+    $midmenuItem1.data("jsonObj", jsonObj);      
+    
+    var $iconContainer = $midmenuItem1.find("#icon_container").show(); 
+    $iconContainer.find("#icon").attr("src", "images/midmenuicon_host.png");   
+       
+    $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25));
+	$midmenuItem1.find("#second_row").text(jsonObj.ipaddress.substring(0,25)); 
+    
+    updateHostStateInMidMenu(jsonObj, $midmenuItem1);   
+}
+
+function hostToRightPanel($midmenuItem1) {       
+    copyActionInfoFromMidMenuToRightPanel($midmenuItem1);  
+    $("#right_panel_content").data("$midmenuItem1", $midmenuItem1);        
+    $("#tab_details").click();     
 }
 
 function hostJsonToDetailsTab() {  
