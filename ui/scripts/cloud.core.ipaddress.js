@@ -680,10 +680,13 @@ function showEnableVPNDialog($thisTab) {
 	$("#dialog_enable_vpn")	
 	.dialog('option', 'buttons', { 						
 		"Enable": function() { 
+			var $thisDialog = $(this);
+			$thisDialog.find("#info_container").hide(); 
+			$spinningWheel = $thisDialog.find("#spinning_wheel").show();
+			
 			var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");	
 			var ipObj = $midmenuItem1.data("jsonObj");
-			var $thisDialog = $(this);
-			$spinningWheel = $thisDialog.find("#spinning_wheel").show();
+						
 			$.ajax({
 				data: createURL("command=createRemoteAccessVpn&publicipid="+ipObj.id+"&account="+ipObj.account+"&domainid="+ipObj.domainid+"&zoneid="+ipObj.zoneid),
 				dataType: "json",
@@ -805,6 +808,7 @@ function showVpnUsers(presharedkey, publicip) {
 		.dialog('option', 'buttons', { 						
 			"Disable": function() { 
 				var $thisDialog = $(this);
+				$thisDialog.find("#info_container").hide(); 
 				$spinningWheel = $thisDialog.find("#spinning_wheel").show();
 				$.ajax({
 					data: createURL("command=deleteRemoteAccessVpn&publicipid="+ipObj.id+"&account="+ipObj.account+"&domainid="+ipObj.domainid+"&zoneid="+ipObj.zoneid),
@@ -879,6 +883,7 @@ function showVpnUsers(presharedkey, publicip) {
 			"Add": function() { 
 				var $thisDialog = $(this);
 				$thisDialog.find("#info_container").hide();
+				
 				var isValid = true;		
 				isValid &= validateString("Username", $thisDialog.find("#username"), $thisDialog.find("#username_errormsg"));					    
 				isValid &= validateString("Password", $thisDialog.find("#password"), $thisDialog.find("#password_errormsg"));				
@@ -994,6 +999,7 @@ function enableDeleteUser() {
 			$thisDialog.find("#username").text(target.data("username"));
 			$thisDialog.dialog('option', 'buttons', { 						
 				"Ok": function() { 
+				    $thisDialog.find("#info_container").hide(); 
 					$spinningWheel = $thisDialog.find("#spinning_wheel").show();
 					$.ajax({
 						data: createURL("command=removeVpnUser"+params.join("")),
