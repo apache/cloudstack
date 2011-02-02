@@ -1022,7 +1022,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
             pool = new StoragePoolVO(StoragePoolType.ISO, storageHost, port, hostPath);
         } else if (scheme.equalsIgnoreCase("vmfs")) {
-            pool = new StoragePoolVO(StoragePoolType.VMFS, storageHost, 0, hostPath);
+            pool = new StoragePoolVO(StoragePoolType.VMFS, "VMFS datastore: " + hostPath, 0, hostPath);
         } else {
             s_logger.warn("Unable to figure out the scheme for URI: " + uri);
             throw new IllegalArgumentException("Unable to figure out the scheme for URI: " + uri);
