@@ -422,7 +422,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 
 	    for (VMTemplateVO template: toBeDownloaded) {
 	        VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(sshost.getId(), template.getId());
-	        if (tmpltHost == null) {
+	        if (tmpltHost == null || tmpltHost.getDownloadState() != Status.DOWNLOADED) {
 	            downloadTemplateToStorage(template, sshost);
 	        }
 	    }
