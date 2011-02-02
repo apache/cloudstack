@@ -61,7 +61,7 @@ public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardi
     }
     
     public PortForwardingRuleVO(String xId, long srcIpId, int srcPort, Ip dstIp, int dstPort, String protocol, long networkId, long accountId, long domainId, long instanceId, boolean isOneToOneNat) {
-        this(xId, srcIpId, srcPort, srcPort, dstIp, dstPort, dstPort, protocol, networkId, accountId, domainId, instanceId, isOneToOneNat);
+        this(xId, srcIpId, srcPort, srcPort, dstIp, dstPort, dstPort, protocol.toLowerCase(), networkId, accountId, domainId, instanceId, isOneToOneNat);
     }
 
     @Override

@@ -62,6 +62,9 @@ public class ListRoutersCmd extends BaseListCmd {
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the Zone ID of the router")
     private Long zoneId;
+    
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="list by network id")
+    private Long networkId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -93,6 +96,10 @@ public class ListRoutersCmd extends BaseListCmd {
 
     public Long getZoneId() {
         return zoneId;
+    }
+    
+    public Long getNetworkId() {
+        return networkId;
     }
 
     /////////////////////////////////////////////////////

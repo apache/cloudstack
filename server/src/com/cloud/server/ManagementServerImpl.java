@@ -182,7 +182,9 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.IPAddressVO;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
@@ -259,6 +261,7 @@ import com.cloud.utils.ssh.SSHKeysHelper;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
@@ -268,6 +271,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -311,6 +315,8 @@ public class ManagementServerImpl implements ManagementServer {
     private final GuestOSCategoryDao _guestOSCategoryDao;
     private final StoragePoolDao _poolDao;
     private final StoragePoolHostDao _poolHostDao;
+    private final NicDao _nicDao;
+    private final NetworkDao _networkDao;
     private final StorageManager _storageMgr;
 
     private final Adapters<UserAuthenticator> _userAuthenticators;
@@ -358,6 +364,8 @@ public class ManagementServerImpl implements ManagementServer {
         _hostPodDao = locator.getDao(HostPodDao.class);
         _jobDao = locator.getDao(AsyncJobDao.class);
         _clusterDao = locator.getDao(ClusterDao.class);
+        _nicDao = locator.getDao(NicDao.class);
+        _networkDao = locator.getDao(NetworkDao.class);
 
         _accountMgr = locator.getManager(AccountManager.class);
         _agentMgr = locator.getManager(AgentManager.class);
@@ -2145,6 +2153,7 @@ public class ManagementServerImpl implements ManagementServer {
         Object pod = cmd.getPodId();
         Object hostId = cmd.getHostId();
         Object keyword = cmd.getKeyword();
+        Object networkId = cmd.getNetworkId();
 
         SearchBuilder<DomainRouterVO> sb = _routerDao.createSearchBuilder();
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
@@ -2159,6 +2168,17 @@ public class ManagementServerImpl implements ManagementServer {
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+        
+        if (networkId != null) {
+            SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
+            nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+            
+            SearchBuilder<NetworkVO> networkSearch = _networkDao.createSearchBuilder();
+            networkSearch.and("networkId", networkSearch.entity().getId(), SearchCriteria.Op.EQ);
+            nicSearch.join("networkSearch", networkSearch, nicSearch.entity().getNetworkId(), networkSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+            
+            sb.join("nicSearch", nicSearch, sb.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
         }
 
         SearchCriteria<DomainRouterVO> sc = sb.create();
@@ -2193,6 +2213,10 @@ public class ManagementServerImpl implements ManagementServer {
         }
         if (hostId != null) {
             sc.setParameters("hostId", hostId);
+        }
+        
+        if (networkId != null) {
+            sc.setJoinParameters("nicSearch", "networkId", networkId);
         }
 
         return _routerDao.search(sc, searchFilter);

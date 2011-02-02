@@ -245,7 +245,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                     dstIp,
                     rule.getDestinationPortStart(), 
                     rule.getDestinationPortEnd(), 
-                    rule.getProtocol(), 
+                    rule.getProtocol().toLowerCase(), 
                     networkId,
                     accountId,
                     domainId, vmId, isNat);

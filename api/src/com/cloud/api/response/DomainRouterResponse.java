@@ -66,6 +66,9 @@ public class DomainRouterResponse extends BaseResponse {
 
     @SerializedName("privatenetmask") @Param(description="the private netmask for the router")
     private String privateNetmask;
+    
+    @SerializedName("privatenetworkid") @Param(description="the ID of the corresponding private network")
+    private Long privateNetworkId;
 
     @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="the public IP address for the router")
     private String publicIp;
@@ -75,6 +78,9 @@ public class DomainRouterResponse extends BaseResponse {
 
     @SerializedName("publicnetmask") @Param(description="the public netmask for the router")
     private String publicNetmask;
+    
+    @SerializedName("publicnetworkid") @Param(description="the ID of the corresponding public network")
+    private Long publicNetworkId;
 
     @SerializedName("guestipaddress") @Param(description="the guest IP address for the router")
     private String guestIpAddress;
@@ -84,6 +90,10 @@ public class DomainRouterResponse extends BaseResponse {
 
     @SerializedName("guestnetmask") @Param(description="the guest netmask for the router")
     private String guestNetmask;
+    
+    @SerializedName("guestnetworkid") @Param(description="the ID of the corresponding guest network")
+    private Long guestNetworkId;
+
 
     @SerializedName("templateid") @Param(description="the template ID for the router")
     private Long templateId;
@@ -102,6 +112,8 @@ public class DomainRouterResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain associated with the router")
     private String domainName;
+    
+
     
     
     @Override
@@ -315,5 +327,29 @@ public class DomainRouterResponse extends BaseResponse {
 
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    public Long getPrivateNetworkId() {
+        return privateNetworkId;
+    }
+
+    public void setPrivateNetworkId(Long privateNetworkId) {
+        this.privateNetworkId = privateNetworkId;
+    }
+
+    public Long getPublicNetworkId() {
+        return publicNetworkId;
+    }
+
+    public void setPublicNetworkId(Long publicNetworkId) {
+        this.publicNetworkId = publicNetworkId;
+    }
+
+    public Long getGuestNetworkId() {
+        return guestNetworkId;
+    }
+
+    public void setGuestNetworkId(Long guestNetworkId) {
+        this.guestNetworkId = guestNetworkId;
     }
 }
