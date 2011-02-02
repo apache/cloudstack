@@ -16,7 +16,7 @@ fflag=
 ext="vhd"
 templateId=1
 hyper=
-DISKSPACE=10000000  #free disk space required in kilobytes
+DISKSPACE=5120000  #free disk space required in kilobytes
 while getopts 'm:h:f:u:Ft:e:' OPTION
 do
   case $OPTION in
