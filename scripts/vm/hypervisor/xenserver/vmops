@@ -5,7 +5,7 @@
 import os, sys, time
 import XenAPIPlugin
 import XenAPI
-sys.path.append("/opt/xensource/sm/")
+sys.path.extend(["/opt/xensource/sm/", "/usr/local/sbin/", "/sbin/"])
 import SR, VDI, SRCommand, util, lvutil
 from util import CommandException
 import vhdutil
@@ -1546,16 +1546,14 @@ def destroy_network_rules_for_vm(session, args):
 
 @echo
 def destroy_ebtables_rules(vm_name):
-    if not os.path.exists('/usr/local/sbin/ebtables'):
-        return 
     
-    delcmd = "/usr/local/sbin/ebtables-save | grep ROUTING | grep " +  vm_name + " | sed 's/-A/-D/'"
+    delcmd = "ebtables-save | grep ROUTING | grep " +  vm_name + " | sed 's/-A/-D/'"
     delcmds = util.pread2(['/bin/bash', '-c', delcmd]).split('\n')
     delcmds.pop()
     for cmd in delcmds:
         try:
             dc = cmd.split(' ')
-            dc.insert(0, '/usr/local/sbin/ebtables')
+            dc.insert(0, 'ebtables')
             dc.insert(1, '-t')
             dc.insert(2, 'nat')
             util.pread2(dc)
@@ -1564,8 +1562,8 @@ def destroy_ebtables_rules(vm_name):
     chains = [vm_name+"-in", vm_name+"-out"]
     for chain in chains:
         try:
-            util.pread2(['/usr/local/sbin/ebtables', '-t', 'nat', '-F', chain])
-            util.pread2(['/usr/local/sbin/ebtables', '-t', 'nat', '-X', chain])
+            util.pread2(['ebtables', '-t', 'nat', '-F', chain])
+            util.pread2(['ebtables', '-t', 'nat', '-X', chain])
         except:
             util.SMlog("Ignoring failure to delete ebtables chain for vm " + vm_name)   
 
@@ -1573,44 +1571,42 @@ def destroy_ebtables_rules(vm_name):
               
 @echo
 def default_ebtables_rules(vm_name, vif, vm_ip, vm_mac):
-    if not os.path.exists('/usr/local/sbin/ebtables'):
-        return 
     
     vmchain_in = vm_name + "-in"
     vmchain_out = vm_name + "-out"
     
     for chain in [vmchain_in, vmchain_out]:
         try:
-            util.pread2(['/usr/local/sbin/ebtables', '-t', 'nat', '-N', chain])
+            util.pread2(['ebtables', '-t', 'nat', '-N', chain])
         except:
-            util.pread2(['/usr/local/sbin/ebtables', '-t',  'nat',  '-F', chain]) 
+            util.pread2(['ebtables', '-t',  'nat',  '-F', chain]) 
 
     try:
         # -s ! 52:54:0:56:44:32 -j DROP 
-        util.pread2(['/usr/local/sbin/ebtables', '-t', 'nat', '-A', 'PREROUTING', '-i',  vif,  '-j', vmchain_in])
-        util.pread2(['/usr/local/sbin/ebtables', '-t', 'nat', '-A', 'POSTROUTING', '-o',  vif, '-j', vmchain_out])
+        util.pread2(['ebtables', '-t', 'nat', '-A', 'PREROUTING', '-i',  vif,  '-j', vmchain_in])
+        util.pread2(['ebtables', '-t', 'nat', '-A', 'POSTROUTING', '-o',  vif, '-j', vmchain_out])
     except:
         util.SMlog("Failed to program default rules")
         return 'false'
     
     try:
-        util.pread2(['/usr/local/sbin/ebtables', '-t', 'nat', '-A', vmchain_in, '-i',  vif, '-s', '!', vm_mac,  '-j', 'DROP'])
-        util.pread2(['/usr/local/sbin/ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP', '-s', '!', vm_mac, '-j', 'DROP'])
-        util.pread2(['/usr/local/sbin/ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP', '--arp-mac-src', '!', vm_mac, '-j', 'DROP'])
-        util.pread2(['/usr/local/sbin/ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP', '--arp-ip-src', '!', vm_ip, '-j', 'DROP']) 
-        util.pread2(['/usr/local/sbin/ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP', '--arp-op', 'Request', '-j', 'ACCEPT'])   
-        util.pread2(['/usr/local/sbin/ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP', '--arp-op', 'Reply', '-j', 'ACCEPT'])    
-        util.pread2(['/usr/local/sbin/ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP',  '-j', 'DROP'])    
+        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-i',  vif, '-s', '!', vm_mac,  '-j', 'DROP'])
+        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP', '-s', '!', vm_mac, '-j', 'DROP'])
+        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP', '--arp-mac-src', '!', vm_mac, '-j', 'DROP'])
+        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP', '--arp-ip-src', '!', vm_ip, '-j', 'DROP']) 
+        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP', '--arp-op', 'Request', '-j', 'ACCEPT'])   
+        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP', '--arp-op', 'Reply', '-j', 'ACCEPT'])    
+        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_in, '-p', 'ARP',  '-j', 'DROP'])    
     except:
         util.SMlog("Failed to program default ebtables IN rules")
         return 'false'
    
     try:
-        util.pread2(['/usr/local/sbin/ebtables', '-t', 'nat', '-A', vmchain_out, '-p', 'ARP', '--arp-op', 'Reply', '--arp-mac-dst', '!', vm_mac, '-j', 'DROP'])
-        util.pread2(['/usr/local/sbin/ebtables', '-t', 'nat', '-A', vmchain_out, '-p', 'ARP', '--arp-ip-dst', '!', vm_ip, '-j', 'DROP']) 
-        util.pread2(['/usr/local/sbin/ebtables', '-t', 'nat', '-A', vmchain_out, '-p', 'ARP', '--arp-op', 'Request', '-j', 'ACCEPT'])   
-        util.pread2(['/usr/local/sbin/ebtables', '-t', 'nat', '-A', vmchain_out, '-p', 'ARP', '--arp-op', 'Reply', '-j', 'ACCEPT'])    
-        util.pread2(['/usr/local/sbin/ebtables', '-t', 'nat', '-A', vmchain_out, '-p', 'ARP',  '-j', 'DROP'])    
+        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_out, '-p', 'ARP', '--arp-op', 'Reply', '--arp-mac-dst', '!', vm_mac, '-j', 'DROP'])
+        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_out, '-p', 'ARP', '--arp-ip-dst', '!', vm_ip, '-j', 'DROP']) 
+        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_out, '-p', 'ARP', '--arp-op', 'Request', '-j', 'ACCEPT'])   
+        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_out, '-p', 'ARP', '--arp-op', 'Reply', '-j', 'ACCEPT'])    
+        util.pread2(['ebtables', '-t', 'nat', '-A', vmchain_out, '-p', 'ARP',  '-j', 'DROP'])    
     except:
         util.SMlog("Failed to program default ebtables OUT rules")
         return 'false' 
