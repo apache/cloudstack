@@ -530,17 +530,18 @@ function doDeleteIngressRule($actionLink, $subgridItem) {
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 	
-			var id = $subgridItem.data("jsonObj").id;
-									
 			var securityGroupObj = $subgridItem.data("parentObj");
 			var ingressRuleObj = $subgridItem.data("jsonObj");
-                        
+            var id = ingressRuleObj.ruleid;
+                       
             var moreCriteria = [];		 
 	        moreCriteria.push("&domainid="+securityGroupObj.domainid);    	    	        
 	        moreCriteria.push("&account="+securityGroupObj.account);    	    		    	        
-	        //moreCriteria.push("&securitygroupname="+securityGroupObj.name);    
+	        moreCriteria.push("&id="+id);    
+	      
+    	    /*	
     	    moreCriteria.push("&securitygroupid="+securityGroupObj.id);    
-    	    	
+    	    
     	    var protocol = ingressRuleObj.protocol;      
 	        moreCriteria.push("&protocol="+protocol);		    	
     	 
@@ -571,6 +572,7 @@ function doDeleteIngressRule($actionLink, $subgridItem) {
 	        var securitygroupname = ingressRuleObj.securitygroupname; 
 	        if((account != null && account.length > 0) && (securitygroupname != null && securitygroupname.length > 0))                        
                 moreCriteria.push("&usersecuritygrouplist[0].account="+account + "&usersecuritygrouplist[0].group="+securitygroupname);    			
+			*/
 						
 			var apiCommand = "command=revokeSecurityGroupIngress"+moreCriteria.join("");                  
             doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem); 
