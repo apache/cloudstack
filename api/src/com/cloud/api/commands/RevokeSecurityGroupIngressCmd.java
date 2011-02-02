@@ -33,32 +33,11 @@ public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the security group. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.CIDR_LIST, type=CommandType.STRING, description="the cidr list associated")
-    private String cidrList;
-
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the security group. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.END_PORT, type=CommandType.INTEGER, description="end port for this ingress rule")
-    private Integer endPort;
-
-    @Parameter(name=ApiConstants.ICMP_CODE, type=CommandType.INTEGER, description="error code for this icmp message")
-    private Integer icmpCode;
-
-    @Parameter(name=ApiConstants.ICMP_TYPE, type=CommandType.INTEGER, description="type for this icmp message")
-    private Integer icmpType;
-
-    @Parameter(name=ApiConstants.SECURITY_GROUP_ID, type=CommandType.LONG, required=true, description="The ID of the security group")
-    private Long securityGroupId;
-
-    @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, description="protocol used")
-    private String protocol;
-
-    @Parameter(name=ApiConstants.START_PORT, type=CommandType.INTEGER,description="start port for this ingress rule")
-    private Integer startPort;
-
-    @Parameter(name=ApiConstants.USER_SECURITY_GROUP_LIST, type=CommandType.MAP, description="user to security group mapping")
-    private Map userSecurityGroupList;
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the ingress rule")
+    private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -68,42 +47,13 @@ public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
         return accountName;
     }
 
-    public String getCidrList() {
-        return cidrList;
-    }
-
     public Long getDomainId() {
         return domainId;
     }
 
-    public Integer getEndPort() {
-        return endPort;
+    public Long getId() {
+        return id;
     }
-
-    public Integer getIcmpCode() {
-        return icmpCode;
-    }
-
-    public Integer getIcmpType() {
-        return icmpType;
-    }
-
-    public Long getSecurityGroupId() {
-        return securityGroupId;
-    }
-
-    public String getProtocol() {
-        return protocol;
-    }
-
-    public Integer getStartPort() {
-        return startPort;
-    }
-
-    public Map getUserSecurityGroupList() {
-        return userSecurityGroupList;
-    }
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -143,30 +93,7 @@ public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        StringBuilder sb = new StringBuilder();
-        if (getUserSecurityGroupList() != null) {
-            sb.append("group list(group/account): ");
-            Collection userGroupCollection = getUserSecurityGroupList().values();
-            Iterator iter = userGroupCollection.iterator();
-
-            HashMap userGroup = (HashMap)iter.next();
-            String group = (String)userGroup.get("group");
-            String authorizedAccountName = (String)userGroup.get("account");
-            sb.append(group + "/" + authorizedAccountName);
-
-            while (iter.hasNext()) {
-                userGroup = (HashMap)iter.next();
-                group = (String)userGroup.get("group");
-                authorizedAccountName = (String)userGroup.get("account");
-                sb.append(", " + group + "/" + authorizedAccountName);
-            }
-        } else if (getCidrList() != null) {
-            sb.append("cidr list: " + getCidrList());
-        } else {
-            sb.append("<error:  no ingress parameters>");
-        }
-
-        return  "revoking ingress from group: " + getSecurityGroupId() + " for " + sb.toString();
+        return  "revoking ingress rule id: " + getId();
     }
     
     @Override

@@ -647,83 +647,28 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	}
 	
 	@Override
-	@DB @SuppressWarnings("rawtypes")
+	@DB 
 	public boolean revokeSecurityGroupIngress(RevokeSecurityGroupIngressCmd cmd) {
 		
+       if (!_enabled) {
+            return false;
+        }
+       
 		//input validation
 		Account account = UserContext.current().getCaller();
-		Long userId  = UserContext.current().getCallerUserId();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
-        Integer startPort = cmd.getStartPort();
-        Integer endPort = cmd.getEndPort();
-        Integer icmpType = cmd.getIcmpType();
-        Integer icmpCode = cmd.getIcmpCode();
-        String protocol = cmd.getProtocol();
-        Long securityGroupId = cmd.getSecurityGroupId();
-        String cidrList = cmd.getCidrList();
-        Map groupList = cmd.getUserSecurityGroupList();
-        String [] cidrs = null;
+        Long id = cmd.getId();
         Long accountId = null;
-        Integer startPortOrType = null;
-        Integer endPortOrCode = null;
-        if (protocol == null) {
-        	protocol = "all";
-        }
-        //FIXME: for exceptions below, add new enums to BaseCmd.PARAM_ to reflect the error condition more precisely
-        if (!NetUtils.isValidSecurityGroupProto(protocol)) {
-        	s_logger.debug("Invalid protocol specified " + protocol);
-        	 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid protocol " + protocol);
-        }
-        if ("icmp".equalsIgnoreCase(protocol) ) {
-            if ((icmpType == null) || (icmpCode == null)) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid ICMP type/code specified, icmpType = " + icmpType + ", icmpCode = " + icmpCode);
-            }
-            if (icmpType == -1 && icmpCode != -1) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid icmp type range" );
-            } 
-            if (icmpCode > 255) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid icmp code " );
-            }
-            startPortOrType = icmpType;
-            endPortOrCode= icmpCode;
-        } else if (protocol.equals("all")) {
-        	if ((startPort != null) || (endPort != null)) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Cannot specify startPort or endPort without specifying protocol");
-            }
-        	startPortOrType = 0;
-        	endPortOrCode = 0;
-        } else {
-            if ((startPort == null) || (endPort == null)) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid port range specified, startPort = " + startPort + ", endPort = " + endPort);
-            }
-            if (startPort == 0 && endPort == 0) {
-                endPort = 65535;
-            }
-            if (startPort > endPort) {
-                s_logger.debug("Invalid port range specified: " + startPort + ":" + endPort);
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid port range " );
-            }
-            if (startPort > 65535 || endPort > 65535 || startPort < -1 || endPort < -1) {
-                s_logger.debug("Invalid port numbers specified: " + startPort + ":" + endPort);
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid port numbers " );
-            }
-            
-            if (startPort < 0 || endPort < 0) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid port range " );
-            }
-            startPortOrType = startPort;
-            endPortOrCode= endPort;
-        }
-
+        SecurityGroupVO groupHandle = null;
         if ((account == null) || isAdmin(account.getType())) {
             if ((accountName != null) && (domainId != null)) {
                 // if it's an admin account, do a quick permission check
                 if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Unable to find rules for security group id = " + securityGroupId + ", permission denied.");
+                        s_logger.debug("Unable to revoke ingress rule id = " + id + ", permission denied.");
                     }
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find rules for security group id = " + securityGroupId + ", permission denied.");
+                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to revoke ingress rule id  = " + id + ", permission denied.");
                 }
                 Account groupOwner =  _accountDao.findActiveAccount(accountName, domainId);
                 if (groupOwner == null) {
@@ -744,100 +689,31 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
 
         if (accountId == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account for security group " + securityGroupId + "; failed to revoke ingress.");
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account for ingress rule id:" + id + "; failed to revoke ingress.");
         }
 
-        SecurityGroupVO sg = _securityGroupDao.findById(securityGroupId);
-        if (sg == null) {
-            s_logger.debug("Unable to find security group with id " + securityGroupId);
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find security group with id " + securityGroupId);
-        }
-
-        if (cidrList == null && groupList == null) {
-        	s_logger.debug("At least one cidr or at least one security group needs to be specified");
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "At least one cidr or at least one security group needs to be specified");
-        }
-        List<String> authorizedCidrs = new ArrayList<String>();
-        if (cidrList != null) {
-        	if (protocol.equals("all")) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Cannot specify cidrs without specifying protocol and ports.");	
-        	}
-        	cidrs = cidrList.split(",");
-        	for (String cidr: cidrs) {
-        		if (!NetUtils.isValidCIDR(cidr)) {
-                    s_logger.debug( "Invalid cidr (" + cidr + ") given, unable to revoke ingress.");	
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid cidr (" + cidr + ") given, unable to revoke ingress.");	
-        		}
-        		authorizedCidrs.add(cidr);
-        	}
-        }
-
-        List<SecurityGroupVO> authorizedGroups = new ArrayList<SecurityGroupVO> ();
-        if (groupList != null) {
-            Collection userGroupCollection = groupList.values();
-            Iterator iter = userGroupCollection.iterator();
-            while (iter.hasNext()) {
-                HashMap userGroup = (HashMap)iter.next();
-        		String group = (String)userGroup.get("group");
-        		String authorizedAccountName = (String)userGroup.get("account");
-        		if ((group == null) || (authorizedAccountName == null)) {
-        			 throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid user group specified, fields 'group' and 'account' cannot be null, please specify groups in the form:  userGroupList[0].group=XXX&userGroupList[0].account=YYY");
-        		}
-
-        		Account authorizedAccount = _accountDao.findActiveAccount(authorizedAccountName, domainId);
-                if (authorizedAccount == null) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Nonexistent account: " + authorizedAccountName + ", domainid: " + domainId + " when trying to revoke ingress for " + securityGroupId + ":" + protocol + ":" + startPortOrType + ":" + endPortOrCode);
-                    }
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Nonexistent account: " + authorizedAccountName + " when trying to revoke ingress for " + securityGroupId + ":" + protocol + ":" + startPortOrType + ":" + endPortOrCode);
-                }
-
-                SecurityGroupVO groupVO = _securityGroupDao.findByAccountAndName(authorizedAccount.getId(), group);
-                if (groupVO == null) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Nonexistent group and/or accountId: " + accountId + ", groupName=" + group);
-                    }
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid account/group pair  (" + userGroup + ") given, unable to revoke ingress.");
-                }
-                authorizedGroups.add(groupVO);
-        	}
-        }
-
-        // If command is executed via 8096 port, set userId to the id of System account (1)
-        if (userId == null) {
-            userId = Long.valueOf(1);
+        IngressRuleVO rule = _ingressRuleDao.findById(id);
+        if (rule == null) {
+            s_logger.debug("Unable to find ingress rule with id " + id);
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find ingress rule with id " + id);
         }
 		
-		if (!_enabled) {
-			return false;
-		}
-		int numDeleted = 0;
-		final int numToDelete = cidrList.length() + authorizedGroups.size();
         final Transaction txn = Transaction.currentTxn();
 
-		SecurityGroupVO securityGroupHandle = _securityGroupDao.findById(securityGroupId);
-		if (securityGroupHandle == null) {
-			s_logger.warn("Security group not found: name= " + securityGroupId);
-			return false;
-		}
 		try {
 			txn.start();
-			
-			securityGroupHandle = _securityGroupDao.acquireInLockTable(securityGroupHandle.getId());
-			if (securityGroupHandle == null)  {
-				s_logger.warn("Could not acquire lock on network security group: name= " + securityGroupId);
+			//acquire lock on parent group (preserving this logic)
+			groupHandle = _securityGroupDao.acquireInLockTable(rule.getSecurityGroupId());
+			if (groupHandle == null)  {
+				s_logger.warn("Could not acquire lock on security group id: " + rule.getSecurityGroupId());
 				return false;
 			}
-			for (final SecurityGroupVO ngVO: authorizedGroups) {
-				numDeleted += _ingressRuleDao.deleteByPortProtoAndGroup(securityGroupHandle.getId(), protocol, startPort, endPort, ngVO.getId());
-			}
-			for (final String cidr: cidrs) {
-				numDeleted += _ingressRuleDao.deleteByPortProtoAndCidr(securityGroupHandle.getId(), protocol, startPort, endPort, cidr);
-			}
-			s_logger.debug("revokeSecurityGroupIngress for group: " + securityGroupId + ", numToDelete=" + numToDelete + ", numDeleted=" + numDeleted);
+
+			_ingressRuleDao.remove(id);
+			s_logger.debug("revokeSecurityGroupIngress succeeded for ingress rule id: " +id);
 			
 			final Set<Long> affectedVms = new HashSet<Long>();
-			affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(securityGroupHandle.getId()));
+			affectedVms.addAll(_securityGroupVMMapDao.listVmIdsBySecurityGroup(groupHandle.getId()));
 			scheduleRulesetUpdateToHosts(affectedVms, true, null);
 			
 			return true;
@@ -845,8 +721,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 			s_logger.warn("Exception caught when deleting ingress rules ", e);
 			throw new CloudRuntimeException("Exception caught when deleting ingress rules", e);
 		} finally {
-			if (securityGroupId != null) {
-				_securityGroupDao.releaseFromLockTable(securityGroupHandle.getId());
+			if (groupHandle != null) {
+				_securityGroupDao.releaseFromLockTable(groupHandle.getId());
 			}
 			txn.commit();
 		}
