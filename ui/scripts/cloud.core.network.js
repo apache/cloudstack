@@ -364,9 +364,9 @@ function publicNetworkFirewallJsonToTemplate(jsonObj, $template) {
 }
 
 var publicNetworkFirewallActionMap = {     
-    "label.action.delete.firewall": {              
-        api: "deleteExternalFirewall",     
-        isAsyncJob: false,      
+    "label.action.delete.firewall": {             
+        isAsyncJob: false,    
+        dialogBeforeActionFn : doDeleteExternalFirewall,        
         inProcessText: "label.action.delete.firewall.processing",
         afterActionSeccessFn: function(json, id, $subgridItem) {                 
             $subgridItem.slideUp("slow", function() {
@@ -376,6 +376,23 @@ var publicNetworkFirewallActionMap = {
     }     
 }  
 
+function doDeleteExternalFirewall($actionLink, $subgridItem) {   
+    var jsonObj = $subgridItem.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text(dictionary["message.action.delete.external.firewall"])
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");					
+			var apiCommand = "command=deleteExternalFirewall&id="+id;            
+            doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem);		
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
 
 function publicNetworkJsonToLoadBalancerTab() {  
     var $midmenuItem1 = $("#right_panel_content").data("$midmenuItem1");
@@ -442,9 +459,9 @@ function publicNetworkLoadBalancerJsonToTemplate(jsonObj, $template) {
 }
 
 var publicNetworkLoadBalancerActionMap = {     
-    "label.action.delete.load.balancer": {              
-        api: "deleteExternalLoadBalancer",     
-        isAsyncJob: false,      
+    "label.action.delete.load.balancer": {   
+        isAsyncJob: false,   
+        dialogBeforeActionFn: doDeleteExternalLoadBalancer, 
         inProcessText: "label.action.delete.load.balancer.processing",
         afterActionSeccessFn: function(json, id, $subgridItem) {                 
             $subgridItem.slideUp("slow", function() {
@@ -453,6 +470,24 @@ var publicNetworkLoadBalancerActionMap = {
         }
     }     
 }  
+
+function doDeleteExternalLoadBalancer($actionLink, $subgridItem) {   
+    var jsonObj = $subgridItem.data("jsonObj");
+	var id = jsonObj.id;
+		
+	$("#dialog_confirmation")
+	.text(dictionary["message.action.delete.external.load.balancer"])
+	.dialog('option', 'buttons', { 					
+		"Confirm": function() { 			
+			$(this).dialog("close");					
+			var apiCommand = "command=deleteExternalLoadBalancer&id="+id;            
+            doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem);		
+		}, 
+		"Cancel": function() { 
+			$(this).dialog("close"); 
+		}
+	}).dialog("open");
+}
 
 function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {   
     var jsonObj = $midmenuItem1.data("jsonObj");      

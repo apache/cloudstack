@@ -15,7 +15,9 @@ dictionary = {
 	'label.action.delete.load.balancer.processing' : '<fmt:message key="label.action.delete.load.balancer.processing"/>',
 	'label.action.delete.network' : '<fmt:message key="label.action.delete.network"/>',
 	'label.action.delete.network.processing' : '<fmt:message key="label.action.delete.network.processing"/>',
-	'message.action.delete.network' : '<fmt:message key="message.action.delete.network"/>'
+	'message.action.delete.network' : '<fmt:message key="message.action.delete.network"/>',
+	'message.action.delete.external.firewall': '<fmt:message key="message.action.delete.external.firewall"/>',
+	'message.action.delete.external.load.balancer': '<fmt:message key="message.action.delete.external.load.balancer"/>'
 };	
 </script>
 
