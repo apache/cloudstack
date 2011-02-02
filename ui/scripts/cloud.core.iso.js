@@ -727,11 +727,19 @@ function doDownloadISO($actionLink, $detailsTab, $midmenuItem1) {
 		                            $infoContainer.removeClass("error");
 		                            $infoContainer.find("#icon,#info").removeClass("error");		                      
 		                            var url = decodeURIComponent(json.queryasyncjobresultresponse.jobresult.iso.url);	
-		                            var htmlMsg = "Please click <a href='" + url + "'>" + url + "</a>" + " to download ISO";                          
-		                            $infoContainer.find("#info").html(htmlMsg);
+		                            var htmlMsg = dictionary["message.download.ISO"];		                            
+		                            var htmlMsg2 = htmlMsg.replace(/#/g, url);                        
+		                            $infoContainer.find("#info").html(htmlMsg2);
 		                            $infoContainer.show();		                        
-		                        } else if (result.jobstatus == 2) { // Failed	
-		                            handleErrorInDialog2(fromdb(result.jobresult.errortext), $dialogDownloadISO);		                        
+		                        } else if (result.jobstatus == 2) { // Failed			                            
+		                            var label = $actionLink.data("label");	
+                                    var label2;
+                                    if(label in dictionary)
+                                        label2 = dictionary[label];
+                                    else
+                                        label2 = label;   		                            		                            
+		                            var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+			                        handleErrorInDialog2(errorMsg, $dialogDownloadISO);		                        
 		                        }											                    
 	                        }
                        },
