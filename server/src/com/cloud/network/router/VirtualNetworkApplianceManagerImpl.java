@@ -366,7 +366,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new InvalidParameterValueException("Unable to find service offering with id " + serviceOfferingId);
         }
         
-     // Check that the router is stopped
+        // Check that the router is stopped
         if (!router.getState().equals(State.Stopped)) {
             s_logger.warn("Unable to upgrade router " + router.toString() + " in state " + router.getState());
             throw new InvalidParameterValueException("Unable to upgrade router " + router.toString() + " in state " + router.getState() + "; make sure the router is stopped and not in an error state before upgrading.");
@@ -1245,7 +1245,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             cmds.addCommand("password", cmd);
         }
 
-        String serviceOffering = _serviceOfferingDao.findById(profile.getServiceOfferingId()).getDisplayText();
+        String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(profile.getServiceOfferingId()).getDisplayText();
         String zoneName = _dcDao.findById(network.getDataCenterId()).getName();
         
         cmds.addCommand(
@@ -1484,7 +1484,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
                     if (nic != null) {
                         s_logger.debug("Creating user data entry for vm " + vm + " on domR " + router);
-                        String serviceOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId()).getDisplayText();
+                        String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId()).getDisplayText();
                         String zoneName = _dcDao.findById(router.getDataCenterId()).getName();
                         cmds.addCommand(
                                 "vmdata",
