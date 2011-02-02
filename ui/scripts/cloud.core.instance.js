@@ -373,7 +373,8 @@ function initVMWizard() {
 						$zone.data("zoneObj", zones[i]);
 					    $zoneSelect.append($zone); 
 				    }
-			    }				
+			    }	
+			    $zoneSelect.change();			
 			    listTemplatesInVmPopup();	
 		    }
 	    });
