@@ -17,6 +17,19 @@
  */
 
 function afterLoadGlobalSettingJSP() {
+    var $actionLink = $("#right_panel_content #tab_content_details #action_link");
+    bindActionLink($actionLink);
+    /*    
+	$actionLink.bind("mouseover", function(event) {	    
+		$(this).find("#action_menu").show();    
+		return false;
+	});
+	$actionLink.bind("mouseout", function(event) {       
+		$(this).find("#action_menu").hide();    
+		return false;
+	});	   	
+	*/
+					
     populateGlobalSettingGrid();
     
     //actions      

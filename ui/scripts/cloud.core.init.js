@@ -248,16 +248,7 @@ $(document).ready(function() {
 		    });
 		    if (currentRightPanelJSP != "jsp/globalsetting.jsp") {
 				$("#right_panel").load("jsp/globalsetting.jsp", function(){   
-				    currentRightPanelJSP = "jsp/globalsetting.jsp";  
-					var $actionLink = $("#right_panel_content #tab_content_details #action_link");
-					$actionLink.bind("mouseover", function(event) {	    
-						$(this).find("#action_menu").show();    
-						return false;
-					});
-					$actionLink.bind("mouseout", function(event) {       
-						$(this).find("#action_menu").hide();    
-						return false;
-					});	   								  
+				    currentRightPanelJSP = "jsp/globalsetting.jsp";  												  
 					afterLoadGlobalSettingJSP();					
 				});    
 			} else {
