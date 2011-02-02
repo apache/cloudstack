@@ -344,7 +344,8 @@ function bindAddClusterButton($leftmenuItem1) {
         dialogAddCluster.dialog('option', 'buttons', { 				
 	        "Add": function() { 
 	            var $thisDialog = $(this);		            
-
+                $thisDialog.find("#info_container").hide(); 
+                
 			    var hypervisor = $thisDialog.find("#cluster_hypervisor").val();
 			    var clusterType="CloudManaged";
 			    if(hypervisor == "VMware")
@@ -487,20 +488,6 @@ function bindAddHostButton($leftmenuItem1) {
             dialogAddHost.find("#pod_name").text(fromdb(clusterObj.podname)); 
         }       
         
-        /*          
-        dialogAddHost.find("#host_hypervisor").change(function() {
-        	if($(this).val() == "VMware") {
-        		$('li[input_group="vmware"]', dialogAddHost).show();
-        		$('li[input_group="general"]', dialogAddHost).hide();
-        	} else {
-        		$('li[input_group="vmware"]', dialogAddHost).hide();
-        		$('li[input_group="general"]', dialogAddHost).show();
-        	}
-        	
-            refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId, $(this).val());        
-        }).change();
-        */
-        
         refreshClsuterFieldInAddHostDialog(dialogAddHost, podId, clusterId); 
         
         dialogAddHost.find("#cluster_select").change();
@@ -509,9 +496,8 @@ function bindAddHostButton($leftmenuItem1) {
         .dialog('option', 'buttons', { 				
 	        "Add": function() { 
 	            var $thisDialog = $(this);		            
-	            			   
-			    //var hypervisor = $thisDialog.find("#host_hypervisor").val();
-		     	
+	            $thisDialog.find("#info_container").hide(); 
+	            
 		        // validate values
 		        var isValid = true;		
 			    isValid &= validateDropDownBox("Cluster", $thisDialog.find("#cluster_select"), $thisDialog.find("#cluster_select_errormsg"), false);  //required, reset error text					    			
@@ -701,6 +687,7 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
 	    .dialog('option', 'buttons', { 				    
 		    "Add": function() { 	
 		    	var $thisDialog = $(this);
+		    	$thisDialog.find("#info_container").hide(); 
 		    			    	
 			    // validate values
 				var protocol = $thisDialog.find("#add_pool_protocol").val();
