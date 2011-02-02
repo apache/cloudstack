@@ -1883,7 +1883,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
     
 	@Override @DB @ActionEvent (eventType=EventTypes.EVENT_VM_CREATE, eventDescription="creating Vm", create=true)
-    public UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException {
+    public UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
         Account caller = UserContext.current().getCaller();
         
         String accountName = cmd.getAccountName();
@@ -1912,6 +1912,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             _accountMgr.checkAccess(caller, domain);
             _accountMgr.checkAccess(owner, domain);
         }
+
+        //check if account/domain is with in resource limits to create a new vm
+        if (_accountMgr.resourceLimitExceeded(owner, ResourceType.user_vm))
+        {
+        	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of virtual machines for account: " + owner.getAccountName() + " has been exceeded.");
+        	rae.setResourceType("vm");
+        	throw rae;	
+        }
+        
         //check if we have available pools for vm deployment
         List<StoragePoolVO> availablePools = _storagePoolDao.listPoolsByStatus(StoragePoolStatus.Up);
         
