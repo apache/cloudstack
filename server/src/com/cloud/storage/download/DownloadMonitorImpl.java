@@ -40,6 +40,7 @@ import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
@@ -105,6 +106,11 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     
     @Inject 
     private UsageEventDao _usageEventDao;
+    
+    @Inject
+    private ClusterDao _clusterDao;
+    @Inject
+    private HostDao _hostDao;
 
 	private String _name;
 	private Boolean _sslCopy = new Boolean(false);
@@ -381,7 +387,47 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 		}
 
 	}
+	
+	@Override
+    public void handleSysTemplateDownload(HostVO host) {
+	    List<HypervisorType> hypers = _hostDao.getAvailHypervisorInZone(host.getId(), host.getDataCenterId());
+	    HypervisorType hostHyper = host.getHypervisorType();
+	    if (hypers.contains(hostHyper)) {
+	        return;
+	    }
 
+	    Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
+	    List<HostVO> ssHosts = _hostDao.listBy(Host.Type.SecondaryStorage, host.getDataCenterId());
+	    if (ssHosts == null || ssHosts.isEmpty()) {
+	        return;
+	    }
+	    HostVO sshost = ssHosts.get(0);
+	    /*Download all the templates in zone with the same hypervisortype*/
+
+	    List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
+	    List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
+
+
+	    for (VMTemplateVO rtngTmplt : rtngTmplts) {
+	        if (rtngTmplt.getHypervisorType() == hostHyper) {
+	            toBeDownloaded.add(rtngTmplt);
+	        }
+	    }
+
+	    for (VMTemplateVO builtinTmplt : defaultBuiltin) {
+	        if (builtinTmplt.getHypervisorType() == hostHyper) {
+	            toBeDownloaded.add(builtinTmplt);
+	        }
+	    }
+
+	    for (VMTemplateVO template: toBeDownloaded) {
+	        VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(sshost.getId(), template.getId());
+	        if (tmpltHost == null) {
+	            downloadTemplateToStorage(template, sshost);
+	        }
+	    }
+	}
+	
 	@Override
 	public void handleTemplateSync(long sserverId, Map<String, TemplateInfo> templateInfos) {
 		HostVO storageHost = _serverDao.findById(sserverId);
@@ -389,26 +435,26 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			s_logger.warn("Huh? Agent id " + sserverId + " does not correspond to a row in hosts table?");
 			return;
 		}		
-		
+
 		Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
 		List<VMTemplateVO> allTemplates = _templateDao.listAllInZone(storageHost.getDataCenterId());
 		List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
 		List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
-
-		if (rtngTmplts != null) {
-			for (VMTemplateVO rtngTmplt : rtngTmplts) {
-				if (!allTemplates.contains(rtngTmplt)) {
-                    allTemplates.add(rtngTmplt);
-                }
-			}
-		}
 		
+		if (rtngTmplts != null) {
+		    for (VMTemplateVO rtngTmplt : rtngTmplts) {
+		        if (!allTemplates.contains(rtngTmplt)) {
+		            allTemplates.add(rtngTmplt);
+		        }
+		    }
+		}
+
 		if (defaultBuiltin != null) {
-			for (VMTemplateVO builtinTmplt : defaultBuiltin) {
-				if (!allTemplates.contains(builtinTmplt)) {
-					allTemplates.add(builtinTmplt);
-				}
-			}
+		    for (VMTemplateVO builtinTmplt : defaultBuiltin) {
+		        if (!allTemplates.contains(builtinTmplt)) {
+		            allTemplates.add(builtinTmplt);
+		        }
+		    }
 		}
 
         toBeDownloaded.addAll(allTemplates);
@@ -471,9 +517,13 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			if (sserver == null) {
 				throw new CloudRuntimeException("Unable to find host from id");
 			}
+			/*Only download templates whose hypervirsor type is in the zone*/
+			List<HypervisorType> availHypers = _clusterDao.getAvailableHypervisorInZone(sserver.getDataCenterId());
 			for (VMTemplateVO tmplt: toBeDownloaded) {
-				s_logger.debug("Template " + tmplt.getName() + " needs to be downloaded to " + sserver.getName());
-				downloadTemplateToStorage(tmplt, sserver);
+			    if (availHypers.contains(tmplt.getHypervisorType())) {
+			        s_logger.debug("Template " + tmplt.getName() + " needs to be downloaded to " + sserver.getName());
+			        downloadTemplateToStorage(tmplt, sserver);
+			    }
 			}
 		}
 		

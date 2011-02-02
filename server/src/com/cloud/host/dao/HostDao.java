@@ -25,6 +25,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Host.Type;
 import com.cloud.host.Status.Event;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.utils.db.GenericDao;
 
@@ -138,4 +139,6 @@ public interface HostDao extends GenericDao<HostVO, Long> {
     void loadDetails(HostVO host);
 
 	HostVO findConsoleProxyHost(String name, Type type);
+
+    List<HypervisorType> getAvailHypervisorInZone(long hostId, long zoneId);
 }

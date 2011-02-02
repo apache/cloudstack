@@ -32,6 +32,7 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.DownloadCommand;
@@ -276,24 +277,25 @@ public class DownloadListener implements Listener {
 	
 	@Override
 	public void processConnect(HostVO agent, StartupCommand cmd) throws ConnectionException {
-	    if (!(cmd instanceof StartupStorageCommand)) {
+	    if (!((cmd instanceof StartupStorageCommand) || (cmd instanceof StartupRoutingCommand))) {
 	        return;
 	    }
-	    if (cmd.getGuid().startsWith("iso:")) {
-	        //FIXME: do not download template for ISO secondary
-	        return;
-	    }
-	    
-	    long agentId = agent.getId();
-	    
-	    StartupStorageCommand storage = (StartupStorageCommand)cmd;
-	    if (storage.getResourceType() == Storage.StorageResourceType.STORAGE_HOST ||
-	    storage.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE )
-	    {
-	    	downloadMonitor.handleTemplateSync(agentId, storage.getTemplateInfo());
+	    if (cmd instanceof StartupRoutingCommand) {
+	        downloadMonitor.handleSysTemplateDownload(agent);
 	    } else {
-	    	//downloadMonitor.handlePoolTemplateSync(storage.getPoolInfo(), storage.getTemplateInfo());
-	    	//no need to do anything. The storagepoolmonitor will initiate template sync.
+	        if (cmd.getGuid().startsWith("iso:")) {
+	            //FIXME: do not download template for ISO secondary
+	            return;
+	        }
+
+	        long agentId = agent.getId();
+
+	        StartupStorageCommand storage = (StartupStorageCommand)cmd;
+	        if (storage.getResourceType() == Storage.StorageResourceType.STORAGE_HOST ||
+	                storage.getResourceType() == Storage.StorageResourceType.SECONDARY_STORAGE )
+	        {
+	            downloadMonitor.handleTemplateSync(agentId, storage.getTemplateInfo());
+	        } 
 	    }
 	}
 

@@ -17,11 +17,13 @@
  */
 package com.cloud.dc.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
 
 import com.cloud.dc.ClusterVO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -31,6 +33,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
 
     protected final SearchBuilder<ClusterVO> PodSearch;
     protected final SearchBuilder<ClusterVO> HyTypeWithoutGuidSearch;
+    protected final SearchBuilder<ClusterVO> AvailHyperSearch;
     protected final SearchBuilder<ClusterVO> ZoneSearch;
     protected ClusterDaoImpl() {
         super();
@@ -48,6 +51,11 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         ZoneSearch = createSearchBuilder();
         ZoneSearch.and("dataCenterId", ZoneSearch.entity().getPodId(), SearchCriteria.Op.EQ);
         ZoneSearch.done();
+        
+        AvailHyperSearch = createSearchBuilder();
+        AvailHyperSearch.and("zoneId", AvailHyperSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        AvailHyperSearch.groupBy(AvailHyperSearch.entity().getHypervisorType());
+        AvailHyperSearch.done();
     }
     
     @Override
@@ -80,5 +88,18 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         sc.setParameters("hypervisorType", hyType);
         
         return listBy(sc);
+    }
+    
+    @Override
+    public List<HypervisorType> getAvailableHypervisorInZone(long zoneId) {
+        SearchCriteria<ClusterVO> sc = AvailHyperSearch.create();
+        sc.setParameters("zoneId", zoneId);
+        List<ClusterVO> clusters = listBy(sc);
+        List<HypervisorType> hypers = new ArrayList<HypervisorType>(4);
+        for (ClusterVO cluster : clusters) {
+            hypers.add(cluster.getHypervisorType());
+        }
+        
+        return hypers;
     }
 }

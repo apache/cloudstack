@@ -20,6 +20,7 @@ package com.cloud.dc.dao;
 import java.util.List;
 
 import com.cloud.dc.ClusterVO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.GenericDao;
 
 public interface ClusterDao extends GenericDao<ClusterVO, Long> {
@@ -27,4 +28,5 @@ public interface ClusterDao extends GenericDao<ClusterVO, Long> {
     ClusterVO findBy(String name, long podId);
     List<ClusterVO> listByHyTypeWithoutGuid(String hyType);
     List<ClusterVO> listByZoneId(long zoneId);
+    List<HypervisorType> getAvailableHypervisorInZone(long zoneId);
 }

@@ -37,6 +37,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Host.Type;
 import com.cloud.host.Status.Event;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
@@ -81,6 +82,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> MaintenanceCountSearch;
     protected final SearchBuilder<HostVO> ClusterSearch;
     protected final SearchBuilder<HostVO> ConsoleProxyHostSearch;
+    protected final SearchBuilder<HostVO> AvailHypevisorInZone;
     
     protected final Attribute _statusAttr;
     protected final Attribute _msIdAttr;
@@ -206,6 +208,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         UnmanagedExternalNetworkApplianceSearch.and("types", UnmanagedExternalNetworkApplianceSearch.entity().getType(), SearchCriteria.Op.IN);
         UnmanagedExternalNetworkApplianceSearch.and("lastPinged", UnmanagedExternalNetworkApplianceSearch.entity().getLastPinged(), SearchCriteria.Op.LTEQ);
         UnmanagedExternalNetworkApplianceSearch.done();
+        
+        AvailHypevisorInZone = createSearchBuilder();
+        AvailHypevisorInZone.and("zoneId", AvailHypevisorInZone.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        AvailHypevisorInZone.and("hostId", AvailHypevisorInZone.entity().getId(), SearchCriteria.Op.NEQ);
+        AvailHypevisorInZone.and("type", AvailHypevisorInZone.entity().getType(), SearchCriteria.Op.EQ);
+        AvailHypevisorInZone.groupBy(AvailHypevisorInZone.entity().getHypervisorType());
+        AvailHypevisorInZone.done();
                 
         _statusAttr = _allAttributes.get("status");
         _msIdAttr = _allAttributes.get("managementServerId");
@@ -616,6 +625,20 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         assert tg != null : "how can this be wrong!";
         
         return s_seqFetcher.getNextSequence(Long.class, tg, hostId);
+    }
+    
+    @Override
+    public List<HypervisorType> getAvailHypervisorInZone(long hostId, long zoneId) {
+        SearchCriteria<HostVO> sc = AvailHypevisorInZone.create();
+        sc.setParameters("zoneId", zoneId);
+        sc.setParameters("hostId", hostId);
+        sc.setParameters("type", Host.Type.Routing);
+        List<HostVO> hosts = listBy(sc);
+        List<HypervisorType> hypers = new ArrayList<HypervisorType>(4);
+        for (HostVO host : hosts) {
+            hypers.add(host.getHypervisorType());
+        }
+        return hypers;
     }
 }
 

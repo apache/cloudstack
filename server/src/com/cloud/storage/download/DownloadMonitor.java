@@ -18,6 +18,7 @@
 
 package com.cloud.storage.download;
 
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -42,5 +43,8 @@ public interface DownloadMonitor extends Manager{
 
 	public void copyTemplate(VMTemplateVO template, HostVO sourceServer, HostVO destServer)
 			throws InvalidParameterValueException, StorageUnavailableException;
+
+	/*When new host added, take a look at if there are templates needed to be downloaded for the same hypervisor as the host*/
+    void handleSysTemplateDownload(HostVO hostId);
 
 }

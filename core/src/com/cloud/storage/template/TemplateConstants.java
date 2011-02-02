@@ -26,8 +26,6 @@ public final class TemplateConstants {
 	public static final String DEFAULT_TMPLT_FIRST_LEVEL_DIR = "tmpl/";
 	
 	public static final String DEFAULT_SYSTEM_VM_TEMPLATE_PATH = "template/tmpl/1/";
-	public static final long DEFAULT_SYSTEM_VM_DB_ID = 1L;
-	public static final long DEFAULT_BUILTIN_VM_DB_ID = 2L;
 	
 	public static final String DEFAULT_SYSTEM_VM_TMPLT_NAME = "routing";
 	

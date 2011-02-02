@@ -258,7 +258,6 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
 		if (_useServiceVM) {
 			for (HostVO h: hosts) {
 				_hostDao.disconnect(h, Event.AgentDisconnected, msId);
-				associateSystemVmTemplate(h.getId(), h.getDataCenterId());
 			}
 		}
 		for (HostVO h: hosts) {
@@ -267,24 +266,8 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
 		
 	}
 	
-    protected void associateSystemVmTemplate(long hostId, long dcId) {
-    	VMTemplateVO tmplt = _tmpltDao.findById(TemplateConstants.DEFAULT_SYSTEM_VM_DB_ID);
-    	if (tmplt == null) {
-    		throw new CloudRuntimeException("Cannot find routing template in vm_template table. Check your configuration");
-    	}
-    	VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(hostId, TemplateConstants.DEFAULT_SYSTEM_VM_DB_ID);
-    	if (tmpltHost == null) {
-    		VMTemplateHostVO vmTemplateHost = new VMTemplateHostVO(hostId, TemplateConstants.DEFAULT_SYSTEM_VM_DB_ID, new Date(), 100, VMTemplateStorageResourceAssoc.Status.DOWNLOADED, null, null, null, TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH, null);
-    		_vmTemplateHostDao.persist(vmTemplateHost);
-    	}
-    }
-    
     private void associateTemplatesToZone(long hostId, long dcId){
-    	VMTemplateZoneVO tmpltZone = _vmTemplateZoneDao.findByZoneTemplate(dcId, TemplateConstants.DEFAULT_SYSTEM_VM_DB_ID);
-    	if (tmpltZone == null) {
-    		VMTemplateZoneVO vmTemplateZone = new VMTemplateZoneVO(dcId, TemplateConstants.DEFAULT_SYSTEM_VM_DB_ID, new Date());
-    		_vmTemplateZoneDao.persist(vmTemplateZone);
-    	}
+    	VMTemplateZoneVO tmpltZone;
 
     	List<VMTemplateVO> allTemplates = _vmTemplateDao.listAll();
     	for (VMTemplateVO vt: allTemplates){
