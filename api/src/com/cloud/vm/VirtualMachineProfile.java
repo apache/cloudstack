@@ -40,12 +40,26 @@ import com.cloud.user.Account;
  * @param <T> a VirtualMachine
  */
 public interface VirtualMachineProfile<T extends VirtualMachine> {
+  
     
-    enum Param {
-        VmPassword,  
-        ControlNic,
-        RestartNetwork,
-    }
+    public static class Param {
+        
+        public static final Param VmPassword = new Param("VmPassword");
+        public static final Param ControlNic = new Param("ControlNic");
+        public static final Param RestartNetwork = new Param("RestartNetwork");
+
+        private String name;
+        
+        public Param(String name) {
+            synchronized(Param.class) {
+                this.name = name;
+            }
+        }
+        
+        public String getName() {
+            return name;
+        }
+     }
     
     String getHostName();
     

@@ -1148,6 +1148,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         _secStorageVmDao.update(secVm.getId(), secVm);
         return true;
     }
+    
 
     @Override
     public boolean finalizeStart(VirtualMachineProfile<SecondaryStorageVmVO> profile, long hostId, Commands cmds, ReservationContext context) {
