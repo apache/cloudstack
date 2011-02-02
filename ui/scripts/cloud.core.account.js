@@ -498,17 +498,20 @@ function accountUserJSONToTemplate(jsonObj, $template) {
     $template.data("timezone", jsonObj.timezone); 
       
     //actions    
-	var $actionLink = $template.find("#user_action_link");		
+	var $actionLink = $template.find("#action_link");	
+	bindActionLink($actionLink);
+	/*	
 	$actionLink.bind("mouseover", function(event) {
-        $(this).find("#user_action_menu").show();    
+        $(this).find("#action_menu").show();    
         return false;
     });
     $actionLink.bind("mouseout", function(event) {
-        $(this).find("#user_action_menu").hide();    
+        $(this).find("#action_menu").hide();    
         return false;
     });		
+	*/
 		
-	var $actionMenu = $actionLink.find("#user_action_menu");
+	var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();	    
     var noAvailableActions = true;
     

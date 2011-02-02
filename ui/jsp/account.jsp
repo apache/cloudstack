@@ -219,8 +219,8 @@ dictionary = {
     <div class="grid_header">
         <div class="grid_header_title" id="grid_header_title">
         </div>
-        <div class="grid_actionbox" id="user_action_link"><p>Actions</p>
-            <div class="grid_actionsdropdown_box" id="user_action_menu" style="display: none;">
+        <div class="grid_actionbox" id="action_link"><p>Actions</p>
+            <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
             </div>

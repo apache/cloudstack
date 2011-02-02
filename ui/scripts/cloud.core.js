@@ -1097,6 +1097,8 @@ function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonR
 			removeDialogs();			
 								    
 			var $actionLink = $("#right_panel_content #tab_content_details #action_link");
+			bindActionLink($actionLink);
+			/*
 			$actionLink.bind("mouseover", function(event) {	    
 				$(this).find("#action_menu").show();    
 				return false;
@@ -1105,6 +1107,7 @@ function listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonR
 				$(this).find("#action_menu").hide();    
 				return false;
 			});	   
+			*/
 			
 			afterLoadRightPanelJSPFn();                
 			listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, 1);   			
@@ -1124,6 +1127,26 @@ function bindAndListMidMenuItems($leftmenu, commandString, getSearchParamsFn, js
         listMidMenuItems(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, rightPanelJSP, afterLoadRightPanelJSPFn, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, $(this).attr("id"), null);
         return false;
     });
+}
+
+function bindActionLink($actionLink) {
+    $actionLink.bind("mouseover", function(event) {	    
+        $(this).find("#action_menu").show();    
+        return false;
+    });
+    $actionLink.bind("mouseout", function(event) {          
+        var $thisElement = $(this)[0];
+	    var relatedTarget1 = event.relatedTarget;
+	    while(relatedTarget1 != null && relatedTarget1.nodeName != "BODY" && relatedTarget1 != $thisElement) {
+	        relatedTarget1 = relatedTarget1.parentNode;
+	    }    	
+	    if(relatedTarget1 == $thisElement) { 
+	        return;        
+        }
+        
+        $(this).find("#action_menu").hide();    
+        return false;
+    });	  
 }
 
 function handleErrorInDialog(XMLHttpResponse, $thisDialog) {    
