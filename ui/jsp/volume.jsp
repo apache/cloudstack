@@ -607,8 +607,8 @@ dictionary = {
     <div class="grid_header">
         <div class="grid_header_title" id="grid_header_title">
         </div>
-        <div class="grid_actionbox" id="snapshot_action_link"><p><fmt:message key="label.actions"/></p>
-            <div class="grid_actionsdropdown_box" id="snapshot_action_menu" style="display: none;">
+        <div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
+            <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
             </div>

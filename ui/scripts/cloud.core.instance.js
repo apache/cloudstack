@@ -1982,17 +1982,20 @@ function vmVolumeJSONToTemplate(json, $template) {
 	setDateField(json.created, $template.find("#created"));
 	
 	//***** actions (begin) *****
-	var $actionLink = $template.find("#volume_action_link");		
+	var $actionLink = $template.find("#action_link");		
+	bindActionLink($actionLink);
+	/*
 	$actionLink.unbind("mouseover").bind("mouseover", function(event) {
-        $(this).find("#volume_action_menu").show();    
+        $(this).find("#action_menu").show();    
         return false;
     });
     $actionLink.unbind("mouseout").bind("mouseout", function(event) {
-        $(this).find("#volume_action_menu").hide();    
+        $(this).find("#action_menu").hide();    
         return false;
     });		
+	*/
 	
-	var $actionMenu = $actionLink.find("#volume_action_menu");
+	var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
      

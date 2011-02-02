@@ -473,17 +473,20 @@ function volumeSnapshotJSONToTemplate(jsonObj, template) {
     template.find("#domain").text(fromdb(jsonObj.domain));    
     setDateField(jsonObj.created, template.find("#created"));	 
 	
-	var $actionLink = template.find("#snapshot_action_link");		
+	var $actionLink = template.find("#action_link");		
+	bindActionLink($actionLink);
+	/*
 	$actionLink.bind("mouseover", function(event) {
-        $(this).find("#snapshot_action_menu").show();    
+        $(this).find("#action_menu").show();    
         return false;
     });
     $actionLink.bind("mouseout", function(event) {
-        $(this).find("#snapshot_action_menu").hide();    
+        $(this).find("#action_menu").hide();    
         return false;
     });		
+	*/
 	
-	var $actionMenu = $actionLink.find("#snapshot_action_menu");
+	var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();	
     
     buildActionLinkForSubgridItem("label.action.create.volume", volumeSnapshotActionMap, $actionMenu, template);	

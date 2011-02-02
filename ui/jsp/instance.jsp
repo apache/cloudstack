@@ -933,8 +933,8 @@ dictionary = {
         <div class="grid_header_title" id="title">
         </div>
 		<!--
-        <div class="grid_actionbox" id="volume_action_link"><p>Actions</p>
-            <div class="grid_actionsdropdown_box" id="nic_action_menu" style="display: none;">
+        <div class="grid_actionbox" id="action_link"><p>Actions</p>
+            <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
             </div>
@@ -943,7 +943,7 @@ dictionary = {
             <div class="gridheader_loader" id="icon">
             </div>
             <p id="description">
-                Waiting &hellip;
+                <fmt:message key="label.waiting"/> &hellip;
             </p>
         </div>    
 		-->
@@ -1004,8 +1004,8 @@ dictionary = {
     <div class="grid_header">
         <div class="grid_header_title" id="title">
         </div>
-        <div class="grid_actionbox" id="volume_action_link"><p><fmt:message key="label.actions"/></p>
-            <div class="grid_actionsdropdown_box" id="volume_action_menu" style="display: none;">
+        <div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
+            <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
             </div>
