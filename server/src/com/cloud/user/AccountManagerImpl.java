@@ -197,7 +197,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
                 // on a per-domain basis, increment the count
                 // FIXME:  can this increment be done on the database side in a custom update statement?
-                Account account = _accountDao.findById(accountId);
+                Account account = _accountDao.findByIdIncludingRemoved(accountId);
                 Long domainId = account.getDomainId();
                 while (domainId != null) {
                     _resourceCountDao.updateDomainCount(domainId, type, true, numToIncrement);
