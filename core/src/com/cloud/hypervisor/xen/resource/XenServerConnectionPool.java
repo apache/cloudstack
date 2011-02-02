@@ -27,6 +27,7 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
+import org.apache.xmlrpc.client.XmlRpcClientException;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.APIVersion;
@@ -835,6 +836,12 @@ public class XenServerConnectionPool {
                         Session.loginWithPassword(this, _username,
                                 _password, APIVersion.latest().toString());
                         method_params[0] = getSessionReference();
+                    } catch (XmlRpcClientException e) {
+                        s_logger.debug("XmlRpcClientException for method: " + method_call + " due to " + e.getMessage());
+                        if (_poolUuid != null) {
+                            cleanup(_poolUuid, _info);
+                        }
+                        throw e;
                     } catch (XmlRpcException e) {
                         s_logger.debug("XmlRpcException for method: " + method_call + " due to " + e.getMessage() + ".  Reconnecting...retry="
                                 + retries);
