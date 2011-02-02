@@ -34,6 +34,7 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.net.NetUtils;
 
 @Entity
 @Table(name="firewall_rules")
@@ -65,7 +66,7 @@ public class FirewallRuleVO implements FirewallRule {
     int sourcePortEnd;
     
     @Column(name="protocol", updatable=false)
-    String protocol = "TCP";
+    String protocol = NetUtils.TCP_PROTO;
     
     @Enumerated(value=EnumType.STRING)
     @Column(name="purpose")

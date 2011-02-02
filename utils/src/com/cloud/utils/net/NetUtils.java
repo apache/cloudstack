@@ -51,6 +51,7 @@ public class NetUtils {
     
     public final static String UDP_PROTO = "udp";
     public final static String TCP_PROTO = "tcp";
+    public final static String ANY_PROTO = "any";
     public final static String ICMP_PROTO = "icmp";
     
     private final static Random _rand = new Random(System.currentTimeMillis());

@@ -1975,6 +1975,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         return networkCapabilities;
     }
+    
+    @Override
+    public Map<Capability, String> getServiceCapability(long zoneId, Service service) {
+        Map<Service, Map<Capability, String>> networkCapabilities = getZoneCapabilities(zoneId);
+        return networkCapabilities.get(service);
+    }
 
     @Override
     public Network getSystemNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType) {

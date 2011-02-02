@@ -170,5 +170,7 @@ public interface NetworkManager extends NetworkService {
     boolean zoneIsConfiguredForExternalNetworking(long zoneId);
     
     void unassignPublicIpAddress(IPAddressVO addr);
+    
+    Map<Capability, String> getServiceCapability(long zoneId, Service service);
 
 }

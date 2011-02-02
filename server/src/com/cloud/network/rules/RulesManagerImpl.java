@@ -39,7 +39,9 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestIpType;
+import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -225,6 +227,14 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         
         if (isNat && (ipAddress.isSourceNat() || !ipAddress.isOneToOneNat() || ipAddress.getAssociatedWithVmId() == null)) {
             throw new NetworkRuleConflictException("Can't do one to one NAT on ip address: " + ipAddress.getAddress());
+        }
+        
+    
+        //Verify that the network guru supports the protocol specified
+        Map<Network.Capability, String> firewallCapability = _networkMgr.getServiceCapability(network.getDataCenterId(), Service.Firewall);
+        String supportedProtocols = firewallCapability.get(Capability.SupportedProtocols).toLowerCase();
+        if (!supportedProtocols.contains(rule.getProtocol().toLowerCase())) {
+            throw new InvalidParameterValueException("Protocol " + rule.getProtocol() + " is not supported in zone " + network.getDataCenterId());
         }
         
         PortForwardingRuleVO newRule = 
