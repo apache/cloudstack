@@ -10,6 +10,10 @@ MOUNTPATH=/mnt/cloud/systemvm
 TMPDIR=${TMP}/cloud/systemvm
 
 
+clean_up() {
+  sudo umount $MOUNTPATH
+}
+
 inject_into_iso() {
   local isofile=${systemvmpath}
   local newpubkey=$2
@@ -17,19 +21,19 @@ inject_into_iso() {
   local tmpiso=${TMP}/$1
   [ ! -f $isofile ] && echo "$(basename $0): Could not find systemvm iso patch file $isofile" && return 1
   sudo mount -o loop $isofile $MOUNTPATH 
-  [ $? -ne 0 ] && echo "$(basename $0): Failed to mount original iso $isofile" && return 1
-  diff -q $MOUNTPATH/authorized_keys $newpubkey &> /dev/null && return 0
+  [ $? -ne 0 ] && echo "$(basename $0): Failed to mount original iso $isofile" && clean_up && return 1
+  diff -q $MOUNTPATH/authorized_keys $newpubkey &> /dev/null && clean_up && return 0
   sudo cp -b $isofile $backup
-  [ $? -ne 0 ] && echo "$(basename $0): Failed to backup original iso $isofile" && return 1
+  [ $? -ne 0 ] && echo "$(basename $0): Failed to backup original iso $isofile" && clean_up && return 1
   rm -rf $TMPDIR
   mkdir -p $TMPDIR
-  [ ! -d $TMPDIR  ] && echo "$(basename $0): Could not find/create temporary dir $TMPDIR" && return 1
+  [ ! -d $TMPDIR  ] && echo "$(basename $0): Could not find/create temporary dir $TMPDIR" && clean_up && return 1
   sudo cp -fr $MOUNTPATH/* $TMPDIR/
-  [ $? -ne 0 ] && echo "$(basename $0): Failed to copy from original iso $isofile" && return 1
+  [ $? -ne 0 ] && echo "$(basename $0): Failed to copy from original iso $isofile" && clean_up && return 1
   sudo cp $newpubkey $TMPDIR/authorized_keys
-  [ $? -ne 0 ] && echo "$(basename $0): Failed to copy key $newpubkey from original iso to new iso " && return 1
+  [ $? -ne 0 ] && echo "$(basename $0): Failed to copy key $newpubkey from original iso to new iso " && clean_up && return 1
   mkisofs -quiet -r -o $tmpiso $TMPDIR
-  [ $? -ne 0 ] && echo "$(basename $0): Failed to create new iso $tmpiso from $TMPDIR" && return 1
+  [ $? -ne 0 ] && echo "$(basename $0): Failed to create new iso $tmpiso from $TMPDIR" && clean_up && return 1
   sudo umount $MOUNTPATH
   [ $? -ne 0 ] && echo "$(basename $0): Failed to unmount old iso from $MOUNTPATH" && return 1
   sudo cp -f $tmpiso $isofile
