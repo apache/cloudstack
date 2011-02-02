@@ -166,6 +166,8 @@ function zoneJsonToDetailsTab() {
         
     //actions ***   
     var $actionLink = $thisTab.find("#action_link"); 
+    bindActionLink($actionLink);
+    /*
     $actionLink.bind("mouseover", function(event) {	    
         $(this).find("#action_menu").show();    
         return false;
@@ -174,6 +176,8 @@ function zoneJsonToDetailsTab() {
         $(this).find("#action_menu").hide();    
         return false;
     });	  
+    */
+    
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();      
     buildActionLinkForTab("label.action.edit.zone", zoneActionMap, $actionMenu, $leftmenuItem1, $thisTab);    

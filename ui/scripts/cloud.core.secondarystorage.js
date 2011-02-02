@@ -87,6 +87,8 @@ function secondaryStorageJsonToDetailsTab() {
        
     //actions ***   
     var $actionLink = $thisTab.find("#action_link"); 
+    bindActionLink($actionLink);
+    /*
     $actionLink.bind("mouseover", function(event) {	    
         $(this).find("#action_menu").show();    
         return false;
@@ -94,8 +96,10 @@ function secondaryStorageJsonToDetailsTab() {
     $actionLink.bind("mouseout", function(event) {       
         $(this).find("#action_menu").hide();    
         return false;
-    });	  
-    var $actionMenu = $thisTab.find("#action_link #action_menu");
+    });	 
+    */
+     
+    var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();          
     buildActionLinkForTab("label.action.delete.secondary.storage", secondaryStorageActionMap, $actionMenu, $midmenuItem1, $thisTab);   
     

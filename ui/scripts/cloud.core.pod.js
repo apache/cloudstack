@@ -138,6 +138,8 @@ function podJsonToDetailsTab() {
     
     //actions ***   
     var $actionLink = $thisTab.find("#action_link"); 
+    bindActionLink($actionLink);
+    /*
     $actionLink.bind("mouseover", function(event) {	    
         $(this).find("#action_menu").show();    
         return false;
@@ -146,7 +148,9 @@ function podJsonToDetailsTab() {
         $(this).find("#action_menu").hide();    
         return false;
     });	  
-    var $actionMenu = $thisTab.find("#action_link #action_menu");
+    */
+    
+    var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();   
     buildActionLinkForTab("label.action.edit.pod", podActionMap, $actionMenu, $leftmenuItem1, $thisTab);  
     buildActionLinkForTab("label.action.delete.pod", podActionMap, $actionMenu, $leftmenuItem1, $thisTab); 
