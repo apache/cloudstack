@@ -465,8 +465,8 @@ dictionary = {
 	<div class="grid_header">
         <div class="grid_header_title" id="grid_header_title">
         </div>
-        <div class="grid_actionbox" id="firewall_action_link"><p><fmt:message key="label.actions"/></p>
-            <div class="grid_actionsdropdown_box" id="firewall_action_menu" style="display: none;">
+        <div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
+            <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
             </div>
@@ -606,8 +606,8 @@ dictionary = {
 	<div class="grid_header">
         <div class="grid_header_title" id="grid_header_title">
         </div>
-        <div class="grid_actionbox" id="loadbalancer_action_link"><p><fmt:message key="label.actions"/></p>
-            <div class="grid_actionsdropdown_box" id="loadbalancer_action_menu" style="display: none;">
+        <div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
+            <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
             </div>
@@ -696,8 +696,8 @@ dictionary = {
 	<div class="grid_header">
         <div class="grid_header_title" id="grid_header_title">
         </div>
-        <div class="grid_actionbox" id="iprange_action_link"><p><fmt:message key="label.actions"/></p>
-            <div class="grid_actionsdropdown_box" id="iprange_action_menu" style="display: none;">
+        <div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
+            <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
             </div>
@@ -796,8 +796,8 @@ dictionary = {
 	<div class="grid_header">
         <div class="grid_header_title" id="grid_header_title">
         </div>
-        <div class="grid_actionbox" id="iprange_action_link"><p><fmt:message key="label.actions"/></p>
-            <div class="grid_actionsdropdown_box" id="iprange_action_menu" style="display: none;">
+        <div class="grid_actionbox" id="action_link"><p><fmt:message key="label.actions"/></p>
+            <div class="grid_actionsdropdown_box" id="action_menu" style="display: none;">
                 <ul class="actionsdropdown_boxlist" id="action_list">
                 </ul>
             </div>

@@ -197,7 +197,6 @@ function podClearNetworkTab() {
 	$thisTab.find("#tab_container").empty();
 } 
 
-
 function podNetworkJsonToTemplate(jsonObj, template) {
     template.data("jsonObj", jsonObj);     
     template.attr("id", "pod_VLAN_"+fromdb(jsonObj.id)).data("podVLANId", fromdb(jsonObj.id));    
@@ -208,17 +207,20 @@ function podNetworkJsonToTemplate(jsonObj, template) {
     template.find("#gateway").text(fromdb(jsonObj.gateway));
     template.find("#podname").text(fromdb(jsonObj.podname)); 
    
-    var $actionLink = template.find("#network_action_link");		
+    var $actionLink = template.find("#action_link");	
+    bindActionLink($actionLink);
+    /*	
 	$actionLink.bind("mouseover", function(event) {
-        $(this).find("#network_action_menu").show();    
+        $(this).find("#action_menu").show();    
         return false;
     });
     $actionLink.bind("mouseout", function(event) {
-        $(this).find("#network_action_menu").hide();    
+        $(this).find("#action_menu").hide();    
         return false;
     });		
+	*/
 	
-	var $actionMenu = $actionLink.find("#network_action_menu");
+	var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();	
     
     buildActionLinkForSubgridItem("Delete IP Range", podNetworkActionMap, $actionMenu, template);	

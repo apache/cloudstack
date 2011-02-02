@@ -170,6 +170,8 @@ function publicNetworkJsonToDetailsTab() {
 	
 	//actions ***   
     var $actionLink = $thisTab.find("#action_link"); 
+    bindActionLink($actionLink);
+    /*
     $actionLink.bind("mouseover", function(event) {	    
         $(this).find("#action_menu").show();    
         return false;
@@ -177,7 +179,9 @@ function publicNetworkJsonToDetailsTab() {
     $actionLink.bind("mouseout", function(event) {       
         $(this).find("#action_menu").hide();    
         return false;
-    });	      
+    });	
+    */
+         
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();   
 	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());	   
@@ -234,17 +238,20 @@ function publicNetworkIprangeJsonToTemplate(jsonObj, $template) {
     $template.find("#domain").text(jsonObj.domain);
     $template.find("#account").text(jsonObj.account);
    
-    var $actionLink = $template.find("#iprange_action_link");		
+    var $actionLink = $template.find("#action_link");	
+    bindActionLink($actionLink);
+    /*	
 	$actionLink.bind("mouseover", function(event) {
-        $(this).find("#iprange_action_menu").show();    
+        $(this).find("#action_menu").show();    
         return false;
     });
     $actionLink.bind("mouseout", function(event) {
-        $(this).find("#iprange_action_menu").hide();    
+        $(this).find("#action_menu").hide();    
         return false;
     });		
+	*/
 	
-	var $actionMenu = $actionLink.find("#iprange_action_menu");
+	var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();	
        
     buildActionLinkForSubgridItem("label.action.delete.IP.range", publicNetworkIpRangeActionMap, $actionMenu, $template);	
@@ -337,17 +344,20 @@ function publicNetworkFirewallJsonToTemplate(jsonObj, $template) {
     $template.find("#numretries").text(fromdb(jsonObj.numretries));
     $template.find("#timeout").text(fromdb(jsonObj.timeout));
           
-    var $actionLink = $template.find("#firewall_action_link");		
+    var $actionLink = $template.find("#action_link");	
+    bindActionLink($actionLink);
+    /*	
 	$actionLink.bind("mouseover", function(event) {
-        $(this).find("#firewall_action_menu").show();    
+        $(this).find("#action_menu").show();    
         return false;
     });
     $actionLink.bind("mouseout", function(event) {
-        $(this).find("#firewall_action_menu").hide();    
+        $(this).find("#action_menu").hide();    
         return false;
     });		
+	*/
 	
-	var $actionMenu = $actionLink.find("#firewall_action_menu");
+	var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();	
        
     buildActionLinkForSubgridItem("label.action.delete.firewall", publicNetworkFirewallActionMap, $actionMenu, $template);	
@@ -413,19 +423,21 @@ function publicNetworkLoadBalancerJsonToTemplate(jsonObj, $template) {
     $template.find("#privateinterface").text(fromdb(jsonObj.privateinterface));      
     $template.find("#numretries").text(fromdb(jsonObj.numretries));
       
-    var $actionLink = $template.find("#loadbalancer_action_link");		
+    var $actionLink = $template.find("#action_link");	
+    bindActionLink($actionLink);
+    /*	
 	$actionLink.bind("mouseover", function(event) {
-        $(this).find("#loadbalancer_action_menu").show();    
+        $(this).find("#action_menu").show();    
         return false;
     });
     $actionLink.bind("mouseout", function(event) {
-        $(this).find("#loadbalancer_action_menu").hide();    
+        $(this).find("#action_menu").hide();    
         return false;
     });		
+	*/
 	
-	var $actionMenu = $actionLink.find("#loadbalancer_action_menu");
-    $actionMenu.find("#action_list").empty();	
-       
+	var $actionMenu = $actionLink.find("#action_menu");
+    $actionMenu.find("#action_list").empty();	       
     buildActionLinkForSubgridItem("label.action.delete.load.balancer", publicNetworkLoadBalancerActionMap, $actionMenu, $template);	
 }
 
@@ -1012,6 +1024,8 @@ function directNetworkJsonToDetailsTab() {
         
     //actions ***   
     var $actionLink = $thisTab.find("#action_link"); 
+    bindActionLink($actionLink);
+    /*
     $actionLink.bind("mouseover", function(event) {	    
         $(this).find("#action_menu").show();    
         return false;
@@ -1020,6 +1034,8 @@ function directNetworkJsonToDetailsTab() {
         $(this).find("#action_menu").hide();    
         return false;
     });	  
+    */
+    
     var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();        
     buildActionLinkForTab("label.action.delete.network", directNetworkActionMap, $actionMenu, $midmenuItem1, $thisTab);	      
@@ -1096,17 +1112,20 @@ function directNetworkIprangeJsonToTemplate(jsonObj, $template) {
     $template.find("#vlan").text(jsonObj.vlan);
     $template.find("#iprange").text(ipRange);
         
-    var $actionLink = $template.find("#iprange_action_link");		
+    var $actionLink = $template.find("#action_link");	
+    bindActionLink($actionLink);
+    /*	
 	$actionLink.bind("mouseover", function(event) {
-        $(this).find("#iprange_action_menu").show();    
+        $(this).find("#action_menu").show();    
         return false;
     });
     $actionLink.bind("mouseout", function(event) {
-        $(this).find("#iprange_action_menu").hide();    
+        $(this).find("#action_menu").hide();    
         return false;
     });		
+    */
 	
-	var $actionMenu = $actionLink.find("#iprange_action_menu");
+	var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();	
        
     buildActionLinkForSubgridItem("label.action.delete.IP.range", directNetworkIpRangeActionMap, $actionMenu, $template);
