@@ -171,6 +171,7 @@ function bindAddSecondaryStorageButton(zoneObj) {
 	    .dialog('option', 'buttons', { 				    
 		    "Add": function() { 
 		        var $thisDialog = $(this);	
+	            $thisDialog.find("#info_container").hide(); 
 	            
 			    // validate values					
 			    var isValid = true;							    

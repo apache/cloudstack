@@ -533,37 +533,10 @@ function bindAddIpRangeToPublicNetworkButton($button, $midmenuItem1) {
     $button.unbind("click").bind("click", function(event) {  
         if($("#public_network_page").find("#tab_content_ipallocation").css("display") == "none")         
             $("#public_network_page").find("#tab_ipallocation").click();
-         
-        /*                  
-        $dialogAddIpRangeToPublicNetwork.find("#info_container").hide();
-        $dialogAddIpRangeToPublicNetwork.find("#zone_name").text(fromdb(zoneObj.name));         
-		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_vlan_container, #add_publicip_vlan_domain_container, #add_publicip_vlan_account_container").hide();
-		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged, #add_publicip_vlan_vlan, #add_publicip_vlan_gateway, #add_publicip_vlan_netmask, #add_publicip_vlan_startip, #add_publicip_vlan_endip, #add_publicip_vlan_account").val("");
-		*/
-		//$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_pod_container").show();	
-		
+       
 		$dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_tagged").change();            		
 	    $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_scope").change(); // default value of "#add_publicip_vlan_scope" is "zone-wide". Calling change() will hide "#add_publicip_vlan_domain_container", "#add_publicip_vlan_account_container". 	
-        
-        /*    					
-		var podSelect = $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_pod").empty();		
-		$.ajax({
-		    data: createURL("command=listPods&zoneId="+zoneObj.id),
-			dataType: "json",
-			async: false,
-			success: function(json) {
-				var pods = json.listpodsresponse.pod;						
-				if (pods != null && pods.length > 0) {
-					for (var i = 0; i < pods.length; i++) {
-						podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 
-					}
-				} else {
-					podSelect.append("<option value=''>No available pods</option>"); 
-				}
-			}
-		});
-		*/
-		
+       
 		var domainSelect = $dialogAddIpRangeToPublicNetwork.find("#add_publicip_vlan_domain").empty();	
 		if(zoneObj.domainid != null) { //list only domains under zoneObj.domainid
 		    domainSelect.append("<option value='" + zoneObj.domainid + "'>" + fromdb(zoneObj.domain) + "</option>"); 	
@@ -706,6 +679,7 @@ function bindAddExternalFirewallButton($button, $midmenuItem1) {
 		.dialog('option', 'buttons', { 	
 			"Add": function() { 	
 			    var $thisDialog = $(this);		
+			    $thisDialog.find("#info_container").hide(); 
 			    			
 				// validate values
 				var isValid = true;		
@@ -890,6 +864,7 @@ function bindAddLoadBalancerButton($button, $midmenuItem1) {
 		.dialog('option', 'buttons', { 	
 			"Add": function() { 	
 			    var $thisDialog = $(this);		
+			    $thisDialog.find("#info_container").hide(); 
 			    			
 				// validate values
 				var isValid = true;		
@@ -1251,6 +1226,7 @@ function bindAddNetworkButton($button) {
 		.dialog('option', 'buttons', { 	
 			"Add": function() { 	
 			    var $thisDialog = $(this);		
+			    $thisDialog.find("#info_container").hide(); 
 			    					
 				// validate values
 				var isValid = true;					
