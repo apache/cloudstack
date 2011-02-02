@@ -4,10 +4,8 @@
 
 import os, sys, time
 import XenAPIPlugin
-import util 
-import XenAPI
 sys.path.extend(["/opt/xensource/sm/", "/usr/local/sbin/", "/sbin/"])
-import SR, VDI, SRCommand, util, lvutil
+import util 
 from util import CommandException
 import hostvmstats
 import socket
