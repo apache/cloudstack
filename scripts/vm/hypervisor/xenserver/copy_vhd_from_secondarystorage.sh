@@ -77,6 +77,12 @@ elif [ $type == "lvmoiscsi" -o $type == "lvm" ]; then
     cleanup
     exit 0
   fi
+  lvsize=$(xe vdi-param-get uuid=$uuid param-name=physical-utilisation)
+  if [ $? -ne 0 ]; then
+    echo "12#failed to get physical size of vdi $uuid"
+    cleanup
+    exit 0
+  fi
   lvchange -ay /dev/VG_XenStorage-$sruuid/VHD-$uuid
   if [ $? -ne 0 ]; then
     echo "10#lvm can not make VDI $uuid  visiable"
@@ -86,12 +92,6 @@ elif [ $type == "lvmoiscsi" -o $type == "lvm" ]; then
   dd if=$vhdfile of=/dev/VG_XenStorage-$sruuid/VHD-$uuid bs=2M
   if [ $? -ne 0 ]; then
     echo "11#failed to dd to sr $sruuid"
-    cleanup
-    exit 0
-  fi
-  lvsize=$(xe vdi-param-get uuid=$uuid param-name=physical-utilisation)
-  if [ $? -ne 0 ]; then
-    echo "12#failed to get physical size of vdi $uuid"
     cleanup
     exit 0
   fi
