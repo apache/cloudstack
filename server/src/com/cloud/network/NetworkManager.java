@@ -168,5 +168,7 @@ public interface NetworkManager extends NetworkService {
     List<? extends PasswordResetElement> getPasswordResetElements();
 
     boolean zoneIsConfiguredForExternalNetworking(long zoneId);
+    
+    void unassignPublicIpAddress(IPAddressVO addr);
 
 }

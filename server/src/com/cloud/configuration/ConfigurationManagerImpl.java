@@ -1839,10 +1839,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 		}
 		eventMsg += ".";
 		if (associateIpRangeToAccount) {
-	        // if this is an account VLAN, now associate the IP Addresses to the account
-		    long ipCount = _publicIpAddressDao.countIPs(zoneId, vlan.getId(), false);
-            _accountMgr.incrementResourceCount(account.getId(), ResourceType.public_ip, ipCount);
-            s_logger.trace("Updated " + ResourceType.public_ip + " resource count on " + ipCount + " for account " + account);
 	        _networkMgr.associateIpAddressListToAccount(userId, account.getId(), zoneId, vlan.getId());
 		}
 		return vlan;

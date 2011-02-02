@@ -259,25 +259,56 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         addr.setState(assign ? IpAddress.State.Allocated : IpAddress.State.Allocating);
 
-        if (vlanUse == VlanType.DirectAttached) {
-            addr.setState(IpAddress.State.Allocated);
-        } else {
+        if (vlanUse != VlanType.DirectAttached) {
             addr.setAssociatedWithNetworkId(networkId);
         }
-
-        if (!_ipAddressDao.update(addr.getId(), addr)) {
-            throw new CloudRuntimeException("Found address to allocate but unable to update: " + addr);
-        }
-        if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-            long isSourceNat = (sourceNat) ? 1 : 0;
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getAccountId(), dcId, isSourceNat, addr.getAddress().toString());
-            _usageEventDao.persist(usageEvent);
-        }
-
+        
+        _ipAddressDao.update(addr.getId(), addr);
+        
         txn.commit();
         long macAddress = NetUtils.createSequenceBasedMacAddress(addr.getMacAddress());
 
         return new PublicIp(addr, _vlanDao.findById(addr.getVlanId()), macAddress);
+    }
+    
+    @DB
+    protected void markPublicIpAsAllocated(IPAddressVO addr) {
+        Transaction txn = Transaction.currentTxn();
+        
+        Account owner = _accountMgr.getAccount(addr.getAccountId());
+        long isSourceNat = (addr.isSourceNat()) ? 1 : 0;
+        
+        txn.start();
+        addr.setState(IpAddress.State.Allocated);
+        _ipAddressDao.update(addr.getId(), addr);
+        
+        //Save usage event
+        if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), isSourceNat, addr.getAddress().toString());
+            _usageEventDao.persist(usageEvent);
+        }
+        
+        _accountMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
+        txn.commit();
+    }
+    
+    @Override @DB
+    public void unassignPublicIpAddress(IPAddressVO addr) {
+        Transaction txn = Transaction.currentTxn();
+        Account owner = _accountMgr.getAccount(addr.getAccountId());
+        long isSourceNat = (addr.isSourceNat()) ? 1 : 0;
+        
+        txn.start();
+        
+        _ipAddressDao.unassignIpAddress(addr.getId());
+        if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, owner.getId(), addr.getDataCenterId(), isSourceNat, addr.getAddress().toString());
+            _usageEventDao.persist(usageEvent);
+        }
+        
+        _accountMgr.decrementResourceCount(owner.getId(), ResourceType.public_ip);
+        
+        txn.commit();
     }
 
     @Override
@@ -323,11 +354,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                 ip = fetchNewPublicIp(dcId, null, vlanId, owner, VlanType.VirtualNetwork, network.getId(), true, false);
                 sourceNat = ip.ip();
-                sourceNat.setState(IpAddress.State.Allocated);
+                
+                markPublicIpAsAllocated(sourceNat);
                 _ipAddressDao.update(sourceNat.getId(), sourceNat);
-
+                
+               
                 // Increment the number of public IPs for this accountId in the database
-                _accountMgr.incrementResourceCount(ownerId, ResourceType.public_ip);
+                
             } else {
                 // Account already has ip addresses
                 for (IPAddressVO addr : addrs) {
@@ -426,12 +459,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (success) {
             for (IPAddressVO addr : userIps) {
+                
                 if (addr.getState() == IpAddress.State.Allocating) {
-                    addr.setState(IpAddress.State.Allocated);
+                   
                     addr.setAssociatedWithNetworkId(network.getId());
-                    _ipAddressDao.update(addr.getId(), addr);
+                    markPublicIpAsAllocated(addr);
+                    
                 } else if (addr.getState() == IpAddress.State.Releasing) {
-                    _ipAddressDao.unassignIpAddress(addr.getId());
+                    unassignPublicIpAddress(addr);
                 }
             }
         }
@@ -508,8 +543,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zoneId);
             }
 
-            _accountMgr.incrementResourceCount(ownerId, ResourceType.public_ip);
-
             Ip ipAddress = ip.getAddress();
 
             s_logger.debug("Got " + ipAddress + " to assign for account " + owner.getId() + " in zone " + network.getDataCenterId());
@@ -526,7 +559,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    @DB
     public IpAddress associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
         Account owner = null;
@@ -542,7 +574,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         Network network = _networksDao.findById(ipToAssoc.getAssociatedWithNetworkId());
 
-        IpAddress ip = _ipAddressDao.findById(cmd.getEntityId());
+        IPAddressVO ip = _ipAddressDao.findById(cmd.getEntityId());
         boolean success = false;
         try {
             success = applyIpAssociations(network, false);
@@ -556,21 +588,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.error("Unable to associate ip address due to resource unavailable exception", e);
             return null;
         } finally {
-            Transaction txn = Transaction.currentTxn();
             if (!success) {
                 if (ip != null) {
                     try {
                         s_logger.warn("Failed to associate ip address " + ip);
                         _ipAddressDao.markAsUnavailable(ip.getId());
-                        applyIpAssociations(network, true);
+                        if (!applyIpAssociations(network, true)) {
+                            //if fail to apply ip assciations again, unassign ip address without updating resource count and generating usage event as there is no need to keep it in the db
+                            _ipAddressDao.unassignIpAddress(ip.getId());
+                        }
                     } catch (Exception e) {
                         s_logger.warn("Unable to disassociate ip address for recovery", e);
                     }
-                    txn.start();
-                    _ipAddressDao.unassignIpAddress(ip.getId());
-                    _accountMgr.decrementResourceCount(owner.getId(), ResourceType.public_ip);
-
-                    txn.commit();
                 }
             }
         }
@@ -617,14 +646,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         if (success) {
-            _ipAddressDao.unassignIpAddress(addrId);
             s_logger.debug("released a public ip id=" + addrId);
-            if (ownerId != Account.ACCOUNT_ID_SYSTEM) {
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ownerId, ip.getDataCenterId(), addrId, null);
-                _usageEventDao.persist(usageEvent);
-            }
-
-            _accountMgr.decrementResourceCount(ownerId, ResourceType.public_ip);
         }
 
         return success;
@@ -1716,11 +1738,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId);
         if (ipsToRelease != null && !ipsToRelease.isEmpty()) {
             for (IPAddressVO ip : ipsToRelease) {
-                _ipAddressDao.unassignIpAddress(ip.getId());
-                if (ip.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE, ip.getAccountId(), ip.getDataCenterId(), 0, ip.getAddress().toString());
-                    _usageEventDao.persist(usageEvent);
-                }
+                unassignPublicIpAddress(ip);
             }
 
             s_logger.debug("Ip addresses are unassigned successfully as a part of network id=" + networkId + " destroy");
@@ -2054,7 +2072,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         long ipCount = _ipAddressDao.countIPs(zoneId, vlanId, false);
         if (ipCount > 0) {
             while (allocatedIps < ipCount) {
-                fetchNewPublicIp(zoneId, null, vlanId, account, VlanType.VirtualNetwork, network.getId(), false, true);
+                PublicIp ip = fetchNewPublicIp(zoneId, null, vlanId, account, VlanType.VirtualNetwork, network.getId(), false, true);
+                markPublicIpAsAllocated(ip.ip());
                 allocatedIps++;
             }
 
