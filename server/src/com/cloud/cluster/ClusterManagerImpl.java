@@ -70,6 +70,8 @@ public class ClusterManagerImpl implements ClusterManager {
     
     private final ScheduledExecutorService _heartbeatScheduler =
         Executors.newScheduledThreadPool(1, new NamedThreadFactory("Cluster-Heartbeat"));
+    private final ScheduledExecutorService _peerScanScheduler = 
+    	Executors.newScheduledThreadPool(1, new NamedThreadFactory("Cluster-PeerScan"));
     
     private final ExecutorService _executor;
     
@@ -517,9 +519,25 @@ public class ClusterManagerImpl implements ClusterManager {
                     }
     	    		
         			_mshostDao.update(_mshostId, DateUtil.currentGMTTime());
-        			peerScan();
 			    } catch (Throwable e) {
 			        s_logger.error("Problem with the cluster heartbeat!", e);
+			    }
+			}
+		};
+	}
+
+	private Runnable getPeerScanTask() {
+		return new Runnable() {
+			@Override
+            public void run() {
+			    try {
+    	    		if(s_logger.isTraceEnabled()) {
+                        s_logger.trace("Cluster manager peer-scan, id:" + _mshostId);
+                    }
+    	    		
+        			peerScan();
+			    } catch (Throwable e) {
+			        s_logger.error("Problem with the cluster peer-scan!", e);
 			    }
 			}
 		};
@@ -629,8 +647,11 @@ public class ClusterManagerImpl implements ClusterManager {
 	        if(s_logger.isInfoEnabled()) {
                 s_logger.info("Management server (host id : " + _mshostId + ") is available at " + _clusterNodeIP + ":" + _currentServiceAdapter.getServicePort());
             }
-	        
+
+	        // use seperated thread for heartbeat updates
 			_heartbeatScheduler.scheduleAtFixedRate(getHeartbeatTask(), heartbeatInterval,
+					heartbeatInterval, TimeUnit.MILLISECONDS);
+			_peerScanScheduler.scheduleAtFixedRate(getPeerScanTask(), heartbeatInterval,
 					heartbeatInterval, TimeUnit.MILLISECONDS);
 	        
         } catch (Throwable e) {
