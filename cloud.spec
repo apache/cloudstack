@@ -67,7 +67,7 @@ Cloud.com management server.
 Summary:   Cloud.com server library
 Requires: java >= 1.6.0
 Obsoletes: vmops-server < %{version}-%{release}
-Requires: %{name}-utils = %{version}-%{release}, %{name}-core = %{version}-%{release}, %{name}-deps = %{version}-%{release}, tomcat6-servlet-2.5-api
+Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, tomcat6-servlet-2.5-api
 Group:     System Environment/Libraries
 %description server
 The Cloud.com server libraries provide a set of Java classes used
@@ -125,7 +125,7 @@ as a service.
 %package core
 Summary:   Cloud.com core library
 Requires: java >= 1.6.0
-Requires: %{name}-utils = %{version}-%{release}, %{name}-deps = %{version}-%{release}
+Requires: %{name}-utils = %{version}, %{name}-deps = %{version}
 Group:     System Environment/Libraries
 Obsoletes: vmops-core < %{version}-%{release}
 %description core
@@ -138,12 +138,12 @@ Summary:   Cloud.com management server
 Conflicts: java-1.5.0-gcj-devel
 Obsoletes: vmops-client < %{version}-%{release}
 Requires: java >= 1.6.0
-Requires: %{name}-deps = %{version}-%{release}, %{name}-utils = %{version}-%{release}, %{name}-server = %{version}-%{release}
-Requires: %{name}-client-ui = %{version}-%{release}
-Requires: %{name}-setup = %{version}-%{release}
+Requires: %{name}-deps = %{version}, %{name}-utils = %{version}, %{name}-server = %{version}
+Requires: %{name}-client-ui = %{version}
+Requires: %{name}-setup = %{version}
 # reqs the agent-scripts package because of xenserver within the management server
-Requires: %{name}-agent-scripts = %{version}-%{release}
-Requires: %{name}-python = %{version}-%{release}
+Requires: %{name}-agent-scripts = %{version}
+Requires: %{name}-python = %{version}
 # for consoleproxy
 # Requires: %{name}-agent
 Requires: tomcat6
@@ -173,10 +173,10 @@ Obsoletes: vmops-setup < %{version}-%{release}
 Requires: java >= 1.6.0
 Requires: python
 Requires: MySQL-python
-Requires: %{name}-utils = %{version}-%{release}
-Requires: %{name}-server = %{version}-%{release}
-Requires: %{name}-deps = %{version}-%{release}
-Requires: %{name}-python = %{version}-%{release}
+Requires: %{name}-utils = %{version}
+Requires: %{name}-server = %{version}
+Requires: %{name}-deps = %{version}
+Requires: %{name}-python = %{version}
 Group:     System Environment/Libraries
 %description setup
 The Cloud.com setup tools let you set up your Management Server and Usage Server.
@@ -184,7 +184,7 @@ The Cloud.com setup tools let you set up your Management Server and Usage Server
 %package agent-libs
 Summary:   Cloud.com agent libraries
 Requires: java >= 1.6.0
-Requires: %{name}-utils = %{version}-%{release}, %{name}-core = %{version}-%{release}, %{name}-deps = %{version}-%{release}
+Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}
 Requires: commons-httpclient
 #Requires: commons-codec
 Requires: commons-collections
@@ -203,11 +203,11 @@ Obsoletes: vmops-agent < %{version}-%{release}
 Obsoletes: vmops-console < %{version}-%{release}
 Obsoletes: cloud-console < %{version}-%{release}
 Requires: java >= 1.6.0
-Requires: %{name}-utils = %{version}-%{release}, %{name}-core = %{version}-%{release}, %{name}-deps = %{version}-%{release}
-Requires: %{name}-agent-libs = %{version}-%{release}
-Requires: %{name}-agent-scripts = %{version}-%{release}
+Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}
+Requires: %{name}-agent-libs = %{version}
+Requires: %{name}-agent-scripts = %{version}
 Requires: python
-Requires: %{name}-python = %{version}-%{release}
+Requires: %{name}-python = %{version}
 Requires: commons-httpclient
 #Requires: commons-codec
 Requires: commons-collections
@@ -252,9 +252,9 @@ will participate in your cloud.
 %package console-proxy
 Summary:   Cloud.com console proxy
 Requires: java >= 1.6.0
-Requires: %{name}-utils = %{version}-%{release}, %{name}-core = %{version}-%{release}, %{name}-deps = %{version}-%{release}, %{name}-agent-libs = %{version}-%{release}
+Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, %{name}-agent-libs = %{version}
 Requires: python
-Requires: %{name}-python = %{version}-%{release}
+Requires: %{name}-python = %{version}
 Requires: commons-httpclient
 #Requires: commons-codec
 Requires: commons-collections
@@ -287,7 +287,7 @@ The Cloud.com command line tools contain a few Python modules that can call clou
 %package test
 Summary:   Cloud.com test suite
 Requires: java >= 1.6.0
-Requires: %{name}-utils = %{version}-%{release}, %{name}-deps = %{version}-%{release}, wget
+Requires: %{name}-utils = %{version}, %{name}-deps = %{version}, wget
 Group:     System Environment/Libraries
 Obsoletes: vmops-test < %{version}-%{release}
 %description test
@@ -303,7 +303,7 @@ Obsoletes: %{name}-premium-plugin-zynga < %{version}-%{release}
 Provides: %{name}-premium-vendor-zynga = %{version}-%{release}
 Obsoletes: %{name}-premium-vendor-zynga < %{version}-%{release}
 Requires: java >= 1.6.0
-Requires: %{name}-utils = %{version}-%{release}
+Requires: %{name}-utils = %{version}
 License:   CSL 1.1
 Group:     System Environment/Libraries
 %description premium
@@ -313,9 +313,9 @@ The Cloud.com premium components expand the range of features on your Cloud.com 
 Summary:   Cloud.com usage monitor
 Obsoletes: vmops-usage < %{version}-%{release}
 Requires: java >= 1.6.0
-Requires: %{name}-utils = %{version}-%{release}, %{name}-core = %{version}-%{release}, %{name}-deps = %{version}-%{release}, %{name}-server = %{version}-%{release}, %{name}-premium = %{version}-%{release}, %{name}-daemonize = %{version}-%{release}
-Requires: %{name}-setup = %{version}-%{release}
-Requires: %{name}-client = %{version}-%{release}
+Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, %{name}-server = %{version}, %{name}-premium = %{version}, %{name}-daemonize = %{version}
+Requires: %{name}-setup = %{version}
+Requires: %{name}-client = %{version}
 License:   CSL 1.1
 Group:     System Environment/Libraries
 %description usage
