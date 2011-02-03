@@ -370,7 +370,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     	}
         Long poolId = v.getPoolId();
         if (poolId == null) {
-            throw new CloudRuntimeException("Volume: " + volumeId + " is empty, don't need to create a snapshot");
+            throw new CloudRuntimeException("You cannot take a snapshot of a volume until it has been attached to an instance");
         }
         VolumeVO volume = _volsDao.acquireInLockTable(volumeId, 10);       
         if( volume == null ) {
