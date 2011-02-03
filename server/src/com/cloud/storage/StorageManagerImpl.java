@@ -2356,6 +2356,19 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             StoragePool pool = _storagePoolDao.findById(vol.getPoolId());
             vm.addDisk(new VolumeTO(vol, pool));
         }
+        
+        if (vm.getType() == VirtualMachine.Type.User) {
+            UserVmVO userVM = (UserVmVO)vm.getVirtualMachine();
+            if (userVM.getIsoId() != null) {
+                Pair<String, String> isoPathPair = getAbsoluteIsoPath(userVM.getIsoId(), userVM.getDataCenterId());
+                if (isoPathPair != null) {
+                    String isoPath = isoPathPair.first();
+                    VolumeTO iso = new VolumeTO(vm.getId(), Volume.VolumeType.ISO, StorageResourceType.STORAGE_POOL, StoragePoolType.ISO, null, null, null, isoPath,
+                            0, null, null);
+                    vm.addDisk(iso);
+                }
+            }
+        }
     }
 
     @Override

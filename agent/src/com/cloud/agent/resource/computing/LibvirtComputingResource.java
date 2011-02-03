@@ -1674,6 +1674,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 					} 
 				}
 			}
+			
+			/*setup disks, e.g for iso*/
+			VolumeTO[] volumes = vm.getDisks();
+			for (VolumeTO volume : volumes) {
+			    if (volume.getType() == Volume.VolumeType.ISO) {
+			        getVolumePath(conn, volume);
+			    }
+			}
+			
 			synchronized (_vms) {
 				_vms.put(vm.getName(), State.Migrating);
 			}
@@ -1683,6 +1692,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			return new PrepareForMigrationAnswer(cmd, e.toString()); 
 		} catch (InternalErrorException e) {
 			return new PrepareForMigrationAnswer(cmd, e.toString()); 
+		} catch (URISyntaxException e) {
+		    return new PrepareForMigrationAnswer(cmd, e.toString()); 
 		}
 	}
 	
