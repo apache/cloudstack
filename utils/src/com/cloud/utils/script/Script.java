@@ -408,6 +408,23 @@ public class Script implements Callable<String> {
         else
             return result.trim();
     }
+    
+    public static String runSimpleBashScript(String command, int timeout) {
+
+        Script s = new Script("/bin/bash", timeout);
+        s.add("-c");
+        s.add(command);
+
+        OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+        if (s.execute(parser) != null)
+            return null;
+
+        String result = parser.getLine();
+        if (result == null || result.trim().isEmpty())
+            return null;
+        else
+            return result.trim();
+    }
 
     public static void main(String[] args) {
         String path = findScript(".", "try.sh");

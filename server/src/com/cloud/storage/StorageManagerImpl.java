@@ -253,6 +253,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     private int _maxVolumeSizeInGb;
     private long _serverId;
 
+    private int _snapshotTimeout;
+
     public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) throws StorageUnavailableException {
 
         // if pool is in maintenance and it is the ONLY pool available; reject
@@ -712,6 +714,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         _retry = NumbersUtil.parseInt(configs.get(Config.StartRetry.key()), 10);
         _pingInterval = NumbersUtil.parseInt(configs.get("ping.interval"), 60);
         _hostRetry = NumbersUtil.parseInt(configs.get("host.retry"), 2);
+        _snapshotTimeout = NumbersUtil.parseInt(Config.CmdsWait.key(), 2*60*60*1000);
         _storagePoolAcquisitionWaitSeconds = NumbersUtil.parseInt(configs.get("pool.acquisition.wait.seconds"), 1800);
         s_logger.info("pool.acquisition.wait.seconds is configured as " + _storagePoolAcquisitionWaitSeconds + " seconds");
 
@@ -1636,7 +1639,16 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         
         for (Long hostId : hostIds) {
             try {
-                return new Pair<Long, Answer[]>(hostId, _agentMgr.send(hostId, cmds));
+                List<Answer> answers = new ArrayList<Answer>();
+                Command[] cmdArray = cmds.toCommands();
+                for (Command cmd : cmdArray) {
+                    if (cmd instanceof BackupSnapshotCommand) {
+                        answers.add(_agentMgr.send(hostId, cmd, _snapshotTimeout));
+                    } else {
+                        answers.add(_agentMgr.send(hostId, cmd));
+                    }
+                }
+                return new Pair<Long, Answer[]>(hostId, answers.toArray(new Answer[answers.size()]));
             } catch (AgentUnavailableException e) {
                 s_logger.debug("Unable to send storage pool command to " + pool, e);
             } catch (OperationTimedoutException e) {

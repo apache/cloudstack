@@ -294,6 +294,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	
 	protected boolean _disconnected = true;
 	protected int _timeout;
+	protected int _cmdsTimeout;
 	protected int _stopTimeout;
     protected static HashMap<DomainInfo.DomainState, State> s_statesTable;
     static {
@@ -544,11 +545,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         
          value = (String)params.get("scripts.timeout");
-        _timeout = NumbersUtil.parseInt(value, 120) * 1000;
+        _timeout = NumbersUtil.parseInt(value, 30*60) * 1000;
         
         value = (String)params.get("stop.script.timeout");
         _stopTimeout = NumbersUtil.parseInt(value, 120) * 1000;
         
+        value = (String)params.get("cmds.timeout");
+        _cmdsTimeout = NumbersUtil.parseInt(value, 7200) * 1000;
         
         value = (String)params.get("host.reserved.mem.mb");
         _dom0MinMem = NumbersUtil.parseInt(value, 0)*1024*1024;
@@ -1004,7 +1007,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     			}
     		} else {
     			/*VM is not running, create a snapshot by ourself*/
-    			final Script command = new Script(_manageSnapshotPath, _timeout, s_logger);
+    			final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
     			if (cmd.getCommandSwitch().equalsIgnoreCase(ManageSnapshotCommand.CREATE_SNAPSHOT)) {
     				command.add("-c", VolPath);
     			} else {
@@ -1041,7 +1044,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			LibvirtStoragePoolDef spd = _storageResource.getStoragePoolDef(conn, secondaryStoragePool);
 			String ssPmountPath = spd.getTargetPath();
 			snapshotDestPath = ssPmountPath + File.separator + "snapshots" + File.separator +  dcId + File.separator + accountId + File.separator + volumeId; 
-			Script command = new Script(_manageSnapshotPath, 1800000, s_logger);
+			Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
 			command.add("-b", snapshotPath);
 			command.add("-n", snapshotName);
 			command.add("-p", snapshotDestPath);
@@ -1079,7 +1082,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     				vm.resume();
     			}
 			} else {
-				command = new Script(_manageSnapshotPath, _timeout, s_logger);   			
+				command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);   			
     			command.add("-d", snapshotPath);  			
     			command.add("-n", snapshotName);
     			result = command.execute();
@@ -1107,7 +1110,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			String ssPmountPath = spd.getTargetPath();
 			String snapshotDestPath = ssPmountPath + File.separator + "snapshots"  + File.separator + dcId + File.separator + accountId + File.separator + volumeId;
 			
-			final Script command = new Script(_manageSnapshotPath, _timeout, s_logger);
+			final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
 			command.add("-d", snapshotDestPath);
 			command.add("-n", cmd.getSnapshotName());
 			
@@ -1131,7 +1134,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			String ssPmountPath = spd.getTargetPath();
 			String snapshotDestPath = ssPmountPath + File.separator + "snapshots" + File.separator +  dcId + File.separator + accountId + File.separator + volumeId;
 			
-			final Script command = new Script(_manageSnapshotPath, _timeout, s_logger);
+			final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
 			command.add("-d", snapshotDestPath);
 			command.add("-n", cmd.getSnapshotName());
 			command.add("-f");
@@ -1338,7 +1341,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         	 primaryPool = _storageResource.getStoragePool(conn, cmd.getPoolUuid());
         	 LibvirtStorageVolumeDef vol = new LibvirtStorageVolumeDef(UUID.randomUUID().toString(), tmplVol.getInfo().capacity, volFormat.QCOW2, null, null);
         	 s_logger.debug(vol.toString());
-        	 primaryVol = _storageResource.copyVolume(primaryPool, vol, tmplVol);
+        	 primaryVol = _storageResource.copyVolume(primaryPool, vol, tmplVol, _cmdsTimeout);
         	 
         	 StorageVolInfo priVolInfo = primaryVol.getInfo();
         	 return new PrimaryStorageDownloadAnswer(primaryVol.getKey(), priVolInfo.allocation);

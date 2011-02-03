@@ -335,11 +335,11 @@ public class LibvirtStorageResource {
         return sp;
     }
     
-    public StorageVol copyVolume(StoragePool destPool, LibvirtStorageVolumeDef destVol, StorageVol srcVol) throws LibvirtException {
+    public StorageVol copyVolume(StoragePool destPool, LibvirtStorageVolumeDef destVol, StorageVol srcVol, int timeout) throws LibvirtException {
         StorageVol vol = destPool.storageVolCreateXML(destVol.toString(), 0);
         String srcPath = srcVol.getKey();
         String destPath = vol.getKey();
-        Script.runSimpleBashScript("cp " + srcPath + " " + destPath );
+        Script.runSimpleBashScript("cp " + srcPath + " " + destPath, timeout);
         return vol;
     }
     

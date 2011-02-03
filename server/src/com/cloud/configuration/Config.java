@@ -130,6 +130,7 @@ public enum Config {
 	StorageCleanupEnabled("Advanced", StorageManager.class, Boolean.class, "storage.cleanup.enabled", "true", "Enables/disables the storage cleanup thread.", null),
 	UpdateWait("Advanced", AgentManager.class, Integer.class, "update.wait", "600", "Time to wait before alerting on a updating agent", null),
 	Wait("Advanced", AgentManager.class, Integer.class, "wait", "1800", "Time to wait for control commands to return", null),
+    CmdsWait("Advanced", AgentManager.class, Integer.class, "cmd.wait", "7200", "Time to wait for some heavy time-consuming commands", null),
 	Workers("Advanced", AgentManager.class, Integer.class, "workers", "5", "Number of worker threads.", null),
 	MountParent("Advanced", ManagementServer.class, String.class, "mount.parent", "/var/lib/cloud/mnt", "The mount point on the Management Server for Secondary Storage.", null),
 //	UpgradeURL("Advanced", ManagementServer.class, String.class, "upgrade.url", "http://example.com:8080/client/agent/update.zip", "The upgrade URL is the URL of the management server that agents will connect to in order to automatically upgrade.", null),
