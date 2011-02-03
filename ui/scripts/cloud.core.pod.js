@@ -669,6 +669,7 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
     	} else if(objCluster.hypervisortype == "XenServer") {
     		$protocolSelector.empty();
 			$protocolSelector.append('<option value="nfs">NFS</option>');
+			$protocolSelector.append('<option value="PreSetup">PreSetup</option>');
 			$protocolSelector.append('<option value="iscsi">ISCSI</option>');
     	} else if(objCluster.hypervisortype == "VMware") {
     		$protocolSelector.empty();
@@ -695,7 +696,7 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
 			    var isValid = true;						    
 			    isValid &= validateDropDownBox("Cluster", $thisDialog.find("#pool_cluster"), $thisDialog.find("#pool_cluster_errormsg"), false);  //required, reset error text					    				
 			    isValid &= validateString("Name", $thisDialog.find("#add_pool_name"), $thisDialog.find("#add_pool_name_errormsg"));
-				if (protocol == "nfs" || protocol == "sharedMountPoint") {
+				if (protocol == "nfs" || protocol == "PreSetup" || protocol == "sharedMountPoint") {
 				    isValid &= validateString("Server", $thisDialog.find("#add_pool_nfs_server"), $thisDialog.find("#add_pool_nfs_server_errormsg"));	
 					isValid &= validateString("Path", $thisDialog.find("#add_pool_path"), $thisDialog.find("#add_pool_path_errormsg"));	
 				} else if(protocol == "iscsi") {
@@ -725,12 +726,12 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
 			    var server = trim($thisDialog.find("#add_pool_nfs_server").val());						
 				
 				var url = null;
-				if (protocol == "nfs") {
+				if (protocol == "nfs" || protocol == "PreSetup") {
 					var path = trim($thisDialog.find("#add_pool_path").val());
 					if(path.substring(0,1)!="/")
 						path = "/" + path; 
 					url = nfsURL(server, path);
-				} 
+				} 				
 				else if (protocol == "sharedMountPoint") {
 					var path = trim($thisDialog.find("#add_pool_path").val());
 					if(path.substring(0,1)!="/")
@@ -905,7 +906,7 @@ function iscsiURL(server, iqn, lun) {
 
 function bindEventHandlerToDialogAddPool($dialogAddPool) { 
     $dialogAddPool.find("#add_pool_protocol").change(function(event) {
-    	if($(this).val() == "nfs") {
+    	if($(this).val() == "nfs" || $(this).val() == "PreSetup") {
     		$("#add_pool_server_container", $dialogAddPool).show();
     		$('li[input_group="nfs"]', $dialogAddPool).show();
     		$('li[input_group="iscsi"]', $dialogAddPool).hide();
@@ -933,21 +934,6 @@ function bindEventHandlerToDialogAddPool($dialogAddPool) {
     		$('li[input_group="vmfs"]', $dialogAddPool).hide();
     		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", true).val("localhost");
     	} 
-
-/*    
-		if ($(this).val() == "iscsi") {
-			$dialogAddPool.find("#add_pool_path_container").hide();
-			$dialogAddPool.find("#add_pool_iqn_container,#add_pool_lun_container").show();
-		} 
-		else if ($(this).val() == "nfs") {
-			$dialogAddPool.find("#add_pool_path_container").show();
-			$dialogAddPool.find("#add_pool_iqn_container,#add_pool_lun_container").hide();
-		}
-		else if ($(this).val() == "vmfs") {
-			$dialogAddPool.find("#add_pool_path_container").show();
-			$dialogAddPool.find("#add_pool_iqn_container,#add_pool_lun_container").hide();
-		}
-*/		
 	});		
 }
 
