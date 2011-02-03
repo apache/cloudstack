@@ -378,15 +378,19 @@ function showDashboard(dashboardToShow) {
 
 //*** dashboard admin (begin) ***
 function capacityBarChart($capacity, percentused) { // e.g. percentused == "51.27" (no % inside)
-    var percentused2 = (percentused + "%");
-    $capacity.find("#percentused").text(percentused2);
     
     var percentusedFloat = parseFloat(percentused); // e.g. percentusedFloat == 51.27  
-    if (percentusedFloat <= 60)
+    var percentusedRound = Math.round(percentusedFloat); //e.g. percentusedRound == 51
+    
+    var percentused2 = (percentusedRound.toString() + "%"); //e.g. percentused2 == "51%"
+    $capacity.find("#percentused").text(percentused2);
+     
+    //e.g. percentusedRound == 51    
+    if (percentusedRound <= 60)
         $capacity.find("#bar_chart").removeClass().addClass("db_barbox low").css("width", percentused2); 
-    else if (percentusedFloat > 60 && percentusedFloat <= 80 )
+    else if (percentusedRound > 60 && percentusedRound <= 80 )
         $capacity.find("#bar_chart").removeClass().addClass("db_barbox mid").css("width", percentused2);
-    else if (percentusedFloat > 80 )
+    else if (percentusedRound > 80 )
         $capacity.find("#bar_chart").removeClass().addClass("db_barbox high").css("width", percentused2);
 }
 //*** dashboard admin (end) ***
