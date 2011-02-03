@@ -814,8 +814,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             if (success) {
                 s_logger.debug("Successfully deleted snapshots directories for all volumes under account " + accountId + " across all zones");
             }
-            // else, there are no snapshots, hence no directory to delete.
-            
             
             // clean up templates
             List<VMTemplateVO> userTemplates = _templateDao.listByAccountId(accountId);
@@ -830,6 +828,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
             
             if (!allTemplatesDeleted) {
+                s_logger.warn("Failed to delete templates while removing account id=" + accountId);
                 accountCleanupNeeded = true;
             }
             

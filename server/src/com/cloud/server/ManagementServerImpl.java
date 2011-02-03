@@ -3011,6 +3011,9 @@ public class ManagementServerImpl implements ManagementServer {
             // cleanup sub-domains first
             for (DomainVO domain : domains) {
                 success = (success && cleanupDomain(domain.getId(), domain.getAccountId()));
+                if (!success) {
+                    s_logger.warn("Failed to cleanup domain id=" + domain.getId());
+                }
             }
         }
 
@@ -3020,7 +3023,10 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
             List<AccountVO> accounts = _accountDao.search(sc, null);
             for (AccountVO account : accounts) {
-                success = (success && _accountMgr.cleanupAccount(account, UserContext.current().getCallerUserId(), UserContext.current().getCaller()));
+                success = (success && _accountMgr.deleteAccount(account, UserContext.current().getCallerUserId(), UserContext.current().getCaller()));
+                if (!success) {
+                    s_logger.warn("Failed to cleanup account id=" + account.getId() + " as a part of domain cleanup");
+                }
             }
         }
         
