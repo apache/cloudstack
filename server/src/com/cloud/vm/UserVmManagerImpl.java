@@ -823,7 +823,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
     }
     
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_VM_UPGRADE, eventDescription="upgrading Vm")
     /*
      * TODO: cleanup eventually - Refactored API call
      */
@@ -1569,7 +1569,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
 	}
 	
-    @Override
+	@Override @ActionEvent (eventType=EventTypes.EVENT_VM_UPDATE, eventDescription="updating Vm")
     public UserVm updateVirtualMachine(UpdateVMCmd cmd) {
         String displayName = cmd.getDisplayName();
         String group = cmd.getGroup();
@@ -1643,17 +1643,17 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return _vmDao.findById(id);
     }
 
-	@Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_VM_STOP, eventDescription="stopping Vm", async=true)
 	public UserVm stopVirtualMachine(StopVMCmd cmd) throws ServerApiException, ConcurrentOperationException{
 	    return stopVirtualMachine(cmd.getId());
 	}
 
-	@Override
+	@Override @ActionEvent (eventType=EventTypes.EVENT_VM_START, eventDescription="starting Vm", async=true)
 	public UserVm startVirtualMachine(StartVMCmd cmd) throws ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
 	    return startVirtualMachine(cmd.getId());
 	}
 
-	@Override
+	@Override @ActionEvent (eventType=EventTypes.EVENT_VM_REBOOT, eventDescription="rebooting Vm", async=true)
 	public UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException{
         Account account = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
@@ -1670,7 +1670,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return rebootVirtualMachine(userId, vmId);
 	}
 
-	@Override
+	@Override @ActionEvent (eventType=EventTypes.EVENT_VM_DESTROY, eventDescription="destroying Vm", async=true)
 	public UserVm destroyVm(DestroyVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException {
 	    return destroyVm(cmd.getId());
 	}
