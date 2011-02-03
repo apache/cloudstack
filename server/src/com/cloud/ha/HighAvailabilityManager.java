@@ -23,8 +23,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineGuru;
 
 /**
  * HighAvailabilityManager checks to make sure the VMs are running fine.
@@ -76,21 +74,6 @@ public interface HighAvailabilityManager extends Manager {
      * @param host host.
      */
     void scheduleRestartForVmsOnHost(final HostVO host);
-
-    /**
-     * Register a handler to take care of a VM.  If a handler for a certain
-     * type of VM is not handled, then it is not part of the HA process.
-     * 
-     * @param type virtual machine type.
-     * @param handler handler that can handle starting and stopping the machine.
-     */
-    void registerHandler(final VirtualMachine.Type type, final VirtualMachineGuru<? extends VMInstanceVO> handler);
-
-    /**
-     * Unregisters a handler.  Not likely called but here for completeness.
-     * @param type virtual machine type to unregister.
-     */
-    void unregisterHandler(final VirtualMachine.Type type);
 
     /**
      * Schedule the vm for migration.

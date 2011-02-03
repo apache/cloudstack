@@ -32,10 +32,10 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
+import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.Host.Type;
 import com.cloud.host.Status.Event;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ServerResource;
@@ -47,7 +47,6 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * AgentManager manages hosts.  It directly coordinates between the
@@ -190,8 +189,6 @@ public interface AgentManager extends Manager {
 	 */
     Pair<HostPodVO, Long> findPod(VirtualMachineTemplate template, ServiceOfferingVO offering, DataCenterVO dc, long userId, Set<Long> avoids);
     
-    Host findHost(VirtualMachineProfile vm, Set<? extends Host> avoids);
-
     /**
      * Put the agent in maintenance mode.
      * 
@@ -226,5 +223,7 @@ public interface AgentManager extends Manager {
     	throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
 
 	Answer easySend(Long hostId, Command cmd, int timeout);
+
+    boolean isHostNativeHAEnabled(long hostId);
 
 }

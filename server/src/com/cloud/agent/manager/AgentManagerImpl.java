@@ -86,6 +86,7 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterIpAddressVO;
@@ -388,6 +389,16 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		return true;
 	}
 
+	@Override
+	public boolean isHostNativeHAEnabled(long hostId) {
+        HostVO host = _hostDao.findById(hostId);
+        if (host.getClusterId() != null) {
+            ClusterDetailsVO detail = _clusterDetailsDao.findDetail(host.getClusterId(), "NativeHA");
+            return detail == null ? false : Boolean.parseBoolean(detail.getValue());
+        }
+        return false;
+    }
+    
 	@Override
 	public Task create(Task.Type type, Link link, byte[] data) {
 		return new AgentHandler(type, link, data);
@@ -2701,11 +2712,6 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			host.setStorageNetmaskDeux(startup.getStorageNetmaskDeux());
 		}
 
-	}
-
-	@Override
-	public Host findHost(VirtualMachineProfile vm, Set<? extends Host> avoids) {
-		return null;
 	}
 
 	// create capacity entries if none exist for this server

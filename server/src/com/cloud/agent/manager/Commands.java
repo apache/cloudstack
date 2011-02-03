@@ -18,6 +18,7 @@
 package com.cloud.agent.manager;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import com.cloud.agent.AgentManager.OnError;
@@ -25,7 +26,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Commands {
+public class Commands implements Iterable<Command> {
     OnError _handler;
     private ArrayList<String> _ids = new ArrayList<String>();
     private ArrayList<Command> _cmds = new ArrayList<Command>();
@@ -149,5 +150,10 @@ public class Commands {
         }
         
         return _handler != OnError.Continue;
+    }
+
+    @Override
+    public Iterator<Command> iterator() {
+        return _cmds.iterator();
     }
 }

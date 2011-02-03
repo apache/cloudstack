@@ -21,11 +21,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.manager.Commands;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.utils.exception.ExecutionException;
 
 /**
  * A VirtualMachineGuru knows how to process a certain type of virtual machine.
@@ -76,28 +72,6 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      * @return id if the handler works for this vm and can parse id.  null if not.
      */
     Long convertToId(String vmName);
-    
-    /**
-     * start the vm
-     * 
-     * @param vm to start.
-     * @return true if started.  false if not.
-     * @throws InsufficientCapacityException if there's not enough capacity to start the vm.
-     * @throws StorageUnavailableException if the storage is unavailable.
-     * @throws ConcurrentOperationException there's multiple threads working on this vm.
-     * @throws ExecutionException 
-     * @throws ResourceUnavailableException 
-     */
-    T start(long vmId) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
-
-    /**
-     * stop the vm
-     * 
-     * @param vm vm to Stop.
-     * @return true if stopped and false if not.
-     * @throws ResourceUnavailableException TODO
-     */
-    boolean stop(T vm) throws ResourceUnavailableException;
     
     /**
      * Produce a cleanup command to be sent to the agent to cleanup anything

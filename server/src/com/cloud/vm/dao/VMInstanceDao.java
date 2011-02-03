@@ -63,13 +63,6 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     
     List<VMInstanceVO> findVMInTransition(Date time, State... states);
 
-    /**
-     * return the counts of domain routers and console proxies running on the host
-     * @param hostId
-     * @return
-     */
-    Integer[] countRoutersAndProxies(Long hostId);
-    
     List<VMInstanceVO> listByTypes(VirtualMachine.Type... types);
     
     VMInstanceVO findByIdTypes(long id, VirtualMachine.Type... types);
@@ -84,4 +77,6 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 	List<VMInstanceVO> listByLastHostId(Long hostId);
 	
 	List<VMInstanceVO> listByTypeAndState(State state, VirtualMachine.Type type);
+
+    List<VMInstanceVO> listByAccountId(long accountId);
 }

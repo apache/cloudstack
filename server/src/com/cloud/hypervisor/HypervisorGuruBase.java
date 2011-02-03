@@ -57,7 +57,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         ServiceOffering offering = vmProfile.getServiceOffering();  
         VirtualMachine vm = vmProfile.getVirtualMachine();
         
-        VirtualMachineTO to = new VirtualMachineTO(vm.getId(), vm.getInstanceName(), vm.getType(), offering.getCpu(), offering.getSpeed(), offering.getRamSize() * 1024l * 1024l, offering.getRamSize() * 1024l * 1024l, null, null);
+        VirtualMachineTO to = new VirtualMachineTO(vm.getId(), vm.getInstanceName(), vm.getType(), offering.getCpu(), offering.getSpeed(), offering.getRamSize() * 1024l * 1024l, offering.getRamSize() * 1024l * 1024l, null, null, vm.isHaEnabled());
         to.setBootArgs(vmProfile.getBootArgs());
         
         List<NicProfile> nicProfiles = vmProfile.getNics();
@@ -70,10 +70,11 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setNics(nics);
         to.setDisks(vmProfile.getDisks().toArray(new VolumeTO[vmProfile.getDisks().size()]));
         
-        if(vmProfile.getTemplate().getBits() == 32)
-        	to.setArch("i686");
-        else
-        	to.setArch("x86_64");
+        if(vmProfile.getTemplate().getBits() == 32) {
+            to.setArch("i686");
+        } else {
+            to.setArch("x86_64");
+        }
         
         return to;
     }

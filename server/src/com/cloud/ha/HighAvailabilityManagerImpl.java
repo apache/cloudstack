@@ -18,7 +18,6 @@
 package com.cloud.ha;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -36,11 +35,9 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.StopAnswer;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -68,20 +65,18 @@ import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.db.GlobalLock;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineProfileImpl;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 
 /**
  * HighAvailabilityManagerImpl coordinates the HA process.  VMs are registered with
- * the HA Coordinator for HA.  The request is stored within a database backed
- * work queue.  HACoordinator then also has a number of workers that pick up
+ * the HA Manager for HA.  The request is stored within a database backed
+ * work queue.  HAManager has a number of workers that pick up
  * these work items to perform HA on the VMs.
  *
  * The HA process goes as follows:
@@ -143,13 +138,10 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     
     String _instance;
     ScheduledExecutorService _executor;
-    int _operationTimeout;
     int _stopRetryInterval;
     int _investigateRetryInterval;
     int _migrateRetryInterval;
     int _restartRetryInterval;
-
-    HashMap<VirtualMachine.Type, VirtualMachineGuru<VMInstanceVO>> _handlers;
 
     int _maxRetries;
     long _timeBetweenFailures;
@@ -157,7 +149,6 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     boolean _forceHA;
 
     protected HighAvailabilityManagerImpl() {
-        _handlers = new HashMap<VirtualMachine.Type, VirtualMachineGuru<VMInstanceVO>>(11);
     }
 
     @Override
@@ -247,17 +238,6 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         wakeupWorkers();
     }
 
-    @Override
-    public synchronized void registerHandler(final VirtualMachine.Type type, final VirtualMachineGuru<? extends VMInstanceVO> handler) {
-        s_logger.info("Registering " + handler.getClass().getSimpleName() + " as the handler for " + type);
-        _handlers.put(type, (VirtualMachineGuru<VMInstanceVO>)handler);
-    }
-
-    @Override
-    public synchronized void unregisterHandler(final VirtualMachine.Type type) {
-        _handlers.remove(type);
-    }
-    
     protected void wakeupWorkers() {
     	for (WorkerThread worker : _workers) {
     		worker.wakup();
@@ -279,8 +259,6 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     	    _itMgr.stateTransitTo(vm, Event.OperationFailed, null);
     	    return;
     	}
-    	VirtualMachineGuru<VMInstanceVO> mgr = findManager(vm.getType());
-    	vm = mgr.findById(vm.getId());
         if (!investigate) {
         	if (s_logger.isDebugEnabled()) {
         		s_logger.debug("VM does not require investigation so I'm marking it as Stopped: " + vm.toString());
@@ -306,8 +284,15 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
                 }
             }
 
-            _itMgr.stateTransitTo(vm, Event.AgentReportStopped, null);
-        	mgr.finalizeStop(new VirtualMachineProfileImpl<VMInstanceVO>(vm), null);
+            try {
+                _itMgr.advanceStop(vm, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            } catch (ResourceUnavailableException e) {
+                // FIXME
+            } catch (OperationTimedoutException e) {
+                // FIXME
+            } catch (ConcurrentOperationException e) {
+                // FIXME
+            }
         }
 
         final List<HaWorkVO> items = _haDao.findPreviousHA(vm.getId());
@@ -330,20 +315,10 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         wakeupWorkers();
     }
 
-    protected VirtualMachineGuru<VMInstanceVO> findManager(final VirtualMachine.Type type) {
-        return _handlers.get(type);
-    }
-
     protected Long restart(final HaWorkVO work) {
         final long vmId = work.getInstanceId();
 
-        final VirtualMachineGuru<VMInstanceVO> mgr = findManager(work.getType());
-        if (mgr == null) {
-            s_logger.warn("Unable to find a handler for " + work.getType().toString() + ", throwing out " + vmId);
-            return null;
-        }
-
-        VMInstanceVO vm = mgr.findById(vmId);
+        VMInstanceVO vm = _itMgr.findById(work.getType(), work.getInstanceId());
         if (vm == null) {
             s_logger.info("Unable to find vm: " + vmId);
             return null;
@@ -356,7 +331,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         }
 
         final HostVO host = _hostDao.findById(work.getHostId());
-        boolean nativeHA = isHostClusterNativeHAEnabled(work.getHostId());
+        boolean nativeHA = _agentMgr.isHostNativeHAEnabled(work.getHostId());
 
         DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
         HostPodVO podVO = _podDao.findById(host.getPodId());
@@ -392,7 +367,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             if (alive != null && alive) {
                 s_logger.debug("VM " + vm.getName() + " is found to be alive by " + investigator.getName());
                 if (host.getStatus() == Status.Up) {
-                	compareState(vm, new AgentVmInfo(vm.getInstanceName(), mgr, State.Running), false, nativeHA);
+//FIXME                	compareState(vm, new AgentVmInfo(vm.getInstanceName(), null, State.Running), false, nativeHA);
                 	return null;
                 } else {
                     s_logger.debug("Rescheduling because the host is not up but the vm is alive");
@@ -420,8 +395,15 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             	return (System.currentTimeMillis() >> 10) + _restartRetryInterval;
             }
 
-            _itMgr.stateTransitTo(vm, Event.AgentReportStopped, null);
-            mgr.finalizeStop(new VirtualMachineProfileImpl<VMInstanceVO>(vm), null);
+            try {
+                _itMgr.advanceStop(vm, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+            } catch (ResourceUnavailableException e) {
+                // FIXME
+            } catch (OperationTimedoutException e) {
+                // FIXME
+            } catch (ConcurrentOperationException e) {
+                // FIXME
+            }
             
             work.setStep(Step.Scheduled);
             _haDao.update(work.getId(), work);
@@ -433,7 +415,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         		+ hostDesc, "Virtual Machine " + vm.getName() + " (id: "
         		+ vm.getId() + ") running on host [" + hostDesc + "] stopped unexpectedly.");
         
-        vm = mgr.findById(vm.getId());
+        vm = _itMgr.findById(vm.getType(), vm.getId());
 
         if (!_forceHA && !vm.isHaEnabled()) {
             if (s_logger.isDebugEnabled()) {
@@ -455,7 +437,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         }
 
         try {
-            VMInstanceVO started = mgr.start(vm.getId());
+            VMInstanceVO started = _itMgr.advanceStart(vm, new HashMap<VirtualMachineProfile.Param, Object>(), _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
             if (started != null) {
                 s_logger.info("VM is now restarted: " + vmId + " on " + started.getHostId());
                 return null;
@@ -464,7 +446,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             if (s_logger.isDebugEnabled()) {
             	s_logger.debug("Rescheduling VM " + vm.toString() + " to try again in " + _restartRetryInterval);
             }
-            vm = mgr.findById(vm.getId());
+            vm = _itMgr.findById(vm.getType(), vm.getId());
             work.setUpdateTime(vm.getUpdated());
             work.setPreviousState(vm.getState());
             return (System.currentTimeMillis() >> 10) + _restartRetryInterval;
@@ -480,250 +462,12 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         	s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
             _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getName() + " which was running on host " + hostDesc, "The Storage is unavailable for trying to restart VM, name: " + vm.getName() + ", id: " + vmId + " which was running on host " + hostDesc);
             return null;
-        }
-    }
-
-
-    /**
-     * compareState does as its name suggests and compares the states between
-     * management server and agent.  It returns whether something should be
-     * cleaned up
-     *
-     */
-    protected Command compareState(VMInstanceVO vm, final AgentVmInfo info, final boolean fullSync, boolean nativeHA) {
-    	State agentState = info.state;
-        final String agentName = info.name;
-        final State serverState = vm.getState();
-        final String serverName = vm.getName();
-
-        
-        Command command = null;
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("VM " + serverName + ": server state = " + serverState.toString() + " and agent state = " + agentState.toString());
-        }
-        
-        if (agentState == State.Error) {
-        	agentState = State.Stopped;
-        	
-            short alertType = AlertManager.ALERT_TYPE_USERVM;
-            if (VirtualMachine.Type.DomainRouter.equals(vm.getType())) {
-                alertType = AlertManager.ALERT_TYPE_DOMAIN_ROUTER;
-            } else if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-                alertType = AlertManager.ALERT_TYPE_CONSOLE_PROXY;
-            }
-
-            HostPodVO podVO = _podDao.findById(vm.getPodId());
-            DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterId());
-            HostVO hostVO = _hostDao.findById(vm.getHostId());
-            
-            String hostDesc = "name: " + hostVO.getName() + " (id:" + hostVO.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
-            _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "VM (name: " + vm.getName() + ", id: " + vm.getId() + ") stopped on host " + hostDesc + " due to storage failure", "Virtual Machine " + vm.getName() + " (id: " + vm.getId() + ") running on host [" + vm.getHostId() + "] stopped due to storage failure.");
-        }
-        
-        if (serverState == State.Migrating) {
-        	s_logger.debug("Skipping vm in migrating state: " + vm.toString());
-        	return null;
-        }
-
-        if (agentState == serverState) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Both states are " + agentState.toString() + " for " + serverName);
-            }
-            assert (agentState == State.Stopped || agentState == State.Running) : "If the states we send up is changed, this must be changed.";
-            _itMgr.stateTransitTo(vm, agentState == State.Stopped ? VirtualMachine.Event.AgentReportStopped : VirtualMachine.Event.AgentReportRunning, vm.getHostId());
-            if (agentState == State.Stopped) {
-                s_logger.debug("State matches but the agent said stopped so let's send a cleanup anyways.");
-                return info.mgr.cleanup(vm, agentName);
-            }
+        } catch (OperationTimedoutException e) {
+            // FIXME
             return null;
         }
-        if (agentState == State.Shutdowned ) {
-            if ( serverState == State.Running || serverState == State.Starting || serverState == State.Stopping ) {
-                _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportShutdowned, null);
-            }
-            s_logger.debug("Sending cleanup to a shutdowned vm: " + agentName);            
-            command = info.mgr.cleanup(vm, agentName);
-        } else if (agentState == State.Stopped) {
-            // This state means the VM on the agent was detected previously
-            // and now is gone.  This is slightly different than if the VM
-            // was never completed but we still send down a Stop Command
-            // to ensure there's cleanup.
-            if (serverState == State.Running ) {
-            	if(!nativeHA) {
-	                // Our records showed that it should be running so let's restart it.
-	                vm = info.mgr.findById(vm.getId());
-	                scheduleRestart(vm, false);
-	                command = info.mgr.cleanup(vm, agentName);
-            	} else {
-            		s_logger.info("VM is in runnting state, agent reported as stopped and native HA is enabled => skip sync action");
-            	}
-            } else if (serverState == State.Stopping) {
-                if (fullSync) {
-                    s_logger.debug("VM is in stopping state on full sync.  Updating the status to stopped");
-                    vm = info.mgr.findById(vm.getId());
-                    _itMgr.stateTransitTo(vm, Event.AgentReportStopped, null);
-                    info.mgr.finalizeStop(new VirtualMachineProfileImpl<VMInstanceVO>(vm), null);
-                    command = info.mgr.cleanup(vm, agentName);
-                } else {
-                    s_logger.debug("Ignoring VM in stopping mode: " + vm.getName());
-                }
-            } else if (serverState == State.Starting) {
-                s_logger.debug("Ignoring VM in starting mode: " + vm.getName());
-                _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
-            } else {
-                s_logger.debug("Sending cleanup to a stopped vm: " + agentName);            
-                _itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
-                command = info.mgr.cleanup(vm, agentName);
-            }
-        } else if (agentState == State.Running) {
-            if (serverState == State.Starting) {
-                if (fullSync) {
-                    s_logger.debug("VM state is starting on full sync so updating it to running");
-                    vm = info.mgr.findById(vm.getId());
-                    _itMgr.stateTransitTo(vm, Event.AgentReportRunning, vm.getHostId());
-                    info.mgr.finalizeStart(new VirtualMachineProfileImpl<VMInstanceVO>(vm), vm.getHostId(), null, null);
-                }
-            } else if (serverState == State.Stopping) {
-                if (fullSync) {
-                    s_logger.debug("VM state is in stopping on fullsync so resend stop.");
-                    vm = info.mgr.findById(vm.getId());
-                    _itMgr.stateTransitTo(vm, Event.AgentReportStopped, null);
-                    info.mgr.finalizeStop(new VirtualMachineProfileImpl<VMInstanceVO>(vm), null);
-                    command = info.mgr.cleanup(vm, agentName);
-                } else {
-                    s_logger.debug("VM is in stopping state so no action.");
-                }
-            } else if (serverState == State.Destroyed || serverState == State.Stopped || serverState == State.Expunging) {
-            	s_logger.debug("VM state is in stopped so stopping it on the agent");
-            	vm = info.mgr.findById(vm.getId());
-            	command = info.mgr.cleanup(vm, agentName);
-            } else {
-            	_itMgr.stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
-            }
-        } /*else if (agentState == State.Unknown) {
-            if (serverState == State.Running) {
-                if (fullSync) {
-                    vm = info.handler.get(vm.getId());
-                }
-                scheduleRestart(vm, false);
-            } else if (serverState == State.Starting) {
-                if (fullSync) {
-                    vm = info.handler.get(vm.getId());
-                }
-                scheduleRestart(vm, false);
-            } else if (serverState == State.Stopping) {
-                if (fullSync) {
-                    s_logger.debug("VM state is stopping in full sync.  Resending stop");
-                    command = info.handler.cleanup(vm, agentName);
-                }
-            }
-        }*/
-        return command;
     }
 
-    public List<Command> fullSync(final long hostId, final Map<String, State> newStates) {
-        final List<? extends VMInstanceVO> vms = _instanceDao.listByHostId(hostId);
-        s_logger.debug("Found " + vms.size() + " VMs for host " + hostId);
-
-        final Map<Long, AgentVmInfo> states = convertToIds(newStates);
-        final ArrayList<Command> commands = new ArrayList<Command>();
-
-        boolean nativeHA = isHostClusterNativeHAEnabled(hostId);
-
-        for (final VMInstanceVO vm : vms) {
-            AgentVmInfo info = states.remove(vm.getId());
-
-            if (info == null) {
-                info = new AgentVmInfo(null, findManager(vm.getType()), State.Stopped);
-            }
-            
-            assert info.mgr != null : "How can the manager be null for " + vm.getType();
-
-            VMInstanceVO vmCasted = info.mgr.findById(vm.getId());
-            final Command command = compareState(vmCasted, info, true, nativeHA);
-            if (command != null) {
-                commands.add(command);
-            }
-        }
-
-        for (final AgentVmInfo left : states.values()) {
-            s_logger.warn("Stopping a VM that we have no record of: " + left.name);
-            commands.add(left.mgr.cleanup(null, left.name));
-        }
-
-        return commands;
-    }
-
-    protected Map<Long, AgentVmInfo> convertToIds(final Map<String, State> states) {
-        final HashMap<Long, AgentVmInfo> map = new HashMap<Long, AgentVmInfo>();
-
-        if (states == null) {
-            return map;
-        }
-
-        final Collection<VirtualMachineGuru<VMInstanceVO>> handlers = _handlers.values();
-
-        for (final Map.Entry<String, State> entry : states.entrySet()) {
-            for (final VirtualMachineGuru<VMInstanceVO> handler : handlers) {
-                final String name = entry.getKey();
-
-                final Long id = handler.convertToId(name);
-
-                if (id != null) {
-                    map.put(id, new AgentVmInfo(entry.getKey(), handler, entry.getValue()));
-                    break;
-                }
-            }
-        }
-
-        return map;
-    }
-
-    public List<Command> deltaSync(final long hostId, final Map<String, State> newStates) {
-        final Map<Long, AgentVmInfo> states = convertToIds(newStates);
-        final ArrayList<Command> commands = new ArrayList<Command>();
-        
-        boolean nativeHA = isHostClusterNativeHAEnabled(hostId);
-        
-        for (final Map.Entry<Long, AgentVmInfo> entry : states.entrySet()) {
-            final AgentVmInfo info = entry.getValue();
-
-            final VMInstanceVO vm = info.mgr.findById(entry.getKey());
-
-            Command command = null;
-            if (vm != null && vm.getHostId() != null && vm.getHostId() == hostId) {
-                command = compareState(vm, info, false, nativeHA);
-            } else {
-            	if(nativeHA) {
-            		if(vm.getHostId() != null && vm.getHostId() != hostId && info.state == VirtualMachine.State.Running) {
-            			vm.setHostId(hostId);
-            			_instanceDao.update(vm.getId(), vm);
-            			
-            			s_logger.info("Native is enabled and we found VM has been switched from host " + vm.getHostId() + " to " + hostId);
-                        command = compareState(vm, info, false, nativeHA);
-            		}
-            	} else {
-	                s_logger.debug("VM is not found.  Stopping " + info.name);
-	                command = info.mgr.cleanup(null, info.name);
-            	}
-            }
-
-            if (command != null) {
-                commands.add(command);
-            }
-        }
-
-        return commands;
-    }
-    
-    private boolean isHostClusterNativeHAEnabled(long hostId) {
-    	HostVO host = _hostDao.findById(hostId);
-    	ClusterDetailsVO detail = _clusterDetailsDao.findDetail(host.getClusterId(), "NativeHA");
-    	if(detail != null && detail.getValue() != null && detail.getValue().equalsIgnoreCase("true"))
-    		return true;
-    	return false;
-    }
 
     public Long migrate(final HaWorkVO work) {
         long vmId = work.getInstanceId();
@@ -740,137 +484,6 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             return  (System.currentTimeMillis() >> 10) + _migrateRetryInterval;
         }
     }
-//    public Long migrate(final HaWorkVO work) {
-//        final long vmId = work.getInstanceId();
-//
-//        final VirtualMachineGuru<VMInstanceVO> mgr = findManager(work.getType());
-//
-//        VMInstanceVO vm = mgr.findById(vmId);
-//        if (vm == null || vm.getRemoved() != null) {
-//            s_logger.debug("Unable to find the vm " + vmId);
-//            return null;
-//        }
-//
-//        s_logger.info("Migrating vm: " + vm.toString());
-//        if (vm.getHostId() == null || vm.getHostId() != work.getHostId()) {
-//        	s_logger.info("VM is not longer running on the current hostId");
-//        	return null;
-//        }
-//
-//        short alertType = AlertManager.ALERT_TYPE_USERVM_MIGRATE;
-//        if (VirtualMachine.Type.DomainRouter.equals(vm.getType())) {
-//            alertType = AlertManager.ALERT_TYPE_DOMAIN_ROUTER_MIGRATE;
-//        } else if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-//            alertType = AlertManager.ALERT_TYPE_CONSOLE_PROXY_MIGRATE;
-//        }
-//
-//        HostVO fromHost = _hostDao.findById(vm.getHostId());
-//        String fromHostName = ((fromHost == null) ? "unknown" : fromHost.getName());
-//        HostVO toHost = null;
-//        if (work.getStep() == Step.Scheduled) {
-//            if (vm.getState() != State.Running) {
-//                s_logger.info("VM's state is not ready for migration. " + vm.toString() + " State is " + vm.getState().toString());
-//                return (System.currentTimeMillis() >> 10) + _migrateRetryInterval;
-//            }
-//            
-//            DataCenterVO dcVO = _dcDao.findById(fromHost.getDataCenterId());
-//            HostPodVO podVO = _podDao.findById(fromHost.getPodId());
-//
-//            try {
-//                toHost = mgr.prepareForMigration(vm);
-//                if (toHost == null) {
-//                    if (s_logger.isDebugEnabled()) {
-//                        s_logger.debug("Unable to find a host for migrating vm " + vmId);
-//                    }
-//                    _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to migrate vm " + vm.getName() + " from host " + fromHostName + " in zone " + dcVO.getName() + " and pod " + podVO.getName(), "Unable to find a suitable host");
-//                }
-//            } catch(final InsufficientCapacityException e) {
-//            	s_logger.warn("Unable to mgirate due to insufficient capacity " + vm.toString());
-//                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to migrate vm " + vm.getName() + " from host " + fromHostName + " in zone " + dcVO.getName() + " and pod " + podVO.getName(), "Insufficient capacity");
-//            } catch(final StorageUnavailableException e) {
-//                s_logger.warn("Storage is unavailable: " + vm.toString());
-//                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to migrate vm " + vm.getName() + " from host " + fromHostName + " in zone " + dcVO.getName() + " and pod " + podVO.getName(), "Storage is gone.");
-//            }
-//            
-//            if (toHost == null) {
-//                _agentMgr.maintenanceFailed(vm.getHostId());
-//                return null;
-//            }
-//
-//            if (s_logger.isDebugEnabled()) {
-//                s_logger.debug("Migrating from " + work.getHostId() + " to " + toHost.getId());
-//            }
-//            work.setStep(Step.Migrating);
-//            work.setHostId(toHost.getId());
-//            _haDao.update(work.getId(), work);
-//        }
-//
-//        if (work.getStep() == Step.Migrating) {
-//        	vm = mgr.findById(vmId);	// let's see if anything has changed.
-//            boolean migrated = false;
-//        	if (vm == null || vm.getRemoved() != null || vm.getHostId() == null || !_itMgr.stateTransitTo(vm, Event.MigrationRequested, vm.getHostId())) {
-//            	s_logger.info("Migration cancelled because state has changed: " + vm.toString());
-//        	} else {
-//                try {
-//                    boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
-//	                MigrateCommand cmd = new MigrateCommand(vm.getInstanceName(), toHost.getPrivateIpAddress(), isWindows);
-//	                Answer answer = _agentMgr.send(fromHost.getId(), cmd);
-//	                if (answer != null && answer.getResult()) {
-//	                	migrated = true;
-//	                    _storageMgr.unshare(vm, fromHost);
-//	                    work.setStep(Step.Investigating);
-//	                    _haDao.update(work.getId(), work);
-//	                }
-//                } catch (final AgentUnavailableException e) {
-//                    s_logger.debug("host became unavailable");
-//                } catch (final OperationTimedoutException e) {
-//                	s_logger.debug("operation timed out");
-//                	if (e.isActive()) {
-//                        scheduleRestart(vm, true);
-//                	}
-//                }
-//          	}
-//
-//            if (!migrated) {
-//                s_logger.info("Migration was unsuccessful.  Cleaning up: " + vm.toString());
-//
-//                DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterId());
-//                HostPodVO podVO = _podDao.findById(vm.getPodId());
-//                _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(), "Unable to migrate vm " + vm.getName() + " from host " + fromHost.getName() + " in zone " + dcVO.getName() + " and pod " + podVO.getName(), "Migrate Command failed.  Please check logs.");
-//
-//                _itMgr.stateTransitTo(vm, Event.MigrationFailedOnSource, toHost.getId());
-//                _agentMgr.maintenanceFailed(vm.getHostId());
-//                
-//                Command cleanup = mgr.cleanup(vm, null);
-//                _agentMgr.easySend(toHost.getId(), cleanup);
-//                _storageMgr.unshare(vm, toHost);
-//                
-//                return null;
-//            }
-//        }
-//        
-//        if (toHost == null) {
-//            toHost = _hostDao.findById(work.getHostId());
-//        }
-//        DataCenterVO dcVO = _dcDao.findById(toHost.getDataCenterId());
-//        HostPodVO podVO = _podDao.findById(toHost.getPodId());
-//
-//        try {
-//            if (!mgr.completeMigration(vm, toHost)) {
-//                _alertMgr.sendAlert(alertType, toHost.getDataCenterId(), toHost.getPodId(), "Unable to migrate " + vmId + " to host " + toHost.getName() + " in zone " + dcVO.getName() + " and pod " + podVO.getName(), "Migration not completed");
-//                s_logger.warn("Unable to complete migration: " + vm.toString());
-//            } else {
-//            	s_logger.info("Migration is complete: " + vm.toString());
-//            }
-//            return null;
-//        } catch (final AgentUnavailableException e) {
-//        	s_logger.warn("Agent is unavailable for " + vm.toString());
-//        } catch (final OperationTimedoutException e) {
-//        	s_logger.warn("Operation timed outfor " + vm.toString());
-//        }
-//    	_itMgr.stateTransitTo(vm, Event.MigrationFailedOnDest, toHost.getId());
-//    	return (System.currentTimeMillis() >> 10) + _migrateRetryInterval;
-//    }
     
     @Override
     public void scheduleDestroy(VMInstanceVO vm, long hostId) {
@@ -888,8 +501,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     }
     
     protected Long destroyVM(HaWorkVO work) {
-        final VirtualMachineGuru<VMInstanceVO> mgr = findManager(work.getType());
-        final VMInstanceVO vm = mgr.findById(work.getInstanceId());
+        final VMInstanceVO vm = _itMgr.findById(work.getType(), work.getInstanceId());
         s_logger.info("Destroying " + vm.toString());
         try {
         	if (vm.getState() != State.Destroyed) {
@@ -922,16 +534,15 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     }
 
     protected Long stopVM(final HaWorkVO work) {
-        final VirtualMachineGuru<VMInstanceVO> mgr = findManager(work.getType());
-        final VMInstanceVO vm = mgr.findById(work.getInstanceId());
+        final VMInstanceVO vm = _itMgr.findById(work.getType(), work.getInstanceId());
         s_logger.info("Stopping " + vm.toString());
         try {
         	if (work.getWorkType() == WorkType.Stop) {
 	            if (vm.getHostId() != null) {
-	                if (mgr.stop(vm)) {
-	                	s_logger.info("Successfully stopped " + vm.toString());
-	                    return null;
-	                }
+// FIXME	                if (_itMgr.advanceStop(vm, false, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount())) {
+//	                	s_logger.info("Successfully stopped " + vm.toString());
+//	                    return null;
+//	                }
 	            } else {
 	            	if (s_logger.isDebugEnabled()) {
 	            		s_logger.debug(vm.toString() + " has already been stopped");
@@ -945,11 +556,12 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         			}
         			return null;
         		} else {
-        			Command cmd = mgr.cleanup(vm, null);
+        		    Command cmd = null;
+//FIXME        			Command cmd = _itMgr.cleanup(vm.getInstanceName());
         			Answer ans = _agentMgr.send(work.getHostId(), cmd);
         			if (ans.getResult()) {
         			    _itMgr.stateTransitTo(vm, Event.AgentReportStopped, null);
-        				mgr.finalizeStop(new VirtualMachineProfileImpl<VMInstanceVO>(vm), (StopAnswer)ans);
+//FIXME        				mgr.finalizeStop(new VirtualMachineProfileImpl<VMInstanceVO>(vm), (StopAnswer)ans);
         				s_logger.info("Successfully stopped " + vm.toString());
         				return null;
         			}
@@ -1023,9 +635,6 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         value = params.get("time.between.cleanup");
         _timeBetweenCleanups = NumbersUtil.parseLong(value, 3600 * 24);
         
-        value = params.get("wait");
-        _operationTimeout = NumbersUtil.parseInt(value, 1800) * 2;
-        
         value = params.get("stop.retry.interval");
         _stopRetryInterval = NumbersUtil.parseInt(value, 10 * 60);
         
@@ -1047,8 +656,6 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         
         _executor = Executors.newScheduledThreadPool(count, new NamedThreadFactory("HA"));
 
-        _agentMgr.registerForHostEvents(new VmSyncListener(this, _agentMgr), true, true, true);
-        
         return true;
     }
     
@@ -1066,7 +673,6 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         }
 
         _executor.scheduleAtFixedRate(new CleanupTask(), _timeBetweenCleanups, _timeBetweenCleanups, TimeUnit.SECONDS);
-        _executor.scheduleAtFixedRate(new TransitionTask(), 0, _operationTimeout, TimeUnit.SECONDS);
 
         return true;
     }
@@ -1171,49 +777,4 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         }
     }
     
-    protected class TransitionTask implements Runnable {
-    	@Override
-    	public void run() {
-    		GlobalLock lock = GlobalLock.getInternLock("TransitionChecking");
-			if (lock == null) {
-				s_logger.debug("Couldn't get the global lock");
-				return;
-			}
-			
-			if (!lock.lock(30)) {
-				s_logger.debug("Couldn't lock the db");
-				return;
-			}
-    		try {
-    			lock.addRef();
-	    		List<VMInstanceVO> instances = _instanceDao.findVMInTransition(new Date(new Date().getTime() - (_operationTimeout * 1000)), State.Starting, State.Stopping);
-	    		for (VMInstanceVO instance : instances) {
-	    			State state = instance.getState();
-	    			if (state == State.Stopping) {
-	    				scheduleStop(instance, instance.getHostId(), true);
-	    			} else if (state == State.Starting) {
-	    				scheduleRestart(instance, true);
-	    			}
-	    		}
-    		} catch (Exception e) {
-    			s_logger.warn("Caught the following exception on transition checking", e);
-    		} finally {
-    			StackMaid.current().exitCleanup();
-    			lock.unlock();
-    		}
-    	}
-    }
-    
-    protected class AgentVmInfo {
-        public String name;
-        public VirtualMachineGuru<VMInstanceVO> mgr;
-        public State state;
-        public State action;
-
-        public AgentVmInfo(final String name, final VirtualMachineGuru<VMInstanceVO> handler, final State state) {
-            this.name = name;
-            this.mgr = handler;
-            this.state = state;
-        }
-    }
 }

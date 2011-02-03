@@ -119,8 +119,6 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.ovs.OvsNetworkManager;
-import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.security.SecurityGroupManager;
@@ -399,12 +397,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             return status;
         }
     }
-    
-    @Override
-    public boolean stop(UserVmVO vm) {
-        return stopVirtualMachine(_accountMgr.getSystemUser().getId(), vm.getId());
-    }
-
     
     @Override @ActionEvent(eventType = EventTypes.EVENT_VOLUME_ATTACH, eventDescription = "attaching volume", async=true)
     public Volume attachVolumeToVM(AttachVolumeCmd command) {
@@ -1084,7 +1076,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("UserVm-Scavenger"));
         
-        _haMgr.registerHandler(Type.User, this);
         _itMgr.registerGuru(Type.User, this);
         
         s_logger.info("User VM Manager is configured.");
@@ -1133,11 +1124,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             return null;
         }
         return VirtualMachineName.getVmId(vmName);
-    }
-
-    @Override
-    public UserVmVO start(long vmId) throws StorageUnavailableException, ConcurrentOperationException {
-        return null; // FIXME start(1L, vmId, null, null, startEventId);
     }
 
     @Override

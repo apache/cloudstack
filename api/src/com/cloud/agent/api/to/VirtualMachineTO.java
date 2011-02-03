@@ -38,11 +38,13 @@ public class VirtualMachineTO {
     String bootArgs;
     String[] bootupScripts;
     boolean rebootOnCrash;
+    boolean enableHA;
+    Map<String, String> params;
 
     VolumeTO[] disks;
     NicTO[] nics;
 
-    public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader, String os) {
+    public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader, String os, boolean enableHA) {
         this.id = id;
         this.name = instanceName;
         this.type = type;
@@ -52,6 +54,7 @@ public class VirtualMachineTO {
         this.maxRam = maxRam;
         this.bootloader = bootloader;
         this.os = os;
+        this.enableHA = enableHA;
     }
 
     protected VirtualMachineTO() {
@@ -135,11 +138,6 @@ public class VirtualMachineTO {
     }
 
     public String getBootArgs() {
-        StringBuilder buf = new StringBuilder(bootArgs != null ? bootArgs : "");
-        buf.append(" ");
-        for (NicTO nic : nics) {
-            buf.append("");
-        }
         return bootArgs;
     }
 

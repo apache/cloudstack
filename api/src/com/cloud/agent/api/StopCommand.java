@@ -21,9 +21,7 @@ import com.cloud.vm.VirtualMachine;
 
 public class StopCommand extends RebootCommand {
     String vnet;
-    boolean mirroredVolumes=false;
     private boolean isProxy=false;
-    private String vncPort=null;
     private String urlPort=null;
     private String publicConsoleProxyIpAddress=null;
     private String privateRouterIpAddress=null;
@@ -31,10 +29,9 @@ public class StopCommand extends RebootCommand {
     protected StopCommand() {
     }
     
-    public StopCommand(VirtualMachine vm, boolean isProxy, String vncPort, String urlPort, String publicConsoleProxyIpAddress) {
+    public StopCommand(VirtualMachine vm, boolean isProxy, String urlPort, String publicConsoleProxyIpAddress) {
     	super(vm);
     	this.isProxy = isProxy;
-    	this.vncPort = vncPort;
     	this.urlPort = urlPort;
     	this.publicConsoleProxyIpAddress = publicConsoleProxyIpAddress;
     }
@@ -55,6 +52,10 @@ public class StopCommand extends RebootCommand {
         this.privateRouterIpAddress = privateRouterIpAddress;
     }
     
+    public StopCommand(String vmName) {
+        super(vmName);
+    }
+    
     public String getVnet() {
         return vnet;
     }
@@ -64,20 +65,8 @@ public class StopCommand extends RebootCommand {
         return true;
     }
 
-	public boolean isMirroredVolumes() {
-		return mirroredVolumes;
-	}
-
-	public void setMirroredVolumes(boolean mirroredVolumes) {
-		this.mirroredVolumes = mirroredVolumes;
-	}
-	
 	public boolean isProxy() {
 		return this.isProxy;
-	}
-	
-	public String getVNCPort() {
-		return this.vncPort;
 	}
 	
 	public String getURLPort() {
@@ -91,5 +80,4 @@ public class StopCommand extends RebootCommand {
     public String getPrivateRouterIpAddress() {
         return privateRouterIpAddress;
     }
-    
 }

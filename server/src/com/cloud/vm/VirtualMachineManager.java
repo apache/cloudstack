@@ -99,4 +99,8 @@ public interface VirtualMachineManager extends Manager {
 	<T extends VMInstanceVO> T reboot(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException;
 	
 	<T extends VMInstanceVO> T advanceReboot(T vm, Map<VirtualMachineProfile.Param, Object> params, User caller, Account account) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
+	
+	VMInstanceVO findById(VirtualMachine.Type type, long vmId);
+
+	VirtualMachine start(VirtualMachine.Type type, long vmId, Map<VirtualMachineProfile.Param, Object> params);
 }

@@ -45,7 +45,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     public <T extends VirtualMachine> VirtualMachineTO implement(VirtualMachineProfile<T> vm) {
         VirtualMachineTO to = toVirtualMachineTO(vm);
         to.setBootloader(BootloaderType.HVM);
-        
+
         // Determine the VM's OS description
         GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
         to.setOs(guestOS.getDisplayName());

@@ -40,11 +40,6 @@ import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -56,10 +51,11 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineGuru;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -83,6 +79,8 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     protected boolean _sslEnabled = false;
     @Inject
     AgentManager _agentMgr;
+    @Inject
+    VirtualMachineManager _itMgr;
     @Inject
     protected ConsoleProxyDao _cpDao;
     public int getVncPort(VMInstanceVO vm) {
@@ -130,9 +128,8 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
         
         _listener = new ConsoleProxyListener(this);
         _agentMgr.registerForHostEvents(_listener, true, true, false);
-
-        HighAvailabilityManager haMgr = locator.getManager(HighAvailabilityManager.class);
-        haMgr.registerHandler(Type.ConsoleProxy, this);
+        
+        _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
 
         if (s_logger.isInfoEnabled()) {
             s_logger.info("AgentBasedConsoleProxyManager has been configured. SSL enabled: " + _sslEnabled);
@@ -290,17 +287,6 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
         return VirtualMachineName.getConsoleProxyId(vmName);
     }
 
-    @Override
-    public ConsoleProxyVO start(long vmId) throws InsufficientCapacityException, StorageUnavailableException,
-            ConcurrentOperationException {
-        return null;
-    }
-
-    @Override
-    public boolean stop(ConsoleProxyVO vm) throws ResourceUnavailableException {
-        return false;
-    }
-
 	@Override
     public boolean applyCustomCertToNewProxy(StartupProxyCommand cmd) {
 		// TODO Auto-generated method stub
@@ -346,7 +332,6 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     @Override
     public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, StopAnswer answer) {
         // TODO Auto-generated method stub
-        
     }
     
     @Override 

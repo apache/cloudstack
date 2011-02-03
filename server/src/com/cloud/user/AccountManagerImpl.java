@@ -66,7 +66,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.server.Criteria;
@@ -95,13 +94,14 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
-import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value={AccountManager.class, AccountService.class})
 public class AccountManagerImpl implements AccountManager, AccountService, Manager {
@@ -117,10 +117,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	@Inject private UserAccountDao _userAccountDao;
 	@Inject private VolumeDao _volumeDao;
 	@Inject private UserVmDao _userVmDao;
-    @Inject private DomainRouterDao _routerDao;
     @Inject private VMTemplateDao _templateDao;
     @Inject private NetworkDao _networkDao;
     @Inject private SecurityGroupDao _securityGroupDao;
+    @Inject private VMInstanceDao _vmDao;
 	
 	
 	@Inject private SecurityGroupManager _networkGroupMgr;
@@ -129,8 +129,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	@Inject private UserVmManager _vmMgr;
 	@Inject private StorageManager _storageMgr;
 	@Inject private TemplateManager _tmpltMgr;
-	@Inject private VirtualNetworkApplianceManager _routerMgr;
 	@Inject private ConfigurationManager _configMgr;
+	@Inject private VirtualMachineManager _itMgr;
 	
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 	
@@ -848,8 +848,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             // Mark the account's volumes as destroyed
             List<VolumeVO> volumes = _volumeDao.findDetachedByAccount(accountId);
             for (VolumeVO volume : volumes) {
-                if(!volume.getState().equals(Volume.State.Destroy))//This check if for account with vm in error state; when a vm is in error state the vols are already destroyed on that account
+                if(!volume.getState().equals(Volume.State.Destroy)) {
                     _storageMgr.destroyVolume(volume);
+                }
             }
             
             //Cleanup security groups
@@ -913,20 +914,15 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
     
     private boolean doDisableAccount(long accountId) throws ConcurrentOperationException, ResourceUnavailableException{
-        List<UserVmVO> vms = _userVmDao.listByAccountId(accountId);
+        List<VMInstanceVO> vms = _vmDao.listByAccountId(accountId);
         boolean success = true;
-        for (UserVmVO vm : vms) {
+        for (VMInstanceVO vm : vms) {
             try {
-                success = (success && _vmMgr.stop(vm));
+                success = (success && _itMgr.stop(vm, getSystemUser(), getSystemAccount()));
             } catch (AgentUnavailableException aue) {
                 s_logger.warn("Agent running on host " + vm.getHostId() + " is unavailable, unable to stop vm " + vm.getName());
                 success = false;
             }
-        }
-
-        List<DomainRouterVO> routers = _routerDao.listBy(accountId);
-        for (DomainRouterVO router : routers) {
-            success = (success && (_routerMgr.stopRouter(router.getId()) != null));
         }
 
         return success;
@@ -949,7 +945,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         String timezone = cmd.getTimezone();
         String accountName = cmd.getAccountName();
         short userType = cmd.getAccountType().shortValue();
-        Long userId = UserContext.current().getCallerUserId();
         
         try {
             if (accountName == null) {
@@ -1039,7 +1034,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     	String email = cmd.getEmail();
     	String timeZone = cmd.getTimezone();
     	Long accountId = null;
-    	Long userId = UserContext.current().getCallerUserId();
     	
     	Account account = _accountDao.findActiveAccount(accountName, domainId);
     	
@@ -1136,7 +1130,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("updating user with id: " + id);
         }
-        UserAccount userAccount = _userAccountDao.findById(id);
         try {
             //check if the apiKey and secretKey are globally unique
             if (apiKey != null && secretKey != null) {
@@ -1498,6 +1491,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
     }
     
+    @Override
     public Account finalizeOwner(Account caller, String accountName, Long domainId) {
         //don't default the owner to the system account
         if (caller.getId() == Account.ACCOUNT_ID_SYSTEM && (accountName == null || domainId == null)) {

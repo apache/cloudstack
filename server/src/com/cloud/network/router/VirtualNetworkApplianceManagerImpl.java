@@ -83,7 +83,6 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
@@ -129,7 +128,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -227,8 +225,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Inject
     StorageManager _storageMgr;
     @Inject
-    HighAvailabilityManager _haMgr;
-    @Inject
     AlertManager _alertMgr;
     @Inject
     AccountManager _accountMgr;
@@ -238,8 +234,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     ConfigurationManager _configMgr;
     @Inject
     AsyncJobManager _asyncMgr;
-    @Inject
-    StoragePoolDao _storagePoolDao = null;
     @Inject
     ServiceOfferingDao _serviceOfferingDao = null;
     @Inject
@@ -256,8 +250,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     NetworkOfferingDao _networkOfferingDao = null;
     @Inject
     NetworkDao _networksDao = null;
-    @Inject
-    NicDao _nicDao;
     @Inject
     GuestOSDao _guestOSDao = null;
     @Inject
@@ -280,6 +272,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     RemoteAccessVpnDao _vpnDao;
     @Inject 
     VMInstanceDao _instanceDao;
+    @Inject
+    NicDao _nicDao;
 
     int _routerRamSize;
     int _retry = 2;
@@ -589,7 +583,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
 
         _agentMgr.registerForHostEvents(new SshKeysDistriMonitor(this, _hostDao, _configDao), true, false, false);
-        _haMgr.registerHandler(VirtualMachine.Type.DomainRouter, this);
         _itMgr.registerGuru(VirtualMachine.Type.DomainRouter, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
@@ -911,7 +904,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         buf.append(" template=domP type=" + type);
         buf.append(" name=").append(profile.getHostName());
         NicProfile controlNic = null;
-        NicProfile managementNic = null;
 
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
@@ -933,7 +925,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
             if (nic.getTrafficType() == TrafficType.Management) {
                 buf.append(" localgw=").append(dest.getPod().getGateway());
-                managementNic = nic;
             } else if (nic.getTrafficType() == TrafficType.Control) {
             	
                 // DOMR control command is sent over management server in VMware
@@ -995,17 +986,16 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         DomainRouterVO router = profile.getVirtualMachine();
 
-        List<NicVO> nics = _nicDao.listBy(router.getId());
-        for (NicVO nic : nics) {
-        	NetworkVO network = _networkDao.findById(nic.getNetworkId());
-        	if (network.getTrafficType() == TrafficType.Public) {
+        List<NicProfile> nics = profile.getNics();
+        for (NicProfile nic : nics) {
+        	if (nic.getTrafficType() == TrafficType.Public) {
         		router.setPublicIpAddress(nic.getIp4Address());
         		router.setPublicNetmask(nic.getNetmask());
         		router.setPublicMacAddress(nic.getMacAddress());
-        	} else if (network.getTrafficType() == TrafficType.Guest) {
+        	} else if (nic.getTrafficType() == TrafficType.Guest) {
         		router.setGuestIpAddress(nic.getIp4Address());
         		router.setGuestMacAddress(nic.getMacAddress());
-        	} else if (network.getTrafficType() == TrafficType.Control) {
+        	} else if (nic.getTrafficType() == TrafficType.Control) {
         		router.setPrivateIpAddress(nic.getIp4Address());
         		router.setPrivateMacAddress(nic.getMacAddress());
         	}
@@ -1587,20 +1577,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return sendCommandsToRouter(router, cmds); 
     }
 
-    @Override
-    public DomainRouterVO start(long vmId) throws InsufficientCapacityException, StorageUnavailableException,
-            ConcurrentOperationException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-    
-    @Override
-    public boolean stop(DomainRouterVO router) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-    
-    
     private List<Long> findLonelyRouters() {
         List<Long> routersToStop = new ArrayList<Long>();
         List<VMInstanceVO> runningRouters = _instanceDao.listByTypeAndState(State.Running, VirtualMachine.Type.DomainRouter);

@@ -279,21 +279,27 @@ public abstract class CitrixResourceBase implements ServerResource {
     }
     
 
-    protected void cleanupHaltedVms(Connection conn) throws XenAPIException, XmlRpcException {
+    protected boolean cleanupHaltedVms(Connection conn) throws XenAPIException, XmlRpcException {
         Host host = Host.getByUuid(conn, _host.uuid);
-        Set<VM> vms = host.getResidentVMs(conn);
+        Set<VM> vms = VM.getAll(conn);
         
+        boolean success = true;
         for (VM vm : vms) {
             try {
-                if (VmPowerState.HALTED.equals(vm.getPowerState(conn))) {
+                VM.Record vmr = vm.getRecord(conn);
+                if (VmPowerState.HALTED.equals(vmr.powerState) && vmr.affinity.equals(host)) {
                     vm.destroy(conn);
                 }
             } catch (XenAPIException e) {
                 s_logger.warn("Unable to cleanup " + vm);
+                success = false;
             } catch (XmlRpcException e) {
                 s_logger.warn("Unable to cleanup " + vm);
+                success = false;
             }
         }
+        
+        return success;
     }
     
     protected boolean isRefNull(XenAPIObject object) {
@@ -2424,6 +2430,20 @@ public abstract class CitrixResourceBase implements ServerResource {
             s_logger.warn(msg);
             return new ReadyAnswer(cmd, msg);
         }
+        
+        try {
+            boolean result = cleanupHaltedVms(conn);
+            if (!result) {
+                return new ReadyAnswer(cmd, "Unable to cleanup halted vms");
+            }
+        } catch (XenAPIException e) {
+            s_logger.warn("Unable to cleanup halted vms", e);
+            return new ReadyAnswer(cmd, "Unable to cleanup halted vms");
+        } catch (XmlRpcException e) {
+            s_logger.warn("Unable to cleanup halted vms", e);
+            return new ReadyAnswer(cmd, "Unable to cleanup halted vms");
+        }
+        
         return new ReadyAnswer(cmd);
     }
 
@@ -3673,16 +3693,6 @@ public abstract class CitrixResourceBase implements ServerResource {
             return null;
         }
 
-        try {
-            cleanupHaltedVms(conn);
-        } catch (XenAPIException e) {
-            s_logger.warn("Unable to cleanup halted vms", e);
-            return null;
-        } catch (XmlRpcException e) {
-            s_logger.warn("Unable to cleanup halted vms", e);
-            return null;
-        }
-        
         StartupRoutingCommand cmd = new StartupRoutingCommand();
         fillHostInfo(conn, cmd);
 

@@ -34,7 +34,7 @@ import com.cloud.user.Account;
  * set in this object is transitional.  It does not get persisted 
  * back to the database.  This allows the adapters to process
  * the information in the virtual machine and make determinations
- * on what the virtual machin profile should look like before it is
+ * on what the virtual machine profile should look like before it is
  * actually started on the hypervisor.
  *
  * @param <T> a VirtualMachine
