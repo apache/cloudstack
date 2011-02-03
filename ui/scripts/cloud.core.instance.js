@@ -1343,7 +1343,7 @@ var vmActionMap = {
      
 function doStartVM($actionLink, $detailsTab, $midmenuItem1) {       
     $("#dialog_confirmation")	
-    .text("Please confirm you want to start instance")
+    .text(dictionary["message.action.start.instance"])
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
@@ -1362,7 +1362,7 @@ function doStartVM($actionLink, $detailsTab, $midmenuItem1) {
 
 function doStopVM($actionLink, $detailsTab, $midmenuItem1) {   
     $("#dialog_confirmation")	
-    .text("Please confirm you want to stop instance")
+    .text(dictionary["message.action.stop.instance"])
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
@@ -1381,7 +1381,7 @@ function doStopVM($actionLink, $detailsTab, $midmenuItem1) {
    
 function doRebootVM($actionLink, $detailsTab, $midmenuItem1) {   
     $("#dialog_confirmation")	
-    .text("Please confirm you want to reboot instance")
+    .text(dictionary["message.action.reboot.instance"])
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
@@ -1400,7 +1400,7 @@ function doRebootVM($actionLink, $detailsTab, $midmenuItem1) {
   
 function doDestroyVM($actionLink, $detailsTab, $midmenuItem1) {   
     $("#dialog_confirmation")	
-    .text("Please confirm you want to destroy instance")
+    .text(dictionary["message.action.destroy.instance"])
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
@@ -1419,7 +1419,7 @@ function doDestroyVM($actionLink, $detailsTab, $midmenuItem1) {
   
 function doRestoreVM($actionLink, $detailsTab, $midmenuItem1) {   
     $("#dialog_confirmation")	
-    .text("Please confirm you want to restore instance")
+    .text(dictionary["message.action.restore.instance"])
     .dialog('option', 'buttons', { 						
 	    "Confirm": function() { 
 		    $(this).dialog("close"); 			
@@ -1551,7 +1551,7 @@ function doDetachISO($actionLink, $detailsTab, $midmenuItem1) {
 
 function doResetPassword($actionLink, $detailsTab, $midmenuItem1) {   		
 	$("#dialog_confirmation")
-	.text("Please confirm you want to change the ROOT password for the virtual machine")	
+	.text(dictionary["message.action.instance.reset.password"])	
 	.dialog('option', 'buttons', { 						
 		"Yes": function() { 
 			$(this).dialog("close"); 
@@ -2097,7 +2097,7 @@ function doCreateTemplateFromVmVolume($actionLink, $subgridItem) {
 
 function doTakeSnapshotFromVmVolume($actionLink, $subgridItem) {  
     $("#dialog_info")
-    .text("Please confirm you want to create snapshot for this volume")					
+    .text(dictionary["message.action.take.snapshot"])					
     .dialog('option', 'buttons', { 					    
 	    "Confirm": function() { 	
 	        $(this).dialog("close");	
