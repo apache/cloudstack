@@ -987,6 +987,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             pool = new StoragePoolVO(StoragePoolType.Filesystem, "localhost", 0, hostPath);
         } else if (scheme.equalsIgnoreCase("sharedMountPoint")) {
             pool = new StoragePoolVO(StoragePoolType.SharedMountPoint, storageHost, 0, hostPath);
+        } else if (scheme.equalsIgnoreCase("PreSetup")) {
+            pool = new StoragePoolVO(StoragePoolType.PreSetup, storageHost, 0, hostPath);
         } else if (scheme.equalsIgnoreCase("iscsi")) {
             String[] tokens = hostPath.split("/");
             int lun = NumbersUtil.parseInt(tokens[tokens.length - 1], -1);
@@ -1052,6 +1054,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         String uuid = null;
         if (scheme.equalsIgnoreCase("sharedmountpoint")) {
             uuid = UUID.randomUUID().toString();
+        } else if (scheme.equalsIgnoreCase("PreSetup")) {
+            uuid = hostPath.replace("/", "");
         } else {
             uuid = UUID.nameUUIDFromBytes(new String(storageHost + hostPath).getBytes()).toString();
         }
@@ -1233,8 +1237,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         s_logger.debug("Adding pool " + pool.getName() + " to  host " + hostId);
         if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem 
         	&& pool.getPoolType() != StoragePoolType.IscsiLUN && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS
-        	&& pool.getPoolType() != StoragePoolType.SharedMountPoint) {
-
+        	&& pool.getPoolType() != StoragePoolType.SharedMountPoint && pool.getPoolType() != StoragePoolType.PreSetup) {
+            s_logger.warn(" Doesn't support storage pool type " + pool.getPoolType());
             return true;
         }
 

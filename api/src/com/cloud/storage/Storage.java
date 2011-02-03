@@ -94,7 +94,9 @@ public class Storage {
         ISO(false),    // for iso image
         LVM(false),    // XenServer local LVM SR
         SharedMountPoint(true),
-        VMFS(true);		// VMware VMFS storage
+        VMFS(true),		// VMware VMFS storage
+        PreSetup(true);  // for XenServer, Storage Pool is set up by customers. 
+        
         
         boolean shared;
         

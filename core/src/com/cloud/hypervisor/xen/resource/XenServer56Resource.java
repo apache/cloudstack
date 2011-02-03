@@ -174,7 +174,9 @@ public class XenServer56Resource extends CitrixResourceBase {
         try {
             SR sr = super.getStorageRepository(conn, pool);
 
-            if (pool.getType() != StoragePoolType.IscsiLUN && pool.getType() != StoragePoolType.NetworkFilesystem) {
+            if (!sr.getShared(conn) || ( pool.getType() != StoragePoolType.IscsiLUN 
+                    && pool.getType() != StoragePoolType.NetworkFilesystem
+                    && pool.getType() != StoragePoolType.PreSetup)) {
                 return sr;
             }
             setupHeartbeatSr(conn, sr, false);

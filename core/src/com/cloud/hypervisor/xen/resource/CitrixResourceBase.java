@@ -5515,6 +5515,8 @@ public abstract class CitrixResourceBase implements ServerResource {
                 return getNfsSR(conn, pool);
             } else if (pool.getType() == StoragePoolType.IscsiLUN) {
                 return getIscsiSR(conn, pool);
+            } else if (pool.getType() == StoragePoolType.PreSetup) {
+                throw new CloudRuntimeException("The pool type: " + pool.getType().name() + " uuid " + pool.getUuid() + " doesn't exist");
             } else {
                 throw new CloudRuntimeException("The pool type: " + pool.getType().name() + " is not supported.");
             }
