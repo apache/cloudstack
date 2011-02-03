@@ -2003,7 +2003,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<? extends StoragePoolVO> allStoragePools = ApiDBUtils.searchForStoragePools(c);
         for (StoragePoolVO pool : allStoragePools) {
             StoragePoolType poolType = pool.getPoolType();
-            if (!(poolType.equals(StoragePoolType.NetworkFilesystem) || poolType.equals(StoragePoolType.IscsiLUN))) {
+            if (!(poolType.isShared())) {// All the non shared storages shouldn't show up in the capacity calculation
                 poolIdsToIgnore.add(pool.getId());
             }
         }
