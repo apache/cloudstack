@@ -5,7 +5,6 @@
 import os, sys, time
 import XenAPIPlugin
 sys.path.extend(["/opt/xensource/sm/", "/usr/local/sbin/", "/sbin/"])
-import util 
 from util import CommandException
 import hostvmstats
 import socket
