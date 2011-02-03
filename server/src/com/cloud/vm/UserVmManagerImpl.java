@@ -2266,6 +2266,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
         _usageEventDao.persist(usageEvent);
         
+        List<NicVO> nics = _nicDao.listBy(vm.getId());
+        for (NicVO nic : nics) {
+            NetworkVO network = _networkDao.findById(nic.getNetworkId());
+            long isDefault = (nic.isDefaultNic()) ? 1 : 0;
+            usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), network.getNetworkOfferingId(), null, isDefault);
+            _usageEventDao.persist(usageEvent);   
+        }
+        
     	return true;
     }
     
@@ -2323,6 +2331,17 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     public void finalizeStop(VirtualMachineProfile<UserVmVO> profile, StopAnswer answer) {
 		UserVmVO vm = profile.getVirtualMachine();
+        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
+        _usageEventDao.persist(usageEvent);
+        
+        List<NicVO> nics = _nicDao.listBy(vm.getId());
+        for (NicVO nic : nics) {
+            NetworkVO network = _networkDao.findById(nic.getNetworkId());
+            usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_DELETE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), null, network.getNetworkOfferingId(), null, null);
+            _usageEventDao.persist(usageEvent);   
+        }
+
+        
 		_ovsTunnelMgr.CheckAndDestroyTunnel(vm);
     }
     
