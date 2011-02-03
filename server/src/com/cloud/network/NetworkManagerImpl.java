@@ -65,6 +65,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
@@ -484,8 +485,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return _networksDao.listBy(owner.getId(), zoneId, GuestIpType.Virtual);
     }
 
-    @Override
-    @DB
+    @Override @DB @ActionEvent (eventType=EventTypes.EVENT_NET_IP_ASSIGN, eventDescription="allocating Ip", create=true)
     public IpAddress allocateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         String accountName = cmd.getAccountName();
         long domainId = cmd.getDomainId();
@@ -558,7 +558,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return ip;
     }
 
-    @Override
+    @Override @DB @ActionEvent (eventType=EventTypes.EVENT_NET_IP_ASSIGN, eventDescription="associating Ip", async=true)
     public IpAddress associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
         Account owner = null;
@@ -1196,8 +1196,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return profiles;
     }
 
-    @Override
-    @DB
+    @Override @DB @ActionEvent (eventType=EventTypes.EVENT_NET_IP_RELEASE, eventDescription="disassociating Ip")
     public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException, IllegalArgumentException {
 
         Long userId = UserContext.current().getCallerUserId();

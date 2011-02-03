@@ -137,7 +137,8 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
 
     @Override
     public String getEventDescription() {
-        return  ("Creating an ipforwarding 1:1 NAT rule for "+ipAddressId+" with virtual machine:"+ getVirtualMachineId());
+        IpAddress ip = _networkService.getIp(ipAddressId);
+        return  ("Applying an ipforwarding 1:1 NAT rule for Ip: "+ip.getAddress()+" with virtual machine:"+ getVirtualMachineId());
     }
 
     @Override

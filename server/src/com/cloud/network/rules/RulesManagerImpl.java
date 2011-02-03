@@ -28,6 +28,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
+import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
@@ -170,7 +171,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
 
-    @Override @DB
+    @Override @DB @ActionEvent (eventType=EventTypes.EVENT_NET_RULE_ADD, eventDescription="creating forwarding rule", create=true)
     public PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId, boolean isNat) throws NetworkRuleConflictException {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
@@ -347,7 +348,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         txn.commit();
     }
     
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_NET_RULE_DELETE, eventDescription="revoking forwarding rule", async=true)
     public boolean revokePortForwardingRule(long ruleId, boolean apply) {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
@@ -511,7 +512,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         return _forwardingDao.searchNatRules(ipId, id, vmId, start, size);
     }
     
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_NET_RULE_ADD, eventDescription="applying forwarding rule", async=true)
     public boolean applyPortForwardingRules(long ipId, Account caller) throws ResourceUnavailableException {
         return applyPortForwardingRules(ipId, false, caller);
     }

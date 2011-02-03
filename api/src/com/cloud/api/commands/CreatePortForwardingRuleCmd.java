@@ -214,7 +214,8 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
 
     @Override
     public String getEventDescription() {
-        return  ("Creating an port forwarding  rule for "+ipAddressId+" with virtual machine:"+virtualMachineId);
+        IpAddress ip = _networkService.getIp(ipAddressId);
+        return  ("Applying port forwarding  rule for Ip: "+ip.getAddress()+" with virtual machine:"+virtualMachineId);
     }
 
     @Override
