@@ -948,7 +948,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
 	@Override
 	@DB
-	public boolean addInstanceToGroups(final Long userVmId, final List<String> groups) {
+	public boolean addInstanceToGroups(final Long userVmId, final List<Long> groups) {
 		if (!_enabled) {
 			return true;
 		}
@@ -958,8 +958,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 			txn.start();
 			UserVm userVm = _userVMDao.acquireInLockTable(userVmId); //ensures that duplicate entries are not created.
 			List<SecurityGroupVO> sgs = new ArrayList<SecurityGroupVO>();
-			for (String sg : groups) {
-			    sgs.add(_securityGroupDao.findByAccountAndName(userVm.getAccountId(), sg));
+			for (Long sgId : groups) {
+			    sgs.add(_securityGroupDao.findById(sgId));
 			}
 			final Set<SecurityGroupVO> uniqueGroups = new TreeSet<SecurityGroupVO>(new SecurityGroupVOComparator());
 			uniqueGroups.addAll(sgs);

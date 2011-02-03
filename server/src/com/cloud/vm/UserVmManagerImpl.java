@@ -2185,7 +2185,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 			updateVmStateForFailedVmCreation(vm.getId());
 		}
 		
-		_networkGroupMgr.addInstanceToGroups(vm.getId(), cmd.getSecurityGroupList());
+		_networkGroupMgr.addInstanceToGroups(vm.getId(), cmd.getSecurityGroupIdList());
 		
 		
 		if (template.getEnablePassword()) {

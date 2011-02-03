@@ -71,8 +71,8 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the hypervisor on which to deploy the virtual machine")
     private String hypervisor;
 
-    @Parameter(name=ApiConstants.SECURITY_GROUP_LIST, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of security groups that going to be applied to the virtual machine. Should be passed only when vm is created from service offering with Direct Attach Network support")
-    private List<String> securityGroupList;
+    @Parameter(name=ApiConstants.SECURITY_GROUP_ID_LIST, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of security groups id that going to be applied to the virtual machine. Should be passed only when vm is created from service offering with Direct Attach Network support")
+    private List<Long> securityGroupIdList;
 
     @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true, description="the ID of the service offering for the virtual machine")
     private Long serviceOfferingId;
@@ -129,8 +129,8 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         return HypervisorType.getType(hypervisor);
     }
 
-    public List<String> getSecurityGroupList() {
-        return securityGroupList;
+    public List<Long> getSecurityGroupIdList() {
+        return securityGroupIdList;
     }
 
     public Long getServiceOfferingId() {

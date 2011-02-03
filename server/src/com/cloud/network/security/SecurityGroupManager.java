@@ -36,7 +36,7 @@ public interface SecurityGroupManager {
 	
 	public SecurityGroupVO createDefaultSecurityGroup( Long accountId);
 	
-	public boolean addInstanceToGroups(Long userVmId, List<String> groups);
+	public boolean addInstanceToGroups(Long userVmId, List<Long> groups);
 
 	public void removeInstanceFromGroups(Long userVmId);
 
