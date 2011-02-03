@@ -64,6 +64,7 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -1536,6 +1537,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Boolean isShared = cmd.getIsShared();
         Boolean isDefault = cmd.isDefault();
         Long accountId = null;
+        String path = null;
 
         if (isSystem == null) {
             isSystem = false;
@@ -1562,6 +1564,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } else {
                 accountId = account.getId();
             }
+            
+            if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+                DomainVO domain = _domainDao.findById(account.getDomainId());
+                if (domain != null) {
+                    path = domain.getPath();
+                }
+            }
         } else {
             accountName = account.getAccountName();
             domainId = account.getDomainId();
@@ -1582,6 +1591,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         SearchBuilder<DataCenterVO> zoneSearch = _dcDao.createSearchBuilder();
         zoneSearch.and("networkType", zoneSearch.entity().getNetworkType(), SearchCriteria.Op.EQ);
         sb.join("zoneSearch", zoneSearch, sb.entity().getDataCenterId(), zoneSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        
+        
+        if (path != null) {
+            //for domain admin we should show only subdomains information
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
 
         SearchCriteria<NetworkVO> sc = sb.create();
 
@@ -1625,6 +1642,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (trafficType != null) {
             sc.addAnd("trafficType", SearchCriteria.Op.EQ, trafficType);
+        }
+        
+        if (path != null) {
+            sc.setJoinParameters("domainSearch", "path", path + "%");
         }
 
         List<NetworkVO> networks = _networksDao.search(sc, searchFilter);
