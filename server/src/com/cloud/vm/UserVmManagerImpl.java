@@ -1030,7 +1030,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             // Create an event
             Long templateId = volume.getTemplateId();
             Long diskOfferingId = volume.getDiskOfferingId();
-            long sizeMB = volume.getSize()/(1024*1024);
             Long offeringId = null;
             if(diskOfferingId != null){
                 DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
@@ -1038,7 +1037,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     offeringId = offering.getId();
                 }
             }
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), offeringId, templateId , sizeMB);
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), offeringId, templateId , volume.getSize());
             _usageEventDao.persist(usageEvent);
         }
         

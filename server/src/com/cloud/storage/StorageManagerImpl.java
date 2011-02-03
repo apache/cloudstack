@@ -518,7 +518,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         Long templateId = originalVolume.getTemplateId();
         ;
         Long diskOfferingId = originalVolume.getDiskOfferingId();
-        long sizeMB = createdVolume.getSize() / (1024 * 1024);
 
         if (createdVolume.getPath() != null) {
             Long offeringId = null;
@@ -530,7 +529,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
 
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(),
-                    volume.getId(), volume.getName(), offeringId, templateId, sizeMB);
+                    volume.getId(), volume.getName(), offeringId, templateId, createdVolume.getSize());
             _usageEventDao.persist(usageEvent);
         }
         txn.commit();
@@ -2275,10 +2274,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         // Save usage event and update resource count for user vm volumes
         if (vm instanceof UserVm) {
-            long sizeMB = size / (1024 * 1024);
 
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(),
-                    vol.getName(), offering.getId(), null, sizeMB);
+                    vol.getName(), offering.getId(), null, size);
             _usageEventDao.persist(usageEvent);
 
             _accountMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
@@ -2321,7 +2319,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
         // Create event and update resource count for volumes if vm is a user vm
         if (vm instanceof UserVm) {
-            long sizeMB = vol.getSize() / (1024 * 1024);
 
             Long offeringId = null;
 
@@ -2330,7 +2327,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             }
 
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(),
-                    vol.getName(), offeringId, template.getId(), sizeMB);
+                    vol.getName(), offeringId, template.getId(), vol.getSize());
             _usageEventDao.persist(usageEvent);
 
             _accountMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
