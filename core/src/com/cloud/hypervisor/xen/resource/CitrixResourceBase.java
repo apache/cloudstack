@@ -3855,12 +3855,11 @@ public abstract class CitrixResourceBase implements ServerResource {
 
                 boolean found = false;
                 for (PBD pbd : pbds) {
-                    if (host.equals(pbd.getHost(conn))) {
-                        PBD.Record pbdr = pbd.getRecord(conn);
+                    PBD.Record pbdr = pbd.getRecord(conn);
+                    if (host.equals(pbdr.host)) {
                         if (!pbdr.currentlyAttached) {
                             pbdPlug(conn, pbd, pbdr.uuid); 
                         }
-                        pbds.remove(pbd);
                         found = true;
                         break;
                     }

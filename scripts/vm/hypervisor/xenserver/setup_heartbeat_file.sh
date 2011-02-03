@@ -10,28 +10,28 @@ usage() {
 
 if [ -z $1 ]; then
   usage
-  echo "1# no uuid of host"
+  echo "#1# no uuid of host"
   exit 0
 fi
 
 if [ -z $2 ]; then
   usage
-  echo "2# no uuid of sr"
+  echo "#2# no uuid of sr"
   exit 0
 fi
 
 if [ `xe host-list | grep $1 | wc -l` -ne 1 ]; then
-  echo  "3# Unable to find the host uuid: $1"
+  echo  "#3# Unable to find the host uuid: $1"
   exit 0
 fi
 
 if [ `xe sr-list uuid=$2 | wc -l`  -eq 0 ]; then 
-  echo "4# Unable to find SR with uuid: $2"
+  echo "#4# Unable to find SR with uuid: $2"
   exit 0
 fi
 
 if [ `xe pbd-list sr-uuid=$2 | grep -B 1 $1 | wc -l` -eq 0 ]; then
-  echo "5# Unable to find a pbd for the SR: $2"
+  echo "#5# Unable to find a pbd for the SR: $2"
   exit 0
 fi
 
@@ -42,7 +42,7 @@ if [ "$srtype" = "nfs" ];then
   dir=/var/run/sr-mount/$2
   filename=$dir/hb-$1
   if [ ! -f "$filename" ]; then
-    echo "6# heartbeat file $filename doesn't exist"
+    echo "#6# heartbeat file $filename doesn't exist"
     exit 0
   fi
 else 
@@ -50,7 +50,7 @@ else
   link=$dir/hb-$1
   lvchange -ay $link
   if [ $? -ne 0 ]; then
-     echo "7# Unable to make the heartbeat $link active"
+     echo "#7# Unable to make the heartbeat $link active"
      exit 0
   fi
 fi
@@ -67,6 +67,6 @@ else
   echo $dir >> $hbfile
 fi
  
-echo "0#DONE"
+echo "#0#DONE"
 
 exit 0

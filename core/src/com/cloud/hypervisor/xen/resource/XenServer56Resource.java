@@ -242,11 +242,11 @@ public class XenServer56Resource extends CitrixResourceBase {
             }
             String result = callHostPluginThroughMaster(conn, "vmopspremium", "setup_heartbeat_sr", "host", _host.uuid,
                     "sr", srUuid);
-            if (result == null || !result.split("#")[0].equals("0")) {
+            if (result == null || !result.split("#")[1].equals("0")) {
                 throw new CloudRuntimeException("Unable to setup heartbeat sr on SR " + srUuid + " due to " + result);
             }
             result = callHostPluginPremium(conn, "setup_heartbeat_file", "host", _host.uuid, "sr", srUuid);
-            if (result == null || !result.split("#")[0].equals("0")) {
+            if (result == null || !result.split("#")[1].equals("0")) {
                 throw new CloudRuntimeException("Unable to setup heartbeat file entry on SR " + srUuid + " due to "
                         + result);
             }
