@@ -35,6 +35,7 @@ import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
@@ -108,7 +109,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     @Inject NicDao _nicDao;
     @Inject UsageEventDao _usageEventDao;
 
-    @Override @DB
+    @Override @DB @ActionEvent (eventType=EventTypes.EVENT_ASSIGN_TO_LOAD_BALANCER_RULE, eventDescription="assigning to load balancer", async=true)
     public boolean assignToLoadBalancer(long loadBalancerId, List<Long> instanceIds) {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
@@ -184,7 +185,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     }
     
 
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_REMOVE_FROM_LOAD_BALANCER_RULE, eventDescription="removing from load balancer", async=true)
     public boolean removeFromLoadBalancer(long loadBalancerId, List<Long> instanceIds) {
         UserContext caller = UserContext.current();
 
@@ -260,7 +261,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     }
     
 
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_LOAD_BALANCER_DELETE, eventDescription="deleting load balancer", async=true) 
     public boolean deleteLoadBalancerRule(long loadBalancerId, boolean apply) {
         UserContext caller = UserContext.current();
         
@@ -299,7 +300,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         return true;
     }
 
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_LOAD_BALANCER_CREATE, eventDescription="creating load balancer") 
     public LoadBalancer createLoadBalancerRule(LoadBalancer lb) throws NetworkRuleConflictException {
         UserContext caller = UserContext.current();
 
@@ -470,7 +471,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         return _name;
     }
 
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_LOAD_BALANCER_UPDATE, eventDescription="updating load balancer", async=true) 
     public LoadBalancer updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd) {
         Long lbRuleId = cmd.getId();
         String name = cmd.getLoadBalancerName();
