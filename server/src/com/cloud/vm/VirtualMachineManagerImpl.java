@@ -823,8 +823,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
         
         VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
         if (vm.getHostId() != null) {
-            StopCommand stop = new StopCommand(vm, vm.getInstanceName(), null);
-    
+            String routerPrivateIp = null;
+            if(vm.getType() == VirtualMachine.Type.DomainRouter){
+                routerPrivateIp = vm.getPrivateIpAddress();
+            }
+            StopCommand stop = new StopCommand(vm, vm.getInstanceName(), null, routerPrivateIp);
             boolean stopped = false;
             StopAnswer answer = null;
             try {
