@@ -29,5 +29,7 @@ echo 1048576 >/proc/sys/fs/aio-max-nr
 # empty heartbeat
 cat /dev/null > /opt/xensource/bin/heartbeat
 
+rm -f /opt/xensource/packages/iso/systemvm-premium.iso
+
 echo "success"
 

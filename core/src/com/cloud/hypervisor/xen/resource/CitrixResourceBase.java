@@ -866,7 +866,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             if(  _host.systemvmisouuid == null ) {
                 for( VDI vdi : srr.VDIs ) {
                     VDI.Record vdir = vdi.getRecord(conn);
-                        if(vdir.nameLabel.contains("systemvm")){
+                        if(vdir.nameLabel.contains("systemvm.iso")){
                             _host.systemvmisouuid = vdir.uuid;
                             break;
                      }
