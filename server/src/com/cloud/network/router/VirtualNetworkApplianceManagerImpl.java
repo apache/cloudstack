@@ -1020,8 +1020,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         _routerDao.update(router.getId(), router);
        
+        //restart network if restartNetwork = false is not specified in profile parameters
+        boolean restartNetwork = true;
+        if (profile.getParameter(Param.RestartNetwork) != null && (Boolean)profile.getParameter(Param.RestartNetwork) == false) {
+            restartNetwork = false;
+        }
         //The commands should be sent for domR only, skip for DHCP
-        if (router.getRole() == VirtualRouter.Role.DHCP_FIREWALL_LB_PASSWD_USERDATA && ((Boolean)profile.getParameter(Param.RestartNetwork))== true) {
+        if (router.getRole() == VirtualRouter.Role.DHCP_FIREWALL_LB_PASSWD_USERDATA && restartNetwork) {
             s_logger.debug("Resending ipAssoc, port forwarding, load balancing rules as a part of Virtual router start");
             long networkId = router.getNetworkId();
             long ownerId = router.getAccountId();
