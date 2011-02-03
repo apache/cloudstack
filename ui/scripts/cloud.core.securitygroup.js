@@ -309,7 +309,9 @@ function initAddIngressRuleDialog() {
                                                     }                                    
                                                 } 								                                                                                                               												
 									        } else if (result.jobstatus == 2) { // Failed									            
-									            handleErrorInDialog2(result.jobresult.errortext, $thisDialog);									            
+									            //var errorMsg = fromdb(result.jobresult.errortext);
+									            var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+									            handleErrorInDialog2(errorMsg, $thisDialog);									            
 									        }
 								        }
 							        },
