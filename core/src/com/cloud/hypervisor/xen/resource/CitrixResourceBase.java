@@ -4047,29 +4047,25 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
                 s_logger.warn(msg);
                 return false;
             }
-            if (srRec.shared) {           	
-                Set<Host> hosts = Host.getAll(conn);
-
-                for (Host host : hosts) {
-                    boolean found = false;
-                    for (PBD pbd : pbds) {
-                        if (host.equals(pbd.getHost(conn))) {
-                            PBD.Record pbdr = pbd.getRecord(conn);
-                            if (!pbdr.currentlyAttached) {
-                                pbdPlug(conn, pbd); 
-                            }
-                            pbds.remove(pbd);
-                            found = true;
-                            break;
+            if (srRec.shared) {
+                Host host = Host.getByUuid(conn, _host.uuid);
+                boolean found = false;
+                for (PBD pbd : pbds) {
+                    PBD.Record pbdr = pbd.getRecord(conn);
+                    if (host.equals(pbdr.host)) {
+                        if (!pbdr.currentlyAttached) {
+                            pbdPlug(conn, pbd);
                         }
+                        found = true;
+                        break;
                     }
-                    if (!found) {
-                        PBD.Record pbdr = srRec.PBDs.iterator().next().getRecord(conn);
-                        pbdr.host = host;
-                        pbdr.uuid = "";
-                        PBD pbd = PBD.create(conn, pbdr);
-                        pbdPlug(conn, pbd); 
-                    }
+                }
+                if (!found) {
+                    PBD.Record pbdr = srRec.PBDs.iterator().next().getRecord(conn);
+                    pbdr.host = host;
+                    pbdr.uuid = "";
+                    PBD pbd = PBD.create(conn, pbdr);
+                    pbdPlug(conn, pbd);
                 }
             } else {
                 for (PBD pbd : pbds) {
