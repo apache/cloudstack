@@ -113,6 +113,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     public boolean assignToLoadBalancer(long loadBalancerId, List<Long> instanceIds) {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
+        LoadBalancerVO loadBalancerLock = null;
 
         LoadBalancerVO loadBalancer = _lbDao.findById(loadBalancerId);
         if (loadBalancer == null) {
@@ -163,22 +164,33 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             vmsToAdd.add(vm);
         }
         
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        
-        for (UserVm vm : vmsToAdd) {
-            LoadBalancerVMMapVO map = new LoadBalancerVMMapVO(loadBalancer.getId(), vm.getId(), false);
-            map = _lb2VmMapDao.persist(map);
-        }
-        txn.commit();
-        
         try {
+        	loadBalancerLock = _lbDao.acquireInLockTable(loadBalancerId);
+        	if(loadBalancerLock == null)
+    		{
+    			s_logger.warn("Failed to acquire lock to assign VM to load balance rule id " + loadBalancerId);
+    			return false;
+    		}
+
+        	Transaction txn = Transaction.currentTxn();
+            txn.start();
+            
+            for (UserVm vm : vmsToAdd) {
+                LoadBalancerVMMapVO map = new LoadBalancerVMMapVO(loadBalancer.getId(), vm.getId(), false);
+                map = _lb2VmMapDao.persist(map);
+            }
+            txn.commit();
+
             loadBalancer.setState(FirewallRule.State.Add);
             _lbDao.persist(loadBalancer);
             applyLoadBalancerConfig(loadBalancerId);
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
             return false;
+        } finally {
+        	if (loadBalancerLock != null) {
+        		_lbDao.releaseFromLockTable(loadBalancerId);
+        	}
         }
        
         return true;
@@ -188,6 +200,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     @Override @ActionEvent (eventType=EventTypes.EVENT_REMOVE_FROM_LOAD_BALANCER_RULE, eventDescription="removing from load balancer", async=true)
     public boolean removeFromLoadBalancer(long loadBalancerId, List<Long> instanceIds) {
         UserContext caller = UserContext.current();
+        LoadBalancerVO loadBalancerLock = null;
 
         LoadBalancerVO loadBalancer = _lbDao.findById(Long.valueOf(loadBalancerId));
         if (loadBalancer == null) {
@@ -195,8 +208,15 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         } 
         
         _accountMgr.checkAccess(caller.getCaller(), loadBalancer);
-       
+
         try {
+        	loadBalancerLock = _lbDao.acquireInLockTable(loadBalancerId); 
+            if (loadBalancerLock == null)
+    		{
+    			s_logger.warn("Failed to acquire lock to delete load balance rule id " + loadBalancerId);
+    			return false;
+    		}
+
             loadBalancer.setState(FirewallRule.State.Add);
             _lbDao.persist(loadBalancer);
             
@@ -218,6 +238,10 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
             return false;
+        } finally {
+        	if (loadBalancerLock != null) {
+        		_lbDao.releaseFromLockTable(loadBalancerId);
+        	}
         }
        
         return true;
@@ -264,13 +288,21 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     @Override @ActionEvent (eventType=EventTypes.EVENT_LOAD_BALANCER_DELETE, eventDescription="deleting load balancer", async=true) 
     public boolean deleteLoadBalancerRule(long loadBalancerId, boolean apply) {
         UserContext caller = UserContext.current();
-        
+        LoadBalancerVO loadBalancerLock = null;
+
         LoadBalancerVO lb = _lbDao.findById(loadBalancerId);
         if (lb == null) {
             throw new InvalidParameterException("Invalid load balancer value: " + loadBalancerId);
         }
         
         _accountMgr.checkAccess(caller.getCaller(), lb);
+        
+        loadBalancerLock = _lbDao.acquireInLockTable(loadBalancerId);
+        if(loadBalancerLock == null)
+		{
+			s_logger.warn("Failed to acquire lock to delete load balance rule id " + loadBalancerId);
+			return false;
+		}        	
         
         lb.setState(FirewallRule.State.Revoke);
         _lbDao.persist(lb);
@@ -290,10 +322,14 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             } catch (ResourceUnavailableException e) {
                 s_logger.warn("Unable to apply the load balancer config because resource is unavaliable.", e);
                 return false;
+            } finally {
+            	if (loadBalancerLock != null)
+            		_lbDao.releaseFromLockTable(loadBalancerId);
             }
         }
-        
+
         _rulesDao.remove(lb.getId());
+
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_LOAD_BALANCER_DELETE, lb.getAccountId(), 0 , lb.getId(), null);
         _usageEventDao.persist(usageEvent);
         s_logger.debug("Load balancer with id " + lb.getId() + " is removed successfully");
