@@ -39,6 +39,8 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -125,6 +127,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     @Inject HostDao _hostDao;
     @Inject DataCenterDao _dcDao;
     @Inject HostPodDao _podDao;
+    @Inject ClusterDetailsDao _clusterDetailsDao;
     long _serverId;
     @Inject(adapter=Investigator.class)
     Adapters<Investigator> _investigators;
@@ -353,6 +356,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         }
 
         final HostVO host = _hostDao.findById(work.getHostId());
+        boolean nativeHA = isHostClusterNativeHAEnabled(work.getHostId());
 
         DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
         HostPodVO podVO = _podDao.findById(host.getPodId());
@@ -388,7 +392,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             if (alive != null && alive) {
                 s_logger.debug("VM " + vm.getName() + " is found to be alive by " + investigator.getName());
                 if (host.getStatus() == Status.Up) {
-                	compareState(vm, new AgentVmInfo(vm.getInstanceName(), mgr, State.Running), false);
+                	compareState(vm, new AgentVmInfo(vm.getInstanceName(), mgr, State.Running), false, nativeHA);
                 	return null;
                 } else {
                     s_logger.debug("Rescheduling because the host is not up but the vm is alive");
@@ -486,7 +490,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
      * cleaned up
      *
      */
-    protected Command compareState(VMInstanceVO vm, final AgentVmInfo info, final boolean fullSync) {
+    protected Command compareState(VMInstanceVO vm, final AgentVmInfo info, final boolean fullSync, boolean nativeHA) {
     	State agentState = info.state;
         final String agentName = info.name;
         final State serverState = vm.getState();
@@ -546,10 +550,14 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             // was never completed but we still send down a Stop Command
             // to ensure there's cleanup.
             if (serverState == State.Running ) {
-                // Our records showed that it should be running so let's restart it.
-                vm = info.mgr.findById(vm.getId());
-                scheduleRestart(vm, false);
-                command = info.mgr.cleanup(vm, agentName);
+            	if(!nativeHA) {
+	                // Our records showed that it should be running so let's restart it.
+	                vm = info.mgr.findById(vm.getId());
+	                scheduleRestart(vm, false);
+	                command = info.mgr.cleanup(vm, agentName);
+            	} else {
+            		s_logger.info("VM is in runnting state, agent reported as stopped and native HA is enabled => skip sync action");
+            	}
             } else if (serverState == State.Stopping) {
                 if (fullSync) {
                     s_logger.debug("VM is in stopping state on full sync.  Updating the status to stopped");
@@ -621,6 +629,8 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         final Map<Long, AgentVmInfo> states = convertToIds(newStates);
         final ArrayList<Command> commands = new ArrayList<Command>();
 
+        boolean nativeHA = isHostClusterNativeHAEnabled(hostId);
+
         for (final VMInstanceVO vm : vms) {
             AgentVmInfo info = states.remove(vm.getId());
 
@@ -631,7 +641,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             assert info.mgr != null : "How can the manager be null for " + vm.getType();
 
             VMInstanceVO vmCasted = info.mgr.findById(vm.getId());
-            final Command command = compareState(vmCasted, info, true);
+            final Command command = compareState(vmCasted, info, true, nativeHA);
             if (command != null) {
                 commands.add(command);
             }
@@ -673,7 +683,9 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     public List<Command> deltaSync(final long hostId, final Map<String, State> newStates) {
         final Map<Long, AgentVmInfo> states = convertToIds(newStates);
         final ArrayList<Command> commands = new ArrayList<Command>();
-
+        
+        boolean nativeHA = isHostClusterNativeHAEnabled(hostId);
+        
         for (final Map.Entry<Long, AgentVmInfo> entry : states.entrySet()) {
             final AgentVmInfo info = entry.getValue();
 
@@ -681,10 +693,20 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
 
             Command command = null;
             if (vm != null && vm.getHostId() != null && vm.getHostId() == hostId) {
-                command = compareState(vm, info, false);
+                command = compareState(vm, info, false, nativeHA);
             } else {
-                s_logger.debug("VM is not found.  Stopping " + info.name);
-                command = info.mgr.cleanup(null, info.name);
+            	if(nativeHA) {
+            		if(vm.getHostId() != null && vm.getHostId() != hostId && info.state == VirtualMachine.State.Running) {
+            			vm.setHostId(hostId);
+            			_instanceDao.update(vm.getId(), vm);
+            			
+            			s_logger.info("Native is enabled and we found VM has been switched from host " + vm.getHostId() + " to " + hostId);
+                        command = compareState(vm, info, false, nativeHA);
+            		}
+            	} else {
+	                s_logger.debug("VM is not found.  Stopping " + info.name);
+	                command = info.mgr.cleanup(null, info.name);
+            	}
             }
 
             if (command != null) {
@@ -693,6 +715,14 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
         }
 
         return commands;
+    }
+    
+    private boolean isHostClusterNativeHAEnabled(long hostId) {
+    	HostVO host = _hostDao.findById(hostId);
+    	ClusterDetailsVO detail = _clusterDetailsDao.findDetail(host.getClusterId(), "NativeHA");
+    	if(detail != null && detail.getValue() != null && detail.getValue().equalsIgnoreCase("true"))
+    		return true;
+    	return false;
     }
 
     public Long migrate(final HaWorkVO work) {
