@@ -134,6 +134,7 @@ chkconfig = Command("chkconfig")
 updatercd = Command("update-rc.d")
 ufw = Command("ufw")
 iptables = Command("iptables")
+iptables_save = Command("iptables-save")
 augtool = Command("augtool")
 kvmok = Command("kvm-ok")
 ifconfig = Command("ifconfig")
@@ -234,7 +235,13 @@ if Fedora or CentOS:
 			if ":on" in o.stdout and os.path.exists("/etc/sysconfig/iptables"):
 				stderr("Setting up firewall rules to permit traffic to CloudStack services")
 				service.iptables.start() ; print o.stdout + o.stderr
-				for p in ports: iptables("-I","INPUT","1","-p","tcp","--dport",p,"-j","ACCEPT")
+				o = iptables_save()
+				for p in ports:
+					r = "INPUT -p tcp -m tcp --dport %s -j ACCEPT" % p
+					if r in o.stdout:
+						continue
+					iptables("-I","INPUT","1","-p","tcp","--dport",p,"-j","ACCEPT")
+
 				o = service.iptables.save() ; print o.stdout + o.stderr
 			else:
 				stderr("No need to set up iptables as the service is unconfigured or not set to start up at boot")
