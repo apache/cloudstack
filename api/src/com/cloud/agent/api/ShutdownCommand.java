@@ -25,14 +25,17 @@ public class ShutdownCommand extends Command {
     public static final String Requested = "sig.kill";
     public static final String Update = "update";
     public static final String Unknown = "unknown";
+    public static final String DeleteHost = "deleteHost";
     
     private String reason;
     private String detail;
 
     protected ShutdownCommand() {
+        super();
     }
     
     public ShutdownCommand(String reason, String detail) {
+        super();
         this.reason = reason;
         this.detail = detail;
     }
@@ -50,6 +53,6 @@ public class ShutdownCommand extends Command {
     
     @Override
     public boolean executeInSequence() {
-        return false;
+        return true;
     }
 }

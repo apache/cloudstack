@@ -111,6 +111,7 @@ public class Agent implements HandlerFactory, IAgentControl {
     AtomicInteger _inProgress = new AtomicInteger();
     
     StartupTask _startup = null;
+    boolean _reconnectAllowed = true;
 
     // for simulator use only
     public Agent(IAgentShell shell) {
@@ -347,6 +348,9 @@ public class Agent implements HandlerFactory, IAgentControl {
     }
     
     protected void reconnect(final Link link) {
+        if (!_reconnectAllowed) {
+            return;
+        }
         synchronized(this) {
         	if (_startup != null) {
         		_startup.cancel();
@@ -456,6 +460,12 @@ public class Agent implements HandlerFactory, IAgentControl {
                     } else if (cmd instanceof UpgradeCommand) {
                         final UpgradeCommand upgrade = (UpgradeCommand)cmd;
                         answer = upgradeAgent(upgrade.getUpgradeUrl(), upgrade);
+                    } else if (cmd instanceof ShutdownCommand) {
+                        ShutdownCommand shutdown = (ShutdownCommand)cmd;
+                        s_logger.debug("Received shutdownCommand, due to: " + shutdown.getReason());
+                        cancelTasks();
+                        _reconnectAllowed = false;
+                        answer = new Answer(cmd, true, null);
                     } else if(cmd instanceof AgentControlCommand) {
                     	answer = null;
                     	synchronized(_controlListeners) {

@@ -972,47 +972,57 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 						+ host.getGuid());
 			}
 
-			if (host.getType() == Type.Routing
-					&& host.getHypervisorType() == HypervisorType.XenServer) {
-				if (host.getClusterId() != null) {
-					List<HostVO> hosts = _hostDao.listBy(Type.Routing,
-							host.getClusterId(), host.getPodId(),
-							host.getDataCenterId());
-					hosts.add(host);
-					boolean success = true;
-					for (HostVO thost : hosts) {
-						long thostId = thost.getId();
-						PoolEjectCommand eject = new PoolEjectCommand(
-								host.getGuid());
-						Answer answer = easySend(thostId, eject);
-						if (answer != null && answer.getResult()) {
-							s_logger.debug("Eject Host: " + hostId + " from "
-									+ thostId + " Succeed");
-							success = true;
-							break;
-						} else {
-							success = false;
-							s_logger.debug("Eject Host: "
-									+ hostId
-									+ " from "
-									+ thostId
-									+ " failed due to "
-									+ (answer != null ? answer.getDetails()
-											: "no answer"));
-						}
-					}
-					if (!success) {
-						String msg = "Unable to eject host "
-								+ host.getGuid()
-								+ " due to there is no host up in this cluster, please execute xe pool-eject host-uuid="
-								+ host.getGuid() + "in this host "
-								+ host.getPrivateIpAddress();
-						s_logger.info(msg);
-						_alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST,
-								host.getDataCenterId(), host.getPodId(),
-								"Unable to eject host " + host.getGuid(), msg);
-					}
-				}
+			if (host.getType() == Type.Routing) {
+			    if (host.getHypervisorType() == HypervisorType.XenServer) {
+			        if (host.getClusterId() != null) {
+			            List<HostVO> hosts = _hostDao.listBy(Type.Routing,
+			                    host.getClusterId(), host.getPodId(),
+			                    host.getDataCenterId());
+			            hosts.add(host);
+			            boolean success = true;
+			            for (HostVO thost : hosts) {
+			                long thostId = thost.getId();
+			                PoolEjectCommand eject = new PoolEjectCommand(
+			                        host.getGuid());
+			                Answer answer = easySend(thostId, eject);
+			                if (answer != null && answer.getResult()) {
+			                    s_logger.debug("Eject Host: " + hostId + " from "
+			                            + thostId + " Succeed");
+			                    success = true;
+			                    break;
+			                } else {
+			                    success = false;
+			                    s_logger.debug("Eject Host: "
+			                            + hostId
+			                            + " from "
+			                            + thostId
+			                            + " failed due to "
+			                            + (answer != null ? answer.getDetails()
+			                                    : "no answer"));
+			                }
+			            }
+			            if (!success) {
+			                String msg = "Unable to eject host "
+			                    + host.getGuid()
+			                    + " due to there is no host up in this cluster, please execute xe pool-eject host-uuid="
+			                    + host.getGuid() + "in this host "
+			                    + host.getPrivateIpAddress();
+			                s_logger.info(msg);
+			                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST,
+			                        host.getDataCenterId(), host.getPodId(),
+			                        "Unable to eject host " + host.getGuid(), msg);
+			            }
+			        }
+			    } else if (host.getHypervisorType() == HypervisorType.KVM) {
+			        try {
+			            ShutdownCommand cmd = new ShutdownCommand(ShutdownCommand.DeleteHost, null);
+			            send(host.getId(), cmd);
+			        } catch (AgentUnavailableException e) {
+			            s_logger.debug("Sending ShutdownCommand failed: " + e.toString());
+			        } catch (OperationTimedoutException e) {
+			            s_logger.debug("Sending ShutdownCommand failed: " + e.toString());
+			        }
+			    }
 			}
 			txn.start();
 

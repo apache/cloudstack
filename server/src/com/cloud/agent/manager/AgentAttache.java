@@ -40,6 +40,7 @@ import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.ReadyCommand;
+import com.cloud.agent.api.ShutdownCommand;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.storage.CreateCommand;
@@ -98,7 +99,7 @@ public abstract class AgentAttache {
     protected boolean _maintenance;
     
     public final static String[] s_commandsAllowedInMaintenanceMode =
-        new String[] { MaintainCommand.class.toString(), MigrateCommand.class.toString(), StopCommand.class.toString(), CheckVirtualMachineCommand.class.toString(), PingTestCommand.class.toString(), CheckHealthCommand.class.toString(), ReadyCommand.class.toString() };
+        new String[] { MaintainCommand.class.toString(), MigrateCommand.class.toString(), StopCommand.class.toString(), CheckVirtualMachineCommand.class.toString(), PingTestCommand.class.toString(), CheckHealthCommand.class.toString(), ReadyCommand.class.toString(), ShutdownCommand.class.toString() };
     protected final static String[] s_commandsNotAllowedInConnectingMode =
         new String[] { StartCommand.class.toString(), CreateCommand.class.toString() };
     static {
