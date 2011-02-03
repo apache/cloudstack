@@ -1158,9 +1158,9 @@ function handleErrorInDialog2(errorMsg, $thisDialog) {
 	var $infoContainer = $thisDialog.find("#info_container");
 
 	if(errorMsg != null && errorMsg.length > 0) 	    
-	    $infoContainer.find("#info").text(fromdb(errorMsg));	
+	    $infoContainer.find("#info").text(errorMsg);	
 	else 
-	    $infoContainer.find("#info").text("action failed");	
+	    $infoContainer.find("#info").text(g_dictionary["label.failed"]);	
 	
 	$thisDialog.find("#spinning_wheel").hide();
 	$infoContainer.show();

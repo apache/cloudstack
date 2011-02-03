@@ -620,7 +620,8 @@ function doDownloadVolume($actionLink, $detailsTab, $midmenuItem1) {
 		                            $infoContainer.find("#info").html(htmlMsg);
 		                            $infoContainer.show();		                        
 		                        } else if (result.jobstatus == 2) { // Failed	
-		                            handleErrorInDialog2(fromdb(result.jobresult.errortext), $dialogDownloadVolume);		                        
+		                            var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+			                        handleErrorInDialog2(errorMsg, $dialogDownloadVolume);		                        
 		                        }											                    
 	                        }
                         },
