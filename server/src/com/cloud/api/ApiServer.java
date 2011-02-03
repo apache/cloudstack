@@ -370,7 +370,6 @@ public class ApiServer implements HttpRequestHandler {
             Long objectId = null;
             if (cmdObj instanceof BaseAsyncCreateCmd) {
                 BaseAsyncCreateCmd createCmd = (BaseAsyncCreateCmd)cmdObj;
-                ctx.setAccountId(createCmd.getEntityOwnerId());
                 _dispatcher.dispatchCreateCmd(createCmd, params);
                 objectId = createCmd.getEntityId();
                 params.put("id", objectId.toString());

@@ -23,7 +23,6 @@ import java.util.List;
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.user.UserAccount;
 import com.cloud.utils.component.Manager;
 
 public interface AsyncJobManager extends Manager {
