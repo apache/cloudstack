@@ -200,7 +200,8 @@ function afterLoadIpJSP() {
 				                        $template.slideUp("slow", function() {
 					                        $(this).remove();
 				                        });
-				                        var errorMsg = "Create Port Fowarding Rule action failed. Reason: " + fromdb(result.jobresult.errortext);				
+				                        //var errorMsg = "Create Port Fowarding Rule action failed. Reason: " + fromdb(result.jobresult.errortext);				
+	                                    var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
 	                                    $("#dialog_error").text(errorMsg).dialog("open");
 			                        }											                    
 		                        }
@@ -297,7 +298,8 @@ function afterLoadIpJSP() {
 				                        $template.slideUp("slow", function() {
 					                        $(this).remove();
 				                        });
-				                        var errorMsg = "Create Port Fowarding Rule action failed. Reason: " + fromdb(result.jobresult.errortext);				
+				                        //var errorMsg = "Create Port Fowarding Rule action failed. Reason: " + fromdb(result.jobresult.errortext);				
+	                                    var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
 	                                    $("#dialog_error").text(errorMsg).dialog("open");
 			                        }											                    
 		                        }
@@ -1751,7 +1753,9 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 							        $spinningWheel.hide();                                   
                                     $rowContainerEdit.hide();  
                                     $rowContainer.show(); 
-								    $("#dialog_alert").text(fromdb(result.jobresult.errortext)).dialog("open");											    					    
+								    //var errorMsg = fromdb(result.jobresult.errortext);
+								    var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+								    $("#dialog_alert").text(errorMsg).dialog("open");											    					    
 							    }
 						    }
 					    },
@@ -1815,7 +1819,9 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 									    refreshLbVmSelect($template, loadBalancerId);											    
 		                                $spinningWheel.hide();   
 									} else if (result.jobstatus == 2) { // Failed										
-										$("#dialog_error").text(fromdb(result.jobresult.errortext)).dialog("open");  																
+										//var errorMsg = fromdb(result.jobresult.errortext);
+										var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+										$("#dialog_error").text(errorMsg).dialog("open");  																
 										$spinningWheel.hide();   
 									}
 								}
@@ -1881,7 +1887,9 @@ function lbVmObjToTemplate(obj, $template) {
 											$(this).remove();
 										});
 									} else if (result.jobstatus == 2) { // Failed													
-										$("#dialog_error").text(fromdb(result.jobresult.errortext)).dialog("open");
+										//var errorMsg = fromdb(result.jobresult.errortext);
+										var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+										$("#dialog_error").text(errorMsg).dialog("open");
 										$spinningWheel.hide();   										
 									}
 								}
