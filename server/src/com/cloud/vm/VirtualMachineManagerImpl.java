@@ -396,7 +396,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
     	//Clean up volumes based on the vm's instance id
     	_storageMgr.cleanupVolumes(vm.getId());
     	
-        VirtualMachineGuru<T> guru = (VirtualMachineGuru<T>)_vmGurus.get(vm.getType());
+        VirtualMachineGuru<T> guru = getVmGuru(vm);
         guru.finalizeExpunge(vm);
     	
         if (s_logger.isDebugEnabled()) {

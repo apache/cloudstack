@@ -144,6 +144,7 @@ public interface NetworkManager extends NetworkService {
     Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain, Account owner) throws ConcurrentOperationException, InsufficientCapacityException;
     
     /**
+     * @throws InsufficientCapacityException 
      * Associates an ip address list to an account.  The list of ip addresses are all addresses associated with the given vlan id.
      * @param userId
      * @param accountId

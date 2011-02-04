@@ -444,6 +444,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return account;
     }
 
+    @Override
     public boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException {
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId());
         List<PublicIp> publicIps = new ArrayList<PublicIp>();
@@ -1385,7 +1386,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Long domainId = cmd.getDomainId();
 
         Account owner = _accountMgr.finalizeOwner(ctxAccount, accountName, domainId);
-        
         // if end ip is not specified, default it to startIp
         if (endIP == null && startIP != null) {
             endIP = startIP;
@@ -1412,7 +1412,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // If networkDomain is not specified, take it from the global configuration
         if (networkDomain == null) {
-            networkDomain = _networkDomain;
+            networkDomain = "cs"+Long.toHexString(owner.getId())+_networkDomain;
         }
 
         // Check if zone exists
@@ -1474,7 +1474,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-
         // Create network
         DataCenterDeployment plan = new DataCenterDeployment(zoneId, null, null, null);
         NetworkVO userNetwork = new NetworkVO();
@@ -2197,6 +2196,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return elements;
     }
 
+    @Override
     public boolean zoneIsConfiguredForExternalNetworking(long zoneId) {
         DataCenterVO zone = _dcDao.findById(zoneId);
 

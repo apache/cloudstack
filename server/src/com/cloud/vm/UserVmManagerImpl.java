@@ -262,7 +262,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     String _name;
     String _instance;
     String _zone;
-    String _defaultNetworkDomain;
 
     private ConfigurationDao _configDao;
 
@@ -1052,14 +1051,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
         
-        _defaultNetworkDomain = configs.get("domain");
-        if (_defaultNetworkDomain == null) {
-            _defaultNetworkDomain = ".myvm.com";
-        }
-        if (!_defaultNetworkDomain.startsWith(".")) {
-            _defaultNetworkDomain = "." + _defaultNetworkDomain;
-        }
-
         _instance = configs.get("instance.name");
         if (_instance == null) {
             _instance = "DEFAULT";
@@ -1856,6 +1847,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	}
 	
     private boolean validPassword(String password) {
+        if (password == null || password.length() == 0) {
+            return false;
+        }
         for (int i = 0; i < password.length(); i++) {
             if (password.charAt(i) == ' ') {
                 return false;
@@ -1968,20 +1962,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 }
                 dataDiskOfferings.add(new Pair<DiskOfferingVO, Long>(diskOffering, size));
             }
-        }
-
-        // Check that the password was passed in and is valid
-        String password = PasswordGenerator.generateRandomPassword(6);
-        if (!template.getEnablePassword()) {
-            password = "saved_password";
-        }
-        if (password == null || password.equals("") || (!validPassword(password))) {
-            throw new InvalidParameterValueException("A valid password for this virtual machine was not provided.");
-        }
-
-        String networkDomain = null;
-        if (networkDomain == null) {
-            networkDomain = "v" + Long.toHexString(owner.getId()) + _defaultNetworkDomain;
         }
 
         String userData = cmd.getUserData();
@@ -2140,7 +2120,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             password = generateRandomPassword();
         }
 
-        if (password == null || password.equals("") || (!validPassword(password))) {
+        if (!validPassword(password)) {
             throw new InvalidParameterValueException("A valid password for this virtual machine was not provided.");
         }
 
@@ -2150,7 +2130,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (sshPublicKey != null && !sshPublicKey.equals("") && password != null && !password.equals("saved_password") ) {       	
         	String encryptedPasswd = RSAHelper.encryptWithSSHPublicKey(sshPublicKey, password);
         	if (encryptedPasswd == null) {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Error encrypting password");
+                throw new CloudRuntimeException("Error encrypting password");
             }
         	
         	vm.setDetail("Encrypted.Password", encryptedPasswd);
@@ -2183,14 +2163,22 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	
 	@Override
 	public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
-		UserVmVO vo = profile.getVirtualMachine();
+        UserVmVO vm = profile.getVirtualMachine();
+	    Account owner = _accountDao.findById(vm.getAccountId());
+	    
+	    if (owner == null || owner.getState() == Account.State.disabled) {
+	        throw new PermissionDeniedException("The owner of " + vm + " either does not exist or is disabled: " + vm.getAccountId());
+	    }
+	    
+	    
+	    
 		VirtualMachineTemplate template = profile.getTemplate();
-		if (vo.getIsoId() != null) {
-			template = _templateDao.findById(vo.getIsoId());
+		if (vm.getIsoId() != null) {
+			template = _templateDao.findById(vm.getIsoId());
 		}
-		if (template != null && template.getFormat() == ImageFormat.ISO && vo.getIsoId() != null) {
+		if (template != null && template.getFormat() == ImageFormat.ISO && vm.getIsoId() != null) {
 			String isoPath = null;
-			Pair<String, String> isoPathPair = _storageMgr.getAbsoluteIsoPath(template.getId(), vo.getDataCenterId()); 	
+			Pair<String, String> isoPathPair = _storageMgr.getAbsoluteIsoPath(template.getId(), vm.getDataCenterId()); 	
 			if (isoPathPair == null) {
 				s_logger.warn("Couldn't get absolute iso path");
 				return false;
@@ -2233,7 +2221,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 			}
 		}
 		_vmDao.update(userVm.getId(), userVm);
-				
 		return true;
 	}
 

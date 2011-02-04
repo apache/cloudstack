@@ -1141,7 +1141,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         routerResponse.setTemplateId(router.getTemplateId());
         routerResponse.setCreated(router.getCreated());
         routerResponse.setState(router.getState());
-        routerResponse.setNetworkDomain(router.getDomain());
 
         if (router.getHostId() != null) {
             routerResponse.setHostId(router.getHostId());
@@ -1175,6 +1174,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                    routerResponse.setGuestMacAddress(singleNicProfile.getMacAddress());
                    routerResponse.setGuestNetmask(singleNicProfile.getNetmask());
                    routerResponse.setGuestNetworkId(singleNicProfile.getNetworkId());
+                   routerResponse.setNetworkDomain(network.getNetworkDomain());
                }
            }
         }

@@ -49,9 +49,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Column(name="public_netmask")
     private String publicNetmask;
     
-    @Column(name="guest_mac_address")
-    private String guestMacAddress;
-    
     @Column(name="guest_ip_address")
     private String guestIpAddress;
     
@@ -96,19 +93,10 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
         this.publicNetmask = publicNetmask;
     }
 
-    public void setGuestMacAddress(String routerMacAddress) {
-        this.guestMacAddress = routerMacAddress;
-    }
-    
     public long getNetworkId() {
         return networkId;
     }
     
-    @Override
-    public String getGuestNetmask() {
-        return guestNetmask;
-    }
-
     public void setGuestIpAddress(String routerIpAddress) {
         this.guestIpAddress = routerIpAddress;
     }
@@ -122,17 +110,14 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
         return dataCenterId;
     }
     
-    @Override
     public String getPublicNetmask() {
         return publicNetmask;
     }
     
-    @Override
     public String getPublicMacAddress() {
         return publicMacAddress;
     }
     
-    @Override
     public String getGuestIpAddress() {
         return guestIpAddress;
     }
@@ -141,7 +126,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
         super();
     }
     
-    @Override
     public String getDomain() {
         return domain;
     }
@@ -156,16 +140,10 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
         this.ramSize = ramSize;
     }
     
-    @Override
     public String getPublicIpAddress() {
         return publicIpAddress;
     }
     
-    @Override
-    public String getGuestMacAddress() {
-        return guestMacAddress;
-    }
-
 	@Override
 	public Role getRole() {
 		return role;

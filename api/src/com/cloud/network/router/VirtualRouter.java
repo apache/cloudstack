@@ -29,29 +29,9 @@ public interface VirtualRouter extends VirtualMachine {
 		DHCP_USERDATA
 	}
     /**
-     * @return the mac address for the router.
-     */
-    public String getGuestMacAddress();
-    
-    public String getGuestIpAddress();
-    
-    public String getPublicMacAddress();
-    
-    public String getPublicNetmask();
-    
-    /**
      * @return the ram size for this machine.
      */
     public int getRamSize();
-    
-    public String getGuestNetmask();
-    
-    /**
-     * @return the public ip address used for source nat.
-     */
-    String getPublicIpAddress();
-    
-    String getDomain();
     
     Role getRole();
 

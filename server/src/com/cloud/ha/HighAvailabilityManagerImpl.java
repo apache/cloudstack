@@ -109,7 +109,6 @@ import com.cloud.vm.dao.VMInstanceDao;
  *    || stop.retry.wait | time to wait before retrying the stop | seconds | 120 ||
  *  }
  **/
-@SuppressWarnings("unchecked")
 @Local(value={HighAvailabilityManager.class})
 public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
     protected static final Logger s_logger = Logger.getLogger(HighAvailabilityManagerImpl.class);
@@ -198,7 +197,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             // collect list of vm names for the alert email
             VMInstanceVO vm = vms.get(0);
             if (vm.isHaEnabled()) {
-                sb.append(" " + vm.getName());
+                sb.append(" " + vm);
             }
             for (int i = 1; i < vms.size(); i++) {
                 vm = vms.get(i);

@@ -670,7 +670,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
     }
 
-    private VmDataCommand generateVmDataCommand(VirtualRouter router, String vmPrivateIpAddress,
+    private VmDataCommand generateVmDataCommand(DomainRouterVO router, String vmPrivateIpAddress,
             String userData, String serviceOffering, String zoneName, String guestIpAddress, String vmName, String vmInstanceName, long vmId, String publicKey) {
         VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress);
         
@@ -755,7 +755,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public VirtualRouter deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params) throws InsufficientCapacityException,
+    public DomainRouterVO deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         long dcId = dest.getDataCenter().getId();
 
@@ -824,7 +824,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public VirtualRouter deployDhcp(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params) throws InsufficientCapacityException,
+    public DomainRouterVO deployDhcp(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params) throws InsufficientCapacityException,
             StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException {
         long dcId = dest.getDataCenter().getId();
 
@@ -994,7 +994,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         		router.setPublicMacAddress(nic.getMacAddress());
         	} else if (nic.getTrafficType() == TrafficType.Guest) {
         		router.setGuestIpAddress(nic.getIp4Address());
-        		router.setGuestMacAddress(nic.getMacAddress());
         	} else if (nic.getTrafficType() == TrafficType.Control) {
         		router.setPrivateIpAddress(nic.getIp4Address());
         		router.setPrivateMacAddress(nic.getMacAddress());
@@ -1197,7 +1196,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     public VirtualRouter addVirtualMachineIntoNetwork(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest,
             ReservationContext context, Boolean startDhcp) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         
-        VirtualRouter router = startDhcp ? deployDhcp(network, dest, profile.getOwner(), profile.getParameters()) : deployVirtualRouter(network, dest, profile.getOwner(), profile.getParameters());
+        DomainRouterVO router = startDhcp ? deployDhcp(network, dest, profile.getOwner(), profile.getParameters()) : deployVirtualRouter(network, dest, profile.getOwner(), profile.getParameters());
 
         _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
         
