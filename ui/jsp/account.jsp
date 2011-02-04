@@ -198,7 +198,7 @@ dictionary = {
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" /></div>
             <div class="actionpanel_button_links">
-                <fmt:message key="label.add.account"/>s
+                <fmt:message key="label.add.account"/>
             </div>
         </div>
     </div>
