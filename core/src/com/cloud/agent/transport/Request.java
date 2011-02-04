@@ -122,6 +122,7 @@ public class Request {
         _seq = seq;
         _agentId = agentId;
         _mgmtId = mgmtId;
+        setInSequence(cmds);
     }
     
     protected Request(Version ver, long seq, long agentId, long mgmtId, short flags, final String content) {
@@ -138,6 +139,18 @@ public class Request {
         setStopOnError(stopOnError);
         setFromServer(fromServer);
         setRevertOnError(revert);
+    }
+    
+    protected void setInSequence(Command[] cmds) {
+        if (cmds == null) {
+            return;
+        }
+        for (Command cmd : cmds) {
+            if (cmd.executeInSequence()) {
+                setInSequence(true);
+                break;
+            }
+        }
     }
     
     protected Request(final Request that, final Command[] cmds) {
