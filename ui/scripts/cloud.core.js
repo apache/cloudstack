@@ -1201,7 +1201,7 @@ function showLeftNavigationBasedOnRole() {
 	    $("#leftmenu_security_group_container").hide();
 	}
 	
-	if (isAdmin() || (isDomainAdmin() && getUserPublicTemplateEnabled() == "true")) {
+	if (isAdmin() || (getUserPublicTemplateEnabled() == "true")) {
 	    $("#leftmenu_submenu_community_template_container, #leftmenu_submenu_community_iso_container").show();
 	}
 	else {
