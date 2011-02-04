@@ -1378,5 +1378,10 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         }
         return lbRules;
     }
+    
+    @Override
+    public LoadBalancerVO findById(long lbId) {
+        return _lbDao.findById(lbId);
+    }
 
 }

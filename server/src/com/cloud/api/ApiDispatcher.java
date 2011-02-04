@@ -29,7 +29,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.async.AsyncCommandQueued;
-import com.cloud.event.EventVO;
+import com.cloud.async.AsyncJobManager;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -49,7 +49,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ApiDispatcher {
     private static final Logger s_logger = Logger.getLogger(ApiDispatcher.class.getName());
 
-    ComponentLocator _locator = null;
+    ComponentLocator _locator;
+    AsyncJobManager _asyncMgr;
 
     // singleton class
     private static ApiDispatcher s_instance = new ApiDispatcher();
@@ -60,6 +61,7 @@ public class ApiDispatcher {
 
     private ApiDispatcher() {
         _locator = ComponentLocator.getLocator(ManagementServer.Name);
+        _asyncMgr = _locator.getManager(AsyncJobManager.class);
     }
 
     public void dispatchCreateCmd(BaseAsyncCreateCmd cmd, Map<String, String> params) {
@@ -128,8 +130,15 @@ public class ApiDispatcher {
                 ctx.setAccountId(asyncCmd.getEntityOwnerId());
                 String startEventId = params.get("ctxStartEventId");
                 ctx.setStartEventId(Long.valueOf(startEventId));
+                
+                //Synchronise job on the object if needed
+                if (asyncCmd.getJob() != null && asyncCmd.getSyncObjId() != null && asyncCmd.getSyncObjType() != null) {
+                    _asyncMgr.syncAsyncJobExecution(asyncCmd.getJob(), asyncCmd.getSyncObjType(), asyncCmd.getSyncObjId().longValue());
+                }
             }
+
             cmd.execute();
+                
         } catch (Throwable t) {
             if (t instanceof  InvalidParameterValueException || t instanceof IllegalArgumentException) {
                 s_logger.info(t.getMessage());

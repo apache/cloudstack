@@ -89,4 +89,14 @@ public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete load balancer");
         }
     }
+    
+    @Override
+    public String getSyncObjType() {
+        return this.networkSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        return _lbService.findById(id).getNetworkId();
+    }
 }

@@ -700,5 +700,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             return null;
         }
     }
-
+    
+    @Override
+    public PortForwardingRule getPortForwardigRule(long ruleId) {
+        return _forwardingDao.findById(ruleId);
+    }
 }

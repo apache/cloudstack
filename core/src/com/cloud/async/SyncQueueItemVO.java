@@ -29,7 +29,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="sync_queue_item")
-public class SyncQueueItemVO {
+public class SyncQueueItemVO implements SyncQueueItem{
 
 	@Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -70,6 +70,7 @@ public class SyncQueueItemVO {
 		this.queueId = queueId;
 	}
 
+	@Override
 	public String getContentType() {
 		return contentType;
 	}
@@ -77,7 +78,8 @@ public class SyncQueueItemVO {
 	public void setContentType(String contentType) {
 		this.contentType = contentType;
 	}
-
+	
+	@Override
 	public Long getContentId() {
 		return contentId;
 	}

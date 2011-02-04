@@ -334,6 +334,7 @@ public class AsyncJobVO implements AsyncJob {
 		this.cmdOriginator = cmdOriginator;
 	}
 	
+	@Override
     public SyncQueueItemVO getSyncSource() {
         return syncSource;
     }

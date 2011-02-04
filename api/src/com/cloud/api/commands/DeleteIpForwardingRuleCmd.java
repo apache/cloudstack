@@ -99,5 +99,15 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  ("Deleting an ipforwarding 1:1 NAT rule id:"+id);
     }
+    
+    @Override
+    public String getSyncObjType() {
+        return this.ipAddressSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        return _rulesService.getPortForwardigRule(id).getSourceIpAddressId();
+    }
 
 }

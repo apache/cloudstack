@@ -84,4 +84,15 @@ public class DisableStaticNat extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to disable static nat");
         }
     }
+    
+    
+    @Override
+    public String getSyncObjType() {
+        return this.ipAddressSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        return ipAddressId;
+    }
 }

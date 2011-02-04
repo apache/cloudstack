@@ -192,7 +192,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     }
 
     @Override @DB
-    public void destroyRemoteAccessVpn(long ipId, long startEventId) throws ResourceUnavailableException {
+    public void destroyRemoteAccessVpn(long ipId) throws ResourceUnavailableException {
         Account caller = UserContext.current().getCaller();
         
         RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findById(ipId);

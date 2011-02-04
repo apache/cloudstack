@@ -90,4 +90,15 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete port forwarding rule");
         }
     }
+    
+    
+    @Override
+    public String getSyncObjType() {
+        return this.ipAddressSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        return _rulesService.getPortForwardigRule(id).getSourceIpAddressId();
+    }
 }

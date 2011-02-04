@@ -26,6 +26,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.utils.component.Manager;
 
 public interface AsyncJobManager extends Manager {
+    
 	public AsyncJobExecutorContext getExecutorContext();
 	
 	public AsyncJobVO getAsyncJob(long jobId);
@@ -39,9 +40,10 @@ public interface AsyncJobManager extends Manager {
     public void completeAsyncJob(long jobId, int jobStatus, int resultCode, Object resultObject);
     public void updateAsyncJobStatus(long jobId, int processStatus, Object resultObject);
     public void updateAsyncJobAttachment(long jobId, String instanceType, Long instanceId);
-    
-    public void syncAsyncJobExecution(AsyncJobVO job, String syncObjType, long syncObjId);
+   
     public void releaseSyncSource(AsyncJobExecutor executor);
+    
+    public void syncAsyncJobExecution(AsyncJob job, String syncObjType, long syncObjId);
     
     /**
      * Queries for the status or final result of an async job.

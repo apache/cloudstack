@@ -99,4 +99,14 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to remove instance from load balancer rule");
         }
     }
+    
+    @Override
+    public String getSyncObjType() {
+        return this.networkSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        return _lbService.findById(id).getNetworkId();
+    }
 }

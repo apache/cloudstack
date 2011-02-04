@@ -145,8 +145,6 @@ public interface ResponseGenerator {
 
     IpForwardingRuleResponse createIpForwardingRuleResponse(PortForwardingRule fwRule);
 
-    void synchronizeCommand(Object job, String syncObjType, Long syncObjId);
-
     User findUserById(Long userId);
 
     UserVm findUserVmById(Long vmId);

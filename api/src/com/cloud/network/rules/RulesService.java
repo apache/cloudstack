@@ -61,4 +61,6 @@ public interface RulesService {
     
     List<PortForwardingRuleTO> buildPortForwardingTOrules(List<? extends PortForwardingRule> pfRules);
     
+    PortForwardingRule getPortForwardigRule(long ruleId);
+    
 }

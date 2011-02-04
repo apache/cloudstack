@@ -172,4 +172,13 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         }
     }
+    
+    
+    public String getSyncObjType() {
+        return this.networkSyncObject;
+    }
+
+    public Long getSyncObjId() {
+        return getNetworkId();
+    }
 }

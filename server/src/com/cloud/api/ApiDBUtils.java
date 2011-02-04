@@ -30,7 +30,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
-import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
@@ -88,10 +87,8 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.net.Ip;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
-import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
@@ -500,10 +497,6 @@ public class ApiDBUtils {
     
     public static NetworkProfile getNetworkProfile(long networkId) {
         return _networkMgr.getNetworkProfile(networkId);
-    }
-    
-    public static void synchronizeCommand(Object job, String syncObjType, long syncObjId) {
-        _asyncMgr.syncAsyncJobExecution((AsyncJobVO)job, syncObjType, syncObjId);
     }
     
     public static NetworkOfferingVO findNetworkOfferingById(long networkOfferingId) {

@@ -57,4 +57,5 @@ public interface AsyncJob {
     String getSessionKey();
     String getCmdOriginator();
     boolean isFromPreviousSession();
+    SyncQueueItem getSyncSource();
 }

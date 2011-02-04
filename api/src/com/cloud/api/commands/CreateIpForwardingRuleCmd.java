@@ -237,5 +237,15 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
             throw new InvalidParameterValueException("Ip address id=" + ipAddressId + " doesn't have 1-1 Nat feature enabled");
         }  
     }
+    
+    @Override
+    public String getSyncObjType() {
+        return this.ipAddressSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        return ipAddressId;
+    }
 
 }

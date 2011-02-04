@@ -228,5 +228,15 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
     public boolean isOneToOneNat() {
         return false;
     }
+    
+    @Override
+    public String getSyncObjType() {
+        return this.ipAddressSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        return ipAddressId;
+    }
 
 }

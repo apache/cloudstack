@@ -151,4 +151,15 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         }
     }
+    
+    
+    @Override
+    public String getSyncObjType() {
+        return this.ipAddressSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        return publicIpId;
+    }
 }

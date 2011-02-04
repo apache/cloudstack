@@ -1262,11 +1262,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     @Override
-    public void synchronizeCommand(Object job, String syncObjType, Long syncObjId) {
-        ApiDBUtils.synchronizeCommand(job, syncObjType, syncObjId);
-    }
-    
-    @Override
     public User findUserById(Long userId) {
         return ApiDBUtils.findUserById(userId);
     }

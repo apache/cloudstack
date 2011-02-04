@@ -233,7 +233,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     }
 
     @Override
-    public void syncAsyncJobExecution(AsyncJobVO job, String syncObjType, long syncObjId) {
+    public void syncAsyncJobExecution(AsyncJob job, String syncObjType, long syncObjId) {
     	// This method is re-entrant.  If an API developer wants to synchronized on an object, e.g. the router,
     	// when executing business logic, they will call this method (actually a method in BaseAsyncCmd that calls this).
     	// This method will get called every time their business logic executes.  The first time it exectues for a job

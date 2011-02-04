@@ -99,4 +99,12 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to assign load balancer rule");
         }
     }
+    
+    public String getSyncObjType() {
+        return this.networkSyncObject;
+    }
+
+    public Long getSyncObjId() {
+        return _lbService.findById(id).getNetworkId();
+    }
 }

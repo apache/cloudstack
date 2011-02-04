@@ -29,10 +29,15 @@ import com.cloud.user.UserContext;
  * queryAsyncJobResult API command.
  */
 public abstract class BaseAsyncCmd extends BaseCmd {
-    private Object _job = null;
+    public static final String ipAddressSyncObject = "ipaddress";
+    public static final String networkSyncObject = "network";
+    
+    
+    private AsyncJob job;
 
     @Parameter(name="starteventid", type=CommandType.LONG)
     private Long startEventId;
+    
 
     /**
      * For async commands the API framework needs to know the owner of the object being acted upon.  This method is
@@ -64,12 +69,8 @@ public abstract class BaseAsyncCmd extends BaseCmd {
         return response;
     }
 
-    public void synchronizeCommand(String syncObjType, long syncObjId) {
-        _responseGenerator.synchronizeCommand(_job, syncObjType, syncObjId);
-    }
-
-    public void setJob(Object job) {
-        _job = job;
+    public void setJob(AsyncJob job) {
+        this.job = job;
     }
 
     public Long getStartEventId() {
@@ -85,7 +86,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
      * provide implementations of the two following methods, getInstanceId() and getInstanceType()
      * 
      * getObjectId() should return the id of the object the async command is executing on
-     * getObjectType() should return a type from the AsyncJobVO.Type enumeration
+     * getObjectType() should return a type from the AsyncJob.Type enumeration
      */
     public Long getInstanceId() {
     	return null;
@@ -95,6 +96,18 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     	return AsyncJob.Type.None;
     }
     
+    public String getSyncObjType() {
+        return null;
+    }
+
+    public Long getSyncObjId() {
+        return null;
+    }
+
+    public AsyncJob getJob() {
+        return job;
+    }
+
     protected long saveStartedEvent(){
         return saveStartedEvent(getEventType(), "Executing job for "+getEventDescription(), getStartEventId());
     }
@@ -124,4 +137,6 @@ public abstract class BaseAsyncCmd extends BaseCmd {
         }
         return _mgr.saveCompletedEvent((userId == null) ? User.UID_SYSTEM : userId, getEntityOwnerId(), level, eventType, description, startEvent);
     }
+    
+    
 }
