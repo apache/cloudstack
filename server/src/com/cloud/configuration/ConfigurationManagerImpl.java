@@ -1535,7 +1535,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 		}
     }
     
-    @Override
+    @Override @DB
     public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException, ResourceUnavailableException {
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
@@ -1547,6 +1547,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String vlanId = cmd.getVlan();
         Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
         Long networkId = cmd.getNetworkID();
+        
         // If an account name and domain ID are specified, look up the account
         String accountName = cmd.getAccountName();
         Long domainId = cmd.getDomainId();
@@ -1559,7 +1560,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         //Verify that network exists
-        NetworkVO network = null; 
+        Network network = null; 
         if (networkId != null) {
             network = _networkDao.findById(networkId);
             if (network == null) {
@@ -1635,13 +1636,59 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
         
-        return createVlanAndPublicIpRange(userId, zoneId, podId, startIP, endIP, vlanGateway, vlanNetmask, forVirtualNetwork, vlanId, account, networkId);
+        //if it's an account specific range, associate ip address list to the account
+        boolean associateIpRangeToAccount = false;
+        
+        if (forVirtualNetwork) {
+            if (account != null) {
+                // verify resource limits
+                long ipResourceLimit = _accountMgr.findCorrectResourceLimit((AccountVO)account, ResourceType.public_ip);
+                long accountIpRange  = NetUtils.ip2Long(endIP) - NetUtils.ip2Long(startIP) + 1;
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug(" IPResourceLimit " +ipResourceLimit + " accountIpRange " + accountIpRange);
+                }
+                if (ipResourceLimit != -1 && accountIpRange > ipResourceLimit){ // -1 means infinite
+                    throw new InvalidParameterValueException(" Public IP Resource Limit is set to " + ipResourceLimit + " which is less than the IP range of " + accountIpRange + " provided");
+                }
+                associateIpRangeToAccount = true;
+            }
+        }
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
+        Vlan vlan = createVlanAndPublicIpRange(userId, zoneId, podId, startIP, endIP, vlanGateway, vlanNetmask, forVirtualNetwork, vlanId, account, networkId);
+        
+        if (associateIpRangeToAccount) {
+            _networkMgr.associateIpAddressListToAccount(userId, account.getId(), zoneId, vlan.getId(), network);
+            if (network == null) {
+                List<? extends Network> networks = _networkMgr.getVirtualNetworksOwnedByAccountInZone(account.getAccountName(), account.getDomainId(), zoneId);
+                network = networks.get(0);
+            }
+            if (network == null) {
+                throw new CloudRuntimeException("Failed to associate vlan to the account id=" + account.getId() + ", default network failed to create");
+            }
+        }
+        txn.commit();
+        
+        //Associate ips to the network
+        if (associateIpRangeToAccount) {
+            if (network.getState() == Network.State.Implemented) {
+                s_logger.debug("Applying ip associations for vlan id=" + vlanId + " in network " + network);
+                if (!_networkMgr.applyIpAssociations(network, false)) {
+                    s_logger.warn("Failed to apply ip associations for vlan id=1 as a part of add vlan range for account id=" + account.getId());
+                }
+            } else {
+                s_logger.trace("Network id=" + network.getId() + " is not Implemented, no need to apply ipAssociations");
+            }
+        }
+ 
+        return vlan;
     }
     
 
-    @Override
-    public Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException, ResourceUnavailableException{
-
+    @Override @DB
+    public Vlan createVlanAndPublicIpRange(Long userId, Long zoneId, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, boolean forVirtualNetwork, String vlanId, Account account, Long networkId){
         // Check that the pod ID is valid
         if (podId != null && ((_podDao.findById(podId)) == null)) {
             throw new InvalidParameterValueException("Please specify a valid pod.");
@@ -1677,21 +1724,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         //ACL check
         checkAccess(account, zone);
 
-    	boolean associateIpRangeToAccount = false;
-    	if (vlanType.equals(VlanType.VirtualNetwork)) {
-    	    if (account != null) {
-    	        // verify resource limits
-    	        long ipResourceLimit = _accountMgr.findCorrectResourceLimit((AccountVO)account, ResourceType.public_ip);
-    	        long accountIpRange  = NetUtils.ip2Long(endIP) - NetUtils.ip2Long(startIP) + 1;
-    	        if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(" IPResourceLimit " +ipResourceLimit + " accountIpRange " + accountIpRange);
-    	        }
-    	        if (ipResourceLimit != -1 && accountIpRange > ipResourceLimit){ // -1 means infinite
-    	            throw new InvalidParameterValueException(" Public IP Resource Limit is set to " + ipResourceLimit + " which is less than the IP range of " + accountIpRange + " provided");
-    	        }
-    	        associateIpRangeToAccount = true;
-    	    }
-    	} else if (vlanType.equals(VlanType.DirectAttached)) {
+    	
+    	if (vlanType.equals(VlanType.DirectAttached)) {
     		if (account != null) {
     			// VLANs for an account must be tagged
         		if (vlanId.equals(Vlan.UNTAGGED)) {
@@ -1720,9 +1754,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         			}
         		}
     		}
-    	} else {
-    		throw new InvalidParameterValueException("Please specify a valid IP range type. Valid types are: " + VlanType.values().toString());
-    	}
+    	} 
 
     	// Make sure the gateway is valid
 		if (!NetUtils.isValidIp(vlanGateway)) {
@@ -1808,18 +1840,20 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 		        }
 		    }
 		}
-		
-		// Everything was fine, so persist the VLAN
+
 		String ipRange = startIP;
 		if (endIP != null) {
 			ipRange += "-" + endIP;
 		}
+		
+		// Everything was fine, so persist the VLAN
+        Transaction txn = Transaction.currentTxn();
+		txn.start();
+		
 		VlanVO vlan = new VlanVO(vlanType, vlanId, vlanGateway, vlanNetmask, zone.getId(), ipRange, networkId);
 		vlan = _vlanDao.persist(vlan);
 		
 		if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId(), networkId)) {
-			deletePublicIPRange(vlan.getId());
-			_vlanDao.expunge(vlan.getId());
 			throw new CloudRuntimeException("Failed to save IP range. Please contact Cloud Support."); //It can be Direct IP or Public IP.
 		}
 		
@@ -1833,14 +1867,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 			_podVlanMapDao.persist(podVlanMapVO);
 		}
 		
-		String eventMsg = "Successfully created new IP range (tag = " + vlanId + ", gateway = " + vlanGateway + ", netmask = " + vlanNetmask + ", start IP = " + startIP;
-		if (endIP != null) {
-			eventMsg += ", end IP = " + endIP;
-		}
-		eventMsg += ".";
-		if (associateIpRangeToAccount) {
-	        _networkMgr.associateIpAddressListToAccount(userId, account.getId(), zoneId, vlan.getId());
-		}
+		txn.commit();
+
 		return vlan;
     }
     

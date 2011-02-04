@@ -79,6 +79,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.Service;
@@ -259,6 +260,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         addr.setAllocatedInDomainId(owner.getDomainId());
         addr.setAllocatedToAccountId(owner.getId());
 
+        if (assign) {
+            markPublicIpAsAllocated(addr);
+        } else {
+            addr.setState(IpAddress.State.Allocating);
+        }
         addr.setState(assign ? IpAddress.State.Allocated : IpAddress.State.Allocating);
 
         if (vlanUse != VlanType.DirectAttached) {
@@ -275,6 +281,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     @DB
     protected void markPublicIpAsAllocated(IPAddressVO addr) {
+        
+        assert (addr.getState() == IpAddress.State.Allocating || addr.getState() == IpAddress.State.Free) : "Unable to transition from state " + addr.getState() + " to " + IpAddress.State.Allocated;
+        
         Transaction txn = Transaction.currentTxn();
         
         Account owner = _accountMgr.getAccount(addr.getAccountId());
@@ -288,9 +297,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), isSourceNat);
             _usageEventDao.persist(usageEvent);
-        }
-        
-        _accountMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
+            _accountMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
+        }   
+       
         txn.commit();
     }
     
@@ -1353,7 +1362,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override @ActionEvent (eventType=EventTypes.EVENT_NETWORK_CREATE, eventDescription="creating network")
-    public Network createNetwork(CreateNetworkCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public Network createNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException {
         Long networkOfferingId = cmd.getNetworkOfferingId();
         Long zoneId = cmd.getZoneId();
         String gateway = cmd.getGateway();
@@ -1366,6 +1375,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         String displayText = cmd.getDisplayText();
         Boolean isShared = cmd.getIsShared();
         Boolean isDefault = cmd.isDefault();
+        Long userId = UserContext.current().getCallerUserId();
+        
+        Transaction txn = Transaction.currentTxn();
 
         // finalize owner for the network
         Account ctxAccount = UserContext.current().getCaller();
@@ -1373,21 +1385,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Long domainId = cmd.getDomainId();
 
         Account owner = _accountMgr.finalizeOwner(ctxAccount, accountName, domainId);
-
-        return createNetwork(networkOfferingId, name, displayText, isShared, isDefault, zoneId, gateway, startIP, endIP, netmask, vlanId, networkDomain, owner);
-    }
-
-    @Override
-    @DB
-    public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String startIP, String endIP, String netmask, String vlanId, String networkDomain, Account owner)
-            throws InvalidParameterValueException, PermissionDeniedException {
-        Account ctxAccount = UserContext.current().getCaller();
-        Long userId = UserContext.current().getCallerUserId();
-        String cidr = null;
-        if (gateway != null && netmask != null) {
-            cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
-        }
-
+        
         // if end ip is not specified, default it to startIp
         if (endIP == null && startIP != null) {
             endIP = startIP;
@@ -1426,7 +1424,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (zone.getNetworkType() == NetworkType.Basic) {
             throw new InvalidParameterValueException("Network creation is not allowed in zone with network type " + NetworkType.Basic);
         }
-
+        
+        String cidr = null;
+        if (gateway != null && netmask != null) {
+            cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
+        }
+        
         // Don't allow to create network with vlan that already exists in the system
         if (vlanId != null) {
             String uri = "vlan://" + vlanId;
@@ -1441,86 +1444,89 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Can't specify vlan because network offering doesn't support it");
         }
 
+        txn.start();
+        Network network = createNetwork(networkOfferingId, name, displayText, isShared, isDefault, zoneId, gateway, cidr, vlanId, networkDomain, owner);
+        
+        // Don't pass owner to create vlan when network offering is of type Direct - done to prevent accountVlanMap entry
+        // creation when vlan is mapped to network
+        if (network.getGuestType() == GuestIpType.Direct) {
+            owner = null;
+        }
+
+        if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN && network.getGuestType() == GuestIpType.Direct && startIP != null && endIP != null && gateway != null) {
+            // Create vlan ip range
+            _configMgr.createVlanAndPublicIpRange(userId, zoneId, null, startIP, endIP, gateway, netmask, false, vlanId, owner, network.getId());
+        }
+        
+        txn.commit();
+        
+        return network;
+    }
+
+    @Override @DB
+    public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain, Account owner)
+            throws ConcurrentOperationException, InsufficientCapacityException {
+        Account ctxAccount = UserContext.current().getCaller();
+        Long userId = UserContext.current().getCallerUserId();
+        
+        NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
+        DataCenterVO zone = _dcDao.findById(zoneId);
+
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        try {
-            // Create network
-            DataCenterDeployment plan = new DataCenterDeployment(zoneId, null, null, null);
-            NetworkVO userNetwork = new NetworkVO();
-            userNetwork.setNetworkDomain(networkDomain);
 
-            // cidr should be set only when the user is admin
-            if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-                if (cidr != null && gateway != null) {
-                    userNetwork.setCidr(cidr);
-                    userNetwork.setGateway(gateway);
-                    if (vlanId != null) {
-                        userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
+        // Create network
+        DataCenterDeployment plan = new DataCenterDeployment(zoneId, null, null, null);
+        NetworkVO userNetwork = new NetworkVO();
+        userNetwork.setNetworkDomain(networkDomain);
+
+        // cidr should be set only when the user is admin
+        if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+            if (cidr != null && gateway != null) {
+                userNetwork.setCidr(cidr);
+                userNetwork.setGateway(gateway);
+                if (vlanId != null) {
+                    userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
+                    userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
+                    if (!vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
                         userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
-                        if (!vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
-                            userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
-                        } else {
-                            userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
-                        }
+                    } else {
+                        userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
                     }
                 }
             }
-
-            List<NetworkVO> networks = setupNetwork(owner, networkOffering, userNetwork, plan, name, displayText, isShared, isDefault);
-            Long networkId = null;
-
-            Network network = null;
-            if (networks == null || networks.isEmpty()) {
-                txn.rollback();
-                throw new CloudRuntimeException("Fail to create a network");
-            } else {
-                if (networks.size() > 0 && networks.get(0).getGuestType() == GuestIpType.Virtual && networks.get(0).getTrafficType() == TrafficType.Guest) {
-                    Network defaultGuestNetwork = networks.get(0);
-                    for (Network nw : networks) {
-                        if (nw.getCidr() != null && nw.getCidr().equals(zone.getGuestNetworkCidr())) {
-                            defaultGuestNetwork = nw;
-                        }
-                    }
-                    network = defaultGuestNetwork;
-                } else {
-                    network = networks.get(0);
-                }
-                
-                networkId = networks.get(0).getId();
-                
-                if (network.getGuestType() == GuestIpType.Virtual) {
-                    s_logger.debug("Creating a source natp ip for " + network);
-                    PublicIp ip = assignSourceNatIpAddress(owner, network, userId);
-                    if (ip == null) {
-                        throw new InsufficientAddressCapacityException("Unable to assign source nat ip address to owner for this network", DataCenter.class, zoneId);
-                    }
-                }
-            }
-
-            // Don't pass owner to create vlan when network offering is of type Direct - done to prevent accountVlanMap entry
-            // creation when vlan is mapped to network
-            if (network.getGuestType() == GuestIpType.Direct) {
-                owner = null;
-            }
-
-            if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN && network.getGuestType() == GuestIpType.Direct && startIP != null && endIP != null && gateway != null) {
-                // Create vlan ip range
-                Vlan vlan = _configMgr.createVlanAndPublicIpRange(userId, zoneId, null, startIP, endIP, gateway, netmask, false, vlanId, owner, networkId);
-                if (vlan == null) {
-                    txn.rollback();
-                    throw new CloudRuntimeException("Failed to create a vlan");
-                }
-            }
-            txn.commit();
-            UserContext.current().setEventDetails("Network Id: "+networkId);
-            return networks.get(0);
-        } catch (Exception ex) {
-            s_logger.warn("Unexpected exception while creating network ", ex);
-            txn.rollback();
-        } finally {
-            txn.close();
         }
-        return null;
+
+        List<NetworkVO> networks = setupNetwork(owner, networkOffering, userNetwork, plan, name, displayText, isShared, isDefault);
+
+        Network network = null;
+        if (networks == null || networks.isEmpty()) {
+            throw new CloudRuntimeException("Fail to create a network");
+        } else {
+            if (networks.size() > 0 && networks.get(0).getGuestType() == GuestIpType.Virtual && networks.get(0).getTrafficType() == TrafficType.Guest) {
+                Network defaultGuestNetwork = networks.get(0);
+                for (Network nw : networks) {
+                    if (nw.getCidr() != null && nw.getCidr().equals(zone.getGuestNetworkCidr())) {
+                        defaultGuestNetwork = nw;
+                    }
+                }
+                network = defaultGuestNetwork;
+            } else {
+                network = networks.get(0);
+            }
+            
+            if (network.getGuestType() == GuestIpType.Virtual) {
+                s_logger.debug("Creating a source natp ip for " + network);
+                PublicIp ip = assignSourceNatIpAddress(owner, network, userId);
+                if (ip == null) {
+                    throw new InsufficientAddressCapacityException("Unable to assign source nat ip address to owner for this network", DataCenter.class, zoneId);
+                }
+            }
+        }
+
+        txn.commit();
+        UserContext.current().setEventDetails("Network Id: "+ network.getId());
+        return network;
     }
 
     @Override
@@ -1644,7 +1650,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             sc.addAnd("trafficType", SearchCriteria.Op.EQ, trafficType);
         }
         
-        if (path != null) {
+        if (path != null && (isShared == null || !isShared)) {
             sc.setJoinParameters("domainSearch", "path", path + "%");
         }
 
@@ -2070,56 +2076,54 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return _nicDao.findByInstanceIdAndNetworkId(networkId, vmId);
     }
 
-    @Override
-    @DB
-    public boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId) throws InsufficientAddressCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-
-        Account account = _accountMgr.getActiveAccount(accountId);
-        if (account == null) {
-            s_logger.warn("Unable to find active account: " + accountId);
+    @Override @DB
+    public boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network network) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+        Account owner = _accountMgr.getActiveAccount(accountId);
+        boolean createNetwork = true;
+        
+        Transaction txn= Transaction.currentTxn();
+        
+        txn.start();
+        
+        if (network != null) {
+            createNetwork = false;
+        } else {
+            List<? extends Network> networks = getVirtualNetworksOwnedByAccountInZone(owner.getAccountName(), owner.getDomainId(), zoneId);
+            if (networks.size() == 0) {
+                createNetwork = true;
+            } else {
+                network = networks.get(0);
+            }
         }
-
-        Network network = null;
-        long allocatedIps = 0;
-
+         
         // create new Virtual network for the user if it doesn't exist
-        List<? extends Network> networks = getVirtualNetworksOwnedByAccountInZone(account.getAccountName(), account.getDomainId(), zoneId);
-        if (networks.size() == 0) {
+        if (createNetwork) {
             List<? extends NetworkOffering> offerings = _configMgr.listNetworkOfferings(TrafficType.Guest, false);
-            network = createNetwork(offerings.get(0).getId(), account.getAccountName() + "-network", account.getAccountName() + "-network", false, null, zoneId, null, null, null, null, null, null, account);
+            network = createNetwork(offerings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", false, true, zoneId, null, null, null, null, owner);
 
             if (network == null) {
                 s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
                 return false;
-            } else {
-                // sourceNat ip is allocated as a part of networkCreate
-                allocatedIps++;
-            }
-        } else {
-            assert (networks.size() <= 1) : "Too many virtual networks. This logic should be obsolete";
-            network = networks.get(0);
+            } 
         }
-
-        // Associate ip addresses
-        long ipCount = _ipAddressDao.countIPs(zoneId, vlanId, false);
-        if (ipCount > 0) {
-            while (allocatedIps < ipCount) {
-                PublicIp ip = fetchNewPublicIp(zoneId, null, vlanId, account, VlanType.VirtualNetwork, network.getId(), false, true);
-                markPublicIpAsAllocated(ip.ip());
-                allocatedIps++;
+        
+        
+        //update all ips with a network id, mark them as allocated and update resourceCount/usage
+        List<IPAddressVO> ips = _ipAddressDao.listByVlanId(vlanId);
+        for (IPAddressVO addr : ips) {
+            if (!addr.isSourceNat() && addr.getState() != State.Allocated) {
+                addr.setAssociatedWithNetworkId(network.getId());
+                addr.setSourceNat(false);
+                addr.setAllocatedTime(new Date());
+                addr.setAllocatedInDomainId(owner.getDomainId());
+                addr.setAllocatedToAccountId(owner.getId());
+                addr.setState(IpAddress.State.Allocating);
+                markPublicIpAsAllocated(addr);
             }
-
-            if (network.getState() == Network.State.Implemented) {
-                s_logger.debug("Applying ip associations for vlan id=" + vlanId + " in network " + network);
-                return applyIpAssociations(network, false);
-            } else {
-                s_logger.trace("Network id=" + network.getId() + " is not Implemented, no need to apply ipAssociations");
-                return true;
-            }
-        } else {
-            s_logger.trace("Found 0 ips to assign in vlan id=" + vlanId);
-            return true;
         }
+        
+        txn.commit();
+        return true;
     }
 
     @Override

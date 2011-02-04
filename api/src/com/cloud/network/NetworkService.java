@@ -50,7 +50,7 @@ public interface NetworkService {
     IpAddress associateIP(AssociateIPAddrCmd cmd) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException, ResourceUnavailableException;    
     boolean disassociateIpAddress(DisassociateIPAddrCmd cmd);
 
-    Network createNetwork(CreateNetworkCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
+    Network createNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException;
     List<? extends Network> searchForNetworks(ListNetworksCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
     boolean deleteNetwork(long networkId) throws InvalidParameterValueException, PermissionDeniedException;
     

@@ -26,6 +26,8 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.NetworkResponse;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.network.Network;
 
 @Implementation(description="Creates a network", responseObject=NetworkResponse.class)
@@ -148,7 +150,7 @@ public class CreateNetworkCmd extends BaseCmd {
     }
     
     @Override
-    public void execute(){
+    public void execute() throws InsufficientCapacityException, ConcurrentOperationException{
         Network result = _networkService.createNetwork(this);
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);

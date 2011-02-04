@@ -32,7 +32,6 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.IngressRuleResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.event.EventTypes;

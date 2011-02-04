@@ -27,8 +27,6 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
@@ -143,7 +141,7 @@ public interface NetworkManager extends NetworkService {
     
     boolean destroyNetwork(long networkId, long callerUserId);
    
-    Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String startIP, String endIP, String netmask, String vlanId, String networkDomain, Account owner) throws InvalidParameterValueException, PermissionDeniedException;
+    Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain, Account owner) throws ConcurrentOperationException, InsufficientCapacityException;
     
     /**
      * Associates an ip address list to an account.  The list of ip addresses are all addresses associated with the given vlan id.
@@ -154,7 +152,7 @@ public interface NetworkManager extends NetworkService {
      * @throws InsufficientAddressCapacityException
      * @throws 
      */
-    boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId) throws InsufficientAddressCapacityException,
+    boolean associateIpAddressListToAccount(long userId, long accountId, long zoneId, Long vlanId, Network networkToAssociateWith) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException;
 
     Nic getNicInNetwork(long vmId, long networkId);
@@ -172,7 +170,9 @@ public interface NetworkManager extends NetworkService {
     void unassignPublicIpAddress(IPAddressVO addr);
     
     Map<Capability, String> getServiceCapability(long zoneId, Service service);
+    
+    boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
 
-    boolean deleteNetworkInternal(long networkId) throws InvalidParameterValueException, PermissionDeniedException;
+    boolean deleteNetworkInternal(long networkId);
 
 }
