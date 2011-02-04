@@ -117,7 +117,8 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
                                         else
                                             handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, afterActionInfo); 
 			                        } else if (result.jobstatus == 2) { // Failed	
-			                            var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+			                            //var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+			                            var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);
 			                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, false, errorMsg);			                            
 			                        }											                    
 		                        }
@@ -291,7 +292,8 @@ function doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem) {
 			                            $subgridItem.find("#after_action_info_container").removeClass("error").addClass("success").show();  
 			                            afterActionSeccessFn(json, id, $subgridItem);	
 			                        } else if (result.jobstatus == 2) { // Failed
-			                            var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+			                            //var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+			                            var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);
 			                            $subgridItem.find("#after_action_info").text(errorMsg);
                                         $subgridItem.find("#after_action_info_container").removeClass("success").addClass("error").show();			                          
 			                        }											                    
@@ -418,8 +420,8 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
 			                            $midmenuItem1.data("afterActionInfo", (label2 + " - " + g_dictionary["label.succeeded"])); 			                            
 			                            afterActionSeccessFn(json, $midmenuItem1, id);  			                            
 			                        } else if (result.jobstatus == 2) { // Failed				                            
-			                            //var errorMsg = label2 + " action failed. Reason: " + fromdb(result.jobresult.errortext);
-			                            var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+			                            //var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+			                            var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);			                            
 			                            handleErrorInMidMenu2(errorMsg, $midmenuItem1, id, inProcessText2); 
 			                        }											                    
 		                        }
