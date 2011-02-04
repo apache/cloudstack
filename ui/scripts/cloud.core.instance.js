@@ -581,9 +581,9 @@ function initVMWizard() {
 	    else {  //*** ISO ***
 	        templateType = "ISO";
 	        if (searchInput != null && searchInput.length > 0)                 
-                commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId+"&keyword="+searchInput;  
+                commandString = "command=listIsos&isReady=true&bootable=true&isofilter=executable&zoneid="+zoneId+"&keyword="+searchInput;  
             else
-                commandString = "command=listIsos&isReady=true&bootable=true&zoneid="+zoneId;  
+                commandString = "command=listIsos&isReady=true&bootable=true&isofilter=executable&zoneid="+zoneId;  
 	    }
 	  
 		commandString += "&pagesize="+vmPopupTemplatePageSize+"&page="+currentPageInTemplateGridInVmPopup;
@@ -683,12 +683,11 @@ function initVMWizard() {
 	             
     $vmPopup.find("#wizard_zone").bind("change", function(event) {       
         var selectedZone = $(this).val();   
-        if(selectedZone != null && selectedZone.length > 0) {
-            listTemplatesInVmPopup();   
-            
+        if(selectedZone != null && selectedZone.length > 0) {            
             $.ajax({
                data: createURL("command=listHypervisors&zoneid="+selectedZone),
                dataType: "json",
+               async: false,
                success: function(json) {            
                    var items = json.listhypervisorsresponse.hypervisor;
                    var $hypervisorDropdown = $("#vmiso_in_vmwizard").find("#hypervisor_select");
@@ -707,7 +706,9 @@ function initVMWizard() {
                        }
                    }
                }    
-            }); 	            
+            }); 
+            
+            listTemplatesInVmPopup();              	            
         }     
         return false;
     });
