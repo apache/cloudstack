@@ -734,11 +734,14 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, secondRowText) {
             });
         }		   
 	}
-	else {	
+	else {	// Failed		
 	    $midmenuItem1.find("#content").addClass("addingfailed");	        	    
 	    $midmenuItem1.find("#icon").attr("src", "images/addingfailed_icon.png");
 	    $midmenuItem1.find("#icon_container").show();	    
 	    $midmenuItem1.find("#first_row").text(g_dictionary["label.adding.failed"]);	
+	    
+	    if(secondRowText != null)
+	        $midmenuItem1.find("#second_row").text(secondRowText);	
 	    
 	    $midmenuItem1.find("#close_icon").show().bind("click", function(event) {	        
 	        $midmenuItem1.slideUp("slow", function() {	            

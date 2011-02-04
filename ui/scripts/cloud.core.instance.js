@@ -1197,7 +1197,7 @@ function initVMWizard() {
 									        }							                        
 									    } else if (result.jobstatus == 2) {
 										    // Failed										    
-										    afterAddingMidMenuItem($midmenuItem1, false, null);		
+										    afterAddingMidMenuItem($midmenuItem1, false, fromdb(result.jobresult.errortext));		
 									    }
 								    }
 							    },
