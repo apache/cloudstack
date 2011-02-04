@@ -352,7 +352,7 @@ var currentStepInVmPopup = 1;
 function initVMWizard() {
     $vmPopup = $("#vm_popup");  
     
-    if (isAdmin() || (isDomainAdmin() && getUserPublicTemplateEnabled() == "true")) {
+    if (isAdmin() || (getUserPublicTemplateEnabled() == "true")) {
         $vmPopup.find("#wiz_community").show();   
     } 
     else {
