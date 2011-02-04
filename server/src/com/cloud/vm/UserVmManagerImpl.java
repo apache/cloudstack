@@ -38,14 +38,12 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeAnswer;
 import com.cloud.agent.api.AttachVolumeCommand;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.SnapshotCommand;
 import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.storage.CreatePrivateTemplateAnswer;
 import com.cloud.agent.api.to.VolumeTO;
@@ -1094,17 +1092,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected UserVmManagerImpl() {
     }
 
-    @Override
-    public Command cleanup(UserVmVO vm, String vmName) {
-        if (vmName != null) {
-            return new StopCommand(vm, vmName, VirtualMachineName.getVnet(vmName));
-        } else if (vm != null) {
-            return new StopCommand(vm, null);
-        } else {
-            throw new CloudRuntimeException("Shouldn't even be here!");
-        }
-    }
-   
     public String getRandomPrivateTemplateName() {
     	return UUID.randomUUID().toString();
     }

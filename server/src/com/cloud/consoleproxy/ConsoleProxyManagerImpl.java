@@ -38,7 +38,6 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ConsoleAccessAuthenticationAnswer;
 import com.cloud.agent.api.ConsoleAccessAuthenticationCommand;
 import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
@@ -46,7 +45,6 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
@@ -1143,18 +1141,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         _capacityScanLock.releaseRef();
         _allocProxyLock.releaseRef();
         return true;
-    }
-
-    @Override
-    public Command cleanup(ConsoleProxyVO vm, String vmName) {
-        if (vmName != null) {
-            return new StopCommand(vm, vmName, VirtualMachineName.getVnet(vmName));
-        } else if (vm != null) {
-            ConsoleProxyVO vo = vm;
-            return new StopCommand(vo, null);
-        } else {
-            throw new CloudRuntimeException("Shouldn't even be here!");
-        }
     }
 
     @Override

@@ -17,7 +17,6 @@
  */
 package com.cloud.vm;
 
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.manager.Commands;
 import com.cloud.deploy.DeployDestination;
@@ -72,14 +71,4 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      * @return id if the handler works for this vm and can parse id.  null if not.
      */
     Long convertToId(String vmName);
-    
-    /**
-     * Produce a cleanup command to be sent to the agent to cleanup anything
-     * out of the ordinary.
-     * @param vm vm to cleanup.  It's possible this is null.
-     * @param vmName name of the vm from the agent.
-     * @return Command to clean it up.  If not cleanup is needed, then return null.
-     */
-    Command cleanup(T vm, String vmName);
-    
 }

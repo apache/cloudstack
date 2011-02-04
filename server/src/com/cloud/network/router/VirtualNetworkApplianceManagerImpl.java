@@ -35,13 +35,11 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
@@ -113,8 +111,6 @@ import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.ovs.OvsNetworkManager;
-import com.cloud.network.ovs.OvsTunnelManager;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
@@ -616,18 +612,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     protected VirtualNetworkApplianceManagerImpl() {
-    }
-
-    @Override
-    public Command cleanup(final DomainRouterVO vm, final String vmName) {
-        if (vmName != null) {
-            return new StopCommand(vm, vmName, VirtualMachineName.getVnet(vmName));
-        } else if (vm != null) {
-            final DomainRouterVO vo = vm;
-            return new StopCommand(vo, null);
-        } else {
-            throw new CloudRuntimeException("Shouldn't even be here!");
-        }
     }
 
     @Override

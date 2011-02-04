@@ -27,7 +27,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.AgentControlAnswer;
-import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ConsoleAccessAuthenticationAnswer;
 import com.cloud.agent.api.ConsoleAccessAuthenticationCommand;
 import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
@@ -36,7 +35,6 @@ import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeployDestination;
@@ -272,11 +270,6 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     @Override
     public String getName() {
         return _name;
-    }
-
-    @Override
-    public Command cleanup(ConsoleProxyVO vm, String vmName) {
-        return new StopCommand(vm, vmName, null);
     }
 
     @Override

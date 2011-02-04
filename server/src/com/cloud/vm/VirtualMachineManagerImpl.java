@@ -1041,7 +1041,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
 
                 stateTransitTo(vm, Event.MigrationFailedOnSource, srcHostId);
                 
-                Command cleanup = vmGuru.cleanup(vm, null);
+                Command cleanup = cleanup(vm.getInstanceName());
                 _agentMgr.easySend(dstHostId, cleanup);
             }
         }
