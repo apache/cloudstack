@@ -447,6 +447,10 @@ def set_options(opt):
 		help = 'Build number [Default: SVN revision number for builds from checkouts, or empty for builds from source releases]',
 		default = '',
 		dest = 'BUILDNUMBER')
+	rpmopts.add_option('--package-version',
+		help = 'package version',
+		default = '',
+		dest = 'VERNUM')
 	rpmopts.add_option('--prerelease', # add javadir to the group that contains bindir
 		help = 'Branch name to append to the release number (if specified, alter release number to be a prerelease); this option requires --build-number=X [Default: nothing]',
 		default = '',
@@ -576,13 +580,19 @@ def rpm(context):
 			raise Utils.WafError("Please specify a build number to go along with --prerelease")
 		prerelease = ["--define","_prerelease %s"%Options.options.PRERELEASE]
 	else: prerelease = []
+
+	if Options.options.VERNUM:
+		ver = Options.options.VERNUM
+	else: ver = "2.1.97"
+
+	packagever = ["--define", "_ver %s" % ver]
 	
 	# FIXME wrap the source tarball in POSIX locking!
 	if not Options.options.blddir: outputdir = _join(context.curdir,blddir,"rpmbuild")
 	else:			   outputdir = _join(_abspath(Options.options.blddir),"rpmbuild")
 	Utils.pprint("GREEN","Building RPMs")
 
-	tarball = Scripting.dist()
+	tarball = Scripting.dist('', ver)
 	sourcedir = _join(outputdir,"SOURCES")
 	
 	if _exists(sourcedir): shutil.rmtree(sourcedir)
@@ -591,7 +601,7 @@ def rpm(context):
 
 	specfile = "%s.spec"%APPNAME
 	checkdeps = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"--nobuild",specfile])
-	dorpm = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"-ba",specfile]+buildnumber+prerelease)
+	dorpm = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"-ba",specfile]+buildnumber+prerelease+packagever)
 	try: checkdeps()
 	except (CalledProcessError,OSError),e:
 		Utils.pprint("YELLOW","Dependencies might be missing.  Trying to auto-install them...")
