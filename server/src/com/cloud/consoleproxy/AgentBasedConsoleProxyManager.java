@@ -315,6 +315,12 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
         // TODO Auto-generated method stub
         return false;
     }
+    
+    @Override
+    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
     @Override
     public boolean finalizeStart(VirtualMachineProfile<ConsoleProxyVO> profile, long hostId, Commands cmds, ReservationContext context) {

@@ -1304,6 +1304,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
         final State serverState = vm.getState();
         final String serverName = vm.getName();
         
+        VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vm);
+        
         Command command = null;
 
         if (s_logger.isDebugEnabled()) {
@@ -1389,7 +1391,33 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
                     s_logger.debug("VM state is starting on full sync so updating it to running");
                     vm = findById(vm.getType(), vm.getId());
                     stateTransitTo(vm, Event.AgentReportRunning, vm.getHostId());
-                    //finalizeStart(new VirtualMachineProfileImpl<VMInstanceVO>(vm), vm.getHostId(), null, null);
+                    s_logger.debug("VM's " + vm + " state is starting on full sync so updating it to Running");
+                    vm = vmGuru.findById(vm.getId());
+                    
+                    VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
+                    
+                    Commands cmds = new Commands(OnError.Revert);
+                    s_logger.debug("Finalizing commands that need to be send to complete Start process for the vm " + vm);
+                    vmGuru.finalizeCommandsOnStart(cmds, profile);
+                    
+                    if (cmds.size() != 0) {
+                        try {
+                            _agentMgr.send(vm.getHostId(), cmds);
+                        } catch (OperationTimedoutException e){
+                            s_logger.error("Exception during update for running vm: " + vm, e);                        
+                            return null;
+                        } catch (ResourceUnavailableException e) {
+                            s_logger.error("Exception during update for running vm: " + vm, e); 
+                            return null;
+                        }
+                    }
+                    
+                    if (vmGuru.finalizeStart(profile, vm.getHostId(), cmds, null)) {
+                        stateTransitTo(vm, Event.AgentReportRunning, vm.getHostId());
+                    } else {
+                        s_logger.error("Exception during update for running vm: " + vm); 
+                        return null;
+                    }
                 }
             } else if (serverState == State.Stopping) {
                 if (fullSync) {

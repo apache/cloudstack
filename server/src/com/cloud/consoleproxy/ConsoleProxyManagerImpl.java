@@ -116,6 +116,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -1439,9 +1440,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     @Override
     public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile, DeployDestination dest, ReservationContext context) {
-    	NicProfile controlNic = (NicProfile)profile.getParameter(VirtualMachineProfile.Param.ControlNic);
-        CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20);
-        cmds.addCommand("checkSsh", check);
+    	
+        finalizeCommandsOnStart(cmds, profile);
         
         ConsoleProxyVO proxy = profile.getVirtualMachine();
         DataCenter dc = dest.getDataCenter();
@@ -1457,6 +1457,15 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         	}
         }
         _consoleProxyDao.update(proxy.getId(), proxy);
+        return true;
+    }
+    
+    @Override
+    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile) {
+        NicProfile controlNic = (NicProfile)profile.getParameter(VirtualMachineProfile.Param.ControlNic);
+        CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20);
+        cmds.addCommand("checkSsh", check);
+        
         return true;
     }
     

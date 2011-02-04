@@ -58,6 +58,8 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      */
     boolean finalizeStart(VirtualMachineProfile<T> profile, long hostId, Commands cmds, ReservationContext context);
     
+    boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<T> profile);
+    
     void finalizeStop(VirtualMachineProfile<T> profile, StopAnswer answer);
     
     void finalizeExpunge(T vm);

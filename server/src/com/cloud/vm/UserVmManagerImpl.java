@@ -2210,6 +2210,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		_vmDao.update(userVm.getId(), userVm);
 		return true;
 	}
+	
+	 @Override
+    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<UserVmVO> profile) {
+        return true;
+    }
 
     @Override
     public boolean finalizeStart(VirtualMachineProfile<UserVmVO> profile, long hostId, Commands cmds, ReservationContext context) {

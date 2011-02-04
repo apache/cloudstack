@@ -1046,9 +1046,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     @Override
     public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<SecondaryStorageVmVO> profile, DeployDestination dest,
             ReservationContext context) {
-        NicProfile controlNic = (NicProfile) profile.getParameter(VirtualMachineProfile.Param.ControlNic);
-        CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20);
-        cmds.addCommand("checkSsh", check);
+        
+        finalizeCommandsOnStart(cmds, profile);
 
         SecondaryStorageVmVO secVm = profile.getVirtualMachine();
         DataCenter dc = dest.getDataCenter();
@@ -1065,6 +1064,15 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             }
         }
         _secStorageVmDao.update(secVm.getId(), secVm);
+        return true;
+    }
+    
+    @Override
+    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<SecondaryStorageVmVO> profile) {
+        NicProfile controlNic = (NicProfile) profile.getParameter(VirtualMachineProfile.Param.ControlNic);
+        CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20);
+        cmds.addCommand("checkSsh", check);
+        
         return true;
     }
     

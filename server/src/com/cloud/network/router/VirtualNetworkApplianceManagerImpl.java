@@ -964,10 +964,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException{
-        NicProfile controlNic = (NicProfile) profile.getParameter(VirtualMachineProfile.Param.ControlNic);
-		
-        cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20));
-
         DomainRouterVO router = profile.getVirtualMachine();
 
         List<NicProfile> nics = profile.getNics();
@@ -985,6 +981,16 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         _routerDao.update(router.getId(), router);
        
+        finalizeCommandsOnStart(cmds, profile);
+        return true;
+    }
+    
+    @Override
+    public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile) {
+        DomainRouterVO router = profile.getVirtualMachine();
+        NicProfile controlNic = (NicProfile) profile.getParameter(VirtualMachineProfile.Param.ControlNic);
+        cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20));
+        
         //restart network if restartNetwork = false is not specified in profile parameters
         boolean restartNetwork = true;
         if (profile.getParameter(Param.RestartNetwork) != null && (Boolean)profile.getParameter(Param.RestartNetwork) == false) {
