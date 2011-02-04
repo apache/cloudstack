@@ -2157,8 +2157,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	        throw new PermissionDeniedException("The owner of " + vm + " either does not exist or is disabled: " + vm.getAccountId());
 	    }
 	    
-	    
-	    
 		VirtualMachineTemplate template = profile.getTemplate();
 		if (vm.getIsoId() != null) {
 			template = _templateDao.findById(vm.getIsoId());

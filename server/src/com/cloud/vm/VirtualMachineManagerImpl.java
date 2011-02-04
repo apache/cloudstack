@@ -692,7 +692,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
                     continue;
                 } catch (RuntimeException e) {
                     s_logger.warn("Failed to start instance " + vm, e);
-                    throw new CloudRuntimeException("Failed to start " + vm, e);
+                    throw e;
                 } finally {
                     if (startedVm == null) {
                         _workDao.updateStep(work, Step.Release);
@@ -1218,12 +1218,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
     @Override
     public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status) {
         return true;
-    }
-    
-    @Override
-    public VirtualMachine start(VirtualMachine.Type type, long vmId, Map<VirtualMachineProfile.Param, Object> params) {
-        
-        return null;
     }
     
     @Override
