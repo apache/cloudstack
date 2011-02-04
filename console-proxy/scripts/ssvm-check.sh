@@ -6,6 +6,13 @@
 # /proc/cmdline can have a different number of arguments depending on whether or not a second
 # DNS server is specified.
 
+if [ -f /proc/cmdline ]
+then
+    CMDLINE=/proc/cmdline
+else
+    CMDLINE=/var/run/cloud/cmd_line
+fi
+
 
 # ping dns server
 echo ================================================
@@ -59,7 +66,7 @@ then
 else
     echo "ERROR: NFS is not currently mounted"
     echo "Try manually mounting from inside the VM"
-    NFSSERVER=`awk '{print $17}' /proc/cmdline|awk -F= '{print $2}'|awk -F: '{print $1}'`
+    NFSSERVER=`awk '{print $17}' $CMDLINE|awk -F= '{print $2}'|awk -F: '{print $1}'`
     echo "NFS server is " $NFSSERVER
     ping -c 2  $NFSSERVER
     if [ $? -eq 0 ]
@@ -75,7 +82,7 @@ fi
 
 # check for connectivity to the management server
 echo ================================================
-MGMTSERVER=`awk '{print $12}' /proc/cmdline | awk -F= '{print $2}'`
+MGMTSERVER=`awk '{print $12}' $CMDLINE | awk -F= '{print $2}'`
 echo Management server is $MGMTSERVER.  Checking connectivity.
 socatout=$(echo | socat - TCP:$MGMTSERVER:8250,connect-timeout=3 2>&1)
 if [ $? -eq 0 ]
