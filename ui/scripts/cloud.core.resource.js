@@ -1610,7 +1610,8 @@ function initUpdateConsoleCertButton($midMenuAddLink2) {
 												$thisDialog.dialog("close");
 												// TODO: Add a confirmation message
 											} else if (result.jobstatus == 2) { // Failed	
-												var errorMsg = result.jobresult.errortext;
+												//var errorMsg = result.jobresult.errortext;
+												var errorMsg = g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);	
 												$thisDialog.find("#info_container").text(errorMsg).show();
 											}	
 										}
