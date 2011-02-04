@@ -172,9 +172,9 @@ function handleErrorInDetailsTab(XMLHttpResponse, $thisTab, label, $afterActionI
    
     var afterActionInfo;
     if(errorMsg.length > 0) 
-        afterActionInfo = label + " action failed. Reason: " + fromdb(errorMsg);
+        afterActionInfo = label + " - " + g_dictionary["label.failed"] + " - " + errorMsg;	        
     else
-        afterActionInfo = label + " action failed.";
+        afterActionInfo = label + " - " + g_dictionary["label.failed"];
     
     $afterActionInfoContainer.find("#after_action_info").text(afterActionInfo);         
     $afterActionInfoContainer.addClass("errorbox").show();
@@ -348,10 +348,13 @@ function handleErrorInSubgridItem(XMLHttpResponse, $subgridItem, label) {
     if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {
         errorMsg = parseXMLHttpResponse(XMLHttpResponse);		
     }
+    
+    var afterActionInfo;
     if(errorMsg.length > 0)  
-        $subgridItem.find("#after_action_info").text(label + " action failed. Reason: " + fromdb(errorMsg));    
+        afterActionInfo = label + " - " + g_dictionary["label.failed"] + " - " + errorMsg;	
     else     
-        $subgridItem.find("#after_action_info").text(label + " action failed."); 
+        afterActionInfo = label + " - " + g_dictionary["label.failed"];
+    $subgridItem.find("#after_action_info").text(afterActionInfo); 
         
 	$subgridItem.find("#after_action_info_container").removeClass("success").addClass("error").show();  
 }    	                
@@ -452,8 +455,7 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
 	        success: function(json) {
 	            $midmenuItem1.find("#content").removeClass("inaction");
 				$midmenuItem1.find("#spinning_wheel").hide();				
-				$midmenuItem1.find("#info_icon").removeClass("error").show();
-			    //$midmenuItem1.data("afterActionInfo", (label2 + " action succeeded.")); 
+				$midmenuItem1.find("#info_icon").removeClass("error").show(); 
 			    $midmenuItem1.data("afterActionInfo", (label2 + " - " + g_dictionary["label.succeeded"])); 			
 			    hideDetailsTabActionSpinningWheel(id, inProcessText2, $midmenuItem1);	
 				afterActionSeccessFn(json, $midmenuItem1, id); 		
@@ -477,8 +479,7 @@ function handleErrorInMidMenu(XMLHttpResponse, $midmenuItem1, id, inProcessText)
 function handleErrorInMidMenu2(errorMsg, $midmenuItem1, id, inProcessText) { 
     $midmenuItem1.find("#content").removeClass("inaction");
 	$midmenuItem1.find("#spinning_wheel").hide();	
-	$midmenuItem1.find("#info_icon").addClass("error").show();		
-	//$midmenuItem1.find("#first_row").text("Action failed");		
+	$midmenuItem1.find("#info_icon").addClass("error").show();	
 	$midmenuItem1.data("afterActionInfo", errorMsg); 
 	hideDetailsTabActionSpinningWheel(id, inProcessText, $midmenuItem1);	                    
     
