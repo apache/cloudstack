@@ -876,7 +876,7 @@ dictionary = {
                     </select>
                 </li>
                 <li id="adv_search_account_li" style="display: none;">
-                    <input class="text textwatermark" type="text" id="adv_search_account" value="by account" />
+                    <input class="text textwatermark" type="text" id="adv_search_account" value='<fmt:message key="label.by.account" />' />
                 </li>
             </ol>
             </form>

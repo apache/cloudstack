@@ -403,7 +403,7 @@ $(document).ready(function() {
 		                success: function(json) {
 			                var zones = json.listzonesresponse.zone;			   
 			                zoneSelect.empty();					
-			                zoneSelect.append("<option value=''>by zone</option>"); 
+			                zoneSelect.append("<option value=''>" + g_dictionary["label.by.zone"] + "</option>"); 
 			                if (zones != null && zones.length > 0) {
 			                    for (var i = 0; i < zones.length; i++) {
 				                    zoneSelect.append("<option value='" + zones[i].id + "'>" + fromdb(zones[i].name) + "</option>"); 
@@ -431,7 +431,7 @@ $(document).ready(function() {
 			                        success: function(json) {
 				                        var pods = json.listpodsresponse.pod;	
 				                        podSelect.empty();					                        
-				                        podSelect.append("<option value=''>by pod</option>"); 				                        		            
+				                        podSelect.append("<option value=''>" + g_dictionary["label.by.pod"] + "</option>"); 				                        		            
 				                        if (pods != null && pods.length > 0) {
 				                            for (var i = 0; i < pods.length; i++) {
 					                            podSelect.append("<option value='" + pods[i].id + "'>" + fromdb(pods[i].name) + "</option>"); 
@@ -455,7 +455,7 @@ $(document).ready(function() {
 		                success: function(json) {			        
 			                var domains = json.listdomainsresponse.domain;		
 	                        domainSelect.empty();	
-	                        domainSelect.append("<option value=''>by domain</option>"); 
+	                        domainSelect.append("<option value=''>" + g_dictionary["label.by.domain"] + "</option>"); 
 			                if (domains != null && domains.length > 0) {
 			                    for (var i = 0; i < domains.length; i++) {
 				                    domainSelect.append("<option value='" + domains[i].id + "'>" + fromdb(domains[i].name) + "</option>"); 
@@ -464,27 +464,7 @@ $(document).ready(function() {
 		                }
 	                });		    
 	            } 	
-            	 
-            	/*    	
-	            var vmSelect = $advancedSearchPopup.find("#adv_search_vm");	
-	            if(vmSelect.length>0) {	
-	                $.ajax({
-		                data: createURL("command=listVirtualMachines"),
-		                dataType: "json",
-		                success: function(json) {			        
-			                var items = json.listvirtualmachinesresponse.virtualmachine;				                
-			                vmSelect.empty();		
-	                        vmSelect.append("<option value=''>by instance</option>"); 				                	 
-			                if (items != null && items.length > 0) {
-			                    for (var i = 0; i < items.length; i++) {
-				                    vmSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>"); 
-			                    }
-			                }
-		                }
-	                });		    
-	            } 	  
-        	    */
-        	    	      
+            	   
 	            $advancedSearchPopup.find("#adv_search_startdate, #adv_search_enddate").datepicker({dateFormat: 'yy-mm-dd'});	            
 	        }
 	    }

@@ -98,7 +98,7 @@
             <form action="#" method="post">
             <ol>
                 <li>
-                    <input class="text textwatermark" type="text" id="adv_search_typeid" value="by Type ID" />
+                    <input class="text textwatermark" type="text" id="adv_search_typeid" value='<fmt:message key="label.by.type.id"/>'/>
                 </li>
             </ol>
             </form>

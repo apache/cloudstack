@@ -301,13 +301,13 @@
                     </select>
                 </li>
                 <li id="adv_search_account_li" style="display: none;">
-                    <input class="text textwatermark" type="text" id="adv_search_account" value="by account" />
+                    <input class="text textwatermark" type="text" id="adv_search_account" value='<fmt:message key="label.by.account" />' />
                 </li>
                 <li>
-                    <input class="text textwatermark" type="text" id="adv_search_startdate" value="by start date" />
+                    <input class="text textwatermark" type="text" id="adv_search_startdate" value='<fmt:message key="label.by.start.date" />' />
                 </li>
                 <li>
-                    <input class="text textwatermark" type="text" id="adv_search_enddate" value="by end date" />
+                    <input class="text textwatermark" type="text" id="adv_search_enddate" value='<fmt:message key="label.by.end.date" />' />
                 </li>
             </ol>
             </form>

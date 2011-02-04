@@ -82,6 +82,10 @@
 		'label.character': '<fmt:message key="label.character"/>',
 		'label.double.quotes.are.not.allowed': '<fmt:message key="label.double.quotes.are.not.allowed"/>',
 		'label.example': '<fmt:message key="label.example"/>',
+		'label.by.zone': '<fmt:message key="label.by.zone"/>', 
+		'label.by.pod': '<fmt:message key="label.by.pod"/>', 
+		'label.by.domain': '<fmt:message key="label.by.domain"/>',
+		'label.by.account': '<fmt:message key="label.by.account"/>'
 	};	
 	</script>
 </head>
