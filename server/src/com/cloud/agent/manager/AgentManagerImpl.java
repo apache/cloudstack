@@ -702,8 +702,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 						+ discoverer.getName());
 			}
 			if (resources != null) {
-				for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources
-						.entrySet()) {
+				for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
 					ServerResource resource = entry.getKey();
 					AgentAttache attache = simulateStart(resource,
 							entry.getValue(), true);
@@ -720,8 +719,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 
 			s_logger.warn("Unable to find the server resources at " + url);
 			throw new DiscoveryException("Unable to add the external cluster");
+		} catch(Throwable e) {
+			s_logger.error("Unexpected exception ", e);
+			throw new DiscoveryException("Unable to add the external cluster due to unhandled exception");
 		} finally {
 			if (!success) {
+				_clusterDetailsDao.deleteDetails(clusterId);
 				_clusterDao.remove(clusterId);
 			}
 		}

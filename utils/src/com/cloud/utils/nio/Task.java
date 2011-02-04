@@ -83,8 +83,8 @@ public abstract class Task implements Runnable {
     public final void run() {
     	try {
     		doTask(this);
-    	} catch (Exception e) {
+    	} catch (Throwable e) {
     		s_logger.warn("Caught the following exception but pushing on", e);
-    	}
+    	} 
     }
 }

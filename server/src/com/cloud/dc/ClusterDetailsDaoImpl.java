@@ -74,4 +74,19 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
         }
         txn.commit();
     }
+
+    @Override
+    public void persist(long clusterId, String name, String value) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        SearchCriteria<ClusterDetailsVO> sc = DetailSearch.create();
+        sc.setParameters("clusterId", clusterId);
+        sc.setParameters("name", name);
+        expunge(sc);
+        
+        ClusterDetailsVO vo = new ClusterDetailsVO(clusterId, name, value);
+        persist(vo);
+        txn.commit();
+    }
+    
 }
