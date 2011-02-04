@@ -151,7 +151,8 @@ function bindAddAccountButton() {
 		$dialogAddAccount
 		.dialog('option', 'buttons', { 					
 			"Create": function() { 	
-			    var $thisDialog = $(this);				    			
+			    var $thisDialog = $(this);	
+			    			    			
 				// validate values
 				var isValid = true;					
 				isValid &= validateString("User name", $thisDialog.find("#add_user_username"), $thisDialog.find("#add_user_username_errormsg"), false);   //required
@@ -252,11 +253,14 @@ function bindAddUserButton() {
             $("#tab_user").click();     
              
         $dialogAddUser.find("#account_name").text(accountObj.name);
+        $dialogAddUser.find("#info_container").hide(); 
             	
 		$dialogAddUser
 		.dialog('option', 'buttons', { 					
 			"Create": function() { 	
-			    var $thisDialog = $(this);				    			
+			    var $thisDialog = $(this);		
+			    $thisDialog.find("#info_container").hide();
+			    		    			
 				// validate values
 				var isValid = true;					
 				isValid &= validateString("User name", $thisDialog.find("#add_user_username"), $thisDialog.find("#add_user_username_errormsg"), false);   //required
