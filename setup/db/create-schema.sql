@@ -715,7 +715,7 @@ CREATE TABLE  `cloud`.`vm_template` (
   `bootable` int(1) unsigned NOT NULL default 1 COMMENT 'true if this template represents a bootable ISO',
   `prepopulate` int(1) unsigned NOT NULL default 0 COMMENT 'prepopulate this template to primary storage',
   `cross_zones` int(1) unsigned NOT NULL default 0 COMMENT 'Make this template available in all zones',
-  `extractable` int(1) unsigned NOT NULL default 1 COMMENT 'Is this template extractable',
+  `extractable` int(1) unsigned NOT NULL default 0 COMMENT 'Is this template extractable',
   `hypervisor_type` varchar(32) COMMENT 'hypervisor that the template is belonged to',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

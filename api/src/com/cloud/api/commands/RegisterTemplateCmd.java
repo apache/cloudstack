@@ -69,7 +69,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     @Parameter(name=ApiConstants.PASSWORD_ENABLED, type=CommandType.BOOLEAN, description="true if the template supports the password reset feature; default is false")
     private Boolean passwordEnabled;
     
-    @Parameter(name=ApiConstants.IS_EXTRACTABLE, type=CommandType.BOOLEAN, description="true if the template or its derivatives are extractable; default is true")
+    @Parameter(name=ApiConstants.IS_EXTRACTABLE, type=CommandType.BOOLEAN, description="true if the template or its derivatives are extractable; default is false")
     private Boolean extractable;
 
     @Parameter(name=ApiConstants.REQUIRES_HVM, type=CommandType.BOOLEAN, description="true if this template requires HVM")

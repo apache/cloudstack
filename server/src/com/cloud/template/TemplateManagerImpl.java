@@ -292,7 +292,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             isPublic = Boolean.FALSE;
         }
         if(isExtractable == null){
-        	isExtractable = Boolean.TRUE;
+        	isExtractable = Boolean.FALSE;
         }
         
         if (zoneId.longValue() == -1) {
@@ -507,24 +507,22 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                 throw new InvalidParameterValueException("Unsupported format, could not extract the template");
             }
         }
-        if(!template.isExtractable() && account!=null && account.getType() != Account.ACCOUNT_TYPE_ADMIN){ // Global admins are always allowed to extract
-        	throw new PermissionDeniedException("The "+ desc + " is not allowed to be extracted" );
-        }
         if (_dcDao.findById(zoneId) == null) {
             throw new IllegalArgumentException("Please specify a valid zone.");
         }
-
-        if (account != null) {                  
-            if(!isAdmin(account.getType())){
-                if (template.getAccountId() != account.getId()){
-                    throw new PermissionDeniedException("Unable to find " + desc + " with ID: " + templateId + " for account: " + account.getAccountName());
-                }
-            } else {
-                Account userAccount = _accountDao.findById(template.getAccountId());
-                if((userAccount == null) || !_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
-                    throw new PermissionDeniedException("Unable to extract " + desc + "=" + templateId + " - permission denied.");
-                }
-            }
+        
+        /*
+         * GLOBAL ADMINS - always allowed to extract
+         * OTHERS - allowed to extract if
+         * 			1) Its own template and extractable=true
+         * 			2) Its not its own template but public=true and extractable=true
+         */
+        if (account!=null && account.getType() != Account.ACCOUNT_TYPE_ADMIN){//Not a ROOT Admin
+        	if (template.getAccountId() == account.getId() && template.isExtractable()){        
+        	}else if (template.getAccountId() != account.getId() && template.isPublicTemplate() && template.isExtractable()){
+        	}else{
+        		throw new PermissionDeniedException("Unable to extract " + desc + "=" + templateId + " - permission denied.");
+        	}
         }
 
         HostVO secondaryStorageHost = _storageMgr.getSecondaryStorageHost(zoneId);
