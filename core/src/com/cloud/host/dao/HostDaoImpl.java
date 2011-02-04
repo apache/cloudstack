@@ -224,6 +224,15 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
     
     @Override
+    public List<HostVO> listSecondaryStorageHosts(long dcId) {
+        SearchCriteria sc = TypeDcSearch.create();
+        sc.setParameters("type", Host.Type.SecondaryStorage);
+        sc.setParameters("dc", dcId);
+        return listActiveBy(sc);
+        
+    }
+    
+    @Override
     public List<HostVO> listSecondaryStorageHosts() {
     	SearchCriteria sc = TypeSearch.create();
     	sc.setParameters("type", Host.Type.SecondaryStorage);

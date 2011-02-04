@@ -1054,7 +1054,7 @@ public class StorageManagerImpl implements StorageManager {
     public String getAbsoluteIsoPath(long templateId, long dataCenterId) {
         String isoPath = null;
 
-        List<HostVO> storageHosts = _hostDao.listBy(Host.Type.SecondaryStorage, dataCenterId);
+        List<HostVO> storageHosts = _hostDao.listSecondaryStorageHosts(dataCenterId);
         if (storageHosts != null) {
             for (HostVO storageHost : storageHosts) {
                 VMTemplateHostVO templateHostVO = _vmTemplateHostDao.findByHostTemplate(storageHost.getId(), templateId);
