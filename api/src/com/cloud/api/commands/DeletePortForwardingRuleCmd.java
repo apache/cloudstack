@@ -29,6 +29,7 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes a port forwarding rule", responseObject=SuccessResponse.class)
 public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
@@ -81,6 +82,7 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute() throws ResourceUnavailableException {
+        UserContext.current().setEventDetails("Rule Id: "+id);
         boolean result = _rulesService.revokePortForwardingRule(id, true);
         
         if (result) {

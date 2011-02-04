@@ -257,7 +257,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             if (!_firewallDao.setStateToAdd(newRule)) {
                 throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
             }
-            
+            UserContext.current().setEventDetails("Rule Id: "+newRule.getId());
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), 0, newRule.getId(), null);
             _usageEventDao.persist(usageEvent);
             return newRule;

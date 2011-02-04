@@ -30,6 +30,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 @Implementation(responseObject=UserVmResponse.class, description="Stops a virtual machine.")
@@ -96,6 +97,7 @@ public class StopVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException{
+        UserContext.current().setEventDetails("Vm Id: "+getId());
         UserVm result = _userVmService.stopVirtualMachine(this);
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse(result);

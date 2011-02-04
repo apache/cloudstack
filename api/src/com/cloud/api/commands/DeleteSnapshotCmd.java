@@ -31,6 +31,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes a snapshot of a disk volume.", responseObject=SuccessResponse.class)
 public class DeleteSnapshotCmd extends BaseAsyncCmd {
@@ -92,6 +93,7 @@ public class DeleteSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("Snapshot Id: "+getId());
         boolean result = _snapshotService.deleteSnapshot(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

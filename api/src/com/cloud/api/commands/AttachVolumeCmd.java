@@ -31,6 +31,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Attaches a disk volume to a virtual machine.", responseObject=VolumeResponse.class)
 public class AttachVolumeCmd extends BaseAsyncCmd {
@@ -116,6 +117,7 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
     
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("Volume Id: "+getId()+" VmId: "+getVirtualMachineId());
         Volume result = _userVmService.attachVolumeToVM(this);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(result);

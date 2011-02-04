@@ -543,7 +543,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (ip == null) {
                 throw new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zoneId);
             }
-
+            UserContext.current().setEventDetails("Ip Id: "+ip.getId());
             Ip ipAddress = ip.getAddress();
 
             s_logger.debug("Got " + ipAddress + " to assign for account " + owner.getId() + " in zone " + network.getDataCenterId());
@@ -1352,7 +1352,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_NETWORK_CREATE, eventDescription="creating network")
     public Network createNetwork(CreateNetworkCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Long networkOfferingId = cmd.getNetworkOfferingId();
         Long zoneId = cmd.getZoneId();
@@ -1512,7 +1512,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
             }
             txn.commit();
-
+            UserContext.current().setEventDetails("Network Id: "+networkId);
             return networks.get(0);
         } catch (Exception ex) {
             s_logger.warn("Unexpected exception while creating network ", ex);
@@ -1654,8 +1654,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    @DB
+    @ActionEvent (eventType=EventTypes.EVENT_NETWORK_DELETE, eventDescription="deleting network")
     public boolean deleteNetwork(long networkId) throws InvalidParameterValueException, PermissionDeniedException {
+        return deleteNetworkInternal(networkId);
+    }
+    
+    @Override
+    @DB
+    public boolean deleteNetworkInternal(long networkId) throws InvalidParameterValueException, PermissionDeniedException {
         Long userId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller();
 

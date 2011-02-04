@@ -31,6 +31,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 @Implementation(description="Destroys a virtual machine. Once destroyed, only the administrator can recover it.", responseObject=UserVmResponse.class)
@@ -93,6 +94,7 @@ public class DestroyVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, ConcurrentOperationException{
+        UserContext.current().setEventDetails("Vm Id: "+getId());
         UserVm result = _userVmService.destroyVm(this);
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse(result);

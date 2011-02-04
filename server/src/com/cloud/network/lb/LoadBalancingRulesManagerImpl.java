@@ -187,6 +187,10 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
     @Override @ActionEvent (eventType=EventTypes.EVENT_REMOVE_FROM_LOAD_BALANCER_RULE, eventDescription="removing from load balancer", async=true)
     public boolean removeFromLoadBalancer(long loadBalancerId, List<Long> instanceIds) {
+        return removeFromLoadBalancerInternal(loadBalancerId, instanceIds);
+    }
+    
+    private boolean removeFromLoadBalancerInternal(long loadBalancerId, List<Long> instanceIds) {
         UserContext caller = UserContext.current();
 
         LoadBalancerVO loadBalancer = _lbDao.findById(Long.valueOf(loadBalancerId));
@@ -222,7 +226,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
        
         return true;
     }
-    
+
     
     @Override
     public boolean removeVmFromLoadBalancers(long instanceId) {
@@ -252,7 +256,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         //Reapply all lbs that had the vm assigned
         if (lbsToReconfigure != null) {
             for (Map.Entry<Long, List<Long>> lb : lbsToReconfigure.entrySet()) {
-                if (!removeFromLoadBalancer(lb.getKey(), lb.getValue())) {
+                if (!removeFromLoadBalancerInternal(lb.getKey(), lb.getValue())) {
                     success = false;
                 }
             }
@@ -263,6 +267,10 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
     @Override @ActionEvent (eventType=EventTypes.EVENT_LOAD_BALANCER_DELETE, eventDescription="deleting load balancer", async=true) 
     public boolean deleteLoadBalancerRule(long loadBalancerId, boolean apply) {
+        return deleteLoadBalancerRuleInternal(loadBalancerId, apply); 
+    }
+    
+    private boolean deleteLoadBalancerRuleInternal(long loadBalancerId, boolean apply) {
         UserContext caller = UserContext.current();
         
         LoadBalancerVO lb = _lbDao.findById(loadBalancerId);
@@ -299,6 +307,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         s_logger.debug("Load balancer with id " + lb.getId() + " is removed successfully");
         return true;
     }
+
 
     @Override @ActionEvent (eventType=EventTypes.EVENT_LOAD_BALANCER_CREATE, eventDescription="creating load balancer") 
     public LoadBalancer createLoadBalancerRule(LoadBalancer lb) throws NetworkRuleConflictException {
@@ -355,6 +364,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
                 throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
             }
             s_logger.debug("Load balancer " + newRule.getId() + " for Ip address id=" +  ipId + ", public port " + srcPortStart + ", private port " + defPortStart+ " is added successfully.");
+            UserContext.current().setEventDetails("Load balancer Id: "+newRule.getId());
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_LOAD_BALANCER_CREATE, ipAddr.getAllocatedToAccountId(), ipAddr.getDataCenterId(), newRule.getId(), null);
             _usageEventDao.persist(usageEvent);
             return newRule;
@@ -423,7 +433,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         s_logger.debug("Found " + rules.size() + " lb rules to cleanup");
         for (FirewallRule rule : rules) {
             if (rule.getPurpose() == Purpose.LoadBalancing) {
-                boolean result = deleteLoadBalancerRule(rule.getId(), true);
+                boolean result = deleteLoadBalancerRuleInternal(rule.getId(), true);
                 if (result == false) {
                     s_logger.warn("Unable to remove load balancer rule " + rule.getId());
                     return false;

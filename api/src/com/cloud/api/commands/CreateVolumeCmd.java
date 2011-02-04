@@ -160,6 +160,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("Volume Id: "+getEntityId()+((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId()));
         Volume volume = _storageService.createVolume(this);
         if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(volume);

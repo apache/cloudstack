@@ -57,6 +57,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
@@ -428,7 +429,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         return snapshot;
     }
 
-    @Override
+    @Override @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_CREATE, eventDescription = "creating snapshot", async=true)
     public SnapshotVO createSnapshot(CreateSnapshotCmd cmd) throws ResourceAllocationException {
         Long volumeId = cmd.getVolumeId();
         Long policyId = cmd.getPolicyId();
@@ -651,7 +652,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
 	}
 
-    @Override @DB
+    @Override @DB @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_DELETE, eventDescription = "deleting snapshot", async=true)
     public boolean deleteSnapshot(DeleteSnapshotCmd cmd) {
     	Long snapshotId = cmd.getId();
     	

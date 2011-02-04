@@ -278,7 +278,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return _vmDao.listByHostId(hostId);
     }
 
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_VM_RESETPASSWORD, eventDescription="resetting Vm password", async=true)
     public UserVm resetVMPassword(ResetVMPasswordCmd cmd, String password) throws ResourceUnavailableException, InsufficientCapacityException{
         Account account = UserContext.current().getCaller();
     	Long userId = UserContext.current().getCallerUserId();
@@ -406,7 +406,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
 
     
-    @Override
+    @Override @ActionEvent(eventType = EventTypes.EVENT_VOLUME_ATTACH, eventDescription = "attaching volume", async=true)
     public Volume attachVolumeToVM(AttachVolumeCmd command) {
     	Long vmId = command.getVirtualMachineId();
     	Long volumeId = command.getId();
@@ -634,7 +634,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     	}
     }
     
-    @Override
+    @Override @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "detaching volume", async=true)
     public Volume detachVolumeFromVM(DetachVolumeCmd cmmd) {    	
     	Account account = UserContext.current().getCaller();
     	if ((cmmd.getId() == null && cmmd.getDeviceId() == null && cmmd.getVirtualMachineId() == null) ||

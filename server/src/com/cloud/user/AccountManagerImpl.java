@@ -862,7 +862,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             List<NetworkVO> networks = _networkDao.listByOwner(accountId);
             if (networks != null) {
                 for (NetworkVO network : networks) {
-                    if (!_networkMgr.deleteNetwork(network.getId())) {
+                    if (!_networkMgr.deleteNetworkInternal(network.getId())) {
                         s_logger.warn("Unable to destroy network " + network + " as a part of account id=" + accountId +" cleanup.");
                         accountCleanupNeeded = true;
                         networksDeleted = false;

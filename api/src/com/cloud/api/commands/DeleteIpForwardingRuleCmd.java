@@ -30,6 +30,7 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes an ip forwarding rule", responseObject=SuccessResponse.class)
 public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
@@ -67,6 +68,7 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("Rule Id: "+id);
     	boolean result = _rulesService.revokePortForwardingRule(id, true);
 
         if (result) {

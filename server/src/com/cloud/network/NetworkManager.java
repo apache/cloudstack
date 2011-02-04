@@ -173,4 +173,6 @@ public interface NetworkManager extends NetworkService {
     
     Map<Capability, String> getServiceCapability(long zoneId, Service service);
 
+    boolean deleteNetworkInternal(long networkId) throws InvalidParameterValueException, PermissionDeniedException;
+
 }

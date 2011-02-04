@@ -161,6 +161,7 @@ import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEvent;
 import com.cloud.event.Event;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
@@ -4215,7 +4216,7 @@ public class ManagementServerImpl implements ManagementServer {
 		return false;
     }
 
-    @Override
+    @Override @ActionEvent(eventType = EventTypes.EVENT_VOLUME_EXTRACT, eventDescription = "extracting volume", async=true)
     public Long extractVolume(ExtractVolumeCmd cmd) throws URISyntaxException {
         Long volumeId = cmd.getId();
         String url = cmd.getUrl();

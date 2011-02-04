@@ -30,6 +30,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 @Implementation(description="Detaches a disk volume from a virtual machine.", responseObject=VolumeResponse.class)
@@ -126,6 +127,7 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("Volume Id: "+getId()+" VmId: "+getVirtualMachineId());
         Volume result = _userVmService.detachVolumeFromVM(this);
         if (result != null){
             VolumeResponse response = _responseGenerator.createVolumeResponse(result);

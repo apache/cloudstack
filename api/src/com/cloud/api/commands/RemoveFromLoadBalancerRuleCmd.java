@@ -31,6 +31,7 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 import com.cloud.utils.StringUtils;
 
 @Implementation(description="Removes a virtual machine or a list of virtual machines from a load balancer rule.", responseObject=SuccessResponse.class)
@@ -90,7 +91,8 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){   
+    public void execute(){
+        UserContext.current().setEventDetails("Load balancer Id: "+getId()+" VmIds: "+StringUtils.join(getVirtualMachineIds(), ","));
         boolean result = _lbService.removeFromLoadBalancer(id, virtualMachineIds);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

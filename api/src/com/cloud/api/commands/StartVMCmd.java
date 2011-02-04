@@ -34,6 +34,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
 
@@ -102,6 +103,7 @@ public class StartVMCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
         try {
+            UserContext.current().setEventDetails("Vm Id: "+getId());
             UserVm result = _userVmService.startVirtualMachine(this);
             if (result != null){
                 UserVmResponse response = _responseGenerator.createUserVmResponse(result);

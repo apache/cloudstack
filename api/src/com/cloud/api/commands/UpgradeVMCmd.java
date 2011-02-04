@@ -25,6 +25,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.UserVmResponse;
+import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 @Implementation(responseObject=UserVmResponse.class, description="Changes the service offering for a virtual machine. " +
@@ -71,6 +72,7 @@ public class UpgradeVMCmd extends BaseCmd {
     
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("Vm Id: "+getId());
         UserVm result = _userVmService.upgradeVirtualMachine(this);
         if (result != null){
             UserVmResponse response = _responseGenerator.createUserVmResponse(result);

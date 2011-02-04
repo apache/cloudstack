@@ -25,6 +25,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Disassociates an ip address from the account.", responseObject=SuccessResponse.class)
 public class DisassociateIPAddrCmd extends BaseCmd {
@@ -58,6 +59,7 @@ public class DisassociateIPAddrCmd extends BaseCmd {
 
     @Override
     public void execute(){
+        UserContext.current().setEventDetails("Ip Id: "+getIpAddressId());
         boolean result = _networkService.disassociateIpAddress(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

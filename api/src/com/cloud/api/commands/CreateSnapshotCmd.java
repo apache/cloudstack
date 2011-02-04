@@ -33,6 +33,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Creates an instant snapshot of a volume.", responseObject=SnapshotResponse.class)
 public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
@@ -131,7 +132,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
         		Long id = _snapshotService.getNextInSequence(this);
         		this.setEntityId(id);
         	}
-        	
+        	UserContext.current().setEventDetails("Snapshot Id: "+getEntityId()+" Volume Id: "+getVolumeId());
             Snapshot snapshot = _snapshotService.createSnapshot(this);
             if (snapshot != null) {
                 SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);

@@ -104,6 +104,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
         boolean success = false;
         PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
         try {
+            UserContext.current().setEventDetails("Rule Id: "+rule.getId());
             success = _rulesService.applyPortForwardingRules(rule.getSourceIpAddressId(), callerContext.getCaller());
             
             //State is different after the rule is applied, so get new object here

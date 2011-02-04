@@ -1504,7 +1504,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         volume.setDomainId((account == null) ? Domain.ROOT_DOMAIN : account.getDomainId());
         volume.setState(Volume.State.Allocated);
         volume = _volsDao.persist(volume);
-
+        UserContext.current().setEventDetails("Volume Id: "+volume.getId());
         return volume;
     }
 
@@ -2181,7 +2181,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 	            (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
 	}
 	
-	@Override
+	@Override @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DELETE, eventDescription = "deleting volume")
 	public boolean deleteVolume(DeleteVolumeCmd cmd) throws ConcurrentOperationException {
     	Account account = UserContext.current().getCaller();
     	Long volumeId = cmd.getId();

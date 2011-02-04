@@ -27,6 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes a detached disk volume.", responseObject=SuccessResponse.class)
 public class DeleteVolumeCmd extends BaseCmd {
@@ -65,6 +66,7 @@ public class DeleteVolumeCmd extends BaseCmd {
 	
     @Override
     public void execute() throws ConcurrentOperationException {
+        UserContext.current().setEventDetails("Volume Id: "+getId());
         boolean result = _storageService.deleteVolume(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
