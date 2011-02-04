@@ -66,7 +66,11 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
                 long userId = ctx.getCallerUserId();
                 long accountId = ctx.getAccountId();
                 long startEventId = ctx.getStartEventId();
-                EventUtils.saveStartedEvent(userId, accountId, actionEvent.eventType(), actionEvent.eventDescription(), startEventId);
+                String eventDescription = actionEvent.eventDescription();
+                if(ctx.getEventDetails() != null){
+                    eventDescription += ". "+ctx.getEventDetails();
+                }
+                EventUtils.saveStartedEvent(userId, accountId, actionEvent.eventType(), eventDescription, startEventId);
             }
         }
         return event;
@@ -81,12 +85,16 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
             long userId = ctx.getCallerUserId();
             long accountId = ctx.getAccountId();
             long startEventId = ctx.getStartEventId();
+            String eventDescription = actionEvent.eventDescription();
+            if(ctx.getEventDetails() != null){
+                eventDescription += ". "+ctx.getEventDetails();
+            }            
             if(actionEvent.create()){
                 //This start event has to be used for subsequent events of this action
-                startEventId = EventUtils.saveCreatedEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully created entity for "+actionEvent.eventDescription());
+                startEventId = EventUtils.saveCreatedEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully created entity for "+eventDescription);
                 ctx.setStartEventId(startEventId);
             } else {
-                EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully completed "+actionEvent.eventDescription(), startEventId);
+                EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully completed "+eventDescription, startEventId);
             }
         }
     }
@@ -100,11 +108,15 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
             long userId = ctx.getCallerUserId();
             long accountId = ctx.getAccountId();
             long startEventId = ctx.getStartEventId();
+            String eventDescription = actionEvent.eventDescription();
+            if(ctx.getEventDetails() != null){
+                eventDescription += ". "+ctx.getEventDetails();
+            }
             if(actionEvent.create()){
-                long eventId = EventUtils.saveCreatedEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while creating entity for "+actionEvent.eventDescription());
+                long eventId = EventUtils.saveCreatedEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while creating entity for "+eventDescription);
                 ctx.setStartEventId(eventId);
             } else {
-                EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while "+actionEvent.eventDescription(), startEventId);
+                EventUtils.saveEvent(userId, accountId, EventVO.LEVEL_ERROR, actionEvent.eventType(), "Error while "+eventDescription, startEventId);
             }
         }
     }

@@ -215,7 +215,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     
     @Override
     public String getEventDescription() {
-        return  "starting Vm";
+        return  "starting Vm. Vm Id: "+getEntityId();
     }
     
     @Override
@@ -227,6 +227,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     public void execute(){
         UserVm result;
         try {
+            UserContext.current().setEventDetails("Vm Id: "+getEntityId());
             result = _userVmService.startVirtualMachine(this);
             if (result != null) {
                 UserVmResponse response = _responseGenerator.createUserVmResponse(result);

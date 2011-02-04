@@ -1878,7 +1878,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return true;
     }
     
-	@Override @DB @ActionEvent (eventType=EventTypes.EVENT_VM_CREATE, eventDescription="creating Vm", create=true)
+	@Override @DB @ActionEvent (eventType=EventTypes.EVENT_VM_CREATE, eventDescription="deploying Vm", create=true)
     public UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException, ResourceAllocationException {
         Account caller = UserContext.current().getCaller();
         
@@ -2119,6 +2119,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Successfully allocated DB entry for " + vm);
         }
+        UserContext.current().setEventDetails("Vm Id: "+vm.getId());
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, accountId, dc.getId(), vm.getId(), vm.getName(), offering.getId(), template.getId(), null);
         _usageEventDao.persist(usageEvent);
         

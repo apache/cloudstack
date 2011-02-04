@@ -32,6 +32,7 @@ public class UserContext {
     private Account account;
     private long startEventId = 0;
     private long accountId;
+    private String eventDetails;
 
     private boolean apiServer;
 
@@ -125,5 +126,13 @@ public class UserContext {
 
     public void setAccountId(long accountId) {
         this.accountId = accountId;
+    }
+
+    public void setEventDetails(String eventDetails) {
+        this.eventDetails = eventDetails;
+    }
+
+    public String getEventDetails() {
+        return eventDetails;
     }
 }
