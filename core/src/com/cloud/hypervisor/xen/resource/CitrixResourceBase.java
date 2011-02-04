@@ -252,6 +252,7 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     protected boolean _canBridgeFirewall = false;
     protected boolean _isOvs = false;
+    protected List<VIF> _tmpDom0Vif = new ArrayList<VIF>();
     protected HashMap<StoragePoolType, StoragePoolResource> _pools = new HashMap<StoragePoolType, StoragePoolResource>(5);
 
     public enum SRType {
@@ -508,43 +509,27 @@ public abstract class CitrixResourceBase implements ServerResource {
         VIF dom0vif = null;
         Pair<VM, VM.Record> vm = getControlDomain(conn);
         VM dom0 = vm.first();
-        Set<VIF> vifs = dom0.getVIFs(conn);
-        if (vifs.size() != 0) {
-        	for (VIF vif : vifs) {
-        		Map<String, String> otherConfig = vif.getOtherConfig(conn);
-        		if (otherConfig != null) {
-        		    String nameLabel = otherConfig.get("nameLabel");
-        		    if ((nameLabel != null) && nameLabel.equalsIgnoreCase(vifNameLabel)) {
-        		        dom0vif = vif;
-        		    }
-        		}
-        	}
-        }
-        /* create temp VIF0 */
-        if (dom0vif == null) {
-        	s_logger.debug("Can't find a vif on dom0 for " + networkDesc + ", creating a new one");
-        	VIF.Record vifr = new VIF.Record();
-        	vifr.VM = dom0;
-        	vifr.device = getLowestAvailableVIFDeviceNum(conn, dom0);
-        	if (vifr.device == null) {
-        		s_logger.debug("Failed to create " + networkDesc + ", no vif available");
-        		return;
-        	}
-        	Map<String, String> config = new HashMap<String, String>();
-        	config.put("nameLabel", vifNameLabel);
-        	vifr.otherConfig = config;
-        	vifr.MAC = "FE:FF:FF:FF:FF:FF";
-        	vifr.network = nw;
-        	dom0vif = VIF.create(conn, vifr);
-        	dom0vif.plug(conn);
-        	dom0vif.unplug(conn);
-        } else {
-        	s_logger.debug("already have a vif on dom0 for " + networkDesc);
-        	if (!dom0vif.getCurrentlyAttached(conn)) {
-        		dom0vif.plug(conn);
-        		dom0vif.unplug(conn);
-        	}
-        }
+       
+		s_logger.debug("Create a vif on dom0 for " + networkDesc);
+		VIF.Record vifr = new VIF.Record();
+		vifr.VM = dom0;
+		vifr.device = getLowestAvailableVIFDeviceNum(conn, dom0);
+		if (vifr.device == null) {
+			s_logger.debug("Failed to create " + networkDesc + ", no vif available");
+			return;
+		}
+		Map<String, String> config = new HashMap<String, String>();
+		config.put("nameLabel", vifNameLabel);
+		vifr.otherConfig = config;
+		vifr.MAC = "FE:FF:FF:FF:FF:FF";
+		vifr.network = nw;
+		dom0vif = VIF.create(conn, vifr);
+		dom0vif.plug(conn);
+		dom0vif.unplug(conn);
+		synchronized(_tmpDom0Vif) {
+			_tmpDom0Vif.add(dom0vif);
+		}
+
     }
     
     private synchronized Network setupvSwitchNetwork(Connection conn) {
@@ -590,7 +575,7 @@ public abstract class CitrixResourceBase implements ServerResource {
                 nw = networks.iterator().next();
             }
             
-            enableXenServerNetwork(conn, nw, "OVSTunnel", "tunnel network for account " + account);
+            enableXenServerNetwork(conn, nw, nwName, "tunnel network for account " + account);
             return nw;
         } catch (Exception e) {
             s_logger.warn("create tunnel network failed", e);
@@ -943,6 +928,27 @@ public abstract class CitrixResourceBase implements ServerResource {
         return cmd;
     }
 
+    private void cleanUpTmpDomVif(Connection conn) {
+    	List<VIF> vifs;
+    	synchronized(_tmpDom0Vif) {	
+    		vifs = _tmpDom0Vif;
+    		_tmpDom0Vif = new ArrayList<VIF>();
+    	}
+    	
+		for (VIF v : vifs) {
+			String vifName = "unkown";
+			try {
+				VIF.Record vifr = v.getRecord(conn);
+				Map<String, String> config = vifr.otherConfig;
+				vifName = config.get("nameLabel");
+				v.destroy(conn);
+				s_logger.debug("Destroy temp dom0 vif" + vifName + " success");
+			} catch (Exception e) {
+				s_logger.warn("Destroy temp dom0 vif " + vifName + "failed", e);
+			}
+		}
+    }
+    
     protected StartAnswer execute(StartCommand cmd) {
         Connection conn = getConnection();
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
@@ -986,6 +992,7 @@ public abstract class CitrixResourceBase implements ServerResource {
                     }
                 }
             }
+            cleanUpTmpDomVif(conn);
 
             if (_canBridgeFirewall) {
                 String result = null;
