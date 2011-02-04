@@ -438,6 +438,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 return proxy;
             }
             
+            String restart = _configDao.getValue(Config.ConsoleProxyRestart.key());
+            if(restart != null && restart.equalsIgnoreCase("false"))
+                return null;
+            
             if(proxy.getState() == VirtualMachine.State.Stopped) {
                 return _itMgr.start(proxy, null, systemUser, systemAcct);
             }
