@@ -122,7 +122,7 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 	}
 	
 	@DB
-    protected void CheckAndCreateTunnel(VMInstanceVO instance, DeployDestination dest) {
+    protected void CheckAndCreateTunnel(VirtualMachine instance, DeployDestination dest) {
 		if (!_isEnabled) {
 			return;
 		}
@@ -137,8 +137,12 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 		List<UserVmVO>vms = _userVmDao.listByAccountId(accountId);
 		DomainRouterVO router = _routerDao.findBy(accountId, instance.getDataCenterId());
 		List<VMInstanceVO>ins = new ArrayList<VMInstanceVO>();
-		ins.addAll(vms);
-		ins.add(router);
+		if (vms != null) {
+			ins.addAll(vms);
+		}
+		if (router != null) {
+			ins.add(router);
+		}
 		List<Pair<Long, Integer>>toHosts = new ArrayList<Pair<Long, Integer>>();
 		List<Pair<Long, Integer>>fromHosts = new ArrayList<Pair<Long, Integer>>();
 		int key;
@@ -223,13 +227,8 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
 	}
 
     @Override
-    public void UserVmCheckAndCreateTunnel(Commands cmds, VirtualMachineProfile<UserVmVO> profile, DeployDestination dest) {
-        CheckAndCreateTunnel(profile.getVirtualMachine(), dest);    
-    }
-
-    @Override
-    public void RouterCheckAndCreateTunnel(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest) {
-        CheckAndCreateTunnel(profile.getVirtualMachine(), dest);  
+    public void VmCheckAndCreateTunnel(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) {
+        CheckAndCreateTunnel(vm.getVirtualMachine(), dest);    
     }
 
     private void handleDestroyTunnelAnswer(Answer ans, long from, long to, long account) {
@@ -256,7 +255,7 @@ public class OvsTunnelManagerImpl implements OvsTunnelManager {
     }
     
     @Override
-    public void CheckAndDestroyTunnel(VMInstanceVO vm) {
+    public void CheckAndDestroyTunnel(VirtualMachine vm) {
         if (!_isEnabled) {
             return;
         }

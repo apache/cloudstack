@@ -280,10 +280,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     RemoteAccessVpnDao _vpnDao;
     @Inject 
     VMInstanceDao _instanceDao;
-    @Inject
-    OvsNetworkManager _ovsNetworkMgr;
-    @Inject
-    OvsTunnelManager _ovsTunnelMgr;
 
     int _routerRamSize;
     int _retry = 2;
@@ -994,10 +990,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException{
         NicProfile controlNic = (NicProfile) profile.getParameter(VirtualMachineProfile.Param.ControlNic);
-
-        _ovsNetworkMgr.RouterCheckAndCreateTunnel(cmds, profile, dest);
-        _ovsNetworkMgr.applyDefaultFlowToRouter(cmds, profile, dest);
-        _ovsTunnelMgr.RouterCheckAndCreateTunnel(cmds, profile, dest);
 		
         cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20));
 
@@ -1121,9 +1113,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (answer != null) {
             processStopOrRebootAnswer(profile.getVirtualMachine(), answer);
         }
-
-    	DomainRouterVO router = profile.getVirtualMachine();
-    	_ovsTunnelMgr.CheckAndDestroyTunnel(router);
     }
     
     @Override

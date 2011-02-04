@@ -604,11 +604,13 @@ public abstract class CitrixResourceBase implements ServerResource {
         } else if (nic.getBroadcastType() == BroadcastDomainType.Native || nic.getBroadcastType() == BroadcastDomainType.LinkLocal) {
             return network.first();
         } else if (nic.getBroadcastType() == BroadcastDomainType.Vswitch) {
-            URI broadcastUri = nic.getBroadcastUri();
-            if (broadcastUri.getHost().equalsIgnoreCase("vlan")) {
+            String broadcastUri = nic.getBroadcastUri().toString();
+            String header = broadcastUri.substring(Networks.BroadcastDomainType.Vswitch.scheme().length() + "://".length());
+            if (header.startsWith("vlan")) {
+            	_isOvs = true;
                 return setupvSwitchNetwork(conn);
             } else {
-                long account = Long.parseLong(broadcastUri.getHost());
+                long account = Long.parseLong(nic.getBroadcastUri().getHost());
                 return createTunnelNetwork(conn, account);
             }
         }
@@ -916,6 +918,25 @@ public abstract class CitrixResourceBase implements ServerResource {
         return new CheckSshAnswer(cmd);
     }
     
+    private HashMap<String, String> parseDefaultOvsRuleComamnd(String str) {
+        HashMap<String, String> cmd = new HashMap<String, String>();
+        String[] sarr = str.split("/");
+        for (int i = 0; i < sarr.length; i++) {
+            String c = sarr[i];
+            c = c.startsWith("/") ? c.substring(1) : c;
+            c = c.endsWith("/") ? c.substring(0, c.length() - 1) : c;
+            String[] p = c.split(";");
+            if (p.length != 2)
+                continue;
+            if (p[0].equalsIgnoreCase("vlans")) {
+            	p[1] = p[1].replace("@", "[");
+            	p[1] = p[1].replace("#", "]");
+            }
+            cmd.put(p[0], p[1]);
+        }
+        return cmd;
+    }
+
     protected StartAnswer execute(StartCommand cmd) {
         Connection conn = getConnection();
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
@@ -944,6 +965,22 @@ public abstract class CitrixResourceBase implements ServerResource {
             
             startVM(conn, host, vm, vmName);
             
+            if (_isOvs) {
+                for (NicTO nic : vmSpec.getNics()) {
+                    if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vswitch) {
+                        HashMap<String, String> args = parseDefaultOvsRuleComamnd(nic.getBroadcastUri().toString().substring(Networks.BroadcastDomainType.Vswitch.scheme().length() + "://".length()));
+                        OvsSetTagAndFlowCommand flowCmd = new OvsSetTagAndFlowCommand(args.get("vmName"), args.get("tag"), args.get("vlans"),
+                                args.get("seqno"), Long.parseLong(args.get("vmId")));
+                        OvsSetTagAndFlowAnswer r = execute(flowCmd);
+                        if (!r.getResult()) {
+                            s_logger.warn("Failed to set flow for VM " + r.getVmId());
+                        } else {
+                            s_logger.info("Success to set flow for VM " + r.getVmId());
+                        }
+                    }
+                }
+            }
+
             if (_canBridgeFirewall) {
                 String result = null;
                 if (vmSpec.getType() != VirtualMachine.Type.User) {

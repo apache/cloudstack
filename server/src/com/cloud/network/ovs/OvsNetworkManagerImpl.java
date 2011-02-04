@@ -362,7 +362,7 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 	}
 
 	@DB
-	protected void CheckAndCreateTunnel(VMInstanceVO instance,
+	protected void CheckAndCreateTunnel(VirtualMachine instance,
 			DeployDestination dest) throws GreTunnelException {
 		if (!_isEnabled) {
 			return;
@@ -463,16 +463,20 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 		}
 	}
 	
-	protected void applyDefaultFlow(Commands cmds,
-			VMInstanceVO instance, DeployDestination dest) {
+	private String cmdPair(String key, String value) {
+	    return String.format("%1$s;%2$s", key, value);
+	}
+	
+	@Override
+	public String applyDefaultFlow(VirtualMachine instance, DeployDestination dest) {
 		if (!_isEnabled) {
-			return;
+			return null;
 		}
 		
 		VirtualMachine.Type vmType = instance.getType();
 		if (vmType != VirtualMachine.Type.User
 				&& vmType != VirtualMachine.Type.DomainRouter) {
-			return;
+			return null;
 		}
 
 		try {
@@ -483,17 +487,30 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 			String vlans = getVlanInPortMapping(accountId, hostId);
 			VmFlowLogVO log = _flowLogDao.findOrNewByVmId(instance.getId(),
 					instance.getName());
-			cmds.addCommand(new OvsSetTagAndFlowCommand(instance.getName(),
-					tag, vlans, Long.toString(log.getLogsequence()), instance
-							.getId()));
+			StringBuffer command = new StringBuffer();
+			command.append("vlan");
+			command.append("/");
+			command.append(cmdPair("vmName", instance.getName()));
+			command.append("/");
+			command.append(cmdPair("tag", tag));
+			command.append("/");
+			vlans = vlans.replace("[", "@");
+			vlans = vlans.replace("]", "#");
+			command.append(cmdPair("vlans", vlans));
+			command.append("/");
+			command.append(cmdPair("seqno", Long.toString(log.getLogsequence())));
+			command.append("/");
+			command.append(cmdPair("vmId", Long.toString(instance.getId())));
+			return command.toString();
 		} catch (OvsVlanExhaustedException e) {
 			s_logger.warn("vlan exhaused on host " + instance.getHostId(), e);
+			return null;
 		}
 	}
 	
 	//FIXME: if router has record in database but not start, this will hang 10 secs due to host
 	//plugin cannot found vif for router.
-	protected void CheckAndUpdateDhcpFlow(VMInstanceVO instance) {
+	protected void CheckAndUpdateDhcpFlow(VirtualMachine instance) {
 		if (!_isEnabled) {
 			return;
 		}
@@ -678,38 +695,12 @@ public class OvsNetworkManagerImpl implements OvsNetworkManager {
 	}
 
 	@Override
-	public void UserVmCheckAndCreateTunnel(Commands cmds,
-			VirtualMachineProfile<UserVmVO> profile, DeployDestination dest) {
+	public void VmCheckAndCreateTunnel(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) {
 		try {
-            CheckAndCreateTunnel(profile.getVirtualMachine(), dest);
+            CheckAndCreateTunnel(vm.getVirtualMachine(), dest);
         } catch (Exception e) {
            s_logger.warn("create gre tunnel failed", e);
         }	
-	}
-
-	@Override
-	public void RouterCheckAndCreateTunnel(Commands cmds,
-			VirtualMachineProfile<DomainRouterVO> profile,
-			DeployDestination dest) {
-		try {
-            CheckAndCreateTunnel(profile.getVirtualMachine(), dest);
-        } catch (Exception e) {
-            s_logger.warn("create gre tunnel failed", e);
-        }	
-	}
-
-	@Override
-	public void applyDefaultFlowToUserVm(Commands cmds,
-			VirtualMachineProfile<UserVmVO> profile, DeployDestination dest) {
-		applyDefaultFlow(cmds, profile.getVirtualMachine(), dest);
-		
-	}
-
-	@Override
-	public void applyDefaultFlowToRouter(Commands cmds,
-			VirtualMachineProfile<DomainRouterVO> profile,
-			DeployDestination dest) {
-		applyDefaultFlow(cmds, profile.getVirtualMachine(), dest);
 	}
 
 	@Override

@@ -6,14 +6,13 @@ import com.cloud.utils.component.Manager;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface OvsTunnelManager extends Manager {
 	boolean isOvsTunnelEnabled();
 
-    public void UserVmCheckAndCreateTunnel(Commands cmds, VirtualMachineProfile<UserVmVO> profile, DeployDestination dest);
-
-    public void RouterCheckAndCreateTunnel(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest);
+    public void VmCheckAndCreateTunnel(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest);
     
-    public void CheckAndDestroyTunnel(VMInstanceVO vm);
+    public void CheckAndDestroyTunnel(VirtualMachine vm);
 }

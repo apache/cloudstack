@@ -256,8 +256,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject UsageEventDao _usageEventDao;
     @Inject SSHKeyPairDao _sshKeyPairDao;
     @Inject UserVmDetailsDao _vmDetailsDao;
-    @Inject OvsNetworkManager _ovsNetworkMgr;
-    @Inject OvsTunnelManager _ovsTunnelMgr;
     
     ScheduledExecutorService _executor = null;
     int _expungeInterval;
@@ -2248,14 +2246,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 			}
 		}
 		_vmDao.update(userVm.getId(), userVm);
-	
-		
-		
-		_ovsNetworkMgr.UserVmCheckAndCreateTunnel(cmds, profile, dest);
-		_ovsNetworkMgr.applyDefaultFlowToUserVm(cmds, profile, dest);
-		_ovsTunnelMgr.UserVmCheckAndCreateTunnel(cmds, profile, dest);
-		
-		
+				
 		return true;
 	}
 
@@ -2339,9 +2330,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_DELETE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), null, network.getNetworkOfferingId(), null, null);
             _usageEventDao.persist(usageEvent);   
         }
-
-        
-		_ovsTunnelMgr.CheckAndDestroyTunnel(vm);
     }
     
     public String generateRandomPassword() {

@@ -65,7 +65,6 @@ public class OvsListener implements Listener {
 								Step.Done);
 					}
 				}
-				// TODO: handle delete failure
 			}
 		} catch (Exception e) {
 			s_logger.warn("process answer failed", e);
