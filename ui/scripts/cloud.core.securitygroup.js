@@ -309,8 +309,8 @@ function initAddIngressRuleDialog() {
                                                     }                                    
                                                 } 								                                                                                                               												
 									        } else if (result.jobstatus == 2) { // Failed									            
-									            //var errorMsg = fromdb(result.jobresult.errortext);
-									            var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+									            //var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+									            var errorMsg = g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);	
 									            handleErrorInDialog2(errorMsg, $thisDialog);									            
 									        }
 								        }

@@ -766,7 +766,8 @@ function doDownloadTemplate($actionLink, $detailsTab, $midmenuItem1) {
 		                            $infoContainer.find("#info").html(htmlMsg2);
 		                            $infoContainer.show();		                        
 		                        } else if (result.jobstatus == 2) { // Failed			                            	                            		                            
-		                            var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+		                            //var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+			                        var errorMsg = g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);	
 			                        handleErrorInDialog2(errorMsg, $dialogDownloadTemplate);		                        
 		                        }											                    
 	                        }
