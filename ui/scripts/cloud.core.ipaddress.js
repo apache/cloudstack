@@ -113,7 +113,7 @@ function afterLoadIpJSP() {
 						                    bindClickToMidMenu($midmenuItem1, ipToRightPanel, ipGetMidmenuId);  
 						                    afterAddingMidMenuItem($midmenuItem1, true);	                            
 									    } else if (result.jobstatus == 2) {
-									        afterAddingMidMenuItem($midmenuItem1, false, g_dictionary["label.adding.failed"]);										        								   				    
+									        afterAddingMidMenuItem($midmenuItem1, false, fromdb(result.jobresult.errortext));					        							        								   				    
 									    }
 								    }
 							    },
@@ -200,8 +200,8 @@ function afterLoadIpJSP() {
 				                        $template.slideUp("slow", function() {
 					                        $(this).remove();
 				                        });
-				                        //var errorMsg = "Create Port Fowarding Rule action failed. Reason: " + fromdb(result.jobresult.errortext);				
-	                                    var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+				                        //var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+	                                    var errorMsg = g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);	
 	                                    $("#dialog_error").text(errorMsg).dialog("open");
 			                        }											                    
 		                        }
@@ -298,8 +298,8 @@ function afterLoadIpJSP() {
 				                        $template.slideUp("slow", function() {
 					                        $(this).remove();
 				                        });
-				                        //var errorMsg = "Create Port Fowarding Rule action failed. Reason: " + fromdb(result.jobresult.errortext);				
-	                                    var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+				                        //var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+	                                    var errorMsg = g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);	
 	                                    $("#dialog_error").text(errorMsg).dialog("open");
 			                        }											                    
 		                        }
@@ -708,16 +708,15 @@ function showEnableVPNDialog($thisTab) {
 										return; //Job has not completed
 									} else {											                    
 										$("body").stopTime(timerKey);				                        
-																																	 
+										$spinningWheel.hide(); 																							 
 										if (result.jobstatus == 1) { // Succeeded
 											showVpnUsers(result.jobresult.remoteaccessvpn.presharedkey, result.jobresult.remoteaccessvpn.publicip);
-											$thisDialog.dialog("close");
-											$spinningWheel.hide();
+											$thisDialog.dialog("close");											
 											$thisTab.find("#tab_container").show();
 											$thisTab.find("#vpn_disabled_msg").hide();
 										} else if (result.jobstatus == 2) { // Failed	
-											$spinningWheel.hide(); 
-											var errorMsg = "We were unable to enable VPN access.  Please contact support.";
+											//var errorMsg = "We were unable to enable VPN access.  Please contact support.";
+											 var errorMsg = g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);	
 											$thisDialog.find("#info_container").text(errorMsg).show();
 										}	
 									}
@@ -842,7 +841,8 @@ function showVpnUsers(presharedkey, publicip) {
 												$vpnTab.find("#tab_container").hide();
 												$vpnTab.find("#vpn_disabled_msg").show();
 											} else if (result.jobstatus == 2) { // Failed	
-												var errorMsg = "We were unable to disable VPN access.  Please contact support.";
+												//var errorMsg = "We were unable to disable VPN access.  Please contact support.";
+												 var errorMsg = g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);	
 												$thisDialog.find("#info_container").text(errorMsg).show();
 											}	
 										}
@@ -920,7 +920,8 @@ function showVpnUsers(presharedkey, publicip) {
 												$thisDialog.dialog("close");
 												$("#tab_content_vpn #grid_content").append(vpnUserJsonToTemplate(result.jobresult.vpnuser).fadeIn());
 											} else if (result.jobstatus == 2) { // Failed	
-												var errorMsg = "We were unable to add user access to your VPN.  Please contact support.";
+												//var errorMsg = "We were unable to add user access to your VPN.  Please contact support.";
+												 var errorMsg = g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);	
 												$thisDialog.find("#info_container").text(errorMsg).show();
 											}	
 										}
@@ -1030,7 +1031,8 @@ function enableDeleteUser() {
 													//remove user from grid
 													$("#right_panel_content #tab_content_vpn").find("#vpnuser"+id).slideUp();
 												} else if (result.jobstatus == 2) { // Failed	
-													var errorMsg = "We were unable to add user access to your VPN.  Please contact support.";
+													//var errorMsg = "We were unable to add user access to your VPN.  Please contact support.";
+													 var errorMsg = g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);	
 													$thisDialog.find("#info_container").text(errorMsg).show();
 												}	
 											}
@@ -1410,8 +1412,9 @@ function portRangeJsonToTemplate(jsonObj, $template) {
 										$template.slideUp("slow", function() {
 											$(this).remove();													
 										});									
-									} else if (result.jobstatus == 2) { // Failed		
-									    $("#dialog_error").text(g_dictionary["label.deleting.failed"]).dialog("open");											
+									} else if (result.jobstatus == 2) { // Failed	
+									     var errorMsg = g_dictionary["label.deleting.failed"] + " - " + fromdb(result.jobresult.errortext);		
+									    $("#dialog_error").text(errorMsg).dialog("open");											
 									}							                    
 		                        }
 	                        },
@@ -1512,7 +1515,8 @@ function portForwardingJsonToTemplate(jsonObj, $template) {
 											$(this).remove();													
 										});									
 									} else if (result.jobstatus == 2) { // Failed		
-									    $("#dialog_error").text(g_dictionary["label.deleting.failed"]).dialog("open");											
+									    var errorMsg = g_dictionary["label.deleting.failed"] + " - " + fromdb(result.jobresult.errortext);	
+									    $("#dialog_error").text(errorMsg).dialog("open");											
 									}							                    
 		                        }
 	                        },
@@ -1675,7 +1679,8 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 											$(this).remove();													
 										});
 									} else if (result.jobstatus == 2) { // Failed										
-										$("#dialog_error").text(g_dictionary["label.deleting.failed"]).dialog("open");
+										var errorMsg = g_dictionary["label.deleting.failed"] + " - " + fromdb(result.jobresult.errortext);	
+										$("#dialog_error").text(errorMsg).dialog("open");
 									}
 								}
 							},
@@ -1753,8 +1758,8 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 							        $spinningWheel.hide();                                   
                                     $rowContainerEdit.hide();  
                                     $rowContainer.show(); 
-								    //var errorMsg = fromdb(result.jobresult.errortext);
-								    var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+								    //var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+								    var errorMsg = g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);	
 								    $("#dialog_alert").text(errorMsg).dialog("open");											    					    
 							    }
 						    }
@@ -1818,9 +1823,9 @@ function loadBalancerJsonToTemplate(jsonObj, $template) {
 									    $template.find("#management_area #subgrid_content").append($lbVmTemplate.show());	
 									    refreshLbVmSelect($template, loadBalancerId);											    
 		                                $spinningWheel.hide();   
-									} else if (result.jobstatus == 2) { // Failed										
-										//var errorMsg = fromdb(result.jobresult.errortext);
-										var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+									} else if (result.jobstatus == 2) { // Failed
+										//var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+										var errorMsg = g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);	
 										$("#dialog_error").text(errorMsg).dialog("open");  																
 										$spinningWheel.hide();   
 									}
@@ -1887,8 +1892,8 @@ function lbVmObjToTemplate(obj, $template) {
 											$(this).remove();
 										});
 									} else if (result.jobstatus == 2) { // Failed													
-										//var errorMsg = fromdb(result.jobresult.errortext);
-										var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+										//var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+										var errorMsg = g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);	
 										$("#dialog_error").text(errorMsg).dialog("open");
 										$spinningWheel.hide();   										
 									}
