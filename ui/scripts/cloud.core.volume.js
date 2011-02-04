@@ -177,7 +177,8 @@ function afterLoadVolumeJSP() {
 						                    bindClickToMidMenu($midmenuItem1, volumeToRightPanel, getMidmenuId);  
 						                    afterAddingMidMenuItem($midmenuItem1, true);	         
 									    } else if (result.jobstatus == 2) {
-									        afterAddingMidMenuItem($midmenuItem1, false, g_dictionary["label.adding.failed"]);										        								   				    
+									        //afterAddingMidMenuItem($midmenuItem1, false, g_dictionary["label.adding.failed"]);	
+									        afterAddingMidMenuItem($midmenuItem1, false, fromdb(result.jobresult.errortext));										        								   				    
 									    }
 								    }
 							    },
@@ -620,7 +621,8 @@ function doDownloadVolume($actionLink, $detailsTab, $midmenuItem1) {
 		                            $infoContainer.find("#info").html(htmlMsg);
 		                            $infoContainer.show();		                        
 		                        } else if (result.jobstatus == 2) { // Failed	
-		                            var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+		                            //var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
+			                        var errorMsg = g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);
 			                        handleErrorInDialog2(errorMsg, $dialogDownloadVolume);		                        
 		                        }											                    
 	                        }
