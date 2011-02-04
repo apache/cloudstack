@@ -1783,11 +1783,17 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 			    var server = trim($thisDialog.find("#add_pool_nfs_server").val());						
 				
 				var url = null;
-				if (protocol == "nfs" || protocol == "PreSetup") {
+				if (protocol == "nfs") {
 					var path = trim($thisDialog.find("#add_pool_path").val());
 					if(path.substring(0,1)!="/")
 						path = "/" + path; 
 					url = nfsURL(server, path);
+				}
+				else if (protocol == "PreSetup") {
+					var path = trim($thisDialog.find("#add_pool_path").val());
+					if(path.substring(0,1)!="/")
+						path = "/" + path; 
+					url = presetupURL(server, path);
 				}
 				else if (protocol == "sharedMountPoint") {
 					var path = trim($thisDialog.find("#add_pool_path").val());
