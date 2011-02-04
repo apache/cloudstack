@@ -811,6 +811,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     public DomainRouterVO deployDhcp(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params) throws InsufficientCapacityException,
             StorageUnavailableException, ConcurrentOperationException, ResourceUnavailableException {
         long dcId = dest.getDataCenter().getId();
+        
+        NetworkOffering offering = _networkOfferingDao.findByIdIncludingRemoved(guestNetwork.getNetworkOfferingId());
+        if (offering.isSystemOnly() || guestNetwork.isShared()) {
+            owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
+        }
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Starting a dhcp for network configurations: dhcp=" + guestNetwork + " in " + dest);
