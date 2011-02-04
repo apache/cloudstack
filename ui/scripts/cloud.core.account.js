@@ -257,11 +257,11 @@ function bindAddUserButton() {
 			    		    			
 				// validate values
 				var isValid = true;					
-				isValid &= validateString("User name", $thisDialog.find("#add_user_username"), $thisDialog.find("#add_user_username_errormsg"), false);   //required
-				isValid &= validateString("Password", $thisDialog.find("#add_user_password"), $thisDialog.find("#add_user_password_errormsg"), false);    //required	
-				isValid &= validateString("Email", $thisDialog.find("#add_user_email"), $thisDialog.find("#add_user_email_errormsg"), true);              //optional	
-				isValid &= validateString("First name", $thisDialog.find("#add_user_firstname"), $thisDialog.find("#add_user_firstname_errormsg"), true); //optional	
-				isValid &= validateString("Last name", $thisDialog.find("#add_user_lastname"), $thisDialog.find("#add_user_lastname_errormsg"), true);    //optional					
+				isValid &= validateString("User name", $thisDialog.find("#add_user_username"), $thisDialog.find("#add_user_username_errormsg"), false);    //required
+				isValid &= validateString("Password", $thisDialog.find("#add_user_password"), $thisDialog.find("#add_user_password_errormsg"), false);     //required	
+				isValid &= validateString("Email", $thisDialog.find("#add_user_email"), $thisDialog.find("#add_user_email_errormsg"), false);              //required
+				isValid &= validateString("First name", $thisDialog.find("#add_user_firstname"), $thisDialog.find("#add_user_firstname_errormsg"), false); //required
+				isValid &= validateString("Last name", $thisDialog.find("#add_user_lastname"), $thisDialog.find("#add_user_lastname_errormsg"), false);    //required				
 				if (!isValid) 
 				    return;
 				
@@ -275,18 +275,12 @@ function bindAddUserButton() {
 				array1.push("&password="+password);
 				
 				var email = $thisDialog.find("#add_user_email").val();
-				if(email == "")
-					email = username;
 				array1.push("&email="+todb(email));
 					
 				var firstname = $thisDialog.find("#add_user_firstname").val();
-				if(firstname == "")
-					firstname = username;
 				array1.push("&firstname="+todb(firstname));
 					
 				var lastname = $thisDialog.find("#add_user_lastname").val();
-				if(lastname == "")
-					lastname = username;
 			    array1.push("&lastname="+todb(lastname));
 									
 			    array1.push("&domainid="+accountObj.domainid);

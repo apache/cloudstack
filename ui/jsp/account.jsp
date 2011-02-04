@@ -445,7 +445,7 @@ dictionary = {
             </li>
             <li>
                 <label for="add_user_account">
-                    <fmt:message key="label.account"/>:</label>
+                    <fmt:message key="label.account.name"/>:</label>
                 <input class="text" type="text" id="add_user_account" />
                 <div id="add_user_account_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
