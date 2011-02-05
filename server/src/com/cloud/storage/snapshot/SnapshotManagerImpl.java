@@ -154,8 +154,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     protected SearchBuilder<SnapshotVO> PolicySnapshotSearch;
     protected SearchBuilder<SnapshotPolicyVO> PoliciesForSnapSearch;
 
-    private final boolean _shouldBeSnapshotCapable = true; // all methods here should be snapshot capable.
-
     private boolean isVolumeDirty(long volumeId,Long policy) {
         VolumeVO volume = _volsDao.findById(volumeId);
         boolean runSnap = true;
@@ -237,43 +235,14 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
     @Override
     public SnapshotVO createSnapshotOnPrimary(VolumeVO volume, Long policyId, Long snapshotId) throws ResourceAllocationException {
-        SnapshotVO createdSnapshot = null;
-    	Long volumeId = volume.getId();
-        if (volume.getStatus() != AsyncInstanceCreateStatus.Created) {
-            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in Created state but " + volume.getStatus() + ". Cannot take snapshot.");
+        SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+        if ( snapshot == null ) {
+            throw new CloudRuntimeException("Can not find snapshot " + snapshotId);
         }
-        StoragePoolVO storagePoolVO = _storagePoolDao.findById(volume.getPoolId());
-        if (storagePoolVO == null) {
-            throw new InvalidParameterValueException("VolumeId: " + volumeId + " does not have a valid storage pool. Is it destroyed?");
-        }
-
-        Long id = null;
-
-        // Determine the name for this snapshot
-        // Snapshot Name: VMInstancename + volumeName + timeString
-        String timeString = DateUtil.getDateDisplayString(DateUtil.GMT_TIMEZONE, new Date(), DateUtil.YYYYMMDD_FORMAT);
-
-        VMInstanceVO vmInstance = _vmDao.findById(volume.getInstanceId());
-        String vmDisplayName = "detached";
-        if (vmInstance != null) {
-            vmDisplayName = vmInstance.getName();
-        }
-        String snapshotName = vmDisplayName + "_" + volume.getName() + "_" + timeString;
-
-        // Create the Snapshot object and save it so we can return it to the
-        // user
-        Type snapshotType = SnapshotVO.getSnapshotType(policyId);
-        HypervisorType hypervisorType = this._volsDao.getHypervisorType(volumeId);
-        SnapshotVO snapshotVO = new SnapshotVO(snapshotId, volume.getAccountId(), volume.getId(), null, snapshotName,
-                (short) snapshotType.ordinal(), snapshotType.name(), hypervisorType);
-        snapshotVO = _snapshotDao.persist(snapshotVO);
-        id = snapshotVO.getId();
-        assert id != null;
-
         // Send a ManageSnapshotCommand to the agent
         String vmName = _storageMgr.getVmNameOnVolume(volume);
-
-        long  preId = _snapshotDao.getLastSnapshot(volumeId, id);
+        long volumeId = volume.getId();
+        long preId = _snapshotDao.getLastSnapshot(volumeId, snapshotId);
 
         String preSnapshotPath = null;
         SnapshotVO preSnapshotVO = null;
@@ -283,23 +252,20 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 preSnapshotPath = preSnapshotVO.getPath();
             }
         }
-
-        ManageSnapshotCommand cmd = new ManageSnapshotCommand(id, volume.getPath(), preSnapshotPath, snapshotName, vmName);
+        ManageSnapshotCommand cmd = new ManageSnapshotCommand(snapshotId, volume.getPath(), preSnapshotPath, snapshot.getName(), vmName);
         
         ManageSnapshotAnswer answer = (ManageSnapshotAnswer)sendToPool(volume, cmd);
-        
         // Update the snapshot in the database
         if ((answer != null) && answer.getResult()) {
             // The snapshot was successfully created
             if( preSnapshotPath != null && preSnapshotPath == answer.getSnapshotPath() ){
                 //empty snapshot
-                s_logger.debug("CreateSnapshot: this is empty snapshot, remove it ");
-                createdSnapshot =  _snapshotDao.findByIdIncludingRemoved(id);
-                createdSnapshot.setPath(preSnapshotPath);
-                createdSnapshot.setBackupSnapshotId(preSnapshotVO.getBackupSnapshotId());
-                createdSnapshot.setStatus(Snapshot.Status.BackedUp);
-                createdSnapshot.setPrevSnapshotId(preId);
-                _snapshotDao.update(id, createdSnapshot);
+                s_logger.debug("CreateSnapshot: this is empty snapshot ");
+                snapshot.setPath(preSnapshotPath);
+                snapshot.setBackupSnapshotId(preSnapshotVO.getBackupSnapshotId());
+                snapshot.setStatus(Snapshot.Status.BackedUp);
+                snapshot.setPrevSnapshotId(preId);
+                _snapshotDao.update(snapshotId, snapshot);
             } else {
                 long preSnapshotId = 0;
                 if( preSnapshotVO != null && preSnapshotVO.getBackupSnapshotId() != null) {
@@ -325,7 +291,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                         preSnapshotId = 0;
                     }
                 }
-                createdSnapshot = updateDBOnCreate(id, answer.getSnapshotPath(), preSnapshotId);
+                snapshot = updateDBOnCreate(snapshotId, answer.getSnapshotPath(), preSnapshotId);
             }
             // Get the snapshot_schedule table entry for this snapshot and
             // policy id.
@@ -333,7 +299,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             if (policyId != Snapshot.MANUAL_POLICY_ID) {
                 SnapshotScheduleVO snapshotSchedule = _snapshotScheduleDao.getCurrentSchedule(volumeId, policyId, true);
                 assert snapshotSchedule != null;
-                snapshotSchedule.setSnapshotId(id);
+                snapshotSchedule.setSnapshotId(snapshotId);
                 _snapshotScheduleDao.update(snapshotSchedule.getId(), snapshotSchedule);
             }
 
@@ -341,14 +307,12 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             if (answer != null) {
                 s_logger.error(answer.getDetails());
             }
-            // The snapshot was not successfully created
-            createdSnapshot =  _snapshotDao.findByIdIncludingRemoved(id);
             // delete from the snapshots table
-            _snapshotDao.expunge(id);                
+            _snapshotDao.expunge(snapshotId);                
             throw new CloudRuntimeException("Creating snapshot for volume " + volumeId + " on primary storage failed.");
         }
 
-        return createdSnapshot;
+        return snapshot;
     }
 
 
@@ -375,6 +339,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         }
         VolumeVO volume = _volsDao.acquireInLockTable(volumeId, 10);       
         if( volume == null ) {
+            _snapshotDao.expunge(snapshotId);
             volume = _volsDao.findById(volumeId);
             if( volume == null ){
                 throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
@@ -390,6 +355,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         	if (hosts != null && !hosts.isEmpty()) {
         		HostVO host = hosts.get(0);
         		if (!hostSupportSnapsthot(host)) {
+                    _snapshotDao.expunge(snapshotId);
                     throw new CloudRuntimeException("KVM Snapshot is not supported on cluster: " + host.getId());
                 }
         	}
@@ -400,6 +366,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             UserVmVO userVm = _vmDao.findById(v.getInstanceId());
             if(userVm != null) {
                 if(userVm.getState().equals(State.Destroyed) || userVm.getState().equals(State.Expunging)) {
+                    _snapshotDao.expunge(snapshotId);
                     throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " is associated with vm:"+userVm.getInstanceName()+" is in "+userVm.getState().toString()+" state");
                 }
             }
@@ -529,7 +496,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             
             String backedUpSnapshotUuid = null;
             // By default, assume failed.
-            String basicErrMsg = "Failed to backup snapshot id " + snapshot.getId() + " to secondary storage for volume: " + volumeId;
             boolean backedUp = false;
             BackupSnapshotAnswer answer = (BackupSnapshotAnswer)sendToPool(volume, backupSnapshotCommand);
             if (answer != null && answer.getResult()) {
@@ -956,7 +922,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         	    continue;
         	}
         	DeleteSnapshotsDirCommand cmd = new DeleteSnapshotsDirCommand(primaryStoragePoolNameLabel, secondaryStoragePoolURL, dcId, accountId, volumeId, volume.getPath());
-        	String basicErrMsg = "Failed to destroy snapshotsDir for: " + volume.getId() + " under account: " + accountId;
         	Answer answer = null;
         	Long poolId = volume.getPoolId();
         	if (poolId != null) {
@@ -1025,10 +990,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 throw new InvalidParameterValueException("Failed to create snapshot policy, snapshots of volumes attached to System or router VM are not allowed");
             }
         }
-        
-        Long accountId = volume.getAccountId();
-        Long userId = getSnapshotUserId();
-
         IntervalType type =  DateUtil.IntervalType.getIntervalType(cmd.getIntervalType());
         if (type == null) {
             throw new InvalidParameterValueException("Unsupported interval type " + cmd.getIntervalType());
@@ -1190,8 +1151,38 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     }
 
     @Override
-    public long getNextInSequence(CreateSnapshotCmd cmd) {
-        return  _snapshotDao.getNextInSequence(Long.class, "id");
+    public SnapshotVO allocSnapshot(CreateSnapshotCmd cmd) {
+        Long volumeId = cmd.getVolumeId();
+        Long policyId = cmd.getPolicyId();
+        VolumeVO volume = _volsDao.findById(volumeId);
+        if( volume == null ){
+            throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
+        }
+        if (volume.getStatus() != AsyncInstanceCreateStatus.Created) {
+            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in Created state but " + volume.getStatus() + ". Cannot take snapshot.");
+        }
+        StoragePoolVO storagePoolVO = _storagePoolDao.findById(volume.getPoolId());
+        if (storagePoolVO == null) {
+            throw new InvalidParameterValueException("VolumeId: " + volumeId + " does not have a valid storage pool. Is it destroyed?");
+        }
+        // Determine the name for this snapshot
+        // Snapshot Name: VMInstancename + volumeName + timeString
+        String timeString = DateUtil.getDateDisplayString(DateUtil.GMT_TIMEZONE, new Date(), DateUtil.YYYYMMDD_FORMAT);
+
+        VMInstanceVO vmInstance = _vmDao.findById(volume.getInstanceId());
+        String vmDisplayName = "detached";
+        if (vmInstance != null) {
+            vmDisplayName = vmInstance.getName();
+        }
+        String snapshotName = vmDisplayName + "_" + volume.getName() + "_" + timeString;
+
+        // Create the Snapshot object and save it so we can return it to the
+        // user
+        Type snapshotType = SnapshotVO.getSnapshotType(policyId);
+        HypervisorType hypervisorType = this._volsDao.getHypervisorType(volumeId);
+        SnapshotVO snapshotVO = new SnapshotVO(volume.getAccountId(), volume.getId(), null, snapshotName,
+                (short) snapshotType.ordinal(), snapshotType.name(), hypervisorType);
+        return _snapshotDao.persist(snapshotVO); 
     }
     
 	@Override

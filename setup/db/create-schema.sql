@@ -357,7 +357,7 @@ CREATE TABLE `cloud`.`volumes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`snapshots` (
-  `id` bigint unsigned UNIQUE NOT NULL COMMENT 'Primary Key',
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'Primary Key',
   `account_id` bigint unsigned NOT NULL COMMENT 'owner.  foreign key to account table',
   `volume_id` bigint unsigned NOT NULL COMMENT 'volume it belongs to. foreign key to volume table',
   `status` varchar(32) COMMENT 'snapshot creation status',

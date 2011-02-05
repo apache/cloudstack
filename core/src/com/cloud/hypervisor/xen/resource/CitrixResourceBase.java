@@ -5240,6 +5240,14 @@ public abstract class CitrixResourceBase implements ServerResource {
         return false;
     }
 
+    VDI vdiGetParent(Connection conn, VDI vdi) throws BadServerResponse, XenAPIException, XmlRpcException{
+        if( vdi == null ) return null;
+        VDI.Record vdiRec = vdi.getRecord(conn);
+        String parentUuid = vdiRec.smConfig.get("vhd-parent");
+        if( parentUuid == null || parentUuid.isEmpty() )
+            return null;
+        return getVDIbyUuid(conn, parentUuid);            
+    }
     
 
     protected BackupSnapshotAnswer execute(final BackupSnapshotCommand cmd) {
@@ -5262,15 +5270,13 @@ public abstract class CitrixResourceBase implements ServerResource {
             if (primaryStorageSR == null) {
                 throw new InternalErrorException("Could not backup snapshot because the primary Storage SR could not be created from the name label: " + primaryStorageNameLabel);
             }
-
             URI uri = new URI(secondaryStoragePoolURL);
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
             VDI snapshotVdi = getVDIbyUuid(conn, snapshotUuid);
-
             if ( prevBackupUuid != null ) {
                 try {
                     VDI preSnapshotVdi = getVDIbyUuid(conn, prevSnapshotUuid);
-                    if ( snapshotVdi.getParent(conn).getParent(conn) == preSnapshotVdi.getParent(conn) ) {
+                    if (vdiGetParent(conn, preSnapshotVdi).equals(vdiGetParent(conn, vdiGetParent(conn, snapshotVdi)))) {
                         fullbackup = false;
                     }                   
                 } catch (Exception e) {                   

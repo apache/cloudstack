@@ -79,6 +79,6 @@ public interface SnapshotService {
     
     boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd);
     
-	long getNextInSequence(CreateSnapshotCmd cmd);
+    Snapshot allocSnapshot(CreateSnapshotCmd cmd);
 
 }

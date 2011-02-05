@@ -40,15 +40,15 @@ import com.google.gson.annotations.Expose;
 public class SnapshotVO implements Snapshot {
 	
     @Id
-    @TableGenerator(name="snapshots_sq", table="sequence", pkColumnName="name", valueColumnName="value", pkColumnValue="snapshots_seq", allocationSize=1)
-    @Column(name="id", updatable=false, nullable = false)
-    Long id;
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @Column(name="id")
+    private long id = -1;
 
     @Column(name="account_id")
     long accountId;
 
     @Column(name="volume_id")
-    long volumeId;
+    Long volumeId;
 
     @Expose
     @Column(name="path")
@@ -87,8 +87,7 @@ public class SnapshotVO implements Snapshot {
     
     public SnapshotVO() { }
 
-    public SnapshotVO(long id, long accountId, long volumeId, String path, String name, short snapshotType, String typeDescription, HypervisorType hypervisorType) {
-        this.id = id;
+    public SnapshotVO(long accountId, Long volumeId, String path, String name, short snapshotType, String typeDescription, HypervisorType hypervisorType) {
         this.accountId = accountId;
         this.volumeId = volumeId;
         this.path = path;
@@ -113,6 +112,10 @@ public class SnapshotVO implements Snapshot {
     @Override
     public long getVolumeId() {
         return volumeId;
+    }
+
+    public void setVolumeId(Long volumeId) {
+        this.volumeId = volumeId;
     }
 
     @Override

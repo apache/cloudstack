@@ -36,13 +36,12 @@ import com.cloud.utils.db.Transaction;
 @Local (value={SnapshotDao.class})
 public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements SnapshotDao {
     public static final Logger s_logger = Logger.getLogger(SnapshotDaoImpl.class.getName());
-    private static final String GET_LAST_SNAPSHOT = "SELECT id FROM snapshots where volume_id = ? AND id != ? ORDER BY created DESC";
+    private static final String GET_LAST_SNAPSHOT = "SELECT id FROM snapshots where volume_id = ? AND id != ? AND path IS NOT NULL ORDER BY created DESC";
     
     private final SearchBuilder<SnapshotVO> VolumeIdSearch;
     private final SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
     private final SearchBuilder<SnapshotVO> ParentIdSearch;
-    private final SearchBuilder<SnapshotVO> backupUuidSearch;
-    
+    private final SearchBuilder<SnapshotVO> backupUuidSearch;   
     
     @Override
     public SnapshotVO findNextSnapshot(long snapshotId) {

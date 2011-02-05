@@ -30,6 +30,7 @@ import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.ApiDispatcher;
 import com.cloud.api.commands.CreateSnapshotCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobResult;
@@ -226,12 +227,18 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
                 params.put("ctxUserId", "1");
                 params.put("ctxAccountId", "1");
                 
+                CreateSnapshotCmd cmd = new CreateSnapshotCmd();
+                ApiDispatcher.getInstance().dispatchCreateCmd(cmd, params);
+                params.put("id", ""+cmd.getEntityId());
+                params.put("ctxStartEventId", "1");
+                
                 AsyncJobVO job = new AsyncJobVO();
                 job.setUserId(userId);
                 // Just have SYSTEM own the job for now.  Users won't be able to see this job, but
                 // it's an internal job so probably not a huge deal.
                 job.setAccountId(1L);
                 job.setCmd(CreateSnapshotCmd.class.getName());
+                job.setInstanceId(cmd.getEntityId());
                 job.setCmdInfo(GsonHelper.getBuilder().create().toJson(params));
 
                 long jobId = _asyncMgr.submitAsyncJob(job);

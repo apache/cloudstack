@@ -121,18 +121,17 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     
     @Override
     public void create(){
-        Long id = _snapshotService.getNextInSequence(this);
-        this.setEntityId(id);
+        Snapshot snapshot = _snapshotService.allocSnapshot(this);
+        if (snapshot != null) {
+            this.setEntityId(snapshot.getId());
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create snapshot");
+        }
     }
     
     @Override
     public void execute(){
-        try {
-        	if (this.getEntityId() == null) {
-        		Long id = _snapshotService.getNextInSequence(this);
-        		this.setEntityId(id);
-        	}
-        	UserContext.current().setEventDetails("Snapshot Id: "+getEntityId()+" Volume Id: "+getVolumeId());
+        try {       	
             Snapshot snapshot = _snapshotService.createSnapshot(this);
             if (snapshot != null) {
                 SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
