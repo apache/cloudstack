@@ -1994,98 +1994,79 @@ public abstract class CitrixResourceBase implements ServerResource {
             return new PrepareForMigrationAnswer(cmd, e);
         }
     }
+    
+    String copy_vhd_to_secondarystorage(Connection conn, String mountpoint, String vdiuuid, String sruuid) {
+        String results = callHostPluginAsync(conn, "vmopspremium", "copy_vhd_to_secondarystorage",
+                2 * 60 * 60 * 1000, "mountpoint", mountpoint, "vdiuuid", vdiuuid, "sruuid", sruuid);
+
+        if (results == null || results.isEmpty()) {
+            String msg = "copy_vhd_to_secondarystorage return null";
+            s_logger.warn(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        String[] tmp = results.split("#");
+        String status = tmp[0];
+        if (status.equals("0")) {
+            return tmp[1];
+        } else {
+            s_logger.warn(tmp[1]);
+            throw new CloudRuntimeException(tmp[1]);
+        }
+    }
+    
+    String copy_vhd_from_secondarystorage(Connection conn, String mountpoint, String sruuid) {
+        String results = callHostPluginAsync(conn, "vmopspremium", "copy_vhd_from_secondarystorage",
+                2 * 60 * 60 * 1000, "mountpoint", mountpoint, "sruuid", sruuid);
+
+        if (results == null || results.isEmpty()) {
+            String msg = "copy_vhd_from_secondarystorage return null";
+            s_logger.warn(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        String[] tmp = results.split("#");
+        String status = tmp[0];
+        if (status.equals("0")) {
+            return tmp[1];
+        } else {
+            s_logger.warn(tmp[1]);
+            throw new CloudRuntimeException(tmp[1]);
+        }
+    }
 
     public PrimaryStorageDownloadAnswer execute(final PrimaryStorageDownloadCommand cmd) {
-        Connection conn = getConnection();
-        SR tmpltsr = null;
         String tmplturl = cmd.getUrl();
         int index = tmplturl.lastIndexOf("/");
-        String mountpoint = tmplturl.substring(0, index);
-        String tmpltname = null;
-        if (index < tmplturl.length() - 1) {
-            tmpltname = tmplturl.substring(index + 1).replace(".vhd", "");
-        }
+        String tmplpath = tmplturl.substring(0, index);
+        String poolName = cmd.getPoolUuid();
         try {
-            String pUuid = cmd.getPoolUuid();
+            URI uri = new URI(tmplpath);
+            String mountpoint = uri.getHost() + ":" + uri.getPath();
+            Connection conn = getConnection();
             SR poolsr = null;
-            Set<SR> srs = SR.getByNameLabel(conn, pUuid);
+            Set<SR> srs = SR.getByNameLabel(conn, poolName);
             if (srs.size() != 1) {
-                String msg = "There are " + srs.size() + " SRs with same name: " + pUuid;
+                String msg = "There are " + srs.size() + " SRs with same name: " + poolName;
                 s_logger.warn(msg);
                 return new PrimaryStorageDownloadAnswer(msg);
             } else {
                 poolsr = srs.iterator().next();
             }
-
-            /* Does the template exist in primary storage pool? If yes, no copy */
-            VDI vmtmpltvdi = null;
-            VDI snapshotvdi = null;
-
-            Set<VDI> vdis = VDI.getByNameLabel(conn, "Template " + cmd.getName());
-
-            for (VDI vdi : vdis) {
-                VDI.Record vdir = vdi.getRecord(conn);
-                if (vdir.SR.equals(poolsr)) {
-                    vmtmpltvdi = vdi;
-                    break;
-                }
-            }
-            if (vmtmpltvdi == null) {
-                tmpltsr = createNfsSRbyURI(conn, new URI(mountpoint), false);
-                tmpltsr.scan(conn);
-                VDI tmpltvdi = null;
-
-                if (tmpltname != null) {
-                    tmpltvdi = getVDIbyUuid(conn, tmpltname);
-                }
-                if (tmpltvdi == null) {
-                    vdis = tmpltsr.getVDIs(conn);
-                    for (VDI vdi : vdis) {
-                        tmpltvdi = vdi;
-                        break;
-                    }
-                }
-                if (tmpltvdi == null) {
-                    String msg = "Unable to find template vdi on secondary storage" + "host:" + _host.uuid + "pool: " + tmplturl;
-                    s_logger.warn(msg);
-                    return new PrimaryStorageDownloadAnswer(msg);
-                }
-                vmtmpltvdi = cloudVDIcopy(conn, tmpltvdi, poolsr);
-                snapshotvdi = vmtmpltvdi.snapshot(conn, new HashMap<String, String>());
-                vmtmpltvdi.destroy(conn);
-                try {
-                    poolsr.scan(conn);
-                } catch (Exception e) {
-                }
-                snapshotvdi.setNameLabel(conn, "Template " + cmd.getName());
-                // vmtmpltvdi.setNameDescription(conn, cmd.getDescription());
-                vmtmpltvdi = snapshotvdi;
-
-            }
-            // Determine the size of the template
-            VDI.Record vdiRec = vmtmpltvdi.getRecord(conn);
-            long phySize = vdiRec.physicalUtilisation;
-            String uuid = vdiRec.uuid;
-            String parentUuid = vdiRec.smConfig.get("vhd-parent");
-            if( parentUuid != null ) {
-                // base copy
-                VDI parentVdi = getVDIbyUuid(conn, parentUuid);
-                phySize += parentVdi.getPhysicalUtilisation(conn);
-            }        
-            return new PrimaryStorageDownloadAnswer(uuid, phySize);
-
-        } catch (XenAPIException e) {
-            String msg = "XenAPIException:" + e.toString() + "host:" + _host.uuid + "pool: " + tmplturl;
-            s_logger.warn(msg, e);
-            return new PrimaryStorageDownloadAnswer(msg);
+            String pUuid = poolsr.getUuid(conn);
+            String uuid = copy_vhd_from_secondarystorage(conn, mountpoint, pUuid);
+            VDI tmpl = getVDIbyUuid(conn, uuid);
+            VDI snapshotvdi = tmpl.snapshot(conn, new HashMap<String, String>());
+            snapshotvdi.setNameLabel(conn, "Template " + cmd.getName());
+            tmpl.destroy(conn);
+            String parentuuid = snapshotvdi.getSmConfig(conn).get("vhd-parent");
+            VDI parent = getVDIbyUuid(conn, parentuuid);
+            Long phySize = parent.getPhysicalUtilisation(conn);
+            return new PrimaryStorageDownloadAnswer(snapshotvdi.getUuid(conn), phySize);
         } catch (Exception e) {
-            String msg = "XenAPIException:" + e.getMessage() + "host:" + _host.uuid + "pool: " + tmplturl;
+            String msg = "Catch Exception " + e.getClass().getName() + " on host:" + _host.uuid + " for template: "
+                    + tmplturl + " due to " + e.toString();
             s_logger.warn(msg, e);
             return new PrimaryStorageDownloadAnswer(msg);
-        } finally {
-            removeSR(conn, tmpltsr);
         }
-
     }
 
     protected String removeSRSync(Connection conn, SR sr) {

@@ -281,118 +281,6 @@ public class XenServer56Resource extends CitrixResourceBase {
         args += privateIpAddress;
         return callHostPlugin(conn, "vmops", "networkUsage", "args", args);
     }
-    String copy_vhd_to_secondarystorage(Connection conn, String mountpoint, String vdiuuid, String sruuid) {
-        String results = callHostPluginAsync(conn, "vmopspremium", "copy_vhd_to_secondarystorage",
-                2 * 60 * 60 * 1000, "mountpoint", mountpoint, "vdiuuid", vdiuuid, "sruuid", sruuid);
-
-        if (results == null || results.isEmpty()) {
-            String msg = "copy_vhd_to_secondarystorage return null";
-            s_logger.warn(msg);
-            throw new CloudRuntimeException(msg);
-        }
-        String[] tmp = results.split("#");
-        String status = tmp[0];
-        if (status.equals("0")) {
-            return tmp[1];
-        } else {
-            s_logger.warn(tmp[1]);
-            throw new CloudRuntimeException(tmp[1]);
-        }
-    }
-    
-    String copy_vhd_from_secondarystorage(Connection conn, String mountpoint, String sruuid) {
-        String results = callHostPluginAsync(conn, "vmopspremium", "copy_vhd_from_secondarystorage",
-                2 * 60 * 60 * 1000, "mountpoint", mountpoint, "sruuid", sruuid);
-
-        if (results == null || results.isEmpty()) {
-            String msg = "copy_vhd_from_secondarystorage return null";
-            s_logger.warn(msg);
-            throw new CloudRuntimeException(msg);
-        }
-        String[] tmp = results.split("#");
-        String status = tmp[0];
-        if (status.equals("0")) {
-            return tmp[1];
-        } else {
-            s_logger.warn(tmp[1]);
-            throw new CloudRuntimeException(tmp[1]);
-        }
-    }
-
-    @Override
-    public CopyVolumeAnswer execute(final CopyVolumeCommand cmd) {
-        Connection conn = getConnection();
-        String volumeUUID = cmd.getVolumePath();
-        StorageFilerTO poolTO = cmd.getPool();
-        String secondaryStorageURL = cmd.getSecondaryStorageURL();
-        boolean toSecondaryStorage = cmd.toSecondaryStorage();
-        try {
-            URI uri = new URI(secondaryStorageURL);
-            String remoteVolumesMountPath = uri.getHost() + ":" + uri.getPath() + "/volumes/";
-            String volumeFolder = String.valueOf(cmd.getVolumeId()) + "/";
-            String mountpoint = remoteVolumesMountPath + volumeFolder;
-            SR primaryStoragePool = getStorageRepository(conn, poolTO);
-            String srUuid = primaryStoragePool.getUuid(conn);         
-            if (toSecondaryStorage) {
-                VDI vdi = VDI.getByUuid(conn, volumeUUID);
-                String vdiParent = vdi.getSmConfig(conn).get("vhd-parent");
-                if( vdiParent != null && !vdiParent.isEmpty() ) {
-                    return super.execute(cmd);
-                }
-                // Create the volume folder
-                if (!createSecondaryStorageFolder(conn, remoteVolumesMountPath, volumeFolder)) {
-                    throw new InternalErrorException("Failed to create the volume folder.");
-                }
-                String uuid = copy_vhd_to_secondarystorage(conn, mountpoint, volumeUUID, srUuid);              
-                return new CopyVolumeAnswer(cmd, true, null, null, uuid);
-            } else {
-                String uuid = copy_vhd_from_secondarystorage(conn, mountpoint, srUuid);
-                deleteSecondaryStorageFolder(conn, remoteVolumesMountPath, volumeFolder);
-                return new CopyVolumeAnswer(cmd, true, null, srUuid, uuid);
-            }
-        } catch (Exception e) {
-            String msg = "Catch Exception " + e.getClass().getName() + " due to " + e.toString();
-            s_logger.warn(msg, e);
-            return new CopyVolumeAnswer(cmd, false, msg, null, null);
-        } 
-    }
-
-    @Override
-    public PrimaryStorageDownloadAnswer execute(final PrimaryStorageDownloadCommand cmd) {
-        String tmplturl = cmd.getUrl();
-        int index = tmplturl.lastIndexOf("/");
-        String tmplpath = tmplturl.substring(0, index);
-        String poolName = cmd.getPoolUuid();
-        try {
-            URI uri = new URI(tmplpath);
-            String mountpoint = uri.getHost() + ":" + uri.getPath();
-            Connection conn = getConnection();
-            SR poolsr = null;
-            Set<SR> srs = SR.getByNameLabel(conn, poolName);
-            if (srs.size() != 1) {
-                String msg = "There are " + srs.size() + " SRs with same name: " + poolName;
-                s_logger.warn(msg);
-                return new PrimaryStorageDownloadAnswer(msg);
-            } else {
-                poolsr = srs.iterator().next();
-            }
-            String pUuid = poolsr.getUuid(conn);
-            String uuid = copy_vhd_from_secondarystorage(conn, mountpoint, pUuid);
-            VDI tmpl = getVDIbyUuid(conn, uuid);
-            VDI snapshotvdi = tmpl.snapshot(conn, new HashMap<String, String>());
-            snapshotvdi.setNameLabel(conn, "Template " + cmd.getName());
-            tmpl.destroy(conn);
-            String parentuuid = snapshotvdi.getSmConfig(conn).get("vhd-parent");
-            VDI parent = getVDIbyUuid(conn, parentuuid);
-            Long phySize = parent.getPhysicalUtilisation(conn);
-            return new PrimaryStorageDownloadAnswer(snapshotvdi.getUuid(conn), phySize);
-        } catch (Exception e) {
-            String msg = "Catch Exception " + e.getClass().getName() + " on host:" + _host.uuid + " for template: "
-                    + tmplturl + " due to " + e.toString();
-            s_logger.warn(msg, e);
-            return new PrimaryStorageDownloadAnswer(msg);
-        }
-    }
 
     protected NetworkUsageAnswer execute(NetworkUsageCommand cmd) {
         Connection conn = getConnection();
@@ -492,6 +380,44 @@ public class XenServer56Resource extends CitrixResourceBase {
 
         src.reconfigureIp(conn, IpConfigurationMode.NONE, null, null, null, null);
         return true;
+    }
+    
+    @Override
+    public CopyVolumeAnswer execute(final CopyVolumeCommand cmd) {
+        Connection conn = getConnection();
+        String volumeUUID = cmd.getVolumePath();
+        StorageFilerTO poolTO = cmd.getPool();
+        String secondaryStorageURL = cmd.getSecondaryStorageURL();
+        boolean toSecondaryStorage = cmd.toSecondaryStorage();
+        try {
+            URI uri = new URI(secondaryStorageURL);
+            String remoteVolumesMountPath = uri.getHost() + ":" + uri.getPath() + "/volumes/";
+            String volumeFolder = String.valueOf(cmd.getVolumeId()) + "/";
+            String mountpoint = remoteVolumesMountPath + volumeFolder;
+            SR primaryStoragePool = getStorageRepository(conn, poolTO);
+            String srUuid = primaryStoragePool.getUuid(conn);         
+            if (toSecondaryStorage) {
+                VDI vdi = VDI.getByUuid(conn, volumeUUID);
+                String vdiParent = vdi.getSmConfig(conn).get("vhd-parent");
+                if( vdiParent != null && !vdiParent.isEmpty() ) {
+                    return super.execute(cmd);
+                }
+                // Create the volume folder
+                if (!createSecondaryStorageFolder(conn, remoteVolumesMountPath, volumeFolder)) {
+                    throw new InternalErrorException("Failed to create the volume folder.");
+                }
+                String uuid = copy_vhd_to_secondarystorage(conn, mountpoint, volumeUUID, srUuid);              
+                return new CopyVolumeAnswer(cmd, true, null, null, uuid);
+            } else {
+                String uuid = copy_vhd_from_secondarystorage(conn, mountpoint, srUuid);
+                deleteSecondaryStorageFolder(conn, remoteVolumesMountPath, volumeFolder);
+                return new CopyVolumeAnswer(cmd, true, null, srUuid, uuid);
+            }
+        } catch (Exception e) {
+            String msg = "Catch Exception " + e.getClass().getName() + " due to " + e.toString();
+            s_logger.warn(msg, e);
+            return new CopyVolumeAnswer(cmd, false, msg, null, null);
+        } 
     }
 
     @Override
