@@ -282,24 +282,23 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     protected boolean cleanupHaltedVms(Connection conn) throws XenAPIException, XmlRpcException {
         Host host = Host.getByUuid(conn, _host.uuid);
-        Set<VM> vms = VM.getAll(conn);
-        
+        Map<VM, VM.Record> vms = VM.getAllRecords(conn);
         boolean success = true;
-        for (VM vm : vms) {
-            try {
-                VM.Record vmr = vm.getRecord(conn);
-                if (VmPowerState.HALTED.equals(vmr.powerState) && vmr.affinity.equals(host)) {
-                    vm.destroy(conn);
+        for (Map.Entry<VM, VM.Record> entry : vms.entrySet()) {
+            VM vm = entry.getKey();
+            VM.Record vmRec = entry.getValue();
+            if ( vmRec.isATemplate || vmRec.isControlDomain )
+                continue;
+            
+            if (VmPowerState.HALTED.equals(vmRec.powerState) && vmRec.affinity.equals(host)) {
+                try {
+                    vm.destroy(conn);  
+                } catch (Exception e) {
+                    s_logger.warn("Catch Exception " + e.getClass().getName() + ": unable to destroy VM " + vmRec.nameLabel + " due to " + e.toString());
+                    success = false;
                 }
-            } catch (XenAPIException e) {
-                s_logger.warn("Unable to cleanup " + vm);
-                success = false;
-            } catch (XmlRpcException e) {
-                s_logger.warn("Unable to cleanup " + vm);
-                success = false;
-            }
+             }
         }
-        
         return success;
     }
     
@@ -725,6 +724,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
         
         vm.setIsATemplate(conn, false);
+        vm.setAffinity(conn, host);
         vm.removeFromOtherConfig(conn, "disks");
         vm.setNameLabel(conn, vmSpec.getName());
         setMemory(conn, vm, vmSpec.getMinRam());
@@ -956,11 +956,10 @@ public abstract class CitrixResourceBase implements ServerResource {
         State state = State.Stopped;
         VM vm = null;
         try {
-            Host host = Host.getByUuid(conn, _host.uuid);
             synchronized (_vms) {
                 _vms.put(vmName, State.Starting);
             }
-            
+            Host host = Host.getByUuid(conn, _host.uuid);            
             vm = createVmFromTemplate(conn, vmSpec, host);
             
             for (VolumeTO disk : vmSpec.getDisks()) {
@@ -2229,12 +2228,15 @@ public abstract class CitrixResourceBase implements ServerResource {
                         break;
                     }
                 }
+                
                 try {
+                    vm.setAffinity(conn, dsthost);
                     vm.poolMigrate(conn, dsthost, new HashMap<String, String>());
                 } catch (Types.VmMissingPvDrivers e1) {
                     // if PV driver is missing, just shutdown the VM
                     s_logger.warn("VM " + vmName + " is stopped when trying to migrate it because PV driver is missing, Please install PV driver for this VM");                  
-                    vm.hardShutdown(conn);                   
+                    vm.hardShutdown(conn);
+                    vm.destroy(conn);
                 }
                 state = State.Stopping;
             }
