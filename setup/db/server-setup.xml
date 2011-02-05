@@ -366,6 +366,7 @@
         alerts will be sent to) and smtp server needs to be
         configured before enabling this feature.
     -->
+    <!--
     <configuration>
       <name>alert.smtp.host</name>
       <value>smtp.host.com</value>
@@ -398,6 +399,7 @@
       <name>alert.smtp.debug</name>
       <value>false</value>
     </configuration>
+    -->
     <!--
     	mount.parent determines where secondary storage is mounted on the management server.
     -->
