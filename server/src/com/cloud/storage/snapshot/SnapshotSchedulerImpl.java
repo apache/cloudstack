@@ -37,6 +37,8 @@ import com.cloud.async.AsyncJobResult;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.dao.AsyncJobDao;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.event.EventTypes;
+import com.cloud.event.EventUtils;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
@@ -46,6 +48,8 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
@@ -221,11 +225,15 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
             try {
                 tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
 
+                Long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
+                        EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:"+volumeId,0);
+
                 Map<String, String> params = new HashMap<String, String>();
                 params.put("volumeid", ""+volumeId);
                 params.put("policyid", ""+policyId);
                 params.put("ctxUserId", "1");
                 params.put("ctxAccountId", "1");
+                params.put("ctxStartEventId", String.valueOf(eventId));
                 
                 CreateSnapshotCmd cmd = new CreateSnapshotCmd();
                 ApiDispatcher.getInstance().dispatchCreateCmd(cmd, params);
