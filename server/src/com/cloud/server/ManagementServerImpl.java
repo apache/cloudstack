@@ -546,38 +546,37 @@ public class ManagementServerImpl implements ManagementServer {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Attempting to log in user: " + username + " in domain " + domainId);
         }
-
-        UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
-        if (userAccount == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to find user with name " + username + " in domain " + domainId);
-            }
-            return null;
-        }
-
-        DomainVO domain = _domainDao.findById(domainId);
-        String domainName = null;
-        if(domain != null) {
-            domainName = domain.getName();
-        }
         
-        if (!userAccount.getState().equalsIgnoreCase(Account.State.enabled.toString()) || !userAccount.getAccountState().equalsIgnoreCase(Account.State.enabled.toString())) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("User " + username + " in domain " + domainName + " is disabled/locked (or account is disabled/locked)");
-            }
-            throw new CloudAuthenticationException("User " + username + " in domain " + domainName + " is disabled/locked (or account is disabled/locked)");
-            //return null;
-        }
-
-        // We only use the first adapter even if multiple have been
-        // configured
+        // We only use the first adapter even if multiple have been configured
         Enumeration<UserAuthenticator> en = _userAuthenticators.enumeration();
         UserAuthenticator authenticator = en.nextElement();
         boolean authenticated = authenticator.authenticate(username, password, domainId);
 
         if (authenticated) {
-        	return userAccount;
+        	 UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
+             if (userAccount == null) {
+                 s_logger.warn("Unable to find an authenticated user with username " + username + " in domain " + domainId);
+                 return null;
+             }
+
+             DomainVO domain = _domainDao.findById(domainId);
+             String domainName = null;
+             if(domain != null) {
+                 domainName = domain.getName();
+             }
+             
+             if (!userAccount.getState().equalsIgnoreCase(Account.State.enabled.toString()) || !userAccount.getAccountState().equalsIgnoreCase(Account.State.enabled.toString())) {
+                 if (s_logger.isInfoEnabled()) {
+                     s_logger.info("User " + username + " in domain " + domainName + " is disabled/locked (or account is disabled/locked)");
+                 }
+                 throw new CloudAuthenticationException("User " + username + " in domain " + domainName + " is disabled/locked (or account is disabled/locked)");
+                 //return null;
+             }
+             return userAccount;
         } else {
+        	if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Unable to authenticate user with username " + username + " in domain " + domainId);
+            }
         	return null;
         }
     }
