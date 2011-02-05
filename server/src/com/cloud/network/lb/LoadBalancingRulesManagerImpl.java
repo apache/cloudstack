@@ -34,6 +34,7 @@ import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -1199,7 +1200,7 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
 
     @Override
     public List<UserVmVO> listLoadBalancerInstances(ListLoadBalancerRuleInstancesCmd cmd) throws PermissionDeniedException {
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long loadBalancerId = cmd.getId();
         Boolean applied = cmd.isApplied();
 
@@ -1211,16 +1212,8 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
         if (loadBalancer == null) {
             return null;
         }
-
-        long lbAcctId = loadBalancer.getAccountId();
-        if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            Account userAccount = _accountDao.findById(lbAcctId);
-            if (!_domainDao.isChildDomain(account.getDomainId(), userAccount.getDomainId())) {
-                throw new PermissionDeniedException("Invalid load balancer rule id (" + loadBalancerId + ") given, unable to list load balancer instances.");
-            }
-        } else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL && account.getId() != lbAcctId) {
-            throw new PermissionDeniedException("Unable to list load balancer instances, account " + account.getAccountName() + " does not own load balancer rule " + loadBalancer.getName());
-        }
+        
+        _accountMgr.checkAccess(caller, loadBalancer);
 
         List<UserVmVO> loadBalancerInstances = new ArrayList<UserVmVO>();
         List<LoadBalancerVMMapVO> vmLoadBalancerMappings = null;
@@ -1266,25 +1259,35 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     @Override
     public List<LoadBalancerVO> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Account caller = UserContext.current().getCaller();
-        Account owner = null;
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
         Long ipId = cmd.getPublicIpId();
+        String path = null;
         
-        if (accountName != null && domainId != null) {
-            owner = _accountDao.findActiveAccount(accountName, domainId);
-            if (owner == null) {
-               accountId = -1L;
+        if (_accountMgr.isAdmin(caller.getType())) {
+            if (domainId != null) {
+                if ((caller != null) && !_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
+                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list load balancers");
+                }
+                if (accountName != null) {
+                    caller = _accountMgr.getActiveAccount(accountName, domainId);
+                    if (caller == null) {
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                    accountId = caller.getId();
+                }
+            } 
+            
+            if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+                DomainVO domain = _domainDao.findById(caller.getDomainId());
+                if (domain != null) {
+                    path = domain.getPath();
+                }
             }
-        }
-        
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-            accountId = caller.getAccountId();
-        } else if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && owner != null) {
-            accountId = owner.getId();
-        } else if (owner != null && caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN){
-            _accountMgr.checkAccess(caller, owner);
+        } else {
+            domainId = caller.getDomainId();
+            accountId = caller.getId();
         }
 
         Filter searchFilter = new Filter(LoadBalancerVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -1305,6 +1308,13 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             SearchBuilder<LoadBalancerVMMapVO> lbVMSearch = _lb2VmMapDao.createSearchBuilder();
             lbVMSearch.and("instanceId", lbVMSearch.entity().getInstanceId(), SearchCriteria.Op.EQ);
             sb.join("lbVMSearch", lbVMSearch, sb.entity().getId(), lbVMSearch.entity().getLoadBalancerId(), JoinBuilder.JoinType.INNER);
+        }
+        
+        if (path != null) {
+            //for domain admin we should show only subdomains information
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         SearchCriteria<LoadBalancerVO> sc = sb.create();
@@ -1336,6 +1346,10 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             sc.setParameters("accountId", accountId);
         } else if (domainId != null) {
             sc.setParameters("domainId", domainId);
+        }
+        
+        if (path != null) {
+            sc.setJoinParameters("domainSearch", "path", path + "%");
         }
 
         return _lbDao.search(sc, searchFilter);

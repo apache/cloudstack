@@ -1649,7 +1649,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             sc.addAnd("trafficType", SearchCriteria.Op.EQ, trafficType);
         }
         
-        if (path != null && (isShared == null || !isShared)) {
+        if (!isSystem && path != null && (isShared == null || !isShared)) {
             sc.setJoinParameters("domainSearch", "path", path + "%");
         }
 
