@@ -1362,7 +1362,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    @Override @ActionEvent (eventType=EventTypes.EVENT_NETWORK_CREATE, eventDescription="creating network")
+    @Override @DB @ActionEvent (eventType=EventTypes.EVENT_NETWORK_CREATE, eventDescription="creating network")
     public Network createNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException {
         Long networkOfferingId = cmd.getNetworkOfferingId();
         Long zoneId = cmd.getZoneId();
