@@ -90,5 +90,5 @@ for hostSlave in $hostSlaves; do
     echo "##done for slave $hostSlave"
   fi
 done
-echo "#check is successful, you can add these hosts to cloud stack"
+echo "#check is successful, you can add these hosts to CloudStack."
 
