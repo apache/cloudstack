@@ -69,7 +69,7 @@ if [ $type == "nfs" ]; then
   fi
   mv /var/run/sr-mount/$sruuid/$uuid /var/run/sr-mount/$sruuid/${uuid}.vhd
   xe sr-scan uuid=$sruuid
-elif [ $type == "lvmoiscsi" -o $type == "lvm" ]; then
+elif [ $type == "lvmoiscsi" -o $type == "lvm" -o $type == "lvmohba"]; then
   size=$(vhd-util query -v -n $vhdfile)
   uuid=$(xe vdi-create sr-uuid=$sruuid virtual-size=${size}MiB type=user name-label="cloud")
   if [ $? -ne 0 ]; then

@@ -70,7 +70,7 @@ if [ $type == "nfs" ]; then
     cleanup
     exit 0
   fi
-elif [ $type == "lvmoiscsi" -o $type == "lvm" ]; then
+elif [ $type == "lvmoiscsi" -o $type == "lvm" -o $type == "lvmohba" ]; then
   lvchange -ay /dev/VG_XenStorage-$sruuid/VHD-$vdiuuid
   if [ $? -ne 0 ]; then
     echo "9#lvm can not make VDI $vdiuuid  visiable"
