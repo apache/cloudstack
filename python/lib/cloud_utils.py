@@ -298,12 +298,22 @@ def check_selinux():
 		if "nforcing" in output:
 			enforcing = True
 		if any ( [ s.startswith("SELINUX=enforcing") for s in file("/etc/selinux/config").readlines() ] ):
-			enforcing = True
+			config_enforcing = True
+		else:
+			config_enforcing = False
 	except (IOError,OSError),e:
 		if e.errno == 2: pass
 		else: raise CheckFailed("An unknown error (%s) took place while checking for SELinux"%str(e))
 	if enforcing:
-		raise CheckFailed("SELinux is set to enforcing, please set it to permissive in /etc/selinux/config, then reboot the machine or type setenforce Permissive, after which you can run this program again.")
+		raise CheckFailed('''SELinux is set to enforcing. There are two options:
+1> Set it permissive in /etc/selinux/config, then reboot the machine.
+2> Type 'setenforce Permissive' in commandline, after which you can run this program again.
+
+We strongly suggest you doing the option 1 that makes sure SELinux goes into permissive after system reboot.\n''')
+
+	if config_enforcing:
+		print "WARNING: We detected that your SELinux is not configured in permissive. to make sure cloudstack won't block by \
+SELinux after system reboot, we strongly suggest you setting it in permissive in /etc/selinux/config, then reboot the machine."
 
 
 def preflight_checks(do_check_kvm=True):

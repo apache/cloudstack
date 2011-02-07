@@ -216,8 +216,7 @@ def checkselinux():
 	try:
 		check_selinux()
 	except CheckFailed,e:
-		sys.stderr.write("SELINUX is set to enforcing, please set it to permissive in /etc/selinux/config\n")
-		sys.stderr.write("then reboot the machine, after which you can run this program again.\n")
+		sys.stderr.write(e.__str__())
 		sys.exit(3)
 
 def checknetwork():
