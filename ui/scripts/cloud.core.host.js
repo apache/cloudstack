@@ -47,7 +47,7 @@ function hostGetSearchParams() {
 }
 
 function afterLoadHostJSP() {    
-    initDialog("dialog_add_host");    
+    initDialog("dialog_add_host", 400);    
     initDialog("dialog_update_os");
          
     // switch between different tabs 

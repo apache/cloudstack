@@ -23,11 +23,11 @@
 	$("#top_buttons").appendTo($topButtonContainer); 
  
     initDialog("dialog_add_external_cluster");
-    initDialog("dialog_add_host");    
+    initDialog("dialog_add_host", 400);    
     initDialog("dialog_add_iprange_to_pod");
     
     //add pool dialog
-    initDialog("dialog_add_pool");	
+    initDialog("dialog_add_pool", 400);	
     bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	 
     
     $.ajax({

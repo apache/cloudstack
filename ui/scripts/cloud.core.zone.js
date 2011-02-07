@@ -24,8 +24,8 @@
         
     initDialog("dialog_add_external_cluster_in_zone_page", 320);
     initDialog("dialog_add_pod", 370);      
-    initDialog("dialog_add_host_in_zone_page"); 
-	initDialog("dialog_add_pool_in_zone_page");
+    initDialog("dialog_add_host_in_zone_page", 400); 
+	initDialog("dialog_add_pool_in_zone_page", 400);
       
     $.ajax({
         data: createURL("command=listHypervisors"),

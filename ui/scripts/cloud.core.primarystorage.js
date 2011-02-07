@@ -62,7 +62,7 @@ function primarystorageToRightPanel($midmenuItem1) {
 
 function afterLoadPrimaryStorageJSP() {     
     //add pool dialog
-    initDialog("dialog_add_pool");
+    initDialog("dialog_add_pool", 400);
     bindEventHandlerToDialogAddPool($("#dialog_add_pool"));	         
     
     primaryStorageRefreshDataBinding();     

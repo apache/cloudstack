@@ -421,8 +421,8 @@ function afterLoadResourceJSP() {
 	initDialog("dialog_update_cert", 450);	
 	initDialog("dialog_add_pod_in_resource_page", 370); 	
 	initDialog("dialog_add_external_cluster_in_resource_page", 320);
-    initDialog("dialog_add_host_in_resource_page");  
-    initDialog("dialog_add_pool_in_resource_page");
+    initDialog("dialog_add_host_in_resource_page", 400);  
+    initDialog("dialog_add_pool_in_resource_page", 400);
 	
 	listZonesUpdate();
 		
