@@ -358,6 +358,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("Unable to find " + ruleId);
         }
         
+        long ownerId = rule.getAccountId();
+        
         _accountMgr.checkAccess(caller, rule);
         revokeRule(rule, caller, ctx.getCallerUserId());
         
@@ -369,7 +371,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             success = true;
         }
         if(success){
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_DELETE, rule.getAccountId(), 0, rule.getId(), null);
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_DELETE, ownerId, 0, ruleId, null);
             _usageEventDao.persist(usageEvent);
         }
         return success;
@@ -383,6 +385,11 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     	}
     	
     	List<PortForwardingRuleVO> rules = _forwardingDao.listByVm(vmId);
+    	
+    	if (rules == null || rules.isEmpty()) {
+            return true;
+        }
+    	
     	for (PortForwardingRuleVO rule : rules) {
     		revokePortForwardingRule(rule.getId(), true);
     	}

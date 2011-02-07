@@ -1111,6 +1111,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     @Override
     public boolean expunge(UserVmVO vm, long callerUserId, Account caller) {
+        UserContext ctx = UserContext.current();
+        ctx.setAccountId(vm.getAccountId());
+        
 	    try {
 	        
 	        if (!_itMgr.advanceExpunge(vm, _accountMgr.getSystemUser(), caller)) {
