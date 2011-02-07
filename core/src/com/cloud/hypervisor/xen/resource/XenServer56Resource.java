@@ -173,12 +173,6 @@ public class XenServer56Resource extends CitrixResourceBase {
     protected SR getStorageRepository(Connection conn, StorageFilerTO pool) {
         try {
             SR sr = super.getStorageRepository(conn, pool);
-
-            if (!sr.getShared(conn) || ( pool.getType() != StoragePoolType.IscsiLUN 
-                    && pool.getType() != StoragePoolType.NetworkFilesystem
-                    && pool.getType() != StoragePoolType.PreSetup)) {
-                return sr;
-            }
             setupHeartbeatSr(conn, sr, false);
             return sr;
         } catch (Exception e) {
@@ -223,12 +217,12 @@ public class XenServer56Resource extends CitrixResourceBase {
     }
 
     protected String setupHeartbeatSr(Connection conn, SR sr, boolean force) throws XenAPIException, XmlRpcException {
-        Host host = Host.getByUuid(conn, _host.uuid);
         SR.Record srRec = sr.getRecord(conn);
         String srUuid = srRec.uuid;
-        if (!srRec.shared || (!SRType.LVMOISCSI.equals(srRec.type) && !SRType.NFS.equals(srRec.type))) {
+        if (!srRec.shared || (!SRType.LVMOHBA.equals(srRec.type) && !SRType.LVMOISCSI.equals(srRec.type) && !SRType.NFS.equals(srRec.type) )) {
             return srUuid;
         }
+        Host host = Host.getByUuid(conn, _host.uuid);
         Set<String> tags = host.getTags(conn);
         if (force || !tags.contains("cloud-heartbeat-" + srUuid)) {
             if (s_logger.isDebugEnabled()) {

@@ -256,7 +256,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     protected HashMap<StoragePoolType, StoragePoolResource> _pools = new HashMap<StoragePoolType, StoragePoolResource>(5);
 
     public enum SRType {
-        NFS, LVM, ISCSI, ISO, LVMOISCSI;
+        NFS, LVM, ISCSI, ISO, LVMOISCSI, LVMOHBA;
 
         @Override
         public String toString() {
@@ -4997,7 +4997,7 @@ public abstract class CitrixResourceBase implements ServerResource {
     }
 
     boolean IsISCSI(String type) {
-        return SRType.LVMOISCSI.equals(type) || SRType.LVM.equals(type) ;
+        return SRType.LVMOHBA.equals(type) || SRType.LVMOISCSI.equals(type) || SRType.LVM.equals(type) ;
     }
     
     protected ManageSnapshotAnswer execute(final ManageSnapshotCommand cmd) {
