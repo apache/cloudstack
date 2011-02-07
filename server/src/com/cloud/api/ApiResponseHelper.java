@@ -1789,8 +1789,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         jobResponse.setCmd(job.getCmd());
         jobResponse.setCreated(job.getCreated());
         jobResponse.setId(job.getId());
-        jobResponse.setJobInstanceId(job.getInstanceId());
-        jobResponse.setJobInstanceType(job.getInstanceType().toString());
+
+        if (job.getInstanceType() != null && job.getInstanceId() != null) {
+            jobResponse.setJobInstanceId(job.getInstanceId());
+            jobResponse.setJobInstanceType(job.getInstanceType().toString());
+        } 
         jobResponse.setJobProcStatus(job.getProcessStatus());
         jobResponse.setJobResult((ResponseObject)ApiSerializerHelper.fromSerializedString(job.getResult()));
         jobResponse.setJobResultCode(job.getResultCode());
