@@ -54,21 +54,7 @@ function templateGetSearchParams() {
 
 function afterLoadTemplateJSP() {      
     var $detailsTab = $("#right_panel_content #tab_content_details");   
-       
-    $.ajax({
-        data: createURL("command=listHypervisors"),
-        dataType: "json",
-        success: function(json) {            
-            var items = json.listhypervisorsresponse.hypervisor;
-            var $hypervisorDropdown = $("#dialog_add_template").find("#add_template_hypervisor");
-            if(items != null && items.length > 0) {                
-                for(var i=0; i<items.length; i++) {                    
-                    $hypervisorDropdown.append("<option value='"+fromdb(items[i].name)+"'>"+fromdb(items[i].name)+"</option>");
-                }
-            }
-        }    
-    })   
-        
+    
 	$("#dialog_add_template #add_template_hypervisor").bind("change", function(event) {	      
 	    var formatSelect = $("#dialog_add_template #add_template_format").empty();	     
 	    var selectedHypervisorType = $(this).val();
@@ -174,10 +160,40 @@ function afterLoadTemplateJSP() {
         return false;
     });
     
-    //populate dropdown ***   			
-	var addTemplateZoneField = $("#dialog_add_template").find("#add_template_zone");    	
+    //populate dropdown ***   
+    //zone dropdown (begin)			
+	var addTemplateZoneField = $("#dialog_add_template").find("#add_template_zone");   	
+	
+	addTemplateZoneField.bind("change", function(event) {	   
+	    event.stopPropagation();
+	    if($(this).val() == null)
+	        return true; 
+	    
+	    var strCmd;
+	    if($(this).val() == -1) 	
+	        strCmd = "command=listHypervisors";	 
+	    else	  
+	        strCmd = "command=listHypervisors&zoneid="+$(this).val();	  	    
+	    
+	    $.ajax({
+            data: createURL(strCmd),
+            dataType: "json",
+            success: function(json) {            
+                var items = json.listhypervisorsresponse.hypervisor;
+                var $hypervisorDropdown = $("#dialog_add_template").find("#add_template_hypervisor").empty();
+                if(items != null && items.length > 0) {                
+                    for(var i=0; i<items.length; i++) {                    
+                        $hypervisorDropdown.append("<option value='"+fromdb(items[i].name)+"'>"+fromdb(items[i].name)+"</option>");
+                    }
+                }
+            }    
+        });  	
+	   	    
+	    return true;
+	});	
+	
 	if (isAdmin())  
-		addTemplateZoneField.append("<option value='-1'>All Zones</option>"); 	
+		addTemplateZoneField.append("<option value='-1'>All Zones</option>"); 			
     $.ajax({
         data: createURL("command=listZones&available=true"),
 	    dataType: "json",
@@ -189,9 +205,11 @@ function afterLoadTemplateJSP() {
 			        g_zoneIds.push(zones[i].id);
 			        g_zoneNames.push(zones[i].name);			       
 		        }
-		    }				    			
+		    }	
+		    addTemplateZoneField.change();			    			
 	    }
 	});	
+    //zone dropdown (end)		
     
     $.ajax({
 	    data: createURL("command=listOsTypes&response=json"),
