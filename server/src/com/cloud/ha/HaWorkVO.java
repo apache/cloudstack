@@ -31,6 +31,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.ha.HighAvailabilityManager.Step;
+import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -38,14 +39,6 @@ import com.cloud.vm.VirtualMachine.State;
 @Entity
 @Table(name="op_ha_work")
 public class HaWorkVO {
-    public enum WorkType {
-        Migration,
-        Stop,
-        CheckStop,
-        Destroy,
-        HA;
-    }
-    
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

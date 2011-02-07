@@ -86,6 +86,7 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -696,7 +697,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
                 } finally {
                     if (startedVm == null) {
                         _workDao.updateStep(work, Step.Release);
-                        cleanup(vmGuru, vmProfile, work, false, caller, account);
+                        cleanup(vmGuru, vmProfile, work, Event.OperationFailed, false, caller, account);
                     }
                 }
             } 
@@ -744,7 +745,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
         return true;
     }
     
-    protected <T extends VMInstanceVO> boolean cleanup(VirtualMachineGuru<T> guru, VirtualMachineProfile<T> profile, ItWorkVO work, boolean force, User user, Account account) {
+    protected <T extends VMInstanceVO> boolean cleanup(VirtualMachineGuru<T> guru, VirtualMachineProfile<T> profile, ItWorkVO work, Event event, boolean force, User user, Account account) {
         T vm = profile.getVirtualMachine();
         State state = vm.getState();
         s_logger.debug("Cleaning up resources for the vm " + vm + " in " + state + " state");
@@ -838,7 +839,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
         if ((vm.getState() == State.Starting || vm.getState() == State.Stopping || vm.getState() == State.Migrating) && forced) {
             ItWorkVO work = _workDao.findByOutstandingWork(vm.getId(), vm.getState());
             if (work != null) {
-                if (cleanup(vmGuru, new VirtualMachineProfileImpl<T>(vm), work, forced, user, account)) {
+                if (cleanup(vmGuru, new VirtualMachineProfileImpl<T>(vm), work, Event.StopRequested, forced, user, account)) {
                     return stateTransitTo(vm, Event.AgentReportStopped, null);
                 }
             }
@@ -1231,12 +1232,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
     }
     
     public Commands deltaSync(long hostId, Map<String, State> newStates) {
-        Map<Long, AgentVmInfo> states = convertToIds(newStates);
+        Map<Long, AgentVmInfo> states = convertToInfos(newStates);
         Commands commands = new Commands(OnError.Continue);
         
         boolean nativeHA = _agentMgr.isHostNativeHAEnabled(hostId);
         
-        for (final Map.Entry<Long, AgentVmInfo> entry : states.entrySet()) {
+        for (Map.Entry<Long, AgentVmInfo> entry : states.entrySet()) {
             AgentVmInfo info = entry.getValue();
 
             VMInstanceVO vm = info.vm;
@@ -1245,6 +1246,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
             if (vm != null) {
                 command = compareState(vm, info, false, nativeHA);
             }  else {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Cleaning up a VM that is no longer found: " + info.name);
+                }
                 command = cleanup(info.name);
             }
 
@@ -1256,7 +1260,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
         return commands;
     }
     
-    protected Map<Long, AgentVmInfo> convertToIds(final Map<String, State> states) {
+    protected Map<Long, AgentVmInfo> convertToInfos(final Map<String, State> states) {
         final HashMap<Long, AgentVmInfo> map = new HashMap<Long, AgentVmInfo>();
 
         if (states == null) {
@@ -1272,13 +1276,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
                 VMInstanceVO vm = vmGuru.findByName(name);
 
                 if (vm != null) {
-                    map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vm, entry.getValue()));
+                    map.put(vm.getId(), new AgentVmInfo(entry.getKey(), vmGuru, vm, entry.getValue()));
                     break;
                 }
                 
                 Long id = vmGuru.convertToId(name);
                 if (id != null) {
-                    map.put(id, new AgentVmInfo(entry.getKey(), null, entry.getValue()));
+                    map.put(id, new AgentVmInfo(entry.getKey(), vmGuru, null, entry.getValue()));
                 }
             }
         }
@@ -1324,61 +1328,59 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
             _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "VM (name: " + vm.getName() + ", id: " + vm.getId() + ") stopped on host " + hostDesc + " due to storage failure", "Virtual Machine " + vm.getName() + " (id: " + vm.getId() + ") running on host [" + vm.getHostId() + "] stopped due to storage failure.");
         }
         
-        if (serverState == State.Migrating) {
-            s_logger.debug("Skipping vm in migrating state: " + vm.toString());
-            return null;
-        }
+//        if (serverState == State.Migrating) {
+//            s_logger.debug("Skipping vm in migrating state: " + vm.toString());
+//            return null;
+//        }
 
         if (agentState == serverState) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Both states are " + agentState.toString() + " for " + serverName);
+                s_logger.debug("Both states are " + agentState + " for " + vm);
             }
             assert (agentState == State.Stopped || agentState == State.Running) : "If the states we send up is changed, this must be changed.";
-            stateTransitTo(vm, agentState == State.Stopped ? VirtualMachine.Event.AgentReportStopped : VirtualMachine.Event.AgentReportRunning, vm.getHostId());
-            if (agentState == State.Stopped) {
-                s_logger.debug("State matches but the agent said stopped so let's send a cleanup anyways.");
-                return cleanup(agentName);
+            if (agentState == State.Running) {
+                stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
+                // FIXME: What if someone comes in and sets it to stopping?  Then what?
+                return null;
             }
-            return null;
-        }
-        if (agentState == State.Shutdowned ) {
-            if ( serverState == State.Running || serverState == State.Starting || serverState == State.Stopping ) {
-                stateTransitTo(vm, VirtualMachine.Event.AgentReportShutdowned, null);
+            s_logger.debug("State matches but the agent said stopped so let's send a cleanup command anyways.");
+            return cleanup(agentName);
+        } 
+        
+        if (agentState == State.Shutdowned) {
+            if (serverState == State.Running || serverState == State.Starting || serverState == State.Stopping) {
+                try {
+                    advanceStop(vm, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
+                } catch (AgentUnavailableException e) {
+                    assert(false) : "How do we hit this with forced on?";
+                    return null;
+                } catch (OperationTimedoutException e) {
+                    assert(false) : "How do we hit this with forced on?";
+                    return null;
+                } catch (ConcurrentOperationException e) {
+                    assert(false) : "How do we hit this with forced on?";
+                    return null;
+                }
+            } else {
+                s_logger.debug("Sending cleanup to a shutdowned vm: " + agentName);            
+                command = cleanup(agentName);
             }
-            s_logger.debug("Sending cleanup to a shutdowned vm: " + agentName);            
-            command = cleanup(agentName);
         } else if (agentState == State.Stopped) {
             // This state means the VM on the agent was detected previously
             // and now is gone.  This is slightly different than if the VM
             // was never completed but we still send down a Stop Command
             // to ensure there's cleanup.
-            if (serverState == State.Running ) {
-                if(!nativeHA) {
-                    // Our records showed that it should be running so let's restart it.
-                    vm = findById(vm.getType(), vm.getId());
-                    _haMgr.scheduleRestart(vm, false);
-                    command = cleanup(agentName);
-                } else {
-                    s_logger.info("VM is in runnting state, agent reported as stopped and native HA is enabled => skip sync action");
-                    stateTransitTo(vm, Event.AgentReportStopped, null);
-                }
+            if (serverState == State.Running) {
+                // Our records showed that it should be running so let's restart it.
+                _haMgr.scheduleRestart(vm, false);
             } else if (serverState == State.Stopping) {
-                if (fullSync) {
-                    s_logger.debug("VM is in stopping state on full sync.  Updating the status to stopped");
-                    vm = findById(vm.getType(), vm.getId());
-//                    advanceStop(vm, true, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
-                    command = cleanup(agentName);
-                } else {
-                    s_logger.debug("Ignoring VM in stopping mode: " + vm.getName());
-                }
+                _haMgr.scheduleStop(vm, vm.getHostId(), WorkType.ForceStop);
+                s_logger.debug("Scheduling a check stop for VM in stopping mode: " + vm);
             } else if (serverState == State.Starting) {
                 s_logger.debug("Ignoring VM in starting mode: " + vm.getName());
-                stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
-            } else {
-                s_logger.debug("Sending cleanup to a stopped vm: " + agentName);            
-                stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
-                command = cleanup(agentName);
-            }
+                _haMgr.scheduleRestart(vm, false);
+            } 
+            command = cleanup(agentName);
         } else if (agentState == State.Running) {
             if (serverState == State.Starting) {
                 if (fullSync) {
@@ -1414,39 +1416,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
                     }
                 }
             } else if (serverState == State.Stopping) {
-                if (fullSync) {
-                    s_logger.debug("VM state is in stopping on fullsync so resend stop.");
-                    vm = findById(vm.getType(), vm.getId());
-                    stateTransitTo(vm, Event.AgentReportStopped, null);
-                    //finalizeStop(new VirtualMachineProfileImpl<VMInstanceVO>(vm), null);
-                    command = cleanup(agentName);
-                } else {
-                    s_logger.debug("VM is in stopping state so no action.");
-                }
-            } else if (serverState == State.Destroyed || serverState == State.Stopped || serverState == State.Expunging) {
+                s_logger.debug("Scheduling a stop command for " + vm);
+                _haMgr.scheduleStop(vm, vm.getHostId(), WorkType.Stop);
+            } else {
                 s_logger.debug("VM state is in stopped so stopping it on the agent");
                 command = cleanup(agentName);
-            } else {
-                stateTransitTo(vm, VirtualMachine.Event.AgentReportRunning, vm.getHostId());
-            }
-        } /*else if (agentState == State.Unknown) {
-            if (serverState == State.Running) {
-                if (fullSync) {
-                    vm = info.vmGuru.get(vm.getId());
-                }
-                scheduleRestart(vm, false);
-            } else if (serverState == State.Starting) {
-                if (fullSync) {
-                    vm = info.vmGuru.get(vm.getId());
-                }
-                scheduleRestart(vm, false);
-            } else if (serverState == State.Stopping) {
-                if (fullSync) {
-                    s_logger.debug("VM state is stopping in full sync.  Resending stop");
-                    command = info.vmGuru.getCleanupCommand(vm, agentName);
-                }
-            }
-        }*/
+            } 
+        }
         return command;
     }
 
@@ -1455,26 +1431,28 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
         final List<? extends VMInstanceVO> vms = _vmDao.listByHostId(hostId);
         s_logger.debug("Found " + vms.size() + " VMs for host " + hostId);
 
-        Map<Long, AgentVmInfo> states = convertToIds(newStates);
+        Map<Long, AgentVmInfo> infos = convertToInfos(newStates);
 
         boolean nativeHA = _agentMgr.isHostNativeHAEnabled(hostId);
 
-        for (final VMInstanceVO vm : vms) {
-            AgentVmInfo info = states.remove(vm.getId());
+        for (VMInstanceVO vm : vms) {
+            AgentVmInfo info = infos.remove(vm.getId());
 
+            VMInstanceVO castedVm = null;
             if (info == null) {
-                info = new AgentVmInfo(vm.getInstanceName(), null, State.Stopped);
+                info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
+                castedVm = info.guru.findById(vm.getId());
+            } else { 
+                castedVm = info.vm;
             }
             
-            VirtualMachineGuru<? extends VMInstanceVO> vmGuru = getVmGuru(vm);
-            VMInstanceVO castedVm = vmGuru.findById(vm.getId());
-            final Command command = compareState(castedVm, info, true, nativeHA);
+            Command command = compareState(castedVm, info, true, nativeHA);
             if (command != null) {
                 commands.addCommand(command);
             }
         }
 
-        for (final AgentVmInfo left : states.values()) {
+        for (final AgentVmInfo left : infos.values()) {
             if (nativeHA) {
                 for (VirtualMachineGuru<? extends VMInstanceVO> vmGuru : _vmGurus.values()) {
                     VMInstanceVO vm = vmGuru.findByName(left.name);
@@ -1615,7 +1593,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
                 for (VMInstanceVO instance : instances) {
                     State state = instance.getState();
                     if (state == State.Stopping) {
-                        _haMgr.scheduleStop(instance, instance.getHostId(), true);
+                        _haMgr.scheduleStop(instance, instance.getHostId(), WorkType.CheckStop);
                     } else if (state == State.Starting) {
                         _haMgr.scheduleRestart(instance, true);
                     }
@@ -1632,13 +1610,15 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
     protected class AgentVmInfo {
         public String name;
         public State state;
-        public State action;
         public VMInstanceVO vm;
+        public VirtualMachineGuru<VMInstanceVO> guru;
 
-        public AgentVmInfo(String name, VMInstanceVO vm, State state) {
+        @SuppressWarnings("unchecked")
+        public AgentVmInfo(String name, VirtualMachineGuru<? extends VMInstanceVO> guru, VMInstanceVO vm, State state) {
             this.name = name;
             this.state = state;
             this.vm = vm;
+            this.guru = (VirtualMachineGuru<VMInstanceVO>)guru;
         }
     }
 }

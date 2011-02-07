@@ -20,7 +20,7 @@ package com.cloud.ha.dao;
 import java.util.List;
 
 import com.cloud.ha.HaWorkVO;
-import com.cloud.ha.HaWorkVO.WorkType;
+import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.utils.db.GenericDao;
 
 public interface HighAvailabilityDao extends GenericDao<HaWorkVO, Long> {
@@ -63,4 +63,6 @@ public interface HighAvailabilityDao extends GenericDao<HaWorkVO, Long> {
      * @return true if it has been scheduled and false if it hasn't.
      */
     boolean hasBeenScheduled(long instanceId, WorkType type);
+
+    int releaseWorkItems(long nodeId);
 }

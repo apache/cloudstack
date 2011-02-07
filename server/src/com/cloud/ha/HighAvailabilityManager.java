@@ -28,6 +28,14 @@ import com.cloud.vm.VMInstanceVO;
  * HighAvailabilityManager checks to make sure the VMs are running fine.
  */
 public interface HighAvailabilityManager extends Manager {
+    public enum WorkType {
+        Migration,  // Migrating VMs off of a host.
+        Stop,       // Stops a VM for storage pool migration purposes.  This should be obsolete now.
+        CheckStop,  // Checks if a VM has been stopped.
+        ForceStop,  // Force a VM to stop even if the states don't allow it.  Use this only if you know the VM is stopped on the physical hypervisor.
+        Destroy,    // Destroy a VM.
+        HA;         // Restart a VM.
+    }
 
     enum Step {
         Scheduled,
@@ -35,9 +43,7 @@ public interface HighAvailabilityManager extends Manager {
         Fencing,
         Stopping,
         Restarting,
-        Preparing,
         Migrating,
-        Checking,
         Cancelled,
         Done,
         Error,
@@ -63,7 +69,7 @@ public interface HighAvailabilityManager extends Manager {
      * @param vm the vm that has gone away.
      * @param investigate must be investigated before we do anything with this vm.
      */
-    void scheduleRestart(final VMInstanceVO vm, boolean investigate);
+    void scheduleRestart(VMInstanceVO vm, boolean investigate);
 
     void cancelDestroy(VMInstanceVO vm, Long hostId);
     
@@ -73,7 +79,7 @@ public interface HighAvailabilityManager extends Manager {
      * Schedule restarts for all vms running on the host.
      * @param host host.
      */
-    void scheduleRestartForVmsOnHost(final HostVO host);
+    void scheduleRestartForVmsOnHost(HostVO host);
 
     /**
      * Schedule the vm for migration.
@@ -81,18 +87,23 @@ public interface HighAvailabilityManager extends Manager {
      * @param vm
      * @return true if schedule worked.
      */
-    boolean scheduleMigration(final VMInstanceVO vm);
+    boolean scheduleMigration(VMInstanceVO vm);
     
     List<VMInstanceVO> findTakenMigrationWork();
 
     /**
-     * Stops a VM.
+     * Schedules a work item to stop a VM.  This method schedules a work
+     * item to do one of three things.
+     * 
+     * 1. Perform a regular stop of a VM: WorkType.Stop
+     * 2. Perform a force stop of a VM: WorkType.ForceStop
+     * 3. Check if a VM has been stopped: WorkType.CheckStop
      * 
      * @param vm virtual machine to stop.
      * @param host host the virtual machine is on.
-     * @param verifyHost make sure it is the same host as the schedule time.
+     * @param type which type of stop is requested. 
      */
-    void scheduleStop(final VMInstanceVO vm, long hostId, boolean verifyHost);
+    void scheduleStop(VMInstanceVO vm, long hostId, WorkType type);
 
     void cancelScheduledMigrations(HostVO host);
 }
