@@ -665,7 +665,7 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
     	if(objCluster.hypervisortype == "KVM") {
     		$protocolSelector.empty();
     		$protocolSelector.append('<option value="nfs">NFS</option>');
-    		$protocolSelector.append('<option value="sharedMountPoint">sharedMountPoint</option>');
+    		$protocolSelector.append('<option value="SharedMountPoint">SharedMountPoint</option>');
     	} else if(objCluster.hypervisortype == "XenServer") {
     		$protocolSelector.empty();
 			$protocolSelector.append('<option value="nfs">NFS</option>');
@@ -696,7 +696,7 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
 			    var isValid = true;						    
 			    isValid &= validateDropDownBox("Cluster", $thisDialog.find("#pool_cluster"), $thisDialog.find("#pool_cluster_errormsg"), false);  //required, reset error text					    				
 			    isValid &= validateString("Name", $thisDialog.find("#add_pool_name"), $thisDialog.find("#add_pool_name_errormsg"));
-				if (protocol == "nfs" || protocol == "PreSetup" || protocol == "sharedMountPoint") {
+				if (protocol == "nfs" || protocol == "PreSetup" || protocol == "SharedMountPoint") {
 				    isValid &= validateString("Server", $thisDialog.find("#add_pool_nfs_server"), $thisDialog.find("#add_pool_nfs_server_errormsg"));	
 					isValid &= validateString("Path", $thisDialog.find("#add_pool_path"), $thisDialog.find("#add_pool_path_errormsg"));	
 				} else if(protocol == "iscsi") {
@@ -738,11 +738,11 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
 						path = "/" + path; 
 					url = presetupURL(server, path);
 				} 			
-				else if (protocol == "sharedMountPoint") {
+				else if (protocol == "SharedMountPoint") {
 					var path = trim($thisDialog.find("#add_pool_path").val());
 					if(path.substring(0,1)!="/")
 						path = "/" + path; 
-					url = sharedMountPointURL(server, path);
+					url = SharedMountPointURL(server, path);
 				} 
 				else if (protocol == "vmfs") {
 					var path = trim($thisDialog.find("#add_pool_vmfs_dc").val());
@@ -892,10 +892,10 @@ function presetupURL(server, path) {
 	return url;
 }
 
-function sharedMountPointURL(server, path) {
+function SharedMountPointURL(server, path) {
     var url;
     if(server.indexOf("://")==-1)
-	    url = "sharedMountPoint://" + server + path;
+	    url = "SharedMountPoint://" + server + path;
 	else
 	    url = server + path;
 	return url;
@@ -942,7 +942,7 @@ function bindEventHandlerToDialogAddPool($dialogAddPool) {
     		$('li[input_group="vmfs"]', $dialogAddPool).show();   
     		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", false).val(""); 		
     	}
-    	else if($(this).val() == "sharedMountPoint") {  //"sharedMountPoint" show the same fields as "nfs" does.
+    	else if($(this).val() == "SharedMountPoint") {  //"SharedMountPoint" show the same fields as "nfs" does.
     		$("#add_pool_server_container", $dialogAddPool).show();
     		$('li[input_group="nfs"]', $dialogAddPool).show();
     		$('li[input_group="iscsi"]', $dialogAddPool).hide();
