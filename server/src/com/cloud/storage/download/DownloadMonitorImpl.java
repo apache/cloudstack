@@ -526,6 +526,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 					if(tmpltHost != null){
 						tmpltHost.setDownloadState(Status.DOWNLOAD_ERROR);
 						tmpltHost.setDownloadPercent(0);
+						tmpltHost.setErrorString("Cannot initiate the download as url is null.");
 						_vmTemplateHostDao.update(tmpltHost.getId(), tmpltHost);
 					}
 					continue;
