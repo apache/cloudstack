@@ -1154,6 +1154,7 @@ function ipJsonToDetailsTab() {
      
         if(ipObj.isstaticnat == true) {        
             buildActionLinkForTab("label.action.disable.static.NAT", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);	
+            buildActionLinkForTab("label.action.release.ip", ipActionMap, $actionMenu, $midmenuItem1, $thisTab);
 			noAvailableActions = false;
         } else {  
 			if(ipObj.issourcenat != true) {   	
