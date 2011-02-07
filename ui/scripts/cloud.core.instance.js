@@ -113,10 +113,7 @@ function afterLoadInstanceJSP() {
 	var tabContentArray = [$("#tab_content_details"), $("#tab_content_nic"), $("#tab_content_volume"), $("#tab_content_statistics")];
 	var afterSwitchFnArray = [vmJsonToDetailsTab, vmJsonToNicTab, vmJsonToVolumeTab, vmJsonToStatisticsTab];
 	switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray);   
-	
-	$readonlyFields  = $("#tab_content_details").find("#vmname, #group, #haenable, #ostypename");
-    $editFields = $("#tab_content_details").find("#vmname_edit, #group_edit, #haenable_edit, #ostypename_edit"); 
-          			   
+	   			   
     // dialogs
     initDialog("dialog_detach_iso_from_vm");       	
    	initDialog("dialog_attach_iso");  
@@ -1437,7 +1434,24 @@ function doRestoreVM($actionLink, $detailsTab, $midmenuItem1) {
     }).dialog("open");
 }   
  
-function doEditVM($actionLink, $detailsTab, $midmenuItem1) {  
+function doEditVM($actionLink, $detailsTab, $midmenuItem1) { 
+	var vmObj = $midmenuItem1.data("jsonObj");	
+    $.ajax({
+        data: createURL("command=listServiceOfferings&id="+vmObj.serviceofferingid),
+        dataType: "json",
+        async: false,
+        success: function(json) {	        
+	        if(json.listserviceofferingsresponse.serviceoffering[0].offerha == true) {	            
+	            $readonlyFields  = $("#tab_content_details").find("#vmname, #group, #haenable, #ostypename");
+                $editFields = $("#tab_content_details").find("#vmname_edit, #group_edit, #haenable_edit, #ostypename_edit"); 	            
+	        }
+	        else {
+	            $readonlyFields  = $("#tab_content_details").find("#vmname, #group, #ostypename");
+                $editFields = $("#tab_content_details").find("#vmname_edit, #group_edit, #ostypename_edit"); 	            
+	        }	        
+        }
+    });
+	 
     $readonlyFields.hide();
     $editFields.show();  
     $detailsTab.find("#cancel_button, #save_button").show();
