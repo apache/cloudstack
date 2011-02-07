@@ -52,12 +52,13 @@ public class NetworkUsageCommand extends Command {
         return option;
     }
     
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean executeInSequence() {
         return false;
     }
 
+    @Override
+    public boolean logTrace() {
+        return true;
+    }
 }

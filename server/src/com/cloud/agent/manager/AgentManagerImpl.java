@@ -1227,8 +1227,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 
 		final AgentAttache agent = getAttache(hostId);
 		if (agent == null || agent.isClosed()) {
-			throw new AgentUnavailableException(
-					"agent not logged into this management server", hostId);
+			throw new AgentUnavailableException("agent not logged into this management server", hostId);
 		}
 
 		long seq = _hostDao.getNextSequence(hostId);
@@ -1684,9 +1683,10 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 
 		AgentAttache attache = null;
 		if (s_logger.isDebugEnabled()) {
-			s_logger.debug("Startup request from directly connected host: "
-					+ new Request(0l, -1l, -1l, cmds, true, false, true)
-							.toString());
+		    new Request(0l, -1l, -1l, cmds, true, false, true).log(-1, "Startup request from directly connected host: ");
+//			s_logger.debug("Startup request from directly connected host: "
+//					+ new Request(0l, -1l, -1l, cmds, true, false, true)
+//							.toString());
 		}
 		try {
 			attache = handleDirectConnect(resource, cmds, details, old);

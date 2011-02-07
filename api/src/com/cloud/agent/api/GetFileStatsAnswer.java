@@ -19,10 +19,6 @@ package com.cloud.agent.api;
 
 import com.cloud.storage.VolumeStats;
 
-/**
- * @author ahuang
- *
- */
 public class GetFileStatsAnswer extends Answer implements VolumeStats {
     long size;
     protected GetFileStatsAnswer() {
@@ -33,7 +29,13 @@ public class GetFileStatsAnswer extends Answer implements VolumeStats {
         size = value;
     }
     
+    @Override
     public long getBytesUsed() {
         return size;
+    }
+    
+    @Override
+    public boolean logTrace() {
+        return true;
     }
 }

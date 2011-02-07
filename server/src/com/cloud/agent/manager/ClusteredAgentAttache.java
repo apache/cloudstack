@@ -141,8 +141,9 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
     					s_logger.debug(log(seq, "Error on connecting to management node: " + req.toString() + " try = " + i));
     				}
     
-    				if(s_logger.isInfoEnabled())
-    					s_logger.info("IOException " + e.getMessage() + " when sending data to peer " + peerName + ", close peer connection and let it re-open");
+    				if(s_logger.isInfoEnabled()) {
+                        s_logger.info("IOException " + e.getMessage() + " when sending data to peer " + peerName + ", close peer connection and let it re-open");
+                    }
     			}
     		}
 		} finally {

@@ -27,10 +27,12 @@ public class GetStorageStatsAnswer extends Answer implements StorageStats {
     
     protected long capacity;
     
+    @Override
     public long getByteUsed() {
         return used;
     }
     
+    @Override
     public long getCapacityBytes() {
         return capacity;
     }
@@ -46,4 +48,8 @@ public class GetStorageStatsAnswer extends Answer implements StorageStats {
         super(cmd, false, details);
     }
 
+    @Override
+    public boolean logTrace() {
+        return true;
+    }
 }

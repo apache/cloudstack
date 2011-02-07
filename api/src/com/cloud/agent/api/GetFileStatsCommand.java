@@ -37,4 +37,9 @@ public class GetFileStatsCommand extends Command {
     public boolean executeInSequence() {
         return false;
     }
+    
+    @Override
+    public boolean logTrace() {
+        return true;
+    }
 }

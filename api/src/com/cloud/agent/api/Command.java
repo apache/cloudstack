@@ -32,9 +32,14 @@ public abstract class Command {
     protected Command() {
     }
     
+    @Override
     public String toString() {
         return this.getClass().getSimpleName();
     }
     
     public abstract boolean executeInSequence();
+    
+    public boolean logTrace() {
+        return false;
+    }
 }

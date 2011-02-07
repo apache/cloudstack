@@ -46,4 +46,9 @@ public class NetworkUsageAnswer extends Answer {
     public Long getBytesSent() {
         return bytesSent;
     }
+    
+    @Override
+    public boolean logTrace() {
+        return true;
+    }
 }

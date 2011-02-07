@@ -29,7 +29,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.exception.UnsupportedVersionException;
-import com.cloud.storage.VolumeVO;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -93,8 +92,8 @@ public class Request {
         s_gBuilder = new GsonBuilder();
         s_gBuilder.registerTypeAdapter(Command[].class, new ArrayTypeAdaptor<Command>());
         s_gBuilder.registerTypeAdapter(Answer[].class, new ArrayTypeAdaptor<Answer>());
-        final Type listType = new TypeToken<List<VolumeVO>>() {}.getType();
-        s_gBuilder.registerTypeAdapter(listType, new VolListTypeAdaptor());
+//        final Type listType = new TypeToken<List<VolumeVO>>() {}.getType();
+//        s_gBuilder.registerTypeAdapter(listType, new VolListTypeAdaptor());
         s_gBuilder.registerTypeAdapter(new TypeToken<List<PortConfig>>() {}.getType(), new PortConfigListTypeAdaptor());
         s_gBuilder.registerTypeAdapter(new TypeToken<Pair<Long, Long>>() {}.getType(), new NwGroupsCommandTypeAdaptor());
         s_logger.info("Builder inited.");
@@ -303,6 +302,34 @@ public class Request {
     protected short getFlags() {
         return (short)(((this instanceof Response) ? FLAG_RESPONSE : FLAG_REQUEST) | _flags);
     }
+    
+    public void log(long agentId, String msg) {
+        if (!s_logger.isDebugEnabled()) {
+            return;
+        }
+        
+        StringBuilder buf = new StringBuilder("Seq ");
+        buf.append(agentId).append("-").append(_seq).append(": ");
+        boolean debug = false;
+        if (_cmds != null) {
+            for (Command cmd : _cmds) {
+                if (!cmd.logTrace()) {
+                    debug = true;
+                    break;
+                }
+            }
+        } else {
+            debug = true;
+        }
+        
+        buf.append(msg).append(toString());
+        
+        if (executeInSequence() || debug) {
+            s_logger.debug(buf.toString());
+        } else {
+            s_logger.trace(buf.toString());
+        }
+    }
 
     /**
      * Factory method for Request and Response.  It expects the bytes to be
@@ -392,10 +419,6 @@ public class Request {
     }
     
     public static class NwGroupsCommandTypeAdaptor implements JsonDeserializer<Pair<Long, Long>>, JsonSerializer<Pair<Long,Long>> {
-        static final GsonBuilder s_gBuilder;
-        static {
-            s_gBuilder = Request.initBuilder();
-        }
 
         public NwGroupsCommandTypeAdaptor() {
         }
@@ -445,12 +468,6 @@ public class Request {
     }
     
     public static class PortConfigListTypeAdaptor implements JsonDeserializer<List<PortConfig>>, JsonSerializer<List<PortConfig>> {
-        static final GsonBuilder s_gBuilder;
-        static {
-            s_gBuilder = Request.initBuilder();
-        }
-
-        static final Type listType = new TypeToken<List<PortConfig>>() {}.getType();
 
         public PortConfigListTypeAdaptor() {
         }
@@ -487,6 +504,5 @@ public class Request {
             }
             return pcs;
         }
-
     }
 }

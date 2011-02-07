@@ -88,4 +88,9 @@ public class GetHostStatsAnswer extends Answer implements HostStats {
 	public HostStats getHostStats() {
 		return hostStats;
 	}
+	
+    @Override
+    public boolean logTrace() {
+        return true;
+    }
 }

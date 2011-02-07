@@ -87,9 +87,10 @@ public class DirectAgentAttache extends AgentAttache {
 	
 	@Override
 	public void send(Request req) throws AgentUnavailableException {
-	    if (s_logger.isDebugEnabled()) {
-	        s_logger.debug(log(req.getSequence(), "Executing " + req.toString()));
-	    }
+	    req.log(_id, "Executing: ");
+//	    if (s_logger.isDebugEnabled()) {
+//	        s_logger.debug(log(req.getSequence(), "Executing " + req.toString()));
+//	    }
 	    if (req instanceof Response) {
 	        Response resp = (Response)req;
 	        Answer[] answers = resp.getAnswers();

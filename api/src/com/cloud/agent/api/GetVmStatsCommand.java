@@ -19,8 +19,6 @@ package com.cloud.agent.api;
 
 import java.util.List;
 
-import com.cloud.vm.VirtualMachine;
-
 public class GetVmStatsCommand extends Command {
     List<String> vmNames;
     String hostGuid;
@@ -50,5 +48,10 @@ public class GetVmStatsCommand extends Command {
     @Override
     public boolean executeInSequence() {
         return false;
+    }
+    
+    @Override
+    public boolean logTrace() {
+        return true;
     }
 }

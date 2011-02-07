@@ -17,7 +17,6 @@
  */
 package com.cloud.agent.api;
 
-import java.util.List;
 
 public class GetHostStatsCommand extends Command 
 {
@@ -49,5 +48,10 @@ public class GetHostStatsCommand extends Command
     @Override
     public boolean executeInSequence() {
         return false;
+    }
+    
+    @Override
+    public boolean logTrace() {
+        return true;
     }
 }

@@ -227,13 +227,14 @@ public abstract class AgentAttache {
     }
 
     public boolean processAnswers(final long seq, final Response resp) {
-        if (s_logger.isDebugEnabled()) {
-            if (!resp.executeInSequence()) {
-                s_logger.debug(log(seq, "Processing: " + resp.toString()));
-            } else {
-                s_logger.trace(log(seq, "Processing: " + resp.toString()));
-            }
-        }
+        resp.log(_id, "Processing: ");
+//        if (s_logger.isDebugEnabled()) {
+//            if (!resp.executeInSequence()) {
+//                s_logger.debug(log(seq, "Processing: " + resp.toString()));
+//            } else {
+//                s_logger.trace(log(seq, "Processing: " + resp.toString()));
+//            }
+//        }
 
         final Answer[] answers = resp.getAnswers();
 
@@ -313,9 +314,10 @@ public abstract class AgentAttache {
                 }
         
                 if (req.executeInSequence() && _currentSequence != null) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(log(seq, "Waiting for Seq " + _currentSequence + " Scheduling: " + req.toString()));
-                    }
+                    req.log(_id, "Waiting for Seq " + _currentSequence + " Scheduling: ");
+//                    if (s_logger.isDebugEnabled()) {
+//                        s_logger.debug(log(seq, "Waiting for Seq " + _currentSequence + " Scheduling: " + req.toString()));
+//                    }
                     addRequest(req);
                     return;
                 }
@@ -323,9 +325,10 @@ public abstract class AgentAttache {
                 // If we got to here either we're not suppose to set
                 // the _currentSequence or it is null already.
                 
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(log(seq, "Sending " + req.toString()));
-                }
+                req.log(_id, "Sending ");
+//                if (s_logger.isDebugEnabled()) {
+//                    s_logger.debug(log(seq, "Sending " + req.toString()));
+//                }
                 send(req);
         
                 if (req.executeInSequence() && _currentSequence == null) {
@@ -362,14 +365,15 @@ public abstract class AgentAttache {
                 }
                 if (answers != null) {
                     if (s_logger.isDebugEnabled()) {
-                        if (req.executeInSequence()) {
-                            s_logger.debug(log(seq, "Received: " + new Response(req, answers).toString()));
-                        } else {
-                            s_logger.debug(log(seq, "Received: "));
-                            if (s_logger.isTraceEnabled()) {
-                                s_logger.trace(log(seq, "Received: " + new Response(req, answers).toString()));
-                            }
-                        }
+                        new Response(req, answers).log(_id, "Received: ");
+//                        if (req.executeInSequence()) {
+//                            s_logger.debug(log(seq, "Received: " + new Response(req, answers).toString()));
+//                        } else {
+//                            s_logger.debug(log(seq, "Received: "));
+//                            if (s_logger.isTraceEnabled()) {
+//                                s_logger.trace(log(seq, "Received: " + new Response(req, answers).toString()));
+//                            }
+//                        }
                     }
                     return answers;
                 }
@@ -377,7 +381,8 @@ public abstract class AgentAttache {
                 answers = sl.getAnswers(); // Try it again.
                 if (answers != null) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(log(seq, "Received after timeout: " + new Response(req, answers).toString()));
+                        new Response(req, answers).log(_id, "Received after timeout: ");
+//                        s_logger.debug(log(seq, "Received after timeout: " + new Response(req, answers).toString()));
                     }
                     return answers;
                 }
