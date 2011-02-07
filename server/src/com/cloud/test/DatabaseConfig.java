@@ -202,9 +202,9 @@ public class DatabaseConfig {
         s_configurationDescriptions.put("use.local.storage", "Indicates whether to use local storage pools or shared storage pools for system VMs.");
         s_configurationDescriptions.put("snapshot.poll.interval", "The time interval in seconds when the management server polls for snapshots to be scheduled.");
         s_configurationDescriptions.put("snapshot.max.hourly", "Maximum hourly snapshots for a volume");
-        s_configurationDescriptions.put("snapshot.max.daily", "Maximum dalily snapshots for a volume");
-        s_configurationDescriptions.put("snapshot.max.weekly", "Maximum hourly snapshots for a volume");
-        s_configurationDescriptions.put("snapshot.max.monthly", "Maximum hourly snapshots for a volume");
+        s_configurationDescriptions.put("snapshot.max.daily", "Maximum daily snapshots for a volume");
+        s_configurationDescriptions.put("snapshot.max.weekly", "Maximum weekly snapshots for a volume");
+        s_configurationDescriptions.put("snapshot.max.monthly", "Maximum monthly snapshots for a volume");
         s_configurationDescriptions.put("snapshot.delta.max",  "max delta snapshots between two full snapshots.");
         s_configurationDescriptions.put("snapshot.recurring.test", "Flag for testing recurring snapshots");
         s_configurationDescriptions.put("snapshot.test.minutes.per.hour", "Set it to a smaller value to take more recurring snapshots");
