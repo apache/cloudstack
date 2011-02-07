@@ -174,6 +174,6 @@ public interface NetworkManager extends NetworkService {
     
     boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
 
-    boolean deleteNetworkInternal(long networkId);
+    boolean deleteNetworkInternal(long networkId, long userId);
 
 }

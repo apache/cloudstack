@@ -1660,13 +1660,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @ActionEvent (eventType=EventTypes.EVENT_NETWORK_DELETE, eventDescription="deleting network")
-    public boolean deleteNetwork(long networkId) throws InvalidParameterValueException, PermissionDeniedException {
-        return deleteNetworkInternal(networkId);
-    }
-    
-    @Override
-    @DB
-    public boolean deleteNetworkInternal(long networkId) throws InvalidParameterValueException, PermissionDeniedException {
+    public boolean deleteNetwork(long networkId) throws InvalidParameterValueException, PermissionDeniedException {   
+        //Don't allow to delete network via api call when it has vms assigned to it
+        int nicCount = getActiveNicsInNetwork(networkId);
+        if (nicCount > 0) {
+            throw new InvalidParameterValueException("Unable to remove the network id=" + networkId + " as it has active Nics.");
+        }
+        
         Long userId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller();
 
@@ -1685,7 +1685,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             Account owner = _accountMgr.getAccount(network.getAccountId());
             _accountMgr.checkAccess(caller, owner);
         }
-
+        
+        return deleteNetworkInternal(networkId, userId);
+    }
+    
+    @Override
+    @DB
+    public boolean deleteNetworkInternal(long networkId, long userId) throws InvalidParameterValueException, PermissionDeniedException {
         return this.destroyNetwork(networkId, userId);
     }
 
