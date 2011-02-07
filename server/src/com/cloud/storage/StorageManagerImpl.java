@@ -1416,7 +1416,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 throw new InvalidParameterValueException("This disk offering requires a custom size specified");
             }
 
-            if (diskOffering.isCustomized() && size != null) {
+            if (!diskOffering.isCustomized() && size != null) {
                 throw new InvalidParameterValueException("This disk offering does not allow custom size");
             }
 
