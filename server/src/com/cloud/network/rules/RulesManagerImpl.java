@@ -377,7 +377,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     
     @Override
     public boolean revokePortForwardingRule(long vmId) {
-    	UserVmVO vm = _vmDao.findById(vmId);
+    	UserVmVO vm = _vmDao.findByIdIncludingRemoved(vmId);
     	if (vm == null) {
     		return false;
     	}
