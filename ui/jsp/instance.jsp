@@ -693,7 +693,8 @@ dictionary = {
 						    </ol>						      
 						</div>
 						<div id="for_no_network_support" style="display:none">		
-						    <span id="not_available_message"><fmt:message key="message.no.network.support"/></span>				    
+						    <span id="not_available_message_1" style="display:none"><fmt:message key="message.no.network.support"/></span>		
+						    <span id="not_available_message_2" style="display:none"><fmt:message key="message.no.network.support.configuration.not.true"/></span>				    
 						</div>
                     </div>
                 </div>

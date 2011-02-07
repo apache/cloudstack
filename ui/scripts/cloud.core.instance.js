@@ -1015,16 +1015,25 @@ function initVMWizard() {
 			} 
 			else {  // Basic Network
 			    $thisPopup.find("#step4").find("#for_advanced_zone").hide();	
-			    if(getDirectAttachSecurityGroupsEnabled() == "true" && $selectedVmWizardTemplate.data("hypervisor") != "VMware" ) {		
+			    if($selectedVmWizardTemplate.data("hypervisor") != "VMware" && getDirectAttachSecurityGroupsEnabled() == "true") {		
 					$thisPopup.find("#step4").find("#for_basic_zone").show();
 					$thisPopup.find("#step4").find("#for_no_network_support").hide();
-			        $thisPopup.find("#step4").find("#security_group_section").show();
-			        $thisPopup.find("#step4").find("#not_available_message").hide();	
+			        $thisPopup.find("#step4").find("#security_group_section").show();			        
 				    $thisPopup.find("#step5").find("#wizard_review_network").text("Basic Network");
 				}
 				else {
 					$thisPopup.find("#step4").find("#for_basic_zone").hide();
-					$thisPopup.find("#step4").find("#for_no_network_support").show();						
+					
+					$thisPopup.find("#step4").find("#for_no_network_support").show();	
+					if($selectedVmWizardTemplate.data("hypervisor") == "VMware") {
+					    $thisPopup.find("#step4").find("#for_no_network_support").find("#not_available_message_1").show();	
+					    $thisPopup.find("#step4").find("#for_no_network_support").find("#not_available_message_2").hide();
+					}		
+					else if(getDirectAttachSecurityGroupsEnabled() != "true") {
+					    $thisPopup.find("#step4").find("#for_no_network_support").find("#not_available_message_1").hide();
+					    $thisPopup.find("#step4").find("#for_no_network_support").find("#not_available_message_2").show();	
+					}    
+					    			
 			        $thisPopup.find("#step5").find("#wizard_review_network").text("Basic Network");			   
 				}
 			}
