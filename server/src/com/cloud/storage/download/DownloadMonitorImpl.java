@@ -520,6 +520,17 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 			/*Only download templates whose hypervirsor type is in the zone*/
 			List<HypervisorType> availHypers = _clusterDao.getAvailableHypervisorInZone(sserver.getDataCenterId());
 			for (VMTemplateVO tmplt: toBeDownloaded) {
+				
+				if (tmplt.getUrl() == null){ // If url is null we cant initiate the download so mark it as an error.
+					VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(sserver.getId(), tmplt.getId());
+					if(tmpltHost != null){
+						tmpltHost.setDownloadState(Status.DOWNLOAD_ERROR);
+						tmpltHost.setDownloadPercent(0);
+						_vmTemplateHostDao.update(tmpltHost.getId(), tmpltHost);
+					}
+					continue;
+				}
+				
 			    if (availHypers.contains(tmplt.getHypervisorType())) {
 			        s_logger.debug("Template " + tmplt.getName() + " needs to be downloaded to " + sserver.getName());
 			        downloadTemplateToStorage(tmplt, sserver);
