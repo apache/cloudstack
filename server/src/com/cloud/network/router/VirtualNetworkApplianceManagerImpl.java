@@ -1095,7 +1095,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public void finalizeStop(VirtualMachineProfile<DomainRouterVO> profile, StopAnswer answer) {
         if (answer != null) {
-            processStopOrRebootAnswer(profile.getVirtualMachine(), answer);
+            VMInstanceVO vm = profile.getVirtualMachine();
+            DomainRouterVO domR = _routerDao.findById(vm.getId());
+            processStopOrRebootAnswer(domR, answer);
         }
     }
     

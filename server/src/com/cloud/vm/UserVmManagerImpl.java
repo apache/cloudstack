@@ -2287,7 +2287,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     
     @Override
     public void finalizeStop(VirtualMachineProfile<UserVmVO> profile, StopAnswer answer) {
-		UserVmVO vm = profile.getVirtualMachine();
+		VMInstanceVO vm = profile.getVirtualMachine();
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
         _usageEventDao.persist(usageEvent);
         
