@@ -39,11 +39,14 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the service offering to be updated")
     private String displayText;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the service offering to be updated")
-    private Long id;
+    @Parameter(name=ApiConstants.IS_PUBLIC, type=CommandType.BOOLEAN, description="if the service offering needs to be made public , we can only go from private to public and not vice versa")
+    private Boolean isPublic;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the service offering to be updated")
     private String serviceOfferingName;
+
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the service offering to be updated")
+    private Long id;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -61,7 +64,9 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
         return serviceOfferingName;
     }
 
-
+    public Boolean getIsPublic() {
+        return isPublic;
+    }
     
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

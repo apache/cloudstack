@@ -1304,7 +1304,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	Long id = cmd.getId();
     	String name = cmd.getServiceOfferingName();
     	Long userId = UserContext.current().getCallerUserId();
-    	    	
+    	Boolean isPublic = cmd.getIsPublic();
+    	
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
         }
@@ -1316,6 +1317,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	}
     	    	
     	boolean updateNeeded = (name != null || displayText != null);
+    	
+    	if(isPublic != null && isPublic)
+    	    updateNeeded = true;
+    	
     	if (!updateNeeded) {
     		return _serviceOfferingDao.findById(id);
     	}
@@ -1328,6 +1333,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         
         if (displayText != null) {
         	offering.setDisplayText(displayText);
+        }
+        
+        if(isPublic != null && isPublic) {
+            offering.setDomainId(null);
         }
                 
 //Note: tag editing commented out for now; keeping the code intact, might need to re-enable in next releases    	
