@@ -315,7 +315,7 @@ function diskofferingGetDiskSize(jsonObj) {
     if(jsonObj.disksize == 0 && jsonObj.isCustomized == true)
         diskSize = "custom size (during VM creation or volume creation)";
     else
-        diskSize = convertBytes(jsonObj.disksize * 1024 * 1024);    //unit of jsonObj.disksize is MB.
+        diskSize = jsonObj.disksize + " GB";
     return diskSize;
 }    
 
