@@ -170,7 +170,7 @@ function bindAddAccountButton() {
 				var username = $thisDialog.find("#add_user_username").val();
 				array1.push("&username="+todb(username));
 				
-				var password = $.md5(encodeURIComponent($thisDialog.find("#add_user_password").val()));
+				var password = $.md5($thisDialog.find("#add_user_password").val());
 				array1.push("&password="+password);
 				
 				var email = $thisDialog.find("#add_user_email").val();				
@@ -271,7 +271,7 @@ function bindAddUserButton() {
 				var username = $thisDialog.find("#add_user_username").val();
 				array1.push("&username="+todb(username));
 				
-				var password = $.md5(encodeURIComponent($thisDialog.find("#add_user_password").val()));
+				var password = $.md5($thisDialog.find("#add_user_password").val());
 				array1.push("&password="+password);
 				
 				var email = $thisDialog.find("#add_user_email").val();
@@ -917,7 +917,7 @@ function doChangePassword($actionLink, $subgridItem) {
 			isValid &= validateString("Password", thisDialog.find("#change_password_password1"), thisDialog.find("#change_password_password1_errormsg"), false); //required						      		   	
 			if (!isValid) return;
 																	
-			var password = $.md5(encodeURIComponent((thisDialog.find("#change_password_password1").val())));						   					
+			var password = $.md5(thisDialog.find("#change_password_password1").val());						   					
 											
 			thisDialog.dialog("close");
 			$.ajax({

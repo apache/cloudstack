@@ -648,7 +648,7 @@ $(document).ready(function() {
 		var username = encodeURIComponent($("#account_username").val());
 		array1.push("&username="+username);
 		
-		var password = encodeURIComponent($("#account_password").val());
+		var password = $("#account_password").val();
 		if (md5Hashed) {
 			password = $.md5(password);
 		} 
