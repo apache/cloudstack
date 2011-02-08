@@ -45,9 +45,9 @@ Below is a sample login attempt
 /*
 $(document).ready(function() {
 	//var username = encodeURIComponent($("#account_username").val());
-	//var password = encodeURIComponent($("#account_password").val());
+	//var password = $("#account_password").val();
 	//var domain = encodeURIComponent($("#account_domain").val());
-	//var url = "/client/api?command=login&username="+username+"&password="+password+"&domain="+domain+"&response=json";
+	//var url = "/client/api?command=login&username="+username+"&password="+$.md5(password)+"&domain="+domain+"&response=json";
 	
 	// Test URL
 	var url = "/client/api?command=login&username=admin&password=5f4dcc3b5aa765d61d8327deb882cf99&domain=%2F&response=json";
