@@ -1254,6 +1254,23 @@ function cancelEditMode($tab) {
     $tab.find("#save_button, #cancel_button").hide();     
 }
 
+function showAfterActionInfoOnTop(isSuccessful, afterActionInfo) {
+    var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");       
+    
+    if(isSuccessful) 
+        $afterActionInfoContainer.removeClass("errorbox");       
+    else
+        $afterActionInfoContainer.addClass("errorbox");
+        
+    $afterActionInfoContainer.find("#after_action_info").text(afterActionInfo);  
+    
+    $afterActionInfoContainer.show();    
+}
+
+
+
+
+
 
 
 
