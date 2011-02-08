@@ -1108,7 +1108,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             s_logger.warn("Failed to start remote access VPN: no router found for account and zone");
             throw new ResourceUnavailableException("Unable to apply lb rules", DataCenter.class, network.getDataCenterId());
         }
-        if (router.getState() != State.Running && router.getState() != State.Starting) {
+        if (router.getState() != State.Running) {
             s_logger.warn("Failed to start remote access VPN: router not in running state");
             throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
         }
