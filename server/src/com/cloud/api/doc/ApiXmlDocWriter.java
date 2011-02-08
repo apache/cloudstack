@@ -123,6 +123,16 @@ public class ApiXmlDocWriter {
             }
 		}
 		
+		//Login and logout commands are hardcoded
+		all_api_commands.put("login", "login");
+		domain_admin_api_commands.put("login", "login");
+		regular_user_api_commands.put("login", "login");
+		
+		all_api_commands.put("logout", "logout");
+        domain_admin_api_commands.put("logout", "logout");
+        regular_user_api_commands.put("logout", "logout");
+        
+		
 		all_api_commands_sorted.putAll(all_api_commands);
 		domain_admin_api_commands_sorted.putAll(domain_admin_api_commands);
 		regular_user_api_commands_sorted.putAll(regular_user_api_commands);
@@ -154,26 +164,61 @@ public class ApiXmlDocWriter {
 				String key = (String)it.next(); 
 				
 	            //Write admin commands
-				writeCommand(out, key);
-				writeCommand(rootAdmin, key);	
-
-				//Write single commands to separate xml files
-				ObjectOutputStream singleRootAdminCommandOs = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + key + ".xml"), "command");
-				writeCommand(singleRootAdminCommandOs, key);
-				singleRootAdminCommandOs.close();
-				
-				if (domain_admin_api_commands.containsKey(key)){
-				    writeCommand(domainAdmin, key);
-				    ObjectOutputStream singleDomainAdminCommandOs = xs.createObjectOutputStream(new FileWriter(domainAdminDirName + "/" + key + ".xml"), "command");
-				    writeCommand(singleDomainAdminCommandOs, key);
+				if (key.equals("login")) {
+				    writeLoginCommand(out);
+				    writeLoginCommand(rootAdmin);
+				    
+				    ObjectOutputStream singleRootAdminCommandOs = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + "login" + ".xml"), "command");
+				    writeLoginCommand(singleRootAdminCommandOs);
+				    singleRootAdminCommandOs.close();
+				    
+				    ObjectOutputStream singleDomainAdminCommandOs = xs.createObjectOutputStream(new FileWriter(domainAdminDirName + "/" + "login" + ".xml"), "command");
+				    writeLoginCommand(singleDomainAdminCommandOs);
 				    singleDomainAdminCommandOs.close();
-				}
-				
-				if (regular_user_api_commands.containsKey(key)){
-				    writeCommand(regularUser, key);
-				    ObjectOutputStream singleRegularUserCommandOs = xs.createObjectOutputStream(new FileWriter(regularUserDirName + "/" + key + ".xml"), "command");
-				    writeCommand(singleRegularUserCommandOs, key);
-				    singleRegularUserCommandOs.close();
+				    
+				    ObjectOutputStream singleRegularUserCommandOs = xs.createObjectOutputStream(new FileWriter(regularUserDirName + "/" + "login" + ".xml"), "command");
+				    writeLoginCommand(singleRegularUserCommandOs);
+				    
+				} else if (key.equals("logout")) {
+				    writeLogoutCommand(out);
+				    writeLogoutCommand(rootAdmin);
+				    
+				    ObjectOutputStream singleRootAdminCommandOs = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + "logout" + ".xml"), "command");
+				    writeLogoutCommand(singleRootAdminCommandOs);
+				    singleRootAdminCommandOs.close();
+				    
+				    ObjectOutputStream singleDomainAdminCommandOs = xs.createObjectOutputStream(new FileWriter(domainAdminDirName + "/" + "logout" + ".xml"), "command");
+                    writeLogoutCommand(singleDomainAdminCommandOs);
+                    singleDomainAdminCommandOs.close();
+                    
+                    ObjectOutputStream singleRegularUserCommandOs = xs.createObjectOutputStream(new FileWriter(regularUserDirName + "/" + "logout" + ".xml"), "command");
+                    writeLogoutCommand(singleRegularUserCommandOs);
+                    singleRegularUserCommandOs.close();
+                    
+				} else {
+				    writeCommand(out, key);
+				    writeCommand(rootAdmin, key);
+				    
+	                //Write single commands to separate xml files
+	                if (!key.equals("login")) {
+	                    ObjectOutputStream singleRootAdminCommandOs = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + key + ".xml"), "command");
+	                    writeCommand(singleRootAdminCommandOs, key);
+	                    singleRootAdminCommandOs.close();
+	                }           
+	                
+	                if (domain_admin_api_commands.containsKey(key)){
+	                    writeCommand(domainAdmin, key);
+	                    ObjectOutputStream singleDomainAdminCommandOs = xs.createObjectOutputStream(new FileWriter(domainAdminDirName + "/" + key + ".xml"), "command");
+	                    writeCommand(singleDomainAdminCommandOs, key);
+	                    singleDomainAdminCommandOs.close();
+	                }
+	                
+	                if (regular_user_api_commands.containsKey(key)){
+	                    writeCommand(regularUser, key);
+	                    ObjectOutputStream singleRegularUserCommandOs = xs.createObjectOutputStream(new FileWriter(regularUserDirName + "/" + key + ".xml"), "command");
+	                    writeCommand(singleRegularUserCommandOs, key);
+	                    singleRegularUserCommandOs.close();
+	                }
 				}
 			}
 			
@@ -181,15 +226,25 @@ public class ApiXmlDocWriter {
 			it = all_api_commands_sorted.keySet().iterator();
 			while (it.hasNext()) {     
                 String key = (String)it.next(); 
-                writeCommand(rootAdminSorted, key);
                 
-
-                if (domain_admin_api_commands.containsKey(key)){
-                    writeCommand(outDomainAdminSorted, key);    
-                }
-                
-                if (regular_user_api_commands.containsKey(key)){
-                    writeCommand(regularUserSorted, key);
+                if (key.equals("login")) {
+                    writeLoginCommand(rootAdminSorted);
+                    writeLoginCommand(outDomainAdminSorted);
+                    writeLoginCommand(regularUserSorted);
+                } else if (key.equals("logout")) {
+                    writeLogoutCommand(rootAdminSorted);
+                    writeLogoutCommand(outDomainAdminSorted);
+                    writeLogoutCommand(regularUserSorted);
+                } else {
+                    writeCommand(rootAdminSorted, key);
+                    
+                    if (domain_admin_api_commands.containsKey(key)){
+                        writeCommand(outDomainAdminSorted, key);    
+                    }
+                    
+                    if (regular_user_api_commands.containsKey(key)){
+                        writeCommand(regularUserSorted, key);
+                    }
                 }
             }
 			
@@ -264,6 +319,60 @@ public class ApiXmlDocWriter {
         
         out.writeObject(apiCommand);
 	}
+	
+	private static void writeLoginCommand(ObjectOutputStream out) throws ClassNotFoundException, IOException{
+        ArrayList<Argument> request = new ArrayList<Argument>();
+        ArrayList<Argument> response = new ArrayList<Argument>();
+        
+        //Create a new command, set name and description
+        Command apiCommand = new Command();
+        apiCommand.setName("login");
+        apiCommand.setDescription("Logs a user into the CloudStack. A successful login attempt will generate a JSESSIONID cookie value that can be passed in subsequent Query command calls until the \"logout\" command has been issued or the session has expired.");
+        
+        //Generate request
+        request.add(new Argument("username", "Username", true));
+        request.add(new Argument("password", "Password", true));
+        request.add(new Argument("domainid", "domain ID that the user belongs to. If no domain ID is passed in, the ROOT domain is assumed.", false));
+        apiCommand.setRequest(request);
+        
+        //Generate response
+        response.add(new Argument("username", "Username"));
+        response.add(new Argument("userid", "User id"));
+        response.add(new Argument("password", "Password"));
+        response.add(new Argument("domainid", "domain ID that the user belongs to. If no domain ID is passed in, the ROOT domain is assumed."));
+        response.add(new Argument("timeout", "the time period before the session has expired"));
+        response.add(new Argument("account", "the account name the user belongs to"));
+        response.add(new Argument("firstname", "first name of the user"));
+        response.add(new Argument("lastname", "last name of the user"));
+        response.add(new Argument("type", "the account type (admin, domain-admin, read-only-admin, user)"));
+        response.add(new Argument("timezone", "user time zone"));       
+        response.add(new Argument("timezoneoffset", "user time zone offset from UTC 00:00"));
+        response.add(new Argument("sessionkey", "Session key that can be passed in subsequent Query command calls"));
+        apiCommand.setResponse(response);
+
+        out.writeObject(apiCommand);
+    }
+	
+	
+	private static void writeLogoutCommand(ObjectOutputStream out) throws ClassNotFoundException, IOException{
+        ArrayList<Argument> request = new ArrayList<Argument>();
+        ArrayList<Argument> response = new ArrayList<Argument>();
+        
+        //Create a new command, set name and description
+        Command apiCommand = new Command();
+        apiCommand.setName("logout");
+        apiCommand.setDescription("Logs out the user");
+        
+        //Generate request - no request parameters
+        apiCommand.setRequest(request);
+        
+        //Generate response
+        response.add(new Argument("success", "success if the logout action succeeded"));
+        apiCommand.setResponse(response);
+
+        out.writeObject(apiCommand);
+    }
+	
 	
 	
 	private static ArrayList<Argument> setRequestFields(Field[] fields) {

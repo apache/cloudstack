@@ -30,6 +30,17 @@ public class Argument implements Comparable{
 		this.name = name;
 	}
 	
+	public Argument(String name, String description, boolean required) {
+        this.name = name;
+        this.description = description;
+        this.required = required;
+    }
+	
+	public Argument(String name, String description) {
+        this.name = name;
+        this.description = description;
+    }
+	
 	public String getName() {
 		return name;
 	}
