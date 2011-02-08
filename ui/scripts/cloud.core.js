@@ -973,6 +973,7 @@ function createMultipleSelectionSubContainer() {
                     selectedItemsInMidMenu[id] = $midmenuItem1; 
                     $midmenuItem1.find("#content").addClass("selected"); //css of vmops  
                     selected_midmenu_id = $midmenuItem1.attr("id");
+                    $currentMidmenuItem = $midmenuItem1;
                 }                               
                 clearRightPanel();      
                 var toRightPanelFn = $midmenuItem1.data("toRightPanelFn");
