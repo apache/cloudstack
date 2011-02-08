@@ -363,8 +363,10 @@ public class ApiServlet extends HttpServlet {
             if (attrNames != null) {
                 while (attrNames.hasMoreElements()) {
                     String attrName = (String)attrNames.nextElement();
-                    String attr = (String)session.getAttribute(attrName);
-                    sb.append("<" + attrName + ">" + attr + "</" + attrName + ">");
+                    Object attrObj = session.getAttribute(attrName);
+                    if (attrObj instanceof String || attrObj instanceof Long || attrObj instanceof Short) {
+                    	sb.append("<" + attrName + ">" + attrObj.toString() + "</" + attrName + ">");
+                    }
                 }
             }
 
