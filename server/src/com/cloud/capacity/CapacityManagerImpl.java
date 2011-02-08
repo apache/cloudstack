@@ -193,10 +193,10 @@ public class CapacityManagerImpl implements CapacityManager {
                 if (reservedCpu >= cpu && reservedMem >= ram) {
                     capacityCpu.setReservedCapacity(reservedCpu - cpu);
                     capacityMem.setReservedCapacity(reservedMem - ram);        
-                    if ((usedCpu + reservedCpu + cpu <= totalCpu) && (reservedMem + usedMem + ram <= totalMem)) {
-                        capacityCpu.setUsedCapacity(usedCpu + cpu);
-                        capacityMem.setUsedCapacity(usedMem + ram);
-                    }
+
+                    capacityCpu.setUsedCapacity(usedCpu + cpu);
+                    capacityMem.setUsedCapacity(usedMem + ram);
+
                     success = true;
                 }       
             } else {
