@@ -495,7 +495,8 @@ var hostActionMap = {
         inProcessText: "label.action.enable.maintenance.mode.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {            
             var item = json.queryasyncjobresultresponse.jobresult.host;
-            hostToMidmenu(item, $midmenuItem1);           
+            hostToMidmenu(item, $midmenuItem1);    
+			return dictionary["message.action.enable.maintenance"];
         }
     },
     "label.action.cancel.maintenance.mode": {              
@@ -505,7 +506,8 @@ var hostActionMap = {
         inProcessText: "label.action.cancel.maintenance.mode.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {            
             var item = json.queryasyncjobresultresponse.jobresult.host;  
-            hostToMidmenu(item, $midmenuItem1);            
+            hostToMidmenu(item, $midmenuItem1);
+			return dictionary["message.action.cancel.maintenance"];
         }
     },
     "label.action.force.reconnect": {              
@@ -515,7 +517,8 @@ var hostActionMap = {
         inProcessText: "label.action.force.reconnect.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {
             var item = json.queryasyncjobresultresponse.jobresult.host;
-            hostToMidmenu(item, $midmenuItem1);             
+            hostToMidmenu(item, $midmenuItem1);  
+			return dictionary["message.action.force.reconnect"];
         }
     },
     "label.action.remove.host": {              

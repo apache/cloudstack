@@ -19,6 +19,9 @@ dictionary = {
 	'label.action.remove.host' : '<fmt:message key="label.action.remove.host"/>',
 	'label.action.remove.host.processing' : '<fmt:message key="label.action.remove.host.processing"/>',
 	'message.action.remove.host' : '<fmt:message key="message.action.remove.host"/>',
+	'message.action.enable.maintenance' : '<fmt:message key="message.action.enable.maintenance"/>',
+	'message.action.cancel.maintenance' : '<fmt:message key="message.action.cancel.maintenance"/>',
+	'message.action.force.reconnect' : '<fmt:message key="message.action.force.reconnect"/>',
 	'label.action.update.OS.preference' : '<fmt:message key="label.action.update.OS.preference"/>',
 	'label.action.update.OS.preference.processing' : '<fmt:message key="label.action.update.OS.preference.processing"/>'
 };	
