@@ -162,22 +162,16 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 				}
 			}
 			
-			if (_configDao.isPremium()) {		
-				// Default value is set as KVM because of FOSS build, when we are
-				// running under premium, autoset to XenServer if we know it is from FOSS settings
-				
-				_configDao.update("secondary.storage.vm", "true");
-				s_logger.debug("ConfigurationServer made secondary storage vm required.");
-				
-				_configDao.update("secstorage.encrypt.copy", "true");
-				s_logger.debug("ConfigurationServer made secondary storage copy encrypted.");
-				
-				_configDao.update("secstorage.secure.copy.cert", "realhostip");
-				s_logger.debug("ConfigurationServer made secondary storage copy use realhostip.");					          	         
-			} else {
-				/*FOSS release, make external DHCP mode as default*/
-				_configDao.update("direct.attach.network.externalIpAllocator.enabled", "true");
-			}
+		
+			_configDao.update("secondary.storage.vm", "true");
+			s_logger.debug("ConfigurationServer made secondary storage vm required.");
+
+			_configDao.update("secstorage.encrypt.copy", "true");
+			s_logger.debug("ConfigurationServer made secondary storage copy encrypted.");
+
+			_configDao.update("secstorage.secure.copy.cert", "realhostip");
+			s_logger.debug("ConfigurationServer made secondary storage copy use realhostip.");          
+
 			
 			// Save Direct Networking service offerings
 			createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance, $0.05 per hour", false, false, false, null);			
