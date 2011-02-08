@@ -704,6 +704,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
         } finally {
             if (startedVm == null) {
                 changeState(vm, Event.OperationFailed, null, work, Step.Done);
+                throw new CloudRuntimeException("Unable to start " + vm);
             }
         }
         
