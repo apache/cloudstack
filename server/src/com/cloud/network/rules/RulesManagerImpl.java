@@ -355,6 +355,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     
     @Override @ActionEvent (eventType=EventTypes.EVENT_NET_RULE_DELETE, eventDescription="revoking forwarding rule", async=true)
     public boolean revokePortForwardingRule(long ruleId, boolean apply) {
+        return revokePortForwardingRuleInternal(ruleId, apply);
+     }
+    
+    private boolean revokePortForwardingRuleInternal(long ruleId, boolean apply) {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
         
@@ -396,7 +400,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
     	
     	for (PortForwardingRuleVO rule : rules) {
-    		revokePortForwardingRule(rule.getId(), true);
+    		revokePortForwardingRuleInternal(rule.getId(), true);
     	}
         return true;
     }
