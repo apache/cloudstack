@@ -32,6 +32,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.State;
@@ -50,7 +51,6 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
-import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -188,6 +188,11 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     
     @Override
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
+        IPAddressVO ip = _ipAddressDao.findByAccountAndIp(vm.getVirtualMachine().getAccountId(), nic.getIp4Address());
+        if (ip != null) {
+            _networkMgr.unassignPublicIpAddress(ip);
+        }
+        nic.deallocate();
     }
     
     @Override
