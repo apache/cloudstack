@@ -1185,14 +1185,14 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	VMTemplateVO iso = _tmpltDao.findById(isoId);
 
         boolean success = _vmMgr.attachISOToVM(vmId, isoId, attach);
-        if ( success ) {
-            if (attach) {
-                vm.setIsoId(iso.getId());
-            } else {
-                vm.setIsoId(null);
-            }
+        if ( success && attach) {
+             vm.setIsoId(iso.getId());
             _userVmDao.update(vmId, vm);
-        }       
+        } 
+        if ( !attach ) {
+            vm.setIsoId(null);
+            _userVmDao.update(vmId, vm);
+        }    
         return success;
     }
 
