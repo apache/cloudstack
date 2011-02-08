@@ -152,4 +152,6 @@ public interface HostDao extends GenericDao<HostVO, Long> {
      * @return ids of the host meeting the search parameters.
      */
     List<Long> listBy(Long dataCenterId, Long podId, Long clusterId, Type hostType, Status... statuses);
+
+    List<HostVO> listBy(Long clusterId, Long podId, long dcId);
 }

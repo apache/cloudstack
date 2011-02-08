@@ -112,6 +112,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
@@ -2071,13 +2072,21 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		final Host.Type type = host.getType();
 
 		if (type == Host.Type.Routing) {
+		    
 			final List<VMInstanceVO> vms = _vmDao.listByHostId(hostId);
 			if (vms.size() == 0) {
 				return true;
 			}
+			
+			List<HostVO> hosts = _hostDao.listBy(host.getClusterId(), host.getPodId(), host.getDataCenterId());	
 
 			for (final VMInstanceVO vm : vms) {
-				_haMgr.scheduleMigration(vm);
+		        if( hosts == null || hosts.isEmpty()) {
+		            // for the last host in this cluster, stop all the VMs
+	                _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
+		        } else {
+		            _haMgr.scheduleMigration(vm);
+		        }
 			}
 		}
 
