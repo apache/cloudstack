@@ -1130,7 +1130,6 @@ public abstract class CitrixResourceBase implements ServerResource {
     protected SetPortForwardingRulesAnswer execute(SetPortForwardingRulesCommand cmd) {
         Connection conn = getConnection();
         
-        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String args = routerIp;
         String[] results = new String[cmd.getRules().length];
@@ -1155,16 +1154,6 @@ public abstract class CitrixResourceBase implements ServerResource {
     	        args += " -r " + rule.getDstIp();
     	        args += " -d " + rule.getStringDstPortRange();
     	
-//    	        String oldPrivateIP = rule.getOldPrivateIP();
-//    	        String oldPrivatePort = rule.getOldPrivatePort();
-//    	
-//    	        if (oldPrivateIP != null) {
-//    	            args += " -w " + oldPrivateIP;
-//    	        }
-//    	
-//    	        if (oldPrivatePort != null) {
-//    	            args += " -x " + oldPrivatePort;
-//    	        }
             }
             String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args);
             results[i++] = (result == null || result.isEmpty()) ? "Failed" : null;

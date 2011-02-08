@@ -121,21 +121,26 @@ public class VirtualRoutingResource implements Manager {
 
     private Answer execute(SetPortForwardingRulesCommand cmd) {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
-
         String[] results = new String[cmd.getRules().length];
         int i = 0;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
             String result = null;
+            final Script command = new Script(_firewallPath, _timeout, s_logger);
+            command.add(routerIp);
+            command.add(rule.revoked() ? "-D" : "-A");
             if (rule.isOneToOneNat()){
-                setStaticNat(!rule.revoked(), rule.getProtocol(), routerIp, rule.getSrcIp(), rule.getDstIp());
+                //1:1 NAT needs instanceip;publicip;domrip;op
+                command.add(" -l ", rule.getSrcIp());
+                command.add(" -r ", rule.getDstIp());
+                command.add(" -P ", rule.getProtocol().toLowerCase());
+                command.add(" -d ", rule.getStringDstPortRange());
+                command.add(" -G ") ;
             } else {
-
-                result = setPortForwardRule(!rule.revoked(), routerName, routerIp, 
-                        rule.getProtocol().toLowerCase(), rule.getSrcIp(), 
-                        Integer.toString(rule.getSrcPortRange()[0]), rule.getDstIp(), 
-                        Integer.toString(rule.getDstPortRange()[0]));
-
+                command.add("-P ", rule.getProtocol().toLowerCase());
+                command.add("-l ", rule.getSrcIp());
+                command.add("-p ", rule.getStringSrcPortRange());
+                command.add("-r ", rule.getDstIp());
+                command.add("-d ", rule.getStringDstPortRange());
             }
             results[i++] = (!(result == null || result.isEmpty())) ? "Failed" : null;
         }
@@ -244,7 +249,9 @@ public class VirtualRoutingResource implements Manager {
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         for (IpAddressTO ip : ips) {
-            result = assignPublicIpAddress(routerName, routerIp, ip.getPublicIp(), ip.isAdd(), ip.isSourceNat(), ip.getVlanId(), ip.getVlanGateway(), ip.getVlanNetmask());
+            result = assignPublicIpAddress(routerName, routerIp, ip.getPublicIp(), ip.isAdd(), 
+                     ip.isFirstIP(), ip.isSourceNat(), ip.getVlanId(), ip.getVlanGateway(), ip.getVlanNetmask(),
+                     ip.getVifMacAddress(), ip.getGuestIp());
             if (result != null) {
                 results[i++] = IpAssocAnswer.errorResult;
             } else {
@@ -385,73 +392,37 @@ public class VirtualRoutingResource implements Manager {
         return command.execute();
     }
 
-    public String assignPublicIpAddress(final String vmName, final String privateIpAddress, final String publicIpAddress, final boolean add, final boolean sourceNat, final String vlanId, final String vlanGateway, final String vlanNetmask) {
+    protected String assignPublicIpAddress(final String vmName,
+            final String privateIpAddress, final String publicIpAddress,
+            final boolean add, final boolean firstIP, final boolean sourceNat,
+            final String vlanId, final String vlanGateway,
+            final String vlanNetmask, final String vifMacAddress, String guestIp){
 
         final Script command = new Script(_ipassocPath, _timeout, s_logger);
+        command.add( privateIpAddress);
         if (add) {
             command.add("-A");
         } else {
             command.add("-D");
         }
+        String cidrSize = Long.toString(NetUtils.getCidrSize(vlanNetmask));
         if (sourceNat) {
             command.add("-f");
+            command.add("-l", publicIpAddress + "/" + cidrSize);
+        } else if (firstIP) {
+            command.add( "-f");
+            command.add( "-l", publicIpAddress + "/" + cidrSize);
+        } else {
+            command.add("-l", publicIpAddress);
         }
-        command.add("-i", privateIpAddress);
-        command.add("-l", publicIpAddress);
-        command.add("-r", vmName);
 
-        command.add("-n", vlanNetmask);
-
+        //FIXME: figure out the right interface
         command.add("-c", "eth2");
 
-        if (vlanId != null) {
-            command.add("-v", vlanId);
-            command.add("-g", vlanGateway);
-        }
-
         return command.execute();
     }
 
-    public String setPortForwardRule(final boolean enable, final String routerName, final String routerIpAddress, final String protocol,
-            final String publicIpAddress, final String publicPortRange, final String privateIpAddress, final String privatePortRange) {
-
-        if (routerIpAddress == null) {
-            s_logger.warn("setPortForwardRule did nothing because Router IP address was null when creating rule for public IP: " + publicIpAddress);
-            return null;    
-        }
-
-
-        final Script command = new Script(_firewallPath, _timeout, s_logger);
-
-        command.add(enable ? "-A" : "-D");
-        command.add("-P", protocol);
-        command.add("-l", publicIpAddress);
-        command.add("-p", publicPortRange);
-        command.add("-n", routerName);
-        command.add("-i", routerIpAddress);
-        command.add("-r", privateIpAddress);
-        command.add("-d", privatePortRange);
-
-        return command.execute();
-    }
-
-    public String setStaticNat(final boolean enable, final String protocal, final String routerIpAddress,
-            final String publicIpAddress, final String privateIpAddress) {
-
-        if (routerIpAddress == null) {
-            s_logger.warn("setStaticNat did nothing because Router IP address was null when creating rule for public IP: " + publicIpAddress);
-            return null;    
-        }
-
-        final Script command = new Script(_firewallPath, _timeout, s_logger);
-
-        command.add(enable ? "-A" : "-D");
-        command.add("-l", publicIpAddress);
-        command.add("-G", protocal);
-        command.add("-i", routerIpAddress);
-        command.add("-r", privateIpAddress);
-        return command.execute();
-    }
+    
 
     private boolean isBridgeExists(String bridgeName) {
         Script command = new Script("/bin/sh", _timeout);
