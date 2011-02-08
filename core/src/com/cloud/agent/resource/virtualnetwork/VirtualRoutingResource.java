@@ -142,6 +142,7 @@ public class VirtualRoutingResource implements Manager {
                 command.add("-r ", rule.getDstIp());
                 command.add("-d ", rule.getStringDstPortRange());
             }
+            result = command.execute();
             results[i++] = (!(result == null || result.isEmpty())) ? "Failed" : null;
         }
 
