@@ -1098,6 +1098,7 @@ public class ManagementServerImpl implements ManagementServer {
         sc.addAnd("systemUse", SearchCriteria.Op.EQ, false);
 
         return _offeringsDao.search(sc, searchFilter);
+        
     }
 
     private List<ServiceOfferingVO> searchServiceOfferingsInternal(Account account, Object name, Object id, Long vmId, Object keyword, Filter searchFilter){
@@ -1121,7 +1122,6 @@ public class ManagementServerImpl implements ManagementServer {
 
 		            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
 		        } else if (vmId != null) {
-		        	includePublicOfferings = false;
 		            UserVmVO vmInstance = _userVmDao.findById(vmId);
 		            if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
 		                throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
@@ -1174,8 +1174,8 @@ public class ManagementServerImpl implements ManagementServer {
 		if(includePublicOfferings) {
             sol.addAll(_offeringsDao.findPublicServiceOfferings());
         }
-		
-    	return sol;
+
+		return sol;
     }
     @Override
     public List<ClusterVO> searchForClusters(ListClustersCmd cmd) {
