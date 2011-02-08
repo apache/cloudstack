@@ -126,16 +126,11 @@ function buildZoneTree() {
             var $thisNode = $(this);    
             $("#right_panel").load("jsp/secondarystorage.jsp", function(){     
                 currentRightPanelJSP = "jsp/secondarystorage.jsp";                 
-                 
-                /*                      
+                                                     
                 $(this).data("onRefreshFn", function() {		        
-                    var zoneObj = $midmenuItem1.data("jsonObj");
-                    if(zoneObj == null)
-                        return;
-                    $("#zone_"+zoneObj.id).find("#secondarystorage_header").click();
+                    secondaryStorageJsonToDetailsTab();    
                 }); 
-                */
-                
+                                
                 afterLoadSecondaryStorageJSP($thisNode);                       
             });      
         } 
@@ -304,7 +299,7 @@ function buildZoneTree() {
                         var $topButtonContainer = clearButtonsOnTop();			    	       
 		                $("#top_buttons").appendTo($topButtonContainer);       
                                         
-                        $thisNode.data("onRefreshFn", function() {
+                        $(this).data("onRefreshFn", function() {
 	                        clusterJsonToDetailsTab();
 	                    });  
             	        
