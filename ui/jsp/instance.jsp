@@ -682,7 +682,7 @@ dictionary = {
 						<div id="for_basic_zone" style="display:none">		
 						    <h3><fmt:message key="label.security.groups"/></h3>		
 						    <span id="not_available_message" style="display:none"><fmt:message key="label.no.security.groups"/></span>				    
-						    <ol id="security_group_section" style="display:none">						        
+						    <ol id="security_group_section" style="display:none; float:left; list-style:none">						        
 						        <li>
 						            <select id="security_group_dropdown" class="multiple" multiple="multiple" size="15">
 									</select>
