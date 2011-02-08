@@ -155,10 +155,7 @@ function buildZoneTree() {
                 currentRightPanelJSP = "jsp/network.jsp";                 
                                       
                 $(this).data("onRefreshFn", function() {		        
-                    var zoneObj = $midmenuItem1.data("jsonObj");
-                    if(zoneObj == null)
-                        return;
-                    $("#zone_"+zoneObj.id).find("#network_header").click();
+                    $selectedSubMenu.click();
                 }); 
                 afterLoadNetworkJSP($thisNode);                       
             });      
