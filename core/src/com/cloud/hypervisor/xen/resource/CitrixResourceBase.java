@@ -1129,31 +1129,31 @@ public abstract class CitrixResourceBase implements ServerResource {
 
     protected SetPortForwardingRulesAnswer execute(SetPortForwardingRulesCommand cmd) {
         Connection conn = getConnection();
-        String args;
+        
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String args = routerIp;
         String[] results = new String[cmd.getRules().length];
         int i = 0;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
             if (rule.isOneToOneNat()){
             	//1:1 NAT needs instanceip;publicip;domrip;op
-            	args = rule.revoked() ? "-D" : "-A";
+            	args += rule.revoked() ? " -D " : " -A ";
             	
     	        args += " -l " + rule.getSrcIp();
-    	        args += " -i " + routerIp;
     	        args += " -r " + rule.getDstIp();
-    	        args += " -G " + rule.getProtocol();
+    	        args += " -P " + rule.getProtocol().toLowerCase();
+                args += " -d " + rule.getStringDstPortRange();
+                args += " -G " ;
+
             } else {
-                args = rule.revoked() ? "-D" : "-A";
+                args += rule.revoked() ? " -D " : " -A ";
     
     	        args += " -P " + rule.getProtocol().toLowerCase();
     	        args += " -l " + rule.getSrcIp();
-    	        args += " -p " + rule.getSrcPortRange()[0];
-    	        args += " -n " + routerName;
-    	        args += " -i " + routerIp;
+    	        args += " -p " + rule.getStringSrcPortRange();
     	        args += " -r " + rule.getDstIp();
-    	        args += " -d " + rule.getDstPortRange()[0];
-    	        args += " -N " + rule.getVlanNetmask();
+    	        args += " -d " + rule.getStringDstPortRange();
     	
 //    	        String oldPrivateIP = rule.getOldPrivateIP();
 //    	        String oldPrivatePort = rule.getOldPrivatePort();
@@ -1389,12 +1389,12 @@ public abstract class CitrixResourceBase implements ServerResource {
                 throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
             }
 
-            String args = null;
+            String args = privateIpAddress;
             
             if (add) {
-                args = "-A";
+                args += " -A ";
             } else {
-                args = "-D";
+                args += " -D ";
             }
             String cidrSize = Long.toString(NetUtils.getCidrSize(vlanNetmask));
             if (sourceNat) {
@@ -1409,12 +1409,10 @@ public abstract class CitrixResourceBase implements ServerResource {
               	args += " -l ";
                 args += publicIpAddress;
             }
-            args += " -i ";
-            args += privateIpAddress;
+            
             args += " -c ";
             args += "eth" + correctVif.getDevice(conn);
-            args += " -g ";
-            args += vlanGateway;
+            
 
             String result = callHostPlugin(conn, "vmops", "ipassoc", "args", args);
             if (result == null || result.isEmpty()) {

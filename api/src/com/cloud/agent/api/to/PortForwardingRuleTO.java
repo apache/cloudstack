@@ -18,6 +18,7 @@
 package com.cloud.agent.api.to;
 
 import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.utils.net.NetUtils;
 
 /**
  * PortForwardingRuleTO specifies one port forwarding rule.
@@ -51,5 +52,9 @@ public class PortForwardingRuleTO extends FirewallRuleTO {
 
     public int[] getDstPortRange() {
         return dstPortRange;
+    }
+
+    public String getStringDstPortRange() {
+        return NetUtils.portRangeToString(dstPortRange);
     }
 }

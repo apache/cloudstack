@@ -787,6 +787,10 @@ public class NetUtils {
 		
     	return getIpRangeEndIpFromCidr(cidr, 32 - Long.parseLong(cidrPair[1]));
     }
+    
+    public static String portRangeToString(int portRange[]){
+        return Integer.toString(portRange[0]) + ":" + Integer.toString(portRange[1]);
+    }
 
     // test only
 	private static void configLog4j() {

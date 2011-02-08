@@ -21,75 +21,9 @@ check_gw() {
   return $?;
 }
 
-rflag=
-iflag=
-Pflag=
-pflag=
-tflag=
-lflag=
-dflag=
-oflag=
-wflag=
-xflag=
-nflag=
-Nflag=
-Gflag=
-op=""
-oldPrivateIP=""
-oldPrivatePort=""
-
-while getopts 'ADr:i:P:p:t:l:d:w:x:n:N:G:' OPTION
-do
-  case $OPTION in
-  A)	Aflag=1
-		op="-A"
-		;;
-  D)	Dflag=1
-		op="-D"
-		;;
-  i)	iflag=1
-		domRIp="$OPTARG"
-		;;
-  r)	rflag=1
-		instanceIp="$OPTARG"
-		;;
-  P)	Pflag=1
-		protocol="$OPTARG"
-		;;
-  p)	pflag=1
-		ports="$OPTARG"
-		;;
-  t)	tflag=1
-		icmptype="$OPTARG"
-		;;
-  l)	lflag=1
-		publicIp="$OPTARG"
-		;;
-  d)	dflag=1
-		dport="$OPTARG"
-		;;
-  w)	wflag=1
-  		oldPrivateIP="$OPTARG"
-  		;;
-  x)	xflag=1
-  		oldPrivatePort="$OPTARG"
-  		;;	
-  n)	nflag=1
-  		domRName="$OPTARG"
-  		;;
-  N)	Nflag=1
-  		netmask="$OPTARG"
-  		;;
-  G)    Gflag=1
-  		nat="OPTARG"
-  		;;
-  ?)	usage
-		exit 2
-		;;
-  esac
-done
-
 cert="/root/.ssh/id_rsa.cloud"
+domRIp=$1
+shift
 
 # Check if DomR is up and running. If not, exit with error code 1.
 check_gw "$domRIp"
@@ -98,19 +32,6 @@ then
   exit 1
 fi
 
-#Either the A flag or the D flag but not both
-if [ "$Aflag$Dflag" != "1" ]
-then
-  usage
-  exit 2
-fi
-
-#Require -d with -p
-if [ "$pflag$dflag" != 11 -a "$pflag$dflag" != "" ]
-then
-  usage
-  exit 2
-fi
 
 ssh -p 3922 -q -o StrictHostKeyChecking=no -i $cert root@$domRIp "/root/firewall.sh $*"
 exit $?
