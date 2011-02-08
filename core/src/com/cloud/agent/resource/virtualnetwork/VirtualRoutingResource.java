@@ -575,7 +575,7 @@ public class VirtualRoutingResource implements Manager {
             s_logger.warn("Incoming public ip address is overriden.  Will always be using the same ip address: " + _publicIpAddress);
         }
 
-        _firewallPath = findScript("firewall.sh");
+        _firewallPath = findScript("call_firewall.sh");
         if (_firewallPath == null) {
             throw new ConfigurationException("Unable to find the firewall.sh");
         }
