@@ -154,7 +154,6 @@ public class VirtualRoutingResource implements Manager {
         File tmpCfgFile = null;
         try {
             String cfgFilePath = "";
-            String routerIP = null;
             LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
             String[] config = cfgtr.generateConfiguration(cmd);
             String[][] rules = cfgtr.generateFwRules(cmd);
@@ -172,7 +171,7 @@ public class VirtualRoutingResource implements Manager {
             final String result = setLoadBalancerConfig(cfgFilePath,
                     rules[LoadBalancerConfigurator.ADD],
                     rules[LoadBalancerConfigurator.REMOVE],
-                    routerIP);
+                    routerIp);
 
             return new Answer(cmd, result == null, result);
         } catch (final IOException e) {
@@ -578,12 +577,12 @@ public class VirtualRoutingResource implements Manager {
 
         _firewallPath = findScript("call_firewall.sh");
         if (_firewallPath == null) {
-            throw new ConfigurationException("Unable to find the firewall.sh");
+            throw new ConfigurationException("Unable to find the call_firewall.sh");
         }
 
-        _loadbPath = findScript("loadbalancer.sh");
+        _loadbPath = findScript("call_loadbalancer.sh");
         if (_loadbPath == null) {
-            throw new ConfigurationException("Unable to find the loadbalancer.sh");
+            throw new ConfigurationException("Unable to find the call_loadbalancer.sh");
         }
 
         _savepasswordPath = findScript("save_password_to_domr.sh");
