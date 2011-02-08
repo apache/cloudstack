@@ -2081,11 +2081,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (group != null) {
                 boolean addToGroup = addInstanceToGroup(Long.valueOf(id), group);
                 if (!addToGroup) {
-                    throw new CloudRuntimeException("Unable to assing Vm to the group " + group);
+                    throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
                 }
             }
         } catch (Exception ex) {
-            throw new CloudRuntimeException("Unable to assing Vm to the group " + group);
+            throw new CloudRuntimeException("Unable to assign Vm to the group " + group);
         }
         
         return vm;
