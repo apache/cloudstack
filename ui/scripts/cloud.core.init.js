@@ -503,8 +503,11 @@ $(document).ready(function() {
 	
 	// refresh button
 	$("#refresh_link").unbind("click").bind("click", function(event) {		
-		if ($currentMidmenuItem != null) {
-			$currentMidmenuItem.click();
+		if ($currentMidmenuItem != null) {			
+			if($("#midmenu_container").find("#multiple_selection_sub_container").length == 0) //single-selection middle menu
+	            $currentMidmenuItem.click();	    
+	        else  //multiple-selection middle menu
+	            clickItemInMultipleSelectionMidmenu($currentMidmenuItem); 
 		} else {
 			var onRefreshFn = $("#right_panel").data("onRefreshFn");
 			if(onRefreshFn != null)
