@@ -31,6 +31,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
@@ -725,9 +726,10 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
         public void run() {
         	s_logger.info("Starting work");
             while (!_stopped) {
+                HaWorkVO work = null;
                 try {
                     s_logger.trace("Checking the database");
-                    final HaWorkVO work = _haDao.take(_serverId);
+                    work = _haDao.take(_serverId);
                     if (work == null) {
                         try {
                         	synchronized(this) {
@@ -739,7 +741,8 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
                             continue;
                         }
                     }
-                    
+
+                    NDC.push("work-" + work.getId());
                     s_logger.info("Processing " + work);
 
                     try {
@@ -776,6 +779,9 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
                     s_logger.error("Caught this throwable, ", th);
                 } finally {
                 	StackMaid.current().exitCleanup();
+                	if (work != null) {
+                	    NDC.pop();
+                	}
                 }
             }
             s_logger.info("Time to go home!");
