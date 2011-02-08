@@ -1771,14 +1771,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         boolean success = true;
 
-        // release ip addresses associated with the network if there are any
+        // release ip addresses associated with the network if there are any - for Virtual case
         List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId);
         if (ipsToRelease != null && !ipsToRelease.isEmpty()) {
             for (IPAddressVO ip : ipsToRelease) {
                 unassignPublicIpAddress(ip);
             }
 
-            s_logger.debug("Ip addresses are unassigned successfully as a part of network id=" + networkId + " destroy");
+            s_logger.debug("Ip addresses associated with network " + networkId + " are unassigned successfully as a part of network id=" + networkId + " destroy");
         }
 
         for (NetworkElement element : _networkElements) {
