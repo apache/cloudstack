@@ -1536,12 +1536,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         _volsDao.update(volume, Volume.Event.Destroy);
         long volumeId = volume.getId();
 
-        if(volume.getPoolId() != null){
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volumeId,
-                    volume.getName(), null, null, null);
-            _usageEventDao.persist(usageEvent);
-        }
-
         // Delete the recurring snapshot policies for this volume.
         _snapshotMgr.deletePoliciesForVolume(volumeId);
 
@@ -2236,6 +2230,9 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         // Check that the volume is not already destroyed
         if (volume.getState() != Volume.State.Destroy) {
             destroyVolume(volume);
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volumeId,
+                    volume.getName(), null, null, null);
+            _usageEventDao.persist(usageEvent);
         }
 
         try {
@@ -2607,8 +2604,15 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         for (VolumeVO vol : volumesForVm) {
             if (vol.getVolumeType().equals(VolumeType.ROOT)) {
                 //This check is for VM in Error state (volume is already destroyed)
-                if(!vol.getState().equals(Volume.State.Destroy))
+                if(!vol.getState().equals(Volume.State.Destroy)){
                     destroyVolume(vol);
+                    VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+                    if(vm.getType() == VirtualMachine.Type.User){
+                        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(),
+                                vol.getName(), null, null, null);
+                        _usageEventDao.persist(usageEvent);
+                    }
+                }
                 toBeExpunged.add(vol);
             } else {
                 if (s_logger.isDebugEnabled()) {

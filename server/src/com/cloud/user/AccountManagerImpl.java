@@ -58,6 +58,9 @@ import com.cloud.configuration.dao.ResourceLimitDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventVO;
+import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -131,6 +134,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	@Inject private TemplateManager _tmpltMgr;
 	@Inject private ConfigurationManager _configMgr;
 	@Inject private VirtualMachineManager _itMgr;
+	@Inject private UsageEventDao _usageEventDao;
 	
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 	
@@ -852,6 +856,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     s_logger.error("Unable to destroy vm: " + vm.getId());
                     accountCleanupNeeded = true;
                 }
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
+                _usageEventDao.persist(usageEvent);
             }
             
             // Mark the account's volumes as destroyed
@@ -859,6 +865,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             for (VolumeVO volume : volumes) {
                 if(!volume.getState().equals(Volume.State.Destroy)) {
                     _storageMgr.destroyVolume(volume);
+                    if(volume.getPoolId() != null){
+                        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(),
+                                volume.getName(), null, null, null);
+                        _usageEventDao.persist(usageEvent);
+                    }
                 }
             }
             
