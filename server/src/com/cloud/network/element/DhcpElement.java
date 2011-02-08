@@ -126,7 +126,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
     
     @Override
     public boolean shutdown(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
-        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
+        DomainRouterVO router = _routerDao.findByNetwork(network.getId());
         if (router == null) {
             return true;
         }
@@ -135,7 +135,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
     
     @Override
     public boolean destroy(Network config) throws ConcurrentOperationException, ResourceUnavailableException{
-        DomainRouterVO router = _routerDao.findByNetworkConfiguration(config.getId());
+        DomainRouterVO router = _routerDao.findByNetwork(config.getId());
         if (router == null) {
             return true;
         }
@@ -178,7 +178,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
         DeployDestination dest = new DeployDestination(dc, null, null, null);
-        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
+        DomainRouterVO router = _routerDao.findByNetwork(network.getId());
         if (router == null) {
             s_logger.trace("Can't find dhcp element in network " + network.getId());
             return true;

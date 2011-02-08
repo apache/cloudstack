@@ -17,9 +17,6 @@
  */
 package com.cloud.vm.dao;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -27,13 +24,12 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.network.router.VirtualRouter.Role;
-import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachine.State;
 
@@ -41,92 +37,33 @@ import com.cloud.vm.VirtualMachine.State;
 public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> implements DomainRouterDao {
     private static final Logger s_logger = Logger.getLogger(DomainRouterDaoImpl.class);
 
-    private static final String GetNextDhcpAddressSql = "UPDATE domain_router set dhcp_ip_address = (@LAST_DHCP:=dhcp_ip_address) + 1 WHERE id = ?";
-    private static final String GetLastDhcpSql = "SELECT @LAST_DHCP";
-
+    protected final SearchBuilder<DomainRouterVO> AllFieldsSearch;
     protected final SearchBuilder<DomainRouterVO> IdStatesSearch;
-    protected final SearchBuilder<DomainRouterVO> AccountDcSearch;
-    protected final SearchBuilder<DomainRouterVO> AccountDcRoleSearch;
-
-    protected final SearchBuilder<DomainRouterVO> AccountSearch;
-    protected final SearchBuilder<DomainRouterVO> DcSearch;
-    protected final SearchBuilder<DomainRouterVO> IpSearch;
-    protected final SearchBuilder<DomainRouterVO> HostSearch;
-    protected final SearchBuilder<DomainRouterVO> LastHostSearch;
     protected final SearchBuilder<DomainRouterVO> HostUpSearch;
-    protected final SearchBuilder<DomainRouterVO> DomainIdSearch;
-    protected final SearchBuilder<DomainRouterVO> StateChangeSearch;
-    protected final SearchBuilder<DomainRouterVO> NetworkConfigSearch;
-    protected final Attribute _updateTimeAttr;
 
     protected DomainRouterDaoImpl() {
-        DcSearch = createSearchBuilder();
-        DcSearch.and("dc", DcSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        DcSearch.done();
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("dc", AllFieldsSearch.entity().getDataCenterId(), Op.EQ);
+        AllFieldsSearch.and("account", AllFieldsSearch.entity().getAccountId(), Op.EQ);
+        AllFieldsSearch.and("role", AllFieldsSearch.entity().getRole(), Op.EQ);
+        AllFieldsSearch.and("domainId", AllFieldsSearch.entity().getDomainId(), Op.EQ);
+        AllFieldsSearch.and("host", AllFieldsSearch.entity().getHostId(), Op.EQ);
+        AllFieldsSearch.and("lastHost", AllFieldsSearch.entity().getLastHostId(), Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
+        AllFieldsSearch.and("network", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
+        AllFieldsSearch.and("podId", AllFieldsSearch.entity().getPodId(), Op.EQ);
+        AllFieldsSearch.done();
 
         IdStatesSearch = createSearchBuilder();
-        IdStatesSearch.and("id", IdStatesSearch.entity().getId(), SearchCriteria.Op.EQ);
-        IdStatesSearch.and("states", IdStatesSearch.entity().getState(), SearchCriteria.Op.IN);
+        IdStatesSearch.and("id", IdStatesSearch.entity().getId(), Op.EQ);
+        IdStatesSearch.and("states", IdStatesSearch.entity().getState(), Op.IN);
         IdStatesSearch.done();
 
-        AccountDcSearch = createSearchBuilder();
-        AccountDcSearch.and("account", AccountDcSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountDcSearch.and("dc", AccountDcSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        AccountDcSearch.done();
-        
-        AccountDcRoleSearch = createSearchBuilder();
-        AccountDcRoleSearch.and("account", AccountDcRoleSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountDcRoleSearch.and("dc", AccountDcRoleSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        AccountDcRoleSearch.and("role", AccountDcRoleSearch.entity().getRole(), SearchCriteria.Op.EQ);
-        AccountDcRoleSearch.done();
-
-        AccountSearch = createSearchBuilder();
-        AccountSearch.and("account", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountSearch.done();
-
-        IpSearch = createSearchBuilder();
-        IpSearch.and("ip", IpSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
-        IpSearch.done();
-
-        HostSearch = createSearchBuilder();
-        HostSearch.and("host", HostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
-        HostSearch.done();
-        
-        LastHostSearch = createSearchBuilder();
-        LastHostSearch.and("lastHost", LastHostSearch.entity().getLastHostId(), SearchCriteria.Op.EQ);
-        LastHostSearch.and("state", LastHostSearch.entity().getState(), SearchCriteria.Op.EQ);
-        LastHostSearch.done();
-
         HostUpSearch = createSearchBuilder();
-        HostUpSearch.and("host", HostUpSearch.entity().getHostId(), SearchCriteria.Op.EQ);
-        HostUpSearch.and("states", HostUpSearch.entity().getState(), SearchCriteria.Op.NIN);
+        HostUpSearch.and("host", HostUpSearch.entity().getHostId(), Op.EQ);
+        HostUpSearch.and("states", HostUpSearch.entity().getState(), Op.NIN);
         HostUpSearch.done();
-
-        DomainIdSearch = createSearchBuilder();
-        DomainIdSearch.and("domainId", DomainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-        DomainIdSearch.done();
-
-        StateChangeSearch = createSearchBuilder();
-        StateChangeSearch.and("id", StateChangeSearch.entity().getId(), SearchCriteria.Op.EQ);
-        StateChangeSearch.and("states", StateChangeSearch.entity().getState(), SearchCriteria.Op.EQ);
-        StateChangeSearch.and("host", StateChangeSearch.entity().getHostId(), SearchCriteria.Op.EQ);
-        StateChangeSearch.and("update", StateChangeSearch.entity().getUpdated(), SearchCriteria.Op.EQ);
-        StateChangeSearch.done();
         
-        NetworkConfigSearch = createSearchBuilder();
-        NetworkConfigSearch.and("network", NetworkConfigSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
-        NetworkConfigSearch.and("podId", NetworkConfigSearch.entity().getPodId(), SearchCriteria.Op.EQ);
-        NetworkConfigSearch.done();    
-
-        _updateTimeAttr = _allAttributes.get("updateTime");
-        assert _updateTimeAttr != null : "Couldn't get this updateTime attribute";
-    }
-
-    @Override
-    public DomainRouterVO findByPublicIpAddress(String ipAddress) {
-        SearchCriteria<DomainRouterVO> sc = IpSearch.create();
-        sc.setParameters("ip", ipAddress);
-        return findOneBy(sc);
     }
 
     @Override
@@ -146,14 +83,14 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
 
     @Override
     public List<DomainRouterVO> listByDataCenter(long dcId) {
-        SearchCriteria<DomainRouterVO> sc = DcSearch.create();
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setParameters("dc", dcId);
         return listBy(sc);
     }
 
     @Override
     public DomainRouterVO findBy(long accountId, long dcId) {
-        SearchCriteria<DomainRouterVO> sc = AccountDcRoleSearch.create();
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
         sc.setParameters("role", Role.DHCP_FIREWALL_LB_PASSWD_USERDATA);
@@ -162,7 +99,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     
     @Override
     public DomainRouterVO findBy(long accountId, long dcId, Role role) {
-        SearchCriteria<DomainRouterVO> sc = AccountDcRoleSearch.create();
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
         sc.setParameters("role", role);
@@ -171,14 +108,14 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
 
     @Override
     public List<DomainRouterVO> listBy(long accountId) {
-        SearchCriteria<DomainRouterVO> sc = AccountSearch.create();
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setParameters("account", accountId);
         return listBy(sc);
     }
 
     @Override
     public List<DomainRouterVO> listByHostId(Long hostId) {
-        SearchCriteria<DomainRouterVO> sc = HostSearch.create();
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setParameters("host", hostId);
         return listBy(sc);
     }
@@ -189,68 +126,45 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         if(hostId != null){
             sc.setParameters("host", hostId);
         }
-        sc.setParameters("states", new Object[] {State.Destroyed, State.Stopped, State.Expunging});
+        sc.setParameters("states", State.Destroyed, State.Stopped, State.Expunging);
         return listBy(sc);
     }
 
     @Override
-    public long getNextDhcpIpAddress(long id) {
-        Transaction txn = Transaction.currentTxn();
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = txn.prepareAutoCloseStatement(GetNextDhcpAddressSql);
-            pstmt.setLong(1, id);
-            pstmt.executeUpdate();
-
-            pstmt = txn.prepareAutoCloseStatement(GetLastDhcpSql);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs == null || !rs.next()) {
-                throw new CloudRuntimeException("Unable to fetch a sequence with " + pstmt.toString());
-            }
-
-            long result = rs.getLong(1);
-            return result;
-        } catch (SQLException e) {
-            txn.rollback();
-            s_logger.warn("DB Exception", e);
-            throw new CloudRuntimeException("DB Exception on " + pstmt.toString(), e);
-        }
-    }
-
-    @Override
     public List<DomainRouterVO> listByDomain(Long domainId) {
-        SearchCriteria<DomainRouterVO> sc = DomainIdSearch.create();
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setParameters("domainId", domainId);
         return listBy(sc);
     }
 
     @Override
-    public DomainRouterVO findByNetworkConfiguration(long networkConfigurationId) {
-        SearchCriteria<DomainRouterVO> sc = NetworkConfigSearch.create();
-        sc.setParameters("network", networkConfigurationId);
+    public DomainRouterVO findByNetwork(long networkId) {
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
         return findOneBy(sc);
     }
     
     
     @Override
-    public DomainRouterVO findByNetworkConfigurationIncludingRemoved(long networkConfigurationId) {
-        SearchCriteria<DomainRouterVO> sc = NetworkConfigSearch.create();
-        sc.setParameters("network", networkConfigurationId);
+    public DomainRouterVO findByNetworkIncludingRemoved(long networkId) {
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
         return findOneIncludingRemovedBy(sc);
     }
 
   
 	@Override
 	public List<DomainRouterVO> listByLastHostId(Long hostId) {
-		SearchCriteria<DomainRouterVO> sc = LastHostSearch.create();
+		SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
         sc.setParameters("lastHost", hostId);
         sc.setParameters("state", State.Stopped);
         return listBy(sc);
 	}
+	
 	@Override
-	public DomainRouterVO findByNetworkConfigurationAndPod(long networkConfigurationId, long podId) {
-	    SearchCriteria<DomainRouterVO> sc = NetworkConfigSearch.create();
-        sc.setParameters("network", networkConfigurationId);
+	public DomainRouterVO findByNetworkAndPod(long networkId, long podId) {
+	    SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
         sc.setParameters("podId", podId);
         return findOneBy(sc);
 	}

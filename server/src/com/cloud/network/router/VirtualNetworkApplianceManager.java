@@ -21,13 +21,10 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.to.PortForwardingRuleTO;
-import com.cloud.api.commands.UpgradeRouterCmd;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
@@ -38,7 +35,6 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
@@ -69,11 +65,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     
     boolean getRouterStatistics(long vmId, Map<String, long[]> netStats, Map<String, long[]> diskStats);
     
-    @Override
-    VirtualRouter upgradeRouter(UpgradeRouterCmd cmd) throws InvalidParameterValueException, PermissionDeniedException;
-	
-	DomainRouterVO getRouter(long accountId, long zoneId);
-	DomainRouterVO getRouter(String publicIpAddress);
+    VirtualRouter getRouter(long accountId, long zoneId);
 	
 	VirtualRouter deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
 	
@@ -91,5 +83,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     boolean applyPortForwardingRules(Network network, List<PortForwardingRuleTO> rules) throws AgentUnavailableException;
     
     String[] applyVpnUsers(Network network, List<? extends VpnUser> users) throws ResourceUnavailableException;
+    
+    VirtualRouter getRouterForNetwork(long networkId);
     
 }

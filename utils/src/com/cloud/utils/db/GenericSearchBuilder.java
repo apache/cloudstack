@@ -372,7 +372,13 @@ public class GenericSearchBuilder<T, K> implements MethodInterceptor {
             }
             
             sql.append(attr.table).append(".").append(attr.columnName).append(op.toString());
-            if (op.getParams() == -1) {
+            if (op == Op.IN && params.length == 1) {
+                sql.delete(sql.length() - op.toString().length(), sql.length());
+                sql.append("=?");
+            } else if (op == Op.NIN && params.length == 1) {
+                sql.delete(sql.length() - op.toString().length(), sql.length());
+                sql.append("!=?");
+            } else if (op.getParams() == -1) {
                 for (int i = 0; i < params.length; i++) {
                     sql.insert(sql.length() - 2, "?,");
                 }

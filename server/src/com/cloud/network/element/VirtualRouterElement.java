@@ -133,7 +133,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
     public boolean restart(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         DeployDestination dest = new DeployDestination(dc, null, null, null);
-        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
+        DomainRouterVO router = _routerDao.findByNetwork(network.getId());
         if (router == null) {
             s_logger.trace("Can't find virtual router element in network " + network.getId());
             return true;
@@ -165,7 +165,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
         if (canHandle(config.getGuestType(),dc)) {
             
             long networkId = config.getId();
-            DomainRouterVO router = _routerDao.findByNetworkConfiguration(networkId);
+            DomainRouterVO router = _routerDao.findByNetwork(networkId);
             if (router == null) {
                 s_logger.warn("Unable to apply firewall rules, virtual router doesn't exist in the network " + config.getId());
                 throw new CloudRuntimeException("Unable to apply firewall rules");

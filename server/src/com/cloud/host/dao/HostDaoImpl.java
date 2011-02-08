@@ -27,15 +27,14 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import javax.ejb.Local;
-import javax.naming.ConfigurationException;
 import javax.persistence.TableGenerator;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.host.Host;
+import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.Host.Type;
 import com.cloud.host.Status.Event;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
@@ -48,9 +47,9 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
-import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value = { HostDao.class }) @DB(txn=false)
@@ -83,6 +82,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected final SearchBuilder<HostVO> ClusterSearch;
     protected final SearchBuilder<HostVO> ConsoleProxyHostSearch;
     protected final SearchBuilder<HostVO> AvailHypevisorInZone;
+    
+    protected final GenericSearchBuilder<HostVO, Long> HostsInStatusSearch;
     
     protected final Attribute _statusAttr;
     protected final Attribute _msIdAttr;
@@ -215,6 +216,15 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         AvailHypevisorInZone.and("type", AvailHypevisorInZone.entity().getType(), SearchCriteria.Op.EQ);
         AvailHypevisorInZone.groupBy(AvailHypevisorInZone.entity().getHypervisorType());
         AvailHypevisorInZone.done();
+        
+        HostsInStatusSearch = createSearchBuilder(Long.class);
+        HostsInStatusSearch.selectField(HostsInStatusSearch.entity().getId());
+        HostsInStatusSearch.and("dc", HostsInStatusSearch.entity().getDataCenterId(), Op.EQ);
+        HostsInStatusSearch.and("pod", HostsInStatusSearch.entity().getPodId(), Op.EQ);
+        HostsInStatusSearch.and("cluster", HostsInStatusSearch.entity().getClusterId(), Op.EQ);
+        HostsInStatusSearch.and("type", HostsInStatusSearch.entity().getType(), Op.EQ);
+        HostsInStatusSearch.and("statuses", HostsInStatusSearch.entity().getStatus(), Op.IN);
+        HostsInStatusSearch.done();
                 
         _statusAttr = _allAttributes.get("status");
         _msIdAttr = _allAttributes.get("managementServerId");
@@ -458,6 +468,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return listBy(sc);
     }
     
+    @Override
     public List<HostVO> findHostsLike(String hostName) {
     	SearchCriteria<HostVO> sc = NameLikeSearch.create();
         sc.setParameters("name", "%" + hostName + "%");
@@ -485,12 +496,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("type", type);
         List<HostVO>hostList = listBy(sc);
         
-        if(hostList==null || hostList.size() == 0)
-        	return null;
-        else
-        	return hostList.get(0);
+        if(hostList==null || hostList.size() == 0) {
+            return null;
+        } else {
+            return hostList.get(0);
+        }
     }
     
+    @Override
     public List<HostVO> listByHostPod(long podId) {
         SearchCriteria<HostVO> sc = PodSearch.create("pod", podId);
         return listBy(sc);
@@ -525,15 +538,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             return;
         }
         _detailsDao.persist(host.getId(), details);
-    }
-    
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        if (!super.configure(name, params)) {
-            return false;
-        }
-
-        return true;
     }
     
     @Override @DB
@@ -639,6 +643,30 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             hypers.add(host.getHypervisorType());
         }
         return hypers;
+    }
+    
+    @Override
+    public List<Long> listBy(Long dataCenterId, Long podId, Long clusterId, Type hostType, Status... statuses) {
+        SearchCriteria<Long> sc = HostsInStatusSearch.create();
+        if (dataCenterId != null) {
+            sc.setParameters("dc", dataCenterId);
+        }
+        
+        if (podId != null) {
+            sc.setParameters("pod", podId);
+        }
+        
+        if (clusterId != null) {
+            sc.setParameters("cluster", clusterId);
+        }
+        
+        if (hostType != null) {
+            sc.setParameters("type", hostType);
+        }
+        
+        sc.setParameters("statuses", (Object[])statuses);
+        
+        return customSearch(sc, null);
     }
 }
 

@@ -27,7 +27,7 @@ import com.cloud.vm.DomainRouterVO;
  *
  *  DomainRouterDao implements
  */
-public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long>{
+public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
     /**
      * gets the DomainRouterVO by user id and data center
      * @Param dcId data center Id.
@@ -69,20 +69,6 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long>{
      */
     public List<DomainRouterVO> listUpByHostId(Long hostId);
     
-    /**
-     * Finds a domain router based on the ip address it is assigned to.
-     * @param ipAddress
-     * @return DomainRouterVO or null if not found.
-     */
-    public DomainRouterVO findByPublicIpAddress(String ipAddress);
-    
-    /**
-     * Gets the next dhcp ip address to be used for vms from this domain router.
-     * @param id domain router id
-     * @return next ip address
-     */
-    long getNextDhcpIpAddress(long id);
-
 	/**
 	 * Find the list of domain routers for a domain
 	 * @param id
@@ -92,9 +78,9 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long>{
 
 	DomainRouterVO findBy(long accountId, long dcId, Role role);
 	
-	DomainRouterVO findByNetworkConfiguration(long networkConfigurationId);
+	DomainRouterVO findByNetwork(long networkId);
 	
-	DomainRouterVO findByNetworkConfigurationIncludingRemoved(long networkConfigurationId);
+	DomainRouterVO findByNetworkIncludingRemoved(long networkId);
 	
-	DomainRouterVO findByNetworkConfigurationAndPod(long networkConfigurationId, long podId);
+	DomainRouterVO findByNetworkAndPod(long networkId, long podId);
 }

@@ -31,13 +31,16 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
-import com.cloud.host.Host;
+import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.vm.DomainRouterVO;
+import com.cloud.network.NetworkManager;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.network.router.VirtualRouter;
+import com.cloud.utils.component.Inject;
+import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -49,10 +52,12 @@ public class InvestigatorImpl implements Investigator {
     private static final Logger s_logger = Logger.getLogger(InvestigatorImpl.class);
 
     private String _name = null;
-    private HostDao _hostDao = null;
-    private DomainRouterDao _routerDao = null;;
-    private UserVmDao _userVmDao = null;
-    private AgentManager _agentMgr = null;
+    @Inject private HostDao _hostDao = null;
+    @Inject private DomainRouterDao _routerDao = null;;
+    @Inject private UserVmDao _userVmDao = null;
+    @Inject private AgentManager _agentMgr = null;
+    @Inject private NetworkManager _networkMgr = null;
+    @Inject private VirtualNetworkApplianceManager _vnaMgr = null;
 
     @Override
     public Boolean isVmAlive(VMInstanceVO vm, HostVO host) {
@@ -62,21 +67,31 @@ public class InvestigatorImpl implements Investigator {
         if (vm.getType() == VirtualMachine.Type.User) {
             // to verify that the VM is alive, we ask the domR (router) to ping the VM (private IP)
             UserVmVO userVm = _userVmDao.findById(vm.getId());
-            Long routerId = null; // FIXME: This doesn't work.  Need to grab the domain router from the network.
-            if (routerId == null) {
-            	/*TODO: checking vm status for external dhcp mode*/
-            	s_logger.debug("It's external dhcp mode, how to checking the vm is alive?");
-            	return true;
-            } else {
-                return testUserVM(vm, routerId);
+            
+            Nic nic = _networkMgr.getNicForTraffic(userVm.getId(), TrafficType.Guest);
+            if (nic == null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Unable to find a guest nic for " + vm);
+                }
+                return null;
             }
+            
+            VirtualRouter router = _vnaMgr.getRouterForNetwork(nic.getNetworkId());
+            if (router == null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Unable to find a router in network " + nic.getNetworkId() + " to ping " + vm);
+                }
+            	return null;
+            }
+            
+            return testUserVM(vm, nic, router);
         } else if ((vm.getType() == VirtualMachine.Type.DomainRouter) || (vm.getType() == VirtualMachine.Type.ConsoleProxy)) {
             // get the data center IP address, find a host on the pod, use that host to ping the data center IP address
             HostVO vmHost = _hostDao.findById(vm.getHostId());
-            List<HostVO> otherHosts = findHostByPod(vm.getPodId(), vm.getHostId());
-            for (HostVO otherHost : otherHosts) {
+            List<Long> otherHosts = findHostByPod(vm.getPodId(), vm.getHostId());
+            for (Long otherHost : otherHosts) {
 
-                Status vmState = testIpAddress(otherHost.getId(), vm.getPrivateIpAddress());
+                Status vmState = testIpAddress(otherHost, vm.getPrivateIpAddress());
                 if (vmState == null) {
                     // can't get information from that host, try the next one
                     continue;
@@ -89,7 +104,7 @@ public class InvestigatorImpl implements Investigator {
                 } else if (vmState == Status.Down) {
                     // We can't ping the VM directly...if we can ping the host, then report the VM down.
                     // If we can't ping the host, then we don't have enough information.
-                    Status vmHostState = testIpAddress(otherHost.getId(), vmHost.getPrivateIpAddress());
+                    Status vmHostState = testIpAddress(otherHost, vmHost.getPrivateIpAddress());
                     if ((vmHostState != null) && (vmHostState == Status.Up)) {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("successfully pinged vm's host IP (" + vmHost.getPrivateIpAddress() + "), but could not ping VM, returning that the VM is down");
@@ -107,29 +122,28 @@ public class InvestigatorImpl implements Investigator {
 
     @Override
     public Status isAgentAlive(HostVO agent) {
-        Long hostId = agent.getId();
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("checking if agent (" + hostId + ") is alive");
+            s_logger.debug("checking if agent (" + agent.getId() + ") is alive");
         }
         
         if (agent.getPodId() == null) {
             return null;
         }
         
-        List<HostVO> otherHosts = findHostByPod(agent.getPodId(), agent.getId());
+        List<Long> otherHosts = findHostByPod(agent.getPodId(), agent.getId());
         
-        for (HostVO otherHost : otherHosts) {
+        for (Long hostId : otherHosts) {
 
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("sending ping from (" + otherHost.getId() + ") to agent's host ip address (" + agent.getPrivateIpAddress() + ")");
+                s_logger.debug("sending ping from (" + hostId + ") to agent's host ip address (" + agent.getPrivateIpAddress() + ")");
             }
-            Status hostState = testIpAddress(otherHost.getId(), agent.getPrivateIpAddress());
+            Status hostState = testIpAddress(hostId, agent.getPrivateIpAddress());
             if (hostState == null) {
                 continue;
             }
             if (hostState == Status.Up) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("ping from (" + otherHost.getId() + ") to agent's host ip address (" + agent.getPrivateIpAddress() + ") successful, returning that agent is disconnected");
+                    s_logger.debug("ping from (" + hostId + ") to agent's host ip address (" + agent.getPrivateIpAddress() + ") successful, returning that agent is disconnected");
                 }
                 return Status.Disconnected; // the computing host ip is ping-able, but the computing agent is down, report that the agent is disconnected
             } else if (hostState == Status.Down) {
@@ -150,11 +164,6 @@ public class InvestigatorImpl implements Investigator {
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        _hostDao = locator.getDao(HostDao.class);
-        _routerDao = locator.getDao(DomainRouterDao.class);
-        _userVmDao = locator.getDao(UserVmDao.class);
-        _agentMgr = locator.getManager(AgentManager.class);
 
         return true;
     }
@@ -173,28 +182,25 @@ public class InvestigatorImpl implements Investigator {
     public boolean stop() {
         return true;
     }
+    
     // Host.status is up and Host.type is routing
-    private List<HostVO> findHostByPod(long podId, Long excludeHostId) {
-        SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
-        sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
-        sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up);
-        sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.Routing);
-        if (excludeHostId != null) {
-            sc.addAnd("id", SearchCriteria.Op.NEQ, excludeHostId);
+    private List<Long> findHostByPod(long podId, Long excludeHostId) {
+        List<Long> hostIds = _hostDao.listBy(null, podId, null, Type.Routing, Status.Up);
+        if (excludeHostId != null){
+            hostIds.remove(excludeHostId);
         }
-        return _hostDao.search(sc, null);
+        
+        return hostIds;
     }
 
-    private Boolean testUserVM(VMInstanceVO vm, Long routerId) {
-        DomainRouterVO router = _routerDao.findById(routerId);
-        String privateIp = vm.getPrivateIpAddress();
+    private Boolean testUserVM(VMInstanceVO vm, Nic nic, VirtualRouter router) {
+        String privateIp = nic.getIp4Address();
         String routerPrivateIp = router.getPrivateIpAddress();
 
-        List<HostVO> otherHosts = findHostByPod(router.getPodId(), null);
-        for (HostVO otherHost : otherHosts) {
-
+        List<Long> otherHosts = findHostByPod(router.getPodId(), null);
+        for (Long hostId : otherHosts) {
             try {
-                Answer pingTestAnswer = _agentMgr.send(otherHost.getId(), new PingTestCommand(routerPrivateIp, privateIp), 30 * 1000);
+                Answer pingTestAnswer = _agentMgr.send(hostId, new PingTestCommand(routerPrivateIp, privateIp), 30 * 1000);
                 if (pingTestAnswer.getResult()) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("user vm " + vm.getName() + " has been successfully pinged, returning that it is alive");
@@ -214,7 +220,7 @@ public class InvestigatorImpl implements Investigator {
             }
         }
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("user vm " + vm.getName() + " could not be pinged, returning that it is unknown");
+            s_logger.debug(vm + " could not be pinged, returning that it is unknown");
         }
         return null;
         

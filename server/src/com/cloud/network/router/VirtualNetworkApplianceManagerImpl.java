@@ -292,11 +292,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public DomainRouterVO getRouter(String publicIpAddress) {
-        return _routerDao.findByPublicIpAddress(publicIpAddress);
-    }
-
-    @Override
     public boolean sendSshKeysToHost(Long hostId, String pubKey, String prvKey) {
         ModifySshKeysCommand cmd = new ModifySshKeysCommand(pubKey, prvKey);
         final Answer answer = _agentMgr.easySend(hostId, cmd);
@@ -398,7 +393,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     public boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile) throws ResourceUnavailableException{
-        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
+        DomainRouterVO router = _routerDao.findByNetwork(network.getId());
         if (router == null) {
             s_logger.warn("Unable save password, router doesn't exist in network " + network.getId());
             throw new CloudRuntimeException("Unable to save password to router");
@@ -753,7 +748,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         DataCenterDeployment plan = new DataCenterDeployment(dcId);
 
-        DomainRouterVO router = _routerDao.findByNetworkConfiguration(guestNetwork.getId());
+        DomainRouterVO router = _routerDao.findByNetwork(guestNetwork.getId());
         if (router == null) {
             long id = _routerDao.getNextInSequence(Long.class, "id");
             if (s_logger.isDebugEnabled()) {
@@ -830,9 +825,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         //In Basic zone and Guest network we have to start domR per pod, not per network
         if (dc.getNetworkType() == NetworkType.Basic && guestNetwork.getTrafficType() == TrafficType.Guest) {
-            router = _routerDao.findByNetworkConfigurationAndPod(guestNetwork.getId(), podId);
+            router = _routerDao.findByNetworkAndPod(guestNetwork.getId(), podId);
         } else {
-            router = _routerDao.findByNetworkConfiguration(guestNetwork.getId());
+            router = _routerDao.findByNetwork(guestNetwork.getId());
         }
         
         if (router == null) {
@@ -1108,7 +1103,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public boolean startRemoteAccessVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
         
-        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
+        DomainRouterVO router = _routerDao.findByNetwork(network.getId());
         if (router == null) {
             s_logger.warn("Failed to start remote access VPN: no router found for account and zone");
             throw new ResourceUnavailableException("Unable to apply lb rules", DataCenter.class, network.getDataCenterId());
@@ -1267,7 +1262,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     
     @Override
     public String[] applyVpnUsers(Network network, List<? extends VpnUser> users) throws ResourceUnavailableException{
-        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
+        DomainRouterVO router = _routerDao.findByNetwork(network.getId());
         if (router == null) {
             s_logger.warn("Failed to add/remove VPN users: no router found for account and zone");
             throw new ResourceUnavailableException("Unable to assign ip addresses, domR doesn't exist for network " + network.getId(), DataCenter.class, network.getDataCenterId());
@@ -1522,12 +1517,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     public boolean associateIP(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
-        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
+        DomainRouterVO router = _routerDao.findByNetwork(network.getId());
         if (router == null) {
             //Return true only when domR entry exists, has Destroyed state and not null Removed field 
             //because it happens just in case when this method is called as a part of account cleanup.
             //In all other cases return false
-            router = _routerDao.findByNetworkConfigurationIncludingRemoved(network.getId());
+            router = _routerDao.findByNetworkIncludingRemoved(network.getId());
             if (router != null && (router.getState() == State.Destroyed || router.getState() == State.Expunging)) {
                 return true;
             }
@@ -1551,7 +1546,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
-        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
+        DomainRouterVO router = _routerDao.findByNetwork(network.getId());
         if (router == null) {
             s_logger.warn("Unable to apply lb rules, virtual router doesn't exist in the network " + network.getId());
             throw new ResourceUnavailableException("Unable to apply lb rules", DataCenter.class, network.getDataCenterId());
@@ -1565,7 +1560,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     public boolean applyPortForwardingRules(Network network, List<PortForwardingRuleTO> rules) throws AgentUnavailableException {
-        DomainRouterVO router = _routerDao.findByNetworkConfiguration(network.getId());
+        DomainRouterVO router = _routerDao.findByNetwork(network.getId());
         
         Commands cmds = new Commands(OnError.Continue);
         createApplyPortForwardingRulesCommands(rules, router, cmds);     
@@ -1607,5 +1602,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         
         return routersToStop;
+    }
+    
+    @Override
+    public VirtualRouter getRouterForNetwork(long networkId) {
+        return _routerDao.findByNetwork(networkId);
+        
     }
 }

@@ -21,9 +21,9 @@ import java.util.Date;
 import java.util.List;
 
 import com.cloud.host.Host;
+import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.host.Host.Type;
 import com.cloud.host.Status.Event;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
@@ -141,4 +141,15 @@ public interface HostDao extends GenericDao<HostVO, Long> {
 	HostVO findConsoleProxyHost(String name, Type type);
 
     List<HypervisorType> getAvailHypervisorInZone(long hostId, long zoneId);
+
+    /**
+     * Returns a list of host ids given the conditions.
+     * @param dataCenterId if specified, then must be in this data center.
+     * @param podId if specified, then must be in this pod.
+     * @param clusterId if specified, then must be in this cluster.
+     * @param hostType TODO
+     * @param statuses the host needs to be in.
+     * @return ids of the host meeting the search parameters.
+     */
+    List<Long> listBy(Long dataCenterId, Long podId, Long clusterId, Type hostType, Status... statuses);
 }
