@@ -326,7 +326,7 @@ public class ApiDBUtils {
     }
 
     public static DomainVO findDomainById(Long domainId) {
-        return _domainDao.findById(domainId);
+        return _domainDao.findByIdIncludingRemoved(domainId);
     }
     
     public static DomainVO findDomainByIdIncludingRemoved(Long domainId) {
@@ -334,15 +334,15 @@ public class ApiDBUtils {
     }
 
     public static DomainRouterVO findDomainRouterById(Long routerId) {
-        return _domainRouterDao.findById(routerId);
+        return _domainRouterDao.findByIdIncludingRemoved(routerId);
     }
 
     public static GuestOS findGuestOSById(Long id) {
-        return _guestOSDao.findById(id);
+        return _guestOSDao.findByIdIncludingRemoved(id);
     }
 
     public static HostVO findHostById(Long hostId) {
-        return _hostDao.findById(hostId);
+        return _hostDao.findByIdIncludingRemoved(hostId);
     }
 
     public static IPAddressVO findIpAddressById(long addressId) {
