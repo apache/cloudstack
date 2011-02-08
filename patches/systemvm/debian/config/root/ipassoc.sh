@@ -5,90 +5,41 @@
 #
 # @VERSION@
 usage() {
-  printf "Usage:\n %s -A  -i <domR eth1 ip>  -l <public-ip-address>  -r <domr name> [-f] \n" $(basename $0) >&2
-  printf " %s -D -i <domR eth1 ip> -l <public-ip-address> -r <domr name> [-f] \n" $(basename $0) >&2
-}
-
-#verify if supplied ip is indeed in the public domain
-check_public_ip() {
- if [[ $(expr match $1 "10.") -gt 0 ]] 
-  then
-    echo "Public IP ($1) cannot be a private IP address!\n"
-    exit 1
-  fi
-}
-
-#ensure that dom0 is set up to do routing and proxy arp
-check_ip_fw () {
-  if [ $(cat /proc/sys/net/ipv4/ip_forward) != 1 ];
-  then
-    printf "Warning. Dom0 not set up to do forwarding.\n" >&2
-    printf "Executing: echo 1 > /proc/sys/net/ipv4/ip_forward\n" >&2
-    printf "To make this permanent, set net.ipv4.ip_forward = 1 in /etc/sysctl.conf\n" >&2
-    echo 1 > /proc/sys/net/ipv4/ip_forward
-  fi
-  #if [ $(cat /proc/sys/net/ipv4/conf/eth0/proxy_arp) != 1 ];
-  #then
-    #printf "Warning. Dom0 not set up to do proxy ARP.\n"
-    #printf "Executing: echo 1 > /proc/sys/net/ipv4/conf/eth0/proxy_arp\n"
-    #printf "To make this permanent, set net.ipv4.conf.eth0.proxy_arp = 1 in /etc/sysctl.conf\n"
-    #echo 1 > /proc/sys/net/ipv4/conf/eth0/proxy_arp
-  #fi
+  printf "Usage:\n %s -A    -l <public-ip-address>   -c <dev> [-f] \n" $(basename $0) >&2
+  printf " %s -D  -l <public-ip-address>  -c <dev> [-f] \n" $(basename $0) >&2
 }
 
 
-# check if gateway domain is up and running
-check_gw() {
-  ping -c 1 -n -q $1 > /dev/null
-  if [ $? -gt 0 ]
-  then
-    sleep 1
-    ping -c 1 -n -q $1 > /dev/null
-  fi
-  return $?;
-}
-
-#Add 1:1 NAT entry
-add_one_to_one_nat_entry() {
-  local guestIp=$1
-  local publicIp=$2  
-  local dIp=$3
-  
-  iptables -t nat -A PREROUTING -i eth2 -d $publicIp -j DNAT --to-destination $guestIp
-  iptables -t nat -A POSTROUTING -o eth2 -s $guestIp -j SNAT --to-source $publicIp
-  iptables -P FORWARD DROP
-  iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
-  iptables -A FORWARD -i eth2 -o eth0 -d $guestIp -m state --state NEW -j ACCEPT
-  iptables -A FORWARD -i eth0 -o eth2 -s $guestIp -m state --state NEW -j ACCEPT
-  
-  return $?
-}
-
-#Add the NAT entries into iptables in the routing domain
 add_nat_entry() {
-  local dRIp=$1
-  local pubIp=$2
-   
-  ip addr add dev $correctVif $pubIp
-  iptables -t nat -I POSTROUTING   -j SNAT -o $correctVif --to-source $pubIp
-  arping -c 3 -I $correctVif -A -U -s $pubIp $pubIp
-     
+  local pubIp=$1
+  logger -t cloud "$(basename $0):Adding nat entry for ip $pubIp on interface $ethDev"
+  local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
+  sudo ip link set $ethDev up
+  sudo ip addr add dev $ethDev $pubIp
+  sudo iptables -A FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+  sudo iptables -A FORWARD -i eth0 -o $ethDev  -j ACCEPT
+  sudo iptables -t nat -I POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
+  sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
   if [ $? -gt 0  -a $? -ne 2 ]
   then
      return 1
   fi
 
   return 0
+   
 }
 
-#remove the NAT entries into iptables in the routing domain
 del_nat_entry() {
-  local dRIp=$1
-  local pubIp=$2
-   
-  iptables -t nat -D POSTROUTING   -j SNAT -o $correctVif --to-source $pubIp
-  ip addr del dev $correctVif $pubIp/32
-      
+  local pubIp=$1
+  logger -t cloud "$(basename $0):Deleting nat entry for ip $pubIp on interface $ethDev"
+  local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
+  local mask=$(echo $1 | awk -F'/' '{print $2}')
+  [ "$mask" == "" ] && mask="32"
+  sudo iptables -D FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+  sudo iptables -D FORWARD -i eth0 -o $ethDev  -j ACCEPT
+  sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask;
+  sudo ip addr del dev $ethDev "$ipNoMask/$mask"
+ 
   if [ $? -gt 0  -a $? -ne 2 ]
   then
      return 1
@@ -99,44 +50,58 @@ del_nat_entry() {
 
 
 add_an_ip () {
-  local dRIp=$1
-  local pubIp=$2
-   
-  ifconfig $correctVif up
-  ip addr add dev $correctVif $pubIp
-  arping -c 3 -I $correctVif -A -U -s $pubIp $pubIp
-     
+  local pubIp=$1
+  logger -t cloud "$(basename $0):Adding ip $pubIp on interface $ethDev"
+  local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
+
+  sudo ip link set $ethDev up
+  sudo ip addr add dev $ethDev $pubIp ;
+  sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
   return $?
+   
 }
 
 remove_an_ip () {
-  local dRIp=$1
-  local pubIp=$2
-   
-  ip addr del dev $correctVif $pubIp/32
-     
-  if [ $? -gt 0  -a $? -ne 2 ]
+  local pubIp=$1
+  logger -t cloud "$(basename $0):Removing ip $pubIp on interface $ethDev"
+  local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
+  local mask=$(echo $1 | awk -F'/' '{print $2}')
+  local existingIpMask=$(sudo ip addr show dev $ethDev | grep inet | awk '{print $2}'  | grep -w $ipNoMask)
+  [ "$existingIpMask" == "" ] && return 0
+  local existingMask=$(echo $existingIpMask | awk -F'/' '{print $2}')
+  if [ "$existingMask" == "32" ] 
+  then
+    sudo ip addr del dev $ethDev $existingIpMask
+    result=$?
+  fi
+  if [ "$existingMask" != "32" ] 
+  then
+        replaceIpMask=`sudo ip addr show dev $ethDev | grep inet | grep -v $existingIpMask | awk '{print $2}' | sort -t/ -k2 -n|tail -1`
+        sudo ip addr del dev $ethDev $existingIpMask;
+        if [ -n "$replaceIpMask" ]; then
+          sudo ip addr del dev $ethDev $replaceIpMask;
+          replaceIp=`echo $replaceIpMask | awk -F/ '{print $1}'`;
+          sudo ip addr add dev $ethDev $replaceIp/$existingMask;
+          sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
+          sudo iptables -t nat -A POSTROUTING   -j SNAT -o $ethDev --to-source $replaceIp ;
+        fi
+    result=$?
+  fi
+  if [ $result -gt 0  -a $result -ne 2 ]
   then
      return 1
   fi
+  return 0
 }
 
 #set -x
 
-rflag=
-iflag=
 lflag=
-aflag=
-nflag=
 fflag=
-vflag=
-gflag=
-nflag=
 cflag=
-Gflag=
 op=""
 
-while getopts 'fADr:i:a:l:v:g:n:c:G:' OPTION
+while getopts 'fADa:l:c:' OPTION
 do
   case $OPTION in
   A)	Aflag=1
@@ -147,49 +112,18 @@ do
 		;;
   f)	fflag=1
 		;;
-  r)	rflag=1
-		domRname="$OPTARG"
-		;;
-  i)	iflag=1
-		domRIp="$OPTARG"
-		;;
   l)	lflag=1
 		publicIp="$OPTARG"
 		;;
-  a)	aflag=1
-		eth2mac="$OPTARG"
-		;;
-  v)	vflag=1
-  		vlanId="$OPTARG"
-  		;;
-  g)	gflag=1
-  		gateway="$OPTARG"
-  		;;
-  n)	nflag=1
-  		netmask="$OPTARG"
-  		;;
   c)	cflag=1
-  		correctVif="$OPTARG"
+  		ethDev="$OPTARG"
   		;;
-  G)    Gflag=1
-        guestIp="$OPTARG"
-        ;;
   ?)	usage
 		exit 2
 		;;
   esac
 done
 
-#1:1 NAT
-if [ "$Gflag" == "1" ]
-then
-  add_nat_entry $domRIp $publicIp 
-  if [ $? -eq 0 ]
-  then
-    add_one_to_one_nat_entry $guestIp $publicIp $domRIp
-  fi
-  exit $?
-fi
 
 #Either the A flag or the D flag but not both
 if [ "$Aflag$Dflag" != "1" ]
@@ -198,39 +132,34 @@ then
  exit 2
 fi
 
-if [ "$Aflag$lflag$iflag$cflag" != "1111" ] && [ "$Dflag$lflag$iflag$cflag" != "1111" ]
+if [ "$lflag$cflag" != "11" ] 
 then
+   usage
    exit 2
 fi
 
-# check if gateway domain is up and running
-if ! check_gw "$domRIp"
-then
-   printf "Unable to ping the routing domain, exiting\n" >&2
-   exit 3
-fi
 
 if [ "$fflag" == "1" ] && [ "$Aflag" == "1" ]
 then
-  add_nat_entry $domRIp $publicIp 
+  add_nat_entry  $publicIp 
   exit $?
 fi
 
 if [ "$Aflag" == "1" ]
 then  
-  add_an_ip $domRIp $publicIp 
+  add_an_ip  $publicIp 
   exit $?
 fi
 
 if [ "$fflag" == "1" ] && [ "$Dflag" == "1" ]
 then
-  del_nat_entry $domRIp $publicIp 
+  del_nat_entry  $publicIp 
   exit $?
 fi
 
 if [ "$Dflag" == "1" ]
 then
-  remove_an_ip $domRIp $publicIp 
+  remove_an_ip  $publicIp 
   exit $?
 fi
 

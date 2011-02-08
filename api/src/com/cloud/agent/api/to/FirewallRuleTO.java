@@ -20,6 +20,7 @@ package com.cloud.agent.api.to;
 import com.cloud.network.IpAddress;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.State;
+import com.cloud.utils.net.NetUtils;
 
 /**
  * FirewallRuleTO transfers a port range for an ip to be opened.
@@ -81,6 +82,10 @@ public class FirewallRuleTO {
 
     public int[] getSrcPortRange() {
         return srcPortRange;
+    }
+    
+    public String getStringSrcPortRange() {
+        return NetUtils.portRangeToString(srcPortRange);
     }
 
     public boolean revoked() {
