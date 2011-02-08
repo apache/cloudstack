@@ -7,7 +7,7 @@
    <!-- Preserve messages in a local file -->
    <!-- ================================= -->
 
-   <!-- A regular appender FIXME implement code that will close/reopen logs on SIGHUP by logrotate FIXME make the paths configurable using the build system, dammit -->
+   <!-- A regular appender FIXME implement code that will close/reopen logs on SIGHUP by logrotate FIXME make the paths configurable using the build system-->
    <appender name="FILE" class="org.apache.log4j.rolling.RollingFileAppender">
       <param name="Append" value="true"/>
       <param name="Threshold" value="TRACE"/>
