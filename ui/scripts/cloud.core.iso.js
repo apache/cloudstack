@@ -289,6 +289,22 @@ function isoJsonToDetailsTab() {
         return;    
     }      
     
+    var strCmd = "command=listIsos&isofilter=self&id="+jsonObj.id;
+    if(jsonObj.zoneid != null)
+        strCmd = strCmd + "&zoneid="+jsonObj.zoneid;    
+    $.ajax({
+        data: createURL(strCmd),
+        dataType: "json",
+        async: false,
+        success: function(json) {            
+            var items = json.listisosresponse.iso;
+            if(items != null && items.length > 0) {
+                jsonObj = items[0];
+                $midmenuItem1.data("jsonObj", jsonObj);                  
+            }
+        }    
+    });
+    
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();  
