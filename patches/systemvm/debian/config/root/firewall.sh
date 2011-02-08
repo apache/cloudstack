@@ -30,6 +30,7 @@ ip_to_dev() {
 #Port (address translation) forwarding for tcp or udp
 tcp_or_udp_entry() {
   local instIp=$1
+  local dport0=$2
   local dport=$(echo $2 | sed 's/:/-/')
   local publicIp=$3
   local port=$4
@@ -54,7 +55,7 @@ tcp_or_udp_entry() {
   (sudo iptables $op FORWARD -p $proto -s 0/0 -d $instIp -m state \
            --state ESTABLISHED,RELATED -j ACCEPT &>>  $OUTFILE || [ "$op" == "-D" ]) &&
   (sudo iptables $op FORWARD -p $proto -s 0/0 -d $instIp  \
-           --destination-port $dport -m state --state NEW  -j ACCEPT &>>  $OUTFILE)
+           --destination-port $dport0 -m state --state NEW  -j ACCEPT &>>  $OUTFILE)
   	
   return $?
 }
