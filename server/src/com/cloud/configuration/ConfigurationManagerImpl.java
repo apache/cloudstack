@@ -1303,10 +1303,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	String displayText = cmd.getDisplayText();
     	Long id = cmd.getId();
     	String name = cmd.getServiceOfferingName();
-    	Boolean ha = cmd.getOfferHa();
-//    	String tags = cmd.getTags();
     	Long userId = UserContext.current().getCallerUserId();
-    	Long domainId = cmd.getDomainId();
     	    	
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -1318,7 +1315,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find service offering " + id);
     	}
     	    	
-    	boolean updateNeeded = (name != null || displayText != null || ha != null || domainId != null);
+    	boolean updateNeeded = (name != null || displayText != null);
     	if (!updateNeeded) {
     		return _serviceOfferingDao.findById(id);
     	}
@@ -1332,15 +1329,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (displayText != null) {
         	offering.setDisplayText(displayText);
         }
-        
-	    if (ha != null) {
-	    	offering.setOfferHA(ha);
-        }
-	    
-        if (domainId != null){
-        	offering.setDomainId(domainId);
-        }
-        
+                
 //Note: tag editing commented out for now; keeping the code intact, might need to re-enable in next releases    	
 //        if (tags != null) 
 //        {
@@ -1415,8 +1404,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	Long diskOfferingId = cmd.getId();
     	String name = cmd.getDiskOfferingName();
     	String displayText = cmd.getDisplayText();
-//    	String tags = cmd.getTags();
-    	Long domainId = cmd.getDomainId();
     	
     	//Check if diskOffering exists
     	DiskOfferingVO diskOfferingHandle = _diskOfferingDao.findById(diskOfferingId);
@@ -1440,9 +1427,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     		diskOffering.setDisplayText(displayText);
     	}
     	
-    	if (domainId != null){
-    		diskOffering.setDomainId(domainId);
-    	}
   
 //Note: tag editing commented out for now;keeping the code intact, might need to re-enable in next releases    	
 //        if (tags != null) 

@@ -45,15 +45,6 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the service offering to be updated")
     private String serviceOfferingName;
     
-    @Parameter(name=ApiConstants.OFFER_HA, type=CommandType.BOOLEAN, description="the HA of the service offering to be updated")
-    private Boolean offerHa;
-    
-//    @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for this service offering.")
-//    private String tags;
-
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the containing domain, null for public offerings")
-    private Long domainId; 
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -70,17 +61,7 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
         return serviceOfferingName;
     }
 
-    public Boolean getOfferHa() {
-        return offerHa;
-    }
 
-//    public String getTags() {
-//        return tags;
-//    }
-
-    public Long getDomainId() {
-		return domainId;
-	}
     
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
