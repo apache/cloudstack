@@ -28,7 +28,7 @@ import com.cloud.utils.component.Adapter;
 public interface RemoteAccessVpnElement extends Adapter {
     String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException;
 
-    boolean start(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
+    boolean startVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
     
-    boolean stop(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
+    boolean stopVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException;
 }

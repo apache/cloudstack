@@ -46,12 +46,13 @@ public interface VirtualNetworkApplianceService{
     
     /**
      * Stops domain router
-     * @param  id of the router
+     * @param id of the router
+     * @param forced just do it.  caller knows best.
      * @return router if successful, null otherwise
      * @throws ConcurrentOperationException 
      * @throws ResourceUnavailableException 
      * @throws InvalidParameterValueException, PermissionDeniedException
      */
-    VirtualRouter stopRouter(long routerId) throws InvalidParameterValueException, PermissionDeniedException, ResourceUnavailableException, ConcurrentOperationException;
+    VirtualRouter stopRouter(long routerId, boolean forced) throws InvalidParameterValueException, PermissionDeniedException, ResourceUnavailableException, ConcurrentOperationException;
     
 }

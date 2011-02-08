@@ -76,8 +76,6 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
@@ -1035,7 +1033,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
             throw new AgentUnavailableException("Operation timed out: ", dstHostId);
         } finally {
             if (!migrated) {
-                s_logger.info("Migration was unsuccessful.  Cleaning up: " + vm.toString());
+                s_logger.info("Migration was unsuccessful.  Cleaning up: " + vm);
 
                 _alertMgr.sendAlert(alertType, fromHost.getDataCenterId(), fromHost.getPodId(), "Unable to migrate vm " + vm.getName() + " from host " + fromHost.getName() + " in zone " + dest.getDataCenter().getName() + " and pod " + dest.getPod().getName(), "Migrate Command failed.  Please check logs.");
 

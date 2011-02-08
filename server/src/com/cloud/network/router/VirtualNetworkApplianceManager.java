@@ -33,6 +33,7 @@ import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.NicProfile;
@@ -86,4 +87,5 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     
     VirtualRouter getRouterForNetwork(long networkId);
     
+    VirtualRouter stop(VirtualRouter router, boolean forced, User callingUser, Account callingAccount) throws ConcurrentOperationException, ResourceUnavailableException;
 }

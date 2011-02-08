@@ -64,7 +64,6 @@ import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
 import com.cloud.api.commands.StartVMCmd;
-import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.async.AsyncInstanceCreateStatus;
@@ -1611,11 +1610,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return _vmDao.findById(id);
     }
 
-    @Override @ActionEvent (eventType=EventTypes.EVENT_VM_STOP, eventDescription="stopping Vm", async=true)
-	public UserVm stopVirtualMachine(StopVMCmd cmd) throws ServerApiException, ConcurrentOperationException{
-	    return stopVirtualMachine(cmd.getId());
-	}
-
 	@Override @ActionEvent (eventType=EventTypes.EVENT_VM_START, eventDescription="starting Vm", async=true)
 	public UserVm startVirtualMachine(StartVMCmd cmd) throws ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
 	    return startVirtualMachine(cmd.getId());
@@ -2259,8 +2253,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return findById(VirtualMachineName.getVmId(name));
     }
 
-    @Override
-    public UserVm stopVirtualMachine(long vmId) throws ConcurrentOperationException {
+    @Override @ActionEvent (eventType=EventTypes.EVENT_VM_STOP, eventDescription="stopping Vm", async=true)
+    public UserVm stopVirtualMachine(long vmId, boolean forced) throws ConcurrentOperationException {
         
         //Input validation
         Account caller = UserContext.current().getCaller();
@@ -2280,8 +2274,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UserVO user = _userDao.findById(userId);
 
         try {
-            _itMgr.stop(vm, user, caller);
+            _itMgr.advanceStop(vm, forced, user, caller);
         } catch (ResourceUnavailableException e) {
+            throw new CloudRuntimeException("Unable to contact the agent to stop the virtual machine " + vm, e);
+        } catch (OperationTimedoutException e) {
             throw new CloudRuntimeException("Unable to contact the agent to stop the virtual machine " + vm, e);
         } 
         

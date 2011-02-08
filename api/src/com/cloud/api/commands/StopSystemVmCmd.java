@@ -29,6 +29,8 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SystemVmResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.vm.VirtualMachine;
@@ -46,6 +48,9 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the system virtual machine")
     private Long id;
 
+    @Parameter(name=ApiConstants.FORCED, type=CommandType.BOOLEAN, required=false, description="Force stop the VM.  The caller knows the VM is stopped.")
+    private Boolean forced;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -83,16 +88,22 @@ public class StopSystemVmCmd extends BaseAsyncCmd {
         return  "stopping system vm: " + getId();
     }
     
+    @Override
     public AsyncJob.Type getInstanceType() {
     	return AsyncJob.Type.SystemVm;
     }
     
+    @Override
     public Long getInstanceId() {
     	return getId();
     }
+    
+    public boolean isForced() {
+        return (forced != null) ? forced : false;
+    }
 
     @Override
-    public void execute(){
+    public void execute() throws ResourceUnavailableException, ConcurrentOperationException {
         VirtualMachine result = _mgr.stopSystemVM(this);
         if (result != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(result);

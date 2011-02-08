@@ -47,6 +47,9 @@ public class StopRouterCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the router")
     private Long id;
+    
+    @Parameter(name=ApiConstants.FORCED, type=CommandType.BOOLEAN, required=false, description="Force stop the VM.  The caller knows the VM is stopped.")
+    private Boolean forced;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -79,23 +82,29 @@ public class StopRouterCmd extends BaseAsyncCmd {
     public String getEventType() {
         return EventTypes.EVENT_ROUTER_STOP;
     }
-
+    
     @Override
     public String getEventDescription() {
         return  "stopping router: " + getId();
     }
     
+    @Override
     public AsyncJob.Type getInstanceType() {
     	return AsyncJob.Type.DomainRouter;
     }
     
+    @Override
     public Long getInstanceId() {
     	return getId();
+    }
+    
+    public boolean isForced() {
+        return (forced != null) ? forced : false;
     }
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException{
-        VirtualRouter result = _routerService.stopRouter(this.getId());
+        VirtualRouter result = _routerService.stopRouter(getId(), isForced());
         if (result != null){
             DomainRouterResponse response =_responseGenerator.createDomainRouterResponse(result);
             response.setResponseName(getCommandName());

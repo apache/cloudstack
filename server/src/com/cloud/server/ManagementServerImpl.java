@@ -269,6 +269,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
@@ -319,6 +320,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final NicDao _nicDao;
     private final NetworkDao _networkDao;
     private final StorageManager _storageMgr;
+    private final VirtualMachineManager _itMgr;
 
     private final Adapters<UserAuthenticator> _userAuthenticators;
     private final HostPodDao _hostPodDao;
@@ -341,8 +343,6 @@ public class ManagementServerImpl implements ManagementServer {
     private final StatsCollector _statsCollector;
 
     private final Map<String, String> _configs;
-
-    private String _domain;
 
     private final int _routerRamSize;
     private final int _proxyRamSize;
@@ -407,18 +407,11 @@ public class ManagementServerImpl implements ManagementServer {
         _tmpltMgr = locator.getManager(TemplateManager.class);
         _uploadMonitor = locator.getManager(UploadMonitor.class);
         _sshKeyPairDao = locator.getDao(SSHKeyPairDao.class);
+        _itMgr = locator.getManager(VirtualMachineManager.class);
     	
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
             s_logger.error("Unable to find an user authenticator.");
-        }
-
-        _domain = _configs.get("domain");
-        if (_domain == null) {
-            _domain = ".myvm.com";
-        }
-        if (!_domain.startsWith(".")) {
-            _domain = "." + _domain;
         }
 
         String value = _configs.get("account.cleanup.interval");
@@ -3996,21 +3989,29 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
 	@Override
-	public VMInstanceVO stopSystemVM(StopSystemVmCmd cmd) {
+	public VMInstanceVO stopSystemVM(StopSystemVmCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException {
 		Long id = cmd.getId();
 		
 	    // verify parameters      
 		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(id, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
         if (systemVm == null) {
-        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + id);
+        	throw new InvalidParameterValueException("unable to find a system vm with id " + id);
         }
+        
+        User caller = _userDao.findById(UserContext.current().getCallerUserId());
 
-        // FIXME: We need to return the system VM from this method, so what do we do with the boolean response from stopConsoleProxy and stopSecondaryStorageVm?
-		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
-			return stopConsoleProxy(id);
-		} else {
-			return stopSecondaryStorageVm(id);
-		}
+        try {
+            if (_itMgr.advanceStop(systemVm, cmd.isForced(), caller, UserContext.current().getCaller())) {
+                if (systemVm.getType() == VirtualMachine.Type.ConsoleProxy) {
+                    return _consoleProxyDao.findById(systemVm.getId());
+                } else if (systemVm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
+                    return _secStorageVmDao.findById(systemVm.getId());
+                } 
+            }
+            return null;
+        } catch (OperationTimedoutException e) {
+            throw new CloudRuntimeException("Unable to stop " + systemVm, e);
+        }
 	}
 
 	@Override

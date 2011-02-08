@@ -21,7 +21,6 @@ import java.util.List;
 
 import javax.naming.InsufficientResourcesException;
 
-import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.CreateVMGroupCmd;
@@ -34,7 +33,6 @@ import com.cloud.api.commands.RebootVMCmd;
 import com.cloud.api.commands.RecoverVMCmd;
 import com.cloud.api.commands.ResetVMPasswordCmd;
 import com.cloud.api.commands.StartVMCmd;
-import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
 import com.cloud.exception.ConcurrentOperationException;
@@ -92,7 +90,6 @@ public interface UserVmService {
     Volume detachVolumeFromVM(DetachVolumeCmd cmmd);
     
     UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException;
-    UserVm stopVirtualMachine(StopVMCmd cmd) throws ServerApiException, ConcurrentOperationException;
     UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException;
     UserVm updateVirtualMachine(UpdateVMCmd cmd);
     UserVm recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException;
@@ -157,7 +154,7 @@ public interface UserVmService {
      */
     UserVm upgradeVirtualMachine(UpgradeVMCmd cmd);
     
-    UserVm stopVirtualMachine(long vmId) throws ConcurrentOperationException;
+    UserVm stopVirtualMachine(long vmId, boolean forced) throws ConcurrentOperationException;
     
     UserVm startVirtualMachine(long vmId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
