@@ -384,7 +384,7 @@ function initVMWizard() {
 				var $securityGroupDropdown = $vmPopup.find("#security_group_dropdown").empty();	
 				if (items != null && items.length > 0) {
 					for (var i = 0; i < items.length; i++) {
-					    $securityGroupDropdown.append("<option value='" + fromdb(items[i].name) + "'>" + fromdb(items[i].name) + "</option>"); 
+					    $securityGroupDropdown.append("<option value='" + fromdb(items[i].id) + "'>" + fromdb(items[i].name) + "</option>"); 
 					}
 				}					    
 			}
@@ -1121,7 +1121,7 @@ function initVMWizard() {
 			    if($thisPopup.find("#step4").find("#security_group_section").css("display") != "none") {
 				    if($thisPopup.find("#security_group_dropdown").val() != null && $thisPopup.find("#security_group_dropdown").val().length > 0) {
 			            var securityGroupList = $thisPopup.find("#security_group_dropdown").val().join(",");
-			            moreCriteria.push("&securitygrouplist="+encodeURIComponent(securityGroupList));	
+			            moreCriteria.push("&securitygroupids="+securityGroupList);	
 			        }		
 			    }				
 			}

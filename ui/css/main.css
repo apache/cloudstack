@@ -1318,6 +1318,20 @@ a:hover {
 	color:#333;
 }
 
+.multiple {
+	background-color: #e9f6ff;
+	font: normal 12px Arial, Helvetica, sans-serif;
+	font-weight:normal;
+	float:left;
+	border: 1px solid #61869b;
+	padding:2px 2px 0 2px;
+	height: 80px;
+	width: 400px;
+	margin:0;
+	padding:0;
+	color:#333;
+}
+
 .rev_wizformarea  .select {
 	background-color: #e9f6ff;
 	font: normal 12px Arial, Helvetica, sans-serif;
