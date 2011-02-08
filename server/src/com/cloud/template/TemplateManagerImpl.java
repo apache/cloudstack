@@ -1170,11 +1170,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         
         String errMsg = "Unable to attach ISO" + isoId + "to virtual machine " + vmId;
         userId = accountAndUserValidation(account, userId, vmInstanceCheck, iso, errMsg);
-        
-        VMInstanceVO vm = ApiDBUtils.findVMInstanceById(vmId);
-        VMTemplateVO vmTemplate = ApiDBUtils.findTemplateById(vm.getTemplateId());
-        if ("xen-pv-drv-iso".equals(iso.getDisplayText()) && vmTemplate.getHypervisorType() != Hypervisor.HypervisorType.XenServer){
-        	throw new InvalidParameterValueException("Cannot attach Xenserver PV drivers to incompatible hypervisor " +vmTemplate.getHypervisorType());
+
+        if ("xen-pv-drv-iso".equals(iso.getDisplayText()) && vmInstanceCheck.getHypervisorType() != Hypervisor.HypervisorType.XenServer){
+        	throw new InvalidParameterValueException("Cannot attach Xenserver PV drivers to incompatible hypervisor " + vmInstanceCheck.getHypervisorType());
         }
         
         return attachISOToVM(vmId, userId, isoId, true);
