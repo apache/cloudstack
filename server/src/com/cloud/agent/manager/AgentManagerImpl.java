@@ -2081,7 +2081,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			List<HostVO> hosts = _hostDao.listBy(host.getClusterId(), host.getPodId(), host.getDataCenterId());	
 
 			for (final VMInstanceVO vm : vms) {
-		        if( hosts == null || hosts.isEmpty()) {
+		        if( hosts == null || hosts.size() <= 1) {
 		            // for the last host in this cluster, stop all the VMs
 	                _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
 		        } else {
