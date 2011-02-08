@@ -85,7 +85,9 @@
 		'label.by.zone': '<fmt:message key="label.by.zone"/>', 
 		'label.by.pod': '<fmt:message key="label.by.pod"/>', 
 		'label.by.domain': '<fmt:message key="label.by.domain"/>',
-		'label.by.account': '<fmt:message key="label.by.account"/>'
+		'label.by.account': '<fmt:message key="label.by.account"/>',
+		'label.path': '<fmt:message key="label.path"/>',
+		'label.SR.name': '<fmt:message key="label.SR.name"/>'
 	};	
 	</script>
 </head>
