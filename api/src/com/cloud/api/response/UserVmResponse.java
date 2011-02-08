@@ -130,8 +130,8 @@ public class UserVmResponse extends BaseResponse {
     @SerializedName("rootdevicetype") @Param(description="device type of the root volume")
     private String rootDeviceType;
 
-    @SerializedName("securitygrouplist") @Param(description="list of security groups associated with the virtual machine")
-    private String securityGroupList;
+    @SerializedName("securitygroup") @Param(description="list of security groups associated with the virtual machine", responseObject = SecurityGroupResponse.class)
+    private List<SecurityGroupResponse> securityGroupList;
 
     @SerializedName(ApiConstants.PASSWORD) @Param(description="the password (if exists) of the virtual machine")
     private String password;
@@ -432,14 +432,6 @@ public class UserVmResponse extends BaseResponse {
         this.rootDeviceType = rootDeviceType;
     }
 
-    public String getSecurityGroupList() {
-        return securityGroupList;
-    }
-
-    public void setSecurityGroupList(String securityGroupList) {
-        this.securityGroupList = securityGroupList;
-    }
-
     public String getPassword() {
         return password;
     }
@@ -478,5 +470,13 @@ public class UserVmResponse extends BaseResponse {
 
     public void setNics(List<NicResponse> nics) {
         this.nics = nics;
+    }
+    
+    public List<SecurityGroupResponse> getSecurityGroupList() {
+        return securityGroupList;
+    }
+
+    public void setSecurityGroupList(List<SecurityGroupResponse> securityGroups) {
+        this.securityGroupList = securityGroups;
     }
 }

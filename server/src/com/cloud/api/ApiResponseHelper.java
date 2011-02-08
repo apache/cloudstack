@@ -112,6 +112,7 @@ import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.security.IngressRule;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -1097,9 +1098,20 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         userVmResponse.setGuestOsId(userVm.getGuestOSId());
-        // network groups
-        userVmResponse.setSecurityGroupList(ApiDBUtils.getNetworkGroupsNamesForVm(userVm.getId()));
-
+        // security groups
+        List<SecurityGroupVO> securityGroups = ApiDBUtils.getSecurityGroupsForVm(userVm.getId());
+        List<SecurityGroupResponse> securityGroupResponse = new ArrayList<SecurityGroupResponse>();
+        for(SecurityGroupVO grp : securityGroups) {
+            SecurityGroupResponse resp = new SecurityGroupResponse();
+            resp.setId(grp.getId());
+            resp.setName(grp.getName());
+            resp.setDescription(grp.getDescription());
+            resp.setObjectName("securitygroup");
+            securityGroupResponse.add(resp);
+        }
+        
+        userVmResponse.setSecurityGroupList(securityGroupResponse);
+        
         List<NicProfile> nicProfiles = ApiDBUtils.getNics(userVm);
         List<NicResponse> nicResponses = new ArrayList<NicResponse>();
         for (NicProfile singleNicProfile : nicProfiles) {
