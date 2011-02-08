@@ -131,11 +131,7 @@ dictionary = {
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="offerha">
-	                    </div>
-	                    <select class="select" id="offerha_edit" style="width: 202px; display: none;">
-	                        <option value="false"><fmt:message key="label.no"/></option>
-							<option value="true"><fmt:message key="label.yes"/></option>
-	                    </select>
+	                    </div>	                  
 	                </div>
 	            </div>
 	            <div class="grid_rows even">
@@ -145,9 +141,7 @@ dictionary = {
 	                </div>
 	                <div class="grid_row_cell" style="width: 79%;">
 	                    <div class="row_celltitles" id="tags">
-	                    </div>	                    
-	                    <input class="text" id="tags_edit" style="width: 200px; display: none;" type="text" />
-	                    <div id="tags_edit_errormsg" style="display:none"></div>  
+	                    </div>	
 	                </div>
 	            </div>
 	            

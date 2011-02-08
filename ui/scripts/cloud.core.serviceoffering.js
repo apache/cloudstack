@@ -39,8 +39,8 @@ function serviceOfferingGetSearchParams() {
 function afterLoadServiceOfferingJSP() {
     initAddServiceOfferingDialog();   
     
-    $readonlyFields = $("#tab_content_details").find("#name, #displaytext, #offerha, #tags, #domain");    
-    $editFields = $("#tab_content_details").find("#name_edit, #displaytext_edit, #offerha_edit, #domain_edit");         
+    $readonlyFields = $("#tab_content_details").find("#name, #displaytext");    
+    $editFields = $("#tab_content_details").find("#name_edit, #displaytext_edit");         
 }
 
 function initAddServiceOfferingDialog() {

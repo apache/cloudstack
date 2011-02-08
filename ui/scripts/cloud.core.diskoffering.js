@@ -39,8 +39,8 @@ function diskOfferingGetSearchParams() {
 function afterLoadDiskOfferingJSP() {    
     initAddDiskOfferingDialog();   
     
-    $readonlyFields  = $("#tab_content_details").find("#name, #displaytext, #tags, #domain");
-    $editFields = $("#tab_content_details").find("#name_edit, #displaytext_edit, #domain_edit");       
+    $readonlyFields  = $("#tab_content_details").find("#name, #displaytext");
+    $editFields = $("#tab_content_details").find("#name_edit, #displaytext_edit");       
 }
 
 function initAddDiskOfferingDialog() { 
