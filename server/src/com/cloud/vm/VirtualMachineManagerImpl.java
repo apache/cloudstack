@@ -62,6 +62,7 @@ import com.cloud.capacity.CapacityManager;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.ResourceCount.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.DataCenter;
@@ -619,7 +620,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
                 }
                 
                 if (dest == null) {
-                    throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId());
+                	_accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
+                    throw new InsufficientServerCapacityException("Unable to create a deployment for " + vmProfile, DataCenter.class, plan.getDataCenterId());                    
                 }
                 
                 long destHostId = dest.getHost().getId();
