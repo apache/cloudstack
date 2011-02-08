@@ -43,4 +43,6 @@ public interface SecurityGroupManager {
 	public void fullSync(long agentId, HashMap<String, Pair<Long, Long>> newGroupStates);
 	
 	public String getSecurityGroupsNamesForVm(long vmId);
+
+    public List<SecurityGroupVO> getSecurityGroupsForVm(long vmId);
 }

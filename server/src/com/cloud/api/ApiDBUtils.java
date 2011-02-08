@@ -43,6 +43,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -249,6 +250,10 @@ public class ApiDBUtils {
 
     public static String getNetworkGroupsNamesForVm(long vmId) {
         return _networkGroupMgr.getSecurityGroupsNamesForVm(vmId);
+    }
+    
+    public static List<SecurityGroupVO> getSecurityGroupsForVm(long vmId) {
+        return _networkGroupMgr.getSecurityGroupsForVm(vmId);
     }
 
     public static String getSnapshotIntervalTypes(long snapshotId) {

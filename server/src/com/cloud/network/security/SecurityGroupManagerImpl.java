@@ -1309,6 +1309,19 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 		}
 
 	}
+	
+   @Override
+    public List<SecurityGroupVO> getSecurityGroupsForVm(long vmId) {
+        List<SecurityGroupVMMapVO>securityGroupsToVmMap =  _securityGroupVMMapDao.listByInstanceId(vmId);
+        List<SecurityGroupVO> secGrps = new ArrayList<SecurityGroupVO>();
+        if(securityGroupsToVmMap != null && securityGroupsToVmMap.size() > 0) {
+            for(SecurityGroupVMMapVO sG : securityGroupsToVmMap) {
+                SecurityGroupVO currSg = _securityGroupDao.findById(sG.getSecurityGroupId());
+                secGrps.add(currSg);
+            }
+        }
+        return secGrps;
+    }
 
     @Override
     public boolean preStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status, Long id) {
