@@ -83,9 +83,11 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
 import com.cloud.domain.Domain;
 import com.cloud.event.Event;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.network.IpAddress;
 import com.cloud.network.router.VirtualRouter;
@@ -218,7 +220,7 @@ public interface ManagementService {
      */
     List<? extends GuestOsCategory> listGuestOSCategoriesByCriteria(ListGuestOsCategoriesCmd cmd);
     
-    VirtualMachine stopSystemVM(StopSystemVmCmd cmd);
+    VirtualMachine stopSystemVM(StopSystemVmCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
     VirtualMachine startSystemVM(StartSystemVMCmd cmd);
     VirtualMachine rebootSystemVM(RebootSystemVmCmd cmd);
     VirtualMachine destroySystemVM(DestroySystemVmCmd cmd);

@@ -77,7 +77,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
     
-    @Inject NetworkDao _networkConfigDao;
+    @Inject NetworkDao _networksDao;
     @Inject NetworkManager _networkMgr;
     @Inject LoadBalancingRulesManager _lbMgr;
     @Inject NetworkOfferingDao _networkOfferingDao;
@@ -204,7 +204,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
     
     @Override
     public String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException{
-        Network network = _networkConfigDao.findById(vpn.getNetworkId());
+        Network network = _networksDao.findById(vpn.getNetworkId());
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         if (canHandle(network.getGuestType(),dc)) {
             return _routerMgr.applyVpnUsers(network, users);
@@ -215,7 +215,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
     }
     
     @Override
-    public boolean start(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
+    public boolean startVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         if (canHandle(network.getGuestType(),dc)) {
             return _routerMgr.startRemoteAccessVpn(network, vpn);
@@ -226,7 +226,7 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
     }
     
     @Override
-    public boolean stop(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
+    public boolean stopVpn(Network network, RemoteAccessVpn vpn) throws ResourceUnavailableException {
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         if (canHandle(network.getGuestType(),dc)) {
             return _routerMgr.deleteRemoteAccessVpn(network, vpn);

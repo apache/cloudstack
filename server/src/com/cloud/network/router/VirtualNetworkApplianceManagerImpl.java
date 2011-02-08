@@ -273,14 +273,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     int _routerRamSize;
     int _retry = 2;
-    String _domain;
     String _instance;
     String _mgmt_host;
 
     int _routerCleanupInterval = 3600;
     int _routerStatsInterval = 300;
     private ServiceOfferingVO _offering;
-    String _networkDomain;
 
     ScheduledExecutorService _executor;
 
@@ -414,7 +412,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     
     
     @Override
-    public VirtualRouter stopRouter(long routerId) throws ResourceUnavailableException, ConcurrentOperationException {
+    public VirtualRouter stopRouter(long routerId, boolean forced) throws ResourceUnavailableException, ConcurrentOperationException {
         UserContext context = UserContext.current();
         Account account = context.getCaller();
         
@@ -428,7 +426,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         UserVO user = _userDao.findById(UserContext.current().getCallerUserId());
         
-        return this.stop(router, user, account);
+        return stop(router, forced, user, account);
     }
     
     @DB
@@ -505,7 +503,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     public VirtualRouter rebootRouter(long routerId, boolean restartNetwork) throws InvalidParameterValueException, PermissionDeniedException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        Account account = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
 
         // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
@@ -513,7 +511,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new InvalidParameterValueException("Unable to find domain router with id " + routerId + ".");
         }
 
-        if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), router.getDomainId())) {
+        if ((caller != null) && !_domainDao.isChildDomain(caller.getDomainId(), router.getDomainId())) {
             throw new PermissionDeniedException("Unable to reboot domain router with id " + routerId + ". Permission denied");
         }
         
@@ -523,9 +521,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new ResourceUnavailableException("Unable to reboot domR, it is not in right state " + router.getState(), DataCenter.class, router.getDataCenterId());
         }
         
+        UserVO user = _userDao.findById(UserContext.current().getCallerUserId());
         s_logger.debug("Stopping and starting router " + router + " as a part of router reboot");
         
-        if (stopRouter(routerId) != null) {
+        if (stop(router, false, user, caller) != null) {
             return startRouter(routerId, restartNetwork);
         } else {
             throw new CloudRuntimeException("Failed to reboot router " + router);
@@ -543,7 +542,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
         _mgmt_host = configs.get("host");
-        _routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), 128);
+        _routerRamSize = NumbersUtil.parseInt(configs.get(Config.RouterRamSize.key()), DEFAULT_ROUTER_VM_RAMSIZE);
 
         String value = configs.get("start.retry");
         _retry = NumbersUtil.parseInt(value, 2);
@@ -554,17 +553,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         value = configs.get("router.cleanup.interval");
         _routerCleanupInterval = NumbersUtil.parseInt(value, 3600);
 
-        _domain = configs.get("domain");
-        if (_domain == null) {
-            _domain = "foo.com";
-        }
-
         _instance = configs.get("instance.name");
         if (_instance == null) {
             _instance = "DEFAULT";
         }
-
-        _networkDomain = configs.get("guest.domain.suffix");
 
         s_logger.info("Router configurations: " + "ramsize=" + _routerRamSize);
 
@@ -626,23 +618,22 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         @Override
         public void run() {
             try {
-                final List<Long> ids = findLonelyRouters();
-                Long size;
-                if (ids == null || ids.isEmpty()) {
-                    size = 0L;
-                } else {
-                    size = Long.valueOf(ids.size());
+                List<Long> ids = findLonelyRouters();
+                
+                s_logger.trace("Found " + ids.size() + " routers to stop. ");
+                
+                for (Long id : ids) {
+                    try {
+                        DomainRouterVO router = _routerDao.findById(id);
+                        if (stop(router, false, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount()) != null) {
+                            s_logger.info("Successfully stopped a rather lonely " + router);
+                        }
+                    } catch (Exception e) {
+                        s_logger.warn("Unable to stop router " + id, e);
+                    }
                 }
                 
-                s_logger.info("Found " + size + " routers to stop. ");
-                
-                if (ids != null) {
-                    for (final Long id : ids) {
-                        stopRouter(id);
-                    } 
-                }
-                
-                s_logger.info("Done my job.  Time to rest.");
+                s_logger.trace("Done my job.  Time to rest.");
             } catch (Exception e) {
                 s_logger.warn("Unable to stop routers.  Will retry. ", e);
             }
@@ -1174,12 +1165,17 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
     }
     
-    private DomainRouterVO stop(DomainRouterVO router, User user, Account caller) throws ConcurrentOperationException, ResourceUnavailableException {
+    @Override
+    public DomainRouterVO stop(VirtualRouter router, boolean forced, User user, Account caller) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Stopping router " + router);
-        if (_itMgr.stop(router, user, caller)) {
-            return _routerDao.findById(router.getId());
-        }  else {
-            return null;
+        try {
+            if (_itMgr.advanceStop((DomainRouterVO)router, forced, user, caller)) {
+                return _routerDao.findById(router.getId());
+            }  else {
+                return null;
+            }
+        } catch (OperationTimedoutException e) {
+            throw new CloudRuntimeException("Unable to stop " + router, e);
         }
     }
     

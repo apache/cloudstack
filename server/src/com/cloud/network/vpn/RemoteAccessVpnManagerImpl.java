@@ -213,7 +213,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         boolean success = false;
         try {
             for (RemoteAccessVpnElement element : elements) {
-                if (element.stop(network, vpn)) {
+                if (element.stopVpn(network, vpn)) {
                     success = true;
                     break;
                 }
@@ -312,7 +312,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         boolean started = false;
         try {
             for (RemoteAccessVpnElement element : elements) {
-                if (element.start(network, vpn)) {
+                if (element.startVpn(network, vpn)) {
                     started = true;
                     break;
                 }

@@ -130,7 +130,7 @@ public class DhcpElement extends AdapterBase implements NetworkElement, Password
         if (router == null) {
             return true;
         }
-        return (_routerMgr.stopRouter(router.getId()) != null);
+        return (_routerMgr.stop(router, false, context.getCaller(), context.getAccount()) != null);
     }
     
     @Override

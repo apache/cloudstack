@@ -45,6 +45,9 @@ public class StopVMCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The ID of the virtual machine")
     private Long id;
+    
+    @Parameter(name=ApiConstants.FORCED, type=CommandType.BOOLEAN, required=false, description="Force stop the VM.  The caller knows the VM is stopped.")
+    private Boolean forced;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -87,18 +90,24 @@ public class StopVMCmd extends BaseAsyncCmd {
         return  "stopping user vm: " + getId();
     }
     
+    @Override
     public AsyncJob.Type getInstanceType() {
     	return AsyncJob.Type.VirtualMachine;
     }
     
+    @Override
     public Long getInstanceId() {
     	return getId();
+    }
+    
+    public boolean isForced() {
+        return (forced != null) ? forced : false;
     }
 
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException{
         UserContext.current().setEventDetails("Vm Id: "+getId());
-        UserVm result = _userVmService.stopVirtualMachine(this);
+        UserVm result = _userVmService.stopVirtualMachine(getId(), isForced());
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse(result);
             response.setResponseName(getCommandName());
