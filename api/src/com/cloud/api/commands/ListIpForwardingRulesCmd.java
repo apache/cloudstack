@@ -91,7 +91,7 @@ public class ListIpForwardingRulesCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends PortForwardingRule> result = _rulesService.searchForIpForwardingRules(publicIpAddressId, id, vmId, this.getStartIndex(), this.getPageSizeVal());
+        List<? extends PortForwardingRule> result = _rulesService.searchForIpForwardingRules(publicIpAddressId, id, vmId, this.getStartIndex(), this.getPageSizeVal(), this.getAccountName(), this.getDomainId());
         ListResponse<IpForwardingRuleResponse> response = new ListResponse<IpForwardingRuleResponse>();
         List<IpForwardingRuleResponse> ipForwardingResponses = new ArrayList<IpForwardingRuleResponse>();
         for (PortForwardingRule rule : result) {

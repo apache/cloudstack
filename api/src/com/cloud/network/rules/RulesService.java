@@ -26,7 +26,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 public interface RulesService {
-    List<? extends PortForwardingRule> searchForIpForwardingRules(Long ipId,  Long id, Long vmId, Long start, Long size);
+    List<? extends PortForwardingRule> searchForIpForwardingRules(Long ipId,  Long id, Long vmId, Long start, Long size, String accountName, Long domainId);
 
     /**
      * Creates a port forwarding rule between two ip addresses or between

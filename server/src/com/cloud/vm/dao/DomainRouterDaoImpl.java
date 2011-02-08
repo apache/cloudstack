@@ -143,15 +143,6 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setParameters("network", networkId);
         return findOneBy(sc);
     }
-    
-    
-    @Override
-    public DomainRouterVO findByNetworkIncludingRemoved(long networkId) {
-        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
-        sc.setParameters("network", networkId);
-        return findOneIncludingRemovedBy(sc);
-    }
-
   
 	@Override
 	public List<DomainRouterVO> listByLastHostId(Long hostId) {

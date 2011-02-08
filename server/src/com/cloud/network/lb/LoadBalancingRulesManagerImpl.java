@@ -34,6 +34,7 @@ import com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;
 import com.cloud.api.commands.ListLoadBalancerRulesCmd;
 import com.cloud.api.commands.UpdateLoadBalancerRuleCmd;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -64,6 +65,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
@@ -1259,35 +1261,16 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
     @Override
     public List<LoadBalancerVO> searchForLoadBalancers(ListLoadBalancerRulesCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
         Account caller = UserContext.current().getCaller();
-        Long domainId = cmd.getDomainId();
-        String accountName = cmd.getAccountName();
-        Long accountId = null;
         Long ipId = cmd.getPublicIpId();
         String path = null;
         
-        if (_accountMgr.isAdmin(caller.getType())) {
-            if (domainId != null) {
-                if ((caller != null) && !_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list load balancers");
-                }
-                if (accountName != null) {
-                    caller = _accountMgr.getActiveAccount(accountName, domainId);
-                    if (caller == null) {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                    accountId = caller.getId();
-                }
-            } 
-            
-            if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-                DomainVO domain = _domainDao.findById(caller.getDomainId());
-                if (domain != null) {
-                    path = domain.getPath();
-                }
-            }
-        } else {
-            domainId = caller.getDomainId();
-            accountId = caller.getId();
+        Pair<String, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId());
+        String accountName = accountDomainPair.first();
+        Long domainId = accountDomainPair.second();
+        
+        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            Domain domain = _accountMgr.getDomain(caller.getDomainId());
+            path = domain.getPath();
         }
 
         Filter searchFilter = new Filter(LoadBalancerVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -1342,10 +1325,12 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             sc.setJoinParameters("lbVMSearch", "instanceId", instanceId);
         }
         
-        if (accountId != null) {
-            sc.setParameters("accountId", accountId);
-        } else if (domainId != null) {
+        if (domainId != null) {
             sc.setParameters("domainId", domainId);
+            if (accountName != null) {
+                Account account = _accountMgr.getActiveAccount(accountName, domainId);
+                sc.setParameters("accountId", account.getId());
+            }
         }
         
         if (path != null) {

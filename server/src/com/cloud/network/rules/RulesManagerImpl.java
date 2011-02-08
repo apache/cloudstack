@@ -28,6 +28,9 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
+import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
@@ -58,6 +61,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -82,6 +86,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     @Inject NetworkManager _networkMgr;
     @Inject EventDao _eventDao;
     @Inject UsageEventDao _usageEventDao;
+    @Inject DomainDao _domainDao;
 
     @Override
     public void detectRulesConflict(FirewallRule newRule, IpAddress ipAddress) throws NetworkRuleConflictException {
@@ -409,6 +414,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     public List<? extends PortForwardingRule> listPortForwardingRules(ListPortForwardingRulesCmd cmd) {
        Account caller = UserContext.current().getCaller();
        Long ipId = cmd.getIpAddressId();
+       String path = null;
         
        Pair<String, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId());
        String accountName = accountDomainPair.first();
@@ -422,12 +428,24 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             _accountMgr.checkAccess(caller, ipAddressVO);
         }
         
+        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            Domain domain = _accountMgr.getDomain(caller.getDomainId());
+            path = domain.getPath();
+        }
+        
         Filter filter = new Filter(PortForwardingRuleVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal()); 
         SearchBuilder<PortForwardingRuleVO> sb = _forwardingDao.createSearchBuilder();
         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
         sb.and("accountId", sb.entity().getAccountId(), Op.EQ);
         sb.and("domainId", sb.entity().getDomainId(), Op.EQ);
         sb.and("oneToOneNat", sb.entity().isOneToOneNat(), Op.EQ);
+        
+        if (path != null) {
+            //for domain admin we should show only subdomains information
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
         
         SearchCriteria<PortForwardingRuleVO> sc = sb.create();
         
@@ -444,6 +462,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
         
         sc.setParameters("oneToOneNat", false);
+        
+        if (path != null) {
+            sc.setJoinParameters("domainSearch", "path", path + "%");
+        }
        
         return _forwardingDao.search(sc, filter);
     }
@@ -515,8 +537,62 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
     
     @Override
-    public List<PortForwardingRuleVO> searchForIpForwardingRules(Long ipId, Long id, Long vmId, Long start, Long size) {
-        return _forwardingDao.searchNatRules(ipId, id, vmId, start, size);
+    public List<PortForwardingRuleVO> searchForIpForwardingRules(Long ipId, Long id, Long vmId, Long start, Long size, String accountName, Long domainId) {
+        Account caller = UserContext.current().getCaller();
+        String path = null;
+         
+        Pair<String, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, accountName, domainId);
+        accountName = accountDomainPair.first();
+        domainId = accountDomainPair.second();
+         
+         if(ipId != null){
+             IPAddressVO ipAddressVO = _ipAddressDao.findById(ipId);
+             if (ipAddressVO == null || !ipAddressVO.readyToUse()) {
+                 throw new InvalidParameterValueException("Ip address id=" + ipId + " not ready for port forwarding rules yet");
+             }
+             _accountMgr.checkAccess(caller, ipAddressVO);
+         }
+         
+         if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+             Domain domain = _accountMgr.getDomain(caller.getDomainId());
+             path = domain.getPath();
+         }
+         
+         Filter filter = new Filter(PortForwardingRuleVO.class, "id", false, start, size); 
+         SearchBuilder<PortForwardingRuleVO> sb = _forwardingDao.createSearchBuilder();
+         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
+         sb.and("accountId", sb.entity().getAccountId(), Op.EQ);
+         sb.and("domainId", sb.entity().getDomainId(), Op.EQ);
+         sb.and("oneToOneNat", sb.entity().isOneToOneNat(), Op.EQ);
+         
+         if (path != null) {
+             //for domain admin we should show only subdomains information
+             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+         }
+         
+         SearchCriteria<PortForwardingRuleVO> sc = sb.create();
+         
+         if (ipId != null) {
+             sc.setParameters("ip", ipId);
+         }
+         
+         if (domainId != null) {
+             sc.setParameters("domainId", domainId);
+             if (accountName != null) {
+                 Account account = _accountMgr.getActiveAccount(accountName, domainId);
+                 sc.setParameters("accountId", account.getId());
+             }
+         }
+         
+         sc.setParameters("oneToOneNat", true);
+         
+         if (path != null) {
+             sc.setJoinParameters("domainSearch", "path", path + "%");
+         }
+         
+         return _forwardingDao.search(sc, filter);
     }
     
     @Override @ActionEvent (eventType=EventTypes.EVENT_NET_RULE_ADD, eventDescription="applying forwarding rule", async=true)

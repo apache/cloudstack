@@ -79,8 +79,6 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
 	DomainRouterVO findBy(long accountId, long dcId, Role role);
 	
 	DomainRouterVO findByNetwork(long networkId);
-	
-	DomainRouterVO findByNetworkIncludingRemoved(long networkId);
-	
+
 	DomainRouterVO findByNetworkAndPod(long networkId, long podId);
 }

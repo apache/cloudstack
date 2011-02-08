@@ -103,28 +103,6 @@ public class PortForwardingRulesDaoImpl extends GenericDaoBase<PortForwardingRul
     }
     
     @Override
-    public List<PortForwardingRuleVO> searchNatRules(Long ipId, Long id, Long vmId, Long startIndex, Long pageSize) {
-        Filter searchFilter = new Filter(PortForwardingRuleVO.class, "id", true, startIndex, pageSize);
-        SearchCriteria<PortForwardingRuleVO> sc = AllFieldsSearch.create();
-
-        if (ipId != null) {
-            sc.setParameters("ipId", ipId);
-        }
-        
-        if (id != null) {
-            sc.setParameters("id", id);
-        }
-        
-        if (vmId != null) {
-            sc.setParameters("vmId", vmId);
-        }
-        
-        sc.setParameters("oneToOneNat", true);
-
-        return listBy(sc, searchFilter);
-    }
-    
-    @Override
     public List<PortForwardingRuleVO> listByNetworkId(long networkId) {
         SearchCriteria<PortForwardingRuleVO> sc = AllFieldsSearch.create();
         sc.setParameters("networkId", networkId);

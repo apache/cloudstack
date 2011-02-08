@@ -17,7 +17,6 @@
  */
 package com.cloud.network.vpn;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -30,12 +29,12 @@ import com.cloud.api.commands.ListRemoteAccessVpnsCmd;
 import com.cloud.api.commands.ListVpnUsersCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
@@ -68,6 +67,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
 
@@ -400,35 +400,19 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
 
     @Override
     public List<VpnUserVO> searchForVpnUsers(ListVpnUsersCmd cmd) {
-        Account account = UserContext.current().getCaller();
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
-        Long accountId = null;
+        Account caller = UserContext.current().getCaller();
         String username = cmd.getUsername();
+        String path = null;
         
         //Verify account information
-        if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-            if (domainId != null) {
-                if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list virtual machines.");
-                }
-
-                if (accountName != null) {
-                    account = _accountDao.findActiveAccount(accountName, domainId);
-                    if (account == null) {
-                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
-                    }
-                    accountId = account.getId();
-                }
-            } 
-            if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-                DomainVO domain = _domainDao.findById(account.getDomainId());
-                if (domain != null) {
-                   domainId = domain.getId();
-                }
-            }
-        } else {
-            accountId = account.getId();
+        Pair<String, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId());
+        String accountName = accountDomainPair.first();
+        Long domainId = accountDomainPair.second();
+        
+        
+        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            Domain domain = _accountMgr.getDomain(caller.getDomainId());
+            path = domain.getPath();
         }
 
         Filter searchFilter = new Filter(VpnUserVO.class, "username", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -439,11 +423,11 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.EQ);
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
+        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
 
-        if ((accountId == null) && (domainId != null)) {
-            // if accountId isn't specified, we can do a domain match for the
-            // admin case
+        if (path != null) {
+            //for domain admin we should show only subdomains information
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
@@ -462,11 +446,16 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
             sc.setParameters("username", username);
         }
 
-        if (accountId != null) {
-            sc.setParameters("accountId", accountId);
-        } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById(domainId);
-            sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+        if (domainId != null) {
+            sc.setParameters("domainId", domainId);
+            if (accountName != null) {
+                Account account = _accountMgr.getActiveAccount(accountName, domainId);
+                sc.setParameters("accountId", account.getId());
+            }
+        }
+        
+        if (path != null) {
+            sc.setJoinParameters("domainSearch", "path", path + "%");
         }
 
         return _vpnUsersDao.search(sc, searchFilter);
@@ -476,8 +465,16 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     public List<RemoteAccessVpnVO> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd) {
         // do some parameter validation
         Account caller = UserContext.current().getCaller();
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
+        String path = null;
+        
+        Pair<String, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId());
+        String accountName = accountDomainPair.first();
+        Long domainId = accountDomainPair.second();
+        
+        if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            Domain domain = _accountMgr.getDomain(caller.getDomainId());
+            path = domain.getPath();
+        }
 
         Long ipAddressId = cmd.getPublicIpId();
         if (ipAddressId != null) {
@@ -492,31 +489,44 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
                 }
             }
             _accountMgr.checkAccess(caller, publicIp);
-
-            List<RemoteAccessVpnVO> vpns = new ArrayList<RemoteAccessVpnVO>(1);
-            RemoteAccessVpnVO remoteVpn = _remoteAccessVpnDao.findById(ipAddressId);
-            if (remoteVpn != null) {
-            	vpns.add(remoteVpn);
-            }
-            return vpns;
         }
 
-        Account owner = null;
-        if (accountName != null) {
-            owner = _accountDao.findAccount(accountName, domainId);
+        
+        Filter filter = new Filter(RemoteAccessVpnVO.class, "serverAddressId", false, cmd.getStartIndex(), cmd.getPageSizeVal()); 
+        SearchBuilder<RemoteAccessVpnVO> sb = _remoteAccessVpnDao.createSearchBuilder();
+        sb.and("serverAddressId", sb.entity().getServerAddressId(), Op.EQ);
+        sb.and("accountId", sb.entity().getAccountId(), Op.EQ);
+        sb.and("domainId", sb.entity().getDomainId(), Op.EQ);
+        sb.and("state", sb.entity().getState(), Op.EQ);
+        
+        if (path != null) {
+            //for domain admin we should show only subdomains information
+            SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
+            domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.LIKE);
+            sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
-        _accountMgr.checkAccess(caller, owner);
+        
+        SearchCriteria<RemoteAccessVpnVO> sc = sb.create();
 
-        Filter searchFilter = new Filter(RemoteAccessVpnVO.class, "serverAddress", true, cmd.getStartIndex(), cmd.getPageSizeVal());
-
-        SearchCriteria<RemoteAccessVpnVO> sc = VpnSearch.create();
-
-        sc.setParameters("accountId", owner.getId());
         sc.setParameters("state", RemoteAccessVpn.State.Running);
-        DomainVO domain = _domainDao.findById(domainId);
-        sc.setJoinParameters("domainSearch", "path", domain.getPath() + "%");
+        
+        if (ipAddressId != null) {
+            sc.setParameters("serverAddressId", ipAddressId);
+        }
+        
+        if (domainId != null) {
+            sc.setParameters("domainId", domainId);
+            if (accountName != null) {
+                Account account = _accountMgr.getActiveAccount(accountName, domainId);
+                sc.setParameters("accountId", account.getId());
+            }
+        }
+        
+        if (path != null) {
+            sc.setJoinParameters("domainSearch", "path", path + "%");
+        }
 
-        return _remoteAccessVpnDao.search(sc, searchFilter);
+        return _remoteAccessVpnDao.search(sc, filter);
     }
 
     @Override

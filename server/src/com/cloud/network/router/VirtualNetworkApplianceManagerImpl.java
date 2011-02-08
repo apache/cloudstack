@@ -1519,13 +1519,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     public boolean associateIP(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
         DomainRouterVO router = _routerDao.findByNetwork(network.getId());
         if (router == null) {
-            //Return true only when domR entry exists, has Destroyed state and not null Removed field 
-            //because it happens just in case when this method is called as a part of account cleanup.
-            //In all other cases return false
-            router = _routerDao.findByNetworkIncludingRemoved(network.getId());
-            if (router != null && (router.getState() == State.Destroyed || router.getState() == State.Expunging)) {
-                return true;
-            }
             s_logger.warn("Unable to associate ip addresses, virtual router doesn't exist in the network " + network.getId());
             throw new ResourceUnavailableException("Unable to assign ip addresses", DataCenter.class, network.getDataCenterId());
         }
