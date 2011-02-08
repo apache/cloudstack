@@ -1941,7 +1941,7 @@ a:hover {
 }
 
 .searchpanel .text{
-	width:145px;
+	width:131px;
 	height:14px;
 	float:left;
 	background:#FFF repeat top left;
@@ -1968,6 +1968,22 @@ a:hover {
 
 .search_closebutton:hover {
 	background:url(../images/search_closeicon_hover.gif) no-repeat top left;
+}
+
+.search_refreshbutton {
+	width:13px;
+	height:13px;
+	background:url(../images/search_refreshicon.gif) no-repeat top left;
+	float:left;
+	margin:2px 0 0 2px;
+	display:inline;
+	padding:0;
+	cursor:pointer;
+	cursor:hand;
+}
+
+.search_refreshbutton:hover {
+	background:url(../images/search_refreshicon_hover.gif) no-repeat top left;
 }
 
 .search_textbg {
