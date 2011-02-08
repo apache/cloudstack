@@ -345,10 +345,12 @@ public class ApiServer implements HttpRequestHandler {
                     response = queueCommand(cmdObj, paramMap);
                     buildAuditTrail(auditTrailSb, command[0], response);
                 } else {
-                    String errorString = "Unknown API command: " + ((command == null) ? "null" : command[0]);
-                    s_logger.warn(errorString);
-                    auditTrailSb.append(" " +errorString);
-                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, errorString);
+                    if(!command[0].equalsIgnoreCase("login") && !command[0].equalsIgnoreCase("logout")) {
+                        String errorString = "Unknown API command: " + ((command == null) ? "null" : command[0]);
+                        s_logger.warn(errorString);
+                        auditTrailSb.append(" " +errorString);
+                        throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, errorString);
+                    }
                 }
             }
         } catch (Exception ex) {
@@ -532,7 +534,7 @@ public class ApiServer implements HttpRequestHandler {
             	return true;
             }else{
             	//check against every available command to see if the command exists or not
-            	if(!isCommandAvailable(commandName)){
+            	if(!isCommandAvailable(commandName) && !commandName.equals("login") && !commandName.equals("logout")){
             		s_logger.warn("The given command:"+commandName+" does not exist");
             		throw new InvalidParameterException("The given command:"+commandName+" does not exist");
             	}
