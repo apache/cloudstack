@@ -1000,6 +1000,7 @@ function getMidmenuId(jsonObj) {
 
 //var lastSearchType;
 var currentCommandString;
+var searchParams;
 function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, jsonResponse2, toMidmenuFn, toRightPanelFn, getMidmenuIdFn, isMultipleSelectionInMidMenu, page) {                
 	$("#midmenu_container").hide();
 	$("#midmenu_spinning_wheel").show();
@@ -1019,11 +1020,7 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
 	
 	(page > 1)? $("#midmenu_prevbutton").show(): $("#midmenu_prevbutton").hide();
 	
-	var searchParams = getSearchParamsFn();
-	if(searchParams.length > 0)
-	    $("#clear_search").show();
-	else
-	    $("#clear_search").hide();
+	searchParams = getSearchParamsFn();
 	
     var count = 0;    
     $.ajax({

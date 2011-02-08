@@ -206,8 +206,8 @@
                                 <li>
                                     <div id="basic_search" class="search_textbg">
                                         <input class="text" type="text" id="search_input" />
-                                        <div id="clear_search" class="search_closebutton" style="display: none;">
-                                        </div>
+										<div id="refresh_mid" class="search_refreshbutton" style="display: block;"></div>
+                                        <div id="clear_search" class="search_closebutton" style="display: block;"></div>
                                     </div>
                                 </li>
                             </ol>

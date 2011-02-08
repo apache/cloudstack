@@ -333,10 +333,20 @@ $(document).ready(function() {
 	}
 	
 	//clear search
-	$("#clear_search").unbind("click").bind("click", function(event) {	    
-	    if($selectedSubMenu != null)
-	        $selectedSubMenu.click();
-	    return false;
+	$("#clear_search").unbind("click").bind("click", function(event) {
+		if(searchParams.length > 0)  {
+			if($selectedSubMenu != null)
+				$selectedSubMenu.click();
+			return false;
+		}
+	});
+	
+	//refresh mid search
+	$("#refresh_mid").unbind("click").bind("click", function(event) {	    
+	    var onRefreshFn = $("#right_panel").data("onRefreshFn");
+		if(onRefreshFn != null)
+		    onRefreshFn();
+		return false;
 	});
 	
 	//basic search	
@@ -493,9 +503,13 @@ $(document).ready(function() {
 	
 	// refresh button
 	$("#refresh_link").unbind("click").bind("click", function(event) {		
-		var onRefreshFn = $("#right_panel").data("onRefreshFn");
-		if(onRefreshFn != null)
-		    onRefreshFn();
+		if ($currentMidmenuItem != null) {
+			$currentMidmenuItem.click();
+		} else {
+			var onRefreshFn = $("#right_panel").data("onRefreshFn");
+			if(onRefreshFn != null)
+				onRefreshFn();
+		}
 		return false;
 	});
 	
