@@ -67,6 +67,7 @@ import com.cloud.api.commands.StartVMCmd;
 import com.cloud.api.commands.StopVMCmd;
 import com.cloud.api.commands.UpdateVMCmd;
 import com.cloud.api.commands.UpgradeVMCmd;
+import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
@@ -1012,20 +1013,22 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         // Recover the VM's disks
-        List<VolumeVO> volumes = _volsDao.findByInstanceIdDestroyed(vmId);
+        List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
         for (VolumeVO volume : volumes) {
-            // Create an event
-            Long templateId = volume.getTemplateId();
-            Long diskOfferingId = volume.getDiskOfferingId();
-            Long offeringId = null;
-            if(diskOfferingId != null){
-                DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
-                if(offering!=null && (offering.getType() == DiskOfferingVO.Type.Disk)){
-                    offeringId = offering.getId();
+            if (volume.getVolumeType().equals(VolumeType.ROOT)) {
+                // Create an event
+                Long templateId = volume.getTemplateId();
+                Long diskOfferingId = volume.getDiskOfferingId();
+                Long offeringId = null;
+                if(diskOfferingId != null){
+                    DiskOfferingVO offering = _diskOfferingDao.findById(diskOfferingId);
+                    if(offering!=null && (offering.getType() == DiskOfferingVO.Type.Disk)){
+                        offeringId = offering.getId();
+                    }
                 }
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), offeringId, templateId , volume.getSize());
+                _usageEventDao.persist(usageEvent);
             }
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), offeringId, templateId , volume.getSize());
-            _usageEventDao.persist(usageEvent);
         }
         
         _accountMgr.incrementResourceCount(account.getId(), ResourceType.volume, new Long(volumes.size()));
@@ -1478,6 +1481,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 				for(VolumeVO volume : volumesForThisVm) {
 				    try {
                         _storageMgr.destroyVolume(volume);
+                        if ((volume.getStatus() == AsyncInstanceCreateStatus.Created) && (volume.getVolumeType().equals(VolumeType.ROOT))) {
+                            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(),
+                                    volume.getName(), null, null, null);
+                            _usageEventDao.persist(usageEvent);
+                        }
                     } catch (ConcurrentOperationException e) {
                         s_logger.warn("Unable to delete volume:"+volume.getId()+" for vm:"+vmId+" whilst transitioning to error state");
                     }
@@ -2342,6 +2350,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         
         if (status) {
+            // Mark the account's volumes as destroyed
+            List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
+            for (VolumeVO volume : volumes) {
+                if (volume.getVolumeType().equals(VolumeType.ROOT)) {
+                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(),
+                            volume.getName(), null, null, null);
+                    _usageEventDao.persist(usageEvent);
+                }
+            }
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
             _usageEventDao.persist(usageEvent);
             _accountMgr.decrementResourceCount(vm.getAccountId(), ResourceType.user_vm);
