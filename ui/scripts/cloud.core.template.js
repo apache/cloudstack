@@ -315,7 +315,23 @@ function templateJsonToDetailsTab() {
         templateClearDetailsTab();
         return;      
     }
-    
+       
+    var strCmd = "command=listTemplates&templatefilter=self&id="+jsonObj.id;
+    if(jsonObj.zoneid != null)
+        strCmd = strCmd +"&zoneid="+jsonObj.zoneid;       
+    $.ajax({
+        data: createURL(strCmd),
+        dataType: "json",
+        async: false,
+        success: function(json) {            
+            var items = json.listtemplatesresponse.template;
+            if(items != null && items.length > 0) {
+                jsonObj = items[0];
+                $midmenuItem1.data("jsonObj", jsonObj);                  
+            }
+        }    
+    });
+       
     var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();        
