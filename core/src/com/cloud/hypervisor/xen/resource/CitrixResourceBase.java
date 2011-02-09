@@ -2306,14 +2306,14 @@ public abstract class CitrixResourceBase implements ServerResource {
         HashMap<String, State> oldStates = null;
 
         final HashMap<String, State> changes = new HashMap<String, State>();
-
+        
+        newStates = getAllVms(conn);
+        if (newStates == null) {
+            s_logger.debug("Unable to get the vm states so no state sync at this point.");
+            return null;
+        }
+        
         synchronized (_vms) {
-            newStates = getAllVms(conn);
-            if (newStates == null) {
-                s_logger.debug("Unable to get the vm states so no state sync at this point.");
-                return null;
-            }
-
             oldStates = new HashMap<String, State>(_vms.size());
             oldStates.putAll(_vms);
 
@@ -3435,19 +3435,17 @@ public abstract class CitrixResourceBase implements ServerResource {
     public PingCommand getCurrentStatus(long id) {
         Connection conn = getConnection();
         try {
-
             if (!pingxenserver()) {
                 Thread.sleep(1000);
                 if (!pingxenserver()) {
                     s_logger.warn(" can not ping xenserver " + _host.uuid);
                     return null;
                 }
-
-            }
-  
+            } 
             HashMap<String, State> newStates = sync(conn);
             if (newStates == null) {
-                newStates = new HashMap<String, State>();
+                s_logger.warn("Unable to get current status from sync");
+                return null;
             }
             if (!_canBridgeFirewall && !_isOvs) {
             	return new PingRoutingCommand(getType(), id, newStates);
