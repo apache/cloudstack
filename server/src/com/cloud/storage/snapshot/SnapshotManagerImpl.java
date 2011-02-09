@@ -234,7 +234,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     }
 
     @Override
-    public SnapshotVO createSnapshotOnPrimary(VolumeVO volume, Long policyId, Long snapshotId) throws ResourceAllocationException {
+    public SnapshotVO createSnapshotOnPrimary(VolumeVO volume, Long policyId, Long snapshotId) {
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
         if ( snapshot == null ) {
             throw new CloudRuntimeException("Can not find snapshot " + snapshotId);
@@ -323,6 +323,13 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     @Override @DB
     public SnapshotVO createSnapshotImpl(Long volumeId, Long policyId, Long snapshotId) throws ResourceAllocationException {
     	VolumeVO v = _volsDao.findById(volumeId);
+    	AccountVO account = _accountDao.findById(v.getAccountId());
+        if (_accountMgr.resourceLimitExceeded(account, ResourceType.snapshot)) {
+        	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of snapshots for account: " + account.getAccountName() + " has been exceeded.");
+        	rae.setResourceType("snapshot");
+        	throw rae;
+        }
+    	
     	if ( v != null && _volsDao.getHypervisorType(v.getId()).equals(HypervisorType.KVM)) {
     		/*KVM needs to lock on the vm of volume, because it takes snapshot on behalf of vm, not volume*/
     		UserVmVO uservm = _vmDao.findById(v.getInstanceId());
