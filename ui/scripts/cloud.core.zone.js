@@ -825,8 +825,6 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
             }              
         }        
     });          
-           	
-    var mapClusters = {};
     
     $podSelect.unbind("change").bind("change", function(event) {	        
         var podId = $(this).val();
@@ -840,9 +838,9 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
             success: function(json) {	          	            
                 var items = json.listclustersresponse.cluster;
                 if(items != null && items.length > 0) {			
-	            	mapClusters = {};
+	            	clustersUnderPod = {};
                     for(var i=0; i<items.length; i++) {
-	                	mapClusters["cluster_"+items[i].id] = items[i];
+	                	clustersUnderPod["cluster_"+items[i].id] = items[i];
                         $clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
                     }
                     
@@ -855,35 +853,8 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
         });        
     });
     
-    $("#pool_cluster", $dialogAddPool).unbind("change").bind("change", function(event) {    	
-    	var curOption = $(this).val();
-    	if(!curOption)
-    		return false;
-    	
-    	var $protocolSelector = $("#add_pool_protocol", $dialogAddPool);
-    	var objCluster = mapClusters['cluster_'+curOption];
-    	
-    	if(objCluster == null)
-    	    return;
-    	
-    	if(objCluster.hypervisortype == "KVM") {
-    		$protocolSelector.empty();
-    		$protocolSelector.append('<option value="nfs">NFS</option>');
-    		$protocolSelector.append('<option value="SharedMountPoint">SharedMountPoint</option>');
-    	} else if(objCluster.hypervisortype == "XenServer") {
-    		$protocolSelector.empty();
-			$protocolSelector.append('<option value="nfs">NFS</option>');
-			$protocolSelector.append('<option value="PreSetup">PreSetup</option>');
-			$protocolSelector.append('<option value="iscsi">iSCSI</option>');
-    	} else if(objCluster.hypervisortype == "VMware") {
-    		$protocolSelector.empty();
-			$protocolSelector.append('<option value="nfs">NFS</option>');
-			$protocolSelector.append('<option value="vmfs">VMFS datastore</option>');
-    	}
-    	
-    	$protocolSelector.change();
-    });    
-    
+    bindAddPrimaryStorageDialog($dialogAddPool);
+        
     $button.unbind("click").bind("click", function(event) {         
         $dialogAddPool.find("#info_container").hide();	
         $podSelect.change();       

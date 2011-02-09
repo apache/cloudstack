@@ -449,20 +449,7 @@ function initAddPodShortcut() {
     var $dialogAddPod = $("#dialog_add_pod_in_resource_page");
 
     var $zoneDropdown = $dialogAddPod.find("#zone_dropdown");
-    /*
-    $.ajax({
-	    data: createURL("command=listZones&available=true"),
-	    dataType: "json",
-	    async: false,
-	    success: function(json) {
-	        var items = json.listzonesresponse.zone;			
-			if (items != null && items.length > 0) {	
-			    for(var i=0; i<items.length; i++)		   			    
-			        $zoneDropdown.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
-			}	
-	    }
-	});    
-    */
+   
     $zoneDropdown.bind("change", function(event) {
 	    var zoneId = $(this).val();	    
 	    if(zoneId == null)
@@ -1629,6 +1616,37 @@ function initUpdateConsoleCertButton($midMenuAddLink2) {
 	});
 }
 
+var clustersUnderPod = {};
+function bindAddPrimaryStorageDialog($dialog) {
+    $dialog.find("#pool_cluster").unbind("change").change(function() {
+    	var curOption = $(this).val();
+    	if(!curOption)
+    		return false;
+    	
+    	var $protocolSelector = $dialog.find("#add_pool_protocol");    	
+    	var objCluster = clustersUnderPod['cluster_'+curOption];
+    	
+    	if(objCluster == null)
+    	    return;
+    	
+    	if(objCluster.hypervisortype == "KVM") {
+    		$protocolSelector.empty();
+    		$protocolSelector.append('<option value="nfs">NFS</option>');
+    		$protocolSelector.append('<option value="SharedMountPoint">SharedMountPoint</option>');
+    	} else if(objCluster.hypervisortype == "XenServer") {
+    		$protocolSelector.empty();
+			$protocolSelector.append('<option value="nfs">NFS</option>');
+			$protocolSelector.append('<option value="PreSetup">PreSetup</option>');
+			$protocolSelector.append('<option value="iscsi">iSCSI</option>');
+    	} else if(objCluster.hypervisortype == "VMware") {
+    		$protocolSelector.empty();
+			$protocolSelector.append('<option value="nfs">NFS</option>');
+			$protocolSelector.append('<option value="vmfs">VMFS datastore</option>');
+    	}
+    	
+    	$protocolSelector.change();
+    });    
+}
 
 function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel) { 
 	var $dialogAddPool = $("#dialog_add_pool_in_resource_page");    
@@ -1656,7 +1674,6 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 	    });
     });
 
-    var mapClusters = {};
     $dialogAddPool.find("#pod_dropdown").bind("change", function(event) {			   
         var podId = $(this).val();
         if(podId == null || podId.length == 0)
@@ -1667,11 +1684,11 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
             dataType: "json",
             async: false,
             success: function(json) {			            
-        		mapClusters = {};
+        		clustersUnderPod = {};
                 var items = json.listclustersresponse.cluster;
                 if(items != null && items.length > 0) {			                
                     for(var i=0; i<items.length; i++) {
-	                	mapClusters["cluster_"+items[i].id] = items[i];
+	                	clustersUnderPod["cluster_"+items[i].id] = items[i];
                         $clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");	
                     }
                     
@@ -1683,35 +1700,8 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
         });
     });        
     
-    $dialogAddPool.find("#pool_cluster").change(function() {
-    	var curOption = $(this).val();
-    	if(!curOption)
-    		return false;
-    	
-    	var $protocolSelector = $("#add_pool_protocol", $dialogAddPool);
-    	var objCluster = mapClusters['cluster_'+curOption];
-    	
-    	if(objCluster == null)
-    	    return;
-    	
-    	if(objCluster.hypervisortype == "KVM") {
-    		$protocolSelector.empty();
-    		$protocolSelector.append('<option value="nfs">NFS</option>');
-    		$protocolSelector.append('<option value="SharedMountPoint">SharedMountPoint</option>');
-    	} else if(objCluster.hypervisortype == "XenServer") {
-    		$protocolSelector.empty();
-			$protocolSelector.append('<option value="nfs">NFS</option>');
-			$protocolSelector.append('<option value="PreSetup">PreSetup</option>');
-			$protocolSelector.append('<option value="iscsi">iSCSI</option>');
-    	} else if(objCluster.hypervisortype == "VMware") {
-    		$protocolSelector.empty();
-			$protocolSelector.append('<option value="nfs">NFS</option>');
-			$protocolSelector.append('<option value="vmfs">VMFS datastore</option>');
-    	}
-    	
-    	$protocolSelector.change();
-    });    
-       
+    bindAddPrimaryStorageDialog($dialogAddPool);
+           
     $("#add_primarystorage_shortcut").unbind("click").bind("click", function(event) { 
         $dialogAddPool.find("#zone_dropdown").change(); //refresh cluster dropdown (do it here to avoid race condition)     
         $dialogAddPool.find("#info_container").hide();	
