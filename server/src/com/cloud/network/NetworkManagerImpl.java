@@ -385,14 +385,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 ip = new PublicIp(sourceNat, _vlanDao.findById(sourceNat.getVlanId()), NetUtils.createSequenceBasedMacAddress(sourceNat.getMacAddress()));
             }
 
-            UserStatisticsVO stats = _userStatsDao.findBy(ownerId, dcId, null, null);
-            if (stats == null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Creating statistics for the owner: " + ownerId);
-                }
-                stats = new UserStatisticsVO(ownerId, dcId, null, null, null);
-                _userStatsDao.persist(stats);
-            }
             txn.commit();
             return ip;
         } finally {

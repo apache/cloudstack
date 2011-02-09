@@ -42,11 +42,11 @@ public class UserStatisticsVO {
 	@Column(name="public_ip_address")
 	private String publicIpAddress;
 	
-	@Column(name="host_id")
-	private Long hostId;
+	@Column(name="device_id")
+	private Long deviceId;
 	
-	@Column(name="host_type")
-    private String hostType;
+	@Column(name="device_type")
+    private String deviceType;
 	
 	@Column(name="net_bytes_received")
 	private long netBytesReceived;
@@ -63,12 +63,12 @@ public class UserStatisticsVO {
 	protected UserStatisticsVO() {
 	}
 	
-	public UserStatisticsVO(long accountId, long dcId, String publicIpAddress, Long hostId, String hostType) {
+	public UserStatisticsVO(long accountId, long dcId, String publicIpAddress, Long deviceId, String deviceType) {
 		this.accountId = accountId;
 		this.dataCenterId = dcId;
 		this.publicIpAddress = publicIpAddress;
-		this.hostId = hostId;
-		this.hostType = hostType;
+		this.deviceId = deviceId;
+		this.deviceType = deviceType;
 		this.netBytesReceived = 0;
 		this.netBytesSent = 0;
 		this.currentBytesReceived = 0;
@@ -91,8 +91,8 @@ public class UserStatisticsVO {
     	return publicIpAddress;
     }
     
-    public Long getHostId() {
-    	return hostId;
+    public Long getDeviceId() {
+    	return deviceId;
     }
 
     public long getCurrentBytesReceived() {
@@ -127,7 +127,7 @@ public class UserStatisticsVO {
 		this.netBytesSent = netBytesSent;
 	}
 
-    public String getHostType() {
-        return hostType;
+    public String getDeviceType() {
+        return deviceType;
     }
 }
