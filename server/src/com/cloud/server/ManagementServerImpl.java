@@ -2747,8 +2747,11 @@ public class ManagementServerImpl implements ManagementServer {
     }
     
     public ConsoleProxyVO destroyConsoleProxy(long instanceId) {
-        _consoleProxyMgr.destroyProxy(instanceId);
-        return _consoleProxyDao.findById(instanceId);
+    	ConsoleProxyVO proxy = _consoleProxyDao.findById(instanceId);
+    	
+        if(_consoleProxyMgr.destroyProxy(instanceId))
+        	return proxy;
+        return null;
     }
 
     @Override
@@ -3878,8 +3881,10 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     public SecondaryStorageVmVO destroySecondaryStorageVm(long instanceId) {
-        _secStorageVmMgr.destroySecStorageVm(instanceId);
-        return _secStorageVmDao.findById(instanceId);
+    	SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(instanceId);
+    	if(_secStorageVmMgr.destroySecStorageVm(instanceId))
+    		return secStorageVm;
+        return null;
     }
 
 	@Override
