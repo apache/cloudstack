@@ -1,0 +1,11 @@
+HKCR
+{
+	NoRemove AppID
+	{
+		'%APPID%' = s 'VMOpsInstanceManager'
+		'vmopsservice.exe'
+		{
+			val AppID = s '%APPID%'
+		}
+	}
+}
