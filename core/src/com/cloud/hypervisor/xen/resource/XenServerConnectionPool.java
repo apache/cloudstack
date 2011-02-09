@@ -527,7 +527,7 @@ public class XenServerConnectionPool {
         }
     }
     
-    private URL getURL(String ip){
+    public URL getURL(String ip){
         try {
             return new URL("https://" + ip);
         } catch (Exception e) { 

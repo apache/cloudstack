@@ -199,6 +199,7 @@ import com.xensource.xenapi.PBD;
 import com.xensource.xenapi.PIF;
 import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.SR;
+import com.xensource.xenapi.Session;
 import com.xensource.xenapi.Task;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.BadServerResponse;
@@ -342,15 +343,23 @@ public abstract class CitrixResourceBase implements ServerResource {
     }
     
     protected boolean pingxenserver() {
-        XenServerConnection conn = (XenServerConnection) getConnection();
+        Session slaveSession = null;
+        Connection slaveConn = null;
         try {
-            Host host = Host.getByUuid(conn, _host.uuid);
-            host.enable(conn);
+            URL slaveUrl = null;
+            slaveUrl = _connPool.getURL(_host.ip);
+            slaveConn = new Connection(slaveUrl);
+            slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, _username, _password);
             return true;
         } catch (Exception e) {
-            String msg = "Catch Exception " + e.getClass().getName() + " : Enable " + _host + " in pool(" + _host.pool + ") failed due to "
-                    + e.toString();
-            s_logger.warn(msg);
+        } finally {
+            if( slaveSession != null ){
+                try{
+                    Session.localLogout(slaveConn);
+                } catch (Exception e) {
+                }
+                slaveConn.dispose();
+            }
         }
         return false;
     }
