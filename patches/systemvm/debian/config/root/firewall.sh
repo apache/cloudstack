@@ -36,11 +36,11 @@ tcp_or_udp_entry() {
   local port=$4
   local op=$5
   local proto=$6
-  logger -t cloud "$(basename $0): port fwd entry for PAT: public ip=$publicIp 
+  logger -t cloud "$(basename $0): creating port fwd entry for PAT: public ip=$publicIp \
   instance ip=$instIp proto=$proto port=$port dport=$dport op=$op"
 
   #if adding, this might be a duplicate, so delete the old one first
-  [ "$op" == "-A" ] && tcp_or_udp_entry $instIp $dport $publicIp $port "-D" $proto 
+  [ "$op" == "-A" ] && tcp_or_udp_entry $instIp $dport0 $publicIp $port "-D" $proto 
   # the delete operation may have errored out but the only possible reason is 
   # that the rules didn't exist in the first place
   local dev=$(ip_to_dev $publicIp)
@@ -57,7 +57,10 @@ tcp_or_udp_entry() {
   (sudo iptables $op FORWARD -p $proto -s 0/0 -d $instIp  \
            --destination-port $dport0 -m state --state NEW  -j ACCEPT &>>  $OUTFILE)
   	
-  return $?
+
+  local result=$?
+  logger -t cloud "$(basename $0): done port fwd entry for PAT: public ip=$publicIp op=$op result=$result"
+  return $result
 }
 
 
@@ -68,7 +71,7 @@ icmp_entry() {
   local publicIp=$3
   local op=$4
   
-  logger -t cloud "$(basename $0): port fwd entry for PAT: public ip=$publicIp \
+  logger -t cloud "$(basename $0): creating port fwd entry for PAT: public ip=$publicIp \
   instance ip=$instIp proto=icmp port=$port dport=$dport op=$op"
   #if adding, this might be a duplicate, so delete the old one first
   [ "$op" == "-A" ] && icmp_entry $instIp $icmpType $publicIp "-D" 
@@ -80,7 +83,9 @@ icmp_entry() {
   sudo iptables -t nat $op OUTPUT  --proto icmp -d $publicIp --icmp-type $icmptype -j DNAT --to-destination $instIp &>>  $OUTFILE
   sudo iptables $op FORWARD -p icmp -s 0/0 -d $instIp --icmp-type $icmptype  -j ACCEPT &>>  $OUTFILE
   	
-  return $?
+  result=$?
+  logger -t cloud "$(basename $0): done port fwd entry for PAT: public ip=$publicIp op=$op result=$result"
+  return $result
 }
 
 
@@ -91,7 +96,7 @@ one_to_one_fw_entry() {
   local proto=$3
   local portRange=$4 
   local op=$5
-  logger -t cloud "$(basename $0): firewall entry for static nat: public ip=$publicIp \
+  logger -t cloud "$(basename $0): create firewall entry for static nat: public ip=$publicIp \
   instance ip=$instIp proto=$proto portRange=$portRange op=$op"
 
   #if adding, this might be a duplicate, so delete the old one first
@@ -111,7 +116,9 @@ one_to_one_fw_entry() {
            --destination-port $portRange -m state \
            --state NEW -j ACCEPT &>>  $OUTFILE )
 
-  return $?
+  result=$?
+  logger -t cloud "$(basename $0): done firewall entry public ip=$publicIp op=$op result=$result"
+  return $result
 }
 
 
