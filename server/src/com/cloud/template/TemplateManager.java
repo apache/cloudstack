@@ -22,6 +22,7 @@ import java.util.List;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -104,9 +105,10 @@ public interface TemplateManager {
         	throw new IllegalArgumentException("The template hasnt been downloaded ");
         }
      * @throws StorageUnavailableException 
+     * @throws ResourceAllocationException 
      * @throws InvalidParameterValueException 
      */
-    boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId) throws StorageUnavailableException;
+    boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId) throws StorageUnavailableException, ResourceAllocationException;
     
     /**
      * Deletes a template from secondary storage servers
