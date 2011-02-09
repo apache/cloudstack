@@ -1,3 +1,9 @@
+cloud (2.2.0) unstable; urgency=low
+
+  * Bumping version number for next Cloud.com release
+
+ -- Engineering <support@cloud.com>  Tue, 8 Feb 2011 11:49:44 -0700
+
 cloud (2.1.97) unstable; urgency=low
 
   * Bumping version number for next Cloud.com release
