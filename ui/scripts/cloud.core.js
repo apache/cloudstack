@@ -876,9 +876,16 @@ function resetViewConsoleAction(jsonObj, $detailsTab) {
 	    //console proxy thumbnail
 	    var imgUrl = "console?cmd=thumbnail&vm=" + jsonObj.id + "&w=144&h=110";		
 		$viewConsoleTemplate.data("imgUrl", imgUrl);
-		disableConsoleHover($viewConsoleContainer);
-		enableConsoleHover($viewConsoleContainer, $viewConsoleTemplate);
-				
+		
+		$viewConsoleContainer.bind("mouseover", function(event) {	    
+			enableConsoleHover($viewConsoleContainer, $viewConsoleTemplate);
+			return false;
+		});
+		$viewConsoleContainer.bind("mouseout", function(event) {       
+			disableConsoleHover($viewConsoleContainer);
+			return false;
+		});	 
+						
 		//console proxy popup
 		$viewConsoleTemplate.data("proxyUrl", "console?cmd=access&vm=" + jsonObj.id).data("vmId",jsonObj.id).click(function(event) {				
 			var proxyUrl = $(this).data("proxyUrl");				
