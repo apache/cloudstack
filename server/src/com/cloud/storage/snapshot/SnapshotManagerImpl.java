@@ -983,7 +983,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(volume.getPoolId());
         if (storagePoolVO == null) {
-            throw new InvalidParameterValueException("Failed to create snapshot policy, volumeId: " + volumeId + " does not have a valid storage pool. Is it destroyed?");
+            throw new InvalidParameterValueException("volumeId: " + volumeId + " please attach this volume to a VM before create snapshot policy for it");
         }
         if (storagePoolVO.isLocal()) {
             throw new InvalidParameterValueException("Failed to create snapshot policy, cannot create a snapshot from a volume residing on a local storage pool, poolId: " + volume.getPoolId());
@@ -1170,7 +1170,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         }
         StoragePoolVO storagePoolVO = _storagePoolDao.findById(volume.getPoolId());
         if (storagePoolVO == null) {
-            throw new InvalidParameterValueException("VolumeId: " + volumeId + " does not have a valid storage pool. Is it destroyed?");
+            throw new InvalidParameterValueException("VolumeId: " + volumeId + " please attach this volume to a VM before create snapshot for it");
         }
         // Determine the name for this snapshot
         // Snapshot Name: VMInstancename + volumeName + timeString
