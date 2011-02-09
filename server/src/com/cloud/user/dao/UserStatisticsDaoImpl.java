@@ -39,11 +39,11 @@ import com.cloud.utils.db.Transaction;
 @Local(value={UserStatisticsDao.class})
 public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long> implements UserStatisticsDao {
     private static final Logger s_logger = Logger.getLogger(UserStatisticsDaoImpl.class);
-    private static final String ACTIVE_AND_RECENTLY_DELETED_SEARCH = "SELECT us.id, us.data_center_id, us.account_id, us.public_ip_address, us.host_id, us.host_type, us.net_bytes_received, us.net_bytes_sent, us.current_bytes_received, us.current_bytes_sent " +
+    private static final String ACTIVE_AND_RECENTLY_DELETED_SEARCH = "SELECT us.id, us.data_center_id, us.account_id, us.public_ip_address, us.device_id, us.device_type, us.net_bytes_received, us.net_bytes_sent, us.current_bytes_received, us.current_bytes_sent " +
                                                                      "FROM user_statistics us, account a " +
                                                                      "WHERE us.account_id = a.id AND (a.removed IS NULL OR a.removed >= ?) " +
                                                                      "ORDER BY us.id";
-    private final SearchBuilder<UserStatisticsVO> AccountDcIpHostSearch;
+    private final SearchBuilder<UserStatisticsVO> AccountDcIpDeviceSearch;
     private final SearchBuilder<UserStatisticsVO> AccountSearch;
     
     public UserStatisticsDaoImpl() {
@@ -51,31 +51,34 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
     	AccountSearch.and("account", AccountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
     	AccountSearch.done();
 
-    	AccountDcIpHostSearch = createSearchBuilder();
-        AccountDcIpHostSearch.and("account", AccountDcIpHostSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
-        AccountDcIpHostSearch.and("dc", AccountDcIpHostSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        AccountDcIpHostSearch.and("ip", AccountDcIpHostSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
-        AccountDcIpHostSearch.and("host", AccountDcIpHostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
-        AccountDcIpHostSearch.done();
+    	AccountDcIpDeviceSearch = createSearchBuilder();
+        AccountDcIpDeviceSearch.and("account", AccountDcIpDeviceSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        AccountDcIpDeviceSearch.and("dc", AccountDcIpDeviceSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        AccountDcIpDeviceSearch.and("ip", AccountDcIpDeviceSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
+        AccountDcIpDeviceSearch.and("device", AccountDcIpDeviceSearch.entity().getDeviceId(), SearchCriteria.Op.EQ);
+        AccountDcIpDeviceSearch.and("deviceType", AccountDcIpDeviceSearch.entity().getDeviceType(), SearchCriteria.Op.EQ);
+        AccountDcIpDeviceSearch.done();
     }
     
     @Override
-    public UserStatisticsVO findBy(long accountId, long dcId, String publicIp, Long hostId) {
-        SearchCriteria<UserStatisticsVO> sc = AccountDcIpHostSearch.create();
+    public UserStatisticsVO findBy(long accountId, long dcId, String publicIp, Long deviceId, String deviceType) {
+        SearchCriteria<UserStatisticsVO> sc = AccountDcIpDeviceSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
         sc.setParameters("ip", publicIp);
-        sc.setParameters("host", hostId);
+        sc.setParameters("device", deviceId);
+        sc.setParameters("deviceType", deviceType);
         return findOneBy(sc);
     }
 
     @Override
-    public UserStatisticsVO lock(long accountId, long dcId, String publicIp, Long hostId) {
-        SearchCriteria<UserStatisticsVO> sc = AccountDcIpHostSearch.create();
+    public UserStatisticsVO lock(long accountId, long dcId, String publicIp, Long deviceId, String deviceType) {
+        SearchCriteria<UserStatisticsVO> sc = AccountDcIpDeviceSearch.create();
         sc.setParameters("account", accountId);
         sc.setParameters("dc", dcId);
         sc.setParameters("ip", publicIp);
-        sc.setParameters("host", hostId);
+        sc.setParameters("device", deviceId);
+        sc.setParameters("deviceType", deviceType);
         return lockOneRandomRow(sc, true);
     }
 

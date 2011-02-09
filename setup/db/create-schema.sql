@@ -685,13 +685,14 @@ CREATE TABLE  `cloud`.`user_statistics` (
   `data_center_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,
   `public_ip_address` varchar(15),
-  `host_id` bigint unsigned,
-  `host_type` varchar(32),
+  `device_id` bigint unsigned NOT NULL,
+  `device_type` varchar(32) NOT NULL,
   `net_bytes_received` bigint unsigned NOT NULL default '0',
   `net_bytes_sent` bigint unsigned NOT NULL default '0',
   `current_bytes_received` bigint unsigned NOT NULL default '0',
   `current_bytes_sent` bigint unsigned NOT NULL default '0',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY (`account_id`, `data_center_id`, `device_id`, `device_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`vm_template` (
