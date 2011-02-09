@@ -24,5 +24,5 @@ public interface StateListener <S,E,V> {
      * @param status the state transition is allowed or not
 	 * @return
 	 */
-	public boolean postStateTransitionEvent(S oldState, E event, S newState, V vo, boolean status);
+	public boolean postStateTransitionEvent(S oldState, E event, S newState, V vo, boolean status, Long id);
 }

@@ -5,4 +5,5 @@ public interface StateObject<S> {
      * @return finite state.
      */
     S getState();
+    Long getHostId();
 }
