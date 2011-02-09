@@ -180,6 +180,7 @@ public class ApiXmlDocWriter {
 				    
 				    ObjectOutputStream singleRegularUserCommandOs = xs.createObjectOutputStream(new FileWriter(regularUserDirName + "/" + "login" + ".xml"), "command");
 				    writeLoginCommand(singleRegularUserCommandOs);
+				    singleRegularUserCommandOs.close();
 				    
 				} else if (key.equals("logout")) {
 				    writeLogoutCommand(out);
