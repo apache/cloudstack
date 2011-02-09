@@ -249,7 +249,7 @@ function hostInstanceJSONToTemplate(jsonObj, template) {
     template.attr("id", "host_instance_"+jsonObj.id).data("hostInstanceId", jsonObj.id);    
     template.find("#grid_header_title").text(fromdb(jsonObj.name));			   
     template.find("#id").text(jsonObj.id);
-    template.find("#name").text(fromdb(jsonObj.name));	  
+    template.find("#name").text(getVmName(jsonObj.name, jsonObj.displayname));	  
     template.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
     template.find("#serviceOfferingName").text(fromdb(jsonObj.serviceofferingname));	
     template.find("#account").text(fromdb(jsonObj.account));
