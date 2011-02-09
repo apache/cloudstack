@@ -2038,12 +2038,19 @@ public abstract class CitrixResourceBase implements ServerResource {
                 poolsr = srs.iterator().next();
             }
             String pUuid = poolsr.getUuid(conn);
+            boolean isISCSI = IsISCSI(poolsr.getType(conn));
             String uuid = copy_vhd_from_secondarystorage(conn, mountpoint, pUuid);
             VDI tmpl = getVDIbyUuid(conn, uuid);
             VDI snapshotvdi = tmpl.snapshot(conn, new HashMap<String, String>());
+            String snapshotUuid = snapshotvdi.getUuid(conn);
             snapshotvdi.setNameLabel(conn, "Template " + cmd.getName());
             tmpl.destroy(conn);
-            String parentuuid = snapshotvdi.getSmConfig(conn).get("vhd-parent");
+            poolsr.scan(conn);
+            try{ 
+                Thread.sleep(5000);
+            } catch (Exception e) {                
+            }
+            String parentuuid = getVhdParent(conn, pUuid, snapshotUuid, isISCSI);
             VDI parent = getVDIbyUuid(conn, parentuuid);
             Long phySize = parent.getPhysicalUtilisation(conn);
             return new PrimaryStorageDownloadAnswer(snapshotvdi.getUuid(conn), phySize);
@@ -5208,17 +5215,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         }
 
         return false;
-    }
-
-    VDI vdiGetParent(Connection conn, VDI vdi) throws BadServerResponse, XenAPIException, XmlRpcException{
-        if( vdi == null ) return null;
-        VDI.Record vdiRec = vdi.getRecord(conn);
-        String parentUuid = vdiRec.smConfig.get("vhd-parent");
-        if( parentUuid == null || parentUuid.isEmpty() )
-            return null;
-        return getVDIbyUuid(conn, parentUuid);            
-    }
-    
+    }  
 
     protected BackupSnapshotAnswer execute(final BackupSnapshotCommand cmd) {
         Connection conn = getConnection();
@@ -5240,15 +5237,21 @@ public abstract class CitrixResourceBase implements ServerResource {
             if (primaryStorageSR == null) {
                 throw new InternalErrorException("Could not backup snapshot because the primary Storage SR could not be created from the name label: " + primaryStorageNameLabel);
             }
+            String psUuid = primaryStorageSR.getUuid(conn);
+            Boolean isISCSI = IsISCSI(primaryStorageSR.getType(conn));
             URI uri = new URI(secondaryStoragePoolURL);
             String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
             VDI snapshotVdi = getVDIbyUuid(conn, snapshotUuid);
             if ( prevBackupUuid != null ) {
-                try {
-                    VDI preSnapshotVdi = getVDIbyUuid(conn, prevSnapshotUuid);
-                    if (vdiGetParent(conn, preSnapshotVdi).equals(vdiGetParent(conn, vdiGetParent(conn, snapshotVdi)))) {
-                        fullbackup = false;
-                    }                   
+                try {            
+                    String snapshotPaUuid = getVhdParent(conn, psUuid, snapshotUuid, isISCSI);
+                    if( snapshotPaUuid != null ) {
+                        String snashotPaPaPaUuid = getVhdParent(conn, psUuid, snapshotPaUuid, isISCSI);
+                        String prevSnashotPaUuid = getVhdParent(conn, psUuid, prevSnapshotUuid, isISCSI);
+                        if (snashotPaPaPaUuid != null && prevSnashotPaUuid!= null && prevSnashotPaUuid.equals(snashotPaPaPaUuid)) {
+                            fullbackup = false;
+                        }
+                    }
                 } catch (Exception e) {                   
                 }
             }
@@ -5275,7 +5278,6 @@ public abstract class CitrixResourceBase implements ServerResource {
                 }
             } else {
                 String primaryStorageSRUuid = primaryStorageSR.getUuid(conn);
-                Boolean isISCSI = IsISCSI(primaryStorageSR.getType(conn));
                 snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, dcId, accountId, volumeId, secondaryStorageMountPath, snapshotUuid, prevBackupUuid, isISCSI);
                 success = (snapshotBackupUuid != null);
             }
