@@ -86,7 +86,8 @@
     </Link>
     <PostBuildEvent>
       <Message>Performing registration</Message>
-      <Command>"$(TargetPath)" /RegServer</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -128,7 +129,8 @@
     </Link>
     <PostBuildEvent>
       <Message>Performing registration</Message>
-      <Command>"$(TargetPath)" /RegServer</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

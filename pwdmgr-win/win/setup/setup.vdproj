@@ -15,32 +15,14 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_3A5BDE922A5348F180B97034CE37C1BF"
+        "MsmKey" = "8:_55A9B5507C4141F2854209DAF400F795"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_421F387C3C8BE5A8FA70EAB78A715FD0"
-        "OwnerKey" = "8:_3A5BDE922A5348F180B97034CE37C1BF"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_4F2493FEFBCA4539E21F5514BE9A3E3D"
-        "OwnerKey" = "8:_3A5BDE922A5348F180B97034CE37C1BF"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_D7F1DD58C60C46D1BDEB8499DC8150FA"
         "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_ED21EE548BA9C60849ECACC981B5EA9E"
-        "OwnerKey" = "8:_3A5BDE922A5348F180B97034CE37C1BF"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -115,31 +97,31 @@
     {
         "CustomAction"
         {
-            "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_B14ADAD548D742CD88000A203740D9D4"
+            "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_135C0FC6511049DC8A04B3F7710C26AB"
             {
-            "Name" = "8:Primary Output from VMOps Instance Manager (Active)"
+            "Name" = "8:vmopsservice.exe"
             "Condition" = "8:"
-            "Object" = "8:_3A5BDE922A5348F180B97034CE37C1BF"
+            "Object" = "8:_55A9B5507C4141F2854209DAF400F795"
             "FileType" = "3:2"
             "InstallAction" = "3:1"
             "Arguments" = "8:/Service"
             "EntryPoint" = "8:"
             "Sequence" = "3:1"
-            "Identifier" = "8:_9003A5D7_BC92_49C4_8F1B_2B43EAB4A5D3"
+            "Identifier" = "8:_44CA86D9_1902_4A87_81E5_A2898BB288F1"
             "InstallerClass" = "11:FALSE"
             "CustomActionData" = "8:"
             }
-            "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_F72BD84453EE4E7A84BC2FE586E82454"
+            "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_A2F9F0CBAE284171BD966C402B687EFB"
             {
-            "Name" = "8:Primary Output from VMOps Instance Manager (Active)"
+            "Name" = "8:vmopsservice.exe"
             "Condition" = "8:"
-            "Object" = "8:_3A5BDE922A5348F180B97034CE37C1BF"
+            "Object" = "8:_55A9B5507C4141F2854209DAF400F795"
             "FileType" = "3:2"
             "InstallAction" = "3:4"
             "Arguments" = "8:/UnregServer"
             "EntryPoint" = "8:"
             "Sequence" = "3:1"
-            "Identifier" = "8:_BED635F7_F779_4DCF_9D15_A6B084832831"
+            "Identifier" = "8:_23916BF0_68CC_41A8_9C61_70A444549196"
             "InstallerClass" = "11:FALSE"
             "CustomActionData" = "8:"
             }
@@ -158,10 +140,10 @@
         }
         "File"
         {
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_421F387C3C8BE5A8FA70EAB78A715FD0"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_55A9B5507C4141F2854209DAF400F795"
             {
-            "SourcePath" = "8:WININET.dll"
-            "TargetName" = "8:WININET.dll"
+            "SourcePath" = "8:..\\bin\\Release\\vmopsservice.exe"
+            "TargetName" = "8:vmopsservice.exe"
             "Tag" = "8:"
             "Folder" = "8:_C239EFF6D5514C779D4C4F9566A171B8"
             "Condition" = "8:"
@@ -174,28 +156,8 @@
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
             "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4F2493FEFBCA4539E21F5514BE9A3E3D"
-            {
-            "SourcePath" = "8:NETAPI32.dll"
-            "TargetName" = "8:NETAPI32.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_C239EFF6D5514C779D4C4F9566A171B8"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D7F1DD58C60C46D1BDEB8499DC8150FA"
@@ -216,26 +178,6 @@
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
             "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_ED21EE548BA9C60849ECACC981B5EA9E"
-            {
-            "SourcePath" = "8:IPHLPAPI.DLL"
-            "TargetName" = "8:IPHLPAPI.DLL"
-            "Tag" = "8:"
-            "Folder" = "8:_C239EFF6D5514C779D4C4F9566A171B8"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:TRUE"
-            "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
         }
@@ -295,8 +237,9 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:VMOps VM Instance Manager"
         "ProductCode" = "8:{CF1EDAC1-1EF6-495A-8211-8EECEE496060}"
-        "PackageCode" = "8:{DAFE57B9-3DAB-4A0D-92AF-3C77C3EE4208}"
+        "PackageCode" = "8:{0AD84965-2422-4BDC-8573-3A25C949D70D}"
         "UpgradeCode" = "8:{24149E96-AFD7-4183-8507-7778FC637D39}"
+        "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
         "DetectNewerInstalledVersion" = "11:FALSE"
@@ -823,34 +766,6 @@
         }
         "ProjectOutput"
         {
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_3A5BDE922A5348F180B97034CE37C1BF"
-            {
-            "SourcePath" = "8:..\\bin\\release\\vmopsservice.exe"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_C239EFF6D5514C779D4C4F9566A171B8"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            "ProjectOutputGroupRegister" = "3:1"
-            "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:Built"
-            "OutputProjectGuid" = "8:{212919B4-2196-44B8-B026-A351E4D8F19A}"
-            "ShowKeyOutput" = "11:TRUE"
-                "ExcludeFilters"
-                {
-                }
-            }
         }
     }
 }
