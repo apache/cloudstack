@@ -1172,7 +1172,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
 
     @Override
-    public VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public VMTemplateVO createPrivateTemplateRecord(CreateTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceAllocationException {
         Long userId = UserContext.current().getCallerUserId();
         if (userId == null) {
             userId = User.UID_SYSTEM;
@@ -1182,7 +1182,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         boolean isAdmin = ((account == null) || isAdmin(account.getType()));
         
     	VMTemplateVO privateTemplate = null;
-
+    	
     	UserVO user = _userDao.findById(userId);
     	
     	if (user == null) {
@@ -1231,6 +1231,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("Failed to create private template " + name + ", a template with that name already exists.");
         }
 
+        AccountVO ownerAccount = _accountDao.findById(volume.getAccountId());
+        if (_accountMgr.resourceLimitExceeded(ownerAccount, ResourceType.template)) {
+        	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
+        	rae.setResourceType("template");
+        	throw rae;
+        }
         // do some parameter defaulting
     	Integer bits = cmd.getBits();
     	Boolean requiresHvm = cmd.getRequiresHvm();

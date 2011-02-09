@@ -30,6 +30,9 @@ import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
@@ -170,7 +173,13 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create(){
-        VirtualMachineTemplate template = _userVmService.createPrivateTemplateRecord(this);
+        VirtualMachineTemplate template = null;
+		try {
+			template = _userVmService.createPrivateTemplateRecord(this);		
+		} catch (ResourceAllocationException ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
+		}
         if (template != null){
             this.setEntityId(template.getId());
         } else {
