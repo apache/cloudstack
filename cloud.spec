@@ -227,9 +227,9 @@ Requires: cloud-kvm
 Requires: kvm
 %endif
 
-%if 0%{?fedora} >= 12
-Requires: qemu-cloud-system-x86
-Requires: qemu-cloud-img
+%if 0%{?fedora} >= 14
+Requires: cloud-qemu-kvm
+Requires: cloud-qemu-img
 %endif
 
 %if 0%{?rhel} >= 6
