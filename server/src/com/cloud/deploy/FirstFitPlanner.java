@@ -1,6 +1,7 @@
 package com.cloud.deploy;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -10,6 +11,8 @@ import org.apache.log4j.Logger;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.HostPodVO;
@@ -49,11 +52,13 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 	@Inject GuestOSDao _guestOSDao = null; 
     @Inject GuestOSCategoryDao _guestOSCategoryDao = null;
     @Inject CapacityManager _capacityMgr;
+    @Inject ConfigurationDao _configDao;
 	
 	@Override
 	public DeployDestination plan(VirtualMachineProfile vmProfile,
 			DeploymentPlan plan, ExcludeList avoid)
 			throws InsufficientServerCapacityException {
+	    String _allocationAlgorithm = _configDao.getValue(Config.VmAllocationAlgorithm.key());
 		VirtualMachine vm = vmProfile.getVirtualMachine();
 		ServiceOffering offering = vmProfile.getServiceOffering();
 		DataCenter dc = _dcDao.findById(vm.getDataCenterId());
@@ -92,14 +97,16 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 		if (pods == null)
 			pods = _podDao.listByDataCenterId(plan.getDataCenterId());
 		
-		//Collections.shuffle(pods);
+		if (_allocationAlgorithm != null && _allocationAlgorithm.equalsIgnoreCase("random")) {
+		    Collections.shuffle(pods);
+		}
 		
 		for (HostPodVO hostPod : pods) {
 			if (avoid.shouldAvoid(hostPod)) {
 				continue;
 			}
 			
-			//Collections.shuffle(clusters);
+			
 			List<ClusterVO> clusters = null;
 			if (plan.getClusterId() != null) {
 				ClusterVO cluster = _clusterDao.findById(plan.getClusterId());
@@ -116,6 +123,10 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 				clusters = _clusterDao.listByPodId(hostPod.getId());
 			}
 			
+			if (_allocationAlgorithm != null && _allocationAlgorithm.equalsIgnoreCase("random")) {
+                Collections.shuffle(clusters);
+            }
+			
 			for (ClusterVO clusterVO : clusters) {
 				if (avoid.shouldAvoid(clusterVO)) {
 					continue;
@@ -127,7 +138,9 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
 				}
 				
 				List<HostVO> hosts = _hostDao.listBy(Host.Type.Routing, clusterVO.getId(), hostPod.getId(), dc.getId());
-				//Collections.shuffle(hosts);
+				if (_allocationAlgorithm != null && _allocationAlgorithm.equalsIgnoreCase("random")) {
+				    Collections.shuffle(hosts);
+				}
 				
 				 // We will try to reorder the host lists such that we give priority to hosts that have
 		        // the minimums to support a VM's requirements
