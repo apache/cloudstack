@@ -645,10 +645,19 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         List<ResourceLimitVO> limits = _resourceLimitDao.search(sc, searchFilter);
         if (limits.size() == 1) {
-        	// Update the existing limit
             ResourceLimitVO limit = limits.get(0);
-            _resourceLimitDao.update(limit.getId(), max);
-            return _resourceLimitDao.findById(limit.getId());
+            //if limit is set to -1, remove the record
+            if (max != null && max.longValue() == -1L) {
+                //this parameter is needed by API as it expects the object to be returned and updates the UI with the object's new "max" parameter
+                ResourceLimitVO limitToReturn = limit;
+                limitToReturn.setMax(-1L);
+                _resourceLimitDao.remove(limit.getId());      
+                return limitToReturn;
+            } else {
+                // Update the existing limit
+                _resourceLimitDao.update(limit.getId(), max);
+                return _resourceLimitDao.findById(limit.getId());
+            }
         } else {
         	// Persist the new Limit
             return _resourceLimitDao.persist(new ResourceLimitVO(domainId, accountId, resourceType, max));
