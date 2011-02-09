@@ -99,9 +99,12 @@ public interface UserVmService {
      * @param cmd the command object that defines the name, display text, snapshot/volume, bits, public/private, etc.
      * for the private template
      * @return the vm template object if successful, null otherwise
-     * @throws InvalidParameterValueException, PermissionDeniedException
+     * @throws ResourceAllocationException 
+     * @throws PermissionDeniedException 
+     * @throws InvalidParameterValueException 
+     * @throws PermissionDeniedException
      */
-    VirtualMachineTemplate createPrivateTemplateRecord(CreateTemplateCmd cmd);
+    VirtualMachineTemplate createPrivateTemplateRecord(CreateTemplateCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceAllocationException;
     
     /**
      * Creates a private template from a snapshot of a VM
