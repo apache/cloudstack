@@ -1617,17 +1617,44 @@ function initUpdateConsoleCertButton($midMenuAddLink2) {
 }
 
 var clustersUnderPod = {};
-function bindAddPrimaryStorageDialog($dialog) {
-    $dialog.find("#pool_cluster").unbind("change").change(function() {
-    	var curOption = $(this).val();
-    	if(!curOption)
+
+function populateClusterFieldInAddPoolDialog($dialog, podId) {          
+    $.ajax({
+       data: createURL("command=listClusters&podid=" + podId),
+        dataType: "json",
+        async: false,
+        success: function(json) {			            
+    		clustersUnderPod = {};
+            var items = json.listclustersresponse.cluster;
+            var $clusterSelect = $dialog.find("#pool_cluster").empty();		
+            if(items != null && items.length > 0) {			                
+                for(var i=0; i<items.length; i++) {
+                	clustersUnderPod["cluster_"+items[i].id] = items[i];
+                    $clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");	
+                }                  
+            }     
+            $clusterSelect.change();	                     
+        }
+    });
+}
+
+function bindClusterFieldInAddPoolDialog($dialog) {
+    $dialog.find("#pool_cluster").unbind("change").change(function(event) {
+        event.stopPropagation();;
+        
+        var $protocolSelector = $dialog.find("#add_pool_protocol");    	
+                
+    	var clusterId = $(this).val();
+    	if(clusterId == null) {
+    	    $protocolSelector.empty();
     		return false;
+        }    	
     	
-    	var $protocolSelector = $dialog.find("#add_pool_protocol");    	
-       	var clusterObj = clustersUnderPod['cluster_'+curOption];
-    	
-    	if(clusterObj == null)
-    	    return;
+       	var clusterObj = clustersUnderPod['cluster_'+clusterId];    	
+    	if(clusterObj == null) {
+    	    $protocolSelector.empty();
+    	    return false;
+    	}
     	
     	if(clusterObj.hypervisortype == "KVM") {
     		$protocolSelector.empty();
@@ -1682,30 +1709,11 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
     $dialogAddPool.find("#pod_dropdown").bind("change", function(event) {			   
         var podId = $(this).val();
         if(podId == null || podId.length == 0)
-            return;
-        var $clusterSelect = $dialogAddPool.find("#pool_cluster").empty();		        
-        $.ajax({
-	       data: createURL("command=listClusters&podid=" + podId),
-            dataType: "json",
-            async: false,
-            success: function(json) {			            
-        		clustersUnderPod = {};
-                var items = json.listclustersresponse.cluster;
-                if(items != null && items.length > 0) {			                
-                    for(var i=0; i<items.length; i++) {
-	                	clustersUnderPod["cluster_"+items[i].id] = items[i];
-                        $clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");	
-                    }
-                    
-	                if(!$clusterSelect.val())
-	                	$("option", $clusterSelect)[0].attr("selected", "selected");
-	                $clusterSelect.change();	                
-                }               
-            }
-        });
+            return;        
+        populateClusterFieldInAddPoolDialog($dialogAddPool, podId);       
     });        
     
-    bindAddPrimaryStorageDialog($dialogAddPool);
+    bindClusterFieldInAddPoolDialog($dialogAddPool);
            
     $("#add_primarystorage_shortcut").unbind("click").bind("click", function(event) { 
         $dialogAddPool.find("#zone_dropdown").change(); //refresh cluster dropdown (do it here to avoid race condition)     

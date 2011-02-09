@@ -630,28 +630,8 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
         $dialogAddPool.find("#pod_name").text(fromdb(clusterObj.podname)); 
     }
                                          
-    var $clusterSelect = $("#dialog_add_pool").find("#pool_cluster").empty();			            
-       
-    $.ajax({
-	    data: createURL("command=listClusters&podid=" + podId),
-	    async: false,
-	    dataType: "json",
-        success: function(json) {                             
-            var items = json.listclustersresponse.cluster;
-            if(items != null && items.length > 0) {		
-            	clustersUnderPod = {};
-                for(var i=0; i<items.length; i++) {
-                	clustersUnderPod["cluster_"+items[i].id] = items[i];
-                    if(sourceClusterId != null && items[i].id == sourceClusterId)
-                        $clusterSelect.append("<option value='" + items[i].id + "' selected>" + fromdb(items[i].name) + "</option>");	
-                    else               
-                        $clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");		
-                }	               
-            }			            
-        }
-    });	
-
-    bindAddPrimaryStorageDialog($dialogAddPool);
+    populateClusterFieldInAddPoolDialog($dialogAddPool, podId);   
+    bindClusterFieldInAddPoolDialog($dialogAddPool);
     		 
     $button.unbind("click").bind("click", function(event) {           
         $dialogAddPool.find("#info_container").hide();	        

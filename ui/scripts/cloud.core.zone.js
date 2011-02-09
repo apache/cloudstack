@@ -830,30 +830,10 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
         var podId = $(this).val();
         if(podId == null || podId.length == 0)
             return;
-        var $clusterSelect = $dialogAddPool.find("#pool_cluster").empty();		        
-        $.ajax({
-	        data: createURL("command=listClusters&podid=" + podId),
-            dataType: "json",
-            async: false,
-            success: function(json) {	          	            
-                var items = json.listclustersresponse.cluster;
-                if(items != null && items.length > 0) {			
-	            	clustersUnderPod = {};
-                    for(var i=0; i<items.length; i++) {
-	                	clustersUnderPod["cluster_"+items[i].id] = items[i];
-                        $clusterSelect.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
-                    }
-                    
-	                if(!$clusterSelect.val()) {
-	                	$("option", $clusterSelect)[0].attr("selected", "selected");
-	                }
-	                $clusterSelect.change();
-                }               
-            }
-        });        
+        populateClusterFieldInAddPoolDialog($dialogAddPool, podId);   
     });
     
-    bindAddPrimaryStorageDialog($dialogAddPool);
+    bindClusterFieldInAddPoolDialog($dialogAddPool);
         
     $button.unbind("click").bind("click", function(event) {         
         $dialogAddPool.find("#info_container").hide();	
