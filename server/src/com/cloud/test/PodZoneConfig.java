@@ -299,6 +299,9 @@ public class PodZoneConfig {
 			values += ",'" + networkType + "'";
 		}
 		
+		//save vnet information
+		columns += ", vnet";
+        values += ",'" + vnetStart + "-" + vnetEnd + "'";
 			
 			
 		columns += ")";
