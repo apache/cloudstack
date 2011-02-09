@@ -491,6 +491,7 @@ fi
 
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-premium/*.jar
+%exclude %{_javadir}/%{name}-premium/servlet-api.jar
 
 %files core
 %defattr(0644,root,root,0755)
