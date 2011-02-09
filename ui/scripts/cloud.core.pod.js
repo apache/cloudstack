@@ -670,7 +670,7 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
     		$protocolSelector.empty();
 			$protocolSelector.append('<option value="nfs">NFS</option>');
 			$protocolSelector.append('<option value="PreSetup">PreSetup</option>');
-			$protocolSelector.append('<option value="iscsi">ISCSI</option>');
+			$protocolSelector.append('<option value="iscsi">iSCSI</option>');
     	} else if(objCluster.hypervisortype == "VMware") {
     		$protocolSelector.empty();
 			$protocolSelector.append('<option value="nfs">NFS</option>');
