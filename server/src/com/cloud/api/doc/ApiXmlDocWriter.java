@@ -167,6 +167,8 @@ public class ApiXmlDocWriter {
 				if (key.equals("login")) {
 				    writeLoginCommand(out);
 				    writeLoginCommand(rootAdmin);
+				    writeLoginCommand(domainAdmin);
+				    writeLoginCommand(regularUser);
 				    
 				    ObjectOutputStream singleRootAdminCommandOs = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + "login" + ".xml"), "command");
 				    writeLoginCommand(singleRootAdminCommandOs);
@@ -182,6 +184,8 @@ public class ApiXmlDocWriter {
 				} else if (key.equals("logout")) {
 				    writeLogoutCommand(out);
 				    writeLogoutCommand(rootAdmin);
+				    writeLogoutCommand(domainAdmin);
+				    writeLogoutCommand(regularUser);
 				    
 				    ObjectOutputStream singleRootAdminCommandOs = xs.createObjectOutputStream(new FileWriter(rootAdminDirName + "/" + "logout" + ".xml"), "command");
 				    writeLogoutCommand(singleRootAdminCommandOs);
