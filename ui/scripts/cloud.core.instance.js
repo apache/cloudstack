@@ -615,17 +615,12 @@ function initVMWizard() {
 				        container.append($newTemplate.show());				       
 				    }						
 				    
-				    
-				    $vmPopup.find("#step1").find("#next_page").show(); //delete this line and uncomment the next 4 lines when bug 7410 is fixed ("pagesize is not working correctly on listTemplates API and listISOs API")
-				    /*
 				    if(items.length < vmPopupTemplatePageSize)
 	                    $vmPopup.find("#step1").find("#next_page").hide();
 	                else
-	                    $vmPopup.find("#step1").find("#next_page").show();
-	                */
-	                
-		        
-			    } else {
+	                    $vmPopup.find("#step1").find("#next_page").show();	 
+			    } 
+			    else {
 			        var msg;
 			        if (selectedTemplateTypeInVmPopup != "blank")
 			            msg = "No templates available";
