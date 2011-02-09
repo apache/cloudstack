@@ -33,7 +33,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @Implementation(description="Creates an instant snapshot of a volume.", responseObject=SnapshotResponse.class)
 public class CreateSnapshotCmd extends BaseAsyncCreateCmd {

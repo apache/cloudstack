@@ -526,6 +526,10 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 _snapshotDao.update(snapshotId, snapshot);
                 UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), volume.getDataCenterId(), snapshotId, snapshot.getName(), null, null, volume.getSize());
                 _usageEventDao.persist(usageEvent);
+                
+                if (snapshot.getSnapshotType() == Type.RECURRING.ordinal()) {
+                    _accountMgr.incrementResourceCount(snapshot.getAccountId(), ResourceType.snapshot);
+                }
 
             }
             else {
@@ -536,6 +540,12 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 // 2) Create the next Snapshot pretending this is a valid snapshot.
                 // 3) backupSnapshotToSecondaryStorage of the next snapshot
                 // will take care of cleaning up the state of this snapshot
+                
+                if (snapshot.getSnapshotType() == Type.RECURRING.ordinal()) {
+                    _accountMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.snapshot);
+                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), 0L, snapshotId, snapshot.getName(), null, null, 0L);
+                    _usageEventDao.persist(usageEvent);
+                }
                 _snapshotDao.remove(snapshotId);
             }
             txn.commit();
@@ -987,6 +997,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         if (volume == null) {
             throw new InvalidParameterValueException("Failed to create snapshot policy, unable to find a volume with id " + volumeId);
         }
+        
+        AccountVO owner = _accountDao.findById(volume.getAccountId());
+        DomainVO domain = _domainDao.findById(owner.getDomainId());
 
         // If an account was passed in, make sure that it matches the account of the volume
         checkAccountPermissions(volume.getAccountId(), volume.getDomainId(), "volume", volumeId);
@@ -1028,6 +1041,15 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         if (cmd.getMaxSnaps() > intervalMaxSnaps) {
             throw new InvalidParameterValueException("maxSnaps exceeds limit: " + intervalMaxSnaps + " for interval type: " + cmd.getIntervalType());
         }
+        
+        
+        //Verify that max doesn't exceed domain and account snapshot limits
+        long accountLimit = _accountMgr.findCorrectResourceLimit(owner, ResourceType.snapshot);
+        long domainLimit = _accountMgr.findCorrectResourceLimit(domain, ResourceType.snapshot);
+        int max = cmd.getMaxSnaps().intValue(); 
+        if (owner.getType() != Account.ACCOUNT_TYPE_ADMIN && ((accountLimit != -1 && max > accountLimit ) || (domainLimit != -1 && max > domainLimit))){
+            throw new InvalidParameterValueException("Max number of snapshots shouldn't exceed the domain/account level snapshot limit");
+        } 
 
         SnapshotPolicyVO policy = new SnapshotPolicyVO(volumeId, cmd.getSchedule(), timezoneId, (short)type.ordinal(), cmd.getMaxSnaps());
         // Create an event

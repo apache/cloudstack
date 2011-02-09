@@ -20,7 +20,6 @@ package com.cloud.storage.dao;
 
 import java.util.List;
 
-import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
