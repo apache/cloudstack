@@ -210,6 +210,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, StateObject
      * @return id of the host it was assigned last time.
      */
     public Long getLastHostId();
+    public Long getHostId();
     
     public void setLastHostId(Long lastHostId);
     

@@ -140,7 +140,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value=VirtualMachineManager.class)
-public class VirtualMachineManagerImpl implements VirtualMachineManager, StateListener<State, VirtualMachine.Event, VirtualMachine>, Listener {
+public class VirtualMachineManagerImpl implements VirtualMachineManager, Listener {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineManagerImpl.class);
     
     String _name;
@@ -447,7 +447,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vm-Operations-Cleanup"));
         _nodeId = _clusterMgr.getId();
       
-        _stateMachine.registerListener(this);
         _agentMgr.registerForHostEvents(this, true, true, true);
         return true;
     }
@@ -908,6 +907,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
     
     @Override
     public boolean stateTransitTo(VMInstanceVO vm, VirtualMachine.Event e, Long hostId) {
+        State oldState = vm.getState();
+        if (oldState == State.Starting ) {
+            if (e == Event.OperationSucceeded) {
+                vm.setLastHostId(hostId);
+            }
+        }
         return _stateMachine.transitTo(vm, e, hostId, _vmDao);
     }
     
@@ -1159,67 +1164,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, StateLi
         return rebootedVm;
     }
     
-    @Override
-    public boolean preStateTransitionEvent(State oldState,
-            Event event, State newState, VirtualMachine vm, boolean transitionStatus, Long id) {
-        s_logger.debug("VM state transitted from :" + oldState + " to " + newState + " with event: " + event +
-                "vm's original host id: " + vm.getHostId() + " new host id: " + id);
-        if (!transitionStatus) {
-            return false;
-        }
-
-        if (oldState == State.Starting) {
-            if (event == Event.OperationSucceeded) {
-                if (vm.getLastHostId() != null && vm.getLastHostId() != id) {
-                    /*need to release the reserved capacity on lasthost*/
-                    _capacityMgr.releaseVmCapacity(vm, true, false, vm.getLastHostId());
-                }
-                vm.setLastHostId(id);
-            } else if (event == Event.OperationFailed) {
-                _capacityMgr.releaseVmCapacity(vm, false, false, vm.getHostId());
-            } else if (event == Event.OperationRetry) {
-                _capacityMgr.releaseVmCapacity(vm, false, false, vm.getHostId());
-            } else if (event == Event.AgentReportStopped) {
-                _capacityMgr.releaseVmCapacity(vm, false, true, vm.getHostId());
-            }
-        } else if (oldState == State.Running) {
-            if (event == Event.AgentReportStopped) {
-                _capacityMgr.releaseVmCapacity(vm, false, true, vm.getHostId());
-            }
-        } else if (oldState == State.Migrating) {
-            if (event == Event.AgentReportStopped) {
-                /*Release capacity from original host*/
-                _capacityMgr.releaseVmCapacity(vm, false, true, vm.getHostId());
-            } else if (event == Event.MigrationFailedOnSource) {
-                /*release capacity from dest host*/
-                _capacityMgr.releaseVmCapacity(vm, false, false, id);
-                id = vm.getHostId();
-            } else if (event == Event.MigrationFailedOnDest) {
-                /*release capacify from original host*/
-                _capacityMgr.releaseVmCapacity(vm, false, false, vm.getHostId());
-            } else if (event == Event.OperationSucceeded) {
-                _capacityMgr.releaseVmCapacity(vm, false, false, vm.getHostId());
-                /*set lasthost id to migration destination host id*/
-                vm.setLastHostId(id);
-            }
-        } else if (oldState == State.Stopping) {
-            if (event == Event.AgentReportStopped || event == Event.OperationSucceeded) {
-                _capacityMgr.releaseVmCapacity(vm, false, true, vm.getHostId());
-            }
-        } else if (oldState == State.Stopped) {
-            if (event == Event.DestroyRequested) {
-                _capacityMgr.releaseVmCapacity(vm, true, false, vm.getLastHostId());
-                vm.setLastHostId(null);
-            }
-        }
-        return transitionStatus;
-    }
-    
-    @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vo, boolean status) {
-        return true;
-    }
-    
+   
     @Override
     public VMInstanceVO findById(VirtualMachine.Type type, long vmId) {
         VirtualMachineGuru<? extends VMInstanceVO> guru = _vmGurus.get(type);

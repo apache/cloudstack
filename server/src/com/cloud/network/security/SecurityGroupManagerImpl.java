@@ -1329,7 +1329,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     }
 
     @Override
-    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status) {
+    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status, Long oldHostId) {
         if (!status) {
             return false;
         }

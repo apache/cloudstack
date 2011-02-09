@@ -29,9 +29,16 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.Listener;
+import com.cloud.agent.api.AgentControlAnswer;
+import com.cloud.agent.api.AgentControlCommand;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.StartupCommand;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -46,12 +53,15 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Event;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value=CapacityManager.class)
-public class CapacityManagerImpl implements CapacityManager {
+public class CapacityManagerImpl implements CapacityManager , StateListener<State, VirtualMachine.Event, VirtualMachine>{
     private static final Logger s_logger = Logger.getLogger(CapacityManagerImpl.class);
     String _name;
     @Inject CapacityDao _capacityDao;
@@ -59,6 +69,7 @@ public class CapacityManagerImpl implements CapacityManager {
     @Inject ServiceOfferingDao _offeringsDao;
     @Inject HostDao _hostDao;
     @Inject VMInstanceDao _vmDao;
+
     private int _hostCapacityCheckerDelay;
     private int _hostCapacityCheckerInterval;
     private int _vmCapacityReleaseInterval;
@@ -73,6 +84,7 @@ public class CapacityManagerImpl implements CapacityManager {
         _hostCapacityCheckerInterval = NumbersUtil.parseInt(_configDao.getValue(Config.HostCapacityCheckerInterval.key()), 3600);
         _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.VmHostCapacityReleaseInterval.key()), 86400);
         _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("HostCapacity-Checker"));
+        VirtualMachine.State.getStateMachine().registerListener(this);
         return true;
     }
 
@@ -330,4 +342,55 @@ public class CapacityManagerImpl implements CapacityManager {
             } 
         }
     }
+
+    @Override
+    public boolean preStateTransitionEvent(State oldState,
+            Event event, State newState, VirtualMachine vm, boolean transitionStatus, Long id) {
+        return true;
+    }
+    
+    @Override
+    public boolean postStateTransitionEvent(State oldState, Event event, State newState, VirtualMachine vm, boolean status, Long oldHostId) {
+        s_logger.debug("VM state transitted from :" + oldState + " to " + newState + " with event: " + event +
+                "vm's original host id: " + vm.getLastHostId() + " new host id: " + vm.getHostId());
+        if (!status) {
+            return false;
+        }
+
+        if (oldState == State.Starting) {
+            if (event == Event.OperationFailed) {
+                releaseVmCapacity(vm, false, false, oldHostId);
+            } else if (event == Event.OperationRetry) {
+                releaseVmCapacity(vm, false, false, oldHostId);
+            } else if (event == Event.AgentReportStopped) {
+                releaseVmCapacity(vm, false, true, oldHostId);
+            }
+        } else if (oldState == State.Running) {
+            if (event == Event.AgentReportStopped) {
+               releaseVmCapacity(vm, false, true, oldHostId);
+            }
+        } else if (oldState == State.Migrating) {
+            if (event == Event.AgentReportStopped) {
+                /*Release capacity from original host*/
+               releaseVmCapacity(vm, false, false, vm.getLastHostId());
+               releaseVmCapacity(vm, false, true, oldHostId);
+            } else if (event == Event.MigrationFailedOnSource) {
+               /*Release from dest host*/
+                releaseVmCapacity(vm, false, false, oldHostId);
+            } else if (event == Event.OperationSucceeded) {
+               releaseVmCapacity(vm, false, false, vm.getLastHostId());
+            }
+        } else if (oldState == State.Stopping) {
+            if (event == Event.AgentReportStopped || event == Event.OperationSucceeded) {
+                releaseVmCapacity(vm, false, true, oldHostId);
+            }
+        } else if (oldState == State.Stopped) {
+            if (event == Event.DestroyRequested) {
+                releaseVmCapacity(vm, true, false, vm.getLastHostId());
+            }
+        }
+        
+        return true;
+    }
+    
 }
