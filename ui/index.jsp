@@ -87,7 +87,13 @@
 		'label.by.domain': '<fmt:message key="label.by.domain"/>',
 		'label.by.account': '<fmt:message key="label.by.account"/>',
 		'label.path': '<fmt:message key="label.path"/>',
-		'label.SR.name': '<fmt:message key="label.SR.name"/>'
+		'label.SR.name': '<fmt:message key="label.SR.name"/>',
+
+		'label.nfs': '<fmt:message key="label.nfs"/>',
+		'label.SharedMountPoint': '<fmt:message key="label.SharedMountPoint"/>',
+		'label.PreSetup': '<fmt:message key="label.PreSetup"/>',
+		'label.iscsi': '<fmt:message key="label.iscsi"/>',
+		'label.VMFS.datastore': '<fmt:message key="label.VMFS.datastore"/>'
 	};	
 	</script>
 </head>

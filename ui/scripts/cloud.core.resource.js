@@ -1624,24 +1624,29 @@ function bindAddPrimaryStorageDialog($dialog) {
     		return false;
     	
     	var $protocolSelector = $dialog.find("#add_pool_protocol");    	
-    	var objCluster = clustersUnderPod['cluster_'+curOption];
+       	var clusterObj = clustersUnderPod['cluster_'+curOption];
     	
-    	if(objCluster == null)
+    	if(clusterObj == null)
     	    return;
     	
-    	if(objCluster.hypervisortype == "KVM") {
+    	if(clusterObj.hypervisortype == "KVM") {
     		$protocolSelector.empty();
-    		$protocolSelector.append('<option value="nfs">NFS</option>');
-    		$protocolSelector.append('<option value="SharedMountPoint">SharedMountPoint</option>');
-    	} else if(objCluster.hypervisortype == "XenServer") {
+    		$protocolSelector.append('<option value="nfs">' + g_dictionary["label.nfs"] + '</option>');
+    		$protocolSelector.append('<option value="SharedMountPoint">' + g_dictionary["label.SharedMountPoint"] + '</option>');
+    	} 
+    	else if(clusterObj.hypervisortype == "XenServer") {
     		$protocolSelector.empty();
-			$protocolSelector.append('<option value="nfs">NFS</option>');
-			$protocolSelector.append('<option value="PreSetup">PreSetup</option>');
-			$protocolSelector.append('<option value="iscsi">iSCSI</option>');
-    	} else if(objCluster.hypervisortype == "VMware") {
+			$protocolSelector.append('<option value="nfs">' + g_dictionary["label.nfs"] + '</option>');
+			$protocolSelector.append('<option value="PreSetup">' + g_dictionary["label.PreSetup"] + '</option>');
+			$protocolSelector.append('<option value="iscsi">' + g_dictionary["label.iscsi"] + '</option>');
+    	} 
+    	else if(clusterObj.hypervisortype == "VMware") {
     		$protocolSelector.empty();
-			$protocolSelector.append('<option value="nfs">NFS</option>');
-			$protocolSelector.append('<option value="vmfs">VMFS datastore</option>');
+			$protocolSelector.append('<option value="nfs">' + g_dictionary["label.nfs"] + '</option>');
+			$protocolSelector.append('<option value="vmfs">' + g_dictionary["label.VMFS.datastore"] + '</option>');
+    	} 
+    	else {
+    	    $protocolSelector.empty();
     	}
     	
     	$protocolSelector.change();

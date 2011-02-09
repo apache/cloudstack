@@ -239,10 +239,7 @@ dictionary = {
             <li>
                 <label for="add_pool_protocol">
                     <fmt:message key="label.protocol"/>:</label>
-                <select class="select" id="add_pool_protocol">
-                    <option value="nfs"><fmt:message key="label.nfs"/></option>
-                    <option value="iscsi"><fmt:message key="label.iscsi"/></option>
-                    <option value="vmfs"><fmt:message key="label.vmfs"/></option>
+                <select class="select" id="add_pool_protocol">                  
                 </select>
             </li>
             <li id="add_pool_server_container">
