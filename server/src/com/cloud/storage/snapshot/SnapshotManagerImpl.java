@@ -840,6 +840,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         Object id = cmd.getId();
         Object keyword = cmd.getKeyword();
         Object snapshotTypeStr = cmd.getSnapshotType();
+        Object intervalTypeStr = cmd.getIntervalType();
 
         Filter searchFilter = new Filter(SnapshotVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<SnapshotVO> sb = _snapshotDao.createSearchBuilder();
@@ -906,10 +907,12 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 throw new InvalidParameterValueException("Unsupported snapshot type " + snapshotTypeStr);
             }
             sc.setParameters("snapshotTypeEQ", snapshotType.ordinal());
+        } else if (intervalTypeStr != null && volumeId != null) {
+            sc.setParameters("snapshotTypeEQ", Snapshot.Type.RECURRING.ordinal());
         } else {
             // Show only MANUAL and RECURRING snapshot types
             sc.setParameters("snapshotTypeNEQ", Snapshot.Type.TEMPLATE.ordinal());
-        }
+        } 
         
         return _snapshotDao.search(sc, searchFilter);
     }
