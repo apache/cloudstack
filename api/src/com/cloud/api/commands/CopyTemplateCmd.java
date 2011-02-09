@@ -29,6 +29,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.TemplateResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
@@ -121,7 +122,10 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
         } catch (StorageUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
-        }
+        } catch (ResourceAllocationException ex) {
+        	s_logger.warn("Exception: ", ex);
+        	throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
+		}
     }
 }
 

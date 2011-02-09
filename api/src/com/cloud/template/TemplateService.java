@@ -39,8 +39,8 @@ public interface TemplateService {
     
     VirtualMachineTemplate registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException;
     VirtualMachineTemplate registerIso(RegisterIsoCmd cmd) throws IllegalArgumentException, ResourceAllocationException;   
-    VirtualMachineTemplate copyIso(CopyIsoCmd cmd) throws StorageUnavailableException;
-    VirtualMachineTemplate copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException;
+    VirtualMachineTemplate copyIso(CopyIsoCmd cmd) throws StorageUnavailableException, ResourceAllocationException;
+    VirtualMachineTemplate copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException, ResourceAllocationException;
     boolean detachIso(DetachIsoCmd cmd);
     boolean attachIso(AttachIsoCmd cmd);
     /**

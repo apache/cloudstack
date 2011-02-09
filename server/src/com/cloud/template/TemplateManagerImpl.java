@@ -700,7 +700,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     
     @Override
     @DB
-    public boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId) throws StorageUnavailableException {
+    public boolean copy(long userId, long templateId, long sourceZoneId, long destZoneId) throws StorageUnavailableException, ResourceAllocationException {
     	HostVO srcSecHost = _storageMgr.getSecondaryStorageHost(sourceZoneId);
     	HostVO dstSecHost = _storageMgr.getSecondaryStorageHost(destZoneId);
     	DataCenterVO destZone = _dcDao.findById(destZoneId);
@@ -731,10 +731,16 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         srcTmpltHost = _tmpltHostDao.findByHostTemplate(srcSecHost.getId(), templateId);
         if (srcTmpltHost == null || srcTmpltHost.getDestroyed() || srcTmpltHost.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
 	      	throw new InvalidParameterValueException("Please specify a template that is installed on secondary storage host: " + srcSecHost.getName());
-	      }
+	    }
         
-        // Event details
-        Account account = _accountDao.findById(vmTemplate.getAccountId());
+        AccountVO account = _accountDao.findById(vmTemplate.getAccountId());
+        if (_accountMgr.resourceLimitExceeded(account, ResourceType.template)) {
+        	ResourceAllocationException rae = new ResourceAllocationException("Maximum number of templates and ISOs for account: " + account.getAccountName() + " has been exceeded.");
+        	rae.setResourceType("template");
+        	throw rae;
+        }
+        
+        // Event details        
         String copyEventType;
         String createEventType;
         if (vmTemplate.getFormat().equals(ImageFormat.ISO)){
@@ -788,7 +794,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     }
       
     @Override
-    public VirtualMachineTemplate copyIso(CopyIsoCmd cmd) throws StorageUnavailableException {
+    public VirtualMachineTemplate copyIso(CopyIsoCmd cmd) throws StorageUnavailableException, ResourceAllocationException {
     	Long isoId = cmd.getId();
     	Long userId = UserContext.current().getCallerUserId();
     	Long sourceZoneId = cmd.getSourceZoneId();
@@ -822,7 +828,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     
     
     @Override
-    public VirtualMachineTemplate copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException {
+    public VirtualMachineTemplate copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException, ResourceAllocationException {
     	Long templateId = cmd.getId();
     	Long userId = UserContext.current().getCallerUserId();
     	Long sourceZoneId = cmd.getSourceZoneId();
