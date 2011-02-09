@@ -110,16 +110,24 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
 			                        			                          			                                             
 			                        if (result.jobstatus == 1) { // Succeeded 				                            	                            
                                         var afterActionInfo = afterActionSeccessFn(json, $midmenuItem1, id); //afterActionSeccessFn() will update $midmenuItem1.data("jsonObj")
-                                        
-                                        //handleMidMenuItemAfterDetailsTabAction() will used updated $midmenuItem1.data("jsonObj")
-                                        if(afterActionInfo == null)
-                                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label2 + " - " + g_dictionary["label.succeeded"]));                                             
-                                        else
-                                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, afterActionInfo); 
+                                        if($("#middle_menu").css("display") != "none") {
+                                            if(afterActionInfo == null)
+                                                handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label2 + " - " + g_dictionary["label.succeeded"]));                                             
+                                            else
+                                                handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, afterActionInfo); 
+                                        }
+                                        else {
+                                            if(afterActionInfo == null)
+                                                showAfterActionInfoOnTop(true, (label2 + " - " + g_dictionary["label.succeeded"]));		
+                                            else
+                                                showAfterActionInfoOnTop(true, afterActionInfo);				              
+                                        }
 			                        } else if (result.jobstatus == 2) { // Failed	
-			                            //var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
 			                            var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);
-			                            handleMidMenuItemAfterDetailsTabAction($midmenuItem1, false, errorMsg);			                            
+			                            if($("#middle_menu").css("display") != "none")
+			                                handleMidMenuItemAfterDetailsTabAction($midmenuItem1, false, errorMsg);		
+			                            else
+			                                showAfterActionInfoOnTop(false, errorMsg);	                            
 			                        }											                    
 		                        }
 	                        },
@@ -152,10 +160,18 @@ function doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $thisTab) {
 	        success: function(json) {	 	                  
 	            $spinningWheel.hide(); 	 
 	            var afterActionInfo = afterActionSeccessFn(json, $midmenuItem1, id); //afterActionSeccessFn() will update $midmenuItem1.data("jsonObj")   
-	            if(afterActionInfo == null)	                
-	                handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label2 + " - " + g_dictionary["label.succeeded"])); //handleMidMenuItemAfterDetailsTabAction() will used updated $midmenuItem1.data("jsonObj")
-	            else
-	                handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, afterActionInfo);
+	            if($("#middle_menu").css("display") != "none") {
+	                if(afterActionInfo == null)	                
+	                    handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, (label2 + " - " + g_dictionary["label.succeeded"])); //handleMidMenuItemAfterDetailsTabAction() will used updated $midmenuItem1.data("jsonObj")
+	                else
+	                    handleMidMenuItemAfterDetailsTabAction($midmenuItem1, true, afterActionInfo);
+	            }
+	            else {	                
+	                if(afterActionInfo == null)
+                        showAfterActionInfoOnTop(true, (label2 + " - " + g_dictionary["label.succeeded"]));		
+                    else
+                        showAfterActionInfoOnTop(true, afterActionInfo);		                
+	            }
 	        },
             error: function(XMLHttpResponse) {
 				handleError(XMLHttpResponse, function() {

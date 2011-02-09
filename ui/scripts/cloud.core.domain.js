@@ -682,80 +682,8 @@ function doDeleteDomain($actionLink, $detailsTab, $midmenuItem1) {
 	.dialog('option', 'buttons', { 					
 		"Confirm": function() { 			
 			$(this).dialog("close");	
-			
-			var $spinningWheel = $("#right_panel_content").find("#tab_content_details").find("#spinning_wheel");
-            $spinningWheel.find("#description").text(dictionary["label.action.delete.domain.processing"]);       
-            $spinningWheel.show();  
-                       
-            var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");   
-            $afterActionInfoContainer.removeClass("errorbox").hide();  
-			
-			var label2 = dictionary["label.action.delete.domain"];
-						            
-            $.ajax({
-                data: createURL("command=deleteDomain&id="+id),
-                dataType: "json",           
-                success: function(json) {
-                    var jobId = json.deletedomainresponse.jobid;                  			                        
-                    var timerKey = "asyncJob_" + jobId;					                       
-                    $("body").everyTime(
-                        10000,
-                        timerKey,
-                        function() {
-                            $.ajax({
-                                data: createURL("command=queryAsyncJobResult&jobId="+jobId),
-	                            dataType: "json",									                    					                    
-	                            success: function(json) {		                                                     							                       
-		                            var result = json.queryasyncjobresultresponse;										                   
-		                            if (result.jobstatus == 0) {
-			                            return; //Job has not completed
-		                            } else {											                    
-			                            $("body").stopTime(timerKey);				                        
-			                            $spinningWheel.hide(); 
-    			                        			                          			                                             
-			                            if (result.jobstatus == 1) { // Succeeded 
-			                                showAfterActionInfoOnTop(true, (label2 + " - " + g_dictionary["label.succeeded"]));				                                
-			                                $midmenuItem1.slideUp(function() {  			                                    
-			                                    var jsonObj = $(this).data("jsonObj");            
-                                                $(this).remove();   
-                                                if(jsonObj.id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
-                                                    clearRightPanel();
-                                                    domainJsonClearRightPanel();
-                                                }                
-                                            });	 
-			                            } else if (result.jobstatus == 2) { // Failed	
-			                                var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - " + fromdb(result.jobresult.errortext);
-			                                showAfterActionInfoOnTop(false, errorMsg);	
-			                            }											                    
-		                            }
-	                            },
-	                            error: function(XMLHttpResponse) {	                            
-		                            $("body").stopTime(timerKey);	
-		                            $spinningWheel.hide(); 
-								    handleError(XMLHttpResponse, function() {
-								        var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - ";
-                                        if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {        
-                                            errorMsg += parseXMLHttpResponse(XMLHttpResponse);	
-                                        }   								    
-									    showAfterActionInfoOnTop(false, errorMsg);	
-								    });
-	                            }
-                            });
-                        },
-                        0
-                    );
-                },
-                error: function(XMLHttpResponse) {
-                    $spinningWheel.hide(); 
-				    handleError(XMLHttpResponse, function() {					   
-					    var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - ";
-                        if(XMLHttpResponse.responseText != null & XMLHttpResponse.responseText.length > 0) {        
-                            errorMsg += parseXMLHttpResponse(XMLHttpResponse);	
-                        }   								    
-					    showAfterActionInfoOnTop(false, errorMsg);						    
-				    });
-                }
-            });         
+			var apiCommand = "command=deleteDomain&id="+id;
+            doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);				
 		}, 
 		"Cancel": function() { 
 			$(this).dialog("close"); 
@@ -768,6 +696,18 @@ var domainActionMap = {
         dialogBeforeActionFn: doEditDomain
     },
     "label.action.delete.domain": {           
-        dialogBeforeActionFn : doDeleteDomain   
+        isAsyncJob: true,
+        dialogBeforeActionFn : doDeleteDomain,          
+        asyncJobResponse: "deletedomainresponse",          
+        inProcessText: "label.action.delete.domain.processing",
+        afterActionSeccessFn: function(json, $midmenuItem1, id) {        
+            $midmenuItem1.slideUp(function() {                
+                $(this).remove();   
+                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                    clearRightPanel();
+                    domainJsonClearRightPanel();
+                }                
+            });                
+        }
     }    
 } 
