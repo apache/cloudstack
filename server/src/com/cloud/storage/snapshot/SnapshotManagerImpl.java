@@ -689,7 +689,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 String BackupSnapshotId = lastSnapshot.getBackupSnapshotId();
                 if (BackupSnapshotId != null) {
                     List<SnapshotVO> snaps = _snapshotDao.listByBackupUuid(lastSnapshot.getVolumeId(), BackupSnapshotId);
-                    if ( snaps.size() > 1 ) {
+                    if ( snaps != null && !snaps.isEmpty() ) {
                         lastSnapshot.setBackupSnapshotId(null);
                         _snapshotDao.update(lastSnapshot.getId(), lastSnapshot);
                     } else {
