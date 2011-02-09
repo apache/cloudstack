@@ -914,12 +914,6 @@ function initAddHostShortcut() {
 				
 		        var array1 = [];
 				
-				/*
-			    var hypervisor = $thisDialog.find("#host_hypervisor").val();
-			    if(hypervisor.length > 0)
-				    array1.push("&hypervisor="+hypervisor);
-		        */
-		        
 		        var zoneId = $thisDialog.find("#zone_dropdown").val();
 		        array1.push("&zoneid="+zoneId);
 		        
@@ -1667,7 +1661,7 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
         var podId = $(this).val();
         if(podId == null || podId.length == 0)
             return;
-        var $clusterSelect = $dialogAddPool.find("#cluster_select").empty();		        
+        var $clusterSelect = $dialogAddPool.find("#pool_cluster").empty();		        
         $.ajax({
 	       data: createURL("command=listClusters&podid=" + podId),
             dataType: "json",
@@ -1689,7 +1683,7 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
         });
     });        
     
-    $dialogAddPool.find("#cluster_select").change(function() {
+    $dialogAddPool.find("#pool_cluster").change(function() {
     	var curOption = $(this).val();
     	if(!curOption)
     		return false;
@@ -1734,7 +1728,7 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 			    var isValid = true;		
 			    isValid &= validateDropDownBox("Zone", $thisDialog.find("#zone_dropdown"), $thisDialog.find("#zone_dropdown_errormsg"));	
 		        isValid &= validateDropDownBox("Pod", $thisDialog.find("#pod_dropdown"), $thisDialog.find("#pod_dropdown_errormsg"));						    
-			    isValid &= validateDropDownBox("Cluster", $thisDialog.find("#cluster_select"), $thisDialog.find("#cluster_select_errormsg"), false);  //required, reset error text					    				
+			    isValid &= validateDropDownBox("Cluster", $thisDialog.find("#pool_cluster"), $thisDialog.find("#pool_cluster_errormsg"), false);  //required, reset error text					    				
 			    isValid &= validateString("Name", $thisDialog.find("#add_pool_name"), $thisDialog.find("#add_pool_name_errormsg"));
 				if (protocol == "nfs" || protocol == "PreSetup" || protocol == "SharedMountPoint") {
 				    isValid &= validateString("Server", $thisDialog.find("#add_pool_nfs_server"), $thisDialog.find("#add_pool_nfs_server_errormsg"));	
@@ -1766,7 +1760,7 @@ function initAddPrimaryStorageShortcut($midmenuAddLink2, currentPageInRightPanel
 				var podId = $thisDialog.find("#pod_dropdown").val();
 		        array1.push("&podId="+podId);
 				
-				var clusterId = $thisDialog.find("#cluster_select").val();
+				var clusterId = $thisDialog.find("#pool_cluster").val();
 			    array1.push("&clusterid="+clusterId);	
 				
 			    var name = trim($thisDialog.find("#add_pool_name").val());

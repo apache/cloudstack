@@ -701,10 +701,7 @@ function bindAddHostButtonOnZonePage($button, zoneId, zoneName) {
 	        "Add": function() { 
 	            var $thisDialog = $(this);		            
 	    		$thisDialog.find("#info_container").hide();  
-	    			   
-			    //var hypervisor = $thisDialog.find("#host_hypervisor").val();
-		        //var clusterRadio = $thisDialog.find("input[name=cluster]:checked").val();				
-			
+	    		
 		        // validate values
 		        var isValid = true;			       	
 		        isValid &= validateDropDownBox("Pod", $thisDialog.find("#pod_dropdown"), $thisDialog.find("#pod_dropdown_errormsg"));	
@@ -790,8 +787,7 @@ function bindAddHostButtonOnZonePage($button, zoneId, zoneName) {
 			        dataType: "json",
 			        success: function(json) {			        
 			            $thisDialog.find("#spinning_wheel").hide();
-			            $thisDialog.dialog("close");						            
-                        //expandClusterNodeAfterAddHost(clusterRadio, podId, newClusterName, clusterId, $thisDialog); //expand cluster node to see host node                                
+			            $thisDialog.dialog("close");		
 			        },			
                     error: function(XMLHttpResponse) {	            
 						handleError(XMLHttpResponse, function() {						  
@@ -836,7 +832,7 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
         var podId = $(this).val();
         if(podId == null || podId.length == 0)
             return;
-        var $clusterSelect = $dialogAddPool.find("#cluster_select").empty();		        
+        var $clusterSelect = $dialogAddPool.find("#pool_cluster").empty();		        
         $.ajax({
 	        data: createURL("command=listClusters&podid=" + podId),
             dataType: "json",
@@ -859,7 +855,7 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
         });        
     });
     
-    $("#cluster_select", $dialogAddPool).unbind("change").bind("change", function(event) {    	
+    $("#pool_cluster", $dialogAddPool).unbind("change").bind("change", function(event) {    	
     	var curOption = $(this).val();
     	if(!curOption)
     		return false;
@@ -903,7 +899,7 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
 				
 			    var isValid = true;					    
 		        isValid &= validateDropDownBox("Pod", $thisDialog.find("#pod_dropdown"), $thisDialog.find("#pod_dropdown_errormsg"));						    
-			    isValid &= validateDropDownBox("Cluster", $thisDialog.find("#cluster_select"), $thisDialog.find("#cluster_select_errormsg"), false);  //required, reset error text					    				
+			    isValid &= validateDropDownBox("Cluster", $thisDialog.find("#pool_cluster"), $thisDialog.find("#pool_cluster_errormsg"), false);  //required, reset error text					    				
 			    isValid &= validateString("Name", $thisDialog.find("#add_pool_name"), $thisDialog.find("#add_pool_name_errormsg"));
 				if (protocol == "nfs" || protocol == "PreSetup" || protocol == "SharedMountPoint") {
 				    isValid &= validateString("Server", $thisDialog.find("#add_pool_nfs_server"), $thisDialog.find("#add_pool_nfs_server_errormsg"));	
@@ -934,7 +930,7 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
 				var podId = $thisDialog.find("#pod_dropdown").val();
 		        array1.push("&podId="+podId);
 				
-				var clusterId = $thisDialog.find("#cluster_select").val();
+				var clusterId = $thisDialog.find("#pool_cluster").val();
 			    array1.push("&clusterid="+clusterId);	
 				
 			    var name = trim($thisDialog.find("#add_pool_name").val());

@@ -957,9 +957,9 @@
             <li id="pool_cluster_container">
                 <label for="pool_cluster">
                     <fmt:message key="label.cluster"/>:</label>
-                <select class="select" id="cluster_select">
+                <select class="select" id="pool_cluster">
                 </select>
-                <div id="cluster_select_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                <div id="pool_cluster_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>
             <li>
