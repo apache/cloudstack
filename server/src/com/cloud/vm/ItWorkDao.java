@@ -17,6 +17,8 @@
  */
 package com.cloud.vm;
 
+import java.util.List;
+
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.ItWorkVO.Step;
 import com.cloud.vm.VirtualMachine.State;
@@ -38,4 +40,6 @@ public interface ItWorkDao extends GenericDao<ItWorkVO, String> {
     void cleanup(long wait);
     
     boolean updateStep(ItWorkVO work, Step step);
+
+    List<ItWorkVO> listWorkInProgressFor(long nodeId);
 }

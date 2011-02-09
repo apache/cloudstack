@@ -192,6 +192,6 @@ public class HaWorkVO {
     
     @Override
 	public String toString() {
-    	return new StringBuilder("[HA-Work:id=").append(id).append(":type=").append(workType.toString()).append(":vm=").append(instanceId).append(":state=").append(previousState.toString()).append("]").toString();
+    	return new StringBuilder("HAWork[").append(id).append("-").append(workType).append("-").append(instanceId).append("-").append(previousState).append("-").append(step).append("]").toString();
     }
 }

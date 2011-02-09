@@ -409,6 +409,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     @Override
     public boolean start() {
         _executor.scheduleAtFixedRate(new CleanupTask(), _cleanupInterval, _cleanupInterval, TimeUnit.SECONDS);
+        cancelWorkItems(_nodeId);
         return true;
     }
 
@@ -446,6 +447,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         _nodeId = _clusterMgr.getId();
       
         _agentMgr.registerForHostEvents(this, true, true, true);
+        
         return true;
     }
     
@@ -1047,6 +1049,41 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                 Command cleanup = cleanup(vm.getInstanceName());
                 _agentMgr.easySend(dstHostId, cleanup);
             }
+        }
+    }
+    
+    protected void cancelWorkItems(long nodeId) {
+        GlobalLock scanLock = GlobalLock.getInternLock(this.getClass().getName());
+
+        try {
+            if (scanLock.lock(3)) {
+                try {
+                    List<ItWorkVO> works = _workDao.listWorkInProgressFor(nodeId);
+                    for (ItWorkVO work : works) {
+                        s_logger.info("Handling unfinished work item: " + work);
+                        try {
+                            VMInstanceVO vm = _vmDao.findById(work.getInstanceId());
+                            if (vm != null) {
+                                if (work.getType() == State.Starting) {
+                                    _haMgr.scheduleRestart(vm, true);
+                                } else if (work.getType() == State.Stopping) {
+                                    _haMgr.scheduleStop(vm, vm.getHostId(), WorkType.CheckStop);
+                                } else if (work.getType() == State.Migrating) {
+                                    _haMgr.scheduleMigration(vm);
+                                }
+                            } 
+                            work.setStep(Step.Done);
+                            _workDao.update(work.getId(), work);
+                        } catch (Exception e) {
+                            s_logger.error("Error while handling " + work, e);
+                        }
+                    }
+                } finally {
+                    scanLock.unlock();
+                }
+            }
+        } finally {
+            scanLock.releaseRef();
         }
     }
     

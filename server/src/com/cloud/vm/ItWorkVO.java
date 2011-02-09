@@ -155,4 +155,9 @@ public class ItWorkVO {
     public long getSecondsTaskHasBeenCreated() {
         return InaccurateClock.getTimeInSeconds() - this.createdAt;
     }
+    
+    @Override
+    public String toString() {
+        return new StringBuilder("ItWork[").append(id).append("-").append(type.toString()).append("-").append(instanceId).append("-").append(step.toString()).append("]").toString();
+    }
 }

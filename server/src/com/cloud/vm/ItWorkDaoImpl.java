@@ -17,6 +17,8 @@
  */
 package com.cloud.vm;
 
+import java.util.List;
+
 import javax.ejb.Local;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -32,6 +34,7 @@ public class ItWorkDaoImpl extends GenericDaoBase<ItWorkVO, String> implements I
     protected final SearchBuilder<ItWorkVO> AllFieldsSearch;
     protected final SearchBuilder<ItWorkVO> CleanupSearch;
     protected final SearchBuilder<ItWorkVO> OutstandingWorkSearch;
+    protected final SearchBuilder<ItWorkVO> WorkInProgressSearch;
     
     protected ItWorkDaoImpl() {
         super();
@@ -52,6 +55,11 @@ public class ItWorkDaoImpl extends GenericDaoBase<ItWorkVO, String> implements I
         OutstandingWorkSearch.and("op", OutstandingWorkSearch.entity().getType(), Op.EQ);
         OutstandingWorkSearch.and("step", OutstandingWorkSearch.entity().getStep(), Op.NEQ);
         OutstandingWorkSearch.done();
+        
+        WorkInProgressSearch = createSearchBuilder();
+        WorkInProgressSearch.and("server", WorkInProgressSearch.entity().getManagementServerId(), Op.EQ);
+        WorkInProgressSearch.and("step", WorkInProgressSearch.entity().getStep(), Op.NIN);
+        WorkInProgressSearch.done();
     }
     
     @Override
@@ -84,5 +92,15 @@ public class ItWorkDaoImpl extends GenericDaoBase<ItWorkVO, String> implements I
     public boolean updateStep(ItWorkVO work, Step step) {
         work.setStep(step);
         return update(work.getId(), work);
+    }
+    
+    @Override
+    public List<ItWorkVO> listWorkInProgressFor(long nodeId) {
+        SearchCriteria<ItWorkVO> sc = WorkInProgressSearch.create();
+        sc.setParameters("server", nodeId);
+        sc.setParameters("step", Step.Done);
+        
+        return search(sc, null);
+        
     }
 }

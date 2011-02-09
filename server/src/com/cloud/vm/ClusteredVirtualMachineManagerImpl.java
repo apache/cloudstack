@@ -39,6 +39,9 @@ public class ClusteredVirtualMachineManagerImpl extends VirtualMachineManagerImp
     
     @Override
     public void onManagementNodeLeft(List<ManagementServerHostVO> nodeList, long selfNodeId) {
+        for (ManagementServerHostVO node : nodeList) {
+            cancelWorkItems(node.getMsid());
+        }
     }
     
     @Override
