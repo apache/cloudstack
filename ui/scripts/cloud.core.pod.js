@@ -631,8 +631,7 @@ function bindAddPrimaryStorageButton($leftmenuItem1) {
     }
                                          
     populateClusterFieldInAddPoolDialog($dialogAddPool, podId);   
-    bindClusterFieldInAddPoolDialog($dialogAddPool);
-    		 
+        		 
     $button.unbind("click").bind("click", function(event) {           
         $dialogAddPool.find("#info_container").hide();	        
 	    $dialogAddPool.find("#pool_cluster").change();
