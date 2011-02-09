@@ -116,7 +116,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -196,6 +195,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private int _standbyCapacity = ConsoleProxyManager.DEFAULT_STANDBY_CAPACITY;
 
     private int _proxyRamSize;
+    private int _proxyCpuMHz;
     private boolean _use_lvm;
     private boolean _use_storage_vm;
     private boolean _disable_rp_filter = false;
@@ -1270,15 +1270,16 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
         Map<String, String> configs = configDao.getConfiguration("management-server", params);
 
-        _proxyRamSize = NumbersUtil.parseInt(configs.get("consoleproxy.ram.size"), DEFAULT_PROXY_VM_RAMSIZE);
-
-        String value = configs.get("consoleproxy.cmd.port");
+        _proxyRamSize = NumbersUtil.parseInt(configs.get(Config.ConsoleProxyRamSize.key()), DEFAULT_PROXY_VM_RAMSIZE);
+        _proxyCpuMHz = NumbersUtil.parseInt(configs.get(Config.ConsoleProxyCpuMHz.key()), DEFAULT_PROXY_VM_CPUMHZ);
+        
+        String value = configs.get(Config.ConsoleProxyCmdPort.key());
         value = configs.get("consoleproxy.sslEnabled");
         if (value != null && value.equalsIgnoreCase("true")) {
             _sslEnabled = true;
         }
 
-        value = configs.get("consoleproxy.capacityscan.interval");
+        value = configs.get(Config.ConsoleProxyCapacityScanInterval.key());
         _capacityScanInterval = NumbersUtil.parseLong(value, DEFAULT_CAPACITY_SCAN_INTERVAL);
 
         _capacityPerProxy = NumbersUtil.parseInt(configs.get("consoleproxy.session.max"), DEFAULT_PROXY_CAPACITY);
@@ -1295,7 +1296,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             _disable_rp_filter = true;
         }
 
-        value = configs.get("system.vm.use.local.storage");
+        value = configs.get(Config.SystemVMUseLocalStorage.key());
         if (value != null && value.equalsIgnoreCase("true")) {
             _use_lvm = true;
         }
@@ -1335,7 +1336,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, _proxyRamSize, 0, 0, 0, true, null, Network.GuestIpType.Virtual,
+        _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, _proxyRamSize, _proxyCpuMHz, 0, 0, true, null, Network.GuestIpType.Virtual,
                 useLocalStorage, true, null, true);
         _serviceOffering.setUniqueName("Cloud.com-ConsoleProxy");
         _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);

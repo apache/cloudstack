@@ -32,6 +32,7 @@ public interface ConsoleProxyManager extends Manager {
 	public static final int DEFAULT_PROXY_CAPACITY = 50;
 	public static final int DEFAULT_STANDBY_CAPACITY = 10;
 	public static final int DEFAULT_PROXY_VM_RAMSIZE = 1024;			// 1G
+	public static final int DEFAULT_PROXY_VM_CPUMHZ = 500;				// 500 MHz
 	
 	public static final int DEFAULT_PROXY_CMD_PORT = 8001;
 	public static final int DEFAULT_PROXY_VNC_PORT = 0;

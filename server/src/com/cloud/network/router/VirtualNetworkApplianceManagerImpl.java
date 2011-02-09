@@ -272,6 +272,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     NicDao _nicDao;
 
     int _routerRamSize;
+    int _routerCpuMHz;
     int _retry = 2;
     String _instance;
     String _mgmt_host;
@@ -542,8 +543,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
         _mgmt_host = configs.get("host");
-        _routerRamSize = NumbersUtil.parseInt(configs.get(Config.RouterRamSize.key()), DEFAULT_ROUTER_VM_RAMSIZE);
-
+        _routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), DEFAULT_ROUTER_VM_RAMSIZE);
+        _routerCpuMHz = NumbersUtil.parseInt(configs.get("router.cpu.mhz"), DEFAULT_ROUTER_CPU_MHZ);
         String value = configs.get("start.retry");
         _retry = NumbersUtil.parseInt(value, 2);
 
@@ -569,7 +570,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         _itMgr.registerGuru(VirtualMachine.Type.DomainRouter, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        _offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, 0, 0, 0, true, null,
+        _offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, _routerCpuMHz, 0, 0, true, null,
                 Network.GuestIpType.Virtual, useLocalStorage, true, null, true);
         _offering.setUniqueName("Cloud.Com-SoftwareRouter");
         _offering = _serviceOfferingDao.persistSystemServiceOffering(_offering);
