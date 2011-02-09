@@ -24,7 +24,7 @@ import com.cloud.vm.SecondaryStorageVmVO;
 public interface SecondaryStorageVmManager extends Manager {
 
 	public static final int DEFAULT_SS_VM_RAMSIZE = 256;			// 256M
-	
+	public static final int DEFAULT_SS_VM_CPUMHZ = 500;				// 500 MHz
 	
 	public static final String ALERT_SUBJECT = "secondarystoragevm-alert";
 		

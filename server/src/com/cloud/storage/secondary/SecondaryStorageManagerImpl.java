@@ -183,6 +183,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
 
     private int _secStorageVmRamSize;
+    private int _secStorageVmCpuMHz;
 
     private String _instance;
     private boolean _useLocalStorage;
@@ -742,6 +743,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         Map<String, String> configs = configDao.getConfiguration("management-server", params);
 
         _secStorageVmRamSize = NumbersUtil.parseInt(configs.get("secstorage.vm.ram.size"), DEFAULT_SS_VM_RAMSIZE);
+        _secStorageVmCpuMHz = NumbersUtil.parseInt(configs.get("secstorage.vm.cpu.mhz"), DEFAULT_SS_VM_CPUMHZ);
         String useServiceVM = configDao.getValue("secondary.storage.vm");
         boolean _useServiceVM = false;
         if ("true".equalsIgnoreCase(useServiceVM)) {
@@ -778,7 +780,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         _itMgr.registerGuru(VirtualMachine.Type.SecondaryStorageVm, this);
 
         _useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        _serviceOffering = new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, _secStorageVmRamSize, 0, 0, 0, true, null,
+        _serviceOffering = new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, _secStorageVmRamSize, _secStorageVmCpuMHz, 0, 0, true, null,
                 Network.GuestIpType.Virtual, _useLocalStorage, true, null, true);
         _serviceOffering.setUniqueName("Cloud.com-SecondaryStorage");
         _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
