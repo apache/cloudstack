@@ -1042,6 +1042,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             throw new InvalidParameterValueException("maxSnaps exceeds limit: " + intervalMaxSnaps + " for interval type: " + cmd.getIntervalType());
         }
         
+        if (cmd.getMaxSnaps() <=0) {
+            throw new InvalidParameterValueException("maxSnaps should be greater than 0");
+        }
         
         //Verify that max doesn't exceed domain and account snapshot limits
         long accountLimit = _accountMgr.findCorrectResourceLimit(owner, ResourceType.snapshot);
