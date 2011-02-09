@@ -19,6 +19,8 @@ package com.cloud.vm;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
@@ -30,15 +32,17 @@ import com.cloud.vm.VirtualMachine.State;
 public class ItWorkVO {
     enum ResourceType {
         Volume,
-        Nic
+        Nic,
+        Host
     }
     
     enum Step {
         Prepare,
-        Start,
+        Starting,
         Started,
         Release,
-        Done
+        Done,
+        Migrating
     }
     
     @Id
@@ -76,6 +80,13 @@ public class ItWorkVO {
     @Column(name="resource_type")
     ResourceType resourceType;
     
+    @Column(name="vm_type")
+    @Enumerated(value=EnumType.STRING)
+    VirtualMachine.Type vmType;
+    
+    public VirtualMachine.Type getVmType() {
+        return vmType;
+    }
     
     public long getResourceId() {
         return resourceId;
@@ -96,7 +107,7 @@ public class ItWorkVO {
     protected ItWorkVO() {
     }
     
-    protected ItWorkVO(String id, long managementServerId, State type, long instanceId) {
+    protected ItWorkVO(String id, long managementServerId, State type, VirtualMachine.Type vmType, long instanceId) {
         this.id = id;
         this.managementServerId = managementServerId;
         this.type = type;
@@ -106,6 +117,7 @@ public class ItWorkVO {
         this.resourceType = null;
         this.createdAt = InaccurateClock.getTimeInSeconds();
         this.updatedAt = createdAt;
+        this.vmType = vmType;
     }
 
     public String getId() {

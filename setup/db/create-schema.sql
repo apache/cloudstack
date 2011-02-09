@@ -93,11 +93,12 @@ DROP TABLE IF EXISTS `cloud`.`usage_event`;
 DROP TABLE IF EXISTS `cloud`.`host_tags`;
 
 CREATE TABLE `cloud`.`op_it_work` (
-  `id` char(40) COMMENT 'id',
+  `id` char(40) COMMENT 'reservation id',
   `mgmt_server_id` bigint unsigned COMMENT 'management server id',
   `created_at` bigint unsigned NOT NULL COMMENT 'when was this work detail created',
   `thread` varchar(255) NOT NULL COMMENT 'thread name',
   `type` char(32) NOT NULL COMMENT 'type of work',
+  `vm_type` char(32) NOT NULL COMMENT 'type of vm',
   `step` char(32) NOT NULL COMMENT 'state',
   `updated_at` bigint unsigned NOT NULL COMMENT 'time it was taken over',
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance',
