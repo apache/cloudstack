@@ -53,7 +53,7 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.LONG, required=true, description="The ID of the disk volume")
     private Long volumeId;
 
-    @Parameter(name=ApiConstants.POLICY_ID, type=CommandType.LONG, description="polocy id of the snapshot, if this is null, then use MANUAL_POLICY.")
+    @Parameter(name=ApiConstants.POLICY_ID, type=CommandType.LONG, description="policy id of the snapshot, if this is null, then use MANUAL_POLICY.")
     private Long policyId;
     
     /////////////////////////////////////////////////////
