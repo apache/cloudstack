@@ -672,7 +672,14 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 	    }
 	    SnapshotVO lastSnapshot = null;
 	    SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-        _snapshotDao.remove(snapshotId);
+	    if ( snapshot.getBackupSnapshotId() != null ) {
+            List<SnapshotVO> snaps = _snapshotDao.listByBackupUuid(snapshot.getVolumeId(), snapshot.getBackupSnapshotId());
+            if ( snaps != null && snaps.size() > 1 ) {
+                snapshot.setBackupSnapshotId(null);
+                _snapshotDao.update(snapshot.getId(), snapshot);
+            } 
+	    }
+	    _snapshotDao.remove(snapshotId);
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), 0L, snapshotId, snapshot.getName(), null, null, 0L);
         _usageEventDao.persist(usageEvent);
         long lastId = snapshotId;
