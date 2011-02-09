@@ -872,48 +872,6 @@ function iscsiURL(server, iqn, lun) {
 	return url;
 }
 
-function bindEventHandlerToDialogAddPool($dialogAddPool) { 
-    $dialogAddPool.find("#add_pool_protocol").change(function(event) {
-    	if($(this).val() == "nfs") {
-    		$("#add_pool_server_container", $dialogAddPool).show();
-    		$('li[input_group="nfs"]', $dialogAddPool).show();
-    		$('li[input_group="iscsi"]', $dialogAddPool).hide();
-    		$('li[input_group="vmfs"]', $dialogAddPool).hide();
-    		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", false).val("");
-    		$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.path"]+":");
-    	} 
-    	if($(this).val() == "PreSetup") {
-    		$("#add_pool_server_container", $dialogAddPool).show();
-    		$('li[input_group="nfs"]', $dialogAddPool).show();
-    		$('li[input_group="iscsi"]', $dialogAddPool).hide();
-    		$('li[input_group="vmfs"]', $dialogAddPool).hide();
-    		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", false).val("");    		
-    		$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.SR.name"]+":");
-    	} 
-    	else if($(this).val() == "iscsi") {
-    		$("#add_pool_server_container", $dialogAddPool).show();
-    		$('li[input_group="nfs"]', $dialogAddPool).hide();
-    		$('li[input_group="iscsi"]', $dialogAddPool).show();
-    		$('li[input_group="vmfs"]', $dialogAddPool).hide();
-    		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", false).val("");
-    	} 
-    	else if($(this).val() == "vmfs") {
-    		$("#add_pool_server_container", $dialogAddPool).hide();
-    		$('li[input_group="nfs"]', $dialogAddPool).hide();
-    		$('li[input_group="iscsi"]', $dialogAddPool).hide();
-    		$('li[input_group="vmfs"]', $dialogAddPool).show();   
-    		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", false).val(""); 		
-    	}
-    	else if($(this).val() == "SharedMountPoint") {  //"SharedMountPoint" show the same fields as "nfs" does.
-    		$("#add_pool_server_container", $dialogAddPool).show();
-    		$('li[input_group="nfs"]', $dialogAddPool).show();
-    		$('li[input_group="iscsi"]', $dialogAddPool).hide();
-    		$('li[input_group="vmfs"]', $dialogAddPool).hide();
-    		$dialogAddPool.find("#add_pool_nfs_server").attr("disabled", true).val("localhost");
-    	} 
-	});		
-}
-
 var podActionMap = {
     "label.action.edit.pod": {
         dialogBeforeActionFn: doEditPod  

@@ -827,9 +827,7 @@ function bindAddPrimaryStorageButtonOnZonePage($button, zoneId, zoneName) {
     });          
     
     $podSelect.unbind("change").bind("change", function(event) {	        
-        var podId = $(this).val();
-        if(podId == null || podId.length == 0)
-            return;
+        var podId = $(this).val();        
         populateClusterFieldInAddPoolDialog($dialogAddPool, podId);   
     });
     
