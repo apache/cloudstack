@@ -27,8 +27,8 @@ import org.apache.log4j.Logger;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.server.Criteria;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.ServiceOffering.GuestIpType;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.vm.UserVmVO;
@@ -47,6 +47,9 @@ public class ListServiceOfferingsCmd extends BaseCmd {
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT_OBJ, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ACCOUNT, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.ZONE_ID, Boolean.FALSE));
     }
 
     public String getName() {
@@ -65,6 +68,9 @@ public class ListServiceOfferingsCmd extends BaseCmd {
         Account account = (Account)params.get(BaseCmd.Properties.ACCOUNT_OBJ.getName());
         Integer page = (Integer)params.get(BaseCmd.Properties.PAGE.getName());
         Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
+        Long zoneId = (Long)params.get(BaseCmd.Properties.ZONE_ID.getName());
+        String accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
+        Long domainId = (Long)params.get(BaseCmd.Properties.DOMAIN_ID.getName());
         
         Long startIndex = Long.valueOf(0);
         int pageSizeNum = 50;
@@ -81,6 +87,7 @@ public class ListServiceOfferingsCmd extends BaseCmd {
         c.addCriteria(Criteria.KEYWORD, keyword);
         c.addCriteria(Criteria.ID, id);
         c.addCriteria(Criteria.NAME, name);
+        c.addCriteria(Criteria.DATACENTERID, zoneId);
         
         //If vmId is present in the list of parameters, verify it
         if (vmId != null) {
@@ -95,6 +102,33 @@ public class ListServiceOfferingsCmd extends BaseCmd {
             }
         	if (keyword == null)
             	c.addCriteria(Criteria.INSTANCEID, vmId);
+        }
+        
+        //add account information to the criteria
+        Long accountId = null;
+        if ((account == null) || isAdmin(account.getType())) {
+            if (domainId != null) {
+                if ((account != null) && !getManagementServer().isChildDomain(account.getDomainId(), domainId)) {
+                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid domain id (" + domainId + ") given, unable to list service offerings.");
+                }
+
+                if (accountName != null) {
+                    account = getManagementServer().findActiveAccount(accountName, domainId);
+                    if (account == null) {
+                        throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
+                    }
+                    accountId = account.getId();
+                }
+            } else if (account != null && isAdmin(account.getType())) {
+                accountId = account.getId();
+            }  
+        } else {
+            accountId = account.getId();
+        }
+        
+        
+        if (accountId != null) {
+           c.addCriteria(Criteria.ACCOUNTID, accountId);
         }
 
         List<ServiceOfferingVO> offerings = getManagementServer().searchForServiceOfferings(c);

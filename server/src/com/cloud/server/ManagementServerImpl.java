@@ -3786,6 +3786,8 @@ public class ManagementServerImpl implements ManagementServer {
         Object vmIdObj = c.getCriteria(Criteria.INSTANCEID);
         Object id = c.getCriteria(Criteria.ID);
         Object keyword = c.getCriteria(Criteria.KEYWORD);
+        Object accountId = c.getCriteria(Criteria.ACCOUNTID);
+        Object zoneId = c.getCriteria(Criteria.DATACENTERID);
 
         if (keyword != null) {
             SearchCriteria ssc = _offeringsDao.createSearchCriteria();
@@ -3814,8 +3816,38 @@ public class ManagementServerImpl implements ManagementServer {
                 sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, offering.getUseLocalStorage());
             }
         }
-
+        
+        //if account doesn't have direct ip addresses and there are no direct Zone wide vlans, return virtual service offerings only
+        List<VlanVO> accountDirectVlans = new ArrayList<VlanVO>();
+        List<VlanVO> zoneDirectVlans = new ArrayList<VlanVO>();
+        if (accountId != null || zoneId != null) {
+            if (accountId != null && zoneId != null) {
+                accountDirectVlans = _vlanDao.listVlansForAccountByType(null, ((Long)accountId).longValue(), VlanType.DirectAttached);
+                zoneDirectVlans = listZoneWideVlansByType(VlanType.DirectAttached, (Long)zoneId);
+            } else if (zoneId != null) {
+                zoneDirectVlans = listZoneWideVlansByType(VlanType.DirectAttached, (Long)zoneId);
+            }  
+            
+            if (accountDirectVlans.isEmpty() && zoneDirectVlans.isEmpty()) {
+                sc.addAnd("guestIpType", SearchCriteria.Op.EQ, GuestIpType.Virtualized);
+            }
+        }
+        
+        
         return _offeringsDao.search(sc, searchFilter);
+    }
+    
+    //lists zone wide vlans by type
+    private List<VlanVO> listZoneWideVlansByType(VlanType type, long zoneId) {
+        List<VlanVO> zoneVlans = _vlanDao.listByZoneAndType(zoneId, type);
+        List<VlanVO> zoneWideVlans = new ArrayList<VlanVO>();
+
+        for (VlanVO vlan : zoneVlans) {
+            if (_accountVlanMapDao.listAccountVlanMapsByVlan(vlan.getId()).isEmpty()) {
+                zoneWideVlans.add(vlan);
+            }
+        }
+        return zoneWideVlans;
     }
     
     @Override

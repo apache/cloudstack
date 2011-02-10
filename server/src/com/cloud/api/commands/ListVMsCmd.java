@@ -31,15 +31,13 @@ import com.cloud.api.ServerApiException;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.host.HostVO;
-import com.cloud.network.security.NetworkGroupVMMapVO;
-import com.cloud.network.security.NetworkGroupVO;
 import com.cloud.server.Criteria;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
-import com.cloud.vm.VmStats;
 import com.cloud.vm.UserVm;
+import com.cloud.vm.VmStats;
 
 public class ListVMsCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
