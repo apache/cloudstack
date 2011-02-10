@@ -54,6 +54,7 @@ public class ListAccountsCmd extends BaseCmd{
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.DOMAIN_ID, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGE, Boolean.FALSE));
         s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.PAGESIZE, Boolean.FALSE));
+        s_properties.add(new Pair<Enum, Boolean>(BaseCmd.Properties.EXACT_MATCH, Boolean.FALSE));
     }
 
     public String getName() {
@@ -75,7 +76,9 @@ public class ListAccountsCmd extends BaseCmd{
         Integer pageSize = (Integer)params.get(BaseCmd.Properties.PAGESIZE.getName());
         String keyword = (String)params.get(BaseCmd.Properties.KEYWORD.getName());
         boolean isAdmin = false;
+        boolean doExactSearch = false;
 		Long accountId = null;
+		Boolean exactMatch = (Boolean)params.get(BaseCmd.Properties.EXACT_MATCH.getName());
 
         String accountName = null;
 
@@ -93,6 +96,10 @@ public class ListAccountsCmd extends BaseCmd{
         } else {
         	accountName = (String)params.get(BaseCmd.Properties.ACCOUNT.getName());
         	accountId = account.getId();
+        }
+        
+        if (exactMatch != null) {
+            doExactSearch = exactMatch;
         }
 
         Long startIndex = Long.valueOf(0);
@@ -119,7 +126,7 @@ public class ListAccountsCmd extends BaseCmd{
 			c.addCriteria(Criteria.ID, accountId);
 		}
 
-        List<AccountVO> accounts = getManagementServer().searchForAccounts(c);
+        List<AccountVO> accounts = getManagementServer().searchForAccounts(c, doExactSearch);
 
         List<Pair<String, Object>> accountTags = new ArrayList<Pair<String, Object>>();
         Object[] aTag = new Object[accounts.size()];

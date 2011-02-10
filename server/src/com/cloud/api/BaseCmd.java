@@ -398,7 +398,8 @@ public abstract class BaseCmd {
         SCOPE("scope", BaseCmd.TYPE_STRING, "scope"),
         SUM_ACROSS_ZONE("sumacrosszone", BaseCmd.TYPE_BOOLEAN, "sumAcrossZone"),
         EXCEPTION("exception", BaseCmd.TYPE_STRING, "excetpion"),
-        HOST_TAGS("hosttags", BaseCmd.TYPE_STRING, "hostTags");
+        HOST_TAGS("hosttags", BaseCmd.TYPE_STRING, "hostTags"),
+        EXACT_MATCH("exactmatch", BaseCmd.TYPE_BOOLEAN, "exactMatch");
 
         private final String _name;
         private final short _dataType;

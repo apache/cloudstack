@@ -1645,9 +1645,10 @@ public interface ManagementServer {
      * Searches for accounts by the specified search criteria
      * Can search by: "id", "name", "domainid", "type"
      * @param c
+     * @param exactMatch TODO
      * @return List of Accounts
      */
-    List<AccountVO> searchForAccounts(Criteria c);
+    List<AccountVO> searchForAccounts(Criteria c, boolean exactMatch);
     
     
     /**

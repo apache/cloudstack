@@ -4330,7 +4330,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<AccountVO> searchForAccounts(Criteria c) {
+    public List<AccountVO> searchForAccounts(Criteria c, boolean exactMatch) {
         Filter searchFilter = new Filter(AccountVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
 
         Object id = c.getCriteria(Criteria.ID);
@@ -4342,7 +4342,12 @@ public class ManagementServerImpl implements ManagementServer {
         Object keyword = c.getCriteria(Criteria.KEYWORD);
 
         SearchBuilder<AccountVO> sb = _accountDao.createSearchBuilder();
-        sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.LIKE);
+        if (exactMatch) {
+            sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.EQ);
+        } else {
+            sb.and("accountName", sb.entity().getAccountName(), SearchCriteria.Op.LIKE);
+        }
+        
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("nid", sb.entity().getId(), SearchCriteria.Op.NEQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
@@ -4359,14 +4364,24 @@ public class ManagementServerImpl implements ManagementServer {
         SearchCriteria sc = sb.create();
         if (keyword != null) {
             SearchCriteria ssc = _accountDao.createSearchCriteria();
-            ssc.addOr("accountName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            
+            if (exactMatch) {
+                ssc.addOr("accountName", SearchCriteria.Op.EQ, keyword);
+            } else {
+                ssc.addOr("accountName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            } 
+            
+            ssc.addOr("state", SearchCriteria.Op.EQ, keyword);
             
             sc.addAnd("accountName", SearchCriteria.Op.SC, ssc);
         }
 
         if (accountname != null) {
-            sc.setParameters("accountName", "%" + accountname + "%");
+            if (exactMatch) {
+                sc.setParameters("accountName", accountname);
+            } else {
+                sc.setParameters("accountName", "%" + accountname + "%");
+            }
         }
 
         if (id != null) {
