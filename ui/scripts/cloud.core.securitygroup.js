@@ -57,7 +57,7 @@ function initAddSecurityGroupDialog() {
     $("#add_securitygroup_button").unbind("click").bind("click", function(event) {    
         $dialogAddSecurityGroup
 	    .dialog('option', 'buttons', {
-	        "Create": function() {		            	          
+	        "Add": function() {		            	          
 	            var $thisDialog = $(this);	
 							
 				// validate values

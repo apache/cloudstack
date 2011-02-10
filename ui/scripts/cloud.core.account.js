@@ -150,7 +150,7 @@ function bindAddAccountButton() {
     $("#add_account_button").unbind("click").bind("click", function(event) {    		
 		$dialogAddAccount
 		.dialog('option', 'buttons', { 					
-			"Create": function() { 	
+			"Add": function() { 	
 			    var $thisDialog = $(this);	
 			    			    			
 				// validate values
@@ -251,7 +251,7 @@ function bindAddUserButton() {
             	
 		$dialogAddUser
 		.dialog('option', 'buttons', { 					
-			"Create": function() { 	
+			"Add": function() { 	
 			    var $thisDialog = $(this);		
 			    $thisDialog.find("#info_container").hide();
 			    		    			

@@ -155,7 +155,7 @@ function initAddDomainDialog() {
         
 		$dialogAddDomain
 		.dialog('option', 'buttons', { 					
-			"Create": function() { 	
+			"Add": function() { 	
 			    var $thisDialog = $(this);
 			    				    			
 				// validate values

@@ -147,7 +147,7 @@ function initAddIsoDialog() {
 	
         $dialogAddIso
 	    .dialog('option', 'buttons', { 				
-		    "Create": function() { 	
+		    "Add": function() { 	
 		        var thisDialog = $(this);
     				
 			    // validate values

@@ -97,7 +97,7 @@ function afterLoadTemplateJSP() {
        
         $("#dialog_add_template")
 		.dialog('option', 'buttons', { 				
-			"Create": function() { 		
+			"Add": function() { 		
 			    var thisDialog = $(this);
 													
 				// validate values
