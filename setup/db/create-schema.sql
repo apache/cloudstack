@@ -103,7 +103,10 @@ CREATE TABLE `cloud`.`op_it_work` (
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance',
   `resource_type` char(32) COMMENT 'type of resource being worked on',
   `resource_id` bigint unsigned COMMENT 'resource id being worked on',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_op_it_work__mgmt_server_id` FOREIGN KEY (`mgmt_server_id`) REFERENCES `mshost`(`msid`),
+  CONSTRAINT `fk_op_it_work__instance_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
+  INDEX `i_op_it_work__step`(`step`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`hypervsior_properties` (
@@ -519,28 +522,12 @@ CREATE TABLE `cloud`.`load_balancer_vm_map` (
 CREATE TABLE `cloud`.`port_forwarding_rules` (
   `id` bigint unsigned NOT NULL COMMENT 'id',
   `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance id',
-  `dest_ip_address` bigint unsigned NOT NULL COMMENT 'id_address',
+  `dest_ip_address` char(40) NOT NULL COMMENT 'id_address',
   `dest_port_start` int(10) NOT NULL COMMENT 'starting port of the port range to map to',
   `dest_port_end` int(10) NOT NULL COMMENT 'end port of the the port range to map to',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_port_forwarding_rules__id` FOREIGN KEY(`id`) REFERENCES `firewall_rules`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE VIEW `cloud`.`port_forwarding_rules_view` AS SELECT fw.id, INET_NTOA(fw.ip_address_id) as src_ip_address_id, INET_NTOA(pf.dest_ip_address), fw.start_port as src_port_start, pf.dest_port_start, fw.end_port as src_end_port, pf.dest_port_end as dest_end_port, fw.state, fw.protocol, fw.purpose, fw.account_id from cloud.firewall_rules as fw inner join cloud.port_forwarding_rules as pf on fw.id=pf.id; 
- 
-#CREATE TABLE  `cloud`.`ip_forwarding` (
-#  `id` bigint unsigned NOT NULL auto_increment,
-#  `group_id` bigint unsigned default NULL,
-#  `public_ip_address` varchar(15) NOT NULL,
-#  `public_port` varchar(10) default NULL,
-#  `private_ip_address` varchar(15) NOT NULL,
-#  `private_port` varchar(10) default NULL,
-#  `enabled` tinyint(1) NOT NULL default '1',
-#  `protocol` varchar(16) NOT NULL default 'TCP',
-#  `forwarding` tinyint(1) NOT NULL default '1',
-#  `algorithm` varchar(255) default NULL,
-#  PRIMARY KEY  (`id`)
-#) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE  `cloud`.`host` (
@@ -656,7 +643,7 @@ CREATE TABLE  `cloud`.`user_ip_address` (
   `id` bigint unsigned NOT NULL UNIQUE auto_increment,
   `account_id` bigint unsigned NULL,
   `domain_id` bigint unsigned NULL,
-  `public_ip_address` bigint unsigned NOT NULL,
+  `public_ip_address` char(40) NOT NULL,
   `data_center_id` bigint unsigned NOT NULL COMMENT 'zone that it belongs to',
   `source_nat` int(1) unsigned NOT NULL default '0',
   `allocated` datetime NULL COMMENT 'Date this ip was allocated to someone',
@@ -678,7 +665,6 @@ CREATE TABLE  `cloud`.`user_ip_address` (
   INDEX `i_user_ip_address__source_nat`(`source_nat`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE VIEW `cloud`.`user_ip_address_view` AS SELECT user_ip_address.id, INET_NTOA(user_ip_address.public_ip_address) as ip_address, user_ip_address.data_center_id, user_ip_address.account_id, user_ip_address.domain_id, user_ip_address.source_nat, user_ip_address.allocated, user_ip_address.vlan_db_id, user_ip_address.one_to_one_nat, user_ip_address.vm_id, user_ip_address.state, user_ip_address.mac_address, user_ip_address.source_network_id as network_id, user_ip_address.network_id as associated_network_id from user_ip_address; 
 
 CREATE TABLE  `cloud`.`user_statistics` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT,

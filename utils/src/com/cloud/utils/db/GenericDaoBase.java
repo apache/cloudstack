@@ -1293,7 +1293,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                 pstmt.setString(j, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cal.getTime()));
             }
         } else if (attr.field.getType().isEnum()) {
-            final Enumerated enumerated = attr.field.getType().getAnnotation(Enumerated.class);
+            final Enumerated enumerated = attr.field.getAnnotation(Enumerated.class);
             final EnumType type = (enumerated == null) ? EnumType.STRING : enumerated.value();
             if (type == EnumType.STRING) {
                 pstmt.setString(j, value == null ? null :  value.toString());
@@ -1307,7 +1307,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
         } else if (attr.field.getType() == byte[].class) {
             pstmt.setBytes(j, (byte[])value);
         } else if (attr.field.getType() == Ip.class) {
-            final Enumerated enumerated = attr.field.getType().getAnnotation(Enumerated.class);
+            final Enumerated enumerated = attr.field.getAnnotation(Enumerated.class);
             final EnumType type = (enumerated == null) ? EnumType.ORDINAL : enumerated.value();
             if (type == EnumType.STRING) {
                 pstmt.setString(j, value == null ? null : value.toString());
