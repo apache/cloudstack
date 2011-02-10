@@ -6,7 +6,7 @@ ALTER TABLE user_ip_address DROP primary key;
 
 
 
---step 2
+--step 2A
 --schema+data changes
 ----------------------------------------user ip address table-------------------------------------------------------------------------
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `id` bigint unsigned NOT NULL auto_increment primary key;
@@ -33,10 +33,12 @@ UPDATE remote_access_vpn SET vpn_server_addr_id = (SELECT id from user_ip_addres
 ALTER TABLE `cloud`.`remote_access_vpn` DROP COLUMN vpn_server_addr;
 
 --------------------------user_ip_address table re-visited------------------------------------------------------------------------------------
+--step 2B
 --done in the java layer
 -- the updates the user ip address table with the vm id; using a 3 way join on firewall rules, user ip address, port forwarding tables
 -- to do this, run Db22beta4to22GAMigrationUtil.java
 
+--step 2C
 DROP VIEW if exists user_ip_address_view;
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `public_ip_address1` char(40) NOT NULL COMMENT 'the public ip address';
 UPDATE user_ip_address SET public_ip_address1 = INET_NTOA(public_ip_address); 
