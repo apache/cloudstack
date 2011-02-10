@@ -291,6 +291,30 @@ $(document).ready(function() {
             					
 			return false;
 		});
+				
+		$("#template_arrow").unbind("click").bind("click", function(event) {	
+		    if($(this).hasClass("expanded_open")) { 
+		        $("#leftmenu_template_filter_container").hide();
+		        $(this).removeClass("expanded_open").addClass("expanded_close");
+		    }
+		    else if($(this).hasClass("expanded_close")) {
+		        $("#leftmenu_template_filter_container").show();
+		        $(this).removeClass("expanded_close").addClass("expanded_open");
+		    }
+		    return false;
+		});
+		
+		$("#iso_arrow").unbind("click").bind("click", function(event) {	
+		    if($(this).hasClass("expanded_open")) { 
+		        $("#leftmenu_iso_filter_container").hide();
+		        $(this).removeClass("expanded_open").addClass("expanded_close");
+		    }
+		    else if($(this).hasClass("expanded_close")) {
+		        $("#leftmenu_iso_filter_container").show();
+		        $(this).removeClass("expanded_close").addClass("expanded_open");
+		    }
+		    return false;
+		});
 		
 		//Setup domain
 		if (isAdmin() || isDomainAdmin()) {

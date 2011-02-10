@@ -458,7 +458,7 @@
                         <div id="leftmenu_itemplate_filter">
                             <div class="leftmenu_content" id="leftmenu_template_filter_header">
                                 <div class="leftmenu_secondindent">
-                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+                                    <div class="leftmenu_arrows expanded_open" id="template_arrow">
                                     </div>
                                     
                                     <fmt:message key="label.menu.templates"/>
@@ -500,7 +500,7 @@
                         <div id="leftmenu_iso_filter">
                             <div class="leftmenu_content" id="leftmenu_iso_filter_header">
                                 <div class="leftmenu_secondindent">
-                                    <div class="leftmenu_arrows white_nonexpanded_close" id="arrowIcon">
+                                    <div class="leftmenu_arrows expanded_open" id="iso_arrow">
                                     </div>
                                     
                                     <fmt:message key="label.menu.isos"/>
