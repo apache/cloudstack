@@ -37,6 +37,18 @@ ALTER TABLE `cloud`.`remote_access_vpn` DROP COLUMN vpn_server_addr;
 -- the updates the user ip address table with the vm id; using a 3 way join on firewall rules, user ip address, port forwarding tables
 -- to do this, run Db22beta4to22GAMigrationUtil.java
 
+DROP VIEW if exists user_ip_address_view;
+ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `public_ip_address1` char(40) NOT NULL COMMENT 'the public ip address';
+UPDATE user_ip_address SET public_ip_address1 = INET_NTOA(public_ip_address); 
+ALTER TABLE `cloud`.`user_ip_address` DROP COLUMN public_ip_address;
+ALTER TABLE `cloud`.`user_ip_address` CHANGE public_ip_address1 public_ip_address char(40) NOT NULL COMMENT 'the public ip address';
+
+DROP VIEW if exists port_forwarding_rules_view;
+ALTER TABLE `cloud`.`port_forwarding_rules` ADD COLUMN `dest_ip_address1` char(40) NOT NULL COMMENT 'the destination ip address';
+UPDATE port_forwarding_rules SET dest_ip_address1 = INET_NTOA(dest_ip_address);
+ALTER TABLE `cloud`.`port_forwarding_rules` DROP COLUMN dest_ip_address;
+ALTER TABLE `cloud`.`port_forwarding_rules` CHANGE dest_ip_address1 dest_ip_address char(40) NOT NULL COMMENT 'the destination ip address';
+
 
 
 --step3 (Run this ONLY after the java program is run: Db22beta4to22GAMigrationUtil.java)
@@ -44,7 +56,9 @@ ALTER TABLE `cloud`.`remote_access_vpn` DROP COLUMN vpn_server_addr;
 --recreate indices
 ALTER TABLE `cloud`.`firewall_rules` ADD CONSTRAINT `fk_firewall_rules__ip_address_id` FOREIGN KEY(`ip_address_id`) REFERENCES `user_ip_address`(`id`);
 ALTER TABLE `cloud`.`remote_access_vpn` ADD CONSTRAINT `fk_remote_access_vpn__server_addr` FOREIGN KEY `fk_remote_access_vpn__server_addr_id` (`vpn_server_addr_id`) REFERENCES `user_ip_address` (`id`);
-
+ALTER TABLE `cloud`.`op_it_work` ADD CONSTRAINT `fk_op_it_work__mgmt_server_id` FOREIGN KEY (`mgmt_server_id`) REFERENCES `mshost`(`msid`);
+ALTER TABLE `cloud`.`op_it_work` ADD CONSTRAINT `fk_op_it_work__instance_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud`.`op_it_work` ADD INDEX `i_op_it_work__step`(`step`);
 
 
 --step 4 (independent of above)
@@ -54,4 +68,3 @@ ALTER TABLE `cloud_usage`.`user_statistics` DROP COLUMN host_type;
 ALTER TABLE `cloud_usage`.`user_statistics` ADD COLUMN `device_id` bigint unsigned NOT NULL;
 ALTER TABLE `cloud_usage`.`user_statistics` ADD COLUMN `device_type` varchar(32) NOT NULL;
 ALTER TABLE `cloud_usage`.`user_statistics` ADD UNIQUE (`account_id`, `data_center_id`, `device_id`, `device_type`);
-
