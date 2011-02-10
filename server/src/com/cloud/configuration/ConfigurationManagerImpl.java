@@ -22,7 +22,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,8 +37,8 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
@@ -52,8 +51,8 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.dao.IPAddressDao;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.ServiceOffering.GuestIpType;
+import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -1011,6 +1010,20 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
         		}
     		} 
     	} 
+    	
+    	//don't allow to have Untagged and tagged direct vlans in the same zone
+    	if (vlanType.equals(VlanType.DirectAttached)) {
+    	   if (vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
+                List<VlanVO> directVlans = _vlanDao.listByZoneAndType(zoneId, VlanType.DirectAttached);
+                for (VlanVO directVlan : directVlans) {
+                    if (!directVlan.getVlanId().equalsIgnoreCase(Vlan.UNTAGGED)) {
+                        throw new InvalidParameterValueException("Zone id=" + " has Direct tagged vlan configured; can't add Direct Untagged vlan to it");
+                    }
+                }
+            } else if (_vlanDao.zoneHasDirectAttachUntaggedVlans(zoneId)) {
+                    throw new InvalidParameterValueException("Zone id=" + zoneId + " has untagged vlan confgiured; can't add Direct tagged vlan to it");
+            }
+    	}
 
     	// Make sure the gateway is valid
 		if (!NetUtils.isValidIp(vlanGateway)) {
