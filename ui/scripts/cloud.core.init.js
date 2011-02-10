@@ -292,26 +292,16 @@ $(document).ready(function() {
 			return false;
 		});
 				
-		$("#template_arrow").unbind("click").bind("click", function(event) {	
-		    if($(this).hasClass("expanded_open")) { 
-		        $("#leftmenu_template_filter_container").hide();
-		        $(this).removeClass("expanded_open").addClass("expanded_close");
+		$("#leftmenu_template_filter_header, #leftmenu_iso_filter_header").unbind("click").bind("click", function(event) {	
+		    var $arrowIcon = $(this).find("#arrow_icon");		    
+		    var $subItemContainer = $(this).next();
+		    if($arrowIcon.hasClass("expanded_open")) { 		        
+		        $subItemContainer.hide();
+		        $arrowIcon.removeClass("expanded_open").addClass("expanded_close");
 		    }
-		    else if($(this).hasClass("expanded_close")) {
-		        $("#leftmenu_template_filter_container").show();
-		        $(this).removeClass("expanded_close").addClass("expanded_open");
-		    }
-		    return false;
-		});
-		
-		$("#iso_arrow").unbind("click").bind("click", function(event) {	
-		    if($(this).hasClass("expanded_open")) { 
-		        $("#leftmenu_iso_filter_container").hide();
-		        $(this).removeClass("expanded_open").addClass("expanded_close");
-		    }
-		    else if($(this).hasClass("expanded_close")) {
-		        $("#leftmenu_iso_filter_container").show();
-		        $(this).removeClass("expanded_close").addClass("expanded_open");
+		    else if($arrowIcon.hasClass("expanded_close")) {
+		        $subItemContainer.show();
+		        $arrowIcon.removeClass("expanded_close").addClass("expanded_open");
 		    }
 		    return false;
 		});
