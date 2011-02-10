@@ -31,7 +31,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 
 @Implementation(description="Disables static rule for given ip address", responseObject=SuccessResponse.class)
-public class DisableStaticNat extends BaseAsyncCmd {
+public class DisableStaticNatCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePortForwardingRuleCmd.class.getName());
     private static final String s_name = "disablestaticnatresponse";
 

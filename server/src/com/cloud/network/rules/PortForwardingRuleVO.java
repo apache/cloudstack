@@ -34,7 +34,7 @@ import com.cloud.utils.net.Ip;
 @PrimaryKeyJoinColumn(name="id")
 public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardingRule {
 
-    @Enumerated(value=EnumType.ORDINAL)
+    @Enumerated(value=EnumType.STRING)
     @Column(name="dest_ip_address")
     private Ip destinationIpAddress = null;
 

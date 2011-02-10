@@ -17,7 +17,6 @@
  */
 package com.cloud.agent.api.to;
 
-import com.cloud.network.IpAddress;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.utils.net.NetUtils;

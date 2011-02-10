@@ -29,7 +29,7 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.NetworkRuleConflictException;
 
 @Implementation(description="Enables static nat for given ip address", responseObject=SuccessResponse.class)
-public class EnableStaticNat extends BaseCmd{
+public class EnableStaticNatCmd extends BaseCmd{
     public static final Logger s_logger = Logger.getLogger(CreateIpForwardingRuleCmd.class.getName());
 
     private static final String s_name = "enablestaticnatresponse";

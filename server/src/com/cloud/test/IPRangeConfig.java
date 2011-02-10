@@ -465,7 +465,7 @@ public class IPRangeConfig {
         while (startIP <= endIP) {
             try {
     		stmt = conn.prepareStatement(insertSql);
-    		stmt.setLong(1, startIP);
+    		stmt.setString(1, NetUtils.long2Ip(startIP));
     		stmt.setLong(2, zoneId);
     		stmt.setLong(3, vlanDbId);
     		stmt.setLong(4, zoneId);

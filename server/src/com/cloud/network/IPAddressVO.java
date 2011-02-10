@@ -53,7 +53,7 @@ public class IPAddressVO implements IpAddress {
 
 	@Id
 	@Column(name="public_ip_address")
-	@Enumerated(value=EnumType.ORDINAL)
+	@Enumerated(value=EnumType.STRING)
 	private Ip address = null;
 
 	@Column(name="data_center_id", updatable=false)
