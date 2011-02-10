@@ -12,9 +12,7 @@ ALTER TABLE user_ip_address DROP primary key;
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `id` bigint unsigned NOT NULL auto_increment primary key;
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `source_network_id` bigint unsigned NOT NULL COMMENT 'network id ip belongs to';
 ALTER TABLE `cloud`.`user_ip_address` ADD COLUMN `vm_id` bigint unsigned NOT NULL COMMENT 'foreign key to virtual machine id';
-ALTER TABLE `cloud`.`user_ip_address` ADD UNIQUE (source_network_id, public_ip_address);
 UPDATE user_ip_address SET source_network_id=(select network_id from vlan where vlan.id=user_ip_address.vlan_db_id);
-ALTER VIEW `cloud`.`user_ip_address_view` AS SELECT user_ip_address.id, user_ip_address.source_network_id,user_ip_address.vm_id,INET_NTOA(user_ip_address.public_ip_address) as ip_address, user_ip_address.data_center_id, user_ip_address.account_id, user_ip_address.domain_id, user_ip_address.source_nat, user_ip_address.allocated, user_ip_address.vlan_db_id, user_ip_address.one_to_one_nat, user_ip_address.state, user_ip_address.mac_address, user_ip_address.network_id as associated_network_id from user_ip_address; 
 
 -------------------------------firewall_rules table -------------------------------------------------------------------------------------
 ALTER TABLE `cloud`.`firewall_rules` ADD COLUMN `ip_address_id` bigint unsigned NOT NULL COMMENT 'foreign key to ip address table';
@@ -61,6 +59,7 @@ ALTER TABLE `cloud`.`remote_access_vpn` ADD CONSTRAINT `fk_remote_access_vpn__se
 ALTER TABLE `cloud`.`op_it_work` ADD CONSTRAINT `fk_op_it_work__mgmt_server_id` FOREIGN KEY (`mgmt_server_id`) REFERENCES `mshost`(`msid`);
 ALTER TABLE `cloud`.`op_it_work` ADD CONSTRAINT `fk_op_it_work__instance_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`op_it_work` ADD INDEX `i_op_it_work__step`(`step`);
+ALTER TABLE `cloud`.`user_ip_address` ADD UNIQUE (source_network_id, public_ip_address);
 
 
 --step 4 (independent of above)
