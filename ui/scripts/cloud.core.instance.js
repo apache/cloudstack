@@ -97,8 +97,7 @@ function afterLoadInstanceJSP() {
 		$doTemplateNo = $("#vm_popup_disk_offering_template_no");
 		$doTemplateCustom = $("#vm_popup_disk_offering_template_custom");
 		$doTemplateExisting = $("#vm_popup_disk_offering_template_existing");
-		$soTemplate = $("#vm_popup_service_offering_template");
-		vmPopulateDropdown();
+		$soTemplate = $("#vm_popup_service_offering_template");		
 		init = true;
 	}
 	
@@ -126,12 +125,14 @@ function afterLoadInstanceJSP() {
 		async: false,
 		success: function(json) {		    
 			types = json.listostypesresponse.ostype;
-			var osTypeDropdownEdit = $("#right_panel_content").find("#tab_content_details").find("#ostypename_edit").empty(); 
+			var osTypeDropdown1 = $("#right_panel_content").find("#tab_content_details").find("#ostypename_edit").empty(); 
+			var osTypeDropdown2 = $("#dialog_create_template #create_template_os_type").empty();
 			if (types != null && types.length > 0) {				
 				for (var i = 0; i < types.length; i++) {
 				    osTypeMap[types[i].id] = fromdb(types[i].description);		
-				    var html = "<option value='" + types[i].id + "'>" + fromdb(types[i].description) + "</option>";							
-					osTypeDropdownEdit.append(html);						
+				    var html = "<option value='" + types[i].id + "'>" + fromdb(types[i].description) + "</option>";									
+					osTypeDropdown1.append(html);	
+					osTypeDropdown2.append(html);					
 				}
 			}					
 		}
@@ -324,22 +325,6 @@ function bindDestroyVMButton() {
              
         return false;        
     }); 	
-}
-
-function vmPopulateDropdown() {         
-    $.ajax({
-        data: createURL("command=listOsTypes&response=json"),
-	    dataType: "json",
-	    success: function(json) {
-		    types = json.listostypesresponse.ostype;
-		    if (types != null && types.length > 0) {
-			    var select = $("#dialog_create_template #create_template_os_type").empty();
-			    for (var i = 0; i < types.length; i++) {
-				    select.append("<option value='" + types[i].id + "'>" + types[i].description + "</option>");
-			    }
-		    }	
-	    }
-    });        
 }
 
 var currentPageInTemplateGridInVmPopup =1;
