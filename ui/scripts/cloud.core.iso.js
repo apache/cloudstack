@@ -108,11 +108,16 @@ function initAddIsoDialog() {
 	    data: createURL("command=listOsTypes"),
 		dataType: "json",
 		async: false,
-		success: function(json) {
+		success: function(json) {		
+		    var osTypeDropDownAdd = $dialogAddIso.find("#add_iso_os_type").empty();
+			var osTypeDropdownEdit = $detailsTab.find("#ostypename_edit").empty();
+		    
+		    var html = "<option value=''>" + g_dictionary["label.none"] +  "</option>";
+			osTypeDropDownAdd.append(html);			
+			osTypeDropdownEdit.append(html);	
+		
 			types = json.listostypesresponse.ostype;
-			if (types != null && types.length > 0) {
-				var osTypeDropDownAdd = $dialogAddIso.find("#add_iso_os_type").empty();
-				var osTypeDropdownEdit = $detailsTab.find("#ostypename_edit").empty();
+			if (types != null && types.length > 0) {				
 				for (var i = 0; i < types.length; i++) {
 					var html = "<option value='" + types[i].id + "'>" + fromdb(types[i].description) + "</option>";
 					osTypeDropDownAdd.append(html);			
@@ -121,6 +126,18 @@ function initAddIsoDialog() {
 			}	
 		}
 	});
+    
+    $dialogAddIso.find("#add_iso_bootable").unbind("change").bind("change", function(event) {        
+        if($(this).val() == "true") {
+            $dialogAddIso.find("#add_iso_os_type_container").show(); 
+        }
+        else {  //$(this).val() == "false"
+            $dialogAddIso.find("#add_iso_os_type_container").hide();
+            $dialogAddIso.find("#add_iso_os_type").val(""); //set OS Type back to "None"
+        }
+        
+        return false;
+    });
     
     //add button ***     
     $("#add_iso_button").unbind("click").bind("click", function(event) {  
@@ -160,8 +177,9 @@ function initAddIsoDialog() {
 			    var isPublic = thisDialog.find("#add_iso_public").val();
 			    array1.push("&isPublic="+isPublic);	
 			    		
-			    var osType = thisDialog.find("#add_iso_os_type").val();
-			    array1.push("&osTypeId="+osType);
+			    var osType = thisDialog.find("#add_iso_os_type").val();			   
+			    if(osType != null && osType.length > 0)
+			        array1.push("&osTypeId="+osType);
 			    
 			    var bootable = thisDialog.find("#add_iso_bootable").val();	
 			    array1.push("&bootable="+bootable);

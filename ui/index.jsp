@@ -88,12 +88,12 @@
 		'label.by.account': '<fmt:message key="label.by.account"/>',
 		'label.path': '<fmt:message key="label.path"/>',
 		'label.SR.name': '<fmt:message key="label.SR.name"/>',
-
 		'label.nfs': '<fmt:message key="label.nfs"/>',
 		'label.SharedMountPoint': '<fmt:message key="label.SharedMountPoint"/>',
 		'label.PreSetup': '<fmt:message key="label.PreSetup"/>',
 		'label.iscsi': '<fmt:message key="label.iscsi"/>',
-		'label.VMFS.datastore': '<fmt:message key="label.VMFS.datastore"/>'
+		'label.VMFS.datastore': '<fmt:message key="label.VMFS.datastore"/>',
+		'label.none': '<fmt:message key="label.none"/>'
 	};	
 	</script>
 </head>

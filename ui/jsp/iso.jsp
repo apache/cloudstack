@@ -272,17 +272,17 @@ dictionary = {
                     </select>
                 </li>	
 				<li>
-					<label for="add_iso_os_type"><fmt:message key="label.os.type"/>:</label>
-					<select class="select" name="add_iso_os_type" id="add_iso_os_type">
-					</select>
-				</li>
-				<li>
 					<label for="add_iso_public"><fmt:message key="label.bootable"/>:</label>
 					<select class="select" name="add_iso_bootable" id="add_iso_bootable">
 						<option value="true"><fmt:message key="label.yes"/></option>
 						<option value="false"><fmt:message key="label.no"/></option>
 					</select>
-				</li>				
+				</li>		
+				<li id="add_iso_os_type_container">
+					<label for="add_iso_os_type"><fmt:message key="label.os.type"/>:</label>
+					<select class="select" name="add_iso_os_type" id="add_iso_os_type">
+					</select>
+				</li>						
 				<li id="add_iso_public_container" style="display:none">
 					<label><fmt:message key="label.public"/>?:</label>
 					<select class="select" id="add_iso_public">
