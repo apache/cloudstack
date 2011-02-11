@@ -242,9 +242,16 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         if (userId == null) {
             userId = Long.valueOf(1);
         }
-        
+                
         if (bootable == null) {
         	bootable = Boolean.TRUE;
+        }
+        
+        if ((guestOSId == null || guestOSId == 138L) && bootable == true){
+        	throw new InvalidParameterValueException("Please pass a valid GuestOS Id");
+        }
+        if (bootable == false){
+        	guestOSId = 138L; //Guest os id of None.
         }
 
         //removing support for file:// type urls (bug: 4239)
