@@ -759,31 +759,31 @@
         </div>
     </div>
     <!-- Dialogs 1 -->
-    <div id="dialog_confirmation" title="Confirmation" style="display: none">
+    <div id="dialog_confirmation" title='<fmt:message key="label.confirmation"/>' style="display: none">
     </div>
-    <div id="dialog_info" title="Info" style="display: none">
+    <div id="dialog_info" title='<fmt:message key="label.info"/>' style="display: none">
     </div>
-    <div id="dialog_alert" title="Alert" style="display: none">
+    <div id="dialog_alert" title='<fmt:message key="label.alert"/>' style="display: none">
     </div>
-    <div id="dialog_error" title="Error" style="display: none; color: red">
+    <div id="dialog_error" title='<fmt:message key="label.error"/>' style="display: none; color: red">
     </div>
-    <div id="dialog_session_expired" title="Session Expired" style="display: none">
+    <div id="dialog_session_expired" title='<fmt:message key="label.session.expired"/>' style="display: none">
         <p>
 			<fmt:message key="error.session.expired"/>
         </p>
     </div>
-    <div id="dialog_error_internet_not_resolved" title="Error" style="display: none">
+    <div id="dialog_error_internet_not_resolved" title='<fmt:message key="label.error"/>' style="display: none">
         <p style="color: red">
 			<fmt:message key="error.unresolved.internet.name"/>
         </p>
     </div>
-    <div id="dialog_error_management_server_not_accessible" title="Error" style="display: none">
+    <div id="dialog_error_management_server_not_accessible" title='<fmt:message key="label.error"/>' style="display: none">
         <p style="color: red">
 			<fmt:message key="error.mgmt.server.inaccessible"/>
         </p>
     </div>
     <!-- Dialogs 2 -->
-    <div id="dialog_info_please_select_one_item_in_middle_menu" title="Alert" style="display: none">
+    <div id="dialog_info_please_select_one_item_in_middle_menu" title='<fmt:message key="label.alert"/>' style="display: none">
         <p>
 			<fmt:message key="error.menu.select"/>
         </p>
