@@ -1993,21 +1993,26 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         throw new CloudRuntimeException("Com'on no control domain?  What the crap?!#@!##$@");
     }
 
-    protected void cleanupHaltedVms(Connection conn) throws XenAPIException, XmlRpcException {
+    protected boolean cleanupHaltedVms(Connection conn) throws XenAPIException, XmlRpcException {
         Host host = Host.getByUuid(conn, _host.uuid);
-        Set<VM> vms = host.getResidentVMs(conn);
-        
-        for (VM vm : vms) {
-            try {
-                if (VmPowerState.HALTED.equals(vm.getPowerState(conn))) {
-                    vm.destroy(conn);
+        Map<VM, VM.Record> vms = VM.getAllRecords(conn);
+        boolean success = true;
+        for (Map.Entry<VM, VM.Record> entry : vms.entrySet()) {
+            VM vm = entry.getKey();
+            VM.Record vmRec = entry.getValue();
+            if ( vmRec.isATemplate || vmRec.isControlDomain )
+                continue;
+            
+            if (VmPowerState.HALTED.equals(vmRec.powerState) && vmRec.affinity.equals(host)) {
+                try {
+                    vm.destroy(conn);  
+                } catch (Exception e) {
+                    s_logger.warn("Catch Exception " + e.getClass().getName() + ": unable to destroy VM " + vmRec.nameLabel + " due to " + e.toString());
+                    success = false;
                 }
-            } catch (XenAPIException e) {
-                s_logger.warn("Unable to cleanup " + vm);
-            } catch (XmlRpcException e) {
-                s_logger.warn("Unable to cleanup " + vm);
-            }
+             }
         }
+        return success;
     }
 
     protected HashMap<String, State> sync() {
