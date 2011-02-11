@@ -418,7 +418,7 @@ dictionary = {
 	                </div>	                
 	                <div class="grid_row_cell" style="width: 25%;">
 	                    <div class="row_celltitles">
-	                        <a id="add_link" href="#">Add</a></div>
+	                        <a id="add_link" href="#"><fmt:message key="label.add"/></a></div>
 	                </div>
 	            </div>
 	            <div id="grid_content">

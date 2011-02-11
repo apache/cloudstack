@@ -860,7 +860,7 @@
 	            <div class="leftmenu_fourthindent">
 	                <div class="leftmenu_arrows white_nonexpanded_close" id="secondarystorage_arrow">
 	                </div>	                
-	                <span id="secondarystorage_name_label">Secondary Storage</span>	 
+	                <span id="secondarystorage_name_label"><fmt:message key="label.secondary.storage"/></span>	 
 	            </div>
 	        </div>	      
             	            
@@ -868,7 +868,7 @@
 	            <div class="leftmenu_fourthindent">
 	                <div class="leftmenu_arrows white_nonexpanded_close" id="network_arrow">
 	                </div>	                
-	                <span id="network_name_label">Network</span>	 
+	                <span id="network_name_label"><fmt:message key="label.menu.network"/></span>	 
 	            </div>
 	        </div>		              	                       
         </div>	    
@@ -910,7 +910,7 @@
             	        <div class="leftmenu_arrowloader" id="host_loading_container" style="display:none;"></div>
                         <div class="leftmenu_arrows white_nonexpanded_close" id="host_arrow">
                         </div>	                
-                        <span>Host</span>               
+                        <span><fmt:message key="label.host"/></span>               
                     </div>  
                 </div>	           
             </div>           
@@ -920,7 +920,7 @@
             	        <div class="leftmenu_arrowloader" id="primarystorage_loading_container" style="display:none;"></div>
                         <div class="leftmenu_arrows white_nonexpanded_close" id="primarystorage_arrow">
                         </div>	                
-                        <span>Storage</span>               
+                        <span><fmt:message key="label.primary.storage"/></span>               
                     </div>  
                 </div>	           
             </div>                   	                       
