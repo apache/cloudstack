@@ -120,7 +120,6 @@ public enum Config {
 	PingInterval("Advanced", AgentManager.class, Integer.class, "ping.interval", "60", "Ping interval in seconds", null),
 	PingTimeout("Advanced", AgentManager.class, Float.class, "ping.timeout", "2.5", "Multiplier to ping.interval before announcing an agent has timed out", null),
 	Port("Advanced", AgentManager.class, Integer.class, "port", "8250", "Port to listen on for agent connection.", null),
-	RouterRamSize("Advanced", NetworkManager.class, Integer.class, "router.ram.size", "128", "Default RAM for router VM in MB.", null),
 	RouterCpuMHz("Advanced", NetworkManager.class, Integer.class, "router.cpu.mhz", "500", "Default CPU speed (MHz) for router VM.", null),
 	RestartRetryInterval("Advanced", HighAvailabilityManager.class, Integer.class, "restart.retry.interval", "600", "Time in seconds between retries to restart a vm", null),
 	RouterCleanupInterval("Advanced", ManagementServer.class, Integer.class, "router.cleanup.interval", "3600", "Time in seconds identifies when to stop router when there are no user vms associated with it", null),
@@ -208,6 +207,7 @@ public enum Config {
     SSOAuthTolerance("Advanced", ManagementServer.class, Long.class, "security.singlesignon.tolerance.millis", "300000", "The allowable clock difference in milliseconds between when an SSO login request is made and when it is received.", null),
 	//NetworkType("Hidden", ManagementServer.class, String.class, "network.type", "vlan", "The type of network that this deployment will use.", "vlan,direct"),
 	HashKey("Hidden", ManagementServer.class, String.class, "security.hash.key", null, "for generic key-ed hash", null),
+	RouterRamSize("Hidden", NetworkManager.class, Integer.class, "router.ram.size", "128", "Default RAM for router VM in MB.", null),
 
 	VmOpWaitInterval("Advanced", ManagementServer.class, Integer.class, "vm.op.wait.interval", "120", "Seconds to wait before checking if a previous operation has succeeded", null),
 	VmOpLockStateRetry("Advanced", ManagementServer.class, Integer.class, "vm.op.lock.state.retry", "5", "Times to retry locking the state of a VM for operations", "-1 means try forever"),
