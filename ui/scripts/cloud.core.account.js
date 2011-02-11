@@ -185,7 +185,7 @@ function bindAddAccountButton() {
 				var account = $thisDialog.find("#add_user_account").val();					
 				if(account == "")
 					account = username;
-			    array1.push("&account="+account);
+			    array1.push("&account="+todb(account));
 					
 				var accountType = $thisDialog.find("#add_user_account_type").val();	
 				var domainId = $thisDialog.find("#domain_dropdown").val();				
