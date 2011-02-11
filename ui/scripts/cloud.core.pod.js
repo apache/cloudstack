@@ -539,12 +539,12 @@ function bindAddHostButton($leftmenuItem1) {
 			        array1.push("&password="+todb(password));
 				    
 			        var hostname = trim($thisDialog.find("#host_vcenter_address").val());
-			        hostname += "/" + trim($thisDialog.find("#host_vcenter_dc").val());
-			        hostname += "/" + trim($thisDialog.find("#host_vcenter_host").val());
+			        hostname += "/" + todb(trim($thisDialog.find("#host_vcenter_dc").val()));
+			        hostname += "/" + todb(trim($thisDialog.find("#host_vcenter_host").val()));
 			        
 			        var url;					
 			        if(hostname.indexOf("http://")==-1)
-			            url = "http://" + todb(hostname);
+			            url = "http://" + hostname;
 			        else
 			            url = hostname;
 			        array1.push("&url="+todb(url));
