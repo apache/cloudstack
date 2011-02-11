@@ -390,10 +390,9 @@ function securityGroupJsonToDetailsTab() {
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
-        
-    var id = jsonObj.id;  
+            
     $.ajax({
-        data: createURL("command=listSecurityGroups&id="+id),
+        data: createURL("command=listSecurityGroups&id="+jsonObj.id),
         dataType: "json",
         async: false,
         success: function(json) {  

@@ -364,6 +364,19 @@ function accountJsonToDetailsTab() {
         return;
     }
    
+    $.ajax({
+        data: createURL("command=listAccounts&id="+jsonObj.id),
+        dataType: "json",
+        async: false,
+        success: function(json) {  
+            var items = json.listaccountsresponse.account;                   
+            if(items != null && items.length > 0) {
+                jsonObj = items[0];
+                $midmenuItem1.data("jsonObj", jsonObj);  
+            }
+        }
+    });  
+   
     var $detailsTab = $("#right_panel_content").find("#tab_content_details");           
     $detailsTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $detailsTab.find("#id").text(fromdb(jsonObj.id));
