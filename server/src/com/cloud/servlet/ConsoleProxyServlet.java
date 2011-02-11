@@ -74,7 +74,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 			}
 			
 			if(_ms.getHashKey() == null) {
-	        	s_logger.info("Console/thumbnail access denied. Ticket service is not ready yet");
+	        	s_logger.debug("Console/thumbnail access denied. Ticket service is not ready yet");
 				sendResponse(resp, "Service is not ready");
 	        	return;
 			}
@@ -93,7 +93,7 @@ public class ConsoleProxyServlet extends HttpServlet {
                     account = (String)params.get("account")[0];
                     accountObj = (Account)params.get("accountobj")[0];
             	} else {
-					s_logger.info("Invalid web session or API key in request, reject console/thumbnail access");
+					s_logger.debug("Invalid web session or API key in request, reject console/thumbnail access");
 					sendResponse(resp, "Access denied. Invalid web session or API key in request");
 					return;
             	}
@@ -111,14 +111,14 @@ public class ConsoleProxyServlet extends HttpServlet {
 
             // Do a sanity check here to make sure the user hasn't already been deleted
             if ((userId == null) || (account == null) || (accountObj == null) || !verifyUser(Long.valueOf(userId))) {
-				s_logger.info("Invalid user/account, reject console/thumbnail access");
+				s_logger.debug("Invalid user/account, reject console/thumbnail access");
 				sendResponse(resp, "Access denied. Invalid or inconsistent account is found");
 				return;
             }
 
 			String cmd = req.getParameter("cmd");
 			if(cmd == null || !isValidCmd(cmd)) {
-				s_logger.info("invalid console servlet command: " + cmd);
+				s_logger.debug("invalid console servlet command: " + cmd);
 				sendResponse(resp, "");
 				return;
 			}
@@ -294,8 +294,8 @@ public class ConsoleProxyServlet extends HttpServlet {
 		sb.append("&tag=").append(tag);
 		sb.append("&ticket=").append(ticket);
 
-		if(s_logger.isInfoEnabled()) {
-            s_logger.info("Compose thumbnail url: " + sb.toString());
+		if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Compose thumbnail url: " + sb.toString());
         }
 		return sb.toString();
 	}
@@ -318,8 +318,8 @@ public class ConsoleProxyServlet extends HttpServlet {
 		sb.append("&tag=").append(tag);
 		sb.append("&ticket=").append(ticket);
 		
-		if(s_logger.isInfoEnabled()) {
-            s_logger.info("Compose console url: " + sb.toString());
+		if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Compose console url: " + sb.toString());
         }
 		return sb.toString();
 	}
@@ -479,7 +479,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             // if api/secret key are passed to the parameters
             if ((signature == null) || (apiKey == null)) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.info("expired session, missing signature, or missing apiKey -- ignoring request...sig: " + signature + ", apiKey: " + apiKey);
+                    s_logger.debug("expired session, missing signature, or missing apiKey -- ignoring request...sig: " + signature + ", apiKey: " + apiKey);
                 }
                 return false; // no signature, bad request
             }
@@ -490,7 +490,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             // verify there is a user with this api key
             Pair<User, Account> userAcctPair = _ms.findUserByApiKey(apiKey);
             if (userAcctPair == null) {
-                s_logger.info("apiKey does not map to a valid user -- ignoring request, apiKey: " + apiKey);
+                s_logger.debug("apiKey does not map to a valid user -- ignoring request, apiKey: " + apiKey);
                 return false;
             }
 
@@ -498,14 +498,14 @@ public class ConsoleProxyServlet extends HttpServlet {
             Account account = userAcctPair.second();
 
             if (!user.getState().equals(Account.State.enabled) || !account.getState().equals(Account.State.enabled)) {
-                s_logger.info("disabled or locked user accessing the api, userid = " + user.getId() + "; name = " + user.getUsername() + "; state: " + user.getState() + "; accountState: " + account.getState());
+                s_logger.debug("disabled or locked user accessing the api, userid = " + user.getId() + "; name = " + user.getUsername() + "; state: " + user.getState() + "; accountState: " + account.getState());
                 return false;
             }     
 
             // verify secret key exists
             secretKey = user.getSecretKey();
             if (secretKey == null) {
-                s_logger.info("User does not have a secret key associated with the account -- ignoring request, username: " + user.getUsername());
+                s_logger.debug("User does not have a secret key associated with the account -- ignoring request, username: " + user.getUsername());
                 return false;
             }
 
@@ -519,7 +519,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             String computedSignature = com.cloud.utils.encoding.Base64.encodeBytes(encryptedBytes);
             boolean equalSig = signature.equals(computedSignature);
             if (!equalSig) {
-            	s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
+            	s_logger.debug("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
             }
             return equalSig;
         } catch (Exception ex) {

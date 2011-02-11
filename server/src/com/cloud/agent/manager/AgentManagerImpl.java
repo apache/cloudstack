@@ -696,8 +696,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			Map<? extends ServerResource, Map<String, String>> resources = null;
 
 			try {
-				resources = discoverer.find(dcId, podId, clusterId, uri,
-						username, password);
+				resources = discoverer.find(dcId, podId, clusterId, uri, username, password);
 			} catch (Exception e) {
 				s_logger.info("Exception in external cluster discovery process with discoverer: "
 						+ discoverer.getName());
@@ -705,15 +704,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			if (resources != null) {
 				for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
 					ServerResource resource = entry.getKey();
-					AgentAttache attache = simulateStart(resource,
-							entry.getValue(), true);
+					AgentAttache attache = simulateStart(resource, entry.getValue(), true);
 					if (attache != null) {
 						hosts.add(_hostDao.findById(attache.getId()));
 					}
 					discoverer.postDiscovery(hosts, _nodeId);
 				}
-				s_logger.info("External cluster has been successfully discovered by "
-						+ discoverer.getName());
+				s_logger.info("External cluster has been successfully discovered by " + discoverer.getName());
 				success = true;
 				return result;
 			}
@@ -1627,8 +1624,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 
 		_hostDao.loadDetails(host);
 
-		HashMap<String, Object> params = new HashMap<String, Object>(host
-				.getDetails().size() + 5);
+		HashMap<String, Object> params = new HashMap<String, Object>(host.getDetails().size() + 5);
 		params.putAll(host.getDetails());
 
 		params.put("guid", host.getGuid());
@@ -1647,8 +1643,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			}
 			if (guid == null || guid.isEmpty()) {
 				throw new CloudRuntimeException(
-						"Can not find guid for cluster " + cluster.getId()
-								+ " name " + cluster.getName());
+						"Can not find guid for cluster " + cluster.getId() + " name " + cluster.getName());
 			}
 			params.put("pool", guid);
 		}
