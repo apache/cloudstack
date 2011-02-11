@@ -544,7 +544,7 @@ dictionary = {
 <!-- Take Snapshots Dialog (end) -->
 
 <!-- Add Volume Dialog (begin) -->
-<div id="dialog_add_volume" title="Add Volume" style="display: none">
+<div id="dialog_add_volume" title='<fmt:message key="label.add.volume"/>' style="display: none">
     <p><fmt:message key="message.add.volume"/></p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form2">

@@ -348,8 +348,8 @@ dictionary = {
 <!-- admin account tab template (end) -->
 
 <!-- Add Domain Dialog (begin) -->
-<div id="dialog_add_domain" title="Add New Domain" style="display:none">
-	<p>Please fill in the following data to add a new domain.</p>
+<div id="dialog_add_domain" title='<fmt:message key="label.add.domain"/>' style="display:none">
+	<p></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form1">
 			<ol>		

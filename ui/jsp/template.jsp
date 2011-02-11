@@ -327,7 +327,7 @@ dictionary = {
 <!-- Create VM from template (end) -->
 
 <!-- Add Template Dialog (begin) -->
-<div id="dialog_add_template" title="Add Template" style="display:none">
+<div id="dialog_add_template" title='<fmt:message key="label.add.template"/>' style="display:none">
 	<p><fmt:message key="message.add.template"/></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form_acquire">

@@ -204,7 +204,7 @@ dictionary = {
     <div class="actionpanel_button_wrapper" id="add_primarystorage_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" alt="Add Primary Storage" /></div>
+                <img src="images/addvm_actionicon.png" alt='<fmt:message key="label.add.primary.storage"/>' /></div>
             <div class="actionpanel_button_links">
                 <fmt:message key="label.add.primary.storage"/>
             </div>
@@ -214,7 +214,7 @@ dictionary = {
 <!--  top buttons (end) -->
 
 <!-- Add Primary Storage Dialog -->
-<div id="dialog_add_pool" title="Add Primary Storage" style="display: none">
+<div id="dialog_add_pool" title='<fmt:message key="label.add.primary.storage"/>' style="display: none">
     <p>
 		<fmt:message key="message.add.primary.storage"/>
     </p>

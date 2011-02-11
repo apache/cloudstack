@@ -367,7 +367,7 @@ dictionary = {
     <div class="actionpanel_button_wrapper" id="add_host_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" alt="Add Host" /></div>
+                <img src="images/addvm_actionicon.png" alt='<fmt:message key="label.add.host"/>' /></div>
             <div class="actionpanel_button_links">
                 <fmt:message key="label.add.host"/>
             </div>
@@ -669,7 +669,7 @@ dictionary = {
 <!--  systemvm tab template (end) -->
 
 <!-- Add Host Dialog -->
-<div id="dialog_add_host" title="Add Host" style="display: none">
+<div id="dialog_add_host" title='<fmt:message key="label.add.host"/>' style="display: none">
     <p><fmt:message key="message.add.host"/>
     </p>
     <div class="dialog_formcontent">

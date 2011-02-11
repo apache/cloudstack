@@ -153,7 +153,7 @@ dictionary = {
     <div class="actionpanel_button_wrapper" id="add_cluster_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" alt="Add Cluster" /></div>
+                <img src="images/addvm_actionicon.png" alt='<fmt:message key="label.add.cluster"/>' /></div>
             <div class="actionpanel_button_links">
                 <fmt:message key="label.add.cluster"/>
             </div>
@@ -162,7 +162,7 @@ dictionary = {
     <div class="actionpanel_button_wrapper" id="add_host_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" alt="Add Host" /></div>
+                <img src="images/addvm_actionicon.png" alt='<fmt:message key="label.add.host"/>' /></div>
             <div class="actionpanel_button_links">
                 <fmt:message key="label.add.host"/>
             </div>
@@ -171,7 +171,7 @@ dictionary = {
     <div class="actionpanel_button_wrapper" id="add_primarystorage_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" alt="Add Primary Storage" /></div>
+                <img src="images/addvm_actionicon.png" alt='<fmt:message key="label.add.primary.storage"/>' /></div>
             <div class="actionpanel_button_links">
                 <fmt:message key="label.add.primary.storage"/>
             </div>
@@ -180,7 +180,7 @@ dictionary = {
     <div class="actionpanel_button_wrapper" id="add_iprange_button" style="display: none">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" alt="Add IP Range" /></div>
+                <img src="images/addvm_actionicon.png" alt='<fmt:message key="label.add.ip.range"/>' /></div>
             <div class="actionpanel_button_links">
                 <fmt:message key="label.add.ip.range"/>
             </div>
@@ -272,7 +272,7 @@ dictionary = {
 
 <!-- ***** dialogs (begin) ***** -->
 <!-- Add Host Dialog (begin) -->
-<div id="dialog_add_host" title="Add Host" style="display: none">
+<div id="dialog_add_host" title='<fmt:message key="label.add.host"/>' style="display: none">
     <p>
 		<fmt:message key="message.add.host"/>
     </p>
@@ -365,7 +365,7 @@ dictionary = {
 <!-- Add Host Dialog (end) -->
 
 <!-- Add Hypervisor managed cluster Dialog (begin) -->
-<div id="dialog_add_external_cluster" title="Add Cluster" style="display: none">
+<div id="dialog_add_external_cluster" title='<fmt:message key="label.add.cluster"/>' style="display: none">
     <p>
 		<fmt:message key="message.add.cluster"/>
     </p>
@@ -374,12 +374,7 @@ dictionary = {
         <ol>
             <li>
             	<label for="cluster_hypervisor"><fmt:message key="label.hypervisor"/>:</label>
-                <select class="select" id="cluster_hypervisor">
-                    <!--  
-                    <option value="Xen Server" SELECTED>Xen Server</option>		
-                    <option value="KVM">KVM</option>										
-                    <option value="VmWare">VMware</option>		
-                    -->								
+                <select class="select" id="cluster_hypervisor">                  						
                 </select>
             </li>
             <li input_group="vmware">
@@ -450,7 +445,7 @@ dictionary = {
 <!-- Add Hypervisor managed cluster Dialog (end) -->
 
 <!-- Add Primary Storage Dialog (begin) -->
-<div id="dialog_add_pool" title="Add Primary Storage" style="display: none">
+<div id="dialog_add_pool" title='<fmt:message key="label.add.primary.storage"/>' style="display: none">
     <p>
 		<fmt:message key="message.add.primary.storage"/>
     </p>
@@ -549,7 +544,7 @@ dictionary = {
 <!-- Add Primary Storage Dialog (end) -->
    
 <!-- Add IP Range to pod (begin) -->
-<div id="dialog_add_iprange_to_pod" title="Add IP Range to Pod" style="display:none">
+<div id="dialog_add_iprange_to_pod" title='<fmt:message key="label.add.ip.range"/>' style="display:none">
 	<fmt:message key="message.add.ip.range.to.pod"/>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form5">

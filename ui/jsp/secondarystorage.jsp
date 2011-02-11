@@ -150,7 +150,7 @@ dictionary = {
     <div class="actionpanel_button_wrapper" id="add_secondarystorage_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" alt="Add Secondary Storage" /></div>
+                <img src="images/addvm_actionicon.png" alt='<fmt:message key="label.add.secondary.storage"/>' /></div>
             <div class="actionpanel_button_links">
                 <fmt:message key="label.add.secondary.storage"/>
             </div>
@@ -160,7 +160,7 @@ dictionary = {
 <!--  top buttons (end) -->
 
 <!-- Add Secondary Storage Dialog (begin) -->
-<div id="dialog_add_secondarystorage" title="Add Secondary Storage" style="display: none">
+<div id="dialog_add_secondarystorage" title='<fmt:message key="label.add.secondary.storage"/>' style="display: none">
     <p>
 		<fmt:message key="message.add.secondary.storage"/>
     </p>

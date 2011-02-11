@@ -403,7 +403,7 @@ dictionary = {
 </div>
 
 <!-- Add Account Dialog (begin)-->
-<div id="dialog_add_account" title="Add New Account" style="display: none">   
+<div id="dialog_add_account" title='<fmt:message key="label.add.account"/>' style="display: none">   
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
@@ -537,7 +537,7 @@ dictionary = {
 <!-- Add Account Dialog (end)-->
 
 <!-- Add User Dialog (begin)-->
-<div id="dialog_add_user" title="Add New User" style="display: none">  
+<div id="dialog_add_user" title='<fmt:message key="label.add.user"/>' style="display: none">  
     <p>
         <fmt:message key="message.new.user"/> :<b><span id="account_name"></span></b>
     </p> 

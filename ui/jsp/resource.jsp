@@ -32,7 +32,7 @@
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 10%; border: none;">
-                	<div id="add_zone_shortcut" class="resadd_button" title="Add Zone"></div>
+                	<div id="add_zone_shortcut" class="resadd_button" title='<fmt:message key="label.add.zone"/>'></div>
                 </div>
             </div>
             <div class="dbrow odd" style="margin-top:10px; border:1px solid #CCC;">
@@ -47,7 +47,7 @@
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 10%; border: none;">
-                	<div id="add_pod_shortcut" class="resadd_button" title="Add Pod"></div>
+                	<div id="add_pod_shortcut" class="resadd_button" title='<fmt:message key="label.add.pod"/>'></div>
                 </div>
             </div>
             
@@ -63,7 +63,7 @@
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 10%; border: none;">
-                	<div id="add_cluster_shortcut" class="resadd_button" title="Add Cluster"></div>
+                	<div id="add_cluster_shortcut" class="resadd_button" title='<fmt:message key="label.add.cluster"/>'></div>
                 </div>
             </div>
             
@@ -79,7 +79,7 @@
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 10%; border: none;">
-                	<div id="add_host_shortcut" class="resadd_button" title="Add Host"></div>
+                	<div id="add_host_shortcut" class="resadd_button" title='<fmt:message key="label.add.host"/>'></div>
                 </div>
             </div>
             
@@ -95,7 +95,7 @@
                     </div>
                 </div>
                 <div class="dbrow_cell" style="width: 10%; border: none;">
-                	<div id="add_primarystorage_shortcut" class="resadd_button" title="Add Primary Storage"></div>
+                	<div id="add_primarystorage_shortcut" class="resadd_button" title='<fmt:message key="label.add.primary.storage"/>'></div>
                 </div>
             </div>       
         </div>
@@ -107,7 +107,7 @@
     <div class="actionpanel_button_wrapper" id="add_zone_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" alt="Add Zone" /></div>
+                <img src="images/addvm_actionicon.png" /></div>
             <div class="actionpanel_button_links">
                 <fmt:message key="label.add.zone"/>
             </div>
@@ -116,7 +116,7 @@
     <div class="actionpanel_button_wrapper" id="Update_SSL_Certificate_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" alt="Update SSL Certificate" /></div>
+                <img src="images/addvm_actionicon.png" /></div>
             <div class="actionpanel_button_links">
                 <fmt:message key="label.update.ssl"/>
             </div>
@@ -632,7 +632,7 @@
 <!-- End Update Certificate Dialog -->
 
 <!-- Add Pod Dialog in resource page (begin) -->
-<div id="dialog_add_pod_in_resource_page" title="Add Pod" style="display: none">   
+<div id="dialog_add_pod_in_resource_page" title='<fmt:message key="label.add.pod"/>' style="display: none">   
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
@@ -726,7 +726,7 @@
 <!-- Add Pod Dialog in resource page (end) -->
 
 <!-- Add Cluster Dialog in resource page (begin) -->
-<div id="dialog_add_external_cluster_in_resource_page" title="Add Cluster" style="display: none">
+<div id="dialog_add_external_cluster_in_resource_page" title='<fmt:message key="label.add.cluster"/>' style="display: none">
     <p>
 		<fmt:message key="message.add.cluster.zone"/>
     </p>
@@ -735,12 +735,7 @@
         <ol>
             <li>
             	<label for="cluster_hypervisor"><fmt:message key="label.hypervisor"/>:</label>
-                <select class="select" id="cluster_hypervisor">
-                    <!--  
-                    <option value="Xen Server" SELECTED>Xen Server</option>		
-                    <option value="KVM">KVM</option>										
-                    <option value="VmWare">VMware</option>		
-                    -->								
+                <select class="select" id="cluster_hypervisor">               						
                 </select>
             </li>
             <li input_group="vmware">
@@ -828,7 +823,7 @@
 <!-- Add Cluster Dialog in resource page (end) -->
 
 <!-- Add Host Dialog in resource page (begin) -->
-<div id="dialog_add_host_in_resource_page" title="Add Host" style="display: none">   
+<div id="dialog_add_host_in_resource_page" title='<fmt:message key="label.add.host"/>' style="display: none">   
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>            
@@ -934,7 +929,7 @@
 <!-- Add Host Dialog in resource page (end) -->
 
 <!-- Add Primary Storage Dialog  in resource page (begin) -->
-<div id="dialog_add_pool_in_resource_page" title="Add Primary Storage" style="display: none">    
+<div id="dialog_add_pool_in_resource_page" title='<fmt:message key="label.add.primary.storage"/>' style="display: none">    
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>

@@ -150,7 +150,7 @@ dictionary = {
 <!--  top buttons (end) -->
 
 <!-- Add Disk Offering Dialog -->
-<div id="dialog_add_disk" title="Add Disk Offering" style="display:none">
+<div id="dialog_add_disk" title='<fmt:message key="label.add.disk.offering"/>' style="display:none">
 	<p><fmt:message key="message.add.disk.offering"/></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form1">

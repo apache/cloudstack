@@ -785,7 +785,7 @@ dictionary = {
 	</div>
 </div>
 
-<div id="dialog_acquire_public_ip" title="Acquire New IP" style="display: none">
+<div id="dialog_acquire_public_ip" title='<fmt:message key="label.acquire.new.ip"/>' style="display: none">
     <p> 
 		<fmt:message key="message.acquire.public.ip"/>
     </p>

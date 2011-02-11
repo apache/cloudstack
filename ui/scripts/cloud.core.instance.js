@@ -765,12 +765,12 @@ function initVMWizard() {
 	        }
                	 
 		    if ($thisPopup.find("#wiz_blank").hasClass("rev_wizmid_selectedtempbut")) {  //ISO
-		        $thisPopup.find("#step3_label").text("Root Disk Offering");
+		        $thisPopup.find("#step3_label").text(dictionary["label.root.disk.offering"]);
 		        $thisPopup.find("#root_disk_offering_container").show();
 		        $thisPopup.find("#data_disk_offering_container").hide();			       
 		    } 
 		    else {  //template
-		        $thisPopup.find("#step3_label").text("Data Disk Offering");
+		        $thisPopup.find("#step3_label").text(dictionary["label.data.disk.offering"]);
 		        $thisPopup.find("#data_disk_offering_container").show();
 		        $thisPopup.find("#root_disk_offering_container").hide();			       
 		    }	

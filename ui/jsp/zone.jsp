@@ -234,7 +234,7 @@ dictionary = {
 
 <!-- ***** dialogs ***** (begin)-->
 <!-- Add Pod Dialog (begin) -->
-<div id="dialog_add_pod" title="Add Pod" style="display: none">
+<div id="dialog_add_pod" title='<fmt:message key="label.add.pod"/>' style="display: none">
     <p>
         <fmt:message key="message.add.pod"/>
     </p>
@@ -321,7 +321,7 @@ dictionary = {
 <!-- Add Pod Dialog (end) -->
 
 <!-- Add Host Dialog in zone page (begin) -->
-<div id="dialog_add_host_in_zone_page" title="Add Host" style="display: none">   
+<div id="dialog_add_host_in_zone_page" title='<fmt:message key="label.add.host"/>' style="display: none">   
     <p>
         <fmt:message key="message.add.host"/>
     </p>
@@ -422,7 +422,7 @@ dictionary = {
 <!-- Add Host Dialog in zone page (end) -->
 
 <!-- Add Hypervisor managed cluster Dialog (begin) -->
-<div id="dialog_add_external_cluster_in_zone_page" title="Add Cluster" style="display: none">
+<div id="dialog_add_external_cluster_in_zone_page" title='<fmt:message key="label.add.cluster"/>' style="display: none">
     <p>
 		<fmt:message key="message.add.cluster.zone"/>
     </p>
@@ -515,7 +515,7 @@ dictionary = {
 
 
 <!-- Add Primary Storage Dialog  in zone page (begin) -->
-<div id="dialog_add_pool_in_zone_page" title="Add Primary Storage" style="display: none"> 
+<div id="dialog_add_pool_in_zone_page" title='<fmt:message key="label.add.primary.storage"/>' style="display: none"> 
     <p>
 		<fmt:message key="message.add.primary.storage"/>
     </p>   

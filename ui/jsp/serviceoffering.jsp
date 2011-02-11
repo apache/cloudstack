@@ -192,7 +192,7 @@ dictionary = {
 <!--  top buttons (end) -->
 
 <!-- Add Service Offering Dialog -->
-<div id="dialog_add_service" title="Add Service Offering" style="display:none">
+<div id="dialog_add_service" title='<fmt:message key="label.add.service.offering"/>' style="display:none">
 	<p><fmt:message key="message.add.service.offering"/></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form_acquire">

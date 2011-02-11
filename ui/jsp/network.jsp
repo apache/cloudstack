@@ -425,7 +425,7 @@ dictionary = {
     <div class="actionpanel_button_wrapper" id="add_network_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" alt="Add Network" /></div>
+                <img src="images/addvm_actionicon.png" alt='<fmt:message key="label.add.network"/>' /></div>
             <div class="actionpanel_button_links">
                 <fmt:message key="label.add.network"/>
             </div>
@@ -434,7 +434,7 @@ dictionary = {
     <div class="actionpanel_button_wrapper" id="add_iprange_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" alt="Add IP Range" /></div>
+                <img src="images/addvm_actionicon.png" alt='<fmt:message key="label.add.ip.range"/>' /></div>
             <div class="actionpanel_button_links">
                 <fmt:message key="label.add.ip.range"/>
             </div>
@@ -444,7 +444,7 @@ dictionary = {
        >
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" alt="Add Firewall" /></div>
+                <img src="images/addvm_actionicon.png" alt='<fmt:message key="label.add.firewall"/>' /></div>
             <div class="actionpanel_button_links">
                 <fmt:message key="label.add.firewall"/>
             </div>
@@ -453,7 +453,7 @@ dictionary = {
     <div class="actionpanel_button_wrapper" id="add_load_balancer_button">
         <div class="actionpanel_button">
             <div class="actionpanel_button_icons">
-                <img src="images/addvm_actionicon.png" alt="Add Load Balancer" /></div>
+                <img src="images/addvm_actionicon.png" alt='<fmt:message key="label.add.load.balancer"/>' /></div>
             <div class="actionpanel_button_links">
                 <fmt:message key="label.add.load.balancer"/>
             </div>
@@ -855,7 +855,7 @@ dictionary = {
 
 
 <!-- Add IP Range for public netework dialog (begin) -->
-<div id="dialog_add_iprange_to_publicnetwork" title="Add IP Range to Public Network" style="display: none">
+<div id="dialog_add_iprange_to_publicnetwork" title='<fmt:message key="label.add.ip.range"/>' style="display: none">
     <p>
 		<fmt:message key="message.add.ip.range"/>: <b><span id="zone_name"></span></b>
     </p>
@@ -953,10 +953,9 @@ dictionary = {
 
 
 <!-- Add External Firewall dialog (begin) -->
-<div id="dialog_add_external_firewall" title="Add Firewall" style="display: none">   
+<div id="dialog_add_external_firewall" title='<fmt:message key="label.add.firewall"/>' style="display: none">   
     <p>
-		<fmt:message key="message.add.firewall"/>
-        Add firewall for zone: <b><span id="zone_name"></span></b>
+		<fmt:message key="message.add.firewall"/>: <b><span id="zone_name"></span></b>
     </p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
@@ -1055,7 +1054,7 @@ dictionary = {
 
 
 <!-- Add Load Balancer dialog (begin) -->
-<div id="dialog_add_load_balancer" title="Add Load Balancer" style="display: none">   
+<div id="dialog_add_load_balancer" title='<fmt:message key="label.add.load.balancer"/>' style="display: none">   
     <p>
 		<fmt:message key="message.add.load.balancer"/>: <b><span id="zone_name"></span></b>
     </p>
@@ -1128,7 +1127,7 @@ dictionary = {
 
 
 <!-- Add IP Range for direct netework dialog (begin) -->
-<div id="dialog_add_iprange_to_directnetwork" title="Add IP Range to Direct Network" style="display: none">
+<div id="dialog_add_iprange_to_directnetwork" title='<fmt:message key="label.add.ip.range"/>' style="display: none">
     <p>
 		<fmt:message key="message.add.ip.range.direct.network"/>
     </p>
@@ -1170,7 +1169,7 @@ dictionary = {
 <!-- Add IP Range for direct netework dialog (end) -->
 
 <!-- Add network dialog for zone (begin) -->
-<div id="dialog_add_network_for_zone" title="Add Network" style="display: none">
+<div id="dialog_add_network_for_zone" title='<fmt:message key="label.add.network"/>' style="display: none">
     <p>
 		<fmt:message key="message.add.network"/>
     </p>

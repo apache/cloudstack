@@ -247,7 +247,7 @@ dictionary = {
 <!--  top buttons (end) -->
 
 <!-- Add ISO Dialog (begin) -->
-<div id="dialog_add_iso" title="Add ISO" style="display:none">		
+<div id="dialog_add_iso" title='<fmt:message key="label.add.iso"/>' style="display:none">		
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form2">
 			<ol>

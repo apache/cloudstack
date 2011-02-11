@@ -233,7 +233,7 @@ dictionary = {
 <!--  Ingress Rule tab template (end) -->
 
 <!-- Add Security Group Dialog (begin) -->
-<div id="dialog_add_security_group" title="Add Security Group" style="display: none">
+<div id="dialog_add_security_group" title='<fmt:message key="label.add.security.group"/>' style="display: none">
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
         <ol>
@@ -258,7 +258,7 @@ dictionary = {
 <!-- Add Security Group Dialog (end) -->
 
 <!-- Add Ingress Rule Dialog (begin) -->
-<div id="dialog_add_ingress_rule" title="Add Ingress Rule" style="display: none">
+<div id="dialog_add_ingress_rule" title='<fmt:message key="label.add.ingress.rule"/>' style="display: none">
     <div class="dialog_formcontent">
         <form action="#" method="post">
         <ol>

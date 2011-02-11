@@ -39,7 +39,9 @@ dictionary = {
 	'label.action.take.snapshot.processing': '<fmt:message key="label.action.take.snapshot.processing"/>',
 	'label.new.password': '<fmt:message key="label.new.password"/>',
 	'message.action.instance.reset.password': '<fmt:message key="message.action.instance.reset.password"/>',
-	'message.action.take.snapshot': '<fmt:message key="message.action.take.snapshot"/>'
+	'message.action.take.snapshot': '<fmt:message key="message.action.take.snapshot"/>',
+	'label.data.disk.offering': '<fmt:message key="label.data.disk.offering"/>',
+	'label.root.disk.offering': '<fmt:message key="label.root.disk.offering"/>'
 };	
 </script>
 
