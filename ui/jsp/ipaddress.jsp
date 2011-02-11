@@ -259,11 +259,7 @@ dictionary = {
 	                    <div id="end_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 15%; padding: 1px;">  
-	                   <select class="select" id="protocol" style="width:70%;">
-	                       <!--  
-	                       <option value="TCP">TCP</option>
-	                       <option value="UDP">UDP</option>
-	                       -->
+	                   <select class="select" id="protocol" style="width:70%;">	                  
 	                   </select>
 	                </div>	                
 	                <div class="grid_row_cell" style="width: 15%; padding: 1px;">   
@@ -293,57 +289,53 @@ dictionary = {
         <div id="tab_container">
 	        <div class="grid_container" id="grid_container">
 	            <div class="grid_header">
-	                <div class="grid_header_cell" style="width: 15%;">
+	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.public.port"/></div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 15%;">
+	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.private.port"/></div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 15%;">
+	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.protocol"/></div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 25%; border: none;">
+	                <div class="grid_header_cell" style="width: 25%; padding: 1px; border: none;">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.instance"/></div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 10%;">
+	                <div class="grid_header_cell" style="width: 10%; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.state"/></div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 15%;">
+	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.actions"/></div>
 	                </div>
 	            </div>
 	            <div class="grid_rows even" id="create_port_forwarding_row">
-	                <div class="grid_row_cell" style="width: 15%;">
-	                    <input id="public_port" class="text" style="width: 70%;" type="text" />
+	                <div class="grid_row_cell" style="width: 15%; padding: 1px;">
+	                    <input id="public_port" class="text" style="width: 70%; padding: 1px;" type="text" />
 	                    <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
 	                </div>
 	                <div class="grid_row_cell" style="width: 15%;">
-	                    <input id="private_port" class="text" style="width: 70%;" type="text" />
+	                    <input id="private_port" class="text" style="width: 70%; padding: 1px;" type="text" />
 	                    <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
 	                </div>
-	                <div class="grid_row_cell" style="width: 15%;">  
-	                   <select class="select" id="protocol" style="width:70%;">
-	                       <!--  
-	                       <option value="TCP">TCP</option>
-	                       <option value="UDP">UDP</option>
-	                       -->
+	                <div class="grid_row_cell" style="width: 15%; padding: 1px;">  
+	                   <select class="select" id="protocol" style="width:70%;">	                    
 	                   </select>
 	                </div>
-	                <div class="grid_row_cell" style="width: 25%;">                   
+	                <div class="grid_row_cell" style="width: 25%; padding: 1px;">                   
 	                    <select class="select" id="vm">
 	                    </select>
 	                    <div id="vm_errormsg" class="errormsg" style="display: none;"></div>	                    
 	                </div>
-	                <div class="grid_row_cell" style="width: 10%;">   
+	                <div class="grid_row_cell" style="width: 10%; padding: 1px;">   
 	                    <div class="row_celltitles" id="state"></div>
 	                </div>  
-	                <div class="grid_row_cell" style="width: 15%;">
+	                <div class="grid_row_cell" style="width: 15%; padding: 1px;">
 	                    <div class="row_celltitles">
 	                        <a id="add_link" href="#"><fmt:message key="label.add"/></a></div>
 	                </div>
@@ -367,56 +359,51 @@ dictionary = {
         <div id="tab_container">
 	        <div class="grid_container">
 	            <div class="grid_header">
-	                <div class="grid_header_cell" style="width: 20%;">
+	                <div class="grid_header_cell" style="width: 20%; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.name"/></div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 14%;">
+	                <div class="grid_header_cell" style="width: 14%; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.public.port"/></div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 14%;">
+	                <div class="grid_header_cell" style="width: 14%; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.private.port"/></div>
 	                </div>
-	                <div class="grid_header_cell" style="width: 15%;">
+	                <div class="grid_header_cell" style="width: 15%; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.algorithm"/></div>
 	                </div>	                
-	                <div class="grid_header_cell" style="width: 10%;">
+	                <div class="grid_header_cell" style="width: 10%; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.state"/></div>
 	                </div>	                
-	                <div class="grid_header_cell" style="width: 25%;">
+	                <div class="grid_header_cell" style="width: 25%; padding: 1px;">
 	                    <div class="grid_header_title">
 	                        <fmt:message key="label.actions"/></div>
 	                </div>
 	            </div>
 	            <div class="grid_rows even" id="create_load_balancer_row">
-	                <div class="grid_row_cell" style="width: 20%;">
-	                    <input id="name" class="text" style="width: 70%;" type="text" />
+	                <div class="grid_row_cell" style="width: 20%; padding: 1px;">
+	                    <input id="name" class="text" style="width: 70%; padding: 1px;" type="text" />
 	                    <div id="name_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
 	                </div>
-	                <div class="grid_row_cell" style="width: 14%;">
-	                    <input id="public_port" class="text" style="width: 70%;" type="text" />
+	                <div class="grid_row_cell" style="width: 14%; padding: 1px;">
+	                    <input id="public_port" class="text" style="width: 70%; padding: 1px;" type="text" />
 	                    <div id="public_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
 	                </div>
-	                <div class="grid_row_cell" style="width: 14%;">
-	                    <input id="private_port" class="text" style="width: 70%;" type="text" />
+	                <div class="grid_row_cell" style="width: 14%; padding: 1px;">
+	                    <input id="private_port" class="text" style="width: 70%; padding: 1px;" type="text" />
 	                    <div id="private_port_errormsg" class="errormsg" style="display: none;">Error msg will appear here</div>
 	                </div>
-	                <div class="grid_row_cell" style="width: 15%;">
-	                    <select id="algorithm_select" class="select" style="width: 70%;">       
-	                        <!--                
-							<option value="roundrobin">roundrobin</option>
-	                        <option value="leastconn">leastconn</option>
-	                        <option value="source">source</option>
-	                        -->  
+	                <div class="grid_row_cell" style="width: 15%; padding: 1px;">
+	                    <select id="algorithm_select" class="select" style="width: 70%;">   	                      
 	                    </select>
 	                </div>	                
-	                <div class="grid_row_cell" style="width: 10%;">	                  
+	                <div class="grid_row_cell" style="width: 10%; padding: 1px;">	                  
 	                </div>	                
-	                <div class="grid_row_cell" style="width: 25%;">
+	                <div class="grid_row_cell" style="width: 25%; padding: 1px;">
 	                    <div class="row_celltitles">
 	                        <a id="add_link" href="#"><fmt:message key="label.add"/></a></div>
 	                </div>
@@ -487,26 +474,26 @@ dictionary = {
 <!-- Load Balancer Template (begin) -->
 <div class="grid_rows odd" id="load_balancer_template" style="display:none">
     <div id="row_container">
-        <div class="grid_row_cell" style="width: 20%;">
+        <div class="grid_row_cell" style="width: 20%; padding: 1px;">
             <div class="row_celltitles" id="name">
                 LB#1</div>
         </div>
-        <div class="grid_row_cell" style="width: 14%;">
+        <div class="grid_row_cell" style="width: 14%; padding: 1px;">
             <div class="row_celltitles" id="public_port">
                 8080</div>
         </div>
-        <div class="grid_row_cell" style="width: 14%;">
+        <div class="grid_row_cell" style="width: 14%; padding: 1px;">
             <div class="row_celltitles" id="private_port">
                 80</div>
         </div>
-        <div class="grid_row_cell" style="width: 15%;">
+        <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles" id="algorithm">
                 (algorithm)</div>
         </div>        
-        <div class="grid_row_cell" style="width: 10%;">
+        <div class="grid_row_cell" style="width: 10%; padding: 1px;">
             <div class="row_celltitles" id="state"></div>
         </div>  
-        <div class="grid_row_cell" style="width: 25%;">
+        <div class="grid_row_cell" style="width: 25%; padding: 1px;">
             <div class="row_celltitles">
                 <a id="manage_link" href="#" style="float:left;"><fmt:message key="label.manage"/></a>
                 <a id="edit_link" href="#" style="float:left; margin-left:15px;"><fmt:message key="label.edit"/></a>
@@ -533,12 +520,7 @@ dictionary = {
             <div class="row_celltitles" id="private_port"></div>
         </div>
         <div class="grid_row_cell" style="width: 15%; padding: 1px;">
-            <select id="algorithm_select" class="select" style="width: 70%;">   
-                <!--                   
-				<option value="roundrobin">roundrobin</option>
-                <option value="leastconn">leastconn</option>
-                <option value="source">source</option>
-                -->   
+            <select id="algorithm_select" class="select" style="width: 70%;">                 
             </select>
         </div>        
         <div class="grid_row_cell" style="width: 10%; padding: 1px;">
@@ -648,60 +630,24 @@ dictionary = {
 <!-- Port Forwarding template (begin) -->
 <div class="grid_rows odd" id="port_forwarding_template" style="display: none">    
     <div id="row_container">
-        <div class="grid_row_cell" style="width: 15%;">
+        <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles" id="public_port"></div>
         </div>
-        <div class="grid_row_cell" style="width: 15%;">
+        <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles" id="private_port"></div>
-        </div>
-        <div class="grid_row_cell" style="width: 15%;">
-            <div class="row_celltitles" id="protocol"></div>
-        </div>
-        <div class="grid_row_cell" style="width: 25%;">
-            <div class="row_celltitles" id="vm_name"></div>
-        </div>   
-        <div class="grid_row_cell" style="width: 10%;">
-            <div class="row_celltitles" id="state"></div>
-        </div>        
-        <div class="grid_row_cell" style="width: 15%;">
-            <div class="row_celltitles">
-                <a id="delete_link" href="#" style="float:left;"><fmt:message key="label.delete"/> </a>
-                <!--  
-                <a id="edit_link" href="#" style="float:left; margin-left:15px;">Edit</a>
-                -->                
-            </div>
-        </div>
-        <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
-            <div class="gridrow_loader">
-            </div>
-            <p id="description">
-                <fmt:message key="label.waiting"/>  &hellip;
-            </p>
-        </div>
-    </div>
-    <div id="row_container_edit" style="display:none">
-        <div class="grid_row_cell" style="width: 15%; padding: 1px;">
-            <div class="row_celltitles" id="public_port"></div>
-        </div>
-        <div class="grid_row_cell" style="width: 15%; padding: 1px;">
-            <input id="private_port" class="text" style="width: 70%;" type="text" />
-            <div id="private_port_errormsg" class="errormsg" style="display: none;">
-                Error msg will appear here</div>
         </div>
         <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles" id="protocol"></div>
         </div>
         <div class="grid_row_cell" style="width: 25%; padding: 1px;">
-            <select class="select" id="vm">
-            </select>
-        </div>
+            <div class="row_celltitles" id="vm_name"></div>
+        </div>   
         <div class="grid_row_cell" style="width: 10%; padding: 1px;">
             <div class="row_celltitles" id="state"></div>
-        </div>
+        </div>        
         <div class="grid_row_cell" style="width: 15%; padding: 1px;">
             <div class="row_celltitles">
-                <a id="save_link" href="#" style="float:left;"><fmt:message key="label.save"/> </a>
-                <a id="cancel_link" href="#" style="float:left; margin-left:15px;"><fmt:message key="label.cancel"/> </a>
+                <a id="delete_link" href="#" style="float:left;"><fmt:message key="label.delete"/> </a>                                
             </div>
         </div>
         <div class="gridrow_loaderbox" style="display: none;" id="spinning_wheel">
@@ -711,7 +657,7 @@ dictionary = {
                 <fmt:message key="label.waiting"/>  &hellip;
             </p>
         </div>
-    </div>
+    </div>    
 </div>
 <!-- Port Forwarding template (end) -->
 
