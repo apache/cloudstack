@@ -344,19 +344,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         if (poolId == null) {
             throw new CloudRuntimeException("You cannot take a snapshot of a volume until it has been attached to an instance");
         }
-        VolumeVO volume = _volsDao.acquireInLockTable(volumeId, 10);       
-        if( volume == null ) {
-            _snapshotDao.expunge(snapshotId);
-            volume = _volsDao.findById(volumeId);
-            if( volume == null ){
-                throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
-            } else {
-                throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " is being used, try it later ");
-            }
-        }
         
-        if (_volsDao.getHypervisorType(volume.getId()).equals(HypervisorType.KVM)) {
-        	StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
+        if (_volsDao.getHypervisorType(v.getId()).equals(HypervisorType.KVM)) {
+        	StoragePoolVO storagePool = _storagePoolDao.findById(v.getPoolId());
         	ClusterVO cluster = _clusterDao.findById(storagePool.getClusterId());
         	List<HostVO> hosts = _hostDao.listByCluster(cluster.getId());
         	if (hosts != null && !hosts.isEmpty()) {
@@ -381,6 +371,16 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         
         SnapshotVO snapshot = null;
         boolean backedUp = false;
+        VolumeVO volume = _volsDao.acquireInLockTable(volumeId, 10);       
+        if( volume == null ) {
+            _snapshotDao.expunge(snapshotId);
+            volume = _volsDao.findById(volumeId);
+            if( volume == null ){
+                throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
+            } else {
+                throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " is being used, try it later ");
+            }
+        }
         try {
 	    	snapshot = createSnapshotOnPrimary(volume, policyId, snapshotId);
 	        if (snapshot != null && snapshot.getStatus() == Snapshot.Status.CreatedOnPrimary ) {
