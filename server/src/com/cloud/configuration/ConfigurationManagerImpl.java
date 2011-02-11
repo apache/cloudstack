@@ -944,6 +944,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	Long userId = UserContext.current().getCallerUserId();
     	int startVnetRange = 0;
     	int stopVnetRange = 0;
+    	Boolean isPublic = cmd.isPublic();
     	
     	if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -1051,6 +1052,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	
     	if (vnetRange != null) {
     		zone.setVnet(vnetRange);
+    	}
+    	
+    	//update a private zone to public; not vice versa
+    	if(isPublic != null && isPublic) {
+    	    zone.setDomainId(null);
+    	    zone.setDomain(null);
     	}
     	
     	if (!_zoneDao.update(zoneId, zone)) {
