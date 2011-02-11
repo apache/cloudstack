@@ -44,7 +44,9 @@ import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Transaction;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 
 /**
  * Thumbnail access : /console?cmd=thumbnail&vm=xxx&w=xxx&h=xxx
@@ -230,10 +232,14 @@ public class ConsoleProxyServlet extends HttpServlet {
 			return;
 		}
 		
-		String vmName = vm.getName();
-		if(vmName == null) {
-            vmName = vm.getInstanceName();
-        }
+		String vmName = vm.getInstanceName();
+		if(vm.getType() == VirtualMachine.Type.User) {
+			UserVmVO userVm = _ms.findUserVMInstanceById(vmId);
+			String displayName = userVm.getDisplayName();
+			if(displayName != null && !displayName.isEmpty() && !displayName.equals(vmName)) {
+	            vmName += "(" + displayName + ")";
+	        }
+		}
 		
 		StringBuffer sb = new StringBuffer();
 		sb.append("<html><title>").append(vmName).append("</title><frameset><frame src=\"").append(composeConsoleAccessUrl(rootUrl, vm, host));
