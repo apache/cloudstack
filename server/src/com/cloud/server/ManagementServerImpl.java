@@ -3820,18 +3820,18 @@ public class ManagementServerImpl implements ManagementServer {
         //if account doesn't have direct ip addresses and there are no direct Zone wide vlans, return virtual service offerings only
         List<VlanVO> accountDirectVlans = new ArrayList<VlanVO>();
         List<VlanVO> zoneDirectVlans = new ArrayList<VlanVO>();
-        if (accountId != null || zoneId != null) {
-            if (accountId != null && zoneId != null) {
-                accountDirectVlans = _vlanDao.listVlansForAccountByType(null, ((Long)accountId).longValue(), VlanType.DirectAttached);
-                zoneDirectVlans = listZoneWideVlansByType(VlanType.DirectAttached, (Long)zoneId);
-            } else if (zoneId != null) {
-                zoneDirectVlans = listZoneWideVlansByType(VlanType.DirectAttached, (Long)zoneId);
-            }  
-            
+        if (accountId != null && zoneId != null) {
+            accountDirectVlans = _vlanDao.listVlansForAccountByType(null, ((Long)accountId).longValue(), VlanType.DirectAttached);
+            zoneDirectVlans = listZoneWideVlansByType(VlanType.DirectAttached, (Long)zoneId);
             if (accountDirectVlans.isEmpty() && zoneDirectVlans.isEmpty()) {
                 sc.addAnd("guestIpType", SearchCriteria.Op.EQ, GuestIpType.Virtualized);
             }
-        }
+        } else if (zoneId != null) {
+            zoneDirectVlans = listZoneWideVlansByType(VlanType.DirectAttached, (Long)zoneId);
+            if (zoneDirectVlans.isEmpty()) {
+                sc.addAnd("guestIpType", SearchCriteria.Op.EQ, GuestIpType.Virtualized);
+            }
+        }  
         
         
         return _offeringsDao.search(sc, searchFilter);
@@ -6243,14 +6243,38 @@ public class ManagementServerImpl implements ManagementServer {
         return success && deleteDomainSuccess;
     }
 
+    @DB
     public void updateDomain(Long domainId, String domainName) {
         SearchCriteria sc = _domainDao.createSearchCriteria();
         sc.addAnd("name", SearchCriteria.Op.EQ, domainName);
         List<DomainVO> domains = _domainDao.search(sc, null);
+        Transaction txn = Transaction.currentTxn();
+        
+        
         if ((domains == null) || domains.isEmpty()) {
-            _domainDao.update(domainId, domainName);
+            txn.start();
             DomainVO domain = _domainDao.findById(domainId);
+            String newName = domainName;
+            String oldName = domain.getName();
+            domain.setName(newName);
+            _domainDao.update(domainId, domain);
+              
+            //update path for parent domain and all domain children
+            List<DomainVO> domainChildren = _domainDao.listDomainChildren(domainId);
+            domainChildren.add(domain);
+            
+            String parentPath = domain.getPath().substring(0, domain.getPath().length() - oldName.length()-1);
+            
+            for (DomainVO domainChild : domainChildren) {
+                String originalPath = domainChild.getPath();
+                String resultPath =  parentPath + newName + originalPath.substring(parentPath.length() + oldName.length()); 
+                
+                domainChild.setPath(resultPath);
+                _domainDao.update(domainChild.getId(), domainChild);
+            }
+            
             saveEvent(new Long(1), domain.getOwner(), EventVO.LEVEL_INFO, EventTypes.EVENT_DOMAIN_UPDATE, "Domain, " + domainName + " was updated");
+            txn.commit();
         } else {
             DomainVO domain = _domainDao.findById(domainId);
             saveEvent(new Long(1), domain.getOwner(), EventVO.LEVEL_ERROR, EventTypes.EVENT_DOMAIN_UPDATE, "Failed to update domain " + domain.getName() + " with name " + domainName + ", name in use.");
