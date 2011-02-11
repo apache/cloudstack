@@ -961,9 +961,24 @@ public abstract class CitrixResourceBase implements ServerResource {
         Connection conn = getConnection();
         VirtualMachineTO vmSpec = cmd.getVirtualMachine();
         String vmName = vmSpec.getName(); 
-        State state = State.Stopped;
+        State state = State.Stopped;       
         VM vm = null;
         try {
+            
+            Set<VM> vms = VM.getByNameLabel(conn, vmName);
+            if ( vms != null ) {
+                for ( VM v : vms ) {
+                    VM.Record vRec = v.getRecord(conn);
+                    if ( vRec.powerState == VmPowerState.HALTED ) {
+                        v.destroy(conn);
+                    } else {
+                        String msg = "There is already a VM having the same name " + vmName + " vm record " +  vRec.toString();
+                        s_logger.warn(msg);
+                        return new StartAnswer(cmd, msg);
+                    }
+                }
+            }
+            
             synchronized (_vms) {
                 _vms.put(vmName, State.Starting);
             }
