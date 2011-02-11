@@ -63,9 +63,50 @@ ALTER TABLE `cloud`.`user_ip_address` ADD UNIQUE (source_network_id, public_ip_a
 
 
 --step 4 (independent of above)
+
+ALTER TABLE `cloud`.`user_statistics` CHANGE `host_id` `device_id` bigint unsigned NOT NULL default 0;
+ALTER TABLE `cloud`.`user_statistics` ADD COLUMN `device_type` varchar(32) NOT NULL default 'DomainRouter';
+UPDATE `cloud`.`user_statistics` us,`cloud`.`host` h SET us.device_type = h.type where us.device_id = h.id AND us.device_id > 0;
+ALTER TABLE `cloud`.`user_statistics` ADD UNIQUE (`account_id`, `data_center_id`, `public_ip_address`, `device_id`, `device_type`);
+
+ALTER TABLE `cloud`.`snapshots` modify `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'Primary Key';
+
 ----------------------usage changes (for cloud_usage database)--------------------------------------------------------------------------------------------------------------
-ALTER TABLE `cloud_usage`.`user_statistics` DROP COLUMN host_id;
-ALTER TABLE `cloud_usage`.`user_statistics` DROP COLUMN host_type;
-ALTER TABLE `cloud_usage`.`user_statistics` ADD COLUMN `device_id` bigint unsigned NOT NULL;
-ALTER TABLE `cloud_usage`.`user_statistics` ADD COLUMN `device_type` varchar(32) NOT NULL;
-ALTER TABLE `cloud_usage`.`user_statistics` ADD UNIQUE (`account_id`, `data_center_id`, `device_id`, `device_type`);
+
+ALTER TABLE `cloud_usage`.`user_statistics` ADD COLUMN `device_id` bigint unsigned NOT NULL default 0;
+ALTER TABLE `cloud_usage`.`user_statistics` ADD COLUMN `device_type` varchar(32) NOT NULL default 'DomainRouter';
+ALTER TABLE `cloud_usage`.`user_statistics` ADD COLUMN `public_ip_address` varchar(15);
+UPDATE `cloud_usage`.`user_statistics` cus, `cloud`.`user_statistics` us SET cus.device_id=us.device_id, cus.device_type=us.device_type, cus.public_ip_address=us.public_ip_address WHERE cus.id = us.id;
+ALTER TABLE `cloud_usage`.`user_statistics` ADD UNIQUE (`account_id`, `data_center_id`, `public_ip_address`, `device_id`, `device_type`);
+
+INSERT INTO user_statistics ( account_id, data_center_id, device_id, device_type ) SELECT VM.account_id, VM.data_center_id, DR.id,'DomainRouter' FROM vm_instance VM, domain_router DR WHERE VM.id = DR.id;
+
+ALTER TABLE `cloud_usage`.`usage_network` ADD COLUMN `host_id` bigint unsigned NOT NULL default 0;
+ALTER TABLE `cloud_usage`.`usage_network` ADD COLUMN `host_type` varchar(32);
+ALTER TABLE `cloud_usage`.`usage_network` drop PRIMARY KEY;
+ALTER TABLE `cloud_usage`.`usage_network` add PRIMARY KEY (`account_id`, `zone_id`, `host_id`, `event_time_millis`);
+
+ALTER TABLE `cloud_usage`.`usage_ip_address` ADD COLUMN `id` bigint unsigned NOT NULL;
+ALTER TABLE `cloud_usage`.`usage_ip_address` ADD COLUMN `is_source_nat` smallint(1) NOT NULL;
+
+ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `type` varchar(32);
+
+CREATE TABLE  `cloud_usage`.`usage_port_forwarding` (
+  `id` bigint unsigned NOT NULL,
+  `zone_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,
+  `created` DATETIME NOT NULL,
+  `deleted` DATETIME NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE  `cloud_usage`.`usage_network_offering` (
+  `zone_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,
+  `vm_instance_id` bigint unsigned NOT NULL,
+  `network_offering_id` bigint unsigned NOT NULL,
+  `is_default` smallint(1) NOT NULL,
+  `created` DATETIME NOT NULL,
+  `deleted` DATETIME NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
