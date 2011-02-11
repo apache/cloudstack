@@ -390,24 +390,21 @@ function securityGroupJsonToDetailsTab() {
     var $thisTab = $("#right_panel_content #tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
-    
-    /*
-    var id = jsonObj.id;    
-    var jsonObj;   
+        
+    var id = jsonObj.id;  
     $.ajax({
         data: createURL("command=listSecurityGroups&id="+id),
         dataType: "json",
         async: false,
         success: function(json) {  
-            var items = json.listsecuritygroupsresponse.securitygroup;            
+            var items = json.listsecuritygroupsresponse.securitygroup;                   
             if(items != null && items.length > 0) {
                 jsonObj = items[0];
                 $midmenuItem1.data("jsonObj", jsonObj);  
             }
         }
     });   
-    */    
- 
+    
     $thisTab.find("#id").text(fromdb(jsonObj.id));     
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
     $thisTab.find("#name").text(fromdb(jsonObj.name)); 
