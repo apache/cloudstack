@@ -153,7 +153,6 @@ import com.cloud.dc.Vlan;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.xen.resource.XenServerConnectionPool.XenServerConnection;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.Networks;
@@ -348,7 +347,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         try {
             URL slaveUrl = null;
             slaveUrl = _connPool.getURL(_host.ip);
-            slaveConn = new Connection(slaveUrl);
+            slaveConn = new Connection(slaveUrl, 10);
             slaveSession = Session.slaveLocalLoginWithPassword(slaveConn, _username, _password);
             return true;
         } catch (Exception e) {
@@ -4294,7 +4293,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         _storageNetworkName2 = (String) params.get("storage.network.device2");
 
         String value = (String) params.get("wait");
-        _wait = NumbersUtil.parseInt(value, 1800);
+        _wait = NumbersUtil.parseInt(value, 600);
 
         if (_pod == null) {
             throw new ConfigurationException("Unable to get the pod");

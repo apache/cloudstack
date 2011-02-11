@@ -429,8 +429,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         
         _guestNic = _params.get(Config.XenGuestNetwork.key());
                
-        String value = _params.get(Config.Wait.toString());
-        _wait = NumbersUtil.parseInt(value, Integer.parseInt(Config.Wait.getDefaultValue()));
+        String value = _params.get(Config.XapiWait.toString());
+        _wait = NumbersUtil.parseInt(value, Integer.parseInt(Config.XapiWait.getDefaultValue()));
         
         value = _params.get(Config.XenSetupMultipath.key());
         Boolean.parseBoolean(value);
