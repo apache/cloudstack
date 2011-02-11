@@ -1710,7 +1710,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Sending network shutdown to " + element);
                 }
-                element.shutdown(network, null);
+                
+                User caller = null;
+                Account owner = _accountMgr.getAccount(network.getAccountId());
+                
+                UserContext ctx = UserContext.current();
+                if (ctx == null) {
+                    caller = _accountMgr.getSystemUser();
+                } else {
+                    caller = _accountMgr.getActiveUser(ctx.getCallerUserId());
+                }
+                
+                ReservationContext context = new ReservationContextImpl(null, null, caller, owner);
+                
+                element.shutdown(network, context);
             } catch (ResourceUnavailableException e) {
                 s_logger.warn("Unable to complete shutdown of the network due to element: " + element.getName(), e);
                 success = false;
