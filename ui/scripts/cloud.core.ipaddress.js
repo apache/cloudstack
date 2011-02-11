@@ -479,20 +479,25 @@ function ipToRightPanel($midmenuItem1) {
 	            }
 	            
 	            //Load Balancer tab	  
-	            if(networkObj != null) {
-	                var lbServiceObj = ipFindNetworkServiceByName("Lb", networkObj);			    	                      
-	                if(lbServiceObj != null)
-	                    $("#tab_load_balancer").show();
-	                else
-	                    $("#tab_load_balancer").hide();	     
-	            }     
-	            else {
-	                $("#tab_load_balancer").hide();	   
-	            }       	            
+	            if (ipObj.issourcenat == true) {
+	                $("#tab_load_balancer").hide();	
+	            }
+	            else { 
+	                if(networkObj != null) {
+	                    var lbServiceObj = ipFindNetworkServiceByName("Lb", networkObj);			    	                      
+	                    if(lbServiceObj != null)
+	                        $("#tab_load_balancer").show();
+	                    else
+	                        $("#tab_load_balancer").hide();	     
+	                }     
+	                else {
+	                    $("#tab_load_balancer").hide();	   
+	                }  
+	            }     	            
 		        
-		        //VPN tab
-		        var vpnServiceObj = ipFindNetworkServiceByName("Vpn", networkObj);	      
+		        //VPN tab		        
 		        if (ipObj.issourcenat == true) {
+		            var vpnServiceObj = ipFindNetworkServiceByName("Vpn", networkObj);	      
 		            if(vpnServiceObj != null)
 			            $("#tab_vpn").show();
 			        else
