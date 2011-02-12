@@ -243,6 +243,11 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("Protocol " + rule.getProtocol() + " is not supported in zone " + network.getDataCenterId());
         }
         
+        //start port can't be bigger than end port
+        if (rule.getDestinationPortStart() > rule.getDestinationPortEnd()) {
+            throw new InvalidParameterValueException("Start port can't be bigger than end port");
+        }
+        
         PortForwardingRuleVO newRule = 
             new PortForwardingRuleVO(rule.getXid(), 
                     rule.getSourceIpAddressId(), 
