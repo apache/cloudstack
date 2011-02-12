@@ -787,7 +787,7 @@ dictionary = {
 <!-- Create User for VPN (end) -->
 
 <!-- Enable Static NAT Dialog (begin) -->
-<div id="dialog_enable_static_NAT" title="Enable Static NAT" style="display: none">   
+<div id="dialog_enable_static_NAT" title='<fmt:message key="label.action.enable.static.NAT"/>' style="display: none">   
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form3">
         <ol>

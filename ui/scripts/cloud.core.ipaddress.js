@@ -1350,7 +1350,7 @@ function doEnableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {
 function doDisableStaticNAT($actionLink, $detailsTab, $midmenuItem1) {  
     var ipObj = $midmenuItem1.data("jsonObj");
     
-    $("#dialog_info")
+    $("#dialog_confirmation")
     .text(dictionary["message.action.disable.static.NAT"])    
 	.dialog('option', 'buttons', { 						
 		"Confirm": function() { 		    

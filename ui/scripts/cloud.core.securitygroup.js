@@ -414,7 +414,7 @@ function securityGroupJsonToDetailsTab() {
     //actions ***
     var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
     $actionMenu.find("#action_list").empty();  
-    buildActionLinkForTab("Delete Security Group", securityGroupActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
+    buildActionLinkForTab("label.action.delete.security.group", securityGroupActionMap, $actionMenu, $midmenuItem1, $thisTab);	  
     
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();         
@@ -489,17 +489,7 @@ function securityGroupIngressRuleJSONToTemplate(jsonObj, $template) {
     // actions	
 	var $actionLink = $template.find("#action_link");
 	bindActionLink($actionLink);
-	/*		
-	$actionLink.bind("mouseover", function(event) {
-        $(this).find("#action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {
-        $(this).find("#action_menu").hide();    
-        return false;
-    });	
-    */	
-	
+		
 	var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();	
         
@@ -536,42 +526,7 @@ function doDeleteIngressRule($actionLink, $subgridItem) {
 	        moreCriteria.push("&domainid="+securityGroupObj.domainid);    	    	        
 	        moreCriteria.push("&account="+securityGroupObj.account);    	    		    	        
 	        moreCriteria.push("&id="+id);    
-	      
-    	    /*	
-    	    moreCriteria.push("&securitygroupid="+securityGroupObj.id);    
-    	    
-    	    var protocol = ingressRuleObj.protocol;      
-	        moreCriteria.push("&protocol="+protocol);		    	
-    	 
-	        if(protocol == "icmp") {
-	            var icmpType = ingressRuleObj.icmptype;
-	            if(icmpType != null)
-	                moreCriteria.push("&icmptype="+encodeURIComponent(icmpType));
-    		    
-	            var icmpCode = ingressRuleObj.icmpcode;
-	            if(icmpCode != null)
-	                moreCriteria.push("&icmpcode="+encodeURIComponent(icmpCode));
-	        }
-	        else {  //TCP, UDP
-	            var startPort = ingressRuleObj.startport;
-	            if(startPort != null)
-	                moreCriteria.push("&startport="+encodeURIComponent(startPort));
-    		    
-	            var endPort = ingressRuleObj.endport;
-	            if(endPort != null)
-	                moreCriteria.push("&endport="+encodeURIComponent(endPort));
-	        }
-    	        
-	        var cidr = ingressRuleObj.cidr;
-	        if(cidr != null && cidr.length > 0)
-	            moreCriteria.push("&cidrlist="+encodeURIComponent(cidr));
-    						
-	        var account = ingressRuleObj.account;
-	        var securitygroupname = ingressRuleObj.securitygroupname; 
-	        if((account != null && account.length > 0) && (securitygroupname != null && securitygroupname.length > 0))                        
-                moreCriteria.push("&usersecuritygrouplist[0].account="+account + "&usersecuritygrouplist[0].group="+securitygroupname);    			
-			*/
-						
+	      						
 			var apiCommand = "command=revokeSecurityGroupIngress"+moreCriteria.join("");                  
             doActionToSubgridItem(id, $actionLink, apiCommand, $subgridItem); 
 	    }, 
@@ -605,8 +560,7 @@ function securityGroupClearDetailsTab() {
 }
 
 var securityGroupActionMap = {       
-    "Delete Security Group": {               
-        api: "deleteSecurityGroup",     
+    "label.action.delete.security.group": {   
         isAsyncJob: false,  
         dialogBeforeActionFn : doDeleteSecurityGroup,               
         inProcessText: "Deleting Security Group....",
