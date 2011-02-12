@@ -61,7 +61,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.info.RunningHostInfoAgregator;
 import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
-import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
@@ -780,8 +779,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         _itMgr.registerGuru(VirtualMachine.Type.SecondaryStorageVm, this);
 
         _useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        _serviceOffering = new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, _secStorageVmRamSize, _secStorageVmCpuMHz, 0, 0, true, null,
-                Network.GuestIpType.Virtual, _useLocalStorage, true, null, true);
+        _serviceOffering = new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, _secStorageVmRamSize, _secStorageVmCpuMHz, 0, 0, true, null, _useLocalStorage, true, null, true);
         _serviceOffering.setUniqueName("Cloud.com-SecondaryStorage");
         _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
 

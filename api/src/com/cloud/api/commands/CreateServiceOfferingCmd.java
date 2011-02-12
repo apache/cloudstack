@@ -61,9 +61,6 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.TAGS, type=CommandType.STRING, description="the tags for this service offering.")
     private String tags;
 
-    @Parameter(name=ApiConstants.USE_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="if true, the VM created will use default virtual networking. If false, the VM created will use a direct attached networking model. The default value is true.")
-    private Boolean useVirtualNetwork;
-
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the containing domain, null for public offerings")
     private Long domainId; 
     
@@ -106,10 +103,6 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     public Long getDomainId() {
 		return domainId;
 	}
-
-	public Boolean getUseVirtualNetwork() {
-        return useVirtualNetwork;
-    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

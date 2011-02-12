@@ -2525,7 +2525,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Object isAdmin = c.getCriteria(Criteria.ISADMIN);
         assert c.getCriteria(Criteria.IPADDRESS) == null : "We don't support search by ip address on VM any more.  If you see this assert, it means we have to find a different way to search by the nic table.";
         Object groupId = c.getCriteria(Criteria.GROUPID);
-        Object useVirtualNetwork = c.getCriteria(Criteria.FOR_VIRTUAL_NETWORK);
         Object path = c.getCriteria(Criteria.PATH);
         Object networkId = c.getCriteria(Criteria.NETWORKID);
         Object hypervisor = c.getCriteria(Criteria.HYPERVISOR);
@@ -2573,16 +2572,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             sb.join("nicSearch", nicSearch, sb.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
         }
         
-        if (useVirtualNetwork != null) {
-            SearchBuilder<ServiceOfferingVO> serviceSearch = _offeringDao.createSearchBuilder();
-            if ((Boolean)useVirtualNetwork){
-                serviceSearch.and("guestIpType", serviceSearch.entity().getGuestIpType(), SearchCriteria.Op.EQ);
-            } else {
-                serviceSearch.and("guestIpType", serviceSearch.entity().getGuestIpType(), SearchCriteria.Op.NEQ);
-            }
-            sb.join("serviceSearch", serviceSearch, sb.entity().getServiceOfferingId(), serviceSearch.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-
         SearchBuilder<AccountVO> accountRemoved = _accountDao.createSearchBuilder();
         accountRemoved.and("accountremoved", accountRemoved.entity().getRemoved(), SearchCriteria.Op.NULL);
         sb.join("accountRemoved", accountRemoved, sb.entity().getAccountId(), accountRemoved.entity().getId(), JoinBuilder.JoinType.INNER);
@@ -2596,10 +2585,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             sc.setJoinParameters("groupSearch", "groupId", groupId);
         }
         
-        if (useVirtualNetwork != null) {
-            sc.setJoinParameters("serviceSearch", "guestIpType", Network.GuestIpType.Virtual.toString());
-        }
-
         if (keyword != null) {
             SearchCriteria<UserVmVO> ssc = _vmDao.createSearchCriteria();
             ssc.addOr("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");

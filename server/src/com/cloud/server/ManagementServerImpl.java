@@ -1128,8 +1128,6 @@ public class ManagementServerImpl implements ManagementServer {
 		            ServiceOfferingVO offering = _offeringsDao.findById(vmInstance.getServiceOfferingId());
 		            sc.addAnd("id", SearchCriteria.Op.NEQ, offering.getId());
 		            
-		            // Only return offerings with the same Guest IP type and storage pool preference
-		            sc.addAnd("guestIpType", SearchCriteria.Op.EQ, offering.getGuestIpType());
 		            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, offering.getUseLocalStorage());
 		        }
 
@@ -2749,8 +2747,9 @@ public class ManagementServerImpl implements ManagementServer {
     public ConsoleProxyVO destroyConsoleProxy(long instanceId) {
     	ConsoleProxyVO proxy = _consoleProxyDao.findById(instanceId);
     	
-        if(_consoleProxyMgr.destroyProxy(instanceId))
-        	return proxy;
+        if(_consoleProxyMgr.destroyProxy(instanceId)) {
+            return proxy;
+        }
         return null;
     }
 
@@ -3882,8 +3881,9 @@ public class ManagementServerImpl implements ManagementServer {
 
     public SecondaryStorageVmVO destroySecondaryStorageVm(long instanceId) {
     	SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(instanceId);
-    	if(_secStorageVmMgr.destroySecStorageVm(instanceId))
-    		return secStorageVm;
+    	if(_secStorageVmMgr.destroySecStorageVm(instanceId)) {
+            return secStorageVm;
+        }
         return null;
     }
 

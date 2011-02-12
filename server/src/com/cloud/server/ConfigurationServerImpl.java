@@ -57,7 +57,6 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.Network;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -174,8 +173,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
 			
 			// Save Direct Networking service offerings
-			createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance, $0.05 per hour", false, false, false, null);			
-			createServiceOffering(User.UID_SYSTEM, "Medium Instance", 1, 1024, 1000, "Medium Instance, $0.10 per hour", false, false, false, null);
+			createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance, $0.05 per hour", false, false, null);			
+			createServiceOffering(User.UID_SYSTEM, "Medium Instance", 1, 1024, 1000, "Medium Instance, $0.10 per hour", false, false, null);
 			 // Save Virtual Networking service offerings
 			//createServiceOffering(User.UID_SYSTEM, "Small Instance", 1, 512, 500, "Small Instance, Virtual Networking, $0.05 per hour", false, false, true, null);
 			//createServiceOffering(User.UID_SYSTEM, "Medium Instance", 1, 1024, 1000, "Medium Instance, Virtual Networking, $0.10 per hour", false, false, true, null);
@@ -604,8 +603,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         if(domainId!=null){
         	DomainVO domainVo = _domainDao.findById(domainId);
         	
-        	if(domainVo == null)
-        		throw new InvalidParameterValueException("Please specify a valid domain id");
+        	if(domainVo == null) {
+                throw new InvalidParameterValueException("Please specify a valid domain id");
+            }
         }
         // Create the new zone in the database
         DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain, domainId, zoneType);
@@ -688,14 +688,13 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         return _diskOfferingDao.persist(newDiskOffering);
     }
 
-    private ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean useVirtualNetwork, String tags) {
+    private ServiceOfferingVO createServiceOffering(long userId, String name, int cpu, int ramSize, int speed, String displayText, boolean localStorageRequired, boolean offerHA, String tags) {
         String networkRateStr = _configDao.getValue("network.throttling.rate");
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
-        Network.GuestIpType guestIpType = useVirtualNetwork ? Network.GuestIpType.Virtual : Network.GuestIpType.Direct;        
         tags = cleanupTags(tags);
-        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, multicastRate, offerHA, displayText, guestIpType, localStorageRequired, false, tags, false);
+        ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, multicastRate, offerHA, displayText, localStorageRequired, false, tags, false);
         
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             return offering;

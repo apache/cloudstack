@@ -1221,7 +1221,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			throw new AgentUnavailableException(-1);
 		}
 		
-		assert noDbTxn() : "I know, I know.  Why are we so strict as to not allow txn across an agent call?  ...  Why are we so cruel ... Why are we such a dictator .... Too bad... Sorry...but NO AGENT COMMANDS WRAPPED WITHIN DB TRANSACTIONS!"; 
+		//assert noDbTxn() : "I know, I know.  Why are we so strict as to not allow txn across an agent call?  ...  Why are we so cruel ... Why are we such a dictator .... Too bad... Sorry...but NO AGENT COMMANDS WRAPPED WITHIN DB TRANSACTIONS!"; 
 
 		Command[] cmds = commands.toCommands();
 

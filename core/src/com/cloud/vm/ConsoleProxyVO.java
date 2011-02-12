@@ -50,9 +50,6 @@ public class ConsoleProxyVO extends VMInstanceVO implements ConsoleProxy {
     @Column(name="public_netmask", nullable=false)
     private String publicNetmask;
     
-    @Column(name="ram_size", updatable=false, nullable=false)
-    private int ramSize;
-    
     @Column(name="active_session", updatable=true, nullable=false)
     private int activeSession;
     
@@ -93,10 +90,6 @@ public class ConsoleProxyVO extends VMInstanceVO implements ConsoleProxy {
     	this.publicMacAddress = publicMacAddress;
     }
     
-    public void setRamSize(int ramSize) {
-    	this.ramSize = ramSize;
-    }
-    
     public void setActiveSession(int activeSession) {
     	this.activeSession = activeSession;
     }
@@ -123,11 +116,6 @@ public class ConsoleProxyVO extends VMInstanceVO implements ConsoleProxy {
 	public String getPublicMacAddress() {
 		return this.publicMacAddress;
 	}
-    
-    @Override
-	public int getRamSize() {
-    	return this.ramSize;
-    }
     
     @Override
 	public int getActiveSession() {

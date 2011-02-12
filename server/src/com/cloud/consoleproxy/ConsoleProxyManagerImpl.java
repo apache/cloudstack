@@ -83,7 +83,6 @@ import com.cloud.info.RunningHostCountInfo;
 import com.cloud.info.RunningHostInfoAgregator;
 import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.maid.StackMaid;
-import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
@@ -440,8 +439,9 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             }
             
             String restart = _configDao.getValue(Config.ConsoleProxyRestart.key());
-            if(restart != null && restart.equalsIgnoreCase("false"))
+            if(restart != null && restart.equalsIgnoreCase("false")) {
                 return null;
+            }
             
             if(proxy.getState() == VirtualMachine.State.Stopped) {
                 return _itMgr.start(proxy, null, systemUser, systemAcct);
@@ -1336,8 +1336,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, _proxyRamSize, _proxyCpuMHz, 0, 0, true, null, Network.GuestIpType.Virtual,
-                useLocalStorage, true, null, true);
+        _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, _proxyRamSize, _proxyCpuMHz, 0, 0, true, null, useLocalStorage, true, null, true);
         _serviceOffering.setUniqueName("Cloud.com-ConsoleProxy");
         _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
 

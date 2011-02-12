@@ -1,30 +1,13 @@
 # This file is obsolete!  Put what you need into create-schema.sql
 
-ALTER TABLE `cloud`.`account_network_ref` ADD CONSTRAINT `fk_account_network_ref__account_id` FOREIGN KEY `fk_account_network_ref__account_id`(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`account_network_ref` ADD CONSTRAINT `fk_account_network_ref__networks_id` FOREIGN KEY `fk_account_network_ref__networks_id`(`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE;
-
 ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD INDEX `i_op_dc_ip_address_alloc__pod_id__data_center_id__taken` (`pod_id`, `data_center_id`, `taken`, `instance_id`);
 ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD UNIQUE `i_op_dc_ip_address_alloc__ip_address__data_center_id`(`ip_address`, `data_center_id`);
 ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD CONSTRAINT `fk_op_dc_ip_address_alloc__pod_id` FOREIGN KEY `fk_op_dc_ip_address_alloc__pod_id` (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD INDEX `i_op_dc_ip_address_alloc__pod_id`(`pod_id`);
 
-ALTER TABLE `cloud`.`host_pod_ref` ADD INDEX `i_host_pod_ref__data_center_id`(`data_center_id`);
-
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD UNIQUE `i_op_dc_vnet_alloc__vnet__data_center_id__account_id`(`vnet`, `data_center_id`, `account_id`);
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD INDEX `i_op_dc_vnet_alloc__dc_taken`(`data_center_id`, `taken`);
 ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD UNIQUE `i_op_dc_vnet_alloc__vnet__data_center_id`(`vnet`, `data_center_id`);
-
-ALTER TABLE `cloud`.`host` ADD INDEX `i_host__removed`(`removed`);
-ALTER TABLE `cloud`.`host` ADD INDEX `i_host__last_ping`(`last_ping`);
-ALTER TABLE `cloud`.`host` ADD INDEX `i_host__status`(`status`);
-ALTER TABLE `cloud`.`host` ADD INDEX `i_host__data_center_id`(`data_center_id`);
-ALTER TABLE `cloud`.`host` ADD CONSTRAINT `fk_host__pod_id` FOREIGN KEY `fk_host__pod_id` (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`host` ADD INDEX `i_host__pod_id`(`pod_id`);
-ALTER TABLE `cloud`.`host` ADD CONSTRAINT `fk_host__cluster_id` FOREIGN KEY `fk_host__cluster_id`(`cluster_id`) REFERENCES `cloud`.`cluster`(`id`);
-
-ALTER TABLE `cloud`.`op_host` ADD CONSTRAINT `fk_op_host__id` FOREIGN KEY `fk_op_host__id`(`id`) REFERENCES `host`(`id`) ON DELETE CASCADE; 
-ALTER TABLE `cloud`.`host_details` ADD CONSTRAINT `fk_host_details__host_id` FOREIGN KEY `fk_host_details__host_id`(`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`host_tags` ADD CONSTRAINT `fk_host_tags__host_id` FOREIGN KEY `fk_host_tags__host_id`(`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE;
 
 ALTER TABLE `cloud`.`storage_pool` ADD CONSTRAINT `fk_storage_pool__pod_id` FOREIGN KEY `fk_storage_pool__pod_id` (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`storage_pool` ADD INDEX `i_storage_pool__pod_id`(`pod_id`);
@@ -56,12 +39,6 @@ ALTER TABLE `cloud`.`event` ADD INDEX `i_event__user_id`(`user_id`);
 ALTER TABLE `cloud`.`event` ADD INDEX `i_event__account_id` (`account_id`);
 ALTER TABLE `cloud`.`event` ADD INDEX `i_event__level_id`(`level`);
 ALTER TABLE `cloud`.`event` ADD INDEX `i_event__type_id`(`type`);
-
-ALTER TABLE `cloud`.`cluster` ADD CONSTRAINT `fk_cluster__data_center_id` FOREIGN KEY `fk_cluster__data_center_id`(`data_center_id`) REFERENCES `cloud`.`data_center`(`id`);
-ALTER TABLE `cloud`.`cluster` ADD CONSTRAINT `fk_cluster__pod_id` FOREIGN KEY `fd_cluster__pod_id`(`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`);
-ALTER TABLE `cloud`.`cluster` ADD UNIQUE `i_cluster__pod_id__name`(`pod_id`, `name`);
-
-ALTER TABLE `cloud`.`cluster_details` ADD CONSTRAINT `fk_cluster_details__cluster_id` FOREIGN KEY `fk_cluster_details__cluster_id`(`cluster_id`) REFERENCES `cluster`(`id`) ON DELETE CASCADE;
 
 ALTER TABLE `cloud`.`vm_template` ADD INDEX `i_vm_template__removed`(`removed`);
 ALTER TABLE `cloud`.`vm_template` ADD INDEX `i_vm_template__public`(`public`);

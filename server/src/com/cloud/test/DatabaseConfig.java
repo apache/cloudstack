@@ -51,8 +51,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import com.cloud.host.Status;
-import com.cloud.network.Network;
-import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.DiskOfferingVO;
@@ -523,8 +521,9 @@ public class DatabaseConfig {
     		stmt.setString(3, "mount.parent");
     		if (nfs) {
     			stmt.setString(4, "/mnt");
-    		} else
-    			stmt.setString(4, "/");
+    		} else {
+                stmt.setString(4, "/");
+            }
     		stmt.executeUpdate();
 
     		stmt.setLong(1, 2);
@@ -532,8 +531,9 @@ public class DatabaseConfig {
     		stmt.setString(3, "mount.path");
     		if (nfs) {
     			stmt.setString(4, mountPoint);
-    		} else
-    			stmt.setString(4, url.replaceFirst("file:/", ""));
+    		} else {
+                stmt.setString(4, url.replaceFirst("file:/", ""));
+            }
     		stmt.executeUpdate();
 
     		stmt.setLong(1, 3);
@@ -567,10 +567,11 @@ public class DatabaseConfig {
              stmt.setLong(1, _poolId++);
              stmt.setString(2, name);
              stmt.setString(3, uuid);
-             if (storageType == null)
-            	 stmt.setString(4, "NetworkFileSystem");
-             else
-            	 stmt.setString(4, storageType);
+             if (storageType == null) {
+                stmt.setString(4, "NetworkFileSystem");
+            } else {
+                stmt.setString(4, storageType);
+            }
              stmt.setLong(5, 111);
              stmt.setLong(6, dataCenterId);
              stmt.setLong(7,0);
@@ -609,11 +610,21 @@ public class DatabaseConfig {
         
         // Check that all IPs are valid
         String ipError = "Please enter a valid IP address for the field: ";
-        if (!IPRangeConfig.validOrBlankIP(dns1)) printError(ipError + "dns1");
-        if (!IPRangeConfig.validOrBlankIP(dns2)) printError(ipError + "dns2");
-        if (!IPRangeConfig.validOrBlankIP(internalDns1)) printError(ipError + "internalDns1");
-        if (!IPRangeConfig.validOrBlankIP(internalDns2)) printError(ipError + "internalDns2");
-        if (!IPRangeConfig.validCIDR(guestNetworkCidr)) printError("Please enter a valid value for guestNetworkCidr");
+        if (!IPRangeConfig.validOrBlankIP(dns1)) {
+            printError(ipError + "dns1");
+        }
+        if (!IPRangeConfig.validOrBlankIP(dns2)) {
+            printError(ipError + "dns2");
+        }
+        if (!IPRangeConfig.validOrBlankIP(internalDns1)) {
+            printError(ipError + "internalDns1");
+        }
+        if (!IPRangeConfig.validOrBlankIP(internalDns2)) {
+            printError(ipError + "internalDns2");
+        }
+        if (!IPRangeConfig.validCIDR(guestNetworkCidr)) {
+            printError("Please enter a valid value for guestNetworkCidr");
+        }
     	int vnetStart = -1;
     	int vnetEnd = -1;
     	if (vnetRange != null) {
@@ -636,28 +647,42 @@ public class DatabaseConfig {
         String vlanPodName = _currentObjectParams.get("podName");
         
         String ipError = "Please enter a valid IP address for the field: ";
-        if (!IPRangeConfig.validOrBlankIP(gateway)) printError(ipError + "gateway");
-        if (!IPRangeConfig.validOrBlankIP(netmask)) printError(ipError + "netmask");
+        if (!IPRangeConfig.validOrBlankIP(gateway)) {
+            printError(ipError + "gateway");
+        }
+        if (!IPRangeConfig.validOrBlankIP(netmask)) {
+            printError(ipError + "netmask");
+        }
         
         // Check that the given IP address range was valid
-    	if (!checkIpAddressRange(publicIpRange)) printError("Please enter a valid public IP range.");
+    	if (!checkIpAddressRange(publicIpRange)) {
+            printError("Please enter a valid public IP range.");
+        }
         
     	// Split the IP address range
     	String[] ipAddressRangeArray = publicIpRange.split("\\-");
     	String startIP = ipAddressRangeArray[0];
     	String endIP = null;
-    	if (ipAddressRangeArray.length > 1) endIP = ipAddressRangeArray[1];
+    	if (ipAddressRangeArray.length > 1) {
+            endIP = ipAddressRangeArray[1];
+        }
     	
     	// If a netmask was provided, check that the startIP, endIP, and gateway all belong to the same subnet
     	if (netmask != null && netmask != "") {
     		if (endIP != null) {
-    			if (!IPRangeConfig.sameSubnet(startIP, endIP, netmask)) printError("Start and end IPs for the public IP range must be in the same subnet, as per the provided netmask.");
+    			if (!IPRangeConfig.sameSubnet(startIP, endIP, netmask)) {
+                    printError("Start and end IPs for the public IP range must be in the same subnet, as per the provided netmask.");
+                }
     		}
     		
     		if (gateway != null && gateway != "") {
-    			if (!IPRangeConfig.sameSubnet(startIP, gateway, netmask)) printError("The start IP for the public IP range must be in the same subnet as the gateway, as per the provided netmask.");
+    			if (!IPRangeConfig.sameSubnet(startIP, gateway, netmask)) {
+                    printError("The start IP for the public IP range must be in the same subnet as the gateway, as per the provided netmask.");
+                }
     			if (endIP != null) {
-    				if (!IPRangeConfig.sameSubnet(endIP, gateway, netmask)) printError("The end IP for the public IP range must be in the same subnet as the gateway, as per the provided netmask.");
+    				if (!IPRangeConfig.sameSubnet(endIP, gateway, netmask)) {
+                        printError("The end IP for the public IP range must be in the same subnet as the gateway, as per the provided netmask.");
+                    }
     			}
     		}
     	}
@@ -708,12 +733,16 @@ public class DatabaseConfig {
                        
 		if (privateIpRange != null) {
 			// Check that the given IP address range was valid
-			if (!checkIpAddressRange(privateIpRange)) printError("Please enter a valid private IP range.");
+			if (!checkIpAddressRange(privateIpRange)) {
+                printError("Please enter a valid private IP range.");
+            }
     		
     		String[] ipAddressRangeArray = privateIpRange.split("\\-");
     		startIP = ipAddressRangeArray[0];
     		endIP = null;
-    		if (ipAddressRangeArray.length > 1) endIP = ipAddressRangeArray[1];
+    		if (ipAddressRangeArray.length > 1) {
+                endIP = ipAddressRangeArray[1];
+            }
 		}
     	
     	// Check that the start IP and end IP match up with the CIDR
@@ -752,13 +781,6 @@ public class DatabaseConfig {
         int mcRate = 10;
         boolean ha = Boolean.parseBoolean(_currentObjectParams.get("enableHA"));
         boolean mirroring = Boolean.parseBoolean(_currentObjectParams.get("mirrored"));
-        String guestIpType = _currentObjectParams.get("guestIpType");
-        Network.GuestIpType type = null;
-        if (guestIpType == null) {
-            type = Network.GuestIpType.Virtual;
-        } else {
-            type = Network.GuestIpType.valueOf(guestIpType);
-        }
         
         boolean useLocalStorage;
         if (useLocalStorageValue != null) {
@@ -771,7 +793,7 @@ public class DatabaseConfig {
         	useLocalStorage = false;
         }
         
-        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, nwRate, mcRate, ha, displayText, type, useLocalStorage, false, null, false);
+        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, nwRate, mcRate, ha, displayText, useLocalStorage, false, null, false);
         ServiceOfferingDaoImpl dao = ComponentLocator.inject(ServiceOfferingDaoImpl.class);
         try {
             dao.persist(serviceOffering);
@@ -848,7 +870,9 @@ public class DatabaseConfig {
     	boolean saveNetworkThrottlingRate = (_networkThrottlingRate != null);
     	boolean saveMulticastThrottlingRate = (_multicastThrottlingRate != null);
     	
-    	if (!saveNetworkThrottlingRate && !saveMulticastThrottlingRate) return;
+    	if (!saveNetworkThrottlingRate && !saveMulticastThrottlingRate) {
+            return;
+        }
     	
     	String insertNWRateSql = "UPDATE `cloud`.`service_offering` SET `nw_rate` = ?";
     	String insertMCRateSql = "UPDATE `cloud`.`service_offering` SET `mc_rate` = ?";
@@ -958,7 +982,9 @@ public class DatabaseConfig {
         String password = _currentObjectParams.get("password");
         String email = _currentObjectParams.get("email");
         
-        if (email == null || email.equals("")) printError("An email address for each user is required.");
+        if (email == null || email.equals("")) {
+            printError("An email address for each user is required.");
+        }
         
         MessageDigest md5 = null;
         try {
@@ -1025,16 +1051,21 @@ public class DatabaseConfig {
         
         String instanceNameError = "Please enter a non-blank value for the field: ";
         if (name.equals("instance.name")) {
-        	if (value == null || value.isEmpty() || !value.matches("^[A-Za-z0-9]{1,8}$"))
-        		printError(instanceNameError + "configuration: instance.name can not be empty and can only contain numbers and alphabets up to 8 characters long");
+        	if (value == null || value.isEmpty() || !value.matches("^[A-Za-z0-9]{1,8}$")) {
+                printError(instanceNameError + "configuration: instance.name can not be empty and can only contain numbers and alphabets up to 8 characters long");
+            }
         }
         
         if (name.equals("network.throttling.rate")) {
-        	if (value != null && !value.isEmpty()) _networkThrottlingRate = value;
+        	if (value != null && !value.isEmpty()) {
+                _networkThrottlingRate = value;
+            }
         }
         
         if (name.equals("multicast.throttling.rate")) {
-        	if (value != null && !value.isEmpty()) _multicastThrottlingRate = value;
+        	if (value != null && !value.isEmpty()) {
+                _multicastThrottlingRate = value;
+            }
         }
 
         String insertSql = "INSERT INTO `cloud`.`configuration` (instance, component, name, value, description, category) " +
@@ -1060,7 +1091,9 @@ public class DatabaseConfig {
     	String[] ipAddressRangeArray = ipAddressRange.split("\\-");
     	String startIP = ipAddressRangeArray[0];
     	String endIP = null;
-    	if (ipAddressRangeArray.length > 1) endIP = ipAddressRangeArray[1];
+    	if (ipAddressRangeArray.length > 1) {
+            endIP = ipAddressRangeArray[1];
+        }
     	
     	if (!IPRangeConfig.validIP(startIP)) {
     		s_logger.error("The private IP address: " + startIP + " is invalid.");
@@ -1199,8 +1232,9 @@ public class DatabaseConfig {
 	    	if (rs.next()) {
 	    		String value = rs.getString(name);
 	    		return value;
-	    	}
-	    	else return null;
+	    	} else {
+                return null;
+            }
 		} catch (SQLException e) {
 			System.out.println("Exception: " + e.getMessage());
 			printError(errorMsg);
@@ -1217,8 +1251,11 @@ public class DatabaseConfig {
 		try {
 			stmt = txn.prepareAutoCloseStatement(selectSql);
 			ResultSet rs = stmt.executeQuery();
-	    	if (rs.next()) return rs.getLong(name);
-	    	else return -1;
+	    	if (rs.next()) {
+                return rs.getLong(name);
+            } else {
+                return -1;
+            }
 		} catch (SQLException e) {
 			System.out.println("Exception: " + e.getMessage());
 			printError(errorMsg);

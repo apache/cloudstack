@@ -354,12 +354,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         ServiceOfferingVO currentServiceOffering = _serviceOfferingDao.findById(router.getServiceOfferingId());
 
-        if (!currentServiceOffering.getGuestIpType().equals(newServiceOffering.getGuestIpType())) {
-            throw new InvalidParameterValueException("Can't upgrade router, due to the new network type: " + newServiceOffering.getGuestIpType()
-                    + " being different from " + "current network type: " + currentServiceOffering.getGuestIpType());
-        }
         if (currentServiceOffering.getUseLocalStorage() != newServiceOffering.getUseLocalStorage()) {
-            throw new InvalidParameterValueException("Can't upgrade, due to new local storage status : " + newServiceOffering.getGuestIpType()
+            throw new InvalidParameterValueException("Can't upgrade, due to new local storage status : " + newServiceOffering.getUseLocalStorage()
                     + " is different from " + "curruent local storage status: " + currentServiceOffering.getUseLocalStorage());
         }
 
@@ -570,8 +566,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         _itMgr.registerGuru(VirtualMachine.Type.DomainRouter, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        _offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, _routerCpuMHz, 0, 0, true, null,
-                Network.GuestIpType.Virtual, useLocalStorage, true, null, true);
+        _offering = new ServiceOfferingVO("System Offering For Software Router", 1, _routerRamSize, _routerCpuMHz, 0, 0, true, null, useLocalStorage, true, null, true);
         _offering.setUniqueName("Cloud.Com-SoftwareRouter");
         _offering = _serviceOfferingDao.persistSystemServiceOffering(_offering);
 
@@ -782,7 +777,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             /*Before starting router, already know the hypervisor type*/
             VMTemplateVO template = _templateDao.findRoutingTemplate(dest.getCluster().getHypervisorType());
             router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(),
-                    template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA(), guestNetwork.getNetworkDomain());
+                    template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA());
             router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
         }
 
@@ -851,7 +846,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             VMTemplateVO template = _templateDao.findRoutingTemplate(dest.getCluster().getHypervisorType());
             
             router = new DomainRouterVO(id, _offering.getId(), VirtualMachineName.getRouterName(id, _instance), template.getId(),
-                    template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA(), guestNetwork.getNetworkDomain());
+                    template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), _offering.getOfferHA());
             router.setRole(Role.DHCP_USERDATA);
             router = _itMgr.allocate(router, template, _offering, networks, plan, null, owner);
         }
@@ -888,7 +883,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             dhcpRange = NetUtils.getDhcpRange(cidr);
         } 
         
-        String domain = network.getNetworkDomain();
         if (router.getRole() == Role.DHCP_USERDATA) {
             type = "dhcpsrvr";
         } else {
@@ -950,8 +944,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (dhcpRange != null) {
             buf.append(" dhcprange=" + dhcpRange);
         }
+        String domain = network.getNetworkDomain();
         if (domain != null) {
-            buf.append(" domain=" + router.getDomain());
+            buf.append(" domain=" + domain);
         }
         
         if (!network.isDefault() && network.getGuestType() == GuestIpType.Direct) {

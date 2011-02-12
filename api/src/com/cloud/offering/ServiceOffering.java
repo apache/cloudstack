@@ -19,8 +19,6 @@ package com.cloud.offering;
 
 import java.util.Date;
 
-import com.cloud.network.Network;
-
 /**
  * ServiceOffering models the different types of service contracts to be 
  * offered.
@@ -68,11 +66,6 @@ public interface ServiceOffering {
      * @return the rate megabits per sec to which a VM's multicast&broadcast traffic is throttled to
      */
     int getMulticastRateMbps();
-    
-    /**
-     * @return the type of IP address to allocate as the primary ip address to a guest
-     */
-    Network.GuestIpType getGuestIpType();
     
     /**
      * @return whether or not the service offering requires local storage

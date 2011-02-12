@@ -54,10 +54,6 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
     @Column(name="nfs_share", nullable=false)
     private String nfsShare;
     
-    
-    @Column(name="ram_size", updatable=false, nullable=false)
-    private int ramSize;
-    
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name="last_update", updatable=true, nullable=true)
     private Date lastUpdateTime;
@@ -85,10 +81,6 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
     	this.publicMacAddress = publicMacAddress;
     }
     
-    public void setRamSize(int ramSize) {
-    	this.ramSize = ramSize;
-    }
-    
     public void setLastUpdateTime(Date time) {
     	this.lastUpdateTime = time;
     }
@@ -108,11 +100,6 @@ public class SecondaryStorageVmVO extends VMInstanceVO implements SecondaryStora
 		return this.publicMacAddress;
 	}
     
-    @Override
-	public int getRamSize() {
-    	return this.ramSize;
-    }
-
    @Override
     public Date getLastUpdateTime() {
     	return this.lastUpdateTime;

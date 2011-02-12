@@ -150,7 +150,7 @@ public class FirstFitAllocator implements HostAllocator {
                 s_logger.debug("Found " + domainRouters.size() + " router domains on host " + host.getId());
             }
             for (DomainRouterVO router : domainRouters) {
-                usedMemory += router.getRamSize() * 1024L * 1024L;
+                usedMemory += 0;//FIXME or more like get rid of me router.getRamSize() * 1024L * 1024L;
             }
 
             List<ConsoleProxyVO> proxys = _consoleProxyDao.listUpByHostId(host.getId());
@@ -158,7 +158,7 @@ public class FirstFitAllocator implements HostAllocator {
                 s_logger.debug("Found " + proxys.size() + " console proxy on host " + host.getId());
             }
             for(ConsoleProxyVO proxy : proxys) {
-                usedMemory += proxy.getRamSize() * 1024L * 1024L;
+                usedMemory += 0; // FIXME or get ird of me totally proxy.getRamSize() * 1024L * 1024L;
             }
             
             List<SecondaryStorageVmVO> secStorageVms = _secStorgaeVmDao.listUpByHostId(host.getId());
@@ -166,7 +166,7 @@ public class FirstFitAllocator implements HostAllocator {
                 s_logger.debug("Found " + secStorageVms.size() + " secondary storage VM on host " + host.getId());
             }
             for(SecondaryStorageVmVO secStorageVm : secStorageVms) {
-                usedMemory += secStorageVm.getRamSize() * 1024L * 1024L;
+                usedMemory += 0; // FIXME or get rid of me  secStorageVm.getRamSize() * 1024L * 1024L;
             }
             		
             List<UserVmVO> vms = _vmDao.listUpByHostId(host.getId());

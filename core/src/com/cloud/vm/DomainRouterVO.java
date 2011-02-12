@@ -37,9 +37,6 @@ import com.cloud.network.router.VirtualRouter;
 @PrimaryKeyJoinColumn(name="id")
 @DiscriminatorValue(value="DomainRouter")
 public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
-    @Column(name="ram_size", nullable=false)
-    private int ramSize;
-    
     @Column(name="public_ip_address")
     private String publicIpAddress;
     
@@ -52,12 +49,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Column(name="guest_ip_address")
     private String guestIpAddress;
     
-    @Column(name="guest_netmask")
-    private String guestNetmask;
-
-    @Column(name="domain", nullable=false)
-    private String domain;
-
     @Column(name="network_id")
     long networkId;
     
@@ -73,12 +64,10 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
             long guestOSId,
             long domainId,
             long accountId,
-            long networkConfigurationId,
-            boolean haEnabled, 
-            String networkDomain) {
+            long networkId,
+            boolean haEnabled) {
         super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
-        this.networkId = networkConfigurationId;
-        this.domain = networkDomain;
+        this.networkId = networkId;
     }
 
     public void setPublicIpAddress(String publicIpAddress) {
@@ -101,10 +90,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
         this.guestIpAddress = routerIpAddress;
     }
 
-    public void setDomain(String domain) {
-        this.domain = domain;
-    }
-
     @Override
     public long getDataCenterId() {
         return dataCenterId;
@@ -124,20 +109,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     
     protected DomainRouterVO() {
         super();
-    }
-    
-    public String getDomain() {
-        return domain;
-    }
-
-    @Override
-    public int getRamSize() {
-        return ramSize;
-    }
-    
-    @Override
-    public void setRamSize(int ramSize) {
-        this.ramSize = ramSize;
     }
     
     public String getPublicIpAddress() {

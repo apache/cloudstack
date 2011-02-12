@@ -29,16 +29,9 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.Listener;
-import com.cloud.agent.api.AgentControlAnswer;
-import com.cloud.agent.api.AgentControlCommand;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.StartupCommand;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -374,7 +367,7 @@ public class CapacityManagerImpl implements CapacityManager , StateListener<Stat
                 /*Release capacity from original host*/
                releaseVmCapacity(vm, false, false, vm.getLastHostId());
                releaseVmCapacity(vm, false, true, oldHostId);
-            } else if (event == Event.MigrationFailedOnSource) {
+            } else if (event == Event.OperationFailed) {
                /*Release from dest host*/
                 releaseVmCapacity(vm, false, false, oldHostId);
             } else if (event == Event.OperationSucceeded) {

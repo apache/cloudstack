@@ -158,14 +158,14 @@ CREATE TABLE `cloud`.`networks` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-
-
 CREATE TABLE `cloud`.`account_network_ref` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `account_id` bigint unsigned NOT NULL COMMENT 'account id',
   `network_id` bigint unsigned NOT NULL COMMENT 'network id',
   `is_owner` smallint(1) NOT NULL COMMENT 'is the owner of the network',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_account_network_ref__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_account_network_ref__networks_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`certificate` (
@@ -195,7 +195,7 @@ CREATE TABLE `cloud`.`nics` (
   `device_id` int(10) COMMENT 'device id for the network when plugged into the virtual machine',
   `update_time` timestamp NOT NULL COMMENT 'time the state was changed',
   `isolation_uri` varchar(255) COMMENT 'id for isolation',
-  `ip6_address` varchar(32) COMMENT 'ip6 address',
+  `ip6_address` char(40) COMMENT 'ip6 address',
   `default_nic` tinyint NOT NULL COMMENT "None", 
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
@@ -238,7 +238,10 @@ CREATE TABLE `cloud`.`cluster` (
   `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id',
   `hypervisor_type` varchar(32),
   `cluster_type` varchar(64) DEFAULT 'CloudManaged',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_cluster__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`),
+  CONSTRAINT `fk_cluster__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`),
+  UNIQUE `i_cluster__pod_id__name`(`pod_id`, `name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`cluster_details` (
@@ -246,7 +249,8 @@ CREATE TABLE `cloud`.`cluster_details` (
   `cluster_id` bigint unsigned NOT NULL COMMENT 'cluster id',
   `name` varchar(255) NOT NULL,
   `value` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_cluster_details__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `cluster`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_host_upgrade` (
@@ -464,7 +468,8 @@ CREATE TABLE  `cloud`.`host_pod_ref` (
   `description` varchar(255) COMMENT 'store private ip range in startIP-endIP format',
   `enabled` tinyint NOT NULL DEFAULT 1 COMMENT 'Is this Pod enabled for activity',
   PRIMARY KEY  (`id`),
-  UNIQUE KEY (`name`, `data_center_id`)
+  UNIQUE KEY (`name`, `data_center_id`),
+  INDEX `i_host_pod_ref__data_center_id`(`data_center_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_dc_vnet_alloc` (
@@ -530,7 +535,6 @@ CREATE TABLE `cloud`.`port_forwarding_rules` (
   CONSTRAINT `fk_port_forwarding_rules__id` FOREIGN KEY(`id`) REFERENCES `firewall_rules`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-
 CREATE TABLE  `cloud`.`host` (
   `id` bigint unsigned NOT NULL auto_increment,
   `name` varchar(255) NOT NULL,
@@ -572,13 +576,21 @@ CREATE TABLE  `cloud`.`host` (
   `disconnected` datetime COMMENT 'Time this was disconnected',
   `created` datetime COMMENT 'date the host first signed on',
   `removed` datetime COMMENT 'date removed if not null',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  INDEX `i_host__removed`(`removed`),
+  INDEX `i_host__last_ping`(`last_ping`),
+  INDEX `i_host__status`(`status`),
+  INDEX `i_host__data_center_id`(`data_center_id`),
+  CONSTRAINT `fk_host__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE,
+  INDEX `i_host__pod_id`(`pod_id`),
+  CONSTRAINT `fk_host__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `cloud`.`cluster`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_host` (
   `id` bigint unsigned NOT NULL UNIQUE COMMENT 'host id',
   `sequence` bigint unsigned DEFAULT 1 NOT NULL COMMENT 'sequence for the host communication',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_op_host__id` FOREIGN KEY (`id`) REFERENCES `host`(`id`) ON DELETE CASCADE 
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`host_details` (
@@ -586,7 +598,8 @@ CREATE TABLE `cloud`.`host_details` (
   `host_id` bigint unsigned NOT NULL COMMENT 'host id',
   `name` varchar(255) NOT NULL,
   `value` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_host_details__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`mshost` (
@@ -606,7 +619,8 @@ CREATE TABLE `cloud`.`host_tags` (
   `id` bigint unsigned NOT NULL auto_increment,
   `host_id` bigint unsigned NOT NULL COMMENT 'host id',
   `tag` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_host_tags__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`user` (
@@ -779,12 +793,9 @@ CREATE TABLE `cloud`.`user_vm_details` (
 
 CREATE TABLE `cloud`.`domain_router` (
   `id` bigint unsigned UNIQUE NOT NULL COMMENT 'Primary Key',
-  `ram_size` int(10) unsigned NOT NULL DEFAULT 128 COMMENT 'memory to use in mb',
-  `domain` varchar(255) COMMENT 'domain',
   `public_mac_address` varchar(17)   COMMENT 'mac address of the public facing network card',
   `public_ip_address` varchar(15)  COMMENT 'public ip address used for source net',
   `public_netmask` varchar(15)  COMMENT 'netmask used for the domR',
-  `guest_mac_address` varchar(17) COMMENT 'mac address of the pod facing network card',
   `guest_netmask` varchar(15) COMMENT 'netmask used for the guest network',
   `guest_ip_address` varchar(15) COMMENT ' ip address in the guest network',   
   `network_id` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'network configuration that this domain router belongs to',
@@ -1030,7 +1041,6 @@ CREATE TABLE  `cloud`.`service_offering` (
   `nw_rate` smallint unsigned default 200 COMMENT 'network rate throttle mbits/s',
   `mc_rate` smallint unsigned default 10 COMMENT 'mcast rate throttle mbits/s',
   `ha_enabled` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Enable HA',
-  `guest_ip_type` varchar(255) NOT NULL DEFAULT 'Virtualized' COMMENT 'Type of guest network -- direct or virtualized',
   `host_tag` varchar(255) COMMENT 'host tag specified by the service_offering',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

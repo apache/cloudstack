@@ -21,13 +21,10 @@ package com.cloud.service;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import com.cloud.network.Network;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.DiskOfferingVO;
 
@@ -54,15 +51,11 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     @Column(name="ha_enabled")
     private boolean offerHA;
     
-    @Column(name="guest_ip_type")
-    @Enumerated(EnumType.STRING)
-    private Network.GuestIpType guestIpType;
-    
     protected ServiceOfferingVO() {
         super();
     }
 
-    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, Network.GuestIpType guestIpType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse) {
+    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse) {
         super(name, displayText, false, tags, recreatable, useLocalStorage, systemUse, true);
         this.cpu = cpu;
         this.ramSize = ramSize;
@@ -70,10 +63,9 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.rateMbps = rateMbps;
         this.multicastRateMbps = multicastRateMbps;
         this.offerHA = offerHA;
-        this.guestIpType = guestIpType;
     }
 
-    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, Network.GuestIpType guestIpType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, Long domainId) {
+    public ServiceOfferingVO(String name, int cpu, int ramSize, int speed, int rateMbps, int multicastRateMbps, boolean offerHA, String displayText, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, Long domainId) {
         super(name, displayText, false, tags, recreatable, useLocalStorage, systemUse, true, domainId);
         this.cpu = cpu;
         this.ramSize = ramSize;
@@ -81,7 +73,6 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.rateMbps = rateMbps;
         this.multicastRateMbps = multicastRateMbps;
         this.offerHA = offerHA;
-        this.guestIpType = guestIpType;
     }
 
 	@Override
@@ -149,13 +140,4 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 		return multicastRateMbps;
 	}
 
-	public void setGuestIpType(Network.GuestIpType guestIpType) {
-		this.guestIpType = guestIpType;
-	}
-
-	@Override
-    public Network.GuestIpType getGuestIpType() {
-		return guestIpType;
-	}
-	
 }

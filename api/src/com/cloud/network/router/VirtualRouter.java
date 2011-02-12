@@ -28,12 +28,5 @@ public interface VirtualRouter extends VirtualMachine {
 		DHCP_FIREWALL_LB_PASSWD_USERDATA,
 		DHCP_USERDATA
 	}
-    /**
-     * @return the ram size for this machine.
-     */
-    public int getRamSize();
-    
     Role getRole();
-
-	void setRamSize(int ramSize);
 }
