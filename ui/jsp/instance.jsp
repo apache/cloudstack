@@ -1151,7 +1151,7 @@ dictionary = {
 </div>
 
 <!-- Attach ISO Dialog -->
-<div id="dialog_attach_iso" title="Attach ISO" style="display: none">
+<div id="dialog_attach_iso" title='<fmt:message key="label.action.attach.iso" />' style="display: none">
     <p> 
         <fmt:message key="message.attach.iso.confirm" />     
     </p>
@@ -1172,7 +1172,7 @@ dictionary = {
 </div>
 
 <!-- Change Service Offering Dialog -->
-<div id="dialog_change_service_offering" title="Change Service Offering" style="display: none">
+<div id="dialog_change_service_offering" title='<fmt:message key="label.action.change.service" />' style="display: none">
     <p> 
 		<fmt:message key="message.change.offering.confirm" />
     </p>
@@ -1193,7 +1193,7 @@ dictionary = {
 </div>
 
 <!-- Create template of disk volume dialog (begin) -->
-<div id="dialog_create_template" title="Create template of disk volume" style="display: none">
+<div id="dialog_create_template" title='<fmt:message key="label.action.create.template" />' style="display: none">
     <p> 
 		<fmt:message key="message.volume.create.template.confirm" />
     </p>
