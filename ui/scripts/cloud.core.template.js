@@ -796,7 +796,7 @@ function doDownloadTemplate($actionLink, $detailsTab, $midmenuItem1) {
 		                            $infoContainer.find("#icon,#info").removeClass("error");
 		                            var url = decodeURIComponent(json.queryasyncjobresultresponse.jobresult.template.url);	
 		                            var htmlMsg = dictionary["message.download.template"];		                            
-		                            var htmlMsg2 = htmlMsg.replace(/#/g, url);       
+		                            var htmlMsg2 = htmlMsg.replace(/#/, url).replace(/00000/, url);       
 		                            $infoContainer.find("#info").html(htmlMsg2);
 		                            $infoContainer.show();		                        
 		                        } else if (result.jobstatus == 2) { // Failed			                            	                            		                            
