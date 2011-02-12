@@ -92,10 +92,26 @@ function routerJsonToDetailsTab() {
     var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
+    
+    //uncomment the following section when Bug 8578("listRouters API doesnt' take in id parameter correctly") is fixed.
+    /*   
+    $.ajax({
+        data: createURL("command=listRouters&id="+jsonObj.id),
+        dataType: "json",
+        async: false,
+        success: function(json) {  
+            var items = json.listroutersresponse.router;                   
+            if(items != null && items.length > 0) {
+                jsonObj = items[0];
+                $midmenuItem1.data("jsonObj", jsonObj);  
+            }
+        }
+    });     
+    */
         
-    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
-            
+    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));            
     setVmStateInRightPanel(fromdb(jsonObj.state), $thisTab.find("#state"));  
+    $thisTab.find("#id").text(fromdb(jsonObj.id));  
     $thisTab.find("#ipAddress").text(fromdb(jsonObj.publicip));
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));
     $thisTab.find("#name").text(fromdb(jsonObj.name));

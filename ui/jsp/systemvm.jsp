@@ -87,27 +87,7 @@ dictionary = {
 	                        </p>
 	                    </div>
 	                </div>
-	            </div>
-	            <div class="grid_rows even">
-	                <div class="grid_row_cell" style="width: 20%;">
-	                    <div class="row_celltitles">
-	                        <fmt:message key="label.system.vm.type"/>:</div>
-	                </div>
-	                <div class="grid_row_cell" style="width: 79%;">
-	                    <div class="row_celltitles" id="systemvmtype">
-	                    </div>
-	                </div>
-	            </div>
-	            <div class="grid_rows odd">
-	                <div class="grid_row_cell" style="width: 20%;">
-	                    <div class="row_celltitles">
-	                        <fmt:message key="label.zone"/>:</div>
-	                </div>
-	                <div class="grid_row_cell" style="width: 79%;">
-	                    <div class="row_celltitles" id="zonename">
-	                    </div>
-	                </div>
-	            </div>
+	            </div>	            
 	            <div class="grid_rows even">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">
@@ -117,7 +97,27 @@ dictionary = {
 	                    <div class="row_celltitles" id="id">
 	                    </div>
 	                </div>
+	            </div>	            
+	            <div class="grid_rows odd">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <fmt:message key="label.system.vm.type"/>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="systemvmtype">
+	                    </div>
+	                </div>
 	            </div>
+	            <div class="grid_rows even">
+	                <div class="grid_row_cell" style="width: 20%;">
+	                    <div class="row_celltitles">
+	                        <fmt:message key="label.zone"/>:</div>
+	                </div>
+	                <div class="grid_row_cell" style="width: 79%;">
+	                    <div class="row_celltitles" id="zonename">
+	                    </div>
+	                </div>
+	            </div>	           
 	            <div class="grid_rows odd">
 	                <div class="grid_row_cell" style="width: 20%;">
 	                    <div class="row_celltitles">

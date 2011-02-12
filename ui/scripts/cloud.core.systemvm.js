@@ -84,8 +84,20 @@ function systemvmJsonToDetailsTab() {
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
        
-    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));
+    $.ajax({
+        data: createURL("command=listSystemVms&id="+jsonObj.id),
+        dataType: "json",
+        async: false,
+        success: function(json) {  
+            var items = json.listsystemvmsresponse.systemvm;                   
+            if(items != null && items.length > 0) {
+                jsonObj = items[0];
+                $midmenuItem1.data("jsonObj", jsonObj);  
+            }
+        }
+    });     
        
+    $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));       
     resetViewConsoleAction(jsonObj, $thisTab);         
     setVmStateInRightPanel(fromdb(jsonObj.state), $thisTab.find("#state"));		
     $thisTab.find("#ipAddress").text(fromdb(jsonObj.publicip));
