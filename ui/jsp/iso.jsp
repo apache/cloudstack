@@ -306,7 +306,7 @@ dictionary = {
 <!-- Add ISO Dialog (end) -->
 
 <!-- Copy ISO Dialog (begin) -->
-<div id="dialog_copy_iso" title="Copy ISO" style="display:none">	
+<div id="dialog_copy_iso" title='<fmt:message key="label.action.copy.ISO"/>' style="display:none">	
     <p>
 	    <fmt:message key="message.copy.iso.confirm"/>:	    
 	</p>
@@ -327,7 +327,7 @@ dictionary = {
 <!--  Copy ISO Dialog (end) -->
 
 <!-- Create VM from ISO (begin) -->
-<div id="dialog_create_vm_from_iso" title="Create VM from ISO" style="display:none">	
+<div id="dialog_create_vm_from_iso" title='<fmt:message key="label.action.create.vm"/>' style="display:none">	
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form5">
 			<ol>			   
@@ -372,7 +372,7 @@ dictionary = {
 </div>
 
 <!-- Download ISO Dialog (begin) -->
-<div id="dialog_download_ISO" title="Download ISO" style="display: none">    
+<div id="dialog_download_ISO" title='<fmt:message key="label.action.download.ISO"/>' style="display: none">    
    <!--Loading box-->
    <div id="spinning_wheel" class="ui_dialog_loaderbox">
        <div class="ui_dialog_loader">

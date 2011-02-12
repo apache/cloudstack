@@ -269,7 +269,7 @@ dictionary = {
 <!--  top buttons (end) -->
 
 <!-- Copy Template Dialog (begin) -->
-<div id="dialog_copy_template" title="Copy Template" style="display:none">
+<div id="dialog_copy_template" title='<fmt:message key="label.action.copy.template"/>' style="display:none">
 	<p><fmt:message key="message.copy.template"/></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form3">
@@ -288,7 +288,7 @@ dictionary = {
 <!--  Copy Template Dialog (end) -->
 
 <!-- Create VM from template (begin) -->
-<div id="dialog_create_vm_from_template" title="Create VM from template" style="display:none">
+<div id="dialog_create_vm_from_template" title='<fmt:message key="label.action.create.vm"/>' style="display:none">
 	<p><fmt:message key="message.create.template"/></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form5">
@@ -399,7 +399,7 @@ dictionary = {
 </div>
 
 <!-- Download Template Dialog (begin) -->
-<div id="dialog_download_template" title="Download Template" style="display: none">    
+<div id="dialog_download_template" title='<fmt:message key="label.action.download.template"/>' style="display: none">    
     <!--Loading box-->
     <div id="spinning_wheel" class="ui_dialog_loaderbox">
         <div class="ui_dialog_loader">
