@@ -230,7 +230,7 @@ dictionary = {
 <!--  top buttons (end) -->
 
 <!-- Create Template Dialog -->
-<div id="dialog_create_template" title="Create Template" style="display: none">
+<div id="dialog_create_template" title='<fmt:message key="label.action.create.template"/>' style="display: none">
     <p><fmt:message key="message.create.template.volume"/></p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form_acquire">
@@ -277,7 +277,7 @@ dictionary = {
 </div>
 
 <!-- Download Volume Dialog (begin) -->
-<div id="dialog_download_volume" title="Download Volume" style="display: none">    
+<div id="dialog_download_volume" title='<fmt:message key="label.action.download.volume"/>' style="display: none">    
   <!--Loading box-->
   <div id="spinning_wheel" class="ui_dialog_loaderbox">
       <div class="ui_dialog_loader">
@@ -297,7 +297,7 @@ dictionary = {
 <!-- Download Volume Dialog (end) -->
 
 <!-- Recurring Snapshots Dialog (begin) -->
-<div id="dialog_recurring_snapshot" title="Recurring Snapshot" style="display:none;">
+<div id="dialog_recurring_snapshot" title='<fmt:message key="label.action.recurring.snapshot"/>' style="display:none;">
     <div class="dialog_snapshotcontainer">
         <div class="dialog_snapshotleft" id="dialog_snapshotleft" >
 			<p><fmt:message key="message.snapshot.schedule"/>:<br/><br/></p>
@@ -584,7 +584,7 @@ dictionary = {
 <!-- Add Volume Dialog (end) -->
 
 <!-- Attach Volume Dialog (begin) -->
-<div id="dialog_attach_volume" title="Attach Volume" style="display: none">
+<div id="dialog_attach_volume" title='<fmt:message key="label.action.attach.disk"/>' style="display: none">
     <p><fmt:message key="message.attach.volume"/></p>
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form3">
@@ -703,7 +703,7 @@ dictionary = {
 <!--  Snapshot tab template (end) -->
 
 <!-- Add Volume Dialog from Snapshot (begin) -->
-<div id="dialog_add_volume_from_snapshot" title="Add Volume from Snapshot" style="display: none">   
+<div id="dialog_add_volume_from_snapshot" title='<fmt:message key="label.action.create.volume"/>' style="display: none">   
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form5">
         <ol>
@@ -719,7 +719,7 @@ dictionary = {
 <!-- Add Volume Dialog from Snapshot (end) -->
 
 <!-- Create template from snapshot (begin) -->
-<div id="dialog_create_template_from_snapshot" title="Create Template from Snapshot" style="display:none">	
+<div id="dialog_create_template_from_snapshot" title='<fmt:message key="label.action.create.template"/>' style="display:none">	
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form6">
 			<ol>
