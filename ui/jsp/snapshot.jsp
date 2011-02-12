@@ -139,7 +139,7 @@ dictionary = {
 <!-- snapshot detail panel (end) -->
 
 <!-- Add Volume Dialog from Snapshot (begin) -->
-<div id="dialog_add_volume_from_snapshot" title="Add Volume from Snapshot" style="display: none">   
+<div id="dialog_add_volume_from_snapshot" title='<fmt:message key="label.action.create.volume"/>' style="display: none">   
     <div class="dialog_formcontent">
         <form action="#" method="post" id="form5">
         <ol>
@@ -155,7 +155,7 @@ dictionary = {
 <!-- Add Volume Dialog from Snapshot (end) -->
 
 <!-- Create template from snapshot (begin) -->
-<div id="dialog_create_template_from_snapshot" title="Create Template from Snapshot" style="display:none">	
+<div id="dialog_create_template_from_snapshot" title='<fmt:message key="label.action.create.template"/>' style="display:none">	
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form6">
 			<ol>

@@ -167,8 +167,7 @@ var snapshotActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id){}
     }   
     , 
-    "label.action.delete.snapshot": {              
-        api: "deleteSnapshot",     
+    "label.action.delete.snapshot": {      
         isAsyncJob: true,
         asyncJobResponse: "deletesnapshotresponse",    
 		dialogBeforeActionFn : doSnapshotDelete,
