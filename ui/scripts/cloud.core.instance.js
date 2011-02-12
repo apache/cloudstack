@@ -2098,7 +2098,7 @@ function doCreateTemplateFromVmVolume($actionLink, $subgridItem) {
 }   
 
 function doTakeSnapshotFromVmVolume($actionLink, $subgridItem) {  
-    $("#dialog_info")
+    $("#dialog_confirmation")
     .text(dictionary["message.action.take.snapshot"])					
     .dialog('option', 'buttons', { 					    
 	    "Confirm": function() { 	
