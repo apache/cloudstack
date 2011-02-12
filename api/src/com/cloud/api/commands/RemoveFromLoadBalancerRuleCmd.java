@@ -104,7 +104,7 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
     
     @Override
     public String getSyncObjType() {
-        return this.networkSyncObject;
+        return BaseAsyncCmd.networkSyncObject;
     }
 
     @Override

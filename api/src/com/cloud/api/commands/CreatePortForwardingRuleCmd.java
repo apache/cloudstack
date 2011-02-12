@@ -21,6 +21,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -232,7 +233,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
     
     @Override
     public String getSyncObjType() {
-        return this.ipAddressSyncObject;
+        return BaseAsyncCmd.ipAddressSyncObject;
     }
 
     @Override

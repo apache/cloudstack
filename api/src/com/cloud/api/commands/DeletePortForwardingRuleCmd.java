@@ -96,7 +96,7 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
     
     @Override
     public String getSyncObjType() {
-        return this.ipAddressSyncObject;
+        return BaseAsyncCmd.ipAddressSyncObject;
     }
 
     @Override

@@ -103,7 +103,7 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
     }
     
     public String getSyncObjType() {
-        return this.networkSyncObject;
+        return BaseAsyncCmd.networkSyncObject;
     }
 
     public Long getSyncObjId() {

@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
@@ -176,7 +177,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     
     
     public String getSyncObjType() {
-        return this.networkSyncObject;
+        return BaseAsyncCmd.networkSyncObject;
     }
 
     public Long getSyncObjId() {
