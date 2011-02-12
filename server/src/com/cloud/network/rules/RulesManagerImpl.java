@@ -568,6 +568,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
          sb.and("accountId", sb.entity().getAccountId(), Op.EQ);
          sb.and("domainId", sb.entity().getDomainId(), Op.EQ);
          sb.and("oneToOneNat", sb.entity().isOneToOneNat(), Op.EQ);
+         sb.and("id", sb.entity().getId(), Op.EQ);
          
          if (path != null) {
              //for domain admin we should show only subdomains information
@@ -576,7 +577,17 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
              sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
          }
          
+         if (vmId != null) {
+             SearchBuilder<IPAddressVO> ipSearch = _ipAddressDao.createSearchBuilder();
+             ipSearch.and("associatedWithVmId", ipSearch.entity().getAssociatedWithVmId(), Op.EQ);
+             sb.join("ipSearch", ipSearch, sb.entity().getSourceIpAddressId(), ipSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+         }
+         
          SearchCriteria<PortForwardingRuleVO> sc = sb.create();
+         
+         if (id != null) {
+             sc.setParameters("id", id);
+         }
          
          if (ipId != null) {
              sc.setParameters("ip", ipId);
@@ -594,6 +605,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
          
          if (path != null) {
              sc.setJoinParameters("domainSearch", "path", path + "%");
+         }
+         
+         if (vmId != null) {
+             sc.setJoinParameters("ipSearch", "associatedWithVmId", vmId);
          }
          
          return _forwardingDao.search(sc, filter);
