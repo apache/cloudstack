@@ -498,9 +498,9 @@
                             <li>
                                 <label for="user_name">
                                     <fmt:message key="label.ip.range"/>:</label>
-                                <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_startip"
+                                <input class="text" style="width: 92px" type="text" name="add_publicip_vlan_startip"
                                     id="add_publicip_vlan_startip" /><span>-</span>
-                                <input class="text" style="width: 67px" type="text" name="add_publicip_vlan_endip"
+                                <input class="text" style="width: 92px" type="text" name="add_publicip_vlan_endip"
                                     id="add_publicip_vlan_endip" />
                                 <div id="add_publicip_vlan_startip_errormsg" class="dialog_formcontent_errormsg"
                                     style="display: none;">
