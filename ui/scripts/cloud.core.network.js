@@ -149,9 +149,21 @@ function publicNetworkJsonToDetailsTab() {
 	var $thisTab = $("#right_panel_content #public_network_page #tab_content_details");      
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
-	
-	$thisTab.find("#grid_header_title").text(fromdb(jsonObj.networkofferingdisplaytext));	
 		
+	$.ajax({
+        data: createURL("command=listNetworks&trafficType=Public&isSystem=true&id="+jsonObj.id),
+        dataType: "json",
+        async: false,
+        success: function(json) {       
+            var items = json.listnetworksresponse.network;             
+            if(items != null && items.length > 0) {
+                jsonObj = items[0];  
+                $midmenuItem1.data("jsonObj", jsonObj);
+            }
+        }
+    });           	
+		
+	$thisTab.find("#grid_header_title").text(fromdb(jsonObj.networkofferingdisplaytext));			
 	$thisTab.find("#id").text(fromdb(jsonObj.id));		
 	$thisTab.find("#state").text(fromdb(jsonObj.state));		
 	$thisTab.find("#traffictype").text(fromdb(jsonObj.traffictype));	
@@ -171,17 +183,7 @@ function publicNetworkJsonToDetailsTab() {
 	//actions ***   
     var $actionLink = $thisTab.find("#action_link"); 
     bindActionLink($actionLink);
-    /*
-    $actionLink.bind("mouseover", function(event) {	    
-        $(this).find("#action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {       
-        $(this).find("#action_menu").hide();    
-        return false;
-    });	
-    */
-         
+             
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();   
 	$actionMenu.find("#action_list").append($("#no_available_actions").clone().show());	   
@@ -1008,9 +1010,21 @@ function directNetworkJsonToDetailsTab() {
 	var $thisTab = $("#right_panel_content #direct_network_page #tab_content_details");      
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
+			
+	$.ajax({
+        data: createURL("command=listNetworks&type=Direct&id="+jsonObj.id),
+        dataType: "json",
+        async: false,
+        success: function(json) {       
+            var items = json.listnetworksresponse.network;                     
+            if(items != null && items.length > 0) {
+                jsonObj = items[0];  
+                $midmenuItem1.data("jsonObj", jsonObj);
+            }
+        }
+    });  	
 		
-	$thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));	
-		
+	$thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));			
 	$thisTab.find("#id").text(fromdb(jsonObj.id));				
 	$thisTab.find("#name").text(fromdb(jsonObj.name));	
 	$thisTab.find("#displaytext").text(fromdb(jsonObj.displaytext));
