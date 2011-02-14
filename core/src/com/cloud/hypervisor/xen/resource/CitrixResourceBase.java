@@ -3432,6 +3432,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             StartupStorageCommand cmd = new StartupStorageCommand();
             cmd.setPoolInfo(pInfo);
             cmd.setGuid(_host.uuid);
+            cmd.setDataCenter(Long.toString(_dcId));
             cmd.setResourceType(Storage.StorageResourceType.STORAGE_POOL);
             return cmd;
         } catch (XenAPIException e) {
