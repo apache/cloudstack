@@ -365,7 +365,7 @@ dictionary = {
 <!-- user tab template (end) -->
 
 <!-- dialogs (begin) -->
-<div id="dialog_resource_limits" title="Resource Limits" style="display:none">
+<div id="dialog_resource_limits" title='<fmt:message key="label.action.resource.limits"/>' style="display:none">
 	<p>
 		<fmt:message key="message.edit.limits"/>
 	</p>
@@ -764,7 +764,7 @@ dictionary = {
 <!-- Edit User Dialog (end)-->
 
 <!-- Change Password Dialog (begin) -->
-<div id="dialog_change_password" title="Change Password" style="display:none">
+<div id="dialog_change_password" title='<fmt:message key="label.action.change.password"/>' style="display:none">
 	<p><fmt:message key="message.edit.confirm"/></p>
 	<div class="dialog_formcontent">
 		<form action="#" method="post" id="form4">
