@@ -760,7 +760,7 @@ dictionary = {
 </div>
 
 <!-- Update OS Preference Dialog -->
-<div id="dialog_update_os" title="Update OS Preference" style="display: none">
+<div id="dialog_update_os" title='<fmt:message key="label.action.update.OS.preference"/>' style="display: none">
     <p>
 		<fmt:message key="message.update.os.preference"/>
     </p>

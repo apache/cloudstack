@@ -602,7 +602,7 @@
 <!-- Zone wizard (end)-->
 
 <!-- Update Certificate Dialog -->
-<div id="dialog_update_cert" title="Update Console Proxy SSL Certificate" style="display:none">
+<div id="dialog_update_cert" title='<fmt:message key="label.update.ssl"/>' style="display:none">
 	<p><fmt:message key="message.update.ssl"/></p>
 
 	<div class="dialog_formcontent">

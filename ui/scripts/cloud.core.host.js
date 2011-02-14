@@ -133,17 +133,7 @@ function hostJsonToDetailsTab() {
     //actions ***   
     var $actionLink = $thisTab.find("#action_link"); 
     bindActionLink($actionLink);
-    /*
-    $actionLink.bind("mouseover", function(event) {	    
-        $(this).find("#action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {       
-        $(this).find("#action_menu").hide();    
-        return false;
-    });	  
-    */
-    
+      
     var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();
     var noAvailableActions = true;
