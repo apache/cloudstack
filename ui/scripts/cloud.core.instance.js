@@ -804,7 +804,7 @@ function initVMWizard() {
 		
 	    if(currentStepInVmPopup ==3) { //disk offering	 	        
 	        if($selectedVmWizardTemplate.data("templateType") == "template") {	//*** template ***            
-	            $thisPopup.find("#wizard_review_disk_offering_label").text("Data Disk Offering:");
+	            $thisPopup.find("#wizard_review_disk_offering_label").text(dictionary["label.data.disk.offering"]  + ":");
 	            var checkedRadioButton = $thisPopup.find("#data_disk_offering_container input[name=data_disk_offering_radio]:checked");	
 	        }
 	        else {  //*** ISO ***	            
@@ -814,7 +814,7 @@ function initVMWizard() {
 	                $thisPopup.find("#step3 #wiz_message").show();
 		            return false;
 		        }   
-	            $thisPopup.find("#wizard_review_disk_offering_label").text("Root Disk Offering:");
+	            $thisPopup.find("#wizard_review_disk_offering_label").text(dictionary["label.root.disk.offering"] + ":");
 	            var checkedRadioButton = $thisPopup.find("#root_disk_offering_container input[name=data_disk_offering_radio]:checked");	
 		    }
 		          		        
