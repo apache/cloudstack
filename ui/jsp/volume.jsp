@@ -25,7 +25,8 @@ dictionary = {
 	'label.action.create.volume.processing' : '<fmt:message key="label.action.create.volume.processing"/>',
 	'label.action.delete.snapshot' : '<fmt:message key="label.action.delete.snapshot"/>',
 	'label.action.delete.snapshot.processing' : '<fmt:message key="label.action.delete.snapshot.processing"/>',
-	'message.action.delete.snapshot' : '<fmt:message key="message.action.delete.snapshot"/>'
+	'message.action.delete.snapshot' : '<fmt:message key="message.action.delete.snapshot"/>',
+	'message.download.volume' : '<fmt:message key="message.download.volume"/>'
 };	
 </script>
 

@@ -616,9 +616,10 @@ function doDownloadVolume($actionLink, $detailsTab, $midmenuItem1) {
 		                        if (result.jobstatus == 1) { // Succeeded 			                            
 		                            $infoContainer.removeClass("error");
 		                            $infoContainer.find("#icon,#info").removeClass("error");		                      
-		                            var url = decodeURIComponent(json.queryasyncjobresultresponse.jobresult.volume.url);	
-		                            var htmlMsg = "Please click <a href='" + url + "'>" + url + "</a>" + " to download volume";                          
-		                            $infoContainer.find("#info").html(htmlMsg);
+		                            var url = decodeURIComponent(json.queryasyncjobresultresponse.jobresult.volume.url);		                          
+		                            var htmlMsg = dictionary["message.download.volume"];		                            
+		                            var htmlMsg2 = htmlMsg.replace(/#/, url).replace(/00000/, url);                        
+		                            $infoContainer.find("#info").html(htmlMsg2);		                            
 		                            $infoContainer.show();		                        
 		                        } else if (result.jobstatus == 2) { // Failed	
 		                            //var errorMsg = g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
