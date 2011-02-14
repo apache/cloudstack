@@ -67,6 +67,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     protected SearchBuilder<VMTemplateVO> PublicSearch;
     private String routerTmpltName;
     private String consoleProxyTmpltName;
+    protected SearchBuilder<VMTemplateVO> XenToolsSearch;
     
     protected VMTemplateDaoImpl() {
     }
@@ -135,6 +136,12 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 	}
 
 	@Override
+	public List<VMTemplateVO> listXenToolsIso() {
+	    SearchCriteria sc = XenToolsSearch.create();
+	    sc.setParameters("uniqueName", "xs-tools.iso");
+	    return listBy(sc);
+	}
+	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 		boolean result = super.configure(name, params);
 		
@@ -166,6 +173,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         AccountIdSearch.and("publicTemplate", AccountIdSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);
 		AccountIdSearch.done();
 
+		XenToolsSearch = createSearchBuilder();
+		XenToolsSearch.and("uniqueName", XenToolsSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
+        AccountIdSearch.done();
 		return result;
 	}
 
@@ -241,6 +251,14 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         			templates.add(tmplt);
         		}
             }
+            
+            //if normal user, add xentools.iso
+            if(accountType == Account.ACCOUNT_TYPE_NORMAL && isIso) {
+                List<VMTemplateVO> xenTools = listXenToolsIso();
+                if(xenTools.size() > 0)
+                    templates.add(xenTools.get(0));
+            }
+            
         } catch (Exception e) {
             s_logger.warn("Error listing templates", e);
         } finally {
