@@ -3491,6 +3491,7 @@ a:hover.search_button {
 }
 
 .gridheader_loaderbox {
+	min-width:107px;
 	width:auto;
 	height:18px;
 	float:right;
