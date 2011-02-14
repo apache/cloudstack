@@ -590,6 +590,7 @@ fi
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-core-extras.jar
 %{_javadir}/%{name}-server-extras.jar
+%{_javadir}/%{name}-vmware-base.jar
 # maintain the following list in sync with files agent-scripts
 %{_libdir}/%{name}/agent/premium-scripts/*
 %{_sysconfdir}/%{name}/management/commands-ext.properties
