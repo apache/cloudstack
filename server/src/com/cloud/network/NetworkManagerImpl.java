@@ -1203,7 +1203,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return profiles;
     }
 
-    @Override @DB @ActionEvent (eventType=EventTypes.EVENT_NET_IP_RELEASE, eventDescription="disassociating Ip")
+    @Override @DB @ActionEvent (eventType=EventTypes.EVENT_NET_IP_RELEASE, eventDescription="disassociating Ip", async=true)
     public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd){
 
         Long userId = UserContext.current().getCallerUserId();

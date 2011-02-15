@@ -27,6 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.user.UserContext;
@@ -75,7 +76,13 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
     @Override
     public long getEntityOwnerId() {
         if (ownerId == null) {
-            ownerId = _entityMgr.findById(PortForwardingRule.class, id).getAccountId();
+            PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, id);
+            if (rule == null) {
+                throw new InvalidParameterValueException("Unable to find port forwarding rule by id=" + id);
+            } else {
+                ownerId = _entityMgr.findById(PortForwardingRule.class, id).getAccountId();
+            }
+           
         }
         return ownerId;
     }

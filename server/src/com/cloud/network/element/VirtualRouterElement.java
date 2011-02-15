@@ -17,7 +17,6 @@
  */
 package com.cloud.network.element;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +31,6 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestIpType;
@@ -44,14 +42,10 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VpnUser;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.vpn.RemoteAccessVpnElement;
 import com.cloud.offering.NetworkOffering;
@@ -59,7 +53,6 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -163,7 +156,6 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
     
         DataCenter dc = _configMgr.getZone(config.getDataCenterId());
         if (canHandle(config.getGuestType(),dc)) {
-            
             long networkId = config.getId();
             DomainRouterVO router = _routerDao.findByNetwork(networkId);
             if (router == null) {
@@ -217,6 +209,13 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException {
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         if (canHandle(network.getGuestType(),dc)) {
+            
+            DomainRouterVO router = _routerDao.findByNetwork(network.getId());
+            if (router == null) {
+                s_logger.debug("Virtual router elemnt doesn't need to associate ip addresses on the backend; virtual router doesn't exist in the network " + network.getId());
+                return true;
+            }
+            
             return _routerMgr.associateIP(network, ipAddress);
         } else {
             return false;

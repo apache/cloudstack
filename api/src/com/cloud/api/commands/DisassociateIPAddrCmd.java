@@ -20,15 +20,19 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.IpAddress;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Disassociates an ip address from the account.", responseObject=SuccessResponse.class)
-public class DisassociateIPAddrCmd extends BaseCmd {
+public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DisassociateIPAddrCmd.class.getName());
 
     private static final String s_name = "disassociateipaddressresponse";
@@ -40,6 +44,10 @@ public class DisassociateIPAddrCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the id of the public ip address to disassociate")
     private Long id;
 
+    
+    // unexposed parameter needed for events logging
+    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, expose=false)
+    private Long ownerId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -66,6 +74,44 @@ public class DisassociateIPAddrCmd extends BaseCmd {
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to disassociate ip address");
+        }
+    }
+    
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_NET_IP_RELEASE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return  ("Disassociating ip address with id=" + id);
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        if (ownerId == null) {
+            IpAddress ip = getIpAddress(id);
+            ownerId = ip.getAccountId();
+        }
+        return ownerId;
+    }
+    
+    public String getSyncObjType() {
+        return BaseAsyncCmd.networkSyncObject;
+    }
+
+    public Long getSyncObjId() {
+        IpAddress ip = getIpAddress(id);
+        return ip.getAssociatedWithNetworkId();
+    }
+    
+    private IpAddress getIpAddress(long id) {
+        IpAddress ip = _entityMgr.findById(IpAddress.class, id);
+        
+        if (ip == null) {
+            throw new InvalidParameterValueException("Unable to find ip address by id=" + id);
+        } else {
+            return ip;
         }
     }
 }
