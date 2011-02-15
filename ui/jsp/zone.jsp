@@ -175,7 +175,11 @@ dictionary = {
                     </div>
                     <div class="grid_row_cell" style="width: 79%;">
                         <div class="row_celltitles" id="ispublic">
-                        </div>                        
+                        </div>                          
+                        <select class="select" id="ispublic_edit" style="width: 202px; display: none;">
+	                        <option value="true"><fmt:message key="label.yes"/></option>
+							<option value="false"><fmt:message key="label.no"/></option>
+	                    </select>             
                     </div>
                 </div>                
                 <div class="grid_rows odd">

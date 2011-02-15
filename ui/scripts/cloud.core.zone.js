@@ -46,10 +46,7 @@
     var tabContentArray = [$("#tab_content_details")];      
     var afterSwitchFnArray = [zoneJsonToDetailsTab];
     switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray); 
-     
-    $readonlyFields  = $("#tab_content_details").find("#name, #dns1, #dns2, #internaldns1, #internaldns2, #vlan, #guestcidraddress");
-    $editFields = $("#tab_content_details").find("#name_edit, #dns1_edit, #dns2_edit, #internaldns1_edit, #internaldns2_edit, #startvlan_edit, #endvlan_edit, #guestcidraddress_edit");
-           
+         
     zoneRefreshDataBinding();    	
 }
 
@@ -164,25 +161,23 @@ function zoneJsonToDetailsTab() {
         
     $thisTab.find("#domain").text(fromdb(jsonObj.domain)); 
     
-    if(jsonObj.domain == null)
-        $thisTab.find("#ispublic").text(g_dictionary["label.yes"]);
-    else
+    if(jsonObj.domain == null) {
+        $thisTab.find("#ispublic").text(g_dictionary["label.yes"]); 
+        $thisTab.find("#ispublic_edit").val("true");             
+        $readonlyFields  = $("#tab_content_details").find("#name, #dns1, #dns2, #internaldns1, #internaldns2, #vlan, #guestcidraddress");
+        $editFields = $("#tab_content_details").find("#name_edit, #dns1_edit, #dns2_edit, #internaldns1_edit, #internaldns2_edit, #startvlan_edit, #endvlan_edit, #guestcidraddress_edit");    
+    }
+    else {
         $thisTab.find("#ispublic").text(g_dictionary["label.no"]);
+        $thisTab.find("#ispublic_edit").val("false");
+        $readonlyFields  = $("#tab_content_details").find("#name, #dns1, #dns2, #internaldns1, #internaldns2, #vlan, #guestcidraddress, #ispublic");
+        $editFields = $("#tab_content_details").find("#name_edit, #dns1_edit, #dns2_edit, #internaldns1_edit, #internaldns2_edit, #startvlan_edit, #endvlan_edit, #guestcidraddress_edit, #ispublic_edit");    
+    }
         
     //actions ***   
     var $actionLink = $thisTab.find("#action_link"); 
     bindActionLink($actionLink);
-    /*
-    $actionLink.bind("mouseover", function(event) {	    
-        $(this).find("#action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {       
-        $(this).find("#action_menu").hide();    
-        return false;
-    });	  
-    */
-    
+       
     var $actionMenu = $thisTab.find("#action_link #action_menu");
     $actionMenu.find("#action_list").empty();      
     buildActionLinkForTab("label.action.edit.zone", zoneActionMap, $actionMenu, $leftmenuItem1, $thisTab);    
@@ -462,6 +457,11 @@ function doEditZone2($actionLink, $detailsTab, $leftmenuItem1, $readonlyFields, 
 	    if(guestcidraddress != jsonObj.guestcidraddress)
 	        moreCriteria.push("&guestcidraddress="+todb(guestcidraddress));				    		 
 	}
+	 
+	if($("#ispublic_edit").css("display") != "none") {
+	    var ispublic = $detailsTab.find("#ispublic_edit").val();
+	    moreCriteria.push("&ispublic="+todb(ispublic));				     
+	} 
 	 
 	if(moreCriteria.length > 0) { 	        	
 	    $.ajax({
