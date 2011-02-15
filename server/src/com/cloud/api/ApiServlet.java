@@ -318,9 +318,9 @@ public class ApiServlet extends HttpServlet {
         try {
             // is text/plain sufficient for XML and JSON?
             if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-                resp.setContentType("text/javascript");
+                resp.setContentType("text/javascript; charset=UTF-8");
             } else {
-                resp.setContentType("text/xml");
+                resp.setContentType("text/xml; charset=UTF-8");
             }
             
             resp.setStatus(responseCode);
