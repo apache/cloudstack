@@ -163,6 +163,11 @@ function zoneJsonToDetailsTab() {
     $thisTab.find("#guestcidraddress_edit").val(fromdb(jsonObj.guestcidraddress));   
         
     $thisTab.find("#domain").text(fromdb(jsonObj.domain)); 
+    
+    if(jsonObj.domain == null)
+        $thisTab.find("#ispublic").text(g_dictionary["label.yes"]);
+    else
+        $thisTab.find("#ispublic").text(g_dictionary["label.no"]);
         
     //actions ***   
     var $actionLink = $thisTab.find("#action_link"); 

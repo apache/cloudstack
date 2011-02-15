@@ -93,7 +93,9 @@
 		'label.PreSetup': '<fmt:message key="label.PreSetup"/>',
 		'label.iscsi': '<fmt:message key="label.iscsi"/>',
 		'label.VMFS.datastore': '<fmt:message key="label.VMFS.datastore"/>',
-		'label.none': '<fmt:message key="label.none"/>'
+		'label.none': '<fmt:message key="label.none"/>',
+		'label.yes': '<fmt:message key="label.yes"/>',
+		'label.no': '<fmt:message key="label.no"/>'		
 	};	
 	</script>
 </head>

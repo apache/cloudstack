@@ -167,8 +167,18 @@ dictionary = {
                         <input class="text" id="guestcidraddress_edit" style="width: 200px; display: none;" type="text" />
 	                    <div id="guestcidraddress_edit_errormsg" style="display:none"></div>       
                     </div>
-                </div>
+                </div>                
                 <div class="grid_rows even">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            <fmt:message key="label.public"/>:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="ispublic">
+                        </div>                        
+                    </div>
+                </div>                
+                <div class="grid_rows odd">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
                             <fmt:message key="label.domain"/>:</div>
