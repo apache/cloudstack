@@ -41,10 +41,10 @@ import com.cloud.agent.api.PingStorageCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
+import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupStorageCommand;
-import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
@@ -56,8 +56,8 @@ import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.Storage;
-import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.DownloadManager;
 import com.cloud.storage.template.DownloadManagerImpl;
 import com.cloud.storage.template.TemplateInfo;
@@ -118,13 +118,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return _dlMgr.handleDownloadCommand((DownloadProgressCommand)cmd);
         } else if (cmd instanceof DownloadCommand) {
             return _dlMgr.handleDownloadCommand((DownloadCommand)cmd);
-        }else if (cmd instanceof UploadCommand) {        	
+        } else if (cmd instanceof UploadCommand) {        	
             return _upldMgr.handleUploadCommand((UploadCommand)cmd);
-        }else if (cmd instanceof CreateEntityDownloadURLCommand){
+        } else if (cmd instanceof CreateEntityDownloadURLCommand){
             return _upldMgr.handleCreateEntityURLCommand((CreateEntityDownloadURLCommand)cmd);
-        }else if(cmd instanceof DeleteEntityDownloadURLCommand){
+        } else if(cmd instanceof DeleteEntityDownloadURLCommand){
             return _upldMgr.handleDeleteEntityDownloadURLCommand((DeleteEntityDownloadURLCommand)cmd);
-        }else if (cmd instanceof GetStorageStatsCommand) {
+        } else if (cmd instanceof GetStorageStatsCommand) {
         	return execute((GetStorageStatsCommand)cmd);
         } else if (cmd instanceof CheckHealthCommand) {
             return new CheckHealthAnswer((CheckHealthCommand)cmd, true);
