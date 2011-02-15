@@ -148,44 +148,45 @@ function initAddIsoDialog() {
         $dialogAddIso
 	    .dialog('option', 'buttons', { 				
 		    "Add": function() { 	
-		        var thisDialog = $(this);
+		        var $thisDialog = $(this);
     				
 			    // validate values
 			    var isValid = true;	
-			    isValid &= validateString("Name", thisDialog.find("#add_iso_name"), thisDialog.find("#add_iso_name_errormsg"));				
-			    //isValid &= validateFilename("Name", thisDialog.find("#add_iso_name"), thisDialog.find("#add_iso_name_errormsg"));
-			    isValid &= validateString("Display Text", thisDialog.find("#add_iso_display_text"), thisDialog.find("#add_iso_display_text_errormsg"));
-			    isValid &= validateString("URL", thisDialog.find("#add_iso_url"), thisDialog.find("#add_iso_url_errormsg"));			
+			    isValid &= validateString("Name", $thisDialog.find("#add_iso_name"), $thisDialog.find("#add_iso_name_errormsg"));				
+			    isValid &= validateString("Display Text", $thisDialog.find("#add_iso_display_text"), $thisDialog.find("#add_iso_display_text_errormsg"));
+			    isValid &= validateString("URL", $thisDialog.find("#add_iso_url"), $thisDialog.find("#add_iso_url_errormsg"));				    			   
+			    if($thisDialog.find("#add_iso_bootable").val() == "true") 
+			        isValid &= validateDropDownBox("OS Type", $thisDialog.find("#add_iso_os_type"), $thisDialog.find("#add_iso_os_type_errormsg"));				    		
 			    if (!isValid) 
 			        return;		
 			        
-			    thisDialog.dialog("close");	
+			    $thisDialog.dialog("close");	
 			    
 			    var array1 = [];
-			    var name = trim(thisDialog.find("#add_iso_name").val());
+			    var name = trim($thisDialog.find("#add_iso_name").val());
 			    array1.push("&name="+todb(name));
 			    
-			    var desc = trim(thisDialog.find("#add_iso_display_text").val());
+			    var desc = trim($thisDialog.find("#add_iso_display_text").val());
 			    array1.push("&displayText="+todb(desc));
 			    
-			    var url = trim(thisDialog.find("#add_iso_url").val());	
+			    var url = trim($thisDialog.find("#add_iso_url").val());	
 			    array1.push("&url="+todb(url));
 			    					
-			    var zoneId = thisDialog.find("#add_iso_zone").val();
+			    var zoneId = $thisDialog.find("#add_iso_zone").val();
 			    array1.push("&zoneId="+zoneId);	
 			    
-			    var isPublic = thisDialog.find("#add_iso_public").val();
+			    var isPublic = $thisDialog.find("#add_iso_public").val();
 			    array1.push("&isPublic="+isPublic);	
-			    		
-			    var osType = thisDialog.find("#add_iso_os_type").val();			   
-			    if(osType != null && osType.length > 0)
-			        array1.push("&osTypeId="+osType);
-			    
-			    var bootable = thisDialog.find("#add_iso_bootable").val();	
+			    					    
+			    var bootable = $thisDialog.find("#add_iso_bootable").val();	
 			    array1.push("&bootable="+bootable);
 			    
-			    if(thisDialog.find("#isfeatured_container").css("display") != "none") {				
-				    var isFeatured = thisDialog.find("#isfeatured").val();						    	
+			    var osType = $thisDialog.find("#add_iso_os_type").val();			   
+			    if(osType != null && osType.length > 0)
+			        array1.push("&osTypeId="+osType);
+			    			    
+			    if($thisDialog.find("#isfeatured_container").css("display") != "none") {				
+				    var isFeatured = $thisDialog.find("#isfeatured").val();						    	
                     array1.push("&isfeatured="+isFeatured);
                 }			
     		    				    
@@ -645,15 +646,15 @@ function doCopyIso($actionLink, $detailsTab, $midmenuItem1) {
 	$("#dialog_copy_iso")
 	.dialog('option', 'buttons', {				    
 	    "OK": function() {				       
-	        var thisDialog = $(this);
+	        var $thisDialog = $(this);
 	        	        	        
 	        var isValid = true;	 
-            isValid &= validateDropDownBox("Zone", thisDialog.find("#copy_iso_zone"), thisDialog.find("#copy_iso_zone_errormsg"), false);  //reset error text		         
+            isValid &= validateDropDownBox("Zone", $thisDialog.find("#copy_iso_zone"), $thisDialog.find("#copy_iso_zone_errormsg"), false);  //reset error text		         
 	        if (!isValid) return;     
 	        
-	        thisDialog.dialog("close");
+	        $thisDialog.dialog("close");
 	        				        
-	        var destZoneId = thisDialog.find("#copy_iso_zone").val();	
+	        var destZoneId = $thisDialog.find("#copy_iso_zone").val();	
             var apiCommand = "command=copyIso&id="+id+"&sourcezoneid="+sourceZoneId+"&destzoneid="+destZoneId;
             doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);	 
 	    }, 
@@ -673,39 +674,39 @@ function doCreateVMFromIso($actionLink, $detailsTab, $midmenuItem1) {
 	createVmDialog
 	.dialog('option', 'buttons', {			    
 	    "Create": function() {
-	        var thisDialog = $(this);	
+	        var $thisDialog = $(this);	
 	      
 	        // validate values
 		    var isValid = true;		
-		    isValid &= validateString("Name", thisDialog.find("#name"), thisDialog.find("#name_errormsg"), true);
-		    isValid &= validateString("Group", thisDialog.find("#group"), thisDialog.find("#group_errormsg"), true);	
-		     if(thisDialog.find("#size_container").css("display") != "none")
-			    isValid &= validateInteger("Size", thisDialog.find("#size"), thisDialog.find("#size_errormsg"));				
+		    isValid &= validateString("Name", $thisDialog.find("#name"), $thisDialog.find("#name_errormsg"), true);
+		    isValid &= validateString("Group", $thisDialog.find("#group"), $thisDialog.find("#group_errormsg"), true);	
+		     if($thisDialog.find("#size_container").css("display") != "none")
+			    isValid &= validateInteger("Size", $thisDialog.find("#size"), $thisDialog.find("#size_errormsg"));				
 		    if (!isValid) 
 		        return;	       
 	           
-	        thisDialog.dialog("close");   
+	        $thisDialog.dialog("close");   
 	        
 	        var array1 = [];
 	        
-	        var name = trim(thisDialog.find("#name").val());
+	        var name = trim($thisDialog.find("#name").val());
 	        array1.push("&displayname="+todb(name));		
 	        
-	        var group = trim(thisDialog.find("#group").val());	
+	        var group = trim($thisDialog.find("#group").val());	
 	        array1.push("&group="+todb(group));	
 	        
-	        var serviceOfferingId = thisDialog.find("#service_offering").val();	
+	        var serviceOfferingId = $thisDialog.find("#service_offering").val();	
 	        array1.push("&serviceOfferingId="+serviceOfferingId);			        
 	        
-	        var diskOfferingId = thisDialog.find("#disk_offering").val();	
+	        var diskOfferingId = $thisDialog.find("#disk_offering").val();	
 	        array1.push("&diskOfferingId="+diskOfferingId);
 	        
-	        if(thisDialog.find("#size_container").css("display") != "none") {
-	            var size = thisDialog.find("#size").val()
+	        if($thisDialog.find("#size_container").css("display") != "none") {
+	            var size = $thisDialog.find("#size").val()
 			    array1.push("&size="+size);
 	        }
 	        
-	        var hypervisor = thisDialog.find("#hypervisor").val();	
+	        var hypervisor = $thisDialog.find("#hypervisor").val();	
 	        array1.push("&hypervisor="+hypervisor);	
 	                         
 		    var apiCommand = "command=deployVirtualMachine&zoneId="+zoneId+"&templateId="+id+array1.join("");

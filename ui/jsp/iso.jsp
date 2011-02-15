@@ -282,6 +282,7 @@ dictionary = {
 					<label for="add_iso_os_type"><fmt:message key="label.os.type"/>:</label>
 					<select class="select" name="add_iso_os_type" id="add_iso_os_type">
 					</select>
+					<div id="add_iso_os_type_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
 				</li>						
 				<li id="add_iso_public_container" style="display:none">
 					<label><fmt:message key="label.public"/>?:</label>
