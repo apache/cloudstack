@@ -644,7 +644,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     
     @Override
     public DataCenterVO editZone(long userId, long zoneId, String newZoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr) throws InvalidParameterValueException, InternalErrorException {
-    	// Make sure the zone exists
+    	boolean isVnetEditingAdditive = false;
+        String existingVnetRange = null;
+        
+        // Make sure the zone exists
     	if (!validZone(zoneId)) {
     		throw new InvalidParameterValueException("A zone with ID: " + zoneId + " does not exist.");
     	}
@@ -660,7 +663,35 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	
     	// If the Vnet range is being changed, make sure there are no allocated VNets
     	if (vnetRange != null) {
-    		if (zoneHasAllocatedVnets(zoneId)) {
+	       
+	        existingVnetRange = zone.getVnet();
+	        if(existingVnetRange != null) {
+	            
+	            String[] existingVnetArray = existingVnetRange.split("-");
+	            String[] newVnetArray = vnetRange.split("-");
+	            int existingVnetArrayLength = existingVnetArray.length;
+	            int newVnetArrayLength = newVnetArray.length;
+	            boolean compareFirstOnly = false;
+	            
+	            if(existingVnetArrayLength == 1 || newVnetArrayLength == 1) {
+	                //only compare arr[0]
+	                compareFirstOnly = true;
+	            }
+	            
+	            
+	            if(compareFirstOnly) {
+	                if(new Integer(newVnetArray[0]) <= new Integer(existingVnetArray[0])) {
+	                    isVnetEditingAdditive = true;
+	                }
+	            } else if((new Integer(newVnetArray[0]) <= new Integer(existingVnetArray[0])) && (new Integer(newVnetArray[1]) >= new Integer(existingVnetArray[1]))) {
+	                isVnetEditingAdditive = true;
+	            }
+               
+	        } else {
+	            isVnetEditingAdditive = true;
+	        }
+	        
+    		if (zoneHasAllocatedVnets(zoneId) && !isVnetEditingAdditive) {
     			throw new InternalErrorException("The vlan range is not editable because there are allocated vlans.");
     		}
     	}
@@ -670,14 +701,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	//2. Check if any of these has the current data center associated
     	//3. If yes, throw exception
     	//4, If no, edit
-    	List<DomainRouterVO> allDomainRoutersAvailable = _domrDao.listAll();
-    	
-    	for(DomainRouterVO domR : allDomainRoutersAvailable)
-    	{
-    		if(domR.getDataCenterId() == zoneId)
-    		{
-    			throw new InternalErrorException("The zone is not editable because there are domR's associated with the zone.");
-    		}
+    	if(!isVnetEditingAdditive) {
+        	List<DomainRouterVO> allDomainRoutersAvailable = _domrDao.listAll();
+        	for(DomainRouterVO domR : allDomainRoutersAvailable)
+        	{
+        		if(domR.getDataCenterId() == zoneId)
+        		{
+        			throw new InternalErrorException("The zone is not editable because there are domR's associated with the zone.");
+        		}
+        	}
     	}
     	
     	//5. Reached here, hence editable
@@ -711,11 +743,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
     	if (vnetRange != null) {
     		zone.setVnet(vnetRange);
     	}
-    	
-    	if (!_zoneDao.update(zoneId, zone)) {
-    		throw new InternalErrorException("Failed to edit zone. Please contact Cloud Support.");
-    	}
-    	
+    	    	
     	if (vnetRange != null) {
     		String[] tokens = vnetRange.split("-");
     		
@@ -733,9 +761,35 @@ public class ConfigurationManagerImpl implements ConfigurationManager {
 				throw new InvalidParameterValueException("Please specify a valid vnet range between 0-4096");
 			}
 	    	
-	    	_zoneDao.deleteVnet(zoneId);
-	    	_zoneDao.addVnet(zone.getId(), begin, end);
+			if(isVnetEditingAdditive) {
+			    if(existingVnetRange == null) {
+			        _zoneDao.addVnet(zone.getId(), begin, end);
+			    } else {
+			        String[] oldTokens = existingVnetRange.split("-");
+		            
+		            int oldBegin = 0;
+		            int oldEnd = 0;
+		            
+		            try {
+                        oldBegin = Integer.parseInt(oldTokens[0]);
+                        oldEnd = tokens.length == 1 ? (begin + 1) : Integer.parseInt(oldTokens[1]);
+                        
+                        _zoneDao.addVnet(zone.getId(), begin, oldBegin-1);
+                        _zoneDao.addVnet(zone.getId(), oldEnd+1, end);
+                    } catch (NumberFormatException e) {
+                        s_logger.warn("Unable to parse vnet range");
+                        throw new InvalidParameterValueException("Please specify a valid vnet range between 0-4096");
+                    }
+			    }
+			} else {
+    	    	_zoneDao.deleteVnet(zoneId);
+    	    	_zoneDao.addVnet(zone.getId(), begin, end);
+			}
     	}
+    	
+        if (!_zoneDao.update(zoneId, zone)) {
+            throw new InternalErrorException("Failed to edit zone. Please contact Cloud Support.");
+        }
     	
     	saveConfigurationEvent(userId, null, EventTypes.EVENT_ZONE_EDIT, "Successfully edited zone with name: " + zone.getName() + ".", "dcId=" + zone.getId(), "dns1=" + dns1, "dns2=" + dns2, "internalDns1=" + internalDns1, "internalDns2=" + internalDns2, "vnetRange=" + vnetRange, "guestCidr=" + guestCidr);
     	
