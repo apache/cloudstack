@@ -368,25 +368,32 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         UserVmVO vm = null;
         vm = _vmDao.findById(vmId);
         if (vm == null) {
-            throw new InvalidParameterValueException("Can't enable one-to-one nat for the address " + ipAddress + ", invalid virtual machine id specified (" + vmId + ").");
+            throw new InvalidParameterValueException("Can't enable static nat for the address " + ipAddress + ", invalid virtual machine id specified (" + vmId + ").");
         }
         
         checkIpAndUserVm(ipAddress, vm, caller);
         
         if (ipAddress.isSourceNat()) {
-            throw new InvalidParameterValueException("Can't enable one to one nat, ip address id=" + ipId + " is a sourceNat ip address");
+            throw new InvalidParameterValueException("Can't enable static, ip address id=" + ipId + " is a sourceNat ip address");
         }
        
         if (!ipAddress.isOneToOneNat()) {
             List<FirewallRuleVO> rules = _firewallDao.listByIpAndNotRevoked(ipId, Purpose.PortForwarding);
             if (rules != null && !rules.isEmpty()) {
-                throw new NetworkRuleConflictException("Failed to enable one to one nat for the ip address id=" + ipAddress.getId() + " as it already has firewall rules assigned");
+                throw new NetworkRuleConflictException("Failed to enable static nat for the ip address id=" + ipId + " as it already has firewall rules assigned");
             }
         } else {
             if (ipAddress.getAssociatedWithVmId() != null && ipAddress.getAssociatedWithVmId().longValue() != vmId) {
-                throw new NetworkRuleConflictException("Failed to enable one to one nat for the ip address id=" + ipAddress.getId() + " and vm id=" + vmId + " as it's already assigned to antoher vm");
+                throw new NetworkRuleConflictException("Failed to enable static for the ip address id=" + ipId + " and vm id=" + vmId + " as it's already assigned to antoher vm");
             }
         } 
+        
+        //If there is public ip address already associated with the vm, throw an exception
+        List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVmId(vmId);
+        
+        if (!ips.isEmpty()) {
+            throw new InvalidParameterValueException("Failed to enable static nat for the ip address id=" + ipId + " as vm id=" + " is already associated with ip id=" + ips.get(0).getId());
+        }
         
         ipAddress.setOneToOneNat(true);
         ipAddress.setAssociatedWithVmId(vmId);
