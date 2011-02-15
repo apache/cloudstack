@@ -629,7 +629,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     
     @Override
     public boolean applyStaticNatRules(long sourceIpId, boolean continueOnError, Account caller){
-        List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurpose(sourceIpId, Purpose.StaticNat);
+        List<? extends FirewallRule> rules = _firewallDao.listByIpAndPurpose(sourceIpId, Purpose.StaticNat);
         List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
         
         if (rules.size() == 0) {
@@ -637,7 +637,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             return true;
         }
         
-        for (FirewallRuleVO rule : rules) {  
+        for (FirewallRule rule : rules) {  
             IpAddress sourceIp = _ipAddressDao.findById(rule.getSourceIpAddressId());
             
             UserVmVO vm = _vmDao.findById(sourceIp.getAssociatedWithVmId());
@@ -650,7 +650,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 throw new CloudRuntimeException("Unable to find ip address to map to in vm id=" + vm.getId());
             }
             
-            staticNatRules.add(new StaticNatRuleImpl(rule, dstIp.addr()));
+            FirewallRuleVO ruleVO = _firewallDao.findById(rule.getId());
+            
+            staticNatRules.add(new StaticNatRuleImpl(ruleVO, dstIp.addr()));
         }
 
         if (caller != null) {

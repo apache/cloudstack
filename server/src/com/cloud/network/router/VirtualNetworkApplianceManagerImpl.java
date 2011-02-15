@@ -1023,7 +1023,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 }
             }
             
-            s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + router.getId() + " start.");
+            s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + router + " start.");
             
             if (!publicIps.isEmpty()) {   
                 
@@ -1031,13 +1031,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 createAssociateIPCommands(router, publicIps, cmds, 0);   
                     
                 List<RemoteAccessVpn> vpns = new ArrayList<RemoteAccessVpn>(); 
-                List<? extends PortForwardingRule> pfRules = null;
-                List<? extends FirewallRule> staticNatFirewallRules = null;
+                List<PortForwardingRule> pfRules = new ArrayList<PortForwardingRule>();
+                List<FirewallRule> staticNatFirewallRules = new ArrayList<FirewallRule>();
                 
                 for (PublicIpAddress ip : publicIps) {
-                    pfRules = _pfRulesDao.listForApplication(ip.getId());
-                    staticNatFirewallRules = _rulesDao.listByIpAndPurpose(ip.getId(), Purpose.StaticNat);
-                    
+                    pfRules.addAll(_pfRulesDao.listForApplication(ip.getId()));
+                    staticNatFirewallRules.addAll(_rulesDao.listByIpAndPurpose(ip.getId(), Purpose.StaticNat));
+
                     RemoteAccessVpn vpn = _vpnDao.findById(ip.getId());
                     if (vpn != null) {
                         vpns.add(vpn);
