@@ -347,6 +347,23 @@ function isoJsonToDetailsTab() {
 	if (jsonObj.isready == false)
 		status = fromdb(jsonObj.status);		
 	setTemplateStateInRightPanel(status, $thisTab.find("#status"));
+			
+	if(jsonObj.isready == true){
+	    $("#progressbar_container").hide();
+	}
+	else {
+	    $("#progressbar_container").show();	    
+	    var progressBarValue = 0;
+	    if(jsonObj.status != null && jsonObj.status.indexOf("%") != -1) {      //e.g. jsonObj.status == "95% Downloaded" 	    
+	        var s = jsonObj.status.substring(0, jsonObj.status.indexOf("%"));  //e.g. s	== "95"
+	        if(isNaN(s) == false) {	        
+	            progressBarValue = parseInt(s);	//e.g. progressBarValue	== 95   
+	        } 
+	    }
+	    $("#progressbar").progressbar({
+		    value: progressBarValue             //e.g. progressBarValue	== 95  
+	    });	    
+	}
 	
 	if(jsonObj.size != null)
 	    $thisTab.find("#size").text(convertBytes(parseInt(jsonObj.size)));  
