@@ -31,7 +31,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.security.InvalidParameterException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -507,7 +506,7 @@ public class ApiServer implements HttpRequestHandler {
 	       return isCommandAvailable;
 	   }
     
-    public boolean verifyRequest(Map<String, Object[]> requestParameters, Long userId) throws InvalidParameterException {
+    public boolean verifyRequest(Map<String, Object[]> requestParameters, Long userId) throws ServerApiException {
         try {
             String apiKey = null;
             String secretKey = null;
@@ -529,16 +528,16 @@ public class ApiServer implements HttpRequestHandler {
             	short accountType = userAccount.getType();
             	
             	if (!isCommandAvailable(accountType, commandName)) {
-            		return false;
+            	    s_logger.warn("The given command:"+commandName+" does not exist");
+                    throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:"+commandName+" does not exist");
             	}
             	return true;
             }else{
             	//check against every available command to see if the command exists or not
             	if(!isCommandAvailable(commandName) && !commandName.equals("login") && !commandName.equals("logout")){
             		s_logger.warn("The given command:"+commandName+" does not exist");
-            		throw new InvalidParameterException("The given command:"+commandName+" does not exist");
+            		throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:"+commandName+" does not exist");
             	}
-            	
             }
             
             // - build a request string with sorted params, make sure it's all lowercase
@@ -599,7 +598,8 @@ public class ApiServer implements HttpRequestHandler {
             UserContext.updateContext(user.getId(), account, null);
 
             if (!isCommandAvailable(account.getType(), commandName)) {
-        		return false;
+                s_logger.warn("The given command:"+commandName+" does not exist");
+                throw new ServerApiException(BaseCmd.UNSUPPORTED_ACTION_ERROR, "The given command:"+commandName+" does not exist");
         	}
 
             // verify secret key exists
@@ -623,9 +623,9 @@ public class ApiServer implements HttpRequestHandler {
             }
             return equalSig;
         } catch (Exception ex) {
-        	if(ex instanceof InvalidParameterException){
-        		throw new InvalidParameterException(ex.getMessage());
-        	}
+            if (ex instanceof ServerApiException && ((ServerApiException) ex).getErrorCode() == BaseCmd.UNSUPPORTED_ACTION_ERROR) {
+                throw (ServerApiException)ex;
+            } 
             s_logger.error("unable to verifty request signature", ex);
         }
         return false;

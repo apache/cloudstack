@@ -19,7 +19,6 @@
 package com.cloud.api;
 
 import java.io.IOException;
-import java.security.InvalidParameterException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -275,7 +274,7 @@ public class ApiServlet extends HttpServlet {
                 if (session != null) {
                     try {
                         session.invalidate();
-                    }catch (IllegalStateException ise) {}
+                    } catch (IllegalStateException ise) {}
                 }
                 
                 auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED +  " " + "unable to verify user credentials and/or request signature");
@@ -283,13 +282,17 @@ public class ApiServlet extends HttpServlet {
                 writeResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType);
   
             }
-        }catch (InvalidParameterException ipe){
-            auditTrailSb.append(" " + HttpServletResponse.SC_NOT_FOUND +  " " + ipe.getMessage());
-            String serializedResponse = _apiServer.getSerializedApiError(HttpServletResponse.SC_NOT_FOUND, ipe.getMessage(), params, responseType);
-            writeResponse(resp, serializedResponse, HttpServletResponse.SC_NOT_FOUND, responseType);
-        }catch (Exception ex) {
-            s_logger.error("unknown exception writing api response", ex);
-            auditTrailSb.append(" unknown exception writing api response");
+        } catch (Exception ex) {
+            if (ex instanceof ServerApiException && ((ServerApiException) ex).getErrorCode() == BaseCmd.UNSUPPORTED_ACTION_ERROR) {
+                ServerApiException se = (ServerApiException)ex;
+                String serializedResponseText = _apiServer.getSerializedApiError(se.getErrorCode(), se.getDescription(), params, responseType);
+                resp.setHeader("X-Description", se.getDescription());
+                writeResponse(resp, serializedResponseText, se.getErrorCode(), responseType);
+                auditTrailSb.append(" " +se.getErrorCode() + " " + se.getDescription());
+            } else {
+                s_logger.error("unknown exception writing api response", ex);
+                auditTrailSb.append(" unknown exception writing api response");
+            }
         } finally {
             s_accessLogger.info(auditTrailSb.toString());            
             // cleanup user context to prevent from being peeked in other request context
