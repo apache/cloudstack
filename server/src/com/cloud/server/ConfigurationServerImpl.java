@@ -405,6 +405,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             s_logger.error("No home directory was detected.  Set the HOME environment variable to point to your user profile or home directory.");
             throw new CloudRuntimeException("No home directory was detected.  Set the HOME environment variable to point to your user profile or home directory.");
         }
+
         File privkeyfile = new File(homeDir + "/.ssh/id_rsa");
         File pubkeyfile  = new File(homeDir + "/.ssh/id_rsa.pub");
 
@@ -412,6 +413,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Systemvm keypairs not found in database. Need to store them in the database");
             }
+            //FIXME: take a global database lock here for safety. 
             Script.runSimpleBashScript("if [ -f ~/.ssh/id_rsa ] ; then true ; else yes '' | ssh-keygen -t rsa -q ; fi");
 
             byte[] arr1 = new byte[4094]; // configuration table column value size
@@ -481,7 +483,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     }
     
     private void writeKeyToDisk(String key, String keyPath) {
-
+        Script.runSimpleBashScript("mkdir -p ~/.ssh");
         File keyfile = new File( keyPath);
         if (!keyfile.exists()) {
             try {
