@@ -410,7 +410,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
      *            - non-null if the domainId was passed in in the command.
      * @return
      */
-    protected Account getAccountForApiCommand(String accountName, Long domainId) throws InvalidParameterValueException, PermissionDeniedException {
+    protected Account getAccountForApiCommand(String accountName, Long domainId){
         Account account = UserContext.current().getCaller();
 
         if (_accountMgr.isAdmin(account.getType())) {
@@ -1204,7 +1204,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override @DB @ActionEvent (eventType=EventTypes.EVENT_NET_IP_RELEASE, eventDescription="disassociating Ip")
-    public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd) throws PermissionDeniedException, IllegalArgumentException {
+    public boolean disassociateIpAddress(DisassociateIPAddrCmd cmd){
 
         Long userId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller();
@@ -1656,7 +1656,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @ActionEvent (eventType=EventTypes.EVENT_NETWORK_DELETE, eventDescription="deleting network")
-    public boolean deleteNetwork(long networkId) throws InvalidParameterValueException, PermissionDeniedException {   
+    public boolean deleteNetwork(long networkId){   
         //Don't allow to delete network via api call when it has vms assigned to it
         int nicCount = getActiveNicsInNetwork(networkId);
         if (nicCount > 0) {
@@ -1687,7 +1687,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     @Override
     @DB
-    public boolean deleteNetworkInternal(long networkId, long userId) throws InvalidParameterValueException, PermissionDeniedException {
+    public boolean deleteNetworkInternal(long networkId, long userId){
         return this.destroyNetwork(networkId, userId);
     }
 

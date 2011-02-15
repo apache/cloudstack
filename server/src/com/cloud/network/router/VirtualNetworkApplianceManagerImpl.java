@@ -1029,13 +1029,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 
                 //Re-apply public ip addresses - should come before PF/LB/VPN
                 createAssociateIPCommands(router, publicIps, cmds, 0);   
+                    
+                List<RemoteAccessVpn> vpns = new ArrayList<RemoteAccessVpn>(); 
+                List<? extends PortForwardingRule> pfRules = null;
+                List<? extends FirewallRule> staticNatFirewallRules = null;
                 
-                //Re-apply port forwarding rules for all public ips
-                List<RemoteAccessVpn> vpns = new ArrayList<RemoteAccessVpn>();
-                
-                List<? extends PortForwardingRule> rules = null;
                 for (PublicIpAddress ip : publicIps) {
-                    rules = _pfRulesDao.listForApplication(ip.getId());
+                    pfRules = _pfRulesDao.listForApplication(ip.getId());
+                    staticNatFirewallRules = _rulesDao.listByIpAndPurpose(ip.getId(), Purpose.StaticNat);
                     
                     RemoteAccessVpn vpn = _vpnDao.findById(ip.getId());
                     if (vpn != null) {
@@ -1043,11 +1044,23 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     }
                 }
                 
-                s_logger.debug("Found " + rules.size() + " port forwarding rule(s) to apply as a part of domR " + router + " start.");
-                if (!rules.isEmpty()) {
-                    createApplyPortForwardingRulesCommands(rules, router, cmds);
+                //Re-apply port forwarding rules
+                s_logger.debug("Found " + pfRules.size() + " port forwarding rule(s) to apply as a part of domR " + router + " start.");
+                if (!pfRules.isEmpty()) {
+                    createApplyPortForwardingRulesCommands(pfRules, router, cmds);
                 } 
                 
+                //Re-apply static nat rules
+                s_logger.debug("Found " + staticNatFirewallRules.size() + " static nat rule(s) to apply as a part of domR " + router + " start.");
+                if (!staticNatFirewallRules.isEmpty()) {
+                    List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
+                    for (FirewallRule rule : staticNatFirewallRules) {
+                        staticNatRules.add(_rulesMgr.buildStaticNatRule(rule));
+                    }   
+                    createApplyStaticNatRulesCommands(staticNatRules, router, cmds);
+                }
+                
+                //Re-apply vpn rules
                 s_logger.debug("Found " + vpns.size() + " vpn(s) to apply as a part of domR " + router + " start.");
                 if (!vpns.isEmpty()) {
                     for (RemoteAccessVpn vpn : vpns) {
