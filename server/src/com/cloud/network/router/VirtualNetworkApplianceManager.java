@@ -22,7 +22,6 @@ import java.util.Map;
 
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.deploy.DeployDestination;
-import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -32,6 +31,7 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
 import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
@@ -81,8 +81,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     
     boolean associateIP (Network network, List<? extends PublicIpAddress> ipAddress) throws ResourceUnavailableException;
     
-    boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException;
-    boolean applyPortForwardingRules(Network network, List<PortForwardingRuleTO> rules) throws AgentUnavailableException;
+    boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException;
     
     String[] applyVpnUsers(Network network, List<? extends VpnUser> users) throws ResourceUnavailableException;
     

@@ -24,15 +24,18 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.network.IPAddressVO;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.net.Ip;
 
 @Local(value=FirewallRulesDao.class) @DB(txn=false)
 public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> implements FirewallRulesDao {
@@ -41,6 +44,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     protected final SearchBuilder<FirewallRuleVO> AllFieldsSearch;
     protected final SearchBuilder<FirewallRuleVO> IpNotRevokedSearch;
     protected final SearchBuilder<FirewallRuleVO> ReleaseSearch;
+    protected SearchBuilder<FirewallRuleVO> VmSearch;
     
     protected FirewallRulesDaoImpl() {
         super();
@@ -59,7 +63,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         IpNotRevokedSearch = createSearchBuilder();
         IpNotRevokedSearch.and("ipId", IpNotRevokedSearch.entity().getSourceIpAddressId(), Op.EQ);
         IpNotRevokedSearch.and("state", IpNotRevokedSearch.entity().getState(), Op.NEQ);
-        IpNotRevokedSearch.and("oneToOneNat", IpNotRevokedSearch.entity().isOneToOneNat(), Op.EQ);
+        IpNotRevokedSearch.and("purpose", IpNotRevokedSearch.entity().getPurpose(), Op.EQ);
         IpNotRevokedSearch.done();
         
         ReleaseSearch = createSearchBuilder();
@@ -84,7 +88,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     
     @Override
     public List<FirewallRuleVO> listByIpAndPurpose(long ipId, FirewallRule.Purpose purpose) {
-        SearchCriteria<FirewallRuleVO> sc = ReleaseSearch.create();
+        SearchCriteria<FirewallRuleVO> sc = AllFieldsSearch.create();
         sc.setParameters("ipId", ipId);
         sc.setParameters("purpose", purpose);
         
@@ -92,17 +96,28 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     }
 
     @Override
-    public List<FirewallRuleVO> listByIpAndNotRevoked(long ipId, Boolean isOneToOneNat) {
+    public List<FirewallRuleVO> listByIpAndNotRevoked(long ipId, FirewallRule.Purpose purpose) {
         SearchCriteria<FirewallRuleVO> sc = IpNotRevokedSearch.create();
         sc.setParameters("ipId", ipId);
         sc.setParameters("state", State.Revoke);
-        if (isOneToOneNat != null) {
-            sc.setParameters("oneToOneNat", isOneToOneNat);
+        
+        if (purpose != null) {
+            sc.setParameters("purpose", purpose);
         }
         
         return listBy(sc);
     }
-
+    
+    
+    @Override
+    public List<FirewallRuleVO> listByNetworkIdAndPurpose(long networkId, FirewallRule.Purpose purpose) {
+        SearchCriteria<FirewallRuleVO> sc = AllFieldsSearch.create();
+        sc.setParameters("purpose", purpose);
+        sc.setParameters("networkId", networkId);
+        
+        return listBy(sc);
+    }
+    
     @Override
     public boolean setStateToAdd(FirewallRuleVO rule) {
         SearchCriteria<FirewallRuleVO> sc = AllFieldsSearch.create();
@@ -120,388 +135,26 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         return update(rule.getId(), rule);
     }
     
-    
-    
-//    public static String SELECT_IP_FORWARDINGS_BY_USERID_SQL   = null;
-//    public static String SELECT_IP_FORWARDINGS_BY_USERID_AND_DCID_SQL = null;
-//    public static String SELECT_LB_FORWARDINGS_BY_USERID_AND_DCID_SQL = null;
-//
-//
-//    public static final String           DELETE_IP_FORWARDING_BY_IPADDRESS_SQL = "DELETE FROM ip_forwarding WHERE public_ip_address = ?";
-//    public static final String           DELETE_IP_FORWARDING_BY_IP_PORT_SQL = "DELETE FROM ip_forwarding WHERE public_ip_address = ? and public_port = ?";
-//
-//    public static final String           DISABLE_IP_FORWARDING_BY_IPADDRESS_SQL = "UPDATE  ip_forwarding set enabled=0 WHERE public_ip_address = ?";
-//
-//
-//    protected SearchBuilder<PortForwardingRuleVO> FWByIPAndForwardingSearch;
-//    protected SearchBuilder<PortForwardingRuleVO> FWByIPPortAndForwardingSearch;
-//    protected SearchBuilder<PortForwardingRuleVO> FWByIPPortProtoSearch;
-//    protected SearchBuilder<PortForwardingRuleVO> FWByIPPortAlgoSearch;
-//    protected SearchBuilder<PortForwardingRuleVO> FWByPrivateIPSearch;
-//    protected SearchBuilder<PortForwardingRuleVO> RulesExcludingPubIpPort;
-//    protected SearchBuilder<PortForwardingRuleVO> FWByGroupId;
-//    protected SearchBuilder<PortForwardingRuleVO> FWByIpForLB;
-//
-//    protected SearchBuilder<PortForwardingRuleVO> FWByGroupAndPrivateIp;
-//    protected SearchBuilder<PortForwardingRuleVO> FWByPrivateIpPrivatePortPublicIpPublicPortSearch;
-//    protected SearchBuilder<PortForwardingRuleVO> OneToOneNATSearch;
-//
-//
-//    protected FirewallRulesDaoImpl() {
-//    }
-//    
-//    @Override
-//	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-//        if (!super.configure(name, params)) {
-//            return false;
-//        }
-//        
-//        SELECT_IP_FORWARDINGS_BY_USERID_SQL = buildSelectByUserIdSql();
-//        if (s_logger.isDebugEnabled()) {
-//            s_logger.debug(SELECT_IP_FORWARDINGS_BY_USERID_SQL);
-//        }
-//        
-//        SELECT_IP_FORWARDINGS_BY_USERID_AND_DCID_SQL = buildSelectByUserIdAndDatacenterIdSql();
-//        if (s_logger.isDebugEnabled()) {
-//            s_logger.debug(SELECT_IP_FORWARDINGS_BY_USERID_AND_DCID_SQL);
-//        }
-//        
-//        SELECT_LB_FORWARDINGS_BY_USERID_AND_DCID_SQL = buildSelectByUserIdAndDatacenterIdForLBSql();
-//        if (s_logger.isDebugEnabled()) {
-//            s_logger.debug(SELECT_LB_FORWARDINGS_BY_USERID_AND_DCID_SQL);
-//        }
-//        
-//
-//        FWByIPSearch = createSearchBuilder();
-//        FWByIPSearch.and("publicIpAddress", FWByIPSearch.entity().getSourceIpAddress(), SearchCriteria.Op.EQ);
-//        FWByIPSearch.done();
-//        
-//        FWByIPAndForwardingSearch = createSearchBuilder();
-//        FWByIPAndForwardingSearch.and("publicIpAddress", FWByIPAndForwardingSearch.entity().getSourceIpAddress(), SearchCriteria.Op.EQ);
-//        FWByIPAndForwardingSearch.and("forwarding", FWByIPAndForwardingSearch.entity().isForwarding(), SearchCriteria.Op.EQ);
-//        FWByIPAndForwardingSearch.done();
-//        
-//        FWByIPPortAndForwardingSearch = createSearchBuilder();
-//        FWByIPPortAndForwardingSearch.and("publicIpAddress", FWByIPPortAndForwardingSearch.entity().getSourceIpAddress(), SearchCriteria.Op.EQ);
-//        FWByIPPortAndForwardingSearch.and("publicPort", FWByIPPortAndForwardingSearch.entity().getSourcePort(), SearchCriteria.Op.EQ);
-//        FWByIPPortAndForwardingSearch.and("forwarding", FWByIPPortAndForwardingSearch.entity().isForwarding(), SearchCriteria.Op.EQ);
-//        FWByIPPortAndForwardingSearch.done();
-//        
-//        FWByIPPortProtoSearch = createSearchBuilder();
-//        FWByIPPortProtoSearch.and("publicIpAddress", FWByIPPortProtoSearch.entity().getSourceIpAddress(), SearchCriteria.Op.EQ);
-//        FWByIPPortProtoSearch.and("publicPort", FWByIPPortProtoSearch.entity().getSourcePort(), SearchCriteria.Op.EQ);
-//        FWByIPPortProtoSearch.and("protocol", FWByIPPortProtoSearch.entity().getProtocol(), SearchCriteria.Op.EQ);
-//        FWByIPPortProtoSearch.done();
-//        
-//        FWByIPPortAlgoSearch = createSearchBuilder();
-//        FWByIPPortAlgoSearch.and("publicIpAddress", FWByIPPortAlgoSearch.entity().getSourceIpAddress(), SearchCriteria.Op.EQ);
-//        FWByIPPortAlgoSearch.and("publicPort", FWByIPPortAlgoSearch.entity().getSourcePort(), SearchCriteria.Op.EQ);
-//        FWByIPPortAlgoSearch.and("algorithm", FWByIPPortAlgoSearch.entity().getAlgorithm(), SearchCriteria.Op.EQ);
-//        FWByIPPortAlgoSearch.done();
-//
-//        FWByPrivateIPSearch = createSearchBuilder();
-//        FWByPrivateIPSearch.and("privateIpAddress", FWByPrivateIPSearch.entity().getDestinationIpAddress(), SearchCriteria.Op.EQ);
-//        FWByPrivateIPSearch.done();
-//
-//        RulesExcludingPubIpPort = createSearchBuilder();
-//        RulesExcludingPubIpPort.and("publicIpAddress", RulesExcludingPubIpPort.entity().getDestinationIpAddress(), SearchCriteria.Op.EQ);
-//        RulesExcludingPubIpPort.and("groupId", RulesExcludingPubIpPort.entity().getGroupId(), SearchCriteria.Op.NEQ);
-//        RulesExcludingPubIpPort.and("forwarding", RulesExcludingPubIpPort.entity().isForwarding(), SearchCriteria.Op.EQ);
-//        RulesExcludingPubIpPort.done();
-//
-//        FWByGroupId = createSearchBuilder();
-//        FWByGroupId.and("groupId", FWByGroupId.entity().getGroupId(), SearchCriteria.Op.EQ);
-//        FWByGroupId.and("forwarding", FWByGroupId.entity().isForwarding(), SearchCriteria.Op.EQ);
-//        FWByGroupId.done();
-//
-//        FWByGroupAndPrivateIp = createSearchBuilder();
-//        FWByGroupAndPrivateIp.and("groupId", FWByGroupAndPrivateIp.entity().getGroupId(), SearchCriteria.Op.EQ);
-//        FWByGroupAndPrivateIp.and("privateIpAddress", FWByGroupAndPrivateIp.entity().getDestinationIpAddress(), SearchCriteria.Op.EQ);
-//        FWByGroupAndPrivateIp.and("forwarding", FWByGroupAndPrivateIp.entity().isForwarding(), SearchCriteria.Op.EQ);
-//        FWByGroupAndPrivateIp.done();
-//
-//        FWByPrivateIpPrivatePortPublicIpPublicPortSearch = createSearchBuilder();
-//        FWByPrivateIpPrivatePortPublicIpPublicPortSearch.and("publicIpAddress", FWByPrivateIpPrivatePortPublicIpPublicPortSearch.entity().getSourceIpAddress(), SearchCriteria.Op.EQ);
-//        FWByPrivateIpPrivatePortPublicIpPublicPortSearch.and("privateIpAddress", FWByPrivateIpPrivatePortPublicIpPublicPortSearch.entity().getDestinationIpAddress(), SearchCriteria.Op.EQ);
-//        FWByPrivateIpPrivatePortPublicIpPublicPortSearch.and("privatePort", FWByPrivateIpPrivatePortPublicIpPublicPortSearch.entity().getDestinationPort(), SearchCriteria.Op.NULL);
-//        FWByPrivateIpPrivatePortPublicIpPublicPortSearch.and("publicPort", FWByPrivateIpPrivatePortPublicIpPublicPortSearch.entity().getSourcePort(), SearchCriteria.Op.NULL);
-//        FWByPrivateIpPrivatePortPublicIpPublicPortSearch.done();
-//        
-//        OneToOneNATSearch = createSearchBuilder();
-//        OneToOneNATSearch.and("publicIpAddress", OneToOneNATSearch.entity().getSourceIpAddress(), SearchCriteria.Op.EQ);
-//        OneToOneNATSearch.and("protocol", OneToOneNATSearch.entity().getProtocol(), SearchCriteria.Op.EQ);
-//        OneToOneNATSearch.done();
-//        
-//        FWByIpForLB = createSearchBuilder();
-//        FWByIpForLB.and("publicIpAddress", FWByIpForLB.entity().getSourceIpAddress(), SearchCriteria.Op.EQ);
-//        FWByIpForLB.and("groupId", FWByIpForLB.entity().getGroupId(), SearchCriteria.Op.NNULL);
-//        FWByIpForLB.and("forwarding", FWByIpForLB.entity().isForwarding(), SearchCriteria.Op.EQ);
-//        FWByIpForLB.done();
-//        
-//        return true;
-//    }
-//
-//    protected String buildSelectByUserIdSql() {
-//        StringBuilder sql = createPartialSelectSql(null, true);
-//        sql.insert(sql.length() - 6, ", user_ip_address ");
-//        sql.append("ip_forwarding.public_ip_address = user_ip_address.public_ip_address AND user_ip_address.account_id = ?");
-//
-//        return sql.toString();
-//    }
-//    
-//    protected String buildSelectByUserIdAndDatacenterIdSql() {
-//    	return "SELECT i.id, i.group_id, i.public_ip_address, i.public_port, i.private_ip_address, i.private_port, i.enabled, i.protocol, i.forwarding, i.algorithm FROM ip_forwarding i, user_ip_address u WHERE i.public_ip_address=u.public_ip_address AND u.account_id=? AND u.data_center_id=?";
-//    }
-//    
-//    protected String buildSelectByUserIdAndDatacenterIdForLBSql() {
-//    	return "SELECT i.id, i.group_id, i.public_ip_address, i.public_port, i.private_ip_address, i.private_port, i.enabled, i.protocol, i.forwarding, i.algorithm FROM ip_forwarding i, user_ip_address u WHERE i.public_ip_address=u.public_ip_address AND u.account_id=? AND u.data_center_id=? AND i.group_id is not NULL";
-//    }
-//
-//    public List<PortForwardingRuleVO> listIPForwarding(String publicIPAddress, boolean forwarding) {
-//        SearchCriteria<PortForwardingRuleVO> sc = FWByIPAndForwardingSearch.create();
-//        sc.setParameters("publicIpAddress", publicIPAddress);
-//        sc.setParameters("forwarding", forwarding);
-//        return listBy(sc);
-//    }
-//
-//    @Override
-//    public List<PortForwardingRuleVO> listIPForwarding(long userId) {
-//        Transaction txn = Transaction.currentTxn();
-//        List<PortForwardingRuleVO> forwardings = new ArrayList<PortForwardingRuleVO>();
-//        PreparedStatement pstmt = null;
-//        try {
-//            pstmt = txn.prepareAutoCloseStatement(SELECT_IP_FORWARDINGS_BY_USERID_SQL);
-//            pstmt.setLong(1, userId);
-//            ResultSet rs = pstmt.executeQuery();
-//            while (rs.next()) {
-//                forwardings.add(toEntityBean(rs, false));
-//            }
-//        } catch (Exception e) {
-//        	s_logger.warn(e);
-//        }
-//        return forwardings;
-//    }
-//    
-//    public List<PortForwardingRuleVO> listIPForwarding(long userId, long dcId) {
-//    	Transaction txn = Transaction.currentTxn();
-//        List<PortForwardingRuleVO> forwardings = new ArrayList<PortForwardingRuleVO>();
-//        PreparedStatement pstmt = null;
-//        try {
-//            pstmt = txn.prepareAutoCloseStatement(SELECT_IP_FORWARDINGS_BY_USERID_AND_DCID_SQL);
-//            pstmt.setLong(1, userId);
-//            pstmt.setLong(2, dcId);
-//            ResultSet rs = pstmt.executeQuery();
-//            while (rs.next()) {
-//                forwardings.add(toEntityBean(rs, false));
-//            }
-//        } catch (Exception e) {
-//        	s_logger.warn(e);
-//        }
-//        return forwardings;
-//    }
-//
-//    @Override
-//    public void deleteIPForwardingByPublicIpAddress(String ipAddress) {
-//        Transaction txn = Transaction.currentTxn();
-//        PreparedStatement pstmt = null;
-//        try {
-//            pstmt = txn.prepareAutoCloseStatement(DELETE_IP_FORWARDING_BY_IPADDRESS_SQL);
-//            pstmt.setString(1, ipAddress);
-//            pstmt.executeUpdate();
-//        } catch (Exception e) {
-//        	s_logger.warn(e);
-//        }
-//    }
-//
-//    @Override
-//    public void deleteIPForwardingByPublicIpAndPort(String ipAddress, String port) {
-//        Transaction txn = Transaction.currentTxn();
-//        PreparedStatement pstmt = null;
-//        try {
-//            pstmt = txn.prepareAutoCloseStatement(DELETE_IP_FORWARDING_BY_IP_PORT_SQL);
-//            pstmt.setString(1, ipAddress);
-//            pstmt.setString(2, port);
-//
-//            pstmt.executeUpdate();
-//        } catch (Exception e) {
-//        	s_logger.warn(e);
-//        }
-//    }
-//    
-//    @Override
-//    public List<PortForwardingRuleVO> listIPForwarding(String publicIPAddress) {
-//        SearchCriteria<PortForwardingRuleVO> sc = FWByIPSearch.create();
-//        sc.setParameters("publicIpAddress", publicIPAddress);
-//        return listBy(sc);
-//    }
-//
-//	@Override
-//	public List<PortForwardingRuleVO> listIPForwardingForUpdate(String publicIPAddress) {
-//		SearchCriteria<PortForwardingRuleVO> sc = FWByIPSearch.create();
-//        sc.setParameters("publicIpAddress", publicIPAddress);
-//        return listBy(sc, null);
-//	}
-//
-//	@Override
-//	public List<PortForwardingRuleVO> listIPForwardingForUpdate(String publicIp, boolean fwding) {
-//        SearchCriteria<PortForwardingRuleVO> sc = FWByIPAndForwardingSearch.create();
-//        sc.setParameters("publicIpAddress", publicIp);
-//        sc.setParameters("forwarding", fwding);
-//        return search(sc, null);
-//	}
-//
-//	@Override
-//	public List<PortForwardingRuleVO> listIPForwardingForUpdate(String publicIp,
-//			String publicPort, String proto) {
-//		SearchCriteria<PortForwardingRuleVO> sc = FWByIPPortProtoSearch.create();
-//        sc.setParameters("publicIpAddress", publicIp);
-//        sc.setParameters("publicPort", publicPort);
-//        sc.setParameters("protocol", proto);
-//        return search(sc, null);
-//	}
-//	
-//	@Override
-//	public List<PortForwardingRuleVO> listLoadBalanceRulesForUpdate(String publicIp,
-//			String publicPort, String algo) {
-//		SearchCriteria<PortForwardingRuleVO> sc = FWByIPPortAlgoSearch.create();
-//        sc.setParameters("publicIpAddress", publicIp);
-//        sc.setParameters("publicPort", publicPort);
-//        sc.setParameters("algorithm", algo);
-//        return listBy(sc, null);
-//	}
-//
-//	@Override
-//	public List<PortForwardingRuleVO> listIPForwarding(String publicIPAddress,
-//			String port, boolean forwarding) {
-//		SearchCriteria<PortForwardingRuleVO> sc = FWByIPPortAndForwardingSearch.create();
-//        sc.setParameters("publicIpAddress", publicIPAddress);
-//        sc.setParameters("publicPort", port);
-//        sc.setParameters("forwarding", forwarding);
-//
-//        return listBy(sc);
-//	}
-//
-//	@Override
-//	public void disableIPForwarding(String publicIPAddress) {
-//        Transaction txn = Transaction.currentTxn();
-//        PreparedStatement pstmt = null;
-//        try {
-//        	txn.start();
-//            pstmt = txn.prepareAutoCloseStatement(DISABLE_IP_FORWARDING_BY_IPADDRESS_SQL);
-//            pstmt.setString(1, publicIPAddress);
-//            pstmt.executeUpdate();
-//            txn.commit();
-//        } catch (Exception e) {
-//            txn.rollback();
-//            throw new CloudRuntimeException("DB Exception ", e);
-//        }
-//	}
-//
-//	@Override
-//    public List<PortForwardingRuleVO> listRulesExcludingPubIpPort(String publicIpAddress, long securityGroupId) {
-//        SearchCriteria<PortForwardingRuleVO> sc = RulesExcludingPubIpPort.create();
-//        sc.setParameters("publicIpAddress", publicIpAddress);
-//        sc.setParameters("groupId", securityGroupId);
-//        sc.setParameters("forwarding", false);
-//        return listBy(sc);
-//    }
-//
-//	@Override
-//    public List<PortForwardingRuleVO> listBySecurityGroupId(long securityGroupId) {
-//	    SearchCriteria<PortForwardingRuleVO> sc = FWByGroupId.create();
-//	    sc.setParameters("groupId", securityGroupId);
-//        sc.setParameters("forwarding", Boolean.TRUE);
-//	    return listBy(sc);
-//	}
-//
-//    @Override
-//    public List<PortForwardingRuleVO> listForwardingByPubAndPrivIp(boolean forwarding, String publicIPAddress, String privateIp) {
-//        SearchCriteria<PortForwardingRuleVO> sc = FWByIPAndForwardingSearch.create();
-//        sc.setParameters("publicIpAddress", publicIPAddress);
-//        sc.setParameters("forwarding", forwarding);
-//        sc.addAnd("privateIpAddress", SearchCriteria.Op.EQ, privateIp);
-//        return listBy(sc);
-//    }
-//
-//    @Override
-//    public List<PortForwardingRuleVO> listByLoadBalancerId(long loadBalancerId) {
-//        SearchCriteria<PortForwardingRuleVO> sc = FWByGroupId.create();
-//        sc.setParameters("groupId", loadBalancerId);
-//        sc.setParameters("forwarding", Boolean.FALSE);
-//        return listBy(sc);
-//    }
-//
-//    @Override
-//    public PortForwardingRuleVO findByGroupAndPrivateIp(long groupId, String privateIp, boolean forwarding) {
-//        SearchCriteria<PortForwardingRuleVO> sc = FWByGroupAndPrivateIp.create();
-//        sc.setParameters("groupId", groupId);
-//        sc.setParameters("privateIpAddress", privateIp);
-//        sc.setParameters("forwarding", forwarding);
-//        return findOneBy(sc);
-//        
-//    }
-//    
-//    @Override
-//    public List<PortForwardingRuleVO> findByPublicIpPrivateIpForNatRule(String publicIp, String privateIp){
-//    	SearchCriteria<PortForwardingRuleVO> sc = FWByPrivateIpPrivatePortPublicIpPublicPortSearch.create();
-//    	sc.setParameters("publicIpAddress", publicIp);
-//    	sc.setParameters("privateIpAddress", privateIp);
-//    	return listBy(sc);
-//    }
-//    
-//	@Override
-//	public List<PortForwardingRuleVO> listByPrivateIp(String privateIp) {
-//		SearchCriteria<PortForwardingRuleVO> sc = FWByPrivateIPSearch.create();
-//        sc.setParameters("privateIpAddress", privateIp);
-//        return listBy(sc);
-//	}
-//
-//	@Override
-//	public List<PortForwardingRuleVO> listIPForwardingByPortAndProto(String publicIp,
-//			String publicPort, String proto) {
-//		SearchCriteria<PortForwardingRuleVO> sc = FWByIPPortProtoSearch.create();
-//        sc.setParameters("publicIpAddress", publicIp);
-//        sc.setParameters("publicPort", publicPort);
-//        sc.setParameters("protocol", proto);
-//        return search(sc, null);
-//	}
-//
-//	@Override
-//	public boolean isPublicIpOneToOneNATted(String publicIp) {
-//		SearchCriteria<PortForwardingRuleVO> sc = OneToOneNATSearch.create();
-//        sc.setParameters("publicIpAddress", publicIp);
-//        sc.setParameters("protocol", NetUtils.NAT_PROTO);
-//        List<PortForwardingRuleVO> rules = search(sc, null);
-//        if (rules.size() != 1)
-//        	return false;
-//        return rules.get(1).getProtocol().equalsIgnoreCase(NetUtils.NAT_PROTO);
-//	}
-//
-//	@Override
-//	public List<PortForwardingRuleVO> listIpForwardingRulesForLoadBalancers(
-//			String publicIp) {
-//		SearchCriteria<PortForwardingRuleVO> sc = FWByIpForLB.create();
-//        sc.setParameters("publicIpAddress", publicIp);
-//        sc.setParameters("forwarding", false);
-//        return search(sc, null);
-//	}
-//	
-//	@Override
-//    public List<PortForwardingRuleVO> listIPForwardingForLB(long userId, long dcId) {
-//    	Transaction txn = Transaction.currentTxn();
-//        List<PortForwardingRuleVO> forwardings = new ArrayList<PortForwardingRuleVO>();
-//        PreparedStatement pstmt = null;
-//        try {
-//            pstmt = txn.prepareAutoCloseStatement(SELECT_LB_FORWARDINGS_BY_USERID_AND_DCID_SQL);
-//            pstmt.setLong(1, userId);
-//            pstmt.setLong(2, dcId);
-//            ResultSet rs = pstmt.executeQuery();
-//            while (rs.next()) {
-//                forwardings.add(toEntityBean(rs, false));
-//            }
-//        } catch (Exception e) {
-//        	s_logger.warn(e);
-//        }
-//        return forwardings;
-//    }
+    @Override
+    public List<FirewallRuleVO> listStaticNatByVmId(long vmId) {   
+        IPAddressDao _ipDao = ComponentLocator.getLocator("management-server").getDao(IPAddressDao.class);
+        
+        if (VmSearch == null) {         
+            SearchBuilder<IPAddressVO> IpSearch = _ipDao.createSearchBuilder();
+            IpSearch.and("associatedWithVmId", IpSearch.entity().getAssociatedWithVmId(), SearchCriteria.Op.EQ);
+            IpSearch.and("oneToOneNat", IpSearch.entity().isOneToOneNat(), SearchCriteria.Op.NNULL);
+            
+            VmSearch = createSearchBuilder();
+            VmSearch.and("purpose", VmSearch.entity().getPurpose(), Op.EQ);
+            VmSearch.join("ipSearch", IpSearch, VmSearch.entity().getSourceIpAddressId(), IpSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+            VmSearch.done();
+        }      
+          
+        SearchCriteria<FirewallRuleVO> sc = VmSearch.create();
+        sc.setParameters("purpose", Purpose.StaticNat);
+        sc.setJoinParameters("ipSearch", "associatedWithVmId", vmId);
+        
+        return listBy(sc);
+    }
+
 }

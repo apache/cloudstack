@@ -25,6 +25,7 @@ public interface FirewallRule extends ControlledEntity {
         PortForwarding,
         LoadBalancing,
         Vpn,
+        StaticNat,
     }
     
     enum State {
@@ -64,8 +65,6 @@ public interface FirewallRule extends ControlledEntity {
     State getState();
     
     long getNetworkId();
-    
-    boolean isOneToOneNat();
     
     long getSourceIpAddressId();
 }

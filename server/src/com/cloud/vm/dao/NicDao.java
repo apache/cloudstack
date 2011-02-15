@@ -9,7 +9,9 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.NicVO;
 
 public interface NicDao extends GenericDao<NicVO, Long> {
-    List<NicVO> listBy(long instanceId);
+    List<NicVO> listByVmId(long instanceId);
+    
+    List<NicVO> listByVmIdIncludingRemoved(long instanceId);
     
     List<String> listIpAddressInNetwork(long networkConfigId);
     List<NicVO> listIncludingRemovedBy(long instanceId);

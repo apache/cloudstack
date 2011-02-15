@@ -19,25 +19,23 @@ package com.cloud.network.rules;
 
 import java.util.List;
 
-import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 public interface RulesService {
-    List<? extends PortForwardingRule> searchForIpForwardingRules(Long ipId,  Long id, Long vmId, Long start, Long size, String accountName, Long domainId);
+    List<? extends FirewallRule> searchStaticNatRules(Long ipId,  Long id, Long vmId, Long start, Long size, String accountName, Long domainId);
 
     /**
      * Creates a port forwarding rule between two ip addresses or between
      * an ip address and a virtual machine.
      * @param rule rule to be created.
      * @param vmId vm to be linked to.  If specified the destination ip address is ignored.
-     * @param isNat TODO
      * @return PortForwardingRule if created.
      * @throws NetworkRuleConflictException if conflicts in the network rules are detected.
      */
-    PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId, boolean isNat) throws NetworkRuleConflictException;
+    PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId) throws NetworkRuleConflictException;
     
     /**
      * Revokes a port forwarding rule 
@@ -59,8 +57,15 @@ public interface RulesService {
     
     boolean disableOneToOneNat(long ipAddressId);
     
-    List<PortForwardingRuleTO> buildPortForwardingTOrules(List<? extends PortForwardingRule> pfRules);
-    
     PortForwardingRule getPortForwardigRule(long ruleId);
+    FirewallRule getFirewallRule(long ruleId);
+    
+    StaticNatRule createStaticNatRule(StaticNatRule rule) throws NetworkRuleConflictException;
+    
+    boolean revokeStaticNatRule(long ruleId, boolean apply);
+    
+    boolean applyStaticNatRules(long ipAdddressId, Account caller) throws ResourceUnavailableException;
+    
+    StaticNatRule buildStaticNatRule(FirewallRule rule);
     
 }

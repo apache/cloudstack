@@ -32,7 +32,6 @@ public interface LoadBalancerConfigurator {
 	public final static int REMOVE = 1;
 	
 	public String [] generateConfiguration(List<PortForwardingRuleTO> fwRules);
-	public String [][] generateFwRules(List<PortForwardingRuleTO> fwRules);
 	
 	public String [] generateConfiguration(LoadBalancerConfigCommand lbCmd);
 	public String [][] generateFwRules(LoadBalancerConfigCommand lbCmd);

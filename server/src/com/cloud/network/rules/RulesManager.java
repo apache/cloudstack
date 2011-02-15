@@ -35,7 +35,11 @@ public interface RulesManager extends RulesService {
     
     boolean applyPortForwardingRules(long ipAddressId, boolean continueOnError, Account caller);
     
+    boolean applyStaticNatRules(long sourceIpId, boolean continueOnError, Account caller);
+    
     boolean applyPortForwardingRulesForNetwork(long networkId, boolean continueOnError, Account caller);
+    
+    boolean applyStaticNatRulesForNetwork(long networkId, boolean continueOnError, Account caller);
     
     /**
      * detectRulesConflict finds conflicts in networking rules.  It checks for
@@ -59,7 +63,7 @@ public interface RulesManager extends RulesService {
     void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller) throws InvalidParameterValueException, PermissionDeniedException;
     void checkRuleAndUserVm(FirewallRule rule, UserVm userVm, Account caller) throws InvalidParameterValueException, PermissionDeniedException;
     
-    boolean revokeAllRules(long ipId, long userId) throws ResourceUnavailableException;
+    boolean revokeAllRules(long ipId, long userId, Account caller) throws ResourceUnavailableException;
     
     List<? extends FirewallRule> listFirewallRulesByIp(long ipAddressId);
     
@@ -73,10 +77,14 @@ public interface RulesManager extends RulesService {
     
     List<? extends PortForwardingRule> gatherPortForwardingRulesForApplication(List<? extends IpAddress> addrs);
 
-	boolean revokePortForwardingRule(long vmId);
+	boolean revokePortForwardingRulesForVm(long vmId);
+	
+	boolean revokeStaticNatRulesForVm(long vmId);
 	
 	FirewallRule[] reservePorts(IpAddress ip, String protocol, FirewallRule.Purpose purpose, int... ports) throws NetworkRuleConflictException;
 	boolean releasePorts(long ipId, String protocol, FirewallRule.Purpose purpose, int... ports);
 	
 	List<PortForwardingRuleVO> listByNetworkId(long networkId);
+	
+	
 }

@@ -167,38 +167,14 @@ public class VirtualRouterElement extends DhcpElement implements NetworkElement,
             long networkId = config.getId();
             DomainRouterVO router = _routerDao.findByNetwork(networkId);
             if (router == null) {
-                s_logger.warn("Unable to apply firewall rules, virtual router doesn't exist in the network " + config.getId());
-                throw new CloudRuntimeException("Unable to apply firewall rules");
+                s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network " + config.getId());
+                return true;
             }
             
-            if (router.getState() == State.Running) {
-                if (rules != null && !rules.isEmpty()) {
-                    if (rules.get(0).getPurpose() == Purpose.LoadBalancing) {
-                        //for load balancer we have to resend all lb rules for the network
-                        List<LoadBalancerVO> lbs = _lbDao.listByNetworkId(config.getId());
-                        List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
-                        for (LoadBalancerVO lb : lbs) {
-                            List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
-                            LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
-                            lbRules.add(loadBalancing);
-                        }
-                        
-                        return _routerMgr.applyLBRules(config, lbRules);
-                    } else if (rules.get(0).getPurpose() == Purpose.PortForwarding) { 
-                        return _routerMgr.applyPortForwardingRules(config, _rulesMgr.buildPortForwardingTOrules((List<PortForwardingRule>)rules));
-                    }
-                } else {
-                    return true;
-                }
-            } else if (router.getState() == State.Stopped || router.getState() == State.Stopping){
-                s_logger.debug("Router is in " + router.getState() + ", so not sending apply firewall rules commands to the backend");
-                return true;
-            } else {
-                s_logger.warn("Unable to apply firewall rules, virtual router is not in the right state " + router.getState());
-                throw new CloudRuntimeException("Unable to apply firewall rules, domR is not in right state " + router.getState());
-            }
-        } 
-        return false;
+            return _routerMgr.applyFirewallRules(config, rules);
+        } else {
+            return true;
+        }
     }
     
     

@@ -28,7 +28,7 @@ import com.cloud.utils.db.GenericDao;
  * Data Access Object for user_ip_address and ip_forwarding tables
  */
 public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
-    List<FirewallRuleVO> listByIpAndNotRevoked(long ipAddressId, Boolean isOneToOneNat);
+    List<FirewallRuleVO> listByIpAndNotRevoked(long ipAddressId, FirewallRule.Purpose purpose);
     
     boolean setStateToAdd(FirewallRuleVO rule);
     
@@ -38,31 +38,8 @@ public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
     
     List<FirewallRuleVO> listByIpAndPurpose(long ipAddressId, FirewallRule.Purpose purpose);
     
-//	public List<PortForwardingRuleVO> listIPForwarding(String publicIPAddress, boolean forwarding);
-//	public List<PortForwardingRuleVO> listIPForwarding(String publicIPAddress, String port, boolean forwarding);
-//
-//	public List<PortForwardingRuleVO> listIPForwarding(long userId);
-//	public List<PortForwardingRuleVO> listIPForwarding(long userId, long dcId);
-//	public void deleteIPForwardingByPublicIpAddress(String ipAddress);
-//	public List<PortForwardingRuleVO> listIPForwarding(String publicIPAddress);
-//	public List<PortForwardingRuleVO> listIPForwardingForUpdate(String publicIPAddress);
-//	public void disableIPForwarding(String publicIPAddress);
-//	public List<PortForwardingRuleVO> listIPForwardingForUpdate(String publicIp, boolean fwding);
-//	public List<PortForwardingRuleVO> listIPForwardingForUpdate(String publicIp, String publicPort, String proto);
-//	public List<PortForwardingRuleVO> listIPForwardingByPortAndProto(String publicIp, String publicPort, String proto);
-//
-//	public List<PortForwardingRuleVO> listLoadBalanceRulesForUpdate(String publicIp, String publicPort, String algo);
-//	public List<PortForwardingRuleVO> listIpForwardingRulesForLoadBalancers(String publicIp);
-//
-//
-//	public List<PortForwardingRuleVO> listRulesExcludingPubIpPort(String publicIpAddress, long securityGroupId);
-//    public List<PortForwardingRuleVO> listBySecurityGroupId(long securityGroupId);
-//    public List<PortForwardingRuleVO> listByLoadBalancerId(long loadBalancerId);
-//    public List<PortForwardingRuleVO> listForwardingByPubAndPrivIp(boolean forwarding, String publicIPAddress, String privateIp);
-//    public PortForwardingRuleVO findByGroupAndPrivateIp(long groupId, String privateIp, boolean forwarding);
-//	public List<PortForwardingRuleVO> findByPublicIpPrivateIpForNatRule(String publicIp,String privateIp);
-//	public List<PortForwardingRuleVO> listByPrivateIp(String privateIp);
-//	public boolean isPublicIpOneToOneNATted(String publicIp);
-//	void deleteIPForwardingByPublicIpAndPort(String ipAddress, String port);
-//	public List<PortForwardingRuleVO> listIPForwardingForLB(long userId, long dcId);
+    List<FirewallRuleVO> listByNetworkIdAndPurpose(long networkId, FirewallRule.Purpose purpose);
+    
+    List<FirewallRuleVO> listStaticNatByVmId(long vmId);
+
 }

@@ -40,12 +40,12 @@ import com.cloud.api.response.InstanceGroupResponse;
 import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
-import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.PodResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceLimitResponse;
+import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.api.response.SnapshotResponse;
@@ -76,6 +76,7 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.security.IngressRule;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
@@ -143,7 +144,7 @@ public interface ResponseGenerator {
 
     FirewallRuleResponse createFirewallRuleResponse(PortForwardingRule fwRule);
 
-    IpForwardingRuleResponse createIpForwardingRuleResponse(PortForwardingRule fwRule);
+    IpForwardingRuleResponse createIpForwardingRuleResponse(StaticNatRule fwRule);
 
     User findUserById(Long userId);
 

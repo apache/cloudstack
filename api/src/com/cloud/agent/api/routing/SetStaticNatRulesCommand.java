@@ -15,24 +15,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.network.lb;
+
+package com.cloud.agent.api.routing;
 
 import java.util.List;
 
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.lb.LoadBalancingRule.LbDestination;
-import com.cloud.user.Account;
+import com.cloud.agent.api.to.StaticNatRuleTO;
 
-public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
-    boolean removeAllLoadBalanacers(long ipId, Account caller, long callerUserId);
-    List<LbDestination> getExistingDestinations(long lbId);
+public class SetStaticNatRulesCommand extends NetworkElementCommand{
     
-    /**
-     * Remove vm from all load balancers
-     * @param vmId
-     * @return true if removal is successful
-     */
-    boolean removeVmFromLoadBalancers(long vmId);
+    StaticNatRuleTO[] rules;
+
+    protected SetStaticNatRulesCommand() {
+    }
     
-    boolean applyLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException;
+    public SetStaticNatRulesCommand(List<? extends StaticNatRuleTO> staticNatRules) {
+        rules = new StaticNatRuleTO[staticNatRules.size()];
+        int i = 0;
+        for (StaticNatRuleTO rule : staticNatRules) {
+            rules[i++] = rule;
+        }
+    }
+    
+    public StaticNatRuleTO[] getRules() {
+        return rules;
+    }
+
 }

@@ -53,7 +53,7 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
     }
 
     public LoadBalancerVO(String xId, String name, String description, long srcIpId, int srcPort, int dstPort, String algorithm, long networkId, long accountId, long domainId) {
-        super(xId, srcIpId, srcPort, NetUtils.TCP_PROTO, networkId, accountId, domainId, Purpose.LoadBalancing, false);
+        super(xId, srcIpId, srcPort, NetUtils.TCP_PROTO, networkId, accountId, domainId, Purpose.LoadBalancing);
         this.name = name;
         this.description = description;
         this.algorithm = algorithm;

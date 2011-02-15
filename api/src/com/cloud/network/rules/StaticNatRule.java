@@ -15,24 +15,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * 
  */
-package com.cloud.network.lb;
 
-import java.util.List;
+package com.cloud.network.rules;
 
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.lb.LoadBalancingRule.LbDestination;
-import com.cloud.user.Account;
+import com.cloud.acl.ControlledEntity;
 
-public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
-    boolean removeAllLoadBalanacers(long ipId, Account caller, long callerUserId);
-    List<LbDestination> getExistingDestinations(long lbId);
+public interface StaticNatRule extends ControlledEntity, FirewallRule{
     
-    /**
-     * Remove vm from all load balancers
-     * @param vmId
-     * @return true if removal is successful
-     */
-    boolean removeVmFromLoadBalancers(long vmId);
+    long getId();
     
-    boolean applyLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException;
+    String getXid();
+    
+    String getProtocol();
+
+    int getSourcePortStart();
+
+    int getSourcePortEnd();
+    
+    Purpose getPurpose();
+
+    State getState();
+    
+    long getAccountId();
+    
+    long getDomainId();
+    
+    long getNetworkId();
+    
+    long getSourceIpAddressId();
+
+    String getDestIpAddress();
 }

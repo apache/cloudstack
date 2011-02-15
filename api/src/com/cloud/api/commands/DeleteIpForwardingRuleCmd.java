@@ -29,7 +29,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes an ip forwarding rule", responseObject=SuccessResponse.class)
@@ -69,7 +69,7 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Rule Id: "+id);
-    	boolean result = _rulesService.revokePortForwardingRule(id, true);
+    	boolean result = _rulesService.revokeStaticNatRule(id, true);
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -82,9 +82,9 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     @Override
     public long getEntityOwnerId() {
         if (ownerId == null) {
-            PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, id);
+            FirewallRule rule = _entityMgr.findById(FirewallRule.class, id);
             if (rule == null) {
-                throw new InvalidParameterValueException("Unable to find firewall rule by id: " + id);
+                throw new InvalidParameterValueException("Unable to find static nat rule by id: " + id);
             } else {
                 ownerId = rule.getAccountId();
             }
@@ -109,7 +109,7 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public Long getSyncObjId() {
-        return _rulesService.getPortForwardigRule(id).getSourceIpAddressId();
+        return _rulesService.getFirewallRule(id).getSourceIpAddressId();
     }
 
 }

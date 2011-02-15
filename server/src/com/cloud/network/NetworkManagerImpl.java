@@ -608,9 +608,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public boolean releasePublicIpAddress(long addrId, long ownerId, long userId) {
+    public boolean releasePublicIpAddress(long addrId, long userId, Account caller) {
         IPAddressVO ip = _ipAddressDao.markAsUnavailable(addrId);
-        assert (ip != null) : "Unable to mark the ip address id=" + addrId + " owned by " + ownerId + " as unavailable.";
+        assert (ip != null) : "Unable to mark the ip address id=" + addrId + " owned by " + ip.getAccountId() + " as unavailable.";
         if (ip == null) {
             return true;
         }
@@ -621,7 +621,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         boolean success = true;
         try {
-            if (!_rulesMgr.revokeAllRules(addrId, userId)) {
+            if (!_rulesMgr.revokeAllRules(addrId, userId, caller)) {
                 s_logger.warn("Unable to revoke all the port forwarding rules for ip " + ip);
                 success = false;
             }
@@ -630,7 +630,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             success = false;
         }
 
-        if (!_lbMgr.removeAllLoadBalanacers(addrId)) {
+        if (!_lbMgr.removeAllLoadBalanacers(addrId, caller, userId)) {
             s_logger.warn("Unable to revoke all the load balancer rules for ip " + ip);
             success = false;
         }
@@ -1072,7 +1072,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public void prepare(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-        List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
+        List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
         for (NicVO nic : nics) {
             Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context);
             NetworkGuru concierge = implemented.first();
@@ -1123,7 +1123,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public <T extends VMInstanceVO> void prepareNicForMigration(VirtualMachineProfile<T> vm, DeployDestination dest) {
-        List<NicVO> nics = _nicDao.listBy(vm.getId());
+        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (NicVO nic : nics) {
             NetworkVO network = _networksDao.findById(nic.getNetworkId());
             NetworkOffering no = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
@@ -1138,7 +1138,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public void release(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, boolean forced) {
-        List<NicVO> nics = _nicDao.listBy(vmProfile.getId());
+        List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
         for (NicVO nic : nics) {
             NetworkVO network = _networksDao.findById(nic.getNetworkId());
             if (nic.getState() == Nic.State.Reserved || nic.getState() == Nic.State.Reserving) {
@@ -1167,7 +1167,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public List<? extends Nic> getNics(VirtualMachine vm) {
-        return _nicDao.listBy(vm.getId());
+        return _nicDao.listByVmId(vm.getId());
+    }
+    
+    @Override
+    public List<? extends Nic> getNicsIncludingRemoved(VirtualMachine vm) {
+        return _nicDao.listByVmIdIncludingRemoved(vm.getId());
     }
 
     private Account findAccountByIpAddress(Long ipAddressId) {
@@ -1180,7 +1185,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public List<NicProfile> getNicProfiles(VirtualMachine vm) {
-        List<NicVO> nics = _nicDao.listBy(vm.getId());
+        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         List<NicProfile> profiles = new ArrayList<NicProfile>();
 
         if (nics != null) {
@@ -1265,7 +1270,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new PermissionDeniedException("Ip address id=" + ipAddressId + " belongs to Account wide IP pool and cannot be disassociated");
             }
 
-            return releasePublicIpAddress(ipAddressId, accountId, userId);
+            return releasePublicIpAddress(ipAddressId, userId, caller);
 
         } catch (PermissionDeniedException pde) {
             throw pde;
@@ -1333,7 +1338,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public void cleanupNics(VirtualMachineProfile<? extends VMInstanceVO> vm) {
-        List<NicVO> nics = _nicDao.listBy(vm.getId());
+        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (NicVO nic : nics) {
             nic.setState(Nic.State.Deallocating);
             _nicDao.update(nic.getId(), nic);
@@ -1938,7 +1943,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         //apply port forwarding rules
         if (!_rulesMgr.applyPortForwardingRulesForNetwork(networkId, false, context.getAccount())) {
-            s_logger.warn("Failed to reapply firewall rule(s) as a part of network id=" + networkId + " restart");
+            s_logger.warn("Failed to reapply port forwarding rule(s) as a part of network id=" + networkId + " restart");
+        }
+        
+        //apply static nat rules
+        if (!_rulesMgr.applyStaticNatRulesForNetwork(networkId, false, context.getAccount())) {
+            s_logger.warn("Failed to reapply static nat rule(s) as a part of network id=" + networkId + " restart");
         }
         
         //apply load balancer rules
@@ -2066,7 +2076,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public List<NetworkVO> listNetworksUsedByVm(long vmId, boolean isSystem) {
         List<NetworkVO> networks = new ArrayList<NetworkVO>();
 
-        List<NicVO> nics = _nicDao.listBy(vmId);
+        List<NicVO> nics = _nicDao.listByVmId(vmId);
         if (nics != null) {
             for (Nic nic : nics) {
                 NetworkVO network = _networksDao.findByIdIncludingRemoved(nic.getNetworkId());
@@ -2173,7 +2183,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public Nic getDefaultNic(long vmId) {
-        List<NicVO> nics = _nicDao.listBy(vmId);
+        List<NicVO> nics = _nicDao.listByVmId(vmId);
         Nic defaultNic = null;
         if (nics != null) {
             for (Nic nic : nics) {

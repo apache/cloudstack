@@ -52,9 +52,12 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
+import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
+import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.utils.NumbersUtil;
@@ -97,7 +100,9 @@ public class VirtualRoutingResource implements Manager {
         try {
             if (cmd instanceof SetPortForwardingRulesCommand ) {
                 return execute((SetPortForwardingRulesCommand)cmd);
-            } else if (cmd instanceof LoadBalancerConfigCommand) {
+            } else if (cmd instanceof SetStaticNatRulesCommand){
+                return execute((SetStaticNatRulesCommand)cmd);
+            }else if (cmd instanceof LoadBalancerConfigCommand) {
                 return execute((LoadBalancerConfigCommand)cmd);
             } else if (cmd instanceof IPAssocCommand) {
                 return execute((IPAssocCommand)cmd);
@@ -126,28 +131,46 @@ public class VirtualRoutingResource implements Manager {
         for (PortForwardingRuleTO rule : cmd.getRules()) {
             String result = null;
             final Script command = new Script(_firewallPath, _timeout, s_logger);
+            
             command.add(routerIp);
             command.add(rule.revoked() ? "-D" : "-A");
-            if (rule.isOneToOneNat()){
-                //1:1 NAT needs instanceip;publicip;domrip;op
-                command.add(" -l ", rule.getSrcIp());
-                command.add(" -r ", rule.getDstIp());
-                command.add(" -P ", rule.getProtocol().toLowerCase());
-                command.add(" -d ", rule.getStringDstPortRange());
-                command.add(" -G ") ;
-            } else {
-                command.add("-P ", rule.getProtocol().toLowerCase());
-                command.add("-l ", rule.getSrcIp());
-                command.add("-p ", rule.getStringSrcPortRange());
-                command.add("-r ", rule.getDstIp());
-                command.add("-d ", rule.getStringDstPortRange());
-            }
+            command.add("-P ", rule.getProtocol().toLowerCase());
+            command.add("-l ", rule.getSrcIp());
+            command.add("-p ", rule.getStringSrcPortRange());
+            command.add("-r ", rule.getDstIp());
+            command.add("-d ", rule.getStringDstPortRange());
+            
             result = command.execute();
             results[i++] = (!(result == null || result.isEmpty())) ? "Failed" : null;
         }
 
         return new SetPortForwardingRulesAnswer(cmd, results);
     }
+    
+    private Answer execute(SetStaticNatRulesCommand cmd) {
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String[] results = new String[cmd.getRules().length];
+        int i = 0;
+        for (StaticNatRuleTO rule : cmd.getRules()) {
+            String result = null;
+            final Script command = new Script(_firewallPath, _timeout, s_logger);
+            command.add(routerIp);
+            command.add(rule.revoked() ? "-D" : "-A");
+            
+            //1:1 NAT needs instanceip;publicip;domrip;op
+            command.add(" -l ", rule.getSrcIp());
+            command.add(" -r ", rule.getDstIp());
+            command.add(" -P ", rule.getProtocol().toLowerCase());
+            command.add(" -d ", rule.getStringSrcPortRange());
+            command.add(" -G ") ;
+            
+            result = command.execute();
+            results[i++] = (!(result == null || result.isEmpty())) ? "Failed" : null;
+        }
+
+        return new SetStaticNatRulesAnswer(cmd, results);
+    }
+    
 
     private Answer execute(LoadBalancerConfigCommand cmd) {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);

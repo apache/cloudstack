@@ -493,7 +493,6 @@ CREATE TABLE `cloud`.`firewall_rules` (
   `account_id` bigint unsigned NOT NULL COMMENT 'owner id',
   `domain_id` bigint unsigned NOT NULL COMMENT 'domain id',
   `network_id` bigint unsigned NOT NULL COMMENT 'network id',
-  `is_static_nat` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if firewall rule is one to one nat rule',
   `xid` char(40) NOT NULL COMMENT 'external id',
   `created` datetime COMMENT 'Date created',
   PRIMARY KEY  (`id`),

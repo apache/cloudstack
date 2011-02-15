@@ -109,6 +109,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.security.IngressRule;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
@@ -951,7 +952,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public IpForwardingRuleResponse createIpForwardingRuleResponse(PortForwardingRule fwRule) {
+    public IpForwardingRuleResponse createIpForwardingRuleResponse(StaticNatRule fwRule) {
         IpForwardingRuleResponse response = new IpForwardingRuleResponse();
         response.setId(fwRule.getId());
         response.setProtocol(fwRule.getProtocol());
@@ -960,8 +961,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setPublicIpAddressId(ip.getId());
         response.setPublicIpAddress(ip.getAddress().addr());
         
-        if (ip != null && fwRule.getDestinationIpAddress() != null) {
-            UserVm vm = ApiDBUtils.findUserVmById(fwRule.getVirtualMachineId());
+        if (ip != null && fwRule.getDestIpAddress() != null) {
+            UserVm vm = ApiDBUtils.findUserVmById(ip.getAssociatedWithVmId());
             if(vm != null){//vm might be destroyed
             	response.setVirtualMachineId(vm.getId());
             	response.setVirtualMachineName(vm.getName());

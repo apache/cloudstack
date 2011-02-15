@@ -135,9 +135,4 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
             return revoked;
         }
     }
-    
-    @Override
-    public boolean isOneToOneNat() {
-        return false;
-    }
 }

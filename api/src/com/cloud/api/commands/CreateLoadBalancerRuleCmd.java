@@ -182,10 +182,4 @@ public class CreateLoadBalancerRuleCmd extends BaseCmd  implements LoadBalancer 
     public int getDefaultPortEnd() {
         return privatePort.intValue();
     }
-    
-    @Override
-    public boolean isOneToOneNat() {
-        return false;
-    }
-
 }

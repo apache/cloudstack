@@ -133,6 +133,8 @@ import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
+import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
@@ -146,6 +148,7 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
+import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
@@ -375,7 +378,9 @@ public abstract class CitrixResourceBase implements ServerResource {
             return execute((CreateCommand) cmd);
         } else if (cmd instanceof SetPortForwardingRulesCommand) {
             return execute((SetPortForwardingRulesCommand) cmd);
-        } else if (cmd instanceof LoadBalancerConfigCommand) {
+        } else if (cmd instanceof SetStaticNatRulesCommand) {
+            return execute((SetStaticNatRulesCommand) cmd);
+        }  else if (cmd instanceof LoadBalancerConfigCommand) {
             return execute((LoadBalancerConfigCommand) cmd);
         } else if (cmd instanceof IPAssocCommand) {
             return execute((IPAssocCommand) cmd);
@@ -1158,31 +1163,41 @@ public abstract class CitrixResourceBase implements ServerResource {
         String[] results = new String[cmd.getRules().length];
         int i = 0;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
-            if (rule.isOneToOneNat()){
-            	//1:1 NAT needs instanceip;publicip;domrip;op
-            	args += rule.revoked() ? " -D " : " -A ";
-            	
-    	        args += " -l " + rule.getSrcIp();
-    	        args += " -r " + rule.getDstIp();
-    	        args += " -P " + rule.getProtocol().toLowerCase();
-                args += " -d " + rule.getStringDstPortRange();
-                args += " -G " ;
+            args += rule.revoked() ? " -D " : " -A ";
+	        args += " -P " + rule.getProtocol().toLowerCase();
+	        args += " -l " + rule.getSrcIp();
+	        args += " -p " + rule.getStringSrcPortRange();
+	        args += " -r " + rule.getDstIp();
+	        args += " -d " + rule.getStringDstPortRange();
 
-            } else {
-                args += rule.revoked() ? " -D " : " -A ";
-    
-    	        args += " -P " + rule.getProtocol().toLowerCase();
-    	        args += " -l " + rule.getSrcIp();
-    	        args += " -p " + rule.getStringSrcPortRange();
-    	        args += " -r " + rule.getDstIp();
-    	        args += " -d " + rule.getStringDstPortRange();
-    	
-            }
             String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args);
             results[i++] = (result == null || result.isEmpty()) ? "Failed" : null;
         }
 
         return new SetPortForwardingRulesAnswer(cmd, results);
+    }
+    
+    protected SetStaticNatRulesAnswer execute(SetStaticNatRulesCommand cmd) {
+        Connection conn = getConnection();
+        
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String args = routerIp;
+        String[] results = new String[cmd.getRules().length];
+        int i = 0;
+        for (StaticNatRuleTO rule : cmd.getRules()) {
+            //1:1 NAT needs instanceip;publicip;domrip;op
+            args += rule.revoked() ? " -D " : " -A ";   
+            args += " -l " + rule.getSrcIp();
+            args += " -r " + rule.getDstIp();
+            args += " -P " + rule.getProtocol().toLowerCase();
+            args += " -d " + rule.getStringSrcPortRange();
+            args += " -G " ;
+           
+            String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args);
+            results[i++] = (result == null || result.isEmpty()) ? "Failed" : null;
+        }
+
+        return new SetStaticNatRulesAnswer(cmd, results);
     }
 
     protected Answer execute(final LoadBalancerConfigCommand cmd) {

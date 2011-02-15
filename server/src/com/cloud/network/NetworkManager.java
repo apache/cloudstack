@@ -81,10 +81,11 @@ public interface NetworkManager extends NetworkService {
      * Do all of the work of releasing public ip addresses.  Note that
      * if this method fails, there can be side effects.
      * @param userId
+     * @param caller TODO
      * @param ipAddress
      * @return true if it did; false if it didn't
      */
-    public boolean releasePublicIpAddress(long id, long ownerId, long userId);
+    public boolean releasePublicIpAddress(long id, long userId, Account caller);
     
     /**
      * Lists IP addresses that belong to VirtualNetwork VLANs
@@ -110,6 +111,8 @@ public interface NetworkManager extends NetworkService {
     void expungeNics(VirtualMachineProfile<? extends VMInstanceVO> vm);
     
     List<? extends Nic> getNics(VirtualMachine vm);
+    
+    List<? extends Nic> getNicsIncludingRemoved(VirtualMachine vm);
     
     List<NicProfile> getNicProfiles(VirtualMachine vm);
 	

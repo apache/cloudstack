@@ -191,35 +191,6 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
 	private String getBlankLine() {
 		return new String("\t ");
 	}
-	
-	@Override
-	public String[][] generateFwRules(List<PortForwardingRuleTO> fwRules) {
-		String [][] result = new String [2][];
-		Set<String> toAdd = new HashSet<String>();
-		Set<String> toRemove = new HashSet<String>();
-		
-		for (int i = 0; i < fwRules.size(); i++) {
-			PortForwardingRuleTO rule = fwRules.get(i);
-			
-			String vlanNetmask = rule.getVlanNetmask();
-			
-			StringBuilder sb = new StringBuilder();
-			sb.append(rule.getSrcIp()).append(":");
-			sb.append(rule.getSrcPortRange()[0]).append(":");
-			sb.append(vlanNetmask);
-			String lbRuleEntry = sb.toString();
-			if (!rule.revoked()) {	
-				toAdd.add(lbRuleEntry);
-			} else {
-				toRemove.add(lbRuleEntry);
-			}
-		}
-		toRemove.removeAll(toAdd);
-		result[ADD] = toAdd.toArray(new String[toAdd.size()]);
-		result[REMOVE] = toRemove.toArray(new String[toRemove.size()]); 
-
-		return result;
-	}
 
 	@Override
 	public String[] generateConfiguration(LoadBalancerConfigCommand lbCmd) {

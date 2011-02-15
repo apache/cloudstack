@@ -30,16 +30,15 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.network.IpAddress;
-import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.StaticNatRule;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-import com.cloud.utils.net.Ip;
 
 @Implementation(description="Creates an ip forwarding rule", responseObject=FirewallRuleResponse.class)
-public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements PortForwardingRule {
+public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements StaticNatRule {
     public static final Logger s_logger = Logger.getLogger(CreateIpForwardingRuleCmd.class.getName());
 
     private static final String s_name = "createipforwardingruleresponse";
@@ -91,15 +90,16 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
         boolean result;
         try {
             UserContext.current().setEventDetails("Rule Id: "+getEntityId());
-            result = _rulesService.applyPortForwardingRules(ipAddressId, UserContext.current().getCaller());
+            result = _rulesService.applyStaticNatRules(ipAddressId, UserContext.current().getCaller());
         } catch (Exception e) {
             s_logger.error("Unable to apply port forwarding rules", e);
-            _rulesService.revokePortForwardingRule(getEntityId(), true);
+            _rulesService.revokeStaticNatRule(getEntityId(), true);
             result = false;
         }
         if (result) {
-            PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, getEntityId());
-            IpForwardingRuleResponse fwResponse = _responseGenerator.createIpForwardingRuleResponse(rule);
+            FirewallRule rule = _entityMgr.findById(FirewallRule.class, getEntityId());
+            StaticNatRule staticNatRule = _rulesService.buildStaticNatRule(rule);
+            IpForwardingRuleResponse fwResponse = _responseGenerator.createIpForwardingRuleResponse(staticNatRule);
             fwResponse.setResponseName(getCommandName());
             this.setResponseObject(fwResponse);
         } else {
@@ -110,11 +110,11 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
 
 	@Override
 	public void create() {
-		PortForwardingRule rule;
+		StaticNatRule rule;
         try {
-            rule = _rulesService.createPortForwardingRule(this, getVirtualMachineId(), true);
+            rule = _rulesService.createStaticNatRule(this);
         } catch (NetworkRuleConflictException e) {
-            s_logger.info("Unable to create Port Forwarding Rule due to " + e.getMessage());
+            s_logger.info("Unable to create Static Nat Rule due to " + e.getMessage());
             throw new ServerApiException(BaseCmd.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
         }
         
@@ -140,17 +140,21 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
     @Override
     public String getEventDescription() {
         IpAddress ip = _networkService.getIp(ipAddressId);
-        return  ("Applying an ipforwarding 1:1 NAT rule for Ip: "+ip.getAddress()+" with virtual machine:"+ getVirtualMachineId());
+        return  ("Applying an ipforwarding 1:1 NAT rule for Ip: "+ip.getAddress()+" with virtual machine:"+ this.getVirtualMachineId());
+    }
+    
+    private long getVirtualMachineId() {
+        return _networkService.getIp(ipAddressId).getAssociatedWithVmId();
+    }
+    
+    @Override
+    public String getDestIpAddress(){
+        return null;
     }
 
     @Override
     public long getId() {
         throw new UnsupportedOperationException("Don't call me");
-    }
-
-    @Override
-    public String getXid() {
-        return null;
     }
 
     @Override
@@ -178,12 +182,12 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
     }
 
     @Override
-    public Purpose getPurpose() {
-        return Purpose.PortForwarding;
+    public FirewallRule.Purpose getPurpose() {
+        return FirewallRule.Purpose.StaticNat;
     }
 
     @Override
-    public State getState() {
+    public FirewallRule.State getState() {
         throw new UnsupportedOperationException("Don't call me");
     }
 
@@ -199,45 +203,15 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
     }
 
     @Override
-    public Ip getDestinationIpAddress() {
-        return null;
-    }
-
-    @Override
-    public int getDestinationPortStart() {
-        return startPort;
-    }
-
-    @Override
-    public int getDestinationPortEnd() {
-        if (endPort == null) {
-            return startPort;
-        } else {
-            return endPort;
-        }
-    }
-
-    @Override
     public long getAccountId() {
         IpAddress ip = _networkService.getIp(ipAddressId);
         return ip.getAccountId();
     }
     
     @Override
-    public boolean isOneToOneNat() {
-        return true;
-    }
-    
-    @Override
-    public long getVirtualMachineId() {
-        IpAddress ip = _networkService.getIp(ipAddressId);
-        if (ip == null) {
-            throw new InvalidParameterValueException("Ip address id=" + ipAddressId + " doesn't exist in the system");
-        } else if (ip.isOneToOneNat() && ip.getAssociatedWithVmId() != null){
-            return _networkService.getIp(ipAddressId).getAssociatedWithVmId();
-        } else {
-            throw new InvalidParameterValueException("Ip address id=" + ipAddressId + " doesn't have 1-1 Nat feature enabled");
-        }  
+    public String getXid() {
+        // FIXME: We should allow for end user to specify Xid.
+        return null;
     }
     
     @Override
@@ -249,5 +223,4 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Por
     public Long getSyncObjId() {
         return ipAddressId;
     }
-
 }

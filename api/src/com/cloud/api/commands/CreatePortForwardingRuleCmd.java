@@ -200,7 +200,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
     @Override
     public void create() {
         try {
-            PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId, false);
+            PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId);
             setEntityId(result.getId());
         } catch (NetworkRuleConflictException ex) {
             s_logger.info("Network rule conflict: " + ex.getMessage());
@@ -224,11 +224,6 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd  implements 
     public long getAccountId() {
         IpAddress ip = _networkService.getIp(ipAddressId);
         return ip.getAccountId();
-    }
-    
-    @Override
-    public boolean isOneToOneNat() {
-        return false;
     }
     
     @Override

@@ -29,7 +29,8 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.api.response.ListResponse;
-import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.StaticNatRule;
 
 @Implementation(description="List the ip forwarding rules", responseObject=FirewallRuleResponse.class)
 public class ListIpForwardingRulesCmd extends BaseListCmd {
@@ -91,11 +92,12 @@ public class ListIpForwardingRulesCmd extends BaseListCmd {
 
     @Override
     public void execute(){
-        List<? extends PortForwardingRule> result = _rulesService.searchForIpForwardingRules(publicIpAddressId, id, vmId, this.getStartIndex(), this.getPageSizeVal(), this.getAccountName(), this.getDomainId());
+        List<? extends FirewallRule> result = _rulesService.searchStaticNatRules(publicIpAddressId, id, vmId, this.getStartIndex(), this.getPageSizeVal(), this.getAccountName(), this.getDomainId());
         ListResponse<IpForwardingRuleResponse> response = new ListResponse<IpForwardingRuleResponse>();
         List<IpForwardingRuleResponse> ipForwardingResponses = new ArrayList<IpForwardingRuleResponse>();
-        for (PortForwardingRule rule : result) {
-            IpForwardingRuleResponse resp = _responseGenerator.createIpForwardingRuleResponse(rule);
+        for (FirewallRule rule : result) {
+            StaticNatRule staticNatRule = _rulesService.buildStaticNatRule(rule);
+            IpForwardingRuleResponse resp = _responseGenerator.createIpForwardingRuleResponse(staticNatRule);
             if (resp != null) {
                 ipForwardingResponses.add(resp);
             }

@@ -62,7 +62,12 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     }
     
     public long getEntityOwnerId() {
-        return _networkService.getNetwork(id).getAccountId();
+        Network network = _networkService.getNetwork(id);
+        if (network == null) {
+            throw new InvalidParameterValueException("Networkd id=" + id + " doesn't exist");
+        } else {
+            return _networkService.getNetwork(id).getAccountId();
+        }
     }
     
     public Long getNetworkId() {

@@ -49,11 +49,13 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
+import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.UpgradeRouterCmd;
@@ -113,8 +115,10 @@ import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
+import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
@@ -1027,23 +1031,21 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 createAssociateIPCommands(router, publicIps, cmds, 0);   
                 
                 //Re-apply port forwarding rules for all public ips
-                List<PortForwardingRuleTO> rulesToReapply = new ArrayList<PortForwardingRuleTO>();
                 List<RemoteAccessVpn> vpns = new ArrayList<RemoteAccessVpn>();
                 
+                List<? extends PortForwardingRule> rules = null;
                 for (PublicIpAddress ip : publicIps) {
-                    List<? extends PortForwardingRule> rules = _pfRulesDao.listForApplication(ip.getId());
-                    if (rules != null){     
-                        rulesToReapply.addAll(_rulesMgr.buildPortForwardingTOrules(rules));
-                    }
+                    rules = _pfRulesDao.listForApplication(ip.getId());
+                    
                     RemoteAccessVpn vpn = _vpnDao.findById(ip.getId());
                     if (vpn != null) {
                         vpns.add(vpn);
                     }
                 }
                 
-                s_logger.debug("Found " + rulesToReapply.size() + " port forwarding rule(s) to apply as a part of domR " + router + " start.");
-                if (!rulesToReapply.isEmpty()) {
-                    createApplyPortForwardingRulesCommands(rulesToReapply, router, cmds);
+                s_logger.debug("Found " + rules.size() + " port forwarding rule(s) to apply as a part of domR " + router + " start.");
+                if (!rules.isEmpty()) {
+                    createApplyPortForwardingRulesCommands(rules, router, cmds);
                 } 
                 
                 s_logger.debug("Found " + vpns.size() + " vpn(s) to apply as a part of domR " + router + " start.");
@@ -1209,7 +1211,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         Commands cmds = new Commands(OnError.Stop);
 
         String routerControlIpAddress = null;
-        List<NicVO> nics = _nicDao.listBy(router.getId());
+        List<NicVO> nics = _nicDao.listByVmId(router.getId());
         for (NicVO n : nics) {
             NetworkVO nc = _networksDao.findById(n.getNetworkId());
             if (nc.getTrafficType() == TrafficType.Control) {
@@ -1403,8 +1405,35 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
     }
     
-    private void createApplyPortForwardingRulesCommands(List<PortForwardingRuleTO> rules, DomainRouterVO router, Commands cmds) {
-        SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(rules);
+    private void createApplyPortForwardingRulesCommands(List<? extends PortForwardingRule> rules, DomainRouterVO router, Commands cmds) {
+        List<PortForwardingRuleTO> rulesTO = null;
+        if (rules != null) {
+            rulesTO = new ArrayList<PortForwardingRuleTO>();
+            for (PortForwardingRule rule : rules) {
+                IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+                PortForwardingRuleTO ruleTO = new PortForwardingRuleTO(rule, sourceIp.getAddress().addr());
+                rulesTO.add(ruleTO);
+            }
+        }
+        
+        SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(rulesTO);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        cmds.addCommand(cmd);
+    }
+    
+    private void createApplyStaticNatRulesCommands(List<? extends StaticNatRule> rules, DomainRouterVO router, Commands cmds) {
+        List<StaticNatRuleTO> rulesTO = null;
+        if (rules != null) {
+            rulesTO = new ArrayList<StaticNatRuleTO>();
+            for (StaticNatRule rule : rules) {
+                IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+                StaticNatRuleTO ruleTO = new StaticNatRuleTO(rule, sourceIp.getAddress().addr(), rule.getDestIpAddress());
+                rulesTO.add(ruleTO);
+            }
+        }
+        
+        SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, router.getPrivateIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
         cmds.addCommand(cmd);
@@ -1547,30 +1576,72 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new ResourceUnavailableException("Unable to assign ip addresses, domR is not in right state " + router.getState(), DataCenter.class, network.getDataCenterId());
         }
     }
-
+    
     @Override
-    public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
+    public boolean applyFirewallRules(Network network, List<? extends FirewallRule> rules) throws ResourceUnavailableException {   
         DomainRouterVO router = _routerDao.findByNetwork(network.getId());
         if (router == null) {
             s_logger.warn("Unable to apply lb rules, virtual router doesn't exist in the network " + network.getId());
             throw new ResourceUnavailableException("Unable to apply lb rules", DataCenter.class, network.getDataCenterId());
         }
         
+        if (router.getState() == State.Running) {
+            if (rules != null && !rules.isEmpty()) {
+                if (rules.get(0).getPurpose() == Purpose.LoadBalancing) {
+                    //for load balancer we have to resend all lb rules for the network
+                    List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkId(network.getId());
+                    List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
+                    for (LoadBalancerVO lb : lbs) {
+                        List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
+                        LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList);
+                        lbRules.add(loadBalancing);
+                    }
+                    
+                    return applyLBRules(router, lbRules);
+                } else if (rules.get(0).getPurpose() == Purpose.PortForwarding) { 
+                    return applyPortForwardingRules(router, (List<PortForwardingRule>)rules);
+                } else if (rules.get(0).getPurpose() == Purpose.StaticNat) { 
+                    return applyStaticNatRules(router, (List<StaticNatRule>)rules);
+                    
+                }else {
+                    s_logger.warn("Unable to apply rules of purpose: " + rules.get(0).getPurpose());
+                    return false;
+                }
+            } else {
+                return true;
+            }
+        } else if (router.getState() == State.Stopped || router.getState() == State.Stopping){
+            s_logger.debug("Router is in " + router.getState() + ", so not sending apply firewall rules commands to the backend");
+            return true;
+        } else {
+            s_logger.warn("Unable to apply firewall rules, virtual router is not in the right state " + router.getState());
+            throw new CloudRuntimeException("Unable to apply firewall rules, domR is not in right state " + router.getState());
+        }
+    } 
+
+
+    protected boolean applyLBRules(DomainRouterVO router, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         Commands cmds = new Commands(OnError.Continue);
         createApplyLoadBalancingRulesCommands(rules, router, cmds);     
         //Send commands to router
         return sendCommandsToRouter(router, cmds);   
     }
 
-    @Override
-    public boolean applyPortForwardingRules(Network network, List<PortForwardingRuleTO> rules) throws AgentUnavailableException {
-        DomainRouterVO router = _routerDao.findByNetwork(network.getId());
-        
+    protected boolean applyPortForwardingRules(DomainRouterVO router, List<PortForwardingRule> rules) throws ResourceUnavailableException { 
         Commands cmds = new Commands(OnError.Continue);
         createApplyPortForwardingRulesCommands(rules, router, cmds);     
         //Send commands to router
         return sendCommandsToRouter(router, cmds); 
     }
+    
+    
+    protected boolean applyStaticNatRules(DomainRouterVO router, List<StaticNatRule> rules) throws ResourceUnavailableException { 
+        Commands cmds = new Commands(OnError.Continue);
+        createApplyStaticNatRulesCommands(rules, router, cmds);     
+        //Send commands to router
+        return sendCommandsToRouter(router, cmds); 
+    }
+    
 
     private List<Long> findLonelyRouters() {
         List<Long> routersToStop = new ArrayList<Long>();

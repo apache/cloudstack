@@ -17,6 +17,7 @@
  */
 package com.cloud.agent.api.to;
 
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.utils.net.NetUtils;
 
@@ -41,7 +42,7 @@ public class PortForwardingRuleTO extends FirewallRuleTO {
     }
     
     protected PortForwardingRuleTO(long id, String srcIp, int srcPortStart, int srcPortEnd, String dstIp, int dstPortStart, int dstPortEnd, String protocol, boolean revoked, boolean brandNew) {
-        super(id, srcIp, protocol, srcPortStart, srcPortEnd, revoked, brandNew, false);
+        super(id, srcIp, protocol, srcPortStart, srcPortEnd, revoked, brandNew, FirewallRule.Purpose.PortForwarding);
         this.dstIp = dstIp;
         this.dstPortRange = new int[] { dstPortStart, dstPortEnd };
     }

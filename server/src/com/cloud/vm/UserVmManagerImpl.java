@@ -1124,8 +1124,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             
             //Cleanup LB/PF rules before expunging the vm
             long vmId = vm.getId();
+            
             //cleanup port forwarding rules
-            if (_rulesMgr.revokePortForwardingRule(vmId)) {
+            if (_rulesMgr.revokePortForwardingRulesForVm(vmId)) {
+                s_logger.debug("Port forwarding rules are removed successfully as a part of vm id=" + vmId + " expunge");
+            } else {
+                s_logger.warn("Fail to remove port forwarding rules as a part of vm id=" + vmId + " expunge");
+            }
+            
+            //cleanup static nat rules
+            if (_rulesMgr.revokeStaticNatRulesForVm(vmId)) {
                 s_logger.debug("Port forwarding rules are removed successfully as a part of vm id=" + vmId + " expunge");
             } else {
                 s_logger.warn("Fail to remove port forwarding rules as a part of vm id=" + vmId + " expunge");
@@ -2203,7 +2211,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 	@Override
 	public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
 		UserVmVO userVm = profile.getVirtualMachine();
-		List<NicVO> nics = _nicDao.listBy(userVm.getId());
+		List<NicVO> nics = _nicDao.listByVmId(userVm.getId());
 		for (NicVO nic : nics) {
 			NetworkVO network = _networkDao.findById(nic.getNetworkId());
 			if (network.getTrafficType() == TrafficType.Guest) {
@@ -2226,7 +2234,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_START, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
         _usageEventDao.persist(usageEvent);
         
-        List<NicVO> nics = _nicDao.listBy(vm.getId());
+        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             long isDefault = (nic.isDefaultNic()) ? 1 : 0;
@@ -2296,7 +2304,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_STOP, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
         _usageEventDao.persist(usageEvent);
         
-        List<NicVO> nics = _nicDao.listBy(vm.getId());
+        List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_DELETE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), null, network.getNetworkOfferingId(), null, null);
