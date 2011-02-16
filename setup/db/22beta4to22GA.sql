@@ -87,7 +87,10 @@ ALTER TABLE `cloud_usage`.`usage_network` drop PRIMARY KEY;
 ALTER TABLE `cloud_usage`.`usage_network` add PRIMARY KEY (`account_id`, `zone_id`, `host_id`, `event_time_millis`);
 
 ALTER TABLE `cloud_usage`.`usage_ip_address` ADD COLUMN `id` bigint unsigned NOT NULL;
-ALTER TABLE `cloud_usage`.`usage_ip_address` ADD COLUMN `is_source_nat` smallint(1) NOT NULL;
+ALTER TABLE `cloud_usage`.`usage_ip_address` ADD COLUMN `is_source_nat` smallint(1) NOT NULL default 0;
+
+update `cloud`.`usage_event` SET size = 0 where type = 'NET.IPASSIGN' and size is null;
+update `cloud_usage`.`usage_event` SET size = 0 where type = 'NET.IPASSIGN' and size is null;
 
 ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `type` varchar(32);
 
