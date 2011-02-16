@@ -614,24 +614,25 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     avoids.addHost(destHostId);
                     continue;
                 } catch (ResourceUnavailableException e) {
+                    s_logger.info("Unable to contact resource.", e);
                     if (!avoids.add(e)) {
                         if (e.getScope() == Volume.class || e.getScope() == Nic.class) {
                             throw e;
                         } else {
-                            throw new CloudRuntimeException("Resource is not available to start the VM.", e);
+                            s_logger.warn("unexpected ResourceUnavailableException : " + e.getScope().getName(), e);
+                            throw e;
                         }
                     }
-                    s_logger.info("Unable to contact resource.", e);
                     continue;
                 } catch (InsufficientCapacityException e) {
+                    s_logger.info("Insufficient capacity ", e);
                     if (!avoids.add(e)) {
                         if (e.getScope() == Volume.class || e.getScope() == Nic.class) {
                             throw e;
                         } else {
-                            throw new CloudRuntimeException("Insufficient capacity to start the VM.", e);
+                            s_logger.warn("unexpected InsufficientCapacityException : " + e.getScope().getName(), e);
                         }
                     }
-                    s_logger.info("Insufficient capacity ", e);
                     continue;
                 } catch (RuntimeException e) {
                     s_logger.warn("Failed to start instance " + vm, e);
@@ -646,7 +647,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         } finally {
             if (startedVm == null) {
                 changeState(vm, Event.OperationFailed, null, work, Step.Done);
-                throw new CloudRuntimeException("Unable to start " + vm);
             }
         }
         

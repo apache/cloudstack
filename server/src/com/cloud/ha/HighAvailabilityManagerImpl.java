@@ -446,27 +446,24 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
             if (s_logger.isDebugEnabled()) {
             	s_logger.debug("Rescheduling VM " + vm.toString() + " to try again in " + _restartRetryInterval);
             }
-            vm = _itMgr.findById(vm.getType(), vm.getId());
-            work.setUpdateTime(vm.getUpdated());
-            work.setPreviousState(vm.getState());
-            return (System.currentTimeMillis() >> 10) + _restartRetryInterval;
+
         } catch (final InsufficientCapacityException e) {
         	s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
             _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getName() + " which was running on host " + hostDesc, "Insufficient capacity to restart VM, name: " + vm.getName() + ", id: " + vmId + " which was running on host " + hostDesc);
-            return null;
         } catch (final ResourceUnavailableException e) {
         	s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
             _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getName() + " which was running on host " + hostDesc, "The Storage is unavailable for trying to restart VM, name: " + vm.getName() + ", id: " + vmId + " which was running on host " + hostDesc);
-            return null;
         } catch (ConcurrentOperationException e) {
         	s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
             _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getName() + " which was running on host " + hostDesc, "The Storage is unavailable for trying to restart VM, name: " + vm.getName() + ", id: " + vmId + " which was running on host " + hostDesc);
-            return null;
         } catch (OperationTimedoutException e) {
             s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
             _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getName() + " which was running on host " + hostDesc, "The Storage is unavailable for trying to restart VM, name: " + vm.getName() + ", id: " + vmId + " which was running on host " + hostDesc);
-            return null;
         }
+        vm = _itMgr.findById(vm.getType(), vm.getId());
+        work.setUpdateTime(vm.getUpdated());
+        work.setPreviousState(vm.getState());
+        return (System.currentTimeMillis() >> 10) + _restartRetryInterval;
     }
 
 
