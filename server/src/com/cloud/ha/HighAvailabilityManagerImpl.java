@@ -385,22 +385,27 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager {
             }
             
             boolean fenced = false;
-            if (alive == null || !alive) {
-                fenced = true;
+            if (alive == null) {
                 s_logger.debug("Fencing off VM that we don't know the state of");
                 Enumeration<FenceBuilder> enfb = _fenceBuilders.enumeration();
                 while (enfb.hasMoreElements()) {
-                    final FenceBuilder fb = enfb.nextElement();
+                    FenceBuilder fb = enfb.nextElement();
                     Boolean result = fb.fenceOff(vm, host);
-                    if (result != null && !result) {
-                    	fenced = false;
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Fencer " + fb.getName() + " returned " + result);
+                    }
+                    if (result != null && result) {
+                    	fenced = true;
+                    	break;
                     }
                 }
+            } else if (!alive) {
+                fenced = true;
             }
             
-            if (alive== null && !fenced) {
+            if (!fenced) {
             	s_logger.debug("We were unable to fence off the VM " + vm.toString());
-                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getName() + " which was running on host " + hostDesc, "Insufficient capcity to restart VM, name: " + vm.getName() + ", id: " + vmId + " which was running on host " + hostDesc);
+                _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getName() + " which was running on host " + hostDesc, "Insufficient capacity to restart VM, name: " + vm.getName() + ", id: " + vmId + " which was running on host " + hostDesc);
             	return (System.currentTimeMillis() >> 10) + _restartRetryInterval;
             }
 
