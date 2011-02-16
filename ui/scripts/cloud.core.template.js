@@ -350,11 +350,44 @@ function templateJsonToDetailsTab() {
     $thisTab.find("#hypervisor").text(fromdb(jsonObj.hypervisor));    
     $thisTab.find("#templatetype").text(fromdb(jsonObj.templatetype)); 
     
+    /*
     var status = "Ready";
 	if (jsonObj.isready == false) 
 		status = fromdb(jsonObj.status);	 
     setTemplateStateInRightPanel(status, $thisTab.find("#status"));
+    */
     
+    var timerKey = "templateDownloadProgress";	
+	$("body").stopTime(timerKey);	//stop timer on previously selected middle menu item in template page
+			
+	if(jsonObj.isready == true){
+	    setTemplateStateInRightPanel("Ready", $thisTab.find("#status"));
+	    $("#progressbar_container").hide();
+	}
+	else {
+	    $("#progressbar_container").show();	    
+	    
+	    setTemplateStateInRightPanel(fromdb(jsonObj.status), $thisTab.find("#status"));
+        var progressBarValue = 0;
+        if(jsonObj.status != null && jsonObj.status.indexOf("%") != -1) {      //e.g. jsonObj.status == "95% Downloaded" 	    
+            var s = jsonObj.status.substring(0, jsonObj.status.indexOf("%"));  //e.g. s	== "95"
+            if(isNaN(s) == false) {	        
+                progressBarValue = parseInt(s);	//e.g. progressBarValue	== 95   
+            } 
+        }
+        $("#progressbar").progressbar({
+            value: progressBarValue             //e.g. progressBarValue	== 95  
+        });	 
+	   	        
+        $("body").everyTime(
+            2000,
+            timerKey,
+            function() {   
+                templateRefreshStatusDownloadProgress(jsonObj, $thisTab, $midmenuItem1, timerKey);                                   	
+            }
+        )	     
+	}
+        
     if(jsonObj.size != null)
 	    $thisTab.find("#size").text(convertBytes(parseInt(jsonObj.size))); 
 	else
@@ -426,6 +459,43 @@ function templateJsonToDetailsTab() {
 	
 	$thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();      
+}
+
+function templateRefreshStatusDownloadProgress(oldJsonObj, $thisTab, $midmenuItem1, timerKey) {   
+    var strCmd = "command=listTemplates&templatefilter=self&id="+oldJsonObj.id;
+    
+    if(oldJsonObj.zoneid != null)
+        strCmd = strCmd +"&zoneid="+oldJsonObj.zoneid;     
+    $.ajax({
+        data: createURL(strCmd),
+        dataType: "json",        
+        success: function(json) { 
+            var items = json.listtemplatesresponse.template;
+            if(items != null && items.length > 0) {
+                var jsonObj = items[0];
+                $midmenuItem1.data("jsonObj", jsonObj);    
+                
+                if(jsonObj.isready == true) {
+                    setTemplateStateInRightPanel("Ready", $thisTab.find("#status"));
+                    $("#progressbar_container").hide();
+                    $("body").stopTime(timerKey);   
+                }
+                else {
+                    setTemplateStateInRightPanel(fromdb(jsonObj.status), $thisTab.find("#status"));
+                    var progressBarValue = 0;
+                    if(jsonObj.status != null && jsonObj.status.indexOf("%") != -1) {      //e.g. jsonObj.status == "95% Downloaded" 	    
+                        var s = jsonObj.status.substring(0, jsonObj.status.indexOf("%"));  //e.g. s	== "95"
+                        if(isNaN(s) == false) {	        
+                            progressBarValue = parseInt(s);	//e.g. progressBarValue	== 95   
+                        } 
+                    }
+                    $("#progressbar").progressbar({
+                        value: progressBarValue             //e.g. progressBarValue	== 95  
+                    });	 
+                }   
+            }            
+        }    
+    });      
 }
 
 //setIconByOsType() is shared by template page and ISO page

@@ -376,7 +376,7 @@ function isoJsonToDetailsTab() {
             2000,
             timerKey,
             function() {   
-                refreshStatusDownloadProgress(jsonObj, $thisTab, $midmenuItem1, timerKey);                                   	
+                isoRefreshStatusDownloadProgress(jsonObj, $thisTab, $midmenuItem1, timerKey);                                   	
             }
         )	     
 	}
@@ -467,7 +467,7 @@ function isoJsonToDetailsTab() {
     $thisTab.find("#tab_container").show();     
 }
 
-function refreshStatusDownloadProgress(oldJsonObj, $thisTab, $midmenuItem1, timerKey) {    
+function isoRefreshStatusDownloadProgress(oldJsonObj, $thisTab, $midmenuItem1, timerKey) {    
     var strCmd = "command=listIsos&isofilter=self&id="+oldJsonObj.id;
     if(oldJsonObj.zoneid != null)
         strCmd = strCmd + "&zoneid="+oldJsonObj.zoneid;    
