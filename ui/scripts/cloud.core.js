@@ -441,7 +441,7 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
 			                        $("body").stopTime(timerKey);	
 			                        $midmenuItem1.find("#content").removeClass("inaction");
 			                        $midmenuItem1.find("#spinning_wheel").hide();			                        
-			                        hideDetailsTabActionSpinningWheel(id, inProcessText2, $midmenuItem1);				                        			                       
+			                        	                        			                       
 			                        
 			                        if (result.jobstatus == 1) { // Succeeded  
 			                            $midmenuItem1.find("#info_icon").removeClass("error").show();			                            		                            
@@ -450,6 +450,8 @@ function doActionToMidMenu(id, apiInfo, apiCommand) {
 			                                $midmenuItem1.data("afterActionInfo", (label2 + " - " + g_dictionary["label.succeeded"])); 	
 			                            else
 			                                $midmenuItem1.data("afterActionInfo", afterActionInfo); 	
+			                                
+			                            hideDetailsTabActionSpinningWheel(id, inProcessText2, $midmenuItem1); //this line will use $midmenuItem1.data("afterActionInfo")	
 			                            		                            
 			                        } else if (result.jobstatus == 2) { // Failed				                            
 			                            //var errorMsg = label2 + " - " + g_dictionary["label.failed"] + " - " + g_dictionary["label.error.code"] + " " + fromdb(result.jobresult.errorcode);
