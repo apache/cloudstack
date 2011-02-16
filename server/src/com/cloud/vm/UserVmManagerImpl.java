@@ -2055,13 +2055,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             hostName = instanceName;
         } else {
             hostName = hostName.toLowerCase();
-            //verify hostName
-            UserVm vm = _vmDao.findVmByZoneIdAndName(dc.getId(), hostName);
-            if (vm != null && !(vm.getState() == State.Expunging || vm.getState() == State.Error)) {
-                throw new InvalidParameterValueException("Vm instance with name \"" + hostName + "\" already exists in zone " + dc.getId());
-            } else if (!NetUtils.verifyHostName(hostName)) {
+            //verify hostName (hostname doesn't have to be unique)
+            if (!NetUtils.verifyHostName(hostName)) {
                 throw new InvalidParameterValueException("Invalid name. Vm name can contain ASCII letters 'a' through 'z', the digits '0' through '9', " +
-                		                                "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\"");
+                		                                "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\" and can't start with digit");
             }
         }
         

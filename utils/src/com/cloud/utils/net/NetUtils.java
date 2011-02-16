@@ -876,14 +876,14 @@ public class NetUtils {
     public static boolean verifyHostName(String hostName) {
         //must be between 1 and 63 characters long and may contain only the ASCII letters 'a' through 'z' (in a case-insensitive manner), 
         //the digits '0' through '9', and the hyphen ('-').
-        //Can not start  with a hyphen, and must not end with a hyphen
+        //Can not start  with a hyphen and digit, and must not end with a hyphen
         
         boolean result = true;
         if (hostName.length() > 63 || hostName.length() < 1) {
             result = false;
         } else if (!hostName.matches("[a-zA-z0-9-]*")) {
             result = false;
-        } else if (hostName.startsWith("-") || hostName.endsWith("-")) {
+        } else if (hostName.startsWith("-") || hostName.matches("^[0-9-].*")|| hostName.endsWith("-")) {
             result = false;
         } 
 
