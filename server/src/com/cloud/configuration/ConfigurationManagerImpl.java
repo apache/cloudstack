@@ -468,7 +468,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 		if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
 		    throw new InvalidParameterValueException("The gateway shouldn't overlap start/end ip addresses");
 		}
-		
+
 		String checkPodCIDRs = _configDao.getValue("check.pod.cidrs");
 		if (checkPodCIDRs == null || checkPodCIDRs.trim().isEmpty() || Boolean.parseBoolean(checkPodCIDRs)) {
 			// Check if the CIDR conflicts with the Guest Network or other pods
@@ -478,6 +478,21 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 			newCidrPair.add(1, new Long(cidrSize));
 			currentPodCidrSubnets.put(new Long(-1), newCidrPair);
 			checkPodCidrSubnets(zoneId, currentPodCidrSubnets);
+			
+			//Prevent using the same CIDR for POD and virtual networking
+			List<VlanVO> vlans = _vlanDao.listByZoneAndType(zoneId, VlanType.VirtualNetwork);
+			for (VlanVO vlan : vlans) {
+	            String vlanCidr = NetUtils.ipAndNetMaskToCidr(vlan.getVlanGateway(), vlan.getVlanNetmask());     
+	            String[] cidrPairVlan = vlanCidr.split("\\/");
+	            String[] vlanIpRange = NetUtils.getIpRangeFromCidr(cidrPairVlan[0], Long.valueOf(cidrPairVlan[1]));
+	            
+	            String[] cidrPairPod = cidr.split("\\/");
+	            String[] podIpRange = NetUtils.getIpRangeFromCidr(cidrPairPod[0], Long.valueOf(cidrPairPod[1]));
+	            
+	            if (NetUtils.ipRangesOverlap(vlanIpRange[0], vlanIpRange[1], podIpRange[0], podIpRange[1])) {
+	                throw new InvalidParameterValueException("Pod's cidr conflicts with cidr of virtual network in zone id=" + zoneId);
+	            }
+	        }
 		}
     }
     
