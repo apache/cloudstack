@@ -956,9 +956,11 @@ function setTemplateStateInRightPanel(stateValue, $stateField) {
     $stateField.text(stateValue);    
      
     if(stateValue == "Ready")
-        $stateField.text(stateValue).removeClass("status_red").addClass("status_green");
+        $stateField.text(stateValue).removeClass("status_red status_gray").addClass("status_green");
+    else if(stateValue != null && stateValue.indexOf("%") != -1)
+        $stateField.text(stateValue).removeClass("status_green status_red").addClass("status_gray");
     else 
-        $stateField.text(stateValue).removeClass("status_green").addClass("status_red");              			       
+        $stateField.text(stateValue).removeClass("status_green status_gray").addClass("status_red");              			       
 }
 
 function initDialog(elementId, width1, addToActive) {
