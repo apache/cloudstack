@@ -52,7 +52,7 @@ public class ListRoutersCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="the host ID of the router")
     private Long hostId;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the disk volume")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the disk router")
     private Long id;
     
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the router")

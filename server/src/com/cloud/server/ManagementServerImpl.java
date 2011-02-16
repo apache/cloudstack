@@ -2023,6 +2023,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         Filter searchFilter = new Filter(EventVO.class, "createDate", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
+        Object id = cmd.getId();
         Object type = cmd.getType();
         Object level = cmd.getLevel();
         Date startDate = cmd.getStartDate();
@@ -2039,6 +2040,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         SearchBuilder<EventVO> sb = _eventDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("levelL", sb.entity().getLevel(), SearchCriteria.Op.LIKE);
         sb.and("levelEQ", sb.entity().getLevel(), SearchCriteria.Op.EQ);
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
@@ -2057,6 +2059,9 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         SearchCriteria<EventVO> sc = sb.create();
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
         if (keyword != null) {
             SearchCriteria<EventVO> ssc = _eventDao.createSearchCriteria();
             ssc.addOr("type", SearchCriteria.Op.LIKE, "%" + keyword + "%");

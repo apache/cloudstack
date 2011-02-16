@@ -27,6 +27,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.EventResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.event.Event;
@@ -47,6 +48,9 @@ public class ListEventsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID for the event. If used with the account parameter, returns all events for an account in the specified domain ID.")
     private Long domainId;
 
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the event")
+    private Long id;
+    
     @Parameter(name=ApiConstants.DURATION, type=CommandType.INTEGER, description="the duration of the event")
     private Integer duration;
 
@@ -77,6 +81,10 @@ public class ListEventsCmd extends BaseListCmd {
         return domainId;
     }
 
+    public Long getId() {
+        return id;
+    }
+    
     public Integer getDuration() {
         return duration;
     }
