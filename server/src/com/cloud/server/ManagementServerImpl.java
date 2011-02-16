@@ -2333,6 +2333,13 @@ public class ManagementServerImpl implements ManagementServer {
 
         // Only return volumes that are not destroyed
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
+        
+        //Allow null ids
+//        sb.or("nullid", sb.entity().getTemplateId(), SearchCriteria.Op.NULL);
+//        
+//        SearchBuilder<VMTemplateVO> templateSearch = _templateDao.createSearchBuilder();
+//        templateSearch.and("templateType", templateSearch.entity().getTemplateType(), SearchCriteria.Op.NEQ);
+//        sb.join("templateSearch", templateSearch, sb.entity().getTemplateId(), templateSearch.entity().getId(), JoinBuilder.JoinType.LEFTOUTER);
 
         if (((accountId == null) && (domainId != null) && isRecursive)) {
             // if accountId isn't specified, we can do a domain match for the admin case if isRecursive is true
@@ -2344,7 +2351,7 @@ public class ManagementServerImpl implements ManagementServer {
             domainSearch.and("path", domainSearch.entity().getPath(), SearchCriteria.Op.EQ);
             sb.join("domainSearch", domainSearch, sb.entity().getDomainId(), domainSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }  
-
+        
         // now set the SC criteria...
         SearchCriteria<VolumeVO> sc = sb.create();
         if (keyword != null) {
@@ -2354,7 +2361,9 @@ public class ManagementServerImpl implements ManagementServer {
 
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
-
+        
+//        sc.setJoinParameters("templateSearch", "templateType", Storage.TemplateType.SYSTEM);
+        
         if (name != null) {
             sc.setParameters("name", "%" + name + "%");
         }
@@ -2396,38 +2405,7 @@ public class ManagementServerImpl implements ManagementServer {
         // Only return volumes that are not destroyed
         sc.setParameters("state", Volume.State.Destroy);
 
-        List<VolumeVO> allVolumes = _volumeDao.search(sc, searchFilter);
-        List<VolumeVO> returnableVolumes = new ArrayList<VolumeVO>(); //these are ones without domr and console proxy
-        
-        for(VolumeVO v:allVolumes)
-        {
-        	VMTemplateVO template = _templateDao.findById(v.getTemplateId());
-        	if(template!=null && (template.getTemplateType() == TemplateType.SYSTEM))
-        	{
-        		//do nothing
-        	}
-        	else
-        	{
-        	    //do not add to returnable list if vol belongs to a user vm that is destoyed and cmd called by user
-        	    if(v.getInstanceId() == null) {
-        	        returnableVolumes.add(v);
-        	    }else {
-        	        if (account.getType() == Account.ACCOUNT_TYPE_NORMAL){
-            	        VMInstanceVO owningVm = _vmInstanceDao.findById(v.getInstanceId());
-            	        if(owningVm != null && owningVm.getType().equals(VirtualMachine.Type.User) && owningVm.getState().equals(VirtualMachine.State.Destroyed)){
-            	            // do not show volumes
-            	            // do nothing
-            	        }else {
-            	            returnableVolumes.add(v);
-            	        }
-        	        }else {
-        	            returnableVolumes.add(v);
-        	        }
-        	    }       	        
-        	}
-        }
-        
-        return returnableVolumes;
+        return _volumeDao.search(sc, searchFilter);
     }
 
     @Override
