@@ -451,7 +451,6 @@ public class XenServerConnectionPool {
                     // wait 2 second
                     forceSleep(2);
                 }
-                
             }
             // then try emergency reset master
             Set<Host> slaves = Host.getAll(conn);
@@ -533,7 +532,8 @@ public class XenServerConnectionPool {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug(msg);
                     }
-                    throw new CloudRuntimeException(msg, e);
+                    PoolEmergencyResetMaster(ipAddress, mConn.getIp(), mConn.getUsername(), mConn.getPassword());
+                    return mConn;
                 } catch (Types.HostOffline e ) {
                     String msg = "Can't connect host " + ipAddress + " due to " + e.toString();
                     if (s_logger.isDebugEnabled()) {
