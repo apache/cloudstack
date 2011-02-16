@@ -1430,7 +1430,7 @@ function doEditVM($actionLink, $detailsTab, $midmenuItem1) {
         dataType: "json",
         async: false,
         success: function(json) {	        
-	        if(json.listserviceofferingsresponse.serviceoffering[0].offerha == true) {	            
+	        if(json.listserviceofferingsresponse.serviceoffering != null && json.listserviceofferingsresponse.serviceoffering[0].offerha == true) {	            
 	            $readonlyFields  = $("#tab_content_details").find("#vmname, #group, #haenable, #ostypename");
                 $editFields = $("#tab_content_details").find("#vmname_edit, #group_edit, #haenable_edit, #ostypename_edit"); 	            
 	        }
