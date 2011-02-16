@@ -773,12 +773,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault) throws ConcurrentOperationException {
-        return setupNetwork(owner, offering, null, plan, name, displayText, isShared, isDefault);
+        return setupNetwork(owner, offering, null, plan, name, displayText, isShared, isDefault, false);
     }
 
     @Override
     @DB
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault) throws ConcurrentOperationException {
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean isShared, boolean isDefault, boolean errorIfAlreadySetup) throws ConcurrentOperationException {
         Transaction.currentTxn();
         Account locked = _accountDao.acquireInLockTable(owner.getId());
         if (locked == null) {
@@ -792,7 +792,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
                     }
-                    return configs;
+                    
+                    if (errorIfAlreadySetup) {
+                        throw new InvalidParameterValueException("Found existing network configuration for offering " + offering + ": " + configs.get(0));
+                    } else {
+                        return configs;
+                    }
                 }
             } else if (predefined != null && predefined.getCidr() != null && predefined.getBroadcastUri() == null && predefined.getBroadcastUri() == null) {
                 List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId(), predefined.getCidr());
@@ -800,7 +805,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));
                     }
-                    return configs;
+                    
+                    if (errorIfAlreadySetup) {
+                        throw new InvalidParameterValueException("Found existing network configuration for offering " + offering + ": " + configs.get(0));
+                    } else {
+                        return configs;
+                    }
                 }
             }
 
@@ -1492,7 +1502,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
-        List<NetworkVO> networks = setupNetwork(owner, networkOffering, userNetwork, plan, name, displayText, isShared, isDefault);
+        List<NetworkVO> networks = setupNetwork(owner, networkOffering, userNetwork, plan, name, displayText, isShared, isDefault, true);
 
         Network network = null;
         if (networks == null || networks.isEmpty()) {
