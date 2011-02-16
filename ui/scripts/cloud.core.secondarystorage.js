@@ -80,7 +80,7 @@ function secondaryStorageJsonToDetailsTab() {
 	$thisTab.find("#type").text(jsonObj.type);	
     $thisTab.find("#ipaddress").text(jsonObj.ipaddress);
        
-    setHostStateInRightPanel(fromdb(jsonObj.state), $thisTab.find("#state"))
+    //setHostStateInRightPanel(fromdb(jsonObj.state), $thisTab.find("#state"))
     
     $thisTab.find("#version").text(jsonObj.version); 
     setDateField(jsonObj.disconnected, $thisTab.find("#disconnected"));
@@ -88,17 +88,7 @@ function secondaryStorageJsonToDetailsTab() {
     //actions ***   
     var $actionLink = $thisTab.find("#action_link"); 
     bindActionLink($actionLink);
-    /*
-    $actionLink.bind("mouseover", function(event) {	    
-        $(this).find("#action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {       
-        $(this).find("#action_menu").hide();    
-        return false;
-    });	 
-    */
-     
+        
     var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();          
     buildActionLinkForTab("label.action.delete.secondary.storage", secondaryStorageActionMap, $actionMenu, $midmenuItem1, $thisTab);   
