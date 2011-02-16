@@ -1683,6 +1683,44 @@ function vmJsonToDetailsTab(){
           
 	resetViewConsoleAction(jsonObj, $thisTab);      
 	setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));		
+	
+	
+	var timerKey = "refreshInstanceStatue";
+	$("body").stopTime(timerKey);  //stop timer used by another middle menu item (i.e. stop timer when clicking on a different middle menu item)		
+	
+	if($midmenuItem1.find("#spinning_wheel").css("display") == "none") {
+	    if(jsonObj.state == "Starting" || jsonObj.state == "Stopping") {	    
+	        $("body").everyTime(
+                2000,
+                timerKey,
+                function() {              
+                    $.ajax({
+		                data: createURL("command=listVirtualMachines&id="+id),
+		                dataType: "json",
+		                async: false,
+		                success: function(json) {  
+			                var items = json.listvirtualmachinesresponse.virtualmachine;
+			                if(items != null && items.length > 0) {
+				                jsonObj = items[0]; //override jsonObj declared above				
+				                $midmenuItem1.data("jsonObj", jsonObj); 
+				                updateVmStateInMidMenu(jsonObj, $midmenuItem1); 
+    				            
+				                if(!(jsonObj.state == "Starting" || jsonObj.state == "Stopping")) {
+				                    $("body").stopTime(timerKey);	
+				                }
+    				            
+				                if(jsonObj.id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+				                    setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));	
+				                    vmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1);	
+				                }		
+	                        }   
+		                }
+	                });                       	
+                }
+            );
+	    }
+	}
+		
 	$thisTab.find("#ipAddress").text(fromdb(jsonObj.ipaddress));
 	
 	$thisTab.find("#id").text(fromdb(jsonObj.id));
@@ -1717,11 +1755,17 @@ function vmJsonToDetailsTab(){
 	setBooleanReadField((jsonObj.isoid != null), $thisTab.find("#iso"));	
 	  
 	//actions ***
-	var $actionMenu = $("#right_panel_content #tab_content_details #action_link #action_menu");
+    vmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1);
+	
+	$thisTab.find("#tab_spinning_wheel").hide();    
+	$thisTab.find("#tab_container").show();  	
+}
+
+function vmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {    
+	var $actionMenu = $thisTab.find("#action_link #action_menu");
 	$actionMenu.find("#action_list").empty();              
-	var noAvailableActions = true;
-		   
-	// Show State of the VM
+	var noAvailableActions = true; 
+	
 	if (jsonObj.state == 'Destroyed') {
 	    if(isAdmin() || isDomainAdmin()) {
 		    buildActionLinkForTab("label.action.restore.instance", vmActionMap, $actionMenu, $midmenuItem1, $thisTab);
@@ -1764,11 +1808,7 @@ function vmJsonToDetailsTab(){
 	// no available actions 
 	if(noAvailableActions == true) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
-	}	 
-	
-	$thisTab.find("#tab_spinning_wheel").hide();    
-	$thisTab.find("#tab_container").show();  
-	
+	}	
 }
 
 function vmJsonToNicTab() {  
