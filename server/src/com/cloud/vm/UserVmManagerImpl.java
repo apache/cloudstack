@@ -2054,9 +2054,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (hostName == null) {
             hostName = instanceName;
         } else {
-            hostName = hostName.toLowerCase();
             //verify hostName (hostname doesn't have to be unique)
-            if (!NetUtils.verifyHostName(hostName)) {
+            if (!NetUtils.verifyDomainNameLabel(hostName, true)) {
                 throw new InvalidParameterValueException("Invalid name. Vm name can contain ASCII letters 'a' through 'z', the digits '0' through '9', " +
                 		                                "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\" and can't start with digit");
             }

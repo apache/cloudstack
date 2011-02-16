@@ -1419,6 +1419,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // If networkDomain is not specified, take it from the global configuration
         if (networkDomain == null) {
             networkDomain = "cs"+Long.toHexString(owner.getId())+_networkDomain;
+        } else {
+            //validate network domain
+            if (!NetUtils.verifyDomainName(networkDomain)) {
+                throw new InvalidParameterValueException("Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', " +  "and the hyphen ('-'); can't start or end with \"-\"");
+            }
         }
 
         // Check if zone exists

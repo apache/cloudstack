@@ -873,21 +873,51 @@ public class NetUtils {
         }
     }
     
-    public static boolean verifyHostName(String hostName) {
+    public static boolean verifyDomainNameLabel(String hostName, boolean isHostName) {
         //must be between 1 and 63 characters long and may contain only the ASCII letters 'a' through 'z' (in a case-insensitive manner), 
         //the digits '0' through '9', and the hyphen ('-').
         //Can not start  with a hyphen and digit, and must not end with a hyphen
+        //If it's a host name, don't allow to start with digit
         
-        boolean result = true;
         if (hostName.length() > 63 || hostName.length() < 1) {
-            result = false;
-        } else if (!hostName.matches("[a-zA-z0-9-]*")) {
-            result = false;
-        } else if (hostName.startsWith("-") || hostName.matches("^[0-9-].*")|| hostName.endsWith("-")) {
-            result = false;
-        } 
+            s_logger.warn("Domain name label must be between 1 and 63 characters long");
+            return false;
+        } else if (!hostName.toLowerCase().matches("[a-zA-z0-9-]*")) {
+            s_logger.warn("Domain name label may contain only the ASCII letters 'a' through 'z' (in a case-insensitive manner)");
+            return false;
+        } else if (hostName.startsWith("-") || hostName.endsWith("-")) {
+            s_logger.warn("Domain name label can not start  with a hyphen and digit, and must not end with a hyphen");
+            return false;
+        } else if (isHostName && hostName.matches("^[0-9-].*")) {
+            s_logger.warn("Host name can't start with digit");
+            return false;
+        }
 
-        return result;
+        return true;
+    }
+    
+    public static boolean verifyDomainName(String domainName) {
+        //don't allow domain name length to exceed 190 chars (190 + 63 (max host name length) = 253 = max domainName length
+        if (domainName.length() < 1 || domainName.length() > 190) {
+            s_logger.trace("Domain name must be between 1 and 190 characters long");
+            return false;
+        }
+        
+        if (domainName.startsWith(".") || domainName.endsWith(".")) {
+            s_logger.trace("Domain name can't start or end with .");
+            return false;
+        }
+        
+        String[] domainNameLabels = domainName.split("\\.");
+        
+        for (int i = 0; i < domainNameLabels.length; i++) {
+            if (!verifyDomainNameLabel(domainNameLabels[i], false)) {
+                s_logger.warn("Domain name label " + domainNameLabels[i] + " is incorrect");
+                return false;
+            }
+        }
+        
+        return true;
     }
     
     public static String getDhcpRange(String cidr) {
