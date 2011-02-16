@@ -342,27 +342,43 @@ function isoJsonToDetailsTab() {
     $thisTab.find("#ostypename_edit").val(fromdb(jsonObj.ostypeid));    
     $thisTab.find("#account").text(fromdb(jsonObj.account));
 	$thisTab.find("#domain").text(fromdb(jsonObj.domain));
-                      
+      
+    /*                  
     var status = "Ready";
 	if (jsonObj.isready == false)
 		status = fromdb(jsonObj.status);		
 	setTemplateStateInRightPanel(status, $thisTab.find("#status"));
+	*/
+	
+	var timerKey = "isoDownloadProgress";	
+	$("body").stopTime(timerKey);	//stop timer on previously selected middle menu item in ISO page
 			
 	if(jsonObj.isready == true){
+	    setTemplateStateInRightPanel("Ready", $thisTab.find("#status"));
 	    $("#progressbar_container").hide();
 	}
 	else {
 	    $("#progressbar_container").show();	    
-	    var progressBarValue = 0;
-	    if(jsonObj.status != null && jsonObj.status.indexOf("%") != -1) {      //e.g. jsonObj.status == "95% Downloaded" 	    
-	        var s = jsonObj.status.substring(0, jsonObj.status.indexOf("%"));  //e.g. s	== "95"
-	        if(isNaN(s) == false) {	        
-	            progressBarValue = parseInt(s);	//e.g. progressBarValue	== 95   
-	        } 
-	    }
-	    $("#progressbar").progressbar({
-		    value: progressBarValue             //e.g. progressBarValue	== 95  
-	    });	    
+	    
+	    setTemplateStateInRightPanel(fromdb(jsonObj.status), $thisTab.find("#status"));
+        var progressBarValue = 0;
+        if(jsonObj.status != null && jsonObj.status.indexOf("%") != -1) {      //e.g. jsonObj.status == "95% Downloaded" 	    
+            var s = jsonObj.status.substring(0, jsonObj.status.indexOf("%"));  //e.g. s	== "95"
+            if(isNaN(s) == false) {	        
+                progressBarValue = parseInt(s);	//e.g. progressBarValue	== 95   
+            } 
+        }
+        $("#progressbar").progressbar({
+            value: progressBarValue             //e.g. progressBarValue	== 95  
+        });	 
+	   	        
+        $("body").everyTime(
+            2000,
+            timerKey,
+            function() {   
+                refreshStatusDownloadProgress(jsonObj, $thisTab, $midmenuItem1, timerKey);                                   	
+            }
+        )	     
 	}
 	
 	if(jsonObj.size != null)
@@ -449,6 +465,42 @@ function isoJsonToDetailsTab() {
 	
 	$thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();     
+}
+
+function refreshStatusDownloadProgress(oldJsonObj, $thisTab, $midmenuItem1, timerKey) {    
+    var strCmd = "command=listIsos&isofilter=self&id="+oldJsonObj.id;
+    if(oldJsonObj.zoneid != null)
+        strCmd = strCmd + "&zoneid="+oldJsonObj.zoneid;    
+    $.ajax({
+        data: createURL(strCmd),
+        dataType: "json",        
+        success: function(json) { 
+            var items = json.listisosresponse.iso;
+            if(items != null && items.length > 0) {
+                var jsonObj = items[0];
+                $midmenuItem1.data("jsonObj", jsonObj);    
+                
+                if(jsonObj.isready == true) {
+                    setTemplateStateInRightPanel("Ready", $thisTab.find("#status"));
+                    $("#progressbar_container").hide();
+                    $("body").stopTime(timerKey);   
+                }
+                else {
+                    setTemplateStateInRightPanel(fromdb(jsonObj.status), $thisTab.find("#status"));
+                    var progressBarValue = 0;
+                    if(jsonObj.status != null && jsonObj.status.indexOf("%") != -1) {      //e.g. jsonObj.status == "95% Downloaded" 	    
+                        var s = jsonObj.status.substring(0, jsonObj.status.indexOf("%"));  //e.g. s	== "95"
+                        if(isNaN(s) == false) {	        
+                            progressBarValue = parseInt(s);	//e.g. progressBarValue	== 95   
+                        } 
+                    }
+                    $("#progressbar").progressbar({
+                        value: progressBarValue             //e.g. progressBarValue	== 95  
+                    });	 
+                }   
+            }            
+        }    
+    });      
 }
 
 function isoClearRightPanel() {
