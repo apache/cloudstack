@@ -67,9 +67,7 @@ function alertJsonToDetailsTab() {
     var $thisTab = $("#right_panel_content").find("#tab_content_details");  
     $thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();        
-    
-    //uncomment the following section when Bug 8577("listAlerts API, listEvents API doesn't take in id parameter correctly") is fixed 
-    /* 
+         
     $.ajax({
         data: createURL("command=listAlerts&id="+jsonObj.id),
         dataType: "json",
@@ -82,8 +80,7 @@ function alertJsonToDetailsTab() {
             }
         }
     });   
-    */
-      
+          
     $thisTab.find("#id").text(fromdb(jsonObj.id));      
     $thisTab.find("#type").text(toAlertType(jsonObj.type));
     $thisTab.find("#typeid").text(fromdb(jsonObj.type));

@@ -3105,10 +3105,15 @@ public class ManagementServerImpl implements ManagementServer {
         Filter searchFilter = new Filter(AlertVO.class, "lastSent", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<AlertVO> sc = _alertDao.createSearchCriteria();
 
-        
+        Object id = cmd.getId();
         Object type = cmd.getType();
         Object keyword = cmd.getKeyword();
 
+        
+        if (id != null) {
+        	sc.addAnd("id", SearchCriteria.Op.EQ, id);        
+        }
+        
         if (keyword != null) {
             SearchCriteria<AlertVO> ssc = _alertDao.createSearchCriteria();
             ssc.addOr("subject", SearchCriteria.Op.LIKE, "%" + keyword + "%");
