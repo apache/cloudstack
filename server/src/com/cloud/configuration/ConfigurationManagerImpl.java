@@ -464,6 +464,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     		throw new InvalidParameterValueException("The gateway is not in the CIDR subnet.");
     	}
 		
+		//Don't allow gateway to overlap with start/endIp
+		if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
+		    throw new InvalidParameterValueException("The gateway shouldn't overlap start/end ip addresses");
+		}
+		
 		String checkPodCIDRs = _configDao.getValue("check.pod.cidrs");
 		if (checkPodCIDRs == null || checkPodCIDRs.trim().isEmpty() || Boolean.parseBoolean(checkPodCIDRs)) {
 			// Check if the CIDR conflicts with the Guest Network or other pods
