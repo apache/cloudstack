@@ -27,6 +27,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.DomainRouterResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.async.AsyncJob;
@@ -51,6 +52,9 @@ public class ListRoutersCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="the host ID of the router")
     private Long hostId;
 
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="the ID of the disk volume")
+    private Long id;
+    
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the router")
     private String routerName;
 
@@ -82,6 +86,10 @@ public class ListRoutersCmd extends BaseListCmd {
         return hostId;
     }
 
+    public Long getId() {
+        return id;
+    }
+    
     public String getRouterName() {
         return routerName;
     }

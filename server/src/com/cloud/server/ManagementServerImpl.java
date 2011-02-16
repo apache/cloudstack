@@ -2138,6 +2138,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         Filter searchFilter = new Filter(DomainRouterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
+        Object id = cmd.getId();
         Object name = cmd.getRouterName();
         Object state = cmd.getState();
         Object zone = cmd.getZoneId();
@@ -2148,6 +2149,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         SearchBuilder<DomainRouterVO> sb = _routerDao.createSearchBuilder();
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
@@ -2184,6 +2186,10 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (name != null) {
             sc.setParameters("name", "%" + name + "%");
+        }
+        
+        if(id != null) {
+        	sc.setParameters("id", id);
         }
 
         if (accountId != null) {
