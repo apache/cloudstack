@@ -1414,9 +1414,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // This can be sent to a KVM host too.
         StoragePool pool = _storagePoolDao.findById(volume.getPoolId());
         CreatePrivateTemplateAnswer answer = null;
+        volume = _volsDao.acquireInLockTable(volumeId, 10);       
+        if( volume == null ) {
+            throw new CloudRuntimeException("Creating template failed due to volume:" + volumeId + " is being used, try it later ");
+        }
         try {
             answer = (CreatePrivateTemplateAnswer)_storageMgr.sendToPool(pool, cmd);
         } catch (StorageUnavailableException e) {
+        } finally {
+            _volsDao.releaseFromLockTable(volumeId);
         }
 
         if ((answer != null) && answer.getResult()) {
