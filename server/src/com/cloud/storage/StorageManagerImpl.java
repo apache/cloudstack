@@ -1447,7 +1447,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a snapshot with id " + snapshotId);
             }
 
-            VolumeVO vol = _volsDao.findById(snapshotCheck.getVolumeId());
+            VolumeVO vol = _volsDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId());
             zoneId = vol.getDataCenterId();
             diskOfferingId = vol.getDiskOfferingId();
             size = vol.getSize();
