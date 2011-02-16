@@ -117,15 +117,7 @@ public interface ConfigurationService {
 
     /**
      * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.
-     * @param userId
-     * @param podId
-     * @param newPodName
-     * @param cidr
-     * @param startIp
-     * @param endIp
-     * @return Pod
-     * @throws  
-     * @throws  
+     * @param UpdatePodCmd api command
      */
     Pod editPod(UpdatePodCmd cmd);
     

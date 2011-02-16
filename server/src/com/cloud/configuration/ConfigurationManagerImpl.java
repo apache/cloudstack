@@ -432,11 +432,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
     
     private void checkPodAttributes(long podId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp, boolean checkForDuplicates) throws InvalidParameterValueException {
-    	// Check if the zone is valid
-		if (!validZone(zoneId)) {
-			throw new InvalidParameterValueException("Please specify a valid zone.");
-		}
-
 		if (checkForDuplicates) {
 			// Check if the pod already exists
 			if (validPod(podName, zoneId)) {
@@ -523,62 +518,47 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	
 		return true;
     }
-
+    
     @Override
-    @DB
-    public Pod editPod(UpdatePodCmd cmd)  
-    {
-    	//Input validation 
-    	String startIp = cmd.getStartIp();
-    	String endIp = cmd.getEndIp();
-    	String gateway = cmd.getGateway();
-    	String netmask = cmd.getNetmask();
-    	String cidr = null;
-    	Long id = cmd.getId();
-    	String name = cmd.getPodName();
+    public Pod editPod(UpdatePodCmd cmd){
+        return editPod(cmd.getId(), cmd.getPodName(), cmd.getStartIp(), cmd.getEndIp(), cmd.getGateway(), cmd.getNetmask());
+    }
+
+    @Override @DB
+    public Pod editPod(long id, String name, String startIp, String endIp, String gateway, String netmask){
 
     	//verify parameters
     	HostPodVO pod = _podDao.findById(id);;
     	if (pod == null) {
     		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find pod by id " + id);
     	}
+
+    	// If the gateway, CIDR, private IP range is being updated, check if the pod has allocated private IP addresses
+        if (gateway!= null || startIp != null || endIp != null) {
+            if (podHasAllocatedPrivateIPs(id)) {
+                throw new CloudRuntimeException("The specified pod has allocated private IP addresses, so its CIDR and IP address range cannot be changed.");
+            }
+        }
     	
     	if (gateway == null) {
     	    gateway = pod.getGateway();
     	} 
     	
+    	String[] podIpRange = pod.getDescription().split("-");
+        
+        if (startIp == null) {
+            startIp = podIpRange[0];
+        }
+        
+        if (endIp == null) {
+            endIp = podIpRange[1];
+        }
+    	
     	if (netmask == null) {
     		netmask = NetUtils.getCidrNetmask(pod.getCidrSize());
     	}
     	
-        if (netmask != null) {
-            cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
-        }
-    	
-    	long zoneId = pod.getDataCenterId();
-    	DataCenterVO zone = _zoneDao.findById(zoneId);
-    	if (zone == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find zone by id " + zoneId);
-    	}
-    	
-    	if (endIp != null && startIp == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "If an end IP is specified, a start IP must be specified.");
-    	}
-    	
-    	// Make sure the pod exists
-    	if (!validPod(id)) {
-    		throw new InvalidParameterValueException("A pod with ID: " + id + " does not exist.");
-    	}
-    	
-    	// If the gateway, CIDR, private IP range is being updated, check if the pod has allocated private IP addresses
-    	if (gateway!= null || cidr != null || startIp != null || endIp != null) {
-    		if (podHasAllocatedPrivateIPs(id)) {
-    			throw new CloudRuntimeException("The specified pod has allocated private IP addresses, so its CIDR and IP address range cannot be changed.");
-    		}
-    	}
-    	
-    	String oldPodName = pod.getName();
-    	
+        String oldPodName = pod.getName();
     	if (name == null) {
     		name = oldPodName;
     	}
@@ -586,56 +566,37 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	if (gateway == null) {
     		gateway = pod.getGateway();
     	}
-    	
-    	if (cidr == null) {
-    		cidr = pod.getCidrAddress() + "/" + pod.getCidrSize();
-    	}
-    	
+
+    	//Verify pod's attributes
+    	String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
     	boolean checkForDuplicates = !oldPodName.equals(name);
     	checkPodAttributes(id, name, pod.getDataCenterId(), gateway, cidr, startIp, endIp, checkForDuplicates);
-    	
-    	String cidrAddress = getCidrAddress(cidr);
-    	int cidrSize = getCidrSize(cidr);
-    	
-    	if (startIp != null && endIp == null) {
-    		endIp = NetUtils.getIpRangeEndIpFromCidr(cidrAddress, cidrSize);
-		}
 		
 		Transaction txn = Transaction.currentTxn();
 		try {
 			txn.start();
+			long zoneId = pod.getDataCenterId();
 			
-			String ipRange;
-			if (startIp != null) {
-				// remove old private ip address
-				_zoneDao.deletePrivateIpAddressByPod(pod.getId());
-				
-				// re-allocate private ip addresses for pod
-				_zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIp);
-				
-				ipRange = startIp + "-";
-				if (endIp != null) {
-					ipRange += endIp;
-				}
-			} else {
-				ipRange = pod.getDescription();
-			}
+			// remove old private ip address
+			_zoneDao.deletePrivateIpAddressByPod(pod.getId());
+			
+			// re-allocate private ip addresses for pod
+			_zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIp);
 			
 	    	pod.setName(name);
 	    	pod.setDataCenterId(zoneId);
-	    	pod.setGateway(gateway);
-	    	pod.setCidrAddress(cidrAddress);
-	    	pod.setCidrSize(cidrSize);
+	    	pod.setGateway(gateway);    	
+	    	pod.setCidrAddress(getCidrAddress(cidr));
+	    	pod.setCidrSize(getCidrSize(cidr));
+	    	
+	    	String ipRange = startIp + "-" + endIp;
 	    	pod.setDescription(ipRange);
 	    	
-	    	if (!_podDao.update(id, pod)) {
-	    		throw new CloudRuntimeException("Failed to edit pod. Please contact Cloud Support.");
-	    	}
+	    	_podDao.update(id, pod);
     	
 	    	txn.commit();
 		} catch(Exception e) {
 			s_logger.error("Unable to edit pod due to " + e.getMessage(), e);
-			txn.rollback();
 			throw new CloudRuntimeException("Failed to edit pod. Please contact Cloud Support.");
 		}
 		
@@ -651,75 +612,57 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String netmask = cmd.getNetmask();
         Long zoneId = cmd.getZoneId();
         String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
-
-        //verify input parameters
-        DataCenterVO zone = _zoneDao.findById(zoneId);
-        if (zone == null) {
-            throw new InvalidParameterValueException("Failed to create pod " + name + " -- unable to find zone " + zoneId);
-        }
-
-        if (endIp != null && startIp == null) {
-            throw new InvalidParameterValueException("Failed to create pod " + name + " -- if an end IP is specified, a start IP must be specified.");
-        }
-
         Long userId = UserContext.current().getCallerUserId();
-        if (userId == null) {
-            userId = Long.valueOf(User.UID_SYSTEM);
-        }
-
+        
         return createPod(userId.longValue(), name, zoneId, gateway, cidr, startIp, endIp);
     }
 
     @Override @DB
     public HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp)  {
-    	checkPodAttributes(-1, podName, zoneId, gateway, cidr, startIp, endIp, true);
-		
-		String cidrAddress = getCidrAddress(cidr);
-		int cidrSize = getCidrSize(cidr);
-		
-		if (startIp != null) {
-			if (endIp == null) {
-				endIp = NetUtils.getIpRangeEndIpFromCidr(cidrAddress, cidrSize);
-			}
-		}
+        
+        // Check if the zone is valid
+        if (!validZone(zoneId)) {
+            throw new InvalidParameterValueException("Please specify a valid zone.");
+        }
+    	
+        String cidrAddress = getCidrAddress(cidr);
+        int cidrSize = getCidrSize(cidr);
+        
+        //endIp is an optional parameter; if not specified - default it to the end ip of the pod's cidr
+        if (startIp != null) {
+            if (endIp == null) {
+                endIp = NetUtils.getIpRangeEndIpFromCidr(cidrAddress, cidrSize);
+            }
+        }
+            
+        //Validate new pod settings
+        checkPodAttributes(-1, podName, zoneId, gateway, cidr, startIp, endIp, true);
 		
 		// Create the new pod in the database
 		String ipRange;
 		if (startIp != null) {
-			ipRange = startIp + "-";
-			if (endIp != null) {
-				ipRange += endIp;
-			}
+			ipRange = startIp + "-" + endIp;
 		} else {
-			ipRange = "";
+			throw new InvalidParameterValueException("Start ip is required parameter");
 		}
 		
 		HostPodVO pod = new HostPodVO(podName, zoneId, gateway, cidrAddress, cidrSize, ipRange);
+		
 		Transaction txn = Transaction.currentTxn();
-		try {
-			txn.start();
-			
-			if (_podDao.persist(pod) == null) {
-				txn.rollback();
-				throw new CloudRuntimeException("Failed to create new pod. Please contact Cloud Support.");
-			}
-			
-			if (startIp != null) {
-				_zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIp);
-			}
-			
-			String[] linkLocalIpRanges = getLinkLocalIPRange();
-			if (linkLocalIpRanges != null) {
-				_zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
-			}
-
-			txn.commit();
-
-		} catch(Exception e) {
-			txn.rollback();
-			s_logger.error("Unable to create new pod due to " + e.getMessage(), e);
-			throw new CloudRuntimeException("Failed to create new pod. Please contact Cloud Support.");
+		txn.start();
+		
+		pod = _podDao.persist(pod);
+		
+		if (startIp != null) {
+			_zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIp);
 		}
+		
+		String[] linkLocalIpRanges = getLinkLocalIPRange();
+		if (linkLocalIpRanges != null) {
+			_zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
+		}
+
+		txn.commit();
 		
 		return pod;
     }

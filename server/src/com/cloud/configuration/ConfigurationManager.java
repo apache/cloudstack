@@ -19,11 +19,13 @@ package com.cloud.configuration;
 
 import java.util.List;
 
+import com.cloud.api.commands.UpdatePodCmd;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
+import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -181,5 +183,19 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
     
     boolean deleteAccountSpecificVirtualRanges(long accountId);
     
+    
+    /**
+     * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.
+     * @param id
+     * @param name
+     * @param startIp
+     * @param endIp
+     * @param gateway
+     * @param netmask
+     * @return Pod
+     * @throws  
+     * @throws  
+     */
+    Pod editPod(long id, String name, String startIp, String endIp, String gateway, String netmask);
     
 }
