@@ -531,37 +531,63 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override @DB
     public Pod editPod(long id, String name, String startIp, String endIp, String gateway, String netmask){
-
-    	//verify parameters
-    	HostPodVO pod = _podDao.findById(id);;
-    	if (pod == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find pod by id " + id);
-    	}
-
-    	// If the gateway, CIDR, private IP range is being updated, check if the pod has allocated private IP addresses
-        if (gateway!= null || startIp != null || endIp != null) {
-            if (podHasAllocatedPrivateIPs(id)) {
-                throw new CloudRuntimeException("The specified pod has allocated private IP addresses, so its CIDR and IP address range cannot be changed.");
-            }
+        
+        //verify parameters
+        HostPodVO pod = _podDao.findById(id);;
+        if (pod == null) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find pod by id " + id);
         }
+            
+        String[] existingPodIpRange = pod.getDescription().split("-"); 
+        String[] leftRangeToAdd = null;
+        String[] rightRangeToAdd = null;
+        boolean allowToDownsize = false;
+        
+    	// If the gateway, CIDR, private IP range is being changed, check if the pod has allocated private IP addresses
+    	if (podHasAllocatedPrivateIPs(id)) {
+    	    
+    	    if (netmask != null) {
+                long newCidr = NetUtils.getCidrSize(netmask);
+                long oldCidr = pod.getCidrSize();
+                
+                if (newCidr > oldCidr) {
+                    throw new CloudRuntimeException("The specified pod has allocated private IP addresses, so its IP address range can be extended only");
+                }
+            }
+    	    
+    	    if (startIp != null && !startIp.equals(existingPodIpRange[0])) {
+    	        if (NetUtils.ipRangesOverlap(startIp, null, existingPodIpRange[0], existingPodIpRange[1])) {
+    	            throw new CloudRuntimeException("The specified pod has allocated private IP addresses, so its IP address range can be extended only");
+    	        } else {
+    	            leftRangeToAdd = new String[2];
+    	            long endIpForUpdate = NetUtils.ip2Long(existingPodIpRange[0]) - 1;    
+    	            leftRangeToAdd[0] = startIp;
+    	            leftRangeToAdd[1] = NetUtils.long2Ip(endIpForUpdate);
+    	        }
+    	    }
+    	    
+    	    if (endIp != null && !endIp.equals(existingPodIpRange[1])) {
+    	        if (NetUtils.ipRangesOverlap(endIp, endIp, existingPodIpRange[0], existingPodIpRange[1])) {
+                    throw new CloudRuntimeException("The specified pod has allocated private IP addresses, so its IP address range can be extended only");
+                } else {
+                    rightRangeToAdd = new String[2];
+                    long startIpForUpdate = NetUtils.ip2Long(existingPodIpRange[1]) + 1;    
+                    rightRangeToAdd[0] = NetUtils.long2Ip(startIpForUpdate);
+                    rightRangeToAdd[1] = endIp;
+                }
+    	    }
+
+    	} else {
+    	    allowToDownsize = true;
+    	}
     	
     	if (gateway == null) {
     	    gateway = pod.getGateway();
     	} 
     	
-    	String[] podIpRange = pod.getDescription().split("-");
-        
-        if (startIp == null) {
-            startIp = podIpRange[0];
-        }
-        
-        if (endIp == null) {
-            endIp = podIpRange[1];
-        }
-    	
     	if (netmask == null) {
-    		netmask = NetUtils.getCidrNetmask(pod.getCidrSize());
-    	}
+            netmask = NetUtils.getCidrNetmask(pod.getCidrSize());
+        }
     	
         String oldPodName = pod.getName();
     	if (name == null) {
@@ -570,6 +596,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     	
     	if (gateway == null) {
     		gateway = pod.getGateway();
+    	}
+    	
+    	if (startIp == null) {
+    	    startIp = existingPodIpRange[0];
+    	}
+    	
+    	if (endIp == null) {
+    	    endIp = existingPodIpRange[1];
     	}
 
     	//Verify pod's attributes
@@ -582,18 +616,38 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 			txn.start();
 			long zoneId = pod.getDataCenterId();
 			
-			// remove old private ip address
-			_zoneDao.deletePrivateIpAddressByPod(pod.getId());
+			if (!allowToDownsize) {
+			        if (leftRangeToAdd != null) {
+			            _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), leftRangeToAdd[0], leftRangeToAdd[1]);
+			        }
+			    
+			        if (rightRangeToAdd != null) {
+			            _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), rightRangeToAdd[0], rightRangeToAdd[1]);
+			        }
+	                
+			} else {
+			    //delete the old range 
+			    _zoneDao.deletePrivateIpAddressByPod(pod.getId());
+			    
+			    //add the new one
+			    if (startIp == null) {
+	                startIp = existingPodIpRange[0];
+	            } 
+			    
+			    if (endIp == null) {
+	                endIp = existingPodIpRange[1];
+	            }
+			    
+			    _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIp);
+			}
 			
-			// re-allocate private ip addresses for pod
-			_zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIp);
 			
 	    	pod.setName(name);
 	    	pod.setDataCenterId(zoneId);
 	    	pod.setGateway(gateway);    	
 	    	pod.setCidrAddress(getCidrAddress(cidr));
 	    	pod.setCidrSize(getCidrSize(cidr));
-	    	
+	    	 
 	    	String ipRange = startIp + "-" + endIp;
 	    	pod.setDescription(ipRange);
 	    	
