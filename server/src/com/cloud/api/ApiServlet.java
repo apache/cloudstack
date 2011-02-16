@@ -75,6 +75,28 @@ public class ApiServlet extends HttpServlet {
 		}
     }
 
+    private void utf8Fixup(HttpServletRequest req, Map<String, Object[]> params) {
+        if(req.getQueryString() == null)
+            return;
+        
+        String[] paramsInQueryString = req.getQueryString().split("&");
+        if(paramsInQueryString != null) {
+            for (String param : paramsInQueryString) {
+                String[] paramTokens = param.split("=");
+                if(paramTokens != null && paramTokens.length == 2) {
+                    String name = param.split("=")[0];
+                    String value = param.split("=")[1];
+    
+                    try { name = URLDecoder.decode(name, "UTF-8"); } catch (UnsupportedEncodingException e) {}
+                    try { value = URLDecoder.decode(value, "UTF-8"); } catch (UnsupportedEncodingException e) {}                
+                    params.put(name, new String[] {value});
+                } else {
+                    s_logger.debug("Invalid paramemter in URL found. param: " + param);
+                }
+            }
+        }
+    }
+    
     @SuppressWarnings("unchecked")
     private void processRequest(HttpServletRequest req, HttpServletResponse resp) {
         StringBuffer auditTrailSb = new StringBuffer();
@@ -84,6 +106,15 @@ public class ApiServlet extends HttpServlet {
         String responseType = BaseCmd.RESPONSE_TYPE_XML;
         Map<String, Object[]> params = new HashMap<String, Object[]>();
         params.putAll(req.getParameterMap());
+
+        //
+        // For HTTP GET requests, it seems that HttpServletRequest.getParameterMap() actually tries
+        // to unwrap URL encoded content from ISO-9959-1.
+        //
+        // After failed in using setCharacterEncoding() to control it, end up with following hacking : for all GET requests,
+        // we will override it with our-own way of UTF-8 based URL decoding.
+        // 
+        utf8Fixup(req, params);
         
         try {
             HttpSession session = req.getSession(false);                                   
@@ -319,7 +350,6 @@ public class ApiServlet extends HttpServlet {
     // FIXME: rather than isError, we might was to pass in the status code to give more flexibility
     private void writeResponse(HttpServletResponse resp, String response, int responseCode, String responseType) {
         try {
-            // is text/plain sufficient for XML and JSON?
             if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
                 resp.setContentType("text/javascript; charset=UTF-8");
             } else {
@@ -327,7 +357,6 @@ public class ApiServlet extends HttpServlet {
             }
             
             resp.setStatus(responseCode);
-            // use getWriter() instead of manually manipulate encoding to have better localization support
 			resp.getWriter().print(response);
         } catch (IOException ioex) {
             if (s_logger.isTraceEnabled()) {
