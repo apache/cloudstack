@@ -903,6 +903,7 @@ CREATE TABLE  `cloud`.`domain` (
   `child_count` int(10) NOT NULL DEFAULT 0,
   `next_child_seq` bigint unsigned NOT NULL DEFAULT 1,
   `removed` datetime COMMENT 'date removed',
+  `state` char(32) NOT NULL default 'Active' COMMENT 'state of the domain',
   PRIMARY KEY  (`id`),
   UNIQUE (parent, name, removed)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

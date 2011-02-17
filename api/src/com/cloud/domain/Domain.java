@@ -13,6 +13,8 @@ import com.cloud.user.OwnedBy;
 public interface Domain extends OwnedBy {
     public static final long ROOT_DOMAIN = 1L;
     
+    enum State {Active, Inactive};
+    
     long getId();
 
     Long getParent();
@@ -34,4 +36,8 @@ public interface Domain extends OwnedBy {
     int getChildCount();
     
     long getNextChildSeq();
+
+    State getState();
+
+    void setState(State state);
 }

@@ -984,6 +984,15 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             if (account != null) {
                 throw new CloudRuntimeException("The specified account: "+account.getAccountName()+" already exists");
             }
+            
+            DomainVO domain = _domainDao.findById(domainId);
+            if(domain == null) {
+                throw new CloudRuntimeException("The domain "+domainId+" does not exist; unable to create account");
+            } else {
+                if(domain.getState().equals(Domain.State.Inactive)) {
+                    throw new CloudRuntimeException("The account cannot be created as domain "+domain.getName()+" is being deleted");
+                }
+            }
 
             if (!_userAccountDao.validateUsernameInDomain(username, domainId)) {
                 throw new CloudRuntimeException("The user " + username + " already exists in domain " + domainId);
@@ -1069,6 +1078,15 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     		accountId = account.getAccountId();
     	}
     	
+        DomainVO domain = _domainDao.findById(domainId);
+        if(domain == null) {
+            throw new CloudRuntimeException("The domain "+domainId+" does not exist; unable to create user");
+        } else {
+            if(domain.getState().equals(Domain.State.Inactive)) {
+                throw new CloudRuntimeException("The user cannot be created as domain "+domain.getName()+" is being deleted");
+            }
+        }
+        
         if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
             throw new CloudRuntimeException("The user " + userName + " already exists in domain " + domainId);
         }

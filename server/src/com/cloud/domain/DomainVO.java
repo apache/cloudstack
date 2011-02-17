@@ -60,7 +60,10 @@ public class DomainVO implements Domain {
 
     @Column(name="next_child_seq")
     private long nextChildSeq = 1L;
-
+    
+    @Column(name="state")
+    private Domain.State state;
+    
     public DomainVO() {}
 
     public DomainVO(String name, long owner, Long parentId) {
@@ -69,6 +72,7 @@ public class DomainVO implements Domain {
         this.accountId = owner;
         this.path ="";
         this.level = 0;
+        this.state = Domain.State.Active;
     }
 
     @Override
@@ -148,6 +152,16 @@ public class DomainVO implements Domain {
     
     public void setNextChildSeq(long seq) {
     	nextChildSeq = seq;
+    }
+    
+    @Override 
+    public Domain.State getState() {
+        return state;
+    }
+    
+    @Override
+    public void setState(Domain.State state) {
+        this.state = state;
     }
     
     @Override

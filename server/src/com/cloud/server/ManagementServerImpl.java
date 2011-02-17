@@ -159,6 +159,7 @@ import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
@@ -2939,6 +2940,9 @@ public class ManagementServerImpl implements ManagementServer {
         Long domainId = cmd.getId();
         Boolean cleanup = cmd.getCleanup();
 
+        //TODO
+        cleanup = true;
+        
         if ((domainId == DomainVO.ROOT_DOMAIN) || ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId))) {
             throw new PermissionDeniedException("Unable to delete domain " + domainId + ", permission denied.");
         }
@@ -2988,10 +2992,24 @@ public class ManagementServerImpl implements ManagementServer {
     private boolean cleanupDomain(Long domainId, Long ownerId) throws ConcurrentOperationException, ResourceUnavailableException{
         boolean success = true;
         {
+            DomainVO domainHandle = _domainDao.findById(domainId);
+            domainHandle.setState(Domain.State.Inactive);
+            _domainDao.update(domainId, domainHandle);
+            
             SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
             sc.addAnd("parent", SearchCriteria.Op.EQ, domainId);
             List<DomainVO> domains = _domainDao.search(sc, null);
 
+            SearchCriteria<DomainVO> sc1 = _domainDao.createSearchCriteria();
+            sc1.addAnd("path", SearchCriteria.Op.LIKE, "%"+domainHandle.getPath()+"%");
+            List<DomainVO> domainsToBeInactivated = _domainDao.search(sc1, null);
+            
+            //update all subdomains to inactive so no accounts can be created
+            for(DomainVO domain : domainsToBeInactivated) {
+                domain.setState(Domain.State.Inactive);
+                _domainDao.update(domain.getId(), domain);
+            }
+            
             // cleanup sub-domains first
             for (DomainVO domain : domains) {
                 success = (success && cleanupDomain(domain.getId(), domain.getAccountId()));
