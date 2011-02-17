@@ -1206,35 +1206,6 @@ function showInstancesTab(p_domainId, p_account) {
 		instanceTemplate.find("#vm_network_stat").html(statHtml);		
 	}
 			
-	vmPopup.find("#wizard_service_offering").bind("click", function(event){		
-	    event.stopPropagation(); //do not use event.preventDetault(), otherwise, radio button won't be checked.	    
-	    var serviceOfferingId = vmPopup.find("#wizard_service_offering input[name=service]:checked").val();		    
-	    if(getDirectAttachNetworkGroupsEnabled() != "true") {
-	        vmPopup.find("#wizard_network_groups_container").hide();
-	    }
-	    else {    
-	        $.ajax({
-			    data: "command=listServiceOfferings&pagesize=500&response=json&id="+serviceOfferingId,
-			    dataType: "json",				
-			    success: function(json) {
-				    var offerings = json.listserviceofferingsresponse.serviceoffering;					
-				    if (offerings != null && offerings.length > 0) {
-				        if(offerings[0].usevirtualnetwork =="true") { //virtual network
-				            vmPopup.find("#wizard_network_groups_container").hide();	
-				        }
-				        else { //direct attached					            
-				            if(vmPopup.find("#wizard_network_groups").find("option").length == 0)
-				                vmPopup.find("#wizard_network_groups_container").hide();	
-				            else 
-				                vmPopup.find("#wizard_network_groups_container").show();	
-				        }
-					        
-				    }			
-			    }				
-		    });	
-		}   
-	});
-	
 	// Add New Wizard Setup
 	var currentStepInVmPopup;
 	$(".add_newvmbutton").bind("click", function(event) {			    	
@@ -1257,87 +1228,7 @@ function showInstancesTab(p_domainId, p_account) {
 			}
 		});
 		
-		$.ajax({					
-			data: "command=listNetworkGroups"+"&domainid="+g_domainid+"&account="+g_account+"&response=json",		
-			dataType: "json",
-			success: function(json) {					
-				var items = json.listnetworkgroupsresponse.networkgroup;					
-				var networkGroupSelect = vmPopup.find("#wizard_network_groups").empty();	
-				if (items != null && items.length > 0) {
-					for (var i = 0; i < items.length; i++) {
-					    if(items[i].name != "default")						
-						    networkGroupSelect.append("<option value='" + fromdb(items[i].name) + "'>" + fromdb(items[i].name) + "</option>"); 
-					}
-				}					    
-			}
-		});					
-		
-	    $.ajax({
-			data: "command=listServiceOfferings&pagesize=500&response=json",
-			dataType: "json",
-			async: false,
-			success: function(json) {
-				var offerings = json.listserviceofferingsresponse.serviceoffering;
-				$("#wizard_service_offering").empty();	
-
-				var first = true;
-				if (offerings != null && offerings.length > 0) {						    
-					for (var i = 0; i < offerings.length; i++) {
-						var checked = "checked";
-						if (first == false) checked = "";
-						var listItem = $("<li><input class='radio' type='radio' name='service' id='service' value='"+offerings[i].id+"'" + checked + "/><label style='width:500px;font-size:11px;' for='service'>"+fromdb(offerings[i].displaytext)+"</label></li>");
-						$("#wizard_service_offering").append(listItem);													
-						first = false;
-					}
-					//Safari and Chrome are not smart enough to make checkbox checked if html markup is appended by JQuery.append(). So, the following 2 lines are added.		
-				    var html_all = $("#wizard_service_offering").html();        
-                    $("#wizard_service_offering").html(html_all); 
-				}
-				
-				$.ajax({
-					data: "command=listDiskOfferings&pagesize=500&domainid=1&response=json",
-					dataType: "json",
-					async: false,
-					success: function(json) {
-						var offerings = json.listdiskofferingsresponse.diskoffering;
-						$("#wizard_root_disk_offering, #wizard_data_disk_offering").empty();
-													
-					    var html = 
-						"<li>"
-							+"<input class='radio' type='radio' name='datadisk' id='datadisk' value='' checked/>"
-							+"<label style='width:500px;font-size:11px;' for='disk'>No disk offering</label>"
-					   +"</li>";
-						$("#wizard_data_disk_offering").append(html);							
-													
-						if (offerings != null && offerings.length > 0) {								    
-							for (var i = 0; i < offerings.length; i++) {	
-								var html = 
-									"<li>"
-										+"<input class='radio' type='radio' name='rootdisk' id='rootdisk' value='"+offerings[i].id+"'" + ((i==0)?"checked":"") + "/>"
-										+"<label style='width:500px;font-size:11px;' for='disk'>"+fromdb(offerings[i].displaytext)+"</label>"
-								   +"</li>";
-								$("#wizard_root_disk_offering").append(html);
-							
-								var html2 = 
-								"<li>"
-									+"<input class='radio' type='radio' name='datadisk' id='datadisk' value='"+offerings[i].id+"'" + "/>"
-									+"<label style='width:500px;font-size:11px;' for='disk'>"+fromdb(offerings[i].displaytext)+"</label>"
-							   +"</li>";
-								$("#wizard_data_disk_offering").append(html2);																		
-							}
-							//Safari and Chrome are not smart enough to make checkbox checked if html markup is appended by JQuery.append(). So, the following 2 lines are added.		
-				            var html_all = $("#wizard_root_disk_offering").html();        
-                            $("#wizard_root_disk_offering").html(html_all); 
-				            
-				            var html_all2 = $("#wizard_data_disk_offering").html();        
-                            $("#wizard_data_disk_offering").html(html_all2); 
-						}
-					}
-				});
-			}
-		});		
-					
-		vmPopup.find("#wizard_service_offering").click();						          
+								          
 	});
 	
 	function vmWizardClose() {			
@@ -1586,7 +1477,93 @@ function showInstancesTab(p_domainId, p_account) {
 		    if(thisPopup.find("#step1 #template_container .rev_wiztemplistbox_selected").length == 0) {			        
 		        thisPopup.find("#step1 #wiz_message").show();
 		        return false;
-		    }
+		    } else {
+				// Setup network groups
+				if(getDirectAttachNetworkGroupsEnabled() == "true") {
+					$.ajax({					
+						data: "command=listNetworkGroups"+"&domainid="+g_domainid+"&account="+g_account+"&response=json",		
+						dataType: "json",
+						success: function(json) {					
+							var items = json.listnetworkgroupsresponse.networkgroup;					
+							var networkGroupSelect = vmPopup.find("#wizard_network_groups").empty();	
+							if (items != null && items.length > 0) {
+								for (var i = 0; i < items.length; i++) {
+									if(items[i].name != "default")						
+										networkGroupSelect.append("<option value='" + fromdb(items[i].name) + "'>" + fromdb(items[i].name) + "</option>"); 
+								}
+							}
+							vmPopup.find("#wizard_network_groups_container").show();
+						}
+					});		
+				}
+				
+				// Setup service offerings
+				var zoneId = vmPopup.find("#wizard_zone").val();
+				$.ajax({
+					data: "command=listServiceOfferings&zoneid="+zoneId+"&pagesize=500&response=json",
+					dataType: "json",
+					async: false,
+					success: function(json) {
+						var offerings = json.listserviceofferingsresponse.serviceoffering;
+						$("#wizard_service_offering").empty();	
+
+						var first = true;
+						if (offerings != null && offerings.length > 0) {						    
+							for (var i = 0; i < offerings.length; i++) {
+								var checked = "checked";
+								if (first == false) checked = "";
+								var listItem = $("<li><input class='radio' type='radio' name='service' id='service' value='"+offerings[i].id+"'" + checked + "/><label style='width:500px;font-size:11px;' for='service'>"+fromdb(offerings[i].displaytext)+"</label></li>");
+								$("#wizard_service_offering").append(listItem);													
+								first = false;
+							}
+							//Safari and Chrome are not smart enough to make checkbox checked if html markup is appended by JQuery.append(). So, the following 2 lines are added.		
+							var html_all = $("#wizard_service_offering").html();        
+							$("#wizard_service_offering").html(html_all); 
+						}
+						
+						$.ajax({
+							data: "command=listDiskOfferings&pagesize=500&domainid=1&response=json",
+							dataType: "json",
+							async: false,
+							success: function(json) {
+								var offerings = json.listdiskofferingsresponse.diskoffering;
+								$("#wizard_root_disk_offering, #wizard_data_disk_offering").empty();
+															
+								var html = 
+								"<li>"
+									+"<input class='radio' type='radio' name='datadisk' id='datadisk' value='' checked/>"
+									+"<label style='width:500px;font-size:11px;' for='disk'>No disk offering</label>"
+							   +"</li>";
+								$("#wizard_data_disk_offering").append(html);							
+															
+								if (offerings != null && offerings.length > 0) {								    
+									for (var i = 0; i < offerings.length; i++) {	
+										var html = 
+											"<li>"
+												+"<input class='radio' type='radio' name='rootdisk' id='rootdisk' value='"+offerings[i].id+"'" + ((i==0)?"checked":"") + "/>"
+												+"<label style='width:500px;font-size:11px;' for='disk'>"+fromdb(offerings[i].displaytext)+"</label>"
+										   +"</li>";
+										$("#wizard_root_disk_offering").append(html);
+									
+										var html2 = 
+										"<li>"
+											+"<input class='radio' type='radio' name='datadisk' id='datadisk' value='"+offerings[i].id+"'" + "/>"
+											+"<label style='width:500px;font-size:11px;' for='disk'>"+fromdb(offerings[i].displaytext)+"</label>"
+									   +"</li>";
+										$("#wizard_data_disk_offering").append(html2);																		
+									}
+									//Safari and Chrome are not smart enough to make checkbox checked if html markup is appended by JQuery.append(). So, the following 2 lines are added.		
+									var html_all = $("#wizard_root_disk_offering").html();        
+									$("#wizard_root_disk_offering").html(html_all); 
+									
+									var html_all2 = $("#wizard_data_disk_offering").html();        
+									$("#wizard_data_disk_offering").html(html_all2); 
+								}
+							}
+						});
+					}
+				});		
+			}
 		}			
 		
 		if (currentStepInVmPopup == 2) {
