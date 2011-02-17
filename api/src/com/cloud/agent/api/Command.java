@@ -17,6 +17,9 @@
  */
 package com.cloud.agent.api;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 /**
  * Command is a command that is sent between the management agent and management
@@ -29,6 +32,9 @@ package com.cloud.agent.api;
  */
 public abstract class Command {
 
+	 // allow command to carry over hypervisor or other environment related context info 
+    protected Map<String, String> contextMap = new HashMap<String, String>();
+	
     protected Command() {
     }
     
@@ -41,5 +47,13 @@ public abstract class Command {
     
     public boolean logTrace() {
         return false;
+    }
+    
+    public void setContextParam(String name, String value) {
+        contextMap.put(name, value);
+    }
+
+    public String getContextParam(String name) {
+        return contextMap.get(name);
     }
 }
