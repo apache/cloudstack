@@ -95,9 +95,9 @@ DROP TABLE IF EXISTS `cloud`.`version`;
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `version` char(40) NOT NULL UNIQUE COMMENT 'version',
-  `updated` datetime NOT NULL COMMENT 'Date this version table was updated`,
+  `updated` datetime NOT NULL COMMENT 'Date this version table was updated',
   `step` char(32) NOT NULL COMMENT 'Step in the upgrade to this version',
-  `dump_path` char(255) NOT NULL COMMENT `path to the dump of the database before upgrade`,
+  `dump_path` char(255) NOT NULL COMMENT 'path to the dump of the database before upgrade',
   PRIMARY KEY (`id`),
   INDEX `i_version__version`(`version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
