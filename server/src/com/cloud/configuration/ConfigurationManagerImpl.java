@@ -2434,7 +2434,20 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));      
         tags = cleanupTags(tags);
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, false, specifyVlan, networkRate, multicastRate, maxConnections, false, availability, false, false, false, false, false, false, false);
+        
+        boolean firewallService = false;
+        boolean lbService = false;
+        boolean vpnService = false;
+        boolean gatewayService = false;
+        
+        if (trafficType == TrafficType.Guest) {
+            firewallService = true;
+            lbService = true;
+            vpnService = true;
+            gatewayService = true;
+        }
+        
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, false, specifyVlan, networkRate, multicastRate, maxConnections, false, availability, true, true, true, gatewayService, firewallService, lbService, vpnService);
         
         if ((offering = _networkOfferingDao.persist(offering)) != null) {
             return offering;

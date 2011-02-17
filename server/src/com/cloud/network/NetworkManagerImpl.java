@@ -677,15 +677,50 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, TrafficType.Storage);
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemStorageNetwork, storageNetworkOffering);
-        NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemGuestNetwork, TrafficType.Guest);
+        NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(
+                NetworkOffering.SystemGuestNetwork, 
+                "System Offering for System-Guest-Network", 
+                TrafficType.Guest, 
+                true, 
+                false, 
+                null, 
+                null, 
+                null, 
+                true, 
+                Availability.Required, 
+                //services - all true except for firewall/lb/vpn and gateway services
+                true, true, true, false, false,false, false);
         guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemGuestNetwork, guestNetworkOffering);
 
-        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, false, false, null, null, null, true, Availability.Required, false, false, false, false,
-                false, false, false);
+        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(
+                NetworkOffering.DefaultVirtualizedNetworkOffering, 
+                "Virtual Vlan", 
+                TrafficType.Guest, 
+                false, 
+                false, 
+                null, 
+                null, 
+                null, 
+                true, 
+                Availability.Required, 
+                //services
+                true, true, true, true,true, true, true);
+        
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
-        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Public, false, false, null, null, null, true, Availability.Required, false, false, false, false, false,
-                false, false);
+        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(
+                NetworkOffering.DefaultDirectNetworkOffering, 
+                "Direct", 
+                TrafficType.Public, 
+                false, 
+                false, 
+                null, 
+                null, 
+                null, 
+                true, 
+                Availability.Required, 
+                //services - all true except for firewall/lb/vpn and gateway services
+                true, true, true, false, false,false, false);
         defaultGuestDirectNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
 
         AccountsUsingNetworkSearch = _accountDao.createSearchBuilder();
@@ -2009,7 +2044,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         providers.put(Service.UserData, dc.getUserDataProvider());
         providers.put(Service.Dhcp, dc.getDhcpProvider());
 
-        Map<Service, Map<Capability, String>> networkCapabilities = new HashMap<Service, Map<Capability, String>>();
+        Map<Service, Map<Capability, String>> zoneCapabilities = new HashMap<Service, Map<Capability, String>>();
 
         for (NetworkElement element : _networkElements) {
             if (providers.isEmpty()) {
@@ -2031,7 +2066,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                                         assert (service.containsCapability(capability)) : "Capability " + capability.getName() + " is not supported by the service " + service.getName();
                                     }
                                 }
-                                networkCapabilities.put(service, capabilities);
+                                zoneCapabilities.put(service, capabilities);
                                 it.remove();
                             }
                         }
@@ -2039,6 +2074,26 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
             }
         }
+        return zoneCapabilities;
+    }
+    
+    
+    @Override
+    public Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId) {
+        Network network = getNetwork(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Unable to find network by id " + networkId);
+        }
+        
+        Map<Service, Map<Capability, String>> zoneCapabilities = getZoneCapabilities(network.getDataCenterId());
+        Map<Service, Map<Capability, String>> networkCapabilities = new HashMap<Service, Map<Capability, String>>();
+        
+        for (Service service : zoneCapabilities.keySet()) {
+            if (isServiceSupported(networkId, service)) {
+                networkCapabilities.put(service, zoneCapabilities.get(service));
+            }
+        }
+        
         return networkCapabilities;
     }
     
@@ -2238,5 +2293,28 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return (zone.getGatewayProvider().equals(Network.Provider.JuniperSRX.getName()) && zone.getFirewallProvider().equals(Network.Provider.JuniperSRX.getName()) && zone.getLoadBalancerProvider().equals(
                 Network.Provider.F5BigIp.getName()));
 
+    }
+    
+    @Override
+    public boolean isServiceSupported(long networkId, Network.Service service) {
+        Network network = getNetwork(networkId);
+        NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+        if (service == Service.Lb) {
+            return offering.isLbService();
+        } else if (service == Service.Dhcp) {
+            return offering.isDhcpService();
+        } else if (service == Service.Dns) {
+            return offering.isDnsService();
+        } else if (service == Service.Firewall) {
+            return offering.isFirewallService();
+        } else if (service == Service.UserData) {
+            return offering.isUserdataService();
+        } else if (service == Service.Vpn) {
+            return offering.isVpnService();
+        } else if (service == Service.Gateway) {
+            return offering.isGatewayService();
+        }
+        
+        return false;
     }
 }

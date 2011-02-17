@@ -49,6 +49,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVMMapVO;
 import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -355,11 +356,19 @@ public class LoadBalancingRulesManagerImpl implements LoadBalancingRulesManager,
             throw new InvalidParameterValueException("Invalid algorithm: " + lb.getAlgorithm());
         }
         
-        Long networkId = lb.getNetworkId();
-        if (networkId == -1 ) {
-            networkId = ipAddr.getAssociatedWithNetworkId();
+        Long networkId = ipAddr.getAssociatedWithNetworkId();
+        if (networkId == null) {
+            throw new InvalidParameterValueException("Unable to create load balancer rule ; ip id=" + ipId + " is not associated with any network");
+
         }
+        
         _accountMgr.checkAccess(caller.getCaller(), ipAddr);
+        
+        //verify that lb service is supported by the network
+        if (!_networkMgr.isServiceSupported(networkId, Service.Lb)) {
+            throw new InvalidParameterValueException("LB service is not supported in network id=" + networkId);
+        }
+        
         LoadBalancerVO newRule = new LoadBalancerVO(lb.getXid(), lb.getName(), lb.getDescription(), lb.getSourceIpAddressId(), lb.getSourcePortEnd(),
                 lb.getDefaultPortStart(), lb.getAlgorithm(), networkId, ipAddr.getAccountId(), ipAddr.getDomainId());
 

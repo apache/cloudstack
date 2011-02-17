@@ -179,6 +179,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     public PortForwardingRule createPortForwardingRule(PortForwardingRule rule, Long vmId) throws NetworkRuleConflictException {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
+        Long networkId = null;
+        Long accountId = null;
+        Long domainId = null;
         
         Long ipAddrId = rule.getSourceIpAddressId();
         
@@ -189,42 +192,31 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("Unable to create port forwarding rule; ip id=" + ipAddrId + " doesn't exist in the system");
         } else if (ipAddress.isOneToOneNat()) {
             throw new InvalidParameterValueException("Unable to create port forwarding rule; ip id=" + ipAddrId + " has static nat enabled");
-        }else {
-            _accountMgr.checkAccess(caller, ipAddress);
-        }
-        
-        Ip dstIp = rule.getDestinationIpAddress();
-        long networkId;
-        UserVmVO vm = null;
-        Network network = null;
-        if (vmId != null) {
-            // validate user VM exists
-            vm = _vmDao.findById(vmId);
-            if (vm == null) {
-                throw new InvalidParameterValueException("Unable to create port forwarding rule on address " + ipAddress + ", invalid virtual machine id specified (" + vmId + ").");
-            } else {
-                checkRuleAndUserVm(rule, vm, caller);
-            }
-            
-            Pair<Network, Ip> guestNic = getUserVmGuestIpAddress(vm, false);
-            dstIp = guestNic.second();
-            network = guestNic.first();
-            
-            if (network == null) {
-                throw new CloudRuntimeException("Unable to find ip address to map to in vm id=" + vmId);
-            }
         } else {
-            network = _networkMgr.getNetwork(rule.getNetworkId());
-            if (network == null) {
-                throw new InvalidParameterValueException("Unable to get the network " + rule.getNetworkId());
-            }
-        }
+            _accountMgr.checkAccess(caller, ipAddress);
+            
+            networkId = ipAddress.getAssociatedWithNetworkId();
+            if (networkId == null) {
+                throw new InvalidParameterValueException("Unable to create port forwarding rule ; ip id=" + ipAddrId + " is not associated with any network");
 
-        _accountMgr.checkAccess(caller, network);
+            }
+            //get account/domain info from the ip address (can't get it from the network as the network can be shared between accounts)
+            accountId = ipAddress.getAccountId();
+            domainId = ipAddress.getDomainId();
+        }        
         
-        networkId = network.getId();
-        long accountId = network.getAccountId();
-        long domainId = network.getDomainId();
+        //start port can't be bigger than end port
+        if (rule.getDestinationPortStart() > rule.getDestinationPortEnd() || rule.getSourcePortStart() > rule.getSourcePortEnd()) {
+            throw new InvalidParameterValueException("Start port can't be bigger than end port");
+        }
+        
+        Network network = _networkMgr.getNetwork(networkId);
+        assert network != null : "Can't create port forwarding rule as network associated with public ip address is null...how is it possible?";
+        
+        //verify that firewall service is supported by the network
+        if (!_networkMgr.isServiceSupported(networkId, Service.Firewall)) {
+            throw new InvalidParameterValueException("Firewall service is not supported in network id=" + networkId);
+        }
     
         //Verify that the network guru supports the protocol specified
         Map<Network.Capability, String> firewallCapability = _networkMgr.getServiceCapability(network.getDataCenterId(), Service.Firewall);
@@ -233,9 +225,21 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("Protocol " + rule.getProtocol() + " is not supported in zone " + network.getDataCenterId());
         }
         
-        //start port can't be bigger than end port
-        if (rule.getDestinationPortStart() > rule.getDestinationPortEnd() || rule.getSourcePortStart() > rule.getSourcePortEnd()) {
-            throw new InvalidParameterValueException("Start port can't be bigger than end port");
+        // validate user VM exists
+        UserVm vm = _vmDao.findById(vmId);
+        if (vm == null) {
+            throw new InvalidParameterValueException("Unable to create port forwarding rule on address " + ipAddress + ", invalid virtual machine id specified (" + vmId + ").");
+        } else {
+            checkRuleAndUserVm(rule, vm, caller); 
+        }
+        
+        //Verify that vm has nic in the network
+        Ip dstIp = rule.getDestinationIpAddress();
+        Nic guestNic = _networkMgr.getNicInNetwork(vmId, networkId);
+        if (guestNic == null || guestNic.getIp4Address() == null) {
+            throw new InvalidParameterValueException("Vm doesn't belong to network associated with ipAddress");
+        } else {
+            dstIp = new Ip(guestNic.getIp4Address());
         }
         
         PortForwardingRuleVO newRule = 
@@ -270,12 +274,12 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
     }
     
-    
-    
     @Override @ActionEvent (eventType=EventTypes.EVENT_NET_RULE_ADD, eventDescription="creating static nat rule", create=true)
     public StaticNatRule createStaticNatRule(StaticNatRule rule) throws NetworkRuleConflictException {
-        UserContext ctx = UserContext.current();
-        Account caller = ctx.getCaller();
+        Account caller = UserContext.current().getCaller();
+        Long networkId = null;
+        Long accountId = null;
+        Long domainId = null;
         
         Long ipAddrId = rule.getSourceIpAddressId();
         
@@ -286,39 +290,49 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("Unable to create static nat rule; ip id=" + ipAddrId + " doesn't exist in the system");
         } else if (ipAddress.isSourceNat() || !ipAddress.isOneToOneNat() || ipAddress.getAssociatedWithVmId() == null) {
             throw new NetworkRuleConflictException("Can't do static nat on ip address: " + ipAddress.getAddress());
-        }else {
+        } else {
             _accountMgr.checkAccess(caller, ipAddress);
+            
+            networkId = ipAddress.getAssociatedWithNetworkId();
+            if (networkId == null) {
+                throw new InvalidParameterValueException("Unable to create static nat rule ; ip id=" + ipAddrId + " is not associated with any network");
+
+            }
+            //get account/domain info from the ip address (can't get it from the network as the network can be shared between accounts)
+            accountId = ipAddress.getAccountId();
+            domainId = ipAddress.getDomainId();
         }
         
-        //Get vm information and verify it
-        long vmId = ipAddress.getAssociatedWithVmId();
-         
-        // validate user VM exists
-        UserVmVO vm = _vmDao.findById(vmId);
+        Network network = _networkMgr.getNetwork(networkId);
+        assert network != null : "Can't create static nat rule as network associated with public ip address is null...how is it possible?";
+        
+        //Validate user vm information
+        UserVmVO vm = _vmDao.findById(ipAddress.getAssociatedWithVmId());
         if (vm == null) {
-            throw new InvalidParameterValueException("Unable to create ip forwarding rule on address " + ipAddress + ", invalid virtual machine id specified (" + vmId + ").");
+            throw new InvalidParameterValueException("Unable to create ip forwarding rule on address " + ipAddress + ", invalid virtual machine id specified (" + vm.getId() + ").");
         } else {
             checkRuleAndUserVm(rule, vm, caller);
         }
         
-        Pair<Network, Ip> guestNic = getUserVmGuestIpAddress(vm, false);
-        Ip dstIp = guestNic.second();
-        Network guestNetwork = guestNic.first();
-        
-        if (guestNetwork == null) {
-            throw new CloudRuntimeException("Unable to find ip address to map to in vm id=" + vmId);
+        //Verify that vm has nic in the network
+        String dstIp = rule.getDestIpAddress();
+        Nic guestNic = _networkMgr.getNicInNetwork(vm.getId(), networkId);
+        if (guestNic == null || guestNic.getIp4Address() == null) {
+            throw new InvalidParameterValueException("Vm doesn't belong to network associated with ipAddress");
+        } else {
+            dstIp = guestNic.getIp4Address();
         }
-       
-        _accountMgr.checkAccess(caller, guestNetwork);
         
-        long accountId = guestNetwork.getAccountId();
-        long domainId = guestNetwork.getDomainId();
+        //verify that firewall service is supported by the network
+        if (!_networkMgr.isServiceSupported(networkId, Service.Firewall)) {
+            throw new InvalidParameterValueException("Firewall service is not supported in network id=" + networkId);
+        }
     
         //Verify that the network guru supports the protocol specified
-        Map<Network.Capability, String> firewallCapability = _networkMgr.getServiceCapability(guestNetwork.getDataCenterId(), Service.Firewall);
+        Map<Network.Capability, String> firewallCapability = _networkMgr.getServiceCapability(network.getDataCenterId(), Service.Firewall);
         String supportedProtocols = firewallCapability.get(Capability.SupportedProtocols).toLowerCase();
         if (!supportedProtocols.contains(rule.getProtocol().toLowerCase())) {
-            throw new InvalidParameterValueException("Protocol " + rule.getProtocol() + " is not supported in zone " + guestNetwork.getDataCenterId());
+            throw new InvalidParameterValueException("Protocol " + rule.getProtocol() + " is not supported in zone " + network.getDataCenterId());
         }
         
         //start port can't be bigger than end port
@@ -332,7 +346,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                     rule.getSourcePortStart(),
                     rule.getSourcePortEnd(),
                     rule.getProtocol().toLowerCase(),
-                    guestNetwork.getId(),
+                    networkId,
                     accountId,
                     domainId, 
                     rule.getPurpose());
@@ -347,7 +361,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), 0, newRule.getId(), null);
             _usageEventDao.persist(usageEvent);
             
-            StaticNatRule staticNatRule = new StaticNatRuleImpl(newRule, dstIp.addr());
+            StaticNatRule staticNatRule = new StaticNatRuleImpl(newRule, dstIp);
             
             return staticNatRule;
         } catch (Exception e) {
@@ -362,21 +376,38 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     
     @Override
     public boolean enableOneToOneNat(long ipId, long vmId) throws NetworkRuleConflictException{
-        IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
+        
         Account caller = UserContext.current().getCaller();
         
-        UserVmVO vm = null;
-        vm = _vmDao.findById(vmId);
+        //Verify input parameters
+        UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
-            throw new InvalidParameterValueException("Can't enable static nat for the address " + ipAddress + ", invalid virtual machine id specified (" + vmId + ").");
+            throw new InvalidParameterValueException("Can't enable static nat for the address id=" + ipId + ", invalid virtual machine id specified (" + vmId + ").");
         }
         
+        IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
+        if (ipAddress == null) {
+            throw new InvalidParameterValueException("Unable to find ip address by id " + ipId);
+        } 
+        
+        //Check permissions
         checkIpAndUserVm(ipAddress, vm, caller);
         
+        //Verify that the ip is associated with the network and firewallService is supported for the network
+        Long networkId = ipAddress.getAssociatedWithNetworkId();
+        if (networkId == null) {
+            throw new InvalidParameterValueException("Unable to enable static nat for the ipAddress id=" + ipId + " as ip is not associated with any network");
+        }
+
+        if (!_networkMgr.isServiceSupported(networkId, Service.Firewall)) {
+            throw new InvalidParameterValueException("Unable to create static nat rule; Firewall service is not supported in network id=" + networkId);
+        }  
+        
+        //Verify ip address parameter    
         if (ipAddress.isSourceNat()) {
             throw new InvalidParameterValueException("Can't enable static, ip address id=" + ipId + " is a sourceNat ip address");
-        }
-       
+        } 
+        
         if (!ipAddress.isOneToOneNat()) {
             List<FirewallRuleVO> rules = _firewallDao.listByIpAndNotRevoked(ipId, Purpose.PortForwarding);
             if (rules != null && !rules.isEmpty()) {
@@ -394,7 +425,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         if (!ips.isEmpty()) {
             throw new InvalidParameterValueException("Failed to enable static nat for the ip address id=" + ipId + " as vm id=" + " is already associated with ip id=" + ips.get(0).getId());
         }
-        
+
         ipAddress.setOneToOneNat(true);
         ipAddress.setAssociatedWithVmId(vmId);
         return _ipAddressDao.update(ipAddress.getId(), ipAddress);
@@ -448,8 +479,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     
     private boolean revokePortForwardingRuleInternal(long ruleId, Account caller, long userId, boolean apply) {  
         PortForwardingRuleVO rule = _forwardingDao.findById(ruleId);
-        
-        long ownerId = rule.getAccountId();
           
         revokeRule(rule, caller, userId);
         
@@ -461,7 +490,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             success = true;
         }
         if(success){
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_DELETE, ownerId, 0, ruleId, null);
+            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_DELETE, rule.getAccountId(), 0, ruleId, null);
             _usageEventDao.persist(usageEvent);
         }
         return success;
@@ -649,17 +678,21 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             
             UserVmVO vm = _vmDao.findById(sourceIp.getAssociatedWithVmId());
             
-            Pair<Network, Ip> guestNic = getUserVmGuestIpAddress(vm, true);
-            Ip dstIp = guestNic.second();
-            Network network = guestNic.first();
+            Long networkId = sourceIp.getAssociatedWithNetworkId();
+            if (networkId == null) {
+                throw new CloudRuntimeException("Ip address is not associated with any network");
+            } 
+            
+            Network network = _networkMgr.getNetwork(networkId);
             
             if (network == null) {
                 throw new CloudRuntimeException("Unable to find ip address to map to in vm id=" + vm.getId());
             }
             
+            Nic guestNic = _networkMgr.getNicInNetwork(vm.getId(), networkId); 
             FirewallRuleVO ruleVO = _firewallDao.findById(rule.getId());
             
-            staticNatRules.add(new StaticNatRuleImpl(ruleVO, dstIp.addr()));
+            staticNatRules.add(new StaticNatRuleImpl(ruleVO, guestNic.getIp4Address()));
         }
 
         if (caller != null) {
@@ -722,15 +755,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             
             UserVmVO vm = _vmDao.findById(sourceIp.getAssociatedWithVmId());
             
-            Pair<Network, Ip> guestNic = getUserVmGuestIpAddress(vm, true);
-            Ip dstIp = guestNic.second();
-            Network network = guestNic.first();
+            Nic guestNic = _networkMgr.getNicInNetwork(vm.getId(), networkId);
+            String dstIp = guestNic.getIp4Address();
             
-            if (network == null) {
-                throw new CloudRuntimeException("Unable to find ip address to map to in vm id=" + vm.getId());
-            }
-            
-            staticNatRules.add(new StaticNatRuleImpl(rule, dstIp.addr()));
+            staticNatRules.add(new StaticNatRuleImpl(rule, dstIp));
         } 
         
         try {
@@ -1055,20 +1083,13 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
         FirewallRuleVO ruleVO = _firewallDao.findById(rule.getId());
         
-        if (ip == null || !ip.isOneToOneNat()) {
+        if (ip == null || !ip.isOneToOneNat() || ip.getAssociatedWithVmId() == null) {
             throw new InvalidParameterValueException("Source ip address of the rule id=" + rule.getId() + " is not static nat enabled");
         }
         
-        UserVm vm = _vmDao.findById(ip.getAssociatedWithVmId());
+        Nic guestNic = _networkMgr.getNicInNetwork(ip.getAssociatedWithVmId(), rule.getNetworkId());
         
-        if (vm == null) {
-            throw new InvalidParameterValueException("Static nat rule id=" + rule.getId() + " doesn't have vm assocaited with it");
-        }
-       
-        Pair<Network, Ip> guestNic = getUserVmGuestIpAddress(vm, false);
-        Ip dstIp = guestNic.second();
-        
-        return new StaticNatRuleImpl(ruleVO, dstIp.addr());
+        return new StaticNatRuleImpl(ruleVO, guestNic.getIp4Address());
     }
      
 }

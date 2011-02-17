@@ -293,7 +293,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.dhcpService = dhcpService;
     }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, boolean lbService, boolean gatewayService, boolean dhcpService, boolean firewallService, boolean dnsService, boolean userDataService, boolean vpnService) {
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, boolean dhcpService, boolean dnsService, boolean userDataService, boolean gatewayService, boolean firewallService, boolean lbService, boolean vpnService) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
@@ -304,13 +304,13 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.specifyVlan = specifyVlan;
         this.isDefault = isDefault;
         this.availability = availability;
-        this.gatewayService = gatewayService;
-        this.lbService = lbService;
         this.dnsService = dnsService;
         this.dhcpService = dhcpService;
+        this.userdataService = userDataService;  
+        this.gatewayService = gatewayService;
         this.firewallService = firewallService;
-        this.vpnService = vpnService;
-        this.userdataService = userDataService;
+        this.lbService = lbService;
+        this.vpnService = vpnService;   
     }
     
     public NetworkOfferingVO(ServiceOfferingVO offering) {

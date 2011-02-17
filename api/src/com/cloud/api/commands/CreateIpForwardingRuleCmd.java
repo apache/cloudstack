@@ -30,6 +30,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.rules.FirewallRule;
@@ -144,7 +145,12 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     }
     
     private long getVirtualMachineId() {
-        return _networkService.getIp(ipAddressId).getAssociatedWithVmId();
+        Long vmId = _networkService.getIp(ipAddressId).getAssociatedWithVmId();
+        
+        if (vmId == null) {
+            throw new InvalidParameterValueException("Ip address is not associated with any network, unable to create static nat rule");
+        }
+        return vmId;
     }
     
     @Override

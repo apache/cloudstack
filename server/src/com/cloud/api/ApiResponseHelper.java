@@ -2302,7 +2302,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDns2(profile.getDns2());
         
         //populate capability
-        Map<Service, Map<Capability, String>>  serviceCapabilitiesMap = ApiDBUtils.getZoneCapabilities(network.getDataCenterId());
+        Map<Service, Map<Capability, String>>  serviceCapabilitiesMap = ApiDBUtils.getNetworkCapabilities(network.getId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
         if (serviceCapabilitiesMap != null) {
             for (Service service : serviceCapabilitiesMap.keySet()) {

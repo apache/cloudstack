@@ -18,6 +18,7 @@
 package com.cloud.network;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.api.commands.AssociateIPAddrCmd;
 import com.cloud.api.commands.CreateNetworkCmd;
@@ -31,6 +32,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.Service;
 import com.cloud.offering.NetworkOffering;
 
 
@@ -63,5 +66,9 @@ public interface NetworkService {
     IpAddress getIp(long id);
     
     NetworkProfile getNetworkProfile(long networkId);
+    
+    Map<Service, Map<Capability, String>> getZoneCapabilities(long zoneId);
+    
+    Map<Service, Map<Capability, String>> getNetworkCapabilities(long networkId);
     
 }

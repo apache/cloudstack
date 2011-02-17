@@ -37,6 +37,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
@@ -127,6 +128,11 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
                 return vpnVO;
             }
             throw new InvalidParameterValueException("A Remote Access VPN already exists for this account");
+        }
+        
+        //Verify that vpn service is enabled for the network
+        if (!_networkMgr.isServiceSupported(ipAddr.getAssociatedWithNetworkId(), Service.Vpn)) {
+            throw new InvalidParameterValueException("Vpn service is not supported in network id=" + ipAddr.getAssociatedWithNetworkId());
         }
 
         if (ipRange == null) {

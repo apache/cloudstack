@@ -729,12 +729,34 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         controlNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(controlNetworkOffering);
         NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, TrafficType.Storage);
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
-        NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemGuestNetwork, TrafficType.Guest);
+        NetworkOfferingVO guestNetworkOffering = new NetworkOfferingVO(
+                NetworkOffering.SystemGuestNetwork, 
+                "System-Guest-Network", 
+                TrafficType.Guest, 
+                true, false, null, null, null, true, 
+                Availability.Required, 
+                true, true, true, //services - all true except for firewall/lb/vpn and gateway
+                false, false, false, false);
+
         guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
         
-        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultVirtualizedNetworkOffering, "Virtual Vlan", TrafficType.Guest, false, false, null, null, null, true, Availability.Required, false, false, false, false, false, false, false);
+        NetworkOfferingVO defaultGuestNetworkOffering = new NetworkOfferingVO(
+                NetworkOffering.DefaultVirtualizedNetworkOffering, 
+                "Virtual Vlan", 
+                TrafficType.Guest, 
+                false, false, null, null, null, true, 
+                Availability.Required, 
+                true, true, true, //services
+                true, true, true, true);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
-        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(NetworkOffering.DefaultDirectNetworkOffering, "Direct", TrafficType.Public, false, false, null, null, null, true, Availability.Required, false, false, false, false, false, false, false);
+        NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(
+                NetworkOffering.DefaultDirectNetworkOffering, 
+                "Direct", 
+                TrafficType.Public, 
+                false, false, null, null, null, true, 
+                Availability.Required, 
+                true, true, true, //services - all true except for firewall/lb/vpn and gateway
+                false, false, false, false);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
     }
     

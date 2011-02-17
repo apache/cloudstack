@@ -28,14 +28,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
  */
 public class Networks {
     
-    public enum Service {
-        Dhcp,
-        Dns,
-        Gateway,
-        LoadBalancer,
-        Firewall
-    }
-    
     public enum RouterPrivateIpStrategy {
         None,
         DcGlobal, //global to data center

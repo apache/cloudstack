@@ -950,19 +950,19 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
    
         //if account is removed, return error
         if(accountHandle!=null && accountHandle.getRemoved() != null) {
-            throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account " + accountHandle.getId()+" is removed");
+            throw new InvalidParameterValueException("The account " + accountHandle.getId()+" is removed");
         }
 
         // Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId.longValue());
         
         if (vm == null) {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
+        	throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
         if ((accountHandle != null) && !_domainDao.isChildDomain(accountHandle.getDomainId(), vm.getDomainId())) {
             // the domain in which the VM lives is not in the admin's domain tree
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to recover virtual machine with id " + vmId + ", invalid id given.");
+            throw new InvalidParameterValueException("Unable to recover virtual machine with id " + vmId + ", invalid id given.");
         }
 
         if (vm.getRemoved() != null) {
