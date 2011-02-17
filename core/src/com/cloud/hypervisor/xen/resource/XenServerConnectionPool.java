@@ -528,24 +528,26 @@ public class XenServerConnectionPool {
                         mConn = null;
                     }
                 } catch (Types.CannotContactHost e ) {
-                    String msg = "Can't connect host " + ipAddress + " due to " + e.toString();
+                    String msg = "Catch Exception: " + e.getClass().getName() + " Can't connect host " + ipAddress + " due to " + e.toString();
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug(msg);
                     }
                     PoolEmergencyResetMaster(ipAddress, mConn.getIp(), mConn.getUsername(), mConn.getPassword());
                     return mConn;
                 } catch (Types.HostOffline e ) {
-                    String msg = "Can't connect host " + ipAddress + " due to " + e.toString();
+                    String msg = "Catch Exception: " + e.getClass().getName() + " Host is offline " + ipAddress + " due to " + e.toString();
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug(msg);
                     }
-                    throw new CloudRuntimeException(msg, e);
+                    PoolEmergencyResetMaster(ipAddress, mConn.getIp(), mConn.getUsername(), mConn.getPassword());
+                    return mConn;
                 } catch (Types.HostNotLive e ) {
-                    String msg = "Can't connect host " + ipAddress + " due to " + e.toString();
+                    String msg = "Catch Exception: " + e.getClass().getName() + " Host Not Live " + ipAddress + " due to " + e.toString();
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug(msg);
                     }
-                    throw new CloudRuntimeException(msg, e);
+                    PoolEmergencyResetMaster(ipAddress, mConn.getIp(), mConn.getUsername(), mConn.getPassword());
+                    return mConn;
                 } catch (UuidInvalid e) {
                     String msg = "Host(" + hostUuid + ") doesn't belong to pool(" + poolUuid + "), please execute 'xe pool-join master-address=" + mConn.getIp()
                         + " master-username=" + mConn.getUsername() + " master-password=" + mConn.getPassword();
