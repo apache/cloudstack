@@ -943,7 +943,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         work.setStep(Step.Prepare);
         work.setResourceType(ItWorkVO.ResourceType.Host);
         work.setResourceId(dstHostId);
-        _workDao.persist(work);
+        work = _workDao.persist(work);
         
         PrepareForMigrationAnswer pfma = null;
         try {
