@@ -522,10 +522,8 @@ long milliseconds = new Date().getTime();
             <div class="rev_wizmid_maincontent">
                 <div class="rev_wizmid_titlebox">
                     <h2>
-                        <strong>Step 1:</strong> Select a Template</h2>
+                        <strong>Step 1:</strong> Select a Template or ISO</h2>
                     <p>
-                        Please select a template for your new virtual instance. You can also choose to select
-                        a blank template from which an ISO image can be installed onto.
                     </p>
                 </div>
                 <div class="rev_wizmid_contentbox">
@@ -565,13 +563,13 @@ long milliseconds = new Date().getTime();
                             </div>
                             <div class="rev_wizmid_tempbox_left" id="wiz_template_filter">
                                 <div class="rev_wizmid_selectedtempbut" id="wiz_featured">
-                                    Featured Template</div>
+                                    Featured Templates</div>
                                 <div class="rev_wizmid_nonselectedtempbut" id="wiz_my">
-                                    My Template</div>
+                                    My Templates</div>
                                 <div class="rev_wizmid_nonselectedtempbut" id="wiz_community">
-                                    Community Template</div>
+                                    Community Templates</div>
                                 <div class="rev_wizmid_nonselectedtempbut" id="wiz_blank">
-                                    Blank Template</div>
+                                    ISOs</div>
                             </div>
                             <div class="rev_wizmid_tempbox_right">
                                 <div class="rev_wiztemplistpanel" id="template_container">
