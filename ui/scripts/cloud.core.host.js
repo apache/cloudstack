@@ -176,6 +176,7 @@ function hostJsonToDetailsTab() {
 
 var hostChangableStatus = {
     "PrepareForMaintenance": 1,
+    "ErrorInMaintenance": 1,
     "Updating": 1,
     "Disconnected": 1,
     "Alert": 1,

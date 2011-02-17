@@ -94,7 +94,8 @@ function primarystorageJsonToDetailsTab() {
             var items = json.liststoragepoolsresponse.storagepool;	           
 			if(items != null && items.length > 0) {
                 jsonObj = items[0];
-                $midmenuItem1.data("jsonObj", jsonObj);                  
+                $midmenuItem1.data("jsonObj", jsonObj);       
+                updateHostStateInMidMenu(jsonObj, $midmenuItem1);             
             }
         }
     });     
@@ -109,16 +110,46 @@ function primarystorageJsonToDetailsTab() {
     
     setHostStateInRightPanel(fromdb(jsonObj.state), $thisTab.find("#state"));
     
+     
+    //refresh status every 2 seconds until status is not changable any more 
+	var timerKey = "refreshPrimarystorageStatus";
+	$("body").stopTime(timerKey);  //stop timer used by another middle menu item (i.e. stop timer when clicking on a different middle menu item)		
+	if($midmenuItem1.find("#spinning_wheel").css("display") == "none") {
+	    if(jsonObj.state in primarystorageChangableStatus) {	    
+	        $("body").everyTime(
+                2000,
+                timerKey,
+                function() {              
+                    $.ajax({
+		                data: createURL("command=listStoragePools&id="+jsonObj.id),
+		                dataType: "json",
+		                async: false,
+		                success: function(json) {  
+			                var items = json.liststoragepoolsresponse.storagepool;	   
+			                if(items != null && items.length > 0) {
+				                jsonObj = items[0]; //override jsonObj declared above				
+				                $midmenuItem1.data("jsonObj", jsonObj); 				                            
+				                if(!(jsonObj.state in primarystorageChangableStatus)) {
+				                    $("body").stopTime(timerKey);					                    
+				                    updateHostStateInMidMenu(jsonObj, $midmenuItem1); 			                    
+				                    if(jsonObj.id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+				                        setHostStateInRightPanel(jsonObj.state, $thisTab.find("#state"));	
+				                        primarystorageBuildActionMenu(jsonObj, $thisTab, $midmenuItem1);	
+				                    }					                    
+				                }               
+	                        }   
+		                }
+	                });                       	
+                }
+            );
+	    }
+	}
+    
+       
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));
     $thisTab.find("#podname").text(fromdb(jsonObj.podname));
     $thisTab.find("#clustername").text(fromdb(jsonObj.clustername));
-	
-	/*
-	var storageType = "ISCSI Share";
-	if (jsonObj.type == 'NetworkFilesystem') 
-	    storageType = "NFS Share";
-    $thisTab.find("#type").text(fromdb(storageType));
-    */
+		
     $thisTab.find("#type").text(fromdb(jsonObj.type));
     
     $thisTab.find("#ipaddress").text(fromdb(jsonObj.ipaddress));
@@ -129,56 +160,69 @@ function primarystorageJsonToDetailsTab() {
 	$thisTab.find("#tags").text(fromdb(jsonObj.tags));   
 	$thisTab.find("#tags_edit").val(fromdb(jsonObj.tags));  
 	 
-	//actions ***   
-    var $actionLink = $thisTab.find("#action_link"); 
-    bindActionLink($actionLink);
-    /*
-    $actionLink.bind("mouseover", function(event) {	    
-        $(this).find("#action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {       
-        $(this).find("#action_menu").hide();    
-        return false;
-    });	  
-    */
-    
-    var $actionMenu = $actionLink.find("#action_menu");
-    $actionMenu.find("#action_list").empty(); 
-    //buildActionLinkForTab("label.action.edit.primary.storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  //because updateStoragePool API is commented out.
-      
-    if (jsonObj.state == 'Up' || jsonObj.state == "Connecting") {
-		buildActionLinkForTab("label.action.enable.maintenance.mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  
-	} 
-	else if(jsonObj.state == 'Down') {
-	    buildActionLinkForTab("label.action.enable.maintenance.mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab); 
-        buildActionLinkForTab("label.action.delete.primary.storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  
-        
-    }	
-	else if(jsonObj.state == "Alert") {	     
-	    buildActionLinkForTab("label.action.delete.primary.storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);   
-	}	
-	else if (jsonObj.state == "ErrorInMaintenance") {
-	    buildActionLinkForTab("label.action.enable.maintenance.mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  
-        buildActionLinkForTab("label.action.cancel.maintenance.mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);   
-    }
-	else if (jsonObj.state == "PrepareForMaintenance") {
-	    buildActionLinkForTab("label.action.cancel.maintenance.mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab); 
-    }
-	else if (jsonObj.state == "Maintenance") {
-	    buildActionLinkForTab("label.action.cancel.maintenance.mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);            	    
-        buildActionLinkForTab("label.action.delete.primary.storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);          
-    }
-	else if (jsonObj.state == "Disconnected"){	      	    
-        buildActionLinkForTab("label.action.delete.primary.storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);          
-    }
-	else {
-	    //alert("Unsupported Host State: " + jsonObj.state);
-	}      
+	// actions  
+    primarystorageBuildActionMenu(jsonObj, $thisTab, $midmenuItem1);
     
     $thisTab.find("#tab_spinning_wheel").hide();    
     $thisTab.find("#tab_container").show();         
 }
+    
+var primarystorageChangableStatus = {
+    "PrepareForMaintenance": 1,
+    "CancelMaintenance": 1
+}
+
+function primarystorageBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {  
+    var $actionLink = $thisTab.find("#action_link"); 
+    bindActionLink($actionLink);
+       
+    var $actionMenu = $actionLink.find("#action_menu");
+    $actionMenu.find("#action_list").empty(); 
+    var noAvailableActions = true;
+    
+    //buildActionLinkForTab("label.action.edit.primary.storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  //because updateStoragePool API is commented out.
+      
+    if (jsonObj.state == 'Up' || jsonObj.state == "Connecting") {
+		buildActionLinkForTab("label.action.enable.maintenance.mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+		noAvailableActions = false;	
+	} 
+	else if(jsonObj.state == 'Down') {
+	    buildActionLinkForTab("label.action.enable.maintenance.mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+        buildActionLinkForTab("label.action.delete.primary.storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+        noAvailableActions = false;	
+        
+    }	
+	else if(jsonObj.state == "Alert") {	     
+	    buildActionLinkForTab("label.action.delete.primary.storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+	    noAvailableActions = false;	 
+	}	
+	else if (jsonObj.state == "ErrorInMaintenance") {
+	    buildActionLinkForTab("label.action.enable.maintenance.mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+        buildActionLinkForTab("label.action.cancel.maintenance.mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+        noAvailableActions = false;	  
+    }
+	else if (jsonObj.state == "PrepareForMaintenance") {
+	    buildActionLinkForTab("label.action.cancel.maintenance.mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab); 
+	    noAvailableActions = false;	
+    }
+	else if (jsonObj.state == "Maintenance") {
+	    buildActionLinkForTab("label.action.cancel.maintenance.mode", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);            	    
+        buildActionLinkForTab("label.action.delete.primary.storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);   
+        noAvailableActions = false;	       
+    }
+	else if (jsonObj.state == "Disconnected"){	      	    
+        buildActionLinkForTab("label.action.delete.primary.storage", primarystorageActionMap, $actionMenu, $midmenuItem1, $thisTab);  
+        noAvailableActions = false;	        
+    }
+	else {
+	    //alert("Unsupported Host State: " + jsonObj.state);
+	} 
+	
+	// no available actions 
+	if(noAvailableActions == true) {
+	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
+	}	      
+}    
        
 function primarystorageClearRightPanel() {  
     primarystorageClearDetailsTab();  
