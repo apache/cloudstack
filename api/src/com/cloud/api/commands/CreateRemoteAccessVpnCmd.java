@@ -29,8 +29,10 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddress;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -156,11 +158,19 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     
     @Override
     public String getSyncObjType() {
-        return BaseAsyncCmd.ipAddressSyncObject;
+        return BaseAsyncCmd.networkSyncObject;
     }
 
     @Override
     public Long getSyncObjId() {
-        return publicIpId;
+        return getIp().getAssociatedWithNetworkId();
+    }
+
+    private IpAddress getIp() {
+        IpAddress ip = _networkService.getIp(publicIpId);
+        if (ip == null) {
+            throw new InvalidParameterValueException("Unable to find ip address by id " + publicIpId);
+        }
+        return ip;
     }
 }

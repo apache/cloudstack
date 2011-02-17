@@ -104,12 +104,12 @@ public class DeleteIpForwardingRuleCmd extends BaseAsyncCmd {
     
     @Override
     public String getSyncObjType() {
-        return BaseAsyncCmd.ipAddressSyncObject;
+        return BaseAsyncCmd.networkSyncObject;
     }
 
     @Override
     public Long getSyncObjId() {
-        return _rulesService.getFirewallRule(id).getSourceIpAddressId();
+        return _rulesService.getFirewallRule(id).getNetworkId();
     }
 
 }

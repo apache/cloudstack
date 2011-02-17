@@ -222,11 +222,19 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     
     @Override
     public String getSyncObjType() {
-        return BaseAsyncCmd.ipAddressSyncObject;
+        return BaseAsyncCmd.networkSyncObject;
     }
 
     @Override
     public Long getSyncObjId() {
-        return ipAddressId;
+        return getIp().getAssociatedWithNetworkId();
+    }
+
+    private IpAddress getIp() {
+        IpAddress ip = _networkService.getIp(ipAddressId);
+        if (ip == null) {
+            throw new InvalidParameterValueException("Unable to find ip address by id " + ipAddressId);
+        }
+        return ip;
     }
 }

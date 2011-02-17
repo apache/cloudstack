@@ -27,6 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 
@@ -88,11 +89,19 @@ public class DisableStaticNatCmd extends BaseAsyncCmd {
     
     @Override
     public String getSyncObjType() {
-        return BaseAsyncCmd.ipAddressSyncObject;
+        return BaseAsyncCmd.networkSyncObject;
     }
 
     @Override
     public Long getSyncObjId() {
-        return ipAddressId;
+        return getIp().getAssociatedWithNetworkId();
+    }
+
+    private IpAddress getIp() {
+        IpAddress ip = _networkService.getIp(ipAddressId);
+        if (ip == null) {
+            throw new InvalidParameterValueException("Unable to find ip address by id " + ipAddressId);
+        }
+        return ip;
     }
 }

@@ -103,11 +103,11 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
     
     @Override
     public String getSyncObjType() {
-        return BaseAsyncCmd.ipAddressSyncObject;
+        return BaseAsyncCmd.networkSyncObject;
     }
 
     @Override
     public Long getSyncObjId() {
-        return _rulesService.getPortForwardigRule(id).getSourceIpAddressId();
+        return _rulesService.getPortForwardigRule(id).getNetworkId();
     }
 }

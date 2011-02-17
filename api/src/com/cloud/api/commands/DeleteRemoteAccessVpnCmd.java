@@ -82,12 +82,12 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
     
     @Override
     public String getSyncObjType() {
-        return BaseAsyncCmd.ipAddressSyncObject;
+        return BaseAsyncCmd.networkSyncObject;
     }
 
     @Override
     public Long getSyncObjId() {
-        return publicIpId;
+        return _ravService.getRemoteAccessVpn(publicIpId).getNetworkId();
     }
 	
 }
