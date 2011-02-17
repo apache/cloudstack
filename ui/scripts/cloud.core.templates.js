@@ -36,21 +36,21 @@ function showTemplatesTab() {
 	}));
 	
 	activateDialog($("#dialog_copy_template").dialog({ 
-		width:300,
+		width:450,
 		autoOpen: false,
 		modal: true,
 		zIndex: 2000
 	}));
 	
 	activateDialog($("#dialog_create_vm_from_template").dialog({ 
-		width:300,
+		width:450,
 		autoOpen: false,
 		modal: true,
 		zIndex: 2000
 	}));
 	
 	activateDialog($("#dialog_create_vm_from_iso").dialog({ 
-		width:300,
+		width:450,
 		autoOpen: false,
 		modal: true,
 		zIndex: 2000
@@ -106,22 +106,6 @@ function showTemplatesTab() {
 			}	
 		}
 	});
-	
-	$.ajax({
-	    data: "command=listServiceOfferings&response=json"+maxPageSize,
-	    dataType: "json",
-	    success: function(json) {
-	        var items = json.listserviceofferingsresponse.serviceoffering;
-	        if(items != null && items.length > 0 ) {
-	            var templateServiceOfferingField = $("#dialog_create_vm_from_template #service_offering").empty();
-	            var isoServiceOfferingField = $("#dialog_create_vm_from_iso #service_offering").empty();
-	            for(var i = 0; i < items.length; i++) {		        
-	                templateServiceOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
-	                isoServiceOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
-	            }
-	        }		        
-	    }
-	});		
 	
 	$.ajax({
 	    data: "command=listDiskOfferings&response=json"+maxPageSize,
@@ -550,100 +534,116 @@ function showTemplatesTab() {
 		    createVmDialog = $("#dialog_create_vm_from_iso");		
 		}
 		createVmDialog.find("#source_name").text(name);
+		
+		$.ajax({
+	    data: "command=listServiceOfferings&zoneId="+zoneId+"&response=json"+maxPageSize,
+	    dataType: "json",
+	    success: function(json) {
+			var items = json.listserviceofferingsresponse.serviceoffering;
+			var templateServiceOfferingField = $("#dialog_create_vm_from_template #service_offering").empty();
+			var isoServiceOfferingField = $("#dialog_create_vm_from_iso #service_offering").empty();
+			for(var i = 0; i < items.length; i++) {		        
+				templateServiceOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
+				isoServiceOfferingField.append("<option value='" + items[i].id + "'>" + fromdb(items[i].name) + "</option>");
+			}	
 			
-		createVmDialog
-		.dialog('option', 'buttons', {			    
-		    "Create": function() {
-		        var thisDialog = $(this);	
-		        			        
-		        // validate values
-			    var isValid = true;		
-			    isValid &= validateString("Name", thisDialog.find("#name"), thisDialog.find("#name_errormsg"), true);
-			    isValid &= validateString("Group", thisDialog.find("#group"), thisDialog.find("#group_errormsg"), true);				
-			    if (!isValid) return;	       
-		                		          
-		        thisDialog.dialog("close");  
-		          
-		        var array1 = [];      
-		        var name = trim(thisDialog.find("#name").val());	
-		        array1.push("&displayname="+encodeURIComponent(name));
-		        	
-		        var group = trim(thisDialog.find("#group").val());	
-		        array1.push("&group="+encodeURIComponent(group));
-		        	
-		        var serviceOfferingId = thisDialog.find("#service_offering").val();		
-		        array1.push("&serviceOfferingId="+serviceOfferingId);
-		        		               
-		        var diskOfferingId = thisDialog.find("#disk_offering").val();
-		        if(diskOfferingId != null && diskOfferingId.length > 0)
-		            array1.push("&diskOfferingId="+diskOfferingId);	 
-		        		        
-		        var loadingImg = thisTemplate.find(".adding_loading");		
-                var rowContainer = thisTemplate.find("#row_container");                                         	                               
-                loadingImg.find(".adding_text").text("Creating VM....");	
-                loadingImg.show();  
-                rowContainer.hide();      
-		        			        		        
-                $.ajax({
-			        data: "command=deployVirtualMachine&zoneId="+zoneId+array1.join("")+"&templateId="+id+"&response=json",
-			        dataType: "json",
-			        success: function(json) {					            
-				        var jobId = json.deployvirtualmachineresponse.jobid;						        
-				        var timerKey = "newVMFromTemplate"+jobId;        						
-				        
-				        $("body").everyTime(
-					        10000,
-					        timerKey,
-					        function() {
-						        $.ajax({
-							        data: "command=queryAsyncJobResult&jobId="+jobId+"&response=json",
-							        dataType: "json",
-							        success: function(json) {
-								        var result = json.queryasyncjobresultresponse;
-								        if (result.jobstatus == 0) {
-									        return; //Job has not completed
-								        } else {										            
-									        $("body").stopTime(timerKey);											        
-									        if (result.jobstatus == 1) {
-										        // Succeeded													        
-										        var htmlMsg;
-										        if (result.virtualmachine[0].passwordenabled == 'true') 
-											        htmlMsg = "Your instance from " + fromdb(name) + " has been successfully created.  Your new password is : <b>" + result.virtualmachine[0].password + "</b> .  Please change it as soon as you log into your new instance";
-										        else 
-											        htmlMsg = "Your instance from " + fromdb(name) + " has been successfully created.";												        
-										        $("#dialog_info").html(htmlMsg).dialog("open");		
-										        loadingImg.hide();  
-                                                rowContainer.show();								       
-									        } else if (result.jobstatus == 2) {
-										        // Failed
-										        $("#dialog_info").html("Unable to create your new instance from " + fromdb(name) + " due to the error: " + fromdb(result.jobresult)).dialog("open");	
-										        loadingImg.hide();  
-                                                rowContainer.show();
-									        }
-								        }
-							        },
-							        error: function(XMLHttpResponse) {
-								        $("body").stopTime(timerKey);
-								        handleError(XMLHttpResponse);
-								        loadingImg.hide();  
-                                        rowContainer.show();
-							        }
-						        });
-					        },
-					        0
-				        );
-			        },
-			        error: function(XMLHttpResponse) {
-			            handleError(XMLHttpResponse);
-						loadingImg.hide();  
-                        rowContainer.show();
-			        }
-		        });						         
-		    }, 
-		    "Cancel": function() {
-		        $(this).dialog("close");
-		    }
-		}).dialog("open");			
+			createVmDialog
+				.dialog('option', 'buttons', {			    
+					"Create": function() {
+						var thisDialog = $(this);	
+											
+						// validate values
+						var isValid = true;		
+						isValid &= validateString("Name", thisDialog.find("#name"), thisDialog.find("#name_errormsg"), true);
+						isValid &= validateString("Group", thisDialog.find("#group"), thisDialog.find("#group_errormsg"), true);				
+						if (!isValid) return;	       
+												  
+						thisDialog.dialog("close");  
+						  
+						var array1 = [];      
+						var name = trim(thisDialog.find("#name").val());	
+						array1.push("&displayname="+encodeURIComponent(name));
+							
+						var group = trim(thisDialog.find("#group").val());	
+						array1.push("&group="+encodeURIComponent(group));
+							
+						var serviceOfferingId = thisDialog.find("#service_offering").val();		
+						array1.push("&serviceOfferingId="+serviceOfferingId);
+											   
+						var diskOfferingId = thisDialog.find("#disk_offering").val();
+						if(diskOfferingId != null && diskOfferingId.length > 0)
+							array1.push("&diskOfferingId="+diskOfferingId);	 
+										
+						var loadingImg = thisTemplate.find(".adding_loading");		
+						var rowContainer = thisTemplate.find("#row_container");                                         	                               
+						loadingImg.find(".adding_text").text("Creating VM....");	
+						loadingImg.show();  
+						rowContainer.hide();      
+															
+						$.ajax({
+							data: "command=deployVirtualMachine&zoneId="+zoneId+array1.join("")+"&templateId="+id+"&response=json",
+							dataType: "json",
+							success: function(json) {					            
+								var jobId = json.deployvirtualmachineresponse.jobid;						        
+								var timerKey = "newVMFromTemplate"+jobId;        						
+								
+								$("body").everyTime(
+									10000,
+									timerKey,
+									function() {
+										$.ajax({
+											data: "command=queryAsyncJobResult&jobId="+jobId+"&response=json",
+											dataType: "json",
+											success: function(json) {
+												var result = json.queryasyncjobresultresponse;
+												if (result.jobstatus == 0) {
+													return; //Job has not completed
+												} else {										            
+													$("body").stopTime(timerKey);											        
+													if (result.jobstatus == 1) {
+														// Succeeded													        
+														var htmlMsg;
+														if (result.virtualmachine[0].passwordenabled == 'true') 
+															htmlMsg = "Your instance from " + fromdb(name) + " has been successfully created.  Your new password is : <b>" + result.virtualmachine[0].password + "</b> .  Please change it as soon as you log into your new instance";
+														else 
+															htmlMsg = "Your instance from " + fromdb(name) + " has been successfully created.";												        
+														$("#dialog_info").html(htmlMsg).dialog("open");		
+														loadingImg.hide();  
+														rowContainer.show();								       
+													} else if (result.jobstatus == 2) {
+														// Failed
+														$("#dialog_info").html("Unable to create your new instance from " + fromdb(name) + " due to the error: " + fromdb(result.jobresult)).dialog("open");	
+														loadingImg.hide();  
+														rowContainer.show();
+													}
+												}
+											},
+											error: function(XMLHttpResponse) {
+												$("body").stopTime(timerKey);
+												handleError(XMLHttpResponse);
+												loadingImg.hide();  
+												rowContainer.show();
+											}
+										});
+									},
+									0
+								);
+							},
+							error: function(XMLHttpResponse) {
+								handleError(XMLHttpResponse);
+								loadingImg.hide();  
+								rowContainer.show();
+							}
+						});						         
+					}, 
+					"Cancel": function() {
+						$(this).dialog("close");
+					}
+				}).dialog("open");
+				
+				
+			}
+		});			
 	}
 	
 			
