@@ -579,9 +579,9 @@ public class XenServer56Resource extends CitrixResourceBase {
             }
             host.setTags(conn, tags);
         } catch (XenAPIException e) {
-            throw new CloudRuntimeException("Unable to setup heartbeat", e);
+            throw new CloudRuntimeException("Unable to remove heartbeat tag", e);
         } catch (Exception e) {
-            throw new CloudRuntimeException("Unable to setup heartbeat", e);
+            throw new CloudRuntimeException("Unable to remove heartbeat tag", e);
         }
 
         String result = callHostPluginPremium(conn, "heartbeat", "host", _host.uuid, "interval", Integer
