@@ -115,7 +115,6 @@ def destroy_network_rules_for_vm(vm_name):
     
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
-        vmchain =  '-'.join(vm_name.split('-')[:-1])
         vmchain_default =  '-'.join(vm_name.split('-')[:-1]) + "-def"
 
     destroy_ebtables_rules(vmchain)
@@ -183,12 +182,12 @@ def default_ebtables_rules(vm_name, rules):
             vm_mac = r.split(",")[1]
             vif = r.split(",")[2]
             execute("ebtables -t nat -A " +  vmchain_in + " -i " + vif + " -s ! " +  vm_mac + " -j DROP")
-            execute("ebtables -t nat -A " +  vmchain_in + " -p ARP -s ! " + vm_mac + " -j DROP")
-            execute("ebtables -t nat -A " +  vmchain_in + " -p ARP --arp-mac-src ! " + vm_mac + " -j DROP")
-            execute("ebtables -t nat -A " + vmchain_in +  " -p ARP --arp-ip-src ! " + vm_ip + " -j DROP") 
-            execute("ebtables -t nat -A " + vmchain_in + " -p ARP --arp-op Request -j ACCEPT")   
-            execute("ebtables -t nat -A " + vmchain_in  + " -p ARP --arp-op Reply -j ACCEPT")    
-            execute("ebtables -t nat -A " + vmchain_in + " -p ARP  -j DROP")    
+            execute("ebtables -t nat -A " +  vmchain_in + " -i " + vif + " -p ARP -s ! " + vm_mac + " -j DROP")
+            execute("ebtables -t nat -A " +  vmchain_in + " -i " + vif + " -p ARP --arp-mac-src ! " + vm_mac + " -j DROP")
+            execute("ebtables -t nat -A " + vmchain_in + " -i " + vif +  " -p ARP --arp-ip-src ! " + vm_ip + " -j DROP") 
+            execute("ebtables -t nat -A " + vmchain_in + " -i " + vif + " -p ARP --arp-op Request -j ACCEPT")   
+            execute("ebtables -t nat -A " + vmchain_in  + " -i " + vif + " -p ARP --arp-op Reply -j ACCEPT")    
+            execute("ebtables -t nat -A " + vmchain_in + " -i " + vif + " -p ARP  -j DROP")    
     except:
         logging.exception("Failed to program default ebtables IN rules")
         return 'false'
@@ -197,11 +196,12 @@ def default_ebtables_rules(vm_name, rules):
         for r in rule:
             vm_ip = r.split(",")[0]
             vm_mac = r.split(",")[1]
-            execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Reply --arp-mac-dst ! " +  vm_mac + " -j DROP")
-            execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-ip-dst ! " + vm_ip + " -j DROP") 
-            execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Request -j ACCEPT")   
-            execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Reply -j ACCEPT")    
-            execute("ebtables -t nat -A " + vmchain_out + " -p ARP -j DROP")    
+            vif = r.split(",")[2]
+            execute("ebtables -t nat -A " + vmchain_out + " -i " + vif + " -p ARP --arp-op Reply --arp-mac-dst ! " +  vm_mac + " -j DROP")
+            execute("ebtables -t nat -A " + vmchain_out + " -i " + vif + " -p ARP --arp-ip-dst ! " + vm_ip + " -j DROP") 
+            execute("ebtables -t nat -A " + vmchain_out + " -i " + vif + " -p ARP --arp-op Request -j ACCEPT")   
+            execute("ebtables -t nat -A " + vmchain_out + " -i " + vif + " -p ARP --arp-op Reply -j ACCEPT")    
+            execute("ebtables -t nat -A " + vmchain_out + " -i " + vif + " -p ARP -j DROP")    
     except:
         logging.debug("Failed to program default ebtables OUT rules")
         return 'false' 
@@ -455,7 +455,8 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules):
         return 'true'
     
     if rules == "" or rules == None:
-	return 'true'
+        write_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno)
+        return 'true'
 
     lines = rules.split(';')[:-1]
 

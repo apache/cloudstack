@@ -303,9 +303,9 @@ public class LibvirtVMDef {
 			_bus = bus;
 
 		}
-		/*device id starting from 0, but iso is 3*/
+		/*skip iso label*/
 		private String getDevLabel(int devId, diskBus bus) {
-			if ( devId >= 2 ) {
+			if ( devId == 2 ) {
 				devId++;
 			}
 			
