@@ -62,7 +62,7 @@ function showNetworkingTab(p_domainId, p_account) {
 						$("#submenu_content_network #overlay_white").hide();
 			            $("#submenu_content_network #loading_gridtable").hide();	
 			            
-			            if(isAdmin() || isDomainAdmin()) {
+			            if(isAdmin()) {
 			                ipListContainer.empty(); //clear search result if there is.               
 			                var template = ipTemplate.clone();
 							ipJsonToPanel(items[0], template);
@@ -309,7 +309,7 @@ function showNetworkingTab(p_domainId, p_account) {
     });	
     
     function isIpManageable(domainid, account) {             
-        if((g_domainid == domainid && g_account == account) || (isAdmin() && account!="system")) 
+        if((g_domainid == domainid && g_account == account) || ((isAdmin() || isDomainAdmin()) && account!="system")) 
             return true;
         else
             return false;
@@ -1018,7 +1018,7 @@ function showNetworkingTab(p_domainId, p_account) {
 		var submenuContent = $("#submenu_content_network").show();
 		$("#submenu_content_network_groups").hide();			
 	    
-	    if(isAdmin() || isDomainAdmin()) {
+	    if(isAdmin()) {
 	        submenuContent.find(".select_directipbg_admin").show();
 	        submenuContent.find(".select_directipbg_user").hide();	
 	        populateDomainDropdown();	    
@@ -1100,7 +1100,7 @@ function showNetworkingTab(p_domainId, p_account) {
 									$("#dialog_info").html("<p>Your IP address <b>" + targetIp + "</b> has been released</p>").dialog("open");
 									$("#submenu_content_network #overlay_white").hide();
 			                        $("#submenu_content_network #loading_gridtable").hide();
-									if (isUser()) {
+									if (!isAdmin()) {
 										RefreshIpDropDown();
 									} else {
 										// Execute the codepath for showing last search result.											
