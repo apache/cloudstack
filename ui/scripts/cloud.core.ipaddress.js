@@ -429,7 +429,7 @@ function ipToRightPanel($midmenuItem1) {
     var networkObj;
     if(ipObj.networkid != null) {  
         $.ajax({            
-            data: createURL("command=listNetworks&id="+ipObj.networkid+"&isSystem=true"),
+            data: createURL("command=listNetworks&id="+ipObj.associatednetworkid),
             dataType: "json",
             async: false,
             success: function(json) {                          
