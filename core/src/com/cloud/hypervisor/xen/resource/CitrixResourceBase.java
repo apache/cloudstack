@@ -3751,7 +3751,7 @@ public abstract class CitrixResourceBase implements ServerResource {
                 String tag = it.next();
                 if (tag.startsWith("vmops-version-")) {
                     if (tag.contains(version)) {
-                        s_logger.info(logX(host, "Host " + hr.address + " is already setup."));
+                        s_logger.info(logX(host, "Host " + hr.address + " is already setup."));                       
                         return;
                     } else {
                         it.remove();
@@ -3824,11 +3824,6 @@ public abstract class CitrixResourceBase implements ServerResource {
             } finally {
                 sshConnection.close();
             }
-
-            if (!setIptables(conn)) {
-                s_logger.warn("set xenserver Iptable failed");
-            }
-
             hr.tags.add("vmops-version-" + version);
             host.setTags(conn, hr.tags);
         } catch (XenAPIException e) {

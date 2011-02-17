@@ -583,6 +583,11 @@ public class XenServer56Resource extends CitrixResourceBase {
         } catch (Exception e) {
             throw new CloudRuntimeException("Unable to remove heartbeat tag", e);
         }
+        
+        if (!setIptables(conn)) {
+            s_logger.warn("set xenserver Iptable failed");
+            return null;
+        }
 
         String result = callHostPluginPremium(conn, "heartbeat", "host", _host.uuid, "interval", Integer
                 .toString(_heartbeatInterval));
@@ -590,7 +595,6 @@ public class XenServer56Resource extends CitrixResourceBase {
             s_logger.warn("Unable to launch the heartbeat process on " + _host.ip);
             return null;
         }
-
         return cmds;
     }
 
