@@ -145,7 +145,7 @@
   <target name="build-war-oss" depends="-init-package" description="Compile the GWT client UI and builds WAR file.">
     <mkdir dir="${client.dist.dir}" />
 
-    <war destfile="${client.dist.dir}/client.war" webxml="${client.dir}/WEB-INF/web.xml">
+    <war destfile="${client.dist.dir}/client.war" webxml="${client.dir}/WEB-INF/web.xml" update="true">
       <fileset dir="${client.target.dir}">
         <include name="**/*" />
       	<exclude name="**/*.properties" />

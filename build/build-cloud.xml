@@ -587,6 +587,7 @@
     <delete dir="${classes.dir}" />
     <delete dir="${jar.dir}" />
     <delete dir="${dist.dir}" />
+    <delete dir="${unittest.dir}"/>
   </target>
 
   <target name="clean-all" depends="clean" description="Clean all of the generated files, including dependency cache and javadoc">

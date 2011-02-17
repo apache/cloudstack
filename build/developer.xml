@@ -8,15 +8,41 @@
         generally developer targets that has nothing to do with compiling.
     </description>
 
-  <dirname property="base.dir" file="${ant.file.Cloud.com Developer Targets}"/>
+  <dirname property="base.dir" file="${ant.file.Cloud.com Developer Targets}/.."/>
   <property name="build.dir" location="${base.dir}/build"/>
   
   <property name="tomcat.home" location="${env.CATALINA_HOME}"/>
   <property name="assertion" value="-ea"/>
 
-  <property name="dist.dir" location="${base.dir}"/>
+  <property name="dist.dir" location="${base.dir}/dist"/>
   <property name="deploy.work.dir" location="${dist.dir}"/>
   <property name="server.deploy.to.dir" location="${tomcat.home}"/>
+  <property name="unittest.dir" location="${base.dir}/unittest"/>
+  <property name="unittest.target.dir" location="${unittest.dir}/classes"/>
+  <property name="unittest.jar.dir" location="${unittest.dir}/jar"/>
+  
+  <macrodef name="compile-test">
+    <attribute name="top.dir" description="Top Directory of the source.  We will add src to this to get the source code."/>
+    <attribute name="jar.name" description="Name of the jar file"/>
+    <attribute name="classpath" description="class path to use"/>
+    <element name="include-files" optional="true"/>
+    <element name="exclude-files" optional="true"/>
+    
+    <sequential>
+      <mkdir dir="${unittest.target.dir}/@{jar.name}"/>
+        
+      <depend srcdir="@{top.dir}/test" destdir="${unittest.target.dir}/@{jar.name}" cache="${dep.cache.dir}" />
+        
+      <echo message="Compiling @{top.dir}/test"/>
+      <javac srcdir="@{top.dir}/test" debug="${debug}" debuglevel="${debuglevel}" deprecation="${deprecation}" destdir="${unittest.target.dir}/@{jar.name}" source="${source.compat.version}" target="${target.compat.version}" includeantruntime="false" compiler="javac1.6">
+        <compilerarg line="-Xlint:-path"/>
+        <classpath refid="@{classpath}" />
+        <exclude-files/>
+      </javac>
+      <jar jarfile="${unittest.jar.dir}/@{jar.name}" basedir="${unittest.target.dir}/@{jar.name}" update="true"/>
+    </sequential>
+  </macrodef>
+  
 
   <target name="clean-edits" description="Delete all the editor backup files in the source tree.">
     <delete>
@@ -173,5 +199,76 @@
       <env key="CATALINA_HOME" value="${tomcat.home}"/>
     </exec>
   </target>
+  
+  <path id="test.classpath">
+    <path refid="deps.classpath" />
+    <path refid="dist.classpath"/>
+    <fileset dir="${unittest.jar.dir}">
+      <include name="*.jar"/>
+    </fileset>
+    <fileset dir="${tools.dir}">
+      <include name="**/junit-4.8.1.jar"/>
+    </fileset>
+  </path>
+  
+  <target name="compile-tests" depends="build-all">
+    <mkdir dir="${unittest.dir}"/>
+    <mkdir dir="${unittest.target.dir}"/>
+    <mkdir dir="${unittest.jar.dir}"/>
 
+    <compile-test jar.name="utils-test.jar" top.dir="${utils.dir}" classpath="test.classpath"/>
+    <compile-test jar.name="server-test.jar" top.dir="${server.dir}" classpath="test.classpath"/>
+  </target>
+  
+  <target name="unittest" description="Execute unit tests" depends="compile-tests">
+    <junit printsummary="true" failureproperty="junit.failure">
+      <!-- N.b. use failureproperty instead of haltonfailure, because if we use
+           the former, we will get no detailed report about the failure.
+           If the test fails, the fail element below will still assure that
+           the Ant run will exit with error status.
+      -->
+      <classpath refid="test.classpath"/>
+      <batchtest todir="${unittest.dir}">
+        <formatter type="xml"/>
+        <fileset dir="${utils.test.dir}">
+          <include name="**/*Test.java"/>
+        </fileset>
+        <fileset dir="${server.test.dir}">
+          <include name="**/*Test.java"/>
+        </fileset>
+      </batchtest>
+    </junit>
+    <junitreport todir="${unittest.dir}">
+      <fileset dir="${unittest.dir}"/>
+      <report todir="test-reports"/>
+    </junitreport>
+    <fail if="junit.failure" message="Unit test(s) failed.  See reports!"/>
+  </target>
+    
+  <target name="test" description="Execute one unit test" depends="compile-tests">
+    <junit printsummary="true" failureproperty="junit.failure">
+      <!-- N.b. use failureproperty instead of haltonfailure, because if we use
+           the former, we will get no detailed report about the failure.
+           If the test fails, the fail element below will still assure that
+           the Ant run will exit with error status.
+      -->
+      <classpath refid="test.classpath"/>
+      <batchtest todir="${unittest.dir}">
+        <formatter type="xml"/>
+        <fileset dir="${utils.test.dir}">
+          <include name="**/${test}.java"/>
+        </fileset>
+        <fileset dir="${server.test.dir}">
+          <include name="**/${test}.java"/>
+        </fileset>
+      </batchtest>
+    </junit>
+    <junitreport todir="${unittest.dir}">
+      <fileset dir="${unittest.dir}"/>
+      <report todir="test-reports"/>
+    </junitreport>
+    <fail if="junit.failure" message="Unit test(s) failed.  See reports!"/>
+  </target>
+  
 </project>
+

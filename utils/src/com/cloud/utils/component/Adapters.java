@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -69,7 +70,7 @@ public class Adapters<T> implements Iterable<T> {
     }
     
     protected void set(List<ComponentInfo<Adapter>> adapters) {
-        HashMap<String, T> map = new HashMap<String, T>(adapters.size());
+        HashMap<String, T> map = new LinkedHashMap<String, T>(adapters.size());
         for (ComponentInfo<Adapter> adapter : adapters) {
             @SuppressWarnings("unchecked")
             T t = (T)adapter.instance;

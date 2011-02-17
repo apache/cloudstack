@@ -356,38 +356,40 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
             while (en.hasMoreElements()) {
                 investigator = en.nextElement();
                 alive = investigator.isVmAlive(vm, host);
+                s_logger.info(investigator.getName() + " found " + vm + "to be alive? " + alive);
                 if (alive != null) {
-                    s_logger.debug(investigator.getName() + " found VM " + vm.getName() + "to be alive? " + alive);
                     break;
                 }
             }
-            if (alive != null && alive) {
+            
+            boolean fenced = false;
+            if (alive == null) {
+                s_logger.debug("Fencing off VM that we don't know the state of");
+                Enumeration<FenceBuilder> enfb = _fenceBuilders.enumeration();
+                while (enfb.hasMoreElements()) {
+                    FenceBuilder fb = enfb.nextElement();
+                    Boolean result = fb.fenceOff(vm, host);
+                    s_logger.info("Fencer " + fb.getName() + " returned " + result);
+                    if (result != null && result) {
+                    	fenced = true;
+                    	break;
+                    }
+                }
+            } else if (!alive) {
+                fenced = true;
+            } else {
                 s_logger.debug("VM " + vm.getName() + " is found to be alive by " + investigator.getName());
                 if (host.getStatus() == Status.Up) {
                     s_logger.info(vm + " is alive and host is up. No need to restart it.");
-                	return null;
+                    return null;
                 } else {
                     s_logger.debug("Rescheduling because the host is not up but the vm is alive");
                     return (System.currentTimeMillis() >> 10) + _investigateRetryInterval;
                 }
             }
             
-            boolean fenced = false;
-            if (alive == null || !alive) {
-                fenced = true;
-                s_logger.debug("Fencing off VM that we don't know the state of");
-                Enumeration<FenceBuilder> enfb = _fenceBuilders.enumeration();
-                while (enfb.hasMoreElements()) {
-                    final FenceBuilder fb = enfb.nextElement();
-                    Boolean result = fb.fenceOff(vm, host);
-                    if (result != null && !result) {
-                    	fenced = false;
-                    }
-                }
-            }
-            
-            if (alive== null && !fenced) {
-            	s_logger.debug("We were unable to fence off the VM " + vm.toString());
+            if (!fenced) {
+            	s_logger.debug("We were unable to fence off the VM " + vm);
                 _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getName() + " which was running on host " + hostDesc, "Insufficient capacity to restart VM, name: " + vm.getName() + ", id: " + vmId + " which was running on host " + hostDesc);
             	return (System.currentTimeMillis() >> 10) + _restartRetryInterval;
             }
@@ -446,7 +448,6 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
             if (s_logger.isDebugEnabled()) {
             	s_logger.debug("Rescheduling VM " + vm.toString() + " to try again in " + _restartRetryInterval);
             }
-
         } catch (final InsufficientCapacityException e) {
         	s_logger.warn("Unable to restart " + vm.toString() + " due to " + e.getMessage());
             _alertMgr.sendAlert(alertType, vm.getDataCenterId(), vm.getPodId(), "Unable to restart " + vm.getName() + " which was running on host " + hostDesc, "Insufficient capacity to restart VM, name: " + vm.getName() + ", id: " + vmId + " which was running on host " + hostDesc);

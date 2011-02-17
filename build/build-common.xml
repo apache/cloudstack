@@ -26,6 +26,7 @@
   
   <property name="target.dir" location="${base.dir}/target"/>
   <property name="classes.dir" location="${target.dir}/classes"/>
+  <property name="tests.dir" location="${target.dir}/tests"/>
   <property name="jar.dir" location="${target.dir}/jar"/>
   <property name="dep.cache.dir" location="${target.dir}/dep-cache"/>
   <property name="debug" value="true"/>
@@ -52,7 +53,7 @@
         <classpath refid="@{classpath}" />
         <exclude-files/>
       </javac>
-      <jar jarfile="${jar.dir}/@{jar.name}" basedir="${classes.dir}/@{jar.name}">
+      <jar jarfile="${jar.dir}/@{jar.name}" basedir="${classes.dir}/@{jar.name}" update="true">
         <manifest>
           <attribute name="Class-Path" value="" />
           <attribute name="Built-By" value="${built.by}" />

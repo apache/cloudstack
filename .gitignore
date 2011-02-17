@@ -19,4 +19,5 @@ cloud-*.tar.bz2
 build.number
 api.log.*.gz
 cloud.log.*.*
+unittest
 deps/cloud.userlibraries

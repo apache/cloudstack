@@ -90,6 +90,17 @@ DROP TABLE IF EXISTS `cloud`.`firewall_rules`;
 DROP TABLE IF EXISTS `cloud`.`ssh_keypairs`;
 DROP TABLE IF EXISTS `cloud`.`usage_event`;
 DROP TABLE IF EXISTS `cloud`.`host_tags`;
+DROP TABLE IF EXISTS `cloud`.`version`;
+
+CREATE TABLE `cloud`.`version` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `version` char(40) NOT NULL UNIQUE COMMENT 'version',
+  `updated` datetime NOT NULL COMMENT 'Date this version table was updated`,
+  `step` char(32) NOT NULL COMMENT 'Step in the upgrade to this version',
+  `dump_path` char(255) NOT NULL COMMENT `path to the dump of the database before upgrade`,
+  PRIMARY KEY (`id`),
+  INDEX `i_version__version`(`version`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_it_work` (
   `id` char(40) COMMENT 'reservation id',
@@ -739,7 +750,6 @@ CREATE TABLE  `cloud`.`vm_instance` (
   `proxy_assign_time` DATETIME NULL COMMENT 'time when console proxy was assigned',
   `vnc_password` varchar(255) NOT NULL COMMENT 'vnc password',
   `ha_enabled` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Should HA be enabled for this VM',
-  `mirrored_vols` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Are the volumes mirrored',
   `update_count` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'date state was updated',
   `update_time` datetime COMMENT 'date the destroy was requested',
   `created` datetime NOT NULL COMMENT 'date created',
@@ -864,7 +874,6 @@ CREATE TABLE  `cloud`.`console_proxy` (
   `public_mac_address` varchar(17) unique COMMENT 'mac address of the public facing network card',
   `public_ip_address` varchar(15) UNIQUE COMMENT 'public ip address for the console proxy',
   `public_netmask` varchar(15)  COMMENT 'public netmask used for the console proxy',
-  `ram_size` int(10) unsigned NOT NULL DEFAULT 512 COMMENT 'memory to use in mb',
   `active_session` int(10) NOT NULL DEFAULT 0 COMMENT 'active session number',
   `last_update` DATETIME NULL COMMENT 'Last session update time',
   `session_details` BLOB NULL COMMENT 'session detail info',
@@ -877,7 +886,6 @@ CREATE TABLE  `cloud`.`secondary_storage_vm` (
   `public_mac_address` varchar(17)  unique COMMENT 'mac address of the public facing network card',
   `public_ip_address` varchar(15) UNIQUE COMMENT 'public ip address for the sec storage vm',
   `public_netmask` varchar(15)  COMMENT 'public netmask used for the sec storage vm',
-  `ram_size` int(10) unsigned NOT NULL DEFAULT 512 COMMENT 'memory to use in mb',
   `guid` varchar(255)  COMMENT 'copied from guid of secondary storage host',
   `nfs_share` varchar(255)  COMMENT 'server and path exported by the nfs server ',
   `last_update` DATETIME NULL COMMENT 'Last session update time',
@@ -907,7 +915,6 @@ CREATE TABLE  `cloud`.`account` (
   `state` varchar(10) NOT NULL default 'enabled',
   `removed` datetime COMMENT 'date removed',
   `cleanup_needed` tinyint(1) NOT NULL default '0',
---  `network_domain` varchar(100) COMMENT 'Network domain name of the Vms of the account',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
