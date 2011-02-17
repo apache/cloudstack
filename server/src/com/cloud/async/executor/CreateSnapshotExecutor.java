@@ -105,7 +105,7 @@ public class CreateSnapshotExecutor extends BaseAsyncJobExecutor {
 	private CreateSnapshotResultObject composeResultObject(Snapshot snapshot) {
 		CreateSnapshotResultObject resultObject = new CreateSnapshotResultObject();
 		ManagementServer managementServer = getAsyncJobMgr().getExecutorContext().getManagementServer();
-		VolumeVO volume = managementServer.findVolumeById(snapshot.getVolumeId());
+		VolumeVO volume = managementServer.findVolumeByIdIncludingRemoved(snapshot.getVolumeId());
 		
 		resultObject.setId(snapshot.getId());
 		long domainId = -1;

@@ -5490,6 +5490,11 @@ public class ManagementServerImpl implements ManagementServer {
          }
     }
 
+    @Override
+    public VolumeVO findVolumeByIdIncludingRemoved(long id) {
+        VolumeVO volume = _volumeDao.findById(id);
+        return volume;
+   }
 
     @Override
     public VolumeVO findAnyVolumeById(long volumeId) {

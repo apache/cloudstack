@@ -2190,5 +2190,6 @@ public interface ManagementServer {
 	 * @return comma separated list of tags
 	 */
 	String getHostTags(long hostId);
+    VolumeVO findVolumeByIdIncludingRemoved(long id);
 	
 }
