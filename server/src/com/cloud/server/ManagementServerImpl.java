@@ -2939,9 +2939,6 @@ public class ManagementServerImpl implements ManagementServer {
         Account account = UserContext.current().getCaller();
         Long domainId = cmd.getId();
         Boolean cleanup = cmd.getCleanup();
-
-        //TODO
-        cleanup = true;
         
         if ((domainId == DomainVO.ROOT_DOMAIN) || ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId))) {
             throw new PermissionDeniedException("Unable to delete domain " + domainId + ", permission denied.");
@@ -2961,10 +2958,13 @@ public class ManagementServerImpl implements ManagementServer {
                     if (!_domainDao.remove(domainId)) {
                         s_logger.error("Delete failed on domain " + domain.getName() + " (id: " + domainId + "); please make sure all users and sub domains have been removed from the domain before deleting");
                         return false;
+                    } else {
+                        domain.setState(Domain.State.Inactive);
+                        _domainDao.update(domainId, domain);
                     }
                 }
             } else {
-                throw new InvalidParameterValueException("Failed to delete domain nable " + domainId + ", domain not found");
+                throw new InvalidParameterValueException("Failed to delete domain " + domainId + ", domain not found");
             }
             cleanupDomainOfferings(domainId);
             return true;
@@ -3004,7 +3004,7 @@ public class ManagementServerImpl implements ManagementServer {
             sc1.addAnd("path", SearchCriteria.Op.LIKE, "%"+domainHandle.getPath()+"%");
             List<DomainVO> domainsToBeInactivated = _domainDao.search(sc1, null);
             
-            //update all subdomains to inactive so no accounts can be created
+            //update all subdomains to inactive so no accounts/users can be created
             for(DomainVO domain : domainsToBeInactivated) {
                 domain.setState(Domain.State.Inactive);
                 _domainDao.update(domain.getId(), domain);
