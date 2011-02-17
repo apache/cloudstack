@@ -1685,9 +1685,9 @@ function vmJsonToDetailsTab(){
 	setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));		
 	
 	
-	var timerKey = "refreshInstanceStatue";
+	//refresh status every 2 seconds until status is not Starting/Stopping any more 
+	var timerKey = "refreshInstanceStatus";
 	$("body").stopTime(timerKey);  //stop timer used by another middle menu item (i.e. stop timer when clicking on a different middle menu item)		
-	
 	if($midmenuItem1.find("#spinning_wheel").css("display") == "none") {
 	    if(jsonObj.state == "Starting" || jsonObj.state == "Stopping") {	    
 	        $("body").everyTime(
@@ -1702,17 +1702,15 @@ function vmJsonToDetailsTab(){
 			                var items = json.listvirtualmachinesresponse.virtualmachine;
 			                if(items != null && items.length > 0) {
 				                jsonObj = items[0]; //override jsonObj declared above				
-				                $midmenuItem1.data("jsonObj", jsonObj); 
-				                updateVmStateInMidMenu(jsonObj, $midmenuItem1); 
-    				            
+				                $midmenuItem1.data("jsonObj", jsonObj); 	
 				                if(!(jsonObj.state == "Starting" || jsonObj.state == "Stopping")) {
 				                    $("body").stopTime(timerKey);	
-				                }
-    				            
-				                if(jsonObj.id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
-				                    setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));	
-				                    vmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1);	
-				                }		
+				                    updateVmStateInMidMenu(jsonObj, $midmenuItem1); 				                    				                    
+				                    if(jsonObj.id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+				                        setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));	
+				                        vmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1);	
+				                    }					                    
+				                }				               	
 	                        }   
 		                }
 	                });                       	
@@ -1721,8 +1719,8 @@ function vmJsonToDetailsTab(){
 	    }
 	}
 		
-	$thisTab.find("#ipAddress").text(fromdb(jsonObj.ipaddress));
-	
+		
+	$thisTab.find("#ipAddress").text(fromdb(jsonObj.ipaddress));	
 	$thisTab.find("#id").text(fromdb(jsonObj.id));
 	$thisTab.find("#zoneName").text(fromdb(jsonObj.zonename));
 		   
