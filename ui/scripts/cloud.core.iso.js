@@ -548,7 +548,8 @@ var isoActionMap = {
         afterActionSeccessFn: function(json, $midmenuItem1, id){   
             var jsonObj = $midmenuItem1.data("jsonObj");
             $midmenuItem1.remove();
-            if((jsonObj.id == $("#right_panel_content").find("#tab_content_details").find("#id").text()) && (jsonObj.zoneid == $("#right_panel_content").find("#tab_content_details").find("#zoneid").text())) {
+            if((jsonObj.id == $("#right_panel_content").find("#tab_content_details").find("#id").text()) 
+               && ((jsonObj.zoneid == null) || (jsonObj.zoneid != null && jsonObj.zoneid == $("#right_panel_content").find("#tab_content_details").find("#zoneid").text()))) {
                 clearRightPanel();
                 isoClearRightPanel();  
             }            

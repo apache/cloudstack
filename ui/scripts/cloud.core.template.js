@@ -340,6 +340,7 @@ function templateJsonToDetailsTab() {
      
     $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));
+    $thisTab.find("#zoneid").text(fromdb(jsonObj.zoneid));
     
     $thisTab.find("#name").text(fromdb(jsonObj.name));
     $thisTab.find("#name_edit").val(fromdb(jsonObj.name));
@@ -350,23 +351,16 @@ function templateJsonToDetailsTab() {
     $thisTab.find("#hypervisor").text(fromdb(jsonObj.hypervisor));    
     $thisTab.find("#templatetype").text(fromdb(jsonObj.templatetype)); 
     
-    /*
-    var status = "Ready";
-	if (jsonObj.isready == false) 
-		status = fromdb(jsonObj.status);	 
-    setTemplateStateInRightPanel(status, $thisTab.find("#status"));
-    */
     
+    //refresh status field every 2 seconds if template is in download progress
     var timerKey = "templateDownloadProgress";	
-	$("body").stopTime(timerKey);	//stop timer on previously selected middle menu item in template page
-			
+	$("body").stopTime(timerKey);	//stop timer on previously selected middle menu item in template page			
 	if(jsonObj.isready == true){
 	    setTemplateStateInRightPanel("Ready", $thisTab.find("#status"));
 	    $("#progressbar_container").hide();
 	}
 	else {
-	    $("#progressbar_container").show();	    
-	    
+	    $("#progressbar_container").show();	  	    
 	    setTemplateStateInRightPanel(fromdb(jsonObj.status), $thisTab.find("#status"));
         var progressBarValue = 0;
         if(jsonObj.status != null && jsonObj.status.indexOf("%") != -1) {      //e.g. jsonObj.status == "95% Downloaded" 	    
@@ -387,6 +381,7 @@ function templateJsonToDetailsTab() {
             }
         )	     
 	}
+	
         
     if(jsonObj.size != null)
 	    $thisTab.find("#size").text(convertBytes(parseInt(jsonObj.size))); 
@@ -521,6 +516,7 @@ function templateClearDetailsTab() {
    
     $thisTab.find("#id").text("");
     $thisTab.find("#zonename").text("");
+    $thisTab.find("#zoneid").text("");
     
     $thisTab.find("#name").text("");
     $thisTab.find("#name_edit").val("");
@@ -564,6 +560,15 @@ var templateActionMap = {
         dialogBeforeActionFn : doDeleteTemplate,
         inProcessText: "label.action.delete.template.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id){  
+            var jsonObj = $midmenuItem1.data("jsonObj");
+            $midmenuItem1.remove();
+            if((jsonObj.id == $("#right_panel_content").find("#tab_content_details").find("#id").text()) 
+               && ((jsonObj.zoneid == null) || (jsonObj.zoneid != null && jsonObj.zoneid == $("#right_panel_content").find("#tab_content_details").find("#zoneid").text()))) {
+                clearRightPanel();
+                isoClearRightPanel();  
+            }     
+            
+            /*
             $midmenuItem1.slideUp("slow", function() {
                 $(this).remove();
                 if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
@@ -571,7 +576,7 @@ var templateActionMap = {
                     templateClearRightPanel();
                 }
             });              
-            
+            */
         }
     },
     "label.action.copy.template": {
