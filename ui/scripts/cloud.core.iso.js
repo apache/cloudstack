@@ -332,6 +332,7 @@ function isoJsonToDetailsTab() {
         
     $thisTab.find("#id").text(fromdb(jsonObj.id));
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename));
+    $thisTab.find("#zoneid").text(fromdb(jsonObj.zoneid));
     
     $thisTab.find("#name").text(fromdb(jsonObj.name));
     $thisTab.find("#name_edit").val(fromdb(jsonObj.name));
@@ -342,24 +343,17 @@ function isoJsonToDetailsTab() {
     $thisTab.find("#ostypename_edit").val(fromdb(jsonObj.ostypeid));    
     $thisTab.find("#account").text(fromdb(jsonObj.account));
 	$thisTab.find("#domain").text(fromdb(jsonObj.domain));
-      
-    /*                  
-    var status = "Ready";
-	if (jsonObj.isready == false)
-		status = fromdb(jsonObj.status);		
-	setTemplateStateInRightPanel(status, $thisTab.find("#status"));
-	*/
-	
+    
+    
+    //refresh status field every 2 seconds if ISO is in download progress	
 	var timerKey = "isoDownloadProgress";	
-	$("body").stopTime(timerKey);	//stop timer on previously selected middle menu item in ISO page
-			
+	$("body").stopTime(timerKey);	//stop timer on previously selected middle menu item in ISO page			
 	if(jsonObj.isready == true){
 	    setTemplateStateInRightPanel("Ready", $thisTab.find("#status"));
 	    $("#progressbar_container").hide();
 	}
 	else {
-	    $("#progressbar_container").show();	    
-	    
+	    $("#progressbar_container").show();	   
 	    setTemplateStateInRightPanel(fromdb(jsonObj.status), $thisTab.find("#status"));
         var progressBarValue = 0;
         if(jsonObj.status != null && jsonObj.status.indexOf("%") != -1) {      //e.g. jsonObj.status == "95% Downloaded" 	    
@@ -380,6 +374,7 @@ function isoJsonToDetailsTab() {
             }
         )	     
 	}
+	
 	
 	if(jsonObj.size != null)
 	    $thisTab.find("#size").text(convertBytes(parseInt(jsonObj.size)));  
@@ -514,6 +509,7 @@ function isoClearDetailsTab() {
     
     $thisTab.find("#id").text("");
     $thisTab.find("#zonename").text("");
+    $thisTab.find("#zoneid").text("");
     
     $thisTab.find("#name").text("");
     $thisTab.find("#name_edit").val("");
@@ -549,14 +545,24 @@ var isoActionMap = {
         asyncJobResponse: "deleteisosresponse",
         dialogBeforeActionFn: doDeleteIso,
         inProcessText: "label.action.delete.ISO.processing",
-        afterActionSeccessFn: function(json, $midmenuItem1, id){    
+        afterActionSeccessFn: function(json, $midmenuItem1, id){   
+            var jsonObj = $midmenuItem1.data("jsonObj");
+            $midmenuItem1.remove();
+            if((jsonObj.id == $("#right_panel_content").find("#tab_content_details").find("#id").text()) && (jsonObj.zoneid == $("#right_panel_content").find("#tab_content_details").find("#zoneid").text())) {
+                clearRightPanel();
+                isoClearRightPanel();  
+            }            
+             
+            /*            
             $midmenuItem1.slideUp("slow", function() {
+                var jsonObj = $midmenuItem1.data("jsonObj");
                 $(this).remove();                
-                if(id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+                if((jsonObj.id == $("#right_panel_content").find("#tab_content_details").find("#id").text()) && (jsonObj.zoneid == $("#right_panel_content").find("#tab_content_details").find("#zoneid").text())) {
                     clearRightPanel();
                     isoClearRightPanel();
                 }
-            });           
+            });    
+            */             
         }        
     },
     "label.action.copy.ISO": {
