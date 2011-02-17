@@ -104,7 +104,8 @@ function hostJsonToDetailsTab() {
             var items = json.listhostsresponse.host;
 			if(items != null && items.length > 0) {
                 jsonObj = items[0];
-                $midmenuItem1.data("jsonObj", jsonObj);                  
+                $midmenuItem1.data("jsonObj", jsonObj);   
+                updateHostStateInMidMenu(jsonObj, $midmenuItem1);                  
             }
         }
     });     
@@ -119,6 +120,42 @@ function hostJsonToDetailsTab() {
         
     setHostStateInRightPanel(fromdb(jsonObj.state), $thisTab.find("#state"));
     
+    
+    //refresh status every 2 seconds until status is not changable any more 
+	var timerKey = "refreshHostStatus";
+	$("body").stopTime(timerKey);  //stop timer used by another middle menu item (i.e. stop timer when clicking on a different middle menu item)		
+	if($midmenuItem1.find("#spinning_wheel").css("display") == "none") {
+	    if(jsonObj.state in hostChangableStatus) {	    
+	        $("body").everyTime(
+                2000,
+                timerKey,
+                function() {              
+                    $.ajax({
+		                data: createURL("command=listHosts&id="+jsonObj.id),
+		                dataType: "json",
+		                async: false,
+		                success: function(json) {  
+			                var items = json.listhostsresponse.host;
+			                if(items != null && items.length > 0) {
+				                jsonObj = items[0]; //override jsonObj declared above				
+				                $midmenuItem1.data("jsonObj", jsonObj); 				                            
+				                if(!(jsonObj.state in hostChangableStatus)) {
+				                    $("body").stopTime(timerKey);					                    
+				                    updateHostStateInMidMenu(jsonObj, $midmenuItem1); 			                    
+				                    if(jsonObj.id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+				                        setHostStateInRightPanel(jsonObj.state, $thisTab.find("#state"));	
+				                        hostBuildActionMenu(jsonObj, $thisTab, $midmenuItem1);	
+				                    }					                    
+				                }               
+	                        }   
+		                }
+	                });                       	
+                }
+            );
+	    }
+	}
+        
+    
     $thisTab.find("#type").text(fromdb(jsonObj.type));      
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename)); 
     $thisTab.find("#podname").text(fromdb(jsonObj.podname));   
@@ -130,7 +167,22 @@ function hostJsonToDetailsTab() {
     
     populateForUpdateOSDialog(jsonObj.oscategoryid);
     
-    //actions ***   
+    // actions 
+    hostBuildActionMenu(jsonObj, $thisTab, $midmenuItem1);
+	
+	$thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();               
+}
+
+var hostChangableStatus = {
+    "PrepareForMaintenance": 1,
+    "Updating": 1,
+    "Disconnected": 1,
+    "Alert": 1,
+    "Connecting": 1   
+}
+
+function hostBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {  
     var $actionLink = $thisTab.find("#action_link"); 
     bindActionLink($actionLink);
       
@@ -186,9 +238,6 @@ function hostJsonToDetailsTab() {
 	if(noAvailableActions == true) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
 	}	
-	
-	$thisTab.find("#tab_spinning_wheel").hide();    
-    $thisTab.find("#tab_container").show();               
 }
 
 function hostJsonToInstanceTab() {       	
