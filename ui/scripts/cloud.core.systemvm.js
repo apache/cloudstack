@@ -93,15 +93,52 @@ function systemvmJsonToDetailsTab() {
             if(items != null && items.length > 0) {
                 jsonObj = items[0];
                 $midmenuItem1.data("jsonObj", jsonObj);  
+                updateVmStateInMidMenu(jsonObj, $midmenuItem1);  
             }
         }
     });     
        
     $thisTab.find("#grid_header_title").text(fromdb(jsonObj.name));       
     resetViewConsoleAction(jsonObj, $thisTab);         
-    setVmStateInRightPanel(fromdb(jsonObj.state), $thisTab.find("#state"));		
-    $thisTab.find("#ipAddress").text(fromdb(jsonObj.publicip));
-        
+    setVmStateInRightPanel(fromdb(jsonObj.state), $thisTab.find("#state"));	
+    
+    
+    //refresh status every 2 seconds until status is not Starting/Stopping any more 
+	var timerKey = "refreshSystemvmStatus";
+	$("body").stopTime(timerKey);  //stop timer used by another middle menu item (i.e. stop timer when clicking on a different middle menu item)		
+	if($midmenuItem1.find("#spinning_wheel").css("display") == "none") {
+	    if(jsonObj.state == "Starting" || jsonObj.state == "Stopping") {	    
+	        $("body").everyTime(
+                2000,
+                timerKey,
+                function() {              
+                    $.ajax({
+		                data: createURL("command=listSystemVms&id="+jsonObj.id),
+		                dataType: "json",
+		                async: false,
+		                success: function(json) {  
+			                var items = json.listsystemvmsresponse.systemvm; 
+			                if(items != null && items.length > 0) {
+				                jsonObj = items[0]; //override jsonObj declared above				
+				                $midmenuItem1.data("jsonObj", jsonObj); 				                            
+				                if(!(jsonObj.state == "Starting" || jsonObj.state == "Stopping")) {
+				                    $("body").stopTime(timerKey);					                    
+				                    updateVmStateInMidMenu(jsonObj, $midmenuItem1); 				                    
+				                    if(jsonObj.id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
+				                        setVmStateInRightPanel(jsonObj.state, $thisTab.find("#state"));	
+				                        systemvmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1);	
+				                    }					                    
+				                }               
+	                        }   
+		                }
+	                });                       	
+                }
+            );
+	    }
+	}
+    	
+    	
+    $thisTab.find("#ipAddress").text(fromdb(jsonObj.publicip));        
     $thisTab.find("#state").text(fromdb(jsonObj.state));     
     $thisTab.find("#systemvmtype").text(toSystemVMTypeText(jsonObj.systemvmtype));    
     $thisTab.find("#zonename").text(fromdb(jsonObj.zonename)); 
@@ -122,29 +159,17 @@ function systemvmJsonToDetailsTab() {
         $thisTab.find("#activeviewersessions_container").hide();
     }    
         
-    //actions ***
+    //actions
+    systemvmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1);
+	
+	$thisTab.find("#tab_spinning_wheel").hide();    
+    $thisTab.find("#tab_container").show();      
+}
+
+function systemvmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {  
     var $actionLink = $thisTab.find("#action_link"); 
     bindActionLink($actionLink);
-    /*
-    $actionLink.bind("mouseover", function(event) {	    
-        $(this).find("#action_menu").show();    
-        return false;
-    });
-    $actionLink.bind("mouseout", function(event) {          
-        var $thisElement = $(this)[0];
-	    var relatedTarget1 = event.relatedTarget;
-	    while(relatedTarget1 != null && relatedTarget1.nodeName != "BODY" && relatedTarget1 != $thisElement) {
-	        relatedTarget1 = relatedTarget1.parentNode;
-	    }    	
-	    if(relatedTarget1 == $thisElement) { 
-	        return;        
-        }
-        
-        $(this).find("#action_menu").hide();    
-        return false;
-    });	 
-    */
-     
+   
     var $actionMenu = $actionLink.find("#action_menu");
     $actionMenu.find("#action_list").empty();   
 	var noAvailableActions = true;
@@ -169,9 +194,6 @@ function systemvmJsonToDetailsTab() {
 	if(noAvailableActions == true) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
 	}	 
-	
-	$thisTab.find("#tab_spinning_wheel").hide();    
-    $thisTab.find("#tab_container").show();      
 }
 
 function systemvmClearDetailsTab() {    
