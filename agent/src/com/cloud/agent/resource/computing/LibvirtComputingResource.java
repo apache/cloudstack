@@ -1500,7 +1500,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	private AttachVolumeAnswer execute(AttachVolumeCommand cmd) {
 		try {
 			Connect conn = LibvirtConnection.getConnection();
-			attachOrDetachDisk(conn, cmd.getAttach(), cmd.getVmName(), cmd.getVolumePath());
+			attachOrDetachDisk(conn, cmd.getAttach(), cmd.getVmName(), cmd.getVolumePath(), cmd.getDeviceId().intValue());
 		} catch (LibvirtException e) {
 			return new AttachVolumeAnswer(cmd, e.toString());
 		} catch (InternalErrorException e) {
@@ -1766,12 +1766,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
 			String xml = dm.getXMLDesc(0);
 			parser.parseDomainXML(xml);
-			List<String> nics = parser.getInterfaces();
+			List<InterfaceDef> nics = parser.getInterfaces();
 			if (nics.size() != 3) {
 				return new Answer(cmd, false, vmName + " doesn't have public nic");
 			}
-			String pubNic = nics.get(2);
-			Pair<Double, Double> nicStats = getNicStats(pubNic);
+			InterfaceDef pubNic = nics.get(2);
+			Pair<Double, Double> nicStats = getNicStats(pubNic.getBrName());
 			/*Note: received means bytes received by all the vms, but from host kernel's pov, it's tx*/
 			return new NetworkUsageAnswer(cmd, "", nicStats.first().longValue(), nicStats.second().longValue());
 		} catch (LibvirtException e) {
@@ -2045,20 +2045,29 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			startDomain(conn, vmName, vm.toString());
 			
 			if (vmSpec.getType() != VirtualMachine.Type.User) {
-				default_network_rules_for_systemvm(vmName);
+			    default_network_rules_for_systemvm(vmName);
 			} else {
 			    NicTO[] nics = vmSpec.getNics();
+			    List<InterfaceDef> vifs = getInterfaces(conn, vmName);
+			    StringBuilder rules = new StringBuilder();
+			    
 			    for (NicTO nic : nics) { 
-			        if (nic.getIsolationUri() != null && nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString())) {
-			            default_network_rules(vmName, vmSpec.getNics()[0].getIp(), vmSpec.getId(), vmSpec.getNics()[0].getMac());
+			        if (nic.getIsolationUri() != null ) {
+			            if (nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString()) ||
+			                nic.getType() == TrafficType.Public) {
+			                rules.append(nic.getIp() + "," + nic.getMac() + "," + vifs.get(nic.getDeviceId()).getDevName() + ";") ;
+			            }
 			        }
 			    }
+			    
+			    if (rules.toString() != null)
+			        default_network_rules(vmName, vmSpec.getId(), rules.toString());
 			}
 
 			// Attach each data volume to the VM, if there is a deferred attached disk
 			for (DiskDef disk : vm.getDevices().getDisks()) {
 				if (disk.isAttachDeferred()) {
-					attachOrDetachDisk(conn, true, vmName, disk.getDiskPath());
+					attachOrDetachDisk(conn, true, vmName, disk.getDiskPath(), disk.getDiskSeq());
 				}
 			}
 			state = State.Running;
@@ -2247,16 +2256,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 		return attachOrDetachDevice(conn, true, vmName, isoXml);
 	}
 	
-	protected synchronized String attachOrDetachDisk(Connect conn, boolean attach, String vmName, String sourceFile) throws LibvirtException, InternalErrorException {
-		String diskDev = null;
-		SortedMap<String, String> diskMaps = null;
+	protected synchronized String attachOrDetachDisk(Connect conn, boolean attach, String vmName, String sourceFile, int devId) throws LibvirtException, InternalErrorException {
+		List<DiskDef> disks = null;
 		Domain dm = null;
 		try {
 			dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes()));
 			LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
 			String xml = dm.getXMLDesc(0);
 			parser.parseDomainXML(xml);
-			diskMaps = parser.getDiskMaps();
+			disks = parser.getDisks();
 		} catch (LibvirtException e) {
 			throw e;
 		} finally {
@@ -2265,32 +2273,26 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			}
 		}
 
-		if (attach) {
-			diskDev = diskMaps.lastKey();
-			/*Find the latest disk dev, and add 1 on it: e.g. if we already attach sdc to a vm, the next disk dev is sdd*/
-			diskDev = diskDev.substring(0, diskDev.length() - 1) + (char)(diskDev.charAt(diskDev.length() -1) + 1);
-		} else {
-			Set<Map.Entry<String, String>> entrySet = diskMaps.entrySet();
-			Iterator<Map.Entry<String, String>> itr = entrySet.iterator();
-			while (itr.hasNext()) {
-				Map.Entry<String, String> entry = itr.next();
-				if ((entry.getValue() != null) && (entry.getValue().equalsIgnoreCase(sourceFile))) {
-					diskDev = entry.getKey();
-					break;
-				}
-			}
+		if (!attach) {
+		    boolean diskAttached = false;
+
+		    for (DiskDef disk : disks) {
+		        if (disk.getDiskPath().equalsIgnoreCase(sourceFile)) {
+		            devId = disk.getDiskSeq();
+		            diskAttached = true;
+		        }
+		    }
+		    if (!diskAttached) {
+		        throw new InternalErrorException("disk: " + sourceFile + " is not attached before");
+		    }
 		}
 
-		if (diskDev == null) {
-			s_logger.warn("Can't get disk dev");
-			return "Can't get disk dev";
-		}
 		DiskDef disk = new DiskDef();
 		String guestOSType = getGuestType(conn, vmName);
 		if (isGuestPVEnabled(guestOSType)) {
-			disk.defFileBasedDisk(sourceFile, diskDev, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
+			disk.defFileBasedDisk(sourceFile, devId, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
 		} else {
-			disk.defFileBasedDisk(sourceFile, diskDev, DiskDef.diskBus.SCSI, DiskDef.diskFmtType.QCOW2);
+			disk.defFileBasedDisk(sourceFile, devId, DiskDef.diskBus.SCSI, DiskDef.diskFmtType.QCOW2);
 		}
 		String xml = disk.toString();
 		return attachOrDetachDevice(conn, attach, vmName, xml);
@@ -2993,18 +2995,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	 return conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes()));
     }
     
-    private  List<String> getInterfaces(Connect conn, String vmName) {
+    private  List<InterfaceDef> getInterfaces(Connect conn, String vmName) {
     	LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
     	Domain dm = null;
     	try {
     		dm =  conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes()));
     		parser.parseDomainXML(dm.getXMLDesc(0));
+    	    return parser.getInterfaces();
+
     	} catch (LibvirtException e) {
     		s_logger.debug("Failed to get dom xml: " + e.toString());
-    		return new ArrayList<String>();
+    		return new ArrayList<InterfaceDef>();
     	} catch (Exception e) {
     		s_logger.debug("Failed to get dom xml: " + e.toString());
-    		return new ArrayList<String>();
+    		return new ArrayList<InterfaceDef>();
     	} finally {
     		try {
     		if (dm != null) {
@@ -3014,7 +3018,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     			
     		}
     	}
-    	return parser.getInterfaces();
     }
     
     private String executeBashScript(String script) {
@@ -3091,11 +3094,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			
     		/*get network stats*/
 
-    		List<String> vifs = getInterfaces(conn, vmName);
+    		List<InterfaceDef> vifs = getInterfaces(conn, vmName);
     		long rx = 0;
     		long tx = 0;
-    		for (String vif : vifs) {
-    			DomainInterfaceStats ifStats = dm.interfaceStats(vif);
+    		for (InterfaceDef vif : vifs) {
+    			DomainInterfaceStats ifStats = dm.interfaceStats(vif.getDevName());
     			rx += ifStats.rx_bytes;
     			tx += ifStats.tx_bytes;
     		}
@@ -3145,16 +3148,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	return true;
     }
     
-    private boolean default_network_rules(String vmName, String pubIP, long vmId, String mac) {
+    private boolean default_network_rules(String vmName, long vmId, String rules) {
     	if (!_can_bridge_firewall) {
             return false;
         }
     	Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
     	cmd.add("default_network_rules");
     	cmd.add("--vmname", vmName);
-    	cmd.add("--vmip", pubIP);
+    	cmd.add("--rules", rules);
     	cmd.add("--vmid", Long.toString(vmId));
-    	cmd.add("--vmmac", mac);
     	
     	String result = cmd.execute();
     	if (result != null) {

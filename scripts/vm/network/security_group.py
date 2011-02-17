@@ -156,9 +156,10 @@ def destroy_ebtables_rules(vm_name):
         except:
             logging.debug("Ignoring failure to delete ebtables chain for vm " + vm_name)   
 
-def default_ebtables_rules(vm_name, vif, vm_ip, vm_mac):
+def default_ebtables_rules(vm_name, rules):
     vmchain_in = vm_name + "-in"
     vmchain_out = vm_name + "-out"
+    rule = rules.split(";")[:-1]
     
     for chain in [vmchain_in, vmchain_out]:
         try:
@@ -168,30 +169,39 @@ def default_ebtables_rules(vm_name, vif, vm_ip, vm_mac):
 
     try:
         # -s ! 52:54:0:56:44:32 -j DROP 
-        execute("ebtables -t nat -A PREROUTING -i " + vif + " -j " +  vmchain_in)
-        execute("ebtables -t nat -A POSTROUTING -o " + vif + " -j " + vmchain_out)
+        for r in rule:
+            vif = r.split(",")[2]
+            execute("ebtables -t nat -A PREROUTING -i " + vif + " -j " +  vmchain_in)
+            execute("ebtables -t nat -A POSTROUTING -o " + vif + " -j " + vmchain_out)
     except:
         logging.debug("Failed to program default rules")
         return 'false'
     
     try:
-        execute("ebtables -t nat -A " +  vmchain_in + " -i " + vif + " -s ! " +  vm_mac + " -j DROP")
-        execute("ebtables -t nat -A " +  vmchain_in + " -p ARP -s ! " + vm_mac + " -j DROP")
-        execute("ebtables -t nat -A " +  vmchain_in + " -p ARP --arp-mac-src ! " + vm_mac + " -j DROP")
-        execute("ebtables -t nat -A " + vmchain_in +  " -p ARP --arp-ip-src ! " + vm_ip + " -j DROP") 
-        execute("ebtables -t nat -A " + vmchain_in + " -p ARP --arp-op Request -j ACCEPT")   
-        execute("ebtables -t nat -A " + vmchain_in  + " -p ARP --arp-op Reply -j ACCEPT")    
-        execute("ebtables -t nat -A " + vmchain_in + " -p ARP  -j DROP")    
+        for r in rule:
+            vm_ip = r.split(",")[0]
+            vm_mac = r.split(",")[1]
+            vif = r.split(",")[2]
+            execute("ebtables -t nat -A " +  vmchain_in + " -i " + vif + " -s ! " +  vm_mac + " -j DROP")
+            execute("ebtables -t nat -A " +  vmchain_in + " -p ARP -s ! " + vm_mac + " -j DROP")
+            execute("ebtables -t nat -A " +  vmchain_in + " -p ARP --arp-mac-src ! " + vm_mac + " -j DROP")
+            execute("ebtables -t nat -A " + vmchain_in +  " -p ARP --arp-ip-src ! " + vm_ip + " -j DROP") 
+            execute("ebtables -t nat -A " + vmchain_in + " -p ARP --arp-op Request -j ACCEPT")   
+            execute("ebtables -t nat -A " + vmchain_in  + " -p ARP --arp-op Reply -j ACCEPT")    
+            execute("ebtables -t nat -A " + vmchain_in + " -p ARP  -j DROP")    
     except:
         logging.exception("Failed to program default ebtables IN rules")
         return 'false'
    
     try:
-        execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Reply --arp-mac-dst ! " +  vm_mac + " -j DROP")
-        execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-ip-dst ! " + vm_ip + " -j DROP") 
-        execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Request -j ACCEPT")   
-        execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Reply -j ACCEPT")    
-        execute("ebtables -t nat -A " + vmchain_out + " -p ARP -j DROP")    
+        for r in rule:
+            vm_ip = r.split(",")[0]
+            vm_mac = r.split(",")[1]
+            execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Reply --arp-mac-dst ! " +  vm_mac + " -j DROP")
+            execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-ip-dst ! " + vm_ip + " -j DROP") 
+            execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Request -j ACCEPT")   
+            execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Reply -j ACCEPT")    
+            execute("ebtables -t nat -A " + vmchain_out + " -p ARP -j DROP")    
     except:
         logging.debug("Failed to program default ebtables OUT rules")
         return 'false' 
@@ -225,10 +235,7 @@ def default_network_rules_systemvm(vm_name):
     return 'true'
 
 
-def default_network_rules(vm_name, vm_ip, vm_id, vm_mac):
-    print vm_name 
-    print vm_ip 
-    print vm_mac
+def default_network_rules(vm_name, vm_id, rules):
     vmName = vm_name 
     domID = getvmId(vm_name)
     delete_rules_for_vm_in_bridge_firewall_chain(vmName)
@@ -236,8 +243,6 @@ def default_network_rules(vm_name, vm_ip, vm_id, vm_mac):
     vmchain_default = '-'.join(vmchain.split('-')[:-1]) + "-def"
     
     destroy_ebtables_rules(vmName)
-    
-    vifs = getVifs(vmName)
 
     try:
         execute("iptables -N " + vmchain)
@@ -249,29 +254,35 @@ def default_network_rules(vm_name, vm_ip, vm_id, vm_mac):
     except:
         execute("iptables -F " + vmchain_default)
 
+    rule = rules.split(";")[:-1]
     try:
-        for v in vifs:
-            execute("iptables -A BRIDGE-FIREWALL -m physdev --physdev-is-bridged --physdev-out " + v + " -j " +  vmchain_default)
-            execute("iptables -A BRIDGE-FIREWALL -m physdev --physdev-is-bridged --physdev-in " +  v + " -j " + vmchain_default)
+        for r in rule:
+            vif = r.split(",")[2] 
+            execute("iptables -A BRIDGE-FIREWALL -m physdev --physdev-is-bridged --physdev-out " + vif + " -j " +  vmchain_default)
+            execute("iptables -A BRIDGE-FIREWALL -m physdev --physdev-is-bridged --physdev-in " +  vif + " -j " + vmchain_default)
         execute("iptables -A  " + vmchain_default + " -m state --state RELATED,ESTABLISHED -j ACCEPT")
         #allow dhcp
-        for v in vifs:
-            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + v + " -p udp --dport 67 --sport 68 -j ACCEPT")
-            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-out " + v + " -p udp --dport 68 --sport 67  -j ACCEPT")
+        for r in rule:
+            vif = r.split(",")[2] 
+            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -p udp --dport 67 --sport 68 -j ACCEPT")
+            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-out " + vif + " -p udp --dport 68 --sport 67  -j ACCEPT")
 
         #don't let vm spoof its ip address
-        for v in vifs:
-            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + v  + " --source " +  vm_ip +  " -j RETURN")
+        for r in rule:
+            vmip = r.split(",")[0]
+            vif = r.split(",")[2] 
+            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif  + " --source " +  vmip +  " -j ACCEPT")
         execute("iptables -A " + vmchain_default + " -j " +  vmchain)
     except:
         logging.debug("Failed to program default rules for vm " + vm_name)
         return 'false'
     
-    for v in vifs:
-    	default_ebtables_rules(vmchain, v, vm_ip, vm_mac)
+    default_ebtables_rules(vmchain, rules)
     
-    if write_rule_log_for_vm(vmName, vm_id, vm_ip, domID, '_initial_', '-1') == False:
-        logging.debug("Failed to log default network rules, ignoring")
+    for r in rule:
+        vm_ip = r.split(",")[0]
+        if write_rule_log_for_vm(vmName, vm_id, vm_ip, domID, '_initial_', '-1') == False:
+            logging.debug("Failed to log default network rules, ignoring")
         
     logging.debug("Programmed default rules for vm " + vm_name)
     return 'true'
@@ -385,7 +396,7 @@ def check_rule_log_for_vm(vmName, vmId, vmIP, domID, signature, seqno):
         lines = (line.rstrip() for line in open(logfilename))
     except:
         logging.debug("failed to open " + logfilename) 
-        return False
+        return [True, True, True, True, True, True]
 
     [_vmName,_vmID,_vmIP,_domID,_signature,_seqno] = ['_', '-1', '_', '-1', '_', '-1']
     try:
@@ -395,7 +406,7 @@ def check_rule_log_for_vm(vmName, vmId, vmIP, domID, signature, seqno):
     except:
         logging.debug("Failed to parse log file for vm " + vm_name)
         remove_rule_log_for_vm(vm_name)
-        return False
+        return [True, True, True, True, True, True]
     
     return [(vm_name != _vmName), (vmId != _vmID), (vmIP != _vmIP), (domID != _domID), (signature != _signature),(seqno != _seqno)]
 
@@ -436,22 +447,18 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules):
     domId = getvmId(vmName)
     vmchain = vm_name
     
+    changes = []
     changes = check_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno)
     
     if not 1 in changes:
         logging.debug("Rules already programmed for vm " + vm_name)
         return 'true'
     
-    if changes[1] or changes[2] or changes[3]:
-        logging.debug("Change detected in vmId or vmIp or domId, resetting default rules")
-        default_network_rules(vmName, vm_ip, vm_id, vmMac)
-        
     if rules == "" or rules == None:
 	return 'true'
 
-    lines = rules.split(';')
+    lines = rules.split(';')[:-1]
 
-    print lines
     logging.debug("    programming network rules for  IP: " + vm_ip + " vmname=" + vm_name)
     #iptables('-F', vmchain)
     
@@ -535,12 +542,13 @@ if __name__ == '__main__':
     parser.add_option("--sig", dest="sig")
     parser.add_option("--seq", dest="seq")
     parser.add_option("--rules", dest="rules")
+    parser.add_option("--phynic", dest="phynic")
     (option, args) = parser.parse_args()
     cmd = args[0]
     if cmd == "can_bridge_firewall":
         can_bridge_firewall(args[1])
     elif cmd == "default_network_rules":
-        default_network_rules(option.vmName, option.vmIP, option.vmID, option.vmMAC)
+        default_network_rules(option.vmName, option.vmID, option.rules)
     elif cmd == "destroy_network_rules_for_vm":
         destroy_network_rules_for_vm(option.vmName) 
     elif cmd == "default_network_rules_systemvm":
@@ -550,4 +558,4 @@ if __name__ == '__main__':
     elif cmd == "add_network_rules":
         add_network_rules(option.vmName, option.vmID, option.vmIP, option.sig, option.seq, option.vmMAC, option.rules)
     elif cmd == "cleanup_rules":
-	cleanup_rules()
+        cleanup_rules()

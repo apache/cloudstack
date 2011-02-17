@@ -2211,7 +2211,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		List<NicVO> nics = _nicDao.listByVmId(userVm.getId());
 		for (NicVO nic : nics) {
 			NetworkVO network = _networkDao.findById(nic.getNetworkId());
-			if (network.getTrafficType() == TrafficType.Guest) {
+			if (network.getTrafficType() == TrafficType.Guest || network.getTrafficType() == TrafficType.Public) {
 				userVm.setPrivateIpAddress(nic.getIp4Address());
 				userVm.setPrivateMacAddress(nic.getMacAddress());
 			}
