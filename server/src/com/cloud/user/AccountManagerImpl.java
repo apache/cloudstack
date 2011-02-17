@@ -64,6 +64,7 @@ import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkManager;
@@ -938,9 +939,14 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         boolean success = true;
         for (VMInstanceVO vm : vms) {
             try {
-                success = (success && _itMgr.stop(vm, getSystemUser(), getSystemAccount()));
+                try {
+                    success = (success && _itMgr.advanceStop(vm, true, getSystemUser(), getSystemAccount()));
+                } catch (OperationTimedoutException ote) {
+                    s_logger.warn("Operation for stopping vm timed out, unable to stop vm " + vm.getName(),ote);
+                    success = false;    
+                }
             } catch (AgentUnavailableException aue) {
-                s_logger.warn("Agent running on host " + vm.getHostId() + " is unavailable, unable to stop vm " + vm.getName());
+                s_logger.warn("Agent running on host " + vm.getHostId() + " is unavailable, unable to stop vm " + vm.getName(),aue);
                 success = false;
             }
         }
