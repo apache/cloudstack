@@ -107,7 +107,7 @@ function systemvmJsonToDetailsTab() {
 	var timerKey = "refreshSystemvmStatus";
 	$("body").stopTime(timerKey);  //stop timer used by another middle menu item (i.e. stop timer when clicking on a different middle menu item)		
 	if($midmenuItem1.find("#spinning_wheel").css("display") == "none") {
-	    if(jsonObj.state == "Starting" || jsonObj.state == "Stopping") {	    
+	    if(jsonObj.state in vmChangableStatus) {	    
 	        $("body").everyTime(
                 2000,
                 timerKey,
@@ -121,7 +121,7 @@ function systemvmJsonToDetailsTab() {
 			                if(items != null && items.length > 0) {
 				                jsonObj = items[0]; //override jsonObj declared above				
 				                $midmenuItem1.data("jsonObj", jsonObj); 				                            
-				                if(!(jsonObj.state == "Starting" || jsonObj.state == "Stopping")) {
+				                if(!(jsonObj.state in vmChangableStatus)) {
 				                    $("body").stopTime(timerKey);					                    
 				                    updateVmStateInMidMenu(jsonObj, $midmenuItem1); 				                    
 				                    if(jsonObj.id.toString() == $("#right_panel_content").find("#tab_content_details").find("#id").text()) {
