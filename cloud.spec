@@ -471,7 +471,6 @@ fi
 %{_javadir}/%{name}-gson.jar
 %{_javadir}/%{name}-httpcore-4.0.jar
 %{_javadir}/%{name}-jna.jar
-%{_javadir}/%{name}-junit-4.8.1.jar
 %{_javadir}/%{name}-libvirt-0.4.5.jar
 %{_javadir}/%{name}-log4j.jar
 %{_javadir}/%{name}-trilead-ssh2-build213.jar
