@@ -1023,7 +1023,12 @@ function initVMWizard() {
 			var zoneObj = $thisPopup.find("#wizard_zone option:selected").data("zoneObj");
 			if (zoneObj.networktype == "Advanced") {
 				var $selectedSecondaryNetworks = $thisPopup.find("input:checkbox[name=secondary_network]:checked");
-				var $selectedPrimaryNetworks = $thisPopup.find("input:radio[name=primary_network]:checked");
+				
+				var $selectedPrimaryNetworks;	
+				if($thisPopup.find("#network_virtual_container").css("display") == "none") 				
+				    $selectedPrimaryNetworks = $thisPopup.find("#network_direct_container").find("input:radio[name=primary_network]:checked");
+				else 
+				    $selectedPrimaryNetworks = $thisPopup.find("input:radio[name=primary_network]:checked");		        
 				
 				// prevent a person from moving on if no network has been selected
 				if($selectedPrimaryNetworks.length == 0) {
