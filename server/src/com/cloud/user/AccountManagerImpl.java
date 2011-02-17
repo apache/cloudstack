@@ -99,6 +99,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.InstanceGroupVO;
+import com.cloud.vm.ReservationContext;
+import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -884,7 +886,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             List<NetworkVO> networks = _networkDao.listByOwner(accountId);
             if (networks != null) {
                 for (NetworkVO network : networks) {
-                    if (!_networkMgr.deleteNetworkInternal(network.getId(), callerUserId)) {
+                    
+                    ReservationContext context = new ReservationContextImpl(null, null, getActiveUser(callerUserId), account);
+                    
+                    if (!_networkMgr.deleteNetworkInternal(network.getId(), context)) {
                         s_logger.warn("Unable to destroy network " + network + " as a part of account id=" + accountId +" cleanup.");
                         accountCleanupNeeded = true;
                         networksDeleted = false;

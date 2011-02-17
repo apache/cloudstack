@@ -1100,7 +1100,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 s_logger.debug("Cleaning up because we're unable to implement network " + network);
                 network.setState(Network.State.Shutdown);
                 _networksDao.update(networkId, network);
-                shutdownNetwork(networkId);
+                
+                shutdownNetwork(networkId, context);
             }
             _networksDao.releaseFromLockTable(networkId);
         }
@@ -1714,13 +1715,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         Long userId = UserContext.current().getCallerUserId();
-        Account caller = UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller(); 
 
         // Verify network id
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
             throw new InvalidParameterValueException("unable to find network " + networkId);
         }
+        
+        Account owner = _accountMgr.getAccount(network.getAccountId());
 
         // Perform permission check
         if (!_accountMgr.isAdmin(caller.getType())) {
@@ -1728,22 +1731,25 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new PermissionDeniedException("Account " + caller.getAccountName() + " does not own network id=" + networkId + ", permission denied");
             }
         } else {
-            Account owner = _accountMgr.getAccount(network.getAccountId());
+            
             _accountMgr.checkAccess(caller, owner);
         }
+
+        User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
+        ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
         
-        return deleteNetworkInternal(networkId, userId);
+        return deleteNetworkInternal(networkId, context);
     }
     
     @Override
     @DB
-    public boolean deleteNetworkInternal(long networkId, long userId){
-        return this.destroyNetwork(networkId, userId);
+    public boolean deleteNetworkInternal(long networkId, ReservationContext context){
+        return this.destroyNetwork(networkId, context);
     }
 
     @Override
     @DB
-    public void shutdownNetwork(long networkId) {
+    public void shutdownNetwork(long networkId, ReservationContext context) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         NetworkVO network = _networksDao.lockRow(networkId, true);
@@ -1765,18 +1771,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Sending network shutdown to " + element);
                 }
-                
-                User caller = null;
-                Account owner = _accountMgr.getAccount(network.getAccountId());
-                
-                UserContext ctx = UserContext.current();
-                if (ctx == null) {
-                    caller = _accountMgr.getSystemUser();
-                } else {
-                    caller = _accountMgr.getActiveUser(ctx.getCallerUserId());
-                }
-                
-                ReservationContext context = new ReservationContextImpl(null, null, caller, owner);
                 
                 element.shutdown(network, context);
             } catch (ResourceUnavailableException e) {
@@ -1811,7 +1805,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @DB
     @Override
-    public boolean destroyNetwork(long networkId, long callerUserId) {
+    public boolean destroyNetwork(long networkId, ReservationContext context) {
         NetworkVO network = _networksDao.findById(networkId);
         if (network == null) {
             s_logger.debug("Unable to find network with id: " + networkId);
@@ -1819,7 +1813,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         // Shutdown network first
-        shutdownNetwork(networkId);
+        shutdownNetwork(networkId, context);
 
         // get updated state for the network
         network = _networksDao.findById(networkId);
@@ -1869,7 +1863,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             txn.start();
             guru.trash(network, _networkOfferingDao.findById(network.getNetworkOfferingId()), owner);
 
-            if (!deleteVlansInNetwork(network.getId(), callerUserId)) {
+            if (!deleteVlansInNetwork(network.getId(), context.getCaller().getId())) {
                 success = false;
                 s_logger.warn("Failed to delete network " + network + "; was unable to cleanup corresponding ip ranges");
             } else {
@@ -1952,7 +1946,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                 for (Long networkId : shutdownList) {
                     try {
-                        shutdownNetwork(networkId);
+                        
+                        User caller = _accountMgr.getSystemUser();
+                        Account owner = _accountMgr.getAccount(getNetwork(networkId).getAccountId());
+                        
+                        ReservationContext context = new ReservationContextImpl(null, null, caller, owner);
+                        
+                        shutdownNetwork(networkId, context);
                     } catch (Exception e) {
                         s_logger.warn("Unable to shutdown network: " + networkId);
                     }

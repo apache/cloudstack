@@ -138,9 +138,9 @@ public interface NetworkManager extends NetworkService {
 
     <T extends VMInstanceVO> void prepareNicForMigration(VirtualMachineProfile<T> vm, DeployDestination dest);
     
-    void shutdownNetwork(long networkId);
+    void shutdownNetwork(long networkId, ReservationContext context);
     
-    boolean destroyNetwork(long networkId, long callerUserId);
+    boolean destroyNetwork(long networkId, ReservationContext context);
    
     Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain, Account owner) throws ConcurrentOperationException, InsufficientCapacityException;
     
@@ -175,7 +175,7 @@ public interface NetworkManager extends NetworkService {
     
     boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
 
-    boolean deleteNetworkInternal(long networkId, long userId);
+    boolean deleteNetworkInternal(long networkId, ReservationContext context);
     
     boolean isServiceSupported(long networkId, Network.Service service);
 
