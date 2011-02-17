@@ -280,7 +280,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
     @Override @DB
     public Date scheduleNextSnapshotJob(SnapshotPolicyVO policyInstance) {
         long policyId = policyInstance.getId();
-        Date nextSnapshotTimestamp = getNextScheduledTime(policyId, _currentTimestamp);
+        Date nextSnapshotTimestamp = getNextScheduledTime(policyId, new Date());
         SnapshotScheduleVO snapshotScheduleVO = new SnapshotScheduleVO(policyInstance.getVolumeId(), policyId, nextSnapshotTimestamp);
         try{
             _snapshotScheduleDao.persist(snapshotScheduleVO);
