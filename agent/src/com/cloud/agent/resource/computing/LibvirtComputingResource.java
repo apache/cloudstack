@@ -2243,13 +2243,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			isoPath = isoVol.getPath();
 			
 			DiskDef iso = new DiskDef();
-			iso.defFileBasedDisk(isoPath, "hdc", DiskDef.diskBus.IDE, DiskDef.diskFmtType.RAW);
-			iso.setDeviceType(DiskDef.deviceType.CDROM);
+			iso.defISODisk(isoPath);
 			isoXml = iso.toString();
 		} else {
 			DiskDef iso = new DiskDef();
-			iso.defFileBasedDisk(null, "hdc", DiskDef.diskBus.IDE,  DiskDef.diskFmtType.RAW);
-			iso.setDeviceType(DiskDef.deviceType.CDROM);
+			iso.defISODisk(null);
 			isoXml = iso.toString();
 		}
 		
@@ -2259,43 +2257,44 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 	protected synchronized String attachOrDetachDisk(Connect conn, boolean attach, String vmName, String sourceFile, int devId) throws LibvirtException, InternalErrorException {
 		List<DiskDef> disks = null;
 		Domain dm = null;
+		int deviceId = devId;
 		try {
-			dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes()));
-			LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
-			String xml = dm.getXMLDesc(0);
-			parser.parseDomainXML(xml);
-			disks = parser.getDisks();
-		} catch (LibvirtException e) {
-			throw e;
+		    if (!attach) {
+		        dm = conn.domainLookupByUUID(UUID.nameUUIDFromBytes(vmName.getBytes()));
+		        LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();
+		        String xml = dm.getXMLDesc(0);
+		        parser.parseDomainXML(xml);
+		        disks = parser.getDisks();
+
+		        boolean diskAttached = false;
+
+		        for (DiskDef disk : disks) {
+		            String file = disk.getDiskPath();
+		            if (file != null && file.equalsIgnoreCase(sourceFile)) {
+		                deviceId = disk.getDiskSeq();
+		                diskAttached = true;
+		                break;
+		            }
+		        }
+		        if (!diskAttached) {
+		            throw new InternalErrorException("disk: " + sourceFile + " is not attached before");
+		        }
+		    }
+		    
+		    DiskDef disk = new DiskDef();
+	        String guestOSType = getGuestType(conn, vmName);
+	        if (isGuestPVEnabled(guestOSType)) {
+	            disk.defFileBasedDisk(sourceFile, deviceId, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
+	        } else {
+	            disk.defFileBasedDisk(sourceFile, deviceId, DiskDef.diskBus.SCSI, DiskDef.diskFmtType.QCOW2);
+	        }
+	        String xml = disk.toString();
+	        return attachOrDetachDevice(conn, attach, vmName, xml);
 		} finally {
 			if (dm != null) {
 				dm.free();
 			}
 		}
-
-		if (!attach) {
-		    boolean diskAttached = false;
-
-		    for (DiskDef disk : disks) {
-		        if (disk.getDiskPath().equalsIgnoreCase(sourceFile)) {
-		            devId = disk.getDiskSeq();
-		            diskAttached = true;
-		        }
-		    }
-		    if (!diskAttached) {
-		        throw new InternalErrorException("disk: " + sourceFile + " is not attached before");
-		    }
-		}
-
-		DiskDef disk = new DiskDef();
-		String guestOSType = getGuestType(conn, vmName);
-		if (isGuestPVEnabled(guestOSType)) {
-			disk.defFileBasedDisk(sourceFile, devId, DiskDef.diskBus.VIRTIO, DiskDef.diskFmtType.QCOW2);
-		} else {
-			disk.defFileBasedDisk(sourceFile, devId, DiskDef.diskBus.SCSI, DiskDef.diskFmtType.QCOW2);
-		}
-		String xml = disk.toString();
-		return attachOrDetachDevice(conn, attach, vmName, xml);
 	}
 	
 	private synchronized String attachOrDetachDevice(Connect conn, boolean attach, String vmName, String xml) throws LibvirtException, InternalErrorException{
@@ -3193,7 +3192,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	cmd.add("--sig", sig);
     	cmd.add("--seq", seq);
     	cmd.add("--vmmac", mac);
-    	cmd.add("--rules", newRules);
+    	if (rules != null)
+    	    cmd.add("--rules", newRules);
     	String result = cmd.execute();
     	if (result != null) {
     		return false;
