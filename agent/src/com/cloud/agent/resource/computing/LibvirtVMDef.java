@@ -483,6 +483,9 @@ public class LibvirtVMDef {
 		public guestNetType getNetType() {
 			return _netType;
 		}
+		public String getDevName() {
+		    return _networkName;
+		}
 		
 		@Override
         public String toString() {
