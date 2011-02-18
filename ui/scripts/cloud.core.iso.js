@@ -285,8 +285,13 @@ function isoToMidmenu(jsonObj, $midmenuItem1) {
     var $iconContainer = $midmenuItem1.find("#icon_container").show();
     $iconContainer.find("#icon").attr("src", "images/midmenuicon_iso.png");
     
-    $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
-    $midmenuItem1.find("#second_row").text(fromdb(jsonObj.zonename).substring(0,25));  
+    var firstRowText = fromdb(jsonObj.name);
+    $midmenuItem1.find("#first_row").text(firstRowText);    
+    $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
+    
+    var secondRowText = fromdb(jsonObj.zonename);
+    $midmenuItem1.find("#second_row").text(secondRowText); 
+    $midmenuItem1.find("#second_row_container").attr("title", secondRowText); 
 }
 
 function isoToRightPanel($midmenuItem1) {  

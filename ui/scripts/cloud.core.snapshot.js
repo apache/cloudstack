@@ -84,9 +84,14 @@ function snapshotToMidmenu(jsonObj, $midmenuItem1) {
     
     var $iconContainer = $midmenuItem1.find("#icon_container").show();   
     $iconContainer.find("#icon").attr("src", "images/midmenuicon_storage_snapshots.png");		
+   
+    var firstRowText = fromdb(jsonObj.name);
+    $midmenuItem1.find("#first_row").text(firstRowText);    
+    $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
     
-    $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
-    $midmenuItem1.find("#second_row").text(fromdb(jsonObj.volumename).substring(0,25));    
+    var secondRowText = fromdb(jsonObj.volumename);
+    $midmenuItem1.find("#second_row").text(secondRowText); 
+    $midmenuItem1.find("#second_row_container").attr("title", secondRowText);   
 }
 
 function snapshotToRightPanel($midmenuItem1) {    

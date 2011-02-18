@@ -44,9 +44,14 @@ function alertToMidmenu(jsonObj, $midmenuItem1) {
         
     var $iconContainer = $midmenuItem1.find("#icon_container").show();   
     $iconContainer.find("#icon").attr("src", "images/midmenuicon_alerts.png");	
+        
+    var firstRowText = fromdb(jsonObj.description);
+    $midmenuItem1.find("#first_row").text(firstRowText);    
+    $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
     
-    setDateField(jsonObj.sent, $midmenuItem1.find("#second_row"));
-    $midmenuItem1.find("#first_row").text(toAlertType(jsonObj.type)); 
+    var secondRowText = toAlertType(jsonObj.type);
+    $midmenuItem1.find("#second_row").text(secondRowText); 
+    $midmenuItem1.find("#second_row_container").attr("title", secondRowText); 
 }
 
 function alertToRightPanel($midmenuItem1) {   

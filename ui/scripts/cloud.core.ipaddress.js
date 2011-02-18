@@ -407,12 +407,15 @@ function ipToMidmenu(jsonObj, $midmenuItem1) {
     var $iconContainer = $midmenuItem1.find("#icon_container").show();
     $iconContainer.find("#icon").attr("src", "images/midmenuicon_network_networkgroup.png");
     
-	var firstRow = jsonObj.ipaddress.substring(0,25);
-	if (jsonObj.issourcenat == true) {
-		firstRow+="[source nat]";
-	}
-    $midmenuItem1.find("#first_row").text(firstRow); 
-    $midmenuItem1.find("#second_row").text("owned by: "+fromdb(jsonObj.account).substring(0,25));    
+	var firstRowText = fromdb(jsonObj.ipaddress);
+	if (jsonObj.issourcenat == true) 
+		firstRowText += "[source nat]";	
+    $midmenuItem1.find("#first_row").text(firstRowText);    
+    $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
+    
+    var secondRowText = "owned by: "+fromdb(jsonObj.account);
+    $midmenuItem1.find("#second_row").text(secondRowText); 
+    $midmenuItem1.find("#second_row_container").attr("title", secondRowText); 
 }
 
 function isIpManageable(domainid, account) {             

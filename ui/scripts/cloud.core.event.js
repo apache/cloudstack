@@ -74,9 +74,14 @@ function eventToMidmenu(jsonObj, $midmenuItem1) {
         $iconContainer.find("#icon").attr("src", "images/midmenuicon_events_error.png");
     else if(jsonObj.level == "WARN")
         $iconContainer.find("#icon").attr("src", "images/midmenuicon_events_warning.png");
+        
+    var firstRowText = fromdb(jsonObj.description);
+    $midmenuItem1.find("#first_row").text(firstRowText);    
+    $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
     
-    $midmenuItem1.find("#first_row").text(getMidmenuItemFirstRow(jsonObj.description)); 
-    $midmenuItem1.find("#second_row").text(fromdb(jsonObj.type).substring(0,25));  
+    var secondRowText = fromdb(jsonObj.type);
+    $midmenuItem1.find("#second_row").text(secondRowText); 
+    $midmenuItem1.find("#second_row_container").attr("title", secondRowText); 
 }
 
 function eventToRightPanel($midmenuItem1) {  

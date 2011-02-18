@@ -1277,17 +1277,6 @@ function drawBarChart($capacity, percentused) { //percentused == "0.01%" (having
         $capacity.find("#bar_chart").removeClass().addClass("db_barbox high").css("width", percentused);
 }   
  
-var midmenuItemFirstRowMaxLength = 30;  
-function getMidmenuItemFirstRow(text) { 
-    var text2 = fromdb(text);    
-    var text3;
-    if(text2.length > midmenuItemFirstRowMaxLength)
-        text3 = fromdb(text2).substring(0, (midmenuItemFirstRowMaxLength-4)) + "....";
-    else
-        text3 = fromdb(text2).substring(0, midmenuItemFirstRowMaxLength);
-    return text3;
-}
-
 var $readonlyFields, $editFields;
 function cancelEditMode($tab) {
     if($editFields != null)
