@@ -68,7 +68,7 @@ hostSlaves=$(xe host-list | grep ^uuid | awk '{print $NF}')
 
 for hostSlave in $hostSlaves; do
   if [ "$hostSlave" != "$hostMaster" ]; then
-    slaveName=$(host-param-get param-name=hostname uuid=$hostSlave)
+    slaveName=$(xe host-param-get param-name=hostname uuid=$hostSlave)
     slaverAddress=$(xe host-param-get param-name=address uuid=$hostSlave)
     echo "##check slave $slaveName $slaveAddress $hostSlave"
     slavePifs=$(xe pif-list host-uuid=$hostSlave| grep ^uuid | awk '{print $NF}')
