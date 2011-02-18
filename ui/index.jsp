@@ -813,10 +813,10 @@
             <div class="midmenu_icons" id="icon_container" style="display: none">
                 <img id="icon" /></div>
             <div class="midmenu_textbox">
-                <p title="temp">
+                <p id="first_row_container">
                     <strong id="first_row">&nbsp;</strong>
                 </p>
-                <span title="tmp1" id="second_row_container">
+                <span id="second_row_container">
                     <span id="second_row">&nbsp;</span>
                 </span>
             </div>

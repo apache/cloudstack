@@ -1641,8 +1641,13 @@ function vmToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.attr("id", getMidmenuId(jsonObj));   
       
     var vmName = getVmName(jsonObj.name, jsonObj.displayname);
-    $midmenuItem1.find("#first_row").text(vmName);        
-    $midmenuItem1.find("#second_row").text(jsonObj.templatename); 
+    $midmenuItem1.find("#first_row").text(vmName);    
+    $midmenuItem1.find("#first_row_container").attr("title", vmName);   
+    
+    var templateName = fromdb(jsonObj.templatename);
+    $midmenuItem1.find("#second_row").text(templateName); 
+    $midmenuItem1.find("#second_row_container").attr("title", templateName); 
+    
     updateVmStateInMidMenu(jsonObj, $midmenuItem1);     
     
     $midmenuItem1.data("toRightPanelFn", vmToRightPanel);   
