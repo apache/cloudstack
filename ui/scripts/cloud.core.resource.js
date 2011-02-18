@@ -1079,7 +1079,9 @@ function closeAddZoneWizard() {
 }
 
 function initAddZoneWizard() {    
-    var $addZoneWizard = $("#add_zone_wizard");
+    var $addZoneWizard = $("#add_zone_wizard");        
+    $addZoneWizard.draggable();
+    
     $addZoneWizard.find("#add_zone_public").unbind("change").bind("change", function(event) {        
         if($(this).val() == "true") {  //public zone
             $addZoneWizard.find("#domain_dropdown_container").hide();  

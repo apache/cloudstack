@@ -333,7 +333,8 @@ var vmPopupTemplatePageSize = 6; //max number of templates in VM wizard
 var currentStepInVmPopup = 1;
 function initVMWizard() {
     $vmPopup = $("#vm_popup");  
-    
+    $vmPopup.draggable();
+
     if (isAdmin() || (getUserPublicTemplateEnabled() == "true")) {
         $vmPopup.find("#wiz_community").show();   
     } 
