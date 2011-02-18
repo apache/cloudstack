@@ -1089,8 +1089,13 @@ function initVMWizard() {
 		    moreCriteria.push("&serviceOfferingId="+$thisPopup.find("input:radio[name=service_offering_radio]:checked").val());
 			
 			var zoneObj = $thisPopup.find("#wizard_zone option:selected").data("zoneObj");
-			if (zoneObj.networktype == "Advanced") {
-				var $selectedPrimaryNetworks = $thisPopup.find("input:radio[name=primary_network]:checked");
+			if (zoneObj.networktype == "Advanced") {				
+				var $selectedPrimaryNetworks;	
+				if($thisPopup.find("#network_virtual_container").css("display") == "none") 				
+				    $selectedPrimaryNetworks = $thisPopup.find("#network_direct_container").find("input:radio[name=primary_network]:checked");
+				else 
+				    $selectedPrimaryNetworks = $thisPopup.find("input:radio[name=primary_network]:checked");					
+				
 				var networkIds = $selectedPrimaryNetworks.data("jsonObj").id;
 
 				var directNetworkIds = $thisPopup.find("#wizard_review_secondary_network_container").data("directNetworkIds");
