@@ -65,8 +65,14 @@ function routerToMidmenu(jsonObj, $midmenuItem1) {
     $midmenuItem1.attr("id", getMidmenuId(jsonObj));  
     $midmenuItem1.data("jsonObj", jsonObj); 
     
-    $midmenuItem1.find("#first_row").text(jsonObj.name.substring(0,25)); 
-    $midmenuItem1.find("#second_row").text(fromdb(jsonObj.publicip).substring(0,25));
+    var firstRowText = fromdb(jsonObj.name);
+    $midmenuItem1.find("#first_row").text(firstRowText);    
+    $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
+    
+    var secondRowText = fromdb(jsonObj.publicip);
+    $midmenuItem1.find("#second_row").text(secondRowText); 
+    $midmenuItem1.find("#second_row_container").attr("title", secondRowText); 
+    
     updateVmStateInMidMenu(jsonObj, $midmenuItem1);       
 }
 
