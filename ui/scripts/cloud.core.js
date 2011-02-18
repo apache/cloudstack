@@ -532,20 +532,6 @@ function hideDetailsTabActionSpinningWheel(id, inProcessText, $midmenuItem1) {
     }
 }	
 
-/*
-If Cancel button in dialog is clicked, action won't preceed. 
-i.e. doActionToMidMenu() won't get called => highlight won't be removd from middle menu. 
-So, we need to remove highlight here. Otherwise, it won't be consistent of selectedItemsInMidMenu which will be emptied soon.
-*/
-/*
-function removeHighlightInMiddleMenu(selectedItemsInMidMenu) {
-    for(var id in selectedItemsInMidMenu) {
-        var $midmenuItem1 = $("#midmenuItem_"+id);	
-        $midmenuItem1.find("#content").removeClass("selected");
-    }
-}	     	
-*/
-
 function copyActionInfoFromMidMenuToRightPanel($midmenuItem1) {     
     var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");       
     
@@ -810,8 +796,10 @@ function bindClickToMidMenu($midmenuItem1, toRightPanelFn, getMidmenuIdFn) {
     }); 
 }
 function clickItemInMultipleSelectionMidmenu($midmenuItem1) {
-    $midmenuItem1.find("#content").addClass("selected");  //css of vmops
-    $midmenuItem1.addClass("ui-selected");                //css of JQuery selectable widget   
+    $midmenuItem1.find("#content").addClass("selected");  //"selected" is a CSS class in cloudstack-defined CSS
+
+    if($midmenuItem1.hasClass("ui-selected") == false)  //"ui-selected" is a CSS class in JQuery selectable widget 
+        $midmenuItem1.addClass("ui-selected");                
     
     clearRightPanel();
     var toRightPanelFn = $midmenuItem1.data("toRightPanelFn");
@@ -823,6 +811,7 @@ function clickItemInMultipleSelectionMidmenu($midmenuItem1) {
     selected_midmenu_id = $midmenuItem1.attr("id");
     $currentMidmenuItem = $midmenuItem1;
 }
+
 
 function switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray) {        
     for(var tabIndex=0; tabIndex<tabArray.length; tabIndex++) {  
@@ -1015,15 +1004,13 @@ function createMultipleSelectionSubContainer() {
             if(ui.selecting.id.indexOf("midmenuItem") != -1) {                     
                 var $midmenuItem1 = $("#"+ui.selecting.id);
                 if($midmenuItem1.find("#content").hasClass("inaction") == false) { //only items not in action are allowed to be selected
-                    var id =$midmenuItem1.data("jsonObj").id;                
-                    selectedItemsInMidMenu[id] = $midmenuItem1; 
-                    $midmenuItem1.find("#content").addClass("selected"); //css of vmops  
-                    selected_midmenu_id = $midmenuItem1.attr("id");
-                    $currentMidmenuItem = $midmenuItem1;
-                }                               
-                clearRightPanel();      
-                var toRightPanelFn = $midmenuItem1.data("toRightPanelFn");
-                toRightPanelFn($midmenuItem1);	          
+                    clickItemInMultipleSelectionMidmenu($midmenuItem1);                
+                }  
+                else { //The item is in action. It can't be selected for another action, but its content still shows in right panel.                           
+                    clearRightPanel();      
+                    var toRightPanelFn = $midmenuItem1.data("toRightPanelFn");
+                    toRightPanelFn($midmenuItem1);	   
+                }       
             }                                             
         },
         unselecting: function(event, ui) {
