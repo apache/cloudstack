@@ -1104,6 +1104,13 @@ public class ManagementServerImpl implements ManagementServer {
 		if(domainRecord != null)
 		{
 			while(true){
+			    if(id != null) {
+			        ServiceOfferingVO so = _offeringsDao.findById((Long)id);
+			        if(so != null)
+			            sol.add(so);
+			        return sol;
+			    }
+			    
 				SearchCriteria<ServiceOfferingVO> sc = _offeringsDao.createSearchCriteria();
 				
 		        if (keyword != null) {
@@ -1130,10 +1137,10 @@ public class ManagementServerImpl implements ManagementServer {
 		            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, offering.getUseLocalStorage());
 		        }
 
-		        if (id != null) {
-		        	includePublicOfferings = false;
-		            sc.addAnd("id", SearchCriteria.Op.EQ, id);
-		        }
+//		        if (id != null) {
+//		        	includePublicOfferings = false;
+//		            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+//		        }
 
 		        if (name != null) {
 		        	includePublicOfferings = false;
