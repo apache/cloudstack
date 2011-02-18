@@ -30,6 +30,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+import org.omg.stub.java.rmi._Remote_Stub;
 
 import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.SecurityChecker;
@@ -69,9 +70,16 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.RemoteAccessVpnVO;
+import com.cloud.network.VpnUser;
+import com.cloud.network.VpnUserVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.vpn.RemoteAccessVpnManagerImpl;
+import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.server.Criteria;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
@@ -138,7 +146,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 	@Inject private ConfigurationManager _configMgr;
 	@Inject private VirtualMachineManager _itMgr;
 	@Inject private UsageEventDao _usageEventDao;
-	
+	@Inject private RemoteAccessVpnDao _remoteAccessVpnDao;
+	@Inject private RemoteAccessVpnService _remoteAccessVpnMgr;
+	@Inject private VpnUserDao _vpnUser;
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 	
 	private final GlobalLock m_resourceCountLock = GlobalLock.getInternLock("resource.count");
@@ -876,6 +886,18 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 }
             }
             
+          //delete remote access vpns and associated users
+            List<RemoteAccessVpnVO> remoteAccessVpns = _remoteAccessVpnDao.findByAccount(accountId);
+            List<VpnUserVO> vpnUsers = _vpnUser.listByAccount(accountId);
+            
+            for(VpnUserVO vpnUser : vpnUsers) {
+                _remoteAccessVpnMgr.removeVpnUser(accountId, vpnUser.getUsername());
+            }
+            
+            for(RemoteAccessVpnVO vpn : remoteAccessVpns) {
+                _remoteAccessVpnMgr.destroyRemoteAccessVpn(vpn.getServerAddressId());
+            }
+            
             //Cleanup security groups
             int numRemoved = _securityGroupDao.removeByAccountId(accountId);
             s_logger.info("deleteAccount: Deleted " + numRemoved + " network groups for account " + accountId);
@@ -907,6 +929,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     s_logger.debug("Account specific Virtual IP ranges " + " are successfully deleted as a part of account id=" + accountId + " cleanup.");
                 }
             }
+            
             return true;
         } finally {
             s_logger.info("Cleanup for account " + account.getId() + (accountCleanupNeeded ? " is needed." : " is not needed."));
