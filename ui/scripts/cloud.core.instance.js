@@ -1651,6 +1651,8 @@ function vmToMidmenu(jsonObj, $midmenuItem1) {
     updateVmStateInMidMenu(jsonObj, $midmenuItem1);     
     
     $midmenuItem1.data("toRightPanelFn", vmToRightPanel);   
+    countTopButtonMapFn = vmCountTopButtonMap;
+    resetTopButtonMapFn = vmResetTopButtonMap;
 }
 
 function vmToRightPanel($midmenuItem1) {
@@ -1828,6 +1830,40 @@ function vmBuildActionMenu(jsonObj, $thisTab, $midmenuItem1) {
 	if(noAvailableActions == true) {
 	    $actionMenu.find("#action_list").append($("#no_available_actions").clone().show());
 	}	
+}
+
+var vmTopButtonMap = {
+    "start_vm_button": 0,
+    "stop_vm_button": 0,
+    "reboot_vm_button": 0,
+    "destroy_vm_button": 0
+};
+
+function vmCountTopButtonMap(jsonObj) {   
+    if(jsonObj == null)
+        return;
+        
+	if (jsonObj.state == 'Running') {			
+		vmTopButtonMap["stop_vm_button"] += 1;	
+		vmTopButtonMap["reboot_vm_button"] += 1;
+		vmTopButtonMap["destroy_vm_button"] += 1;	
+	} 
+	else if (jsonObj.state == 'Stopped') {	
+		vmTopButtonMap["start_vm_button"] += 1;
+		vmTopButtonMap["destroy_vm_button"] += 1;		  					
+	}
+	else if (jsonObj.state == 'Error') {		    
+	    vmTopButtonMap["destroy_vm_button"] += 1;	    
+	}
+}
+
+function vmResetTopButtonMap() {
+    vmTopButtonMap = {
+        "start_vm_button": 0,
+        "stop_vm_button": 0,
+        "reboot_vm_button": 0,
+        "destroy_vm_button": 0
+    };
 }
 
 function vmJsonToNicTab() {  

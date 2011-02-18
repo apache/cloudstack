@@ -989,7 +989,7 @@ function clickItemInMultipleSelectionMidmenu($midmenuItem1) {
     
     var jsonObj = $midmenuItem1.data("jsonObj");    	
     selectedItemsInMidMenu[jsonObj.id] = $midmenuItem1;  
-    
+           
     selected_midmenu_id = $midmenuItem1.attr("id");
     $currentMidmenuItem = $midmenuItem1;
 }
@@ -998,6 +998,9 @@ function unclickItemInMultipleSelectionMidmenu($midmenuItem1, id) {
     delete selectedItemsInMidMenu[id];
     $midmenuItem1.find("#content").removeClass("selected"); 
 }
+
+var countTopButtonMapFn = function() {};
+var resetTopButtonMapFn = function() {};
 
 function createMultipleSelectionSubContainer() {      
     var $multipleSelectionSubContainer = $("<div id='multiple_selection_sub_container'></div>"); 
@@ -1026,6 +1029,12 @@ function createMultipleSelectionSubContainer() {
                     unclickItemInMultipleSelectionMidmenu($midmenuItem1, id);                   
                 }
             }             
+        },
+        start: function(event, ui) {            
+            resetTopButtonMapFn();           
+        },
+        stop: function(event, ui) {            
+            countTopButtonMapFn();            
         }
     }); 
     
@@ -1089,7 +1098,8 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
                             $midmenuItem1.click(); 
                         }
                         else {                                                            
-                            clickItemInMultipleSelectionMidmenu($midmenuItem1);                       
+                            clickItemInMultipleSelectionMidmenu($midmenuItem1);  
+                            countTopButtonMapFn();                         
                         }                        
                     }                 
                 }  
