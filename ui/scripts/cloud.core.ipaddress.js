@@ -1251,7 +1251,8 @@ function setNetworkTypeField(value, $field) {
 
 var ipActionMap = {  
     "label.action.release.ip": {                  
-        isAsyncJob: false,        
+        isAsyncJob: true,     
+        asyncJobResponse: "disassociateipaddressresponse",   
         dialogBeforeActionFn : doReleaseIp,
         inProcessText: "label.action.release.ip.processing",
         afterActionSeccessFn: function(json, $midmenuItem1, id) {   
