@@ -2248,6 +2248,8 @@ a:hover.search_button {
 	padding:0;
 	cursor:pointer;
 	cursor:hand;
+
+
 }
 
 
@@ -2268,6 +2270,18 @@ a:hover.search_button {
 	padding:0;
 }
 
+.actionpanel_button_hidden{
+	width:auto;
+	height:27px;
+	float:left;
+	margin:0;
+	padding:0;
+	filter:alpha(opacity=50);
+    -moz-opacity:0.5;
+    -khtml-opacity: 0.5;
+    opacity: 0.5;
+
+}
 
 .actionpanel_button_links{
 	width:auto;
