@@ -189,7 +189,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         configValuesForValidation.add("migrate.retry.interval");
         configValuesForValidation.add("network.gc.interval");
         configValuesForValidation.add("ping.interval");
-        configValuesForValidation.add("router.cleanup.interval");
         configValuesForValidation.add("router.stats.interval");
         configValuesForValidation.add("snapshot.poll.interval");
         configValuesForValidation.add("stop.retry.interval");

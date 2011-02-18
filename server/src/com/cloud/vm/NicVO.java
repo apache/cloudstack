@@ -101,17 +101,22 @@ public class NicVO implements Nic {
     @Enumerated(value=EnumType.STRING)
     ReservationStrategy strategy;
     
+    @Enumerated(value=EnumType.STRING)
+    @Column(name="vm_type")
+    VmType vmType;
+    
     @Column(name=GenericDao.REMOVED_COLUMN)
     Date removed;
     
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
 
-    public NicVO(String reserver, Long instanceId, long configurationId) {
+    public NicVO(String reserver, Long instanceId, long configurationId, VmType vmType) {
         this.reserver = reserver;
         this.instanceId = instanceId;
         this.networkId = configurationId;
         this.state = State.Allocated;
+        this.vmType = vmType;
     }
     
     @Override
@@ -299,5 +304,10 @@ public class NicVO implements Nic {
     @Override
     public String toString() {
         return new StringBuilder("Nic[").append(id).append("-").append(instanceId).append("-").append(reservationId).append("-").append(ip4Address).append("]").toString();
+    }
+
+    @Override
+    public VmType getVmType() {
+        return vmType;
     }
 }

@@ -207,6 +207,7 @@ CREATE TABLE `cloud`.`nics` (
   `isolation_uri` varchar(255) COMMENT 'id for isolation',
   `ip6_address` char(40) COMMENT 'ip6 address',
   `default_nic` tinyint NOT NULL COMMENT "None", 
+  `vm_type` varchar(32) COMMENT 'type of vm: System or User vm',
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`),

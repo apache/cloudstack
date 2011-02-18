@@ -126,10 +126,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
+import com.cloud.vm.Nic.VmType;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
@@ -366,11 +368,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 sourceNat = ip.ip();
                 
                 markPublicIpAsAllocated(sourceNat);
-                _ipAddressDao.update(sourceNat.getId(), sourceNat);
-                
-               
-                // Increment the number of public IPs for this accountId in the database
-                
+                _ipAddressDao.update(sourceNat.getId(), sourceNat);       
             } else {
                 // Account already has ip addresses
                 for (IPAddressVO addr : addrs) {
@@ -931,7 +929,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (profile == null) {
                 continue;
             }
-            NicVO vo = new NicVO(concierge.getName(), vm.getId(), config.getId());
+            
+            VmType vmType = null;
+            
+            if (vm.getType() == Type.User) {
+                vmType  = Nic.VmType.User;
+            } else  {
+                vmType = Nic.VmType.System;
+            }
+            
+            NicVO vo = new NicVO(concierge.getName(), vm.getId(), config.getId(), vmType);
 
             while (deviceIds[deviceId] && deviceId < deviceIds.length) {
                 deviceId++;
@@ -1112,7 +1119,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Transaction txn = Transaction.currentTxn();
         txn.start();
         _nicDao.update(nic.getId(), nic);
-        _networksDao.changeActiveNicsBy(networkId, count);
+        
+         if (nic.getVmType() == VmType.User) {
+             _networksDao.changeActiveNicsBy(networkId, count);
+         }
         txn.commit();
     }
 
@@ -1714,7 +1724,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Unable to remove the network id=" + networkId + " as it has active Nics.");
         }
         
-        Long userId = UserContext.current().getCallerUserId();
         Account caller = UserContext.current().getCaller(); 
 
         // Verify network id
@@ -1731,8 +1740,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new PermissionDeniedException("Account " + caller.getAccountName() + " does not own network id=" + networkId + ", permission denied");
             }
         } else {
-            
             _accountMgr.checkAccess(caller, owner);
+        }
+        
+        //Make sure that there are no user vms in the network that are not Expunged/Error
+        List<UserVmVO> userVms = _vmDao.listByNetworkId(networkId);
+        
+        for (UserVmVO vm : userVms) {
+            if (!(vm.getState() == VirtualMachine.State.Error || vm.getState() == VirtualMachine.State.Expunging)) {
+                throw new InvalidParameterValueException("Can't delete the network, not all user vms are expunged");
+            }
         }
 
         User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());

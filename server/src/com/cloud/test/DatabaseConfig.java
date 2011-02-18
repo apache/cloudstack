@@ -224,7 +224,6 @@ public class DatabaseConfig {
 		s_configurationComponents.put("consoleproxy.domP.enable", "management-server");
 		s_configurationComponents.put("consoleproxy.port", "management-server");
 		s_configurationComponents.put("consoleproxy.url.port", "management-server");
-        s_configurationComponents.put("router.cleanup.interval", "management-server");
         s_configurationComponents.put("alert.email.addresses", "management-server");
         s_configurationComponents.put("alert.smtp.host", "management-server");
         s_configurationComponents.put("alert.smtp.port", "management-server");

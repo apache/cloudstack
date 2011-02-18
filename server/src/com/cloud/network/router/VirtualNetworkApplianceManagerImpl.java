@@ -281,7 +281,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     String _instance;
     String _mgmt_host;
 
-    int _routerCleanupInterval = 3600;
     int _routerStatsInterval = 300;
     private ServiceOfferingVO _offering;
 
@@ -551,9 +550,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         value = configs.get("router.stats.interval");
         _routerStatsInterval = NumbersUtil.parseInt(value, 300);
 
-        value = configs.get("router.cleanup.interval");
-        _routerCleanupInterval = NumbersUtil.parseInt(value, 3600);
-
         _instance = configs.get("instance.name");
         if (_instance == null) {
             _instance = "DEFAULT";
@@ -588,7 +584,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     public boolean start() {
-        _executor.scheduleAtFixedRate(new RouterCleanupTask(), _routerCleanupInterval, _routerCleanupInterval, TimeUnit.SECONDS);
         _executor.scheduleAtFixedRate(new NetworkUsageTask(), _routerStatsInterval, _routerStatsInterval, TimeUnit.SECONDS);
         return true;
     }
@@ -608,36 +603,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
 
         return VirtualMachineName.getRouterId(vmName);
-    }
-
-    protected class RouterCleanupTask implements Runnable {
-
-        public RouterCleanupTask() {
-        }
-
-        @Override
-        public void run() {
-            try {
-                List<Long> ids = findLonelyRouters();
-                
-                s_logger.trace("Found " + ids.size() + " routers to stop. ");
-                
-                for (Long id : ids) {
-                    try {
-                        DomainRouterVO router = _routerDao.findById(id);
-                        if (stop(router, false, _accountMgr.getSystemUser(), _accountMgr.getSystemAccount()) != null) {
-                            s_logger.info("Successfully stopped a rather lonely " + router);
-                        }
-                    } catch (Exception e) {
-                        s_logger.warn("Unable to stop router " + id, e);
-                    }
-                }
-                
-                s_logger.trace("Done my job.  Time to rest.");
-            } catch (Exception e) {
-                s_logger.warn("Unable to stop routers.  Will retry. ", e);
-            }
-        }
     }
 
     private VmDataCommand generateVmDataCommand(DomainRouterVO router, String vmPrivateIpAddress,
@@ -1653,43 +1618,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         createApplyStaticNatRulesCommands(rules, router, cmds);     
         //Send commands to router
         return sendCommandsToRouter(router, cmds); 
-    }
-    
-
-    private List<Long> findLonelyRouters() {
-        List<Long> routersToStop = new ArrayList<Long>();
-        List<VMInstanceVO> runningRouters = _instanceDao.listByTypeAndState(State.Running, VirtualMachine.Type.DomainRouter);
-        
-        for (VMInstanceVO router : runningRouters) {
-            DataCenter dc = _configMgr.getZone(router.getDataCenterId());
-            if (dc.getNetworkType() == NetworkType.Advanced) {
-                //Only non-system networks should be reviewed as system network can always have other system vms running
-                List<NetworkVO> routerNetworks = _networkMgr.listNetworksUsedByVm(router.getId(), false); 
-                List<Network> networksToCheck = new ArrayList<Network>();
-                for (Network routerNetwork : routerNetworks){
-                   if ((routerNetwork.getGuestType() == GuestIpType.Direct && routerNetwork.getTrafficType() == TrafficType.Public) || (routerNetwork.getGuestType() == GuestIpType.Virtual && routerNetwork.getTrafficType() == TrafficType.Guest)) {
-                       networksToCheck.add(routerNetwork);
-                   }
-                }
-                
-                boolean toStop = true;
-                for (Network network : networksToCheck) {
-                    int count = _networkMgr.getActiveNicsInNetwork(network.getId());
-                    if (count > 1) {
-                        s_logger.trace("Network id=" + network.getId() + " used by router " + router + " has more than 1 active nic (number of nics is " + count + ")");
-                        toStop = false;
-                        break;
-                    }
-                }
-                
-                if (toStop) {
-                    s_logger.trace("Adding router " + router + " to stop list of Router Monitor"); 
-                    routersToStop.add(router.getId());
-                }
-            }
-        }
-        
-        return routersToStop;
     }
     
     @Override
