@@ -44,10 +44,12 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
@@ -74,7 +76,8 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
     @Inject protected SnapshotPolicyDao       _snapshotPolicyDao;
     @Inject protected AsyncJobManager         _asyncMgr;
     @Inject protected SnapshotManager         _snapshotManager;
-    @Inject protected StoragePoolHostDao      _poolHostDao; 
+    @Inject protected StoragePoolHostDao      _poolHostDao;
+    @Inject protected VolumeDao               _volsDao;
     
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
     private int        _snapshotPollInterval;
@@ -214,6 +217,11 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         for (SnapshotScheduleVO snapshotToBeExecuted : snapshotsToBeExecuted) {
             long policyId = snapshotToBeExecuted.getPolicyId();
             long volumeId = snapshotToBeExecuted.getVolumeId();
+            VolumeVO volume = _volsDao.findById(volumeId);
+            if ( volume.getPoolId() == null) {
+                // this volume is not attached
+                continue;
+            }
             if (s_logger.isDebugEnabled()) {
                 Date scheduledTimestamp = snapshotToBeExecuted.getScheduledTimestamp();
                 displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, scheduledTimestamp);

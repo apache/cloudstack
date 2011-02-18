@@ -1000,14 +1000,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         // If an account was passed in, make sure that it matches the account of the volume
         checkAccountPermissions(volume.getAccountId(), volume.getDomainId(), "volume", volumeId);
 
-        StoragePoolVO storagePoolVO = _storagePoolDao.findById(volume.getPoolId());
-        if (storagePoolVO == null) {
-            throw new InvalidParameterValueException("volumeId: " + volumeId + " please attach this volume to a VM before create snapshot policy for it");
-        }
-        if (storagePoolVO.isLocal()) {
-            throw new InvalidParameterValueException("Failed to create snapshot policy, cannot create a snapshot from a volume residing on a local storage pool, poolId: " + volume.getPoolId());
-        }
-
         Long instanceId = volume.getInstanceId();
         if (instanceId != null) {
             // It is not detached, but attached to a VM
