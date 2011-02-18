@@ -1872,6 +1872,9 @@ function convertBytes(bytes) {
 }
 
 function convertHz(hz) {
+    if (hz == null)
+        return "";
+
 	if (hz < 1000) {
 		return hz + " MHZ";
 	} else {

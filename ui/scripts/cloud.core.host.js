@@ -362,6 +362,7 @@ function hostJsonToStatisticsTab() {
 	$thisTab.find("#tab_container").hide(); 
     $thisTab.find("#tab_spinning_wheel").show();   
     
+    /*
     var $barChartContainer = $thisTab.find("#cpu_barchart");
          
     var cpuNumber = ((jsonObj.cpunumber==null)? "":jsonObj.cpunumber.toString());
@@ -374,6 +375,12 @@ function hostJsonToStatisticsTab() {
     $barChartContainer.find("#percentused").text("");   
     if(jsonObj.cpuused!=null)
         drawBarChart($barChartContainer, jsonObj.cpuused);		
+    */
+    
+    $thisTab.find("#cpunumber").text(fromdb(jsonObj.cpunumber));
+    $thisTab.find("#cpuspeed").text(convertHz(jsonObj.cpuspeed));
+    
+    $thisTab.find("#percentused").text(jsonObj.cpuused); 
     
     var cpuAllocated = ((jsonObj.cpuallocated==null)? "":jsonObj.cpuallocated);
     $thisTab.find("#cpuallocated").text(cpuAllocated);    
