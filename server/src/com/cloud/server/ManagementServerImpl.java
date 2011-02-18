@@ -2346,12 +2346,9 @@ public class ManagementServerImpl implements ManagementServer {
         // Only return volumes that are not destroyed
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
         
-        //Allow null ids
-//        sb.or("nullid", sb.entity().getTemplateId(), SearchCriteria.Op.NULL);
-//        
-//        SearchBuilder<VMTemplateVO> templateSearch = _templateDao.createSearchBuilder();
-//        templateSearch.and("templateType", templateSearch.entity().getTemplateType(), SearchCriteria.Op.NEQ);
-//        sb.join("templateSearch", templateSearch, sb.entity().getTemplateId(), templateSearch.entity().getId(), JoinBuilder.JoinType.LEFTOUTER);
+        SearchBuilder<DiskOfferingVO> diskOfferingSearch = _diskOfferingDao.createSearchBuilder();
+        diskOfferingSearch.and("systemUse", diskOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.NEQ);
+        sb.join("diskOfferingSearch", diskOfferingSearch, sb.entity().getDiskOfferingId(), diskOfferingSearch.entity().getId(), JoinBuilder.JoinType.LEFTOUTER);
 
         if (((accountId == null) && (domainId != null) && isRecursive)) {
             // if accountId isn't specified, we can do a domain match for the admin case if isRecursive is true
@@ -2374,8 +2371,6 @@ public class ManagementServerImpl implements ManagementServer {
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
         
-//        sc.setJoinParameters("templateSearch", "templateType", Storage.TemplateType.SYSTEM);
-        
         if (name != null) {
             sc.setParameters("name", "%" + name + "%");
         }
@@ -2386,6 +2381,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (accountId != null) {
             sc.setParameters("accountIdEQ", accountId);
+            sc.setJoinParameters("diskOfferingSearch", "systemUse", 1);
         } else if (domainId != null) {
             DomainVO domain = _domainDao.findById(domainId);
             if(isRecursive) {
