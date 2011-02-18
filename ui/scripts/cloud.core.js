@@ -779,40 +779,6 @@ function afterAddingMidMenuItem($midmenuItem1, isSuccessful, secondRowText) {
 	}
 }
 
-var $currentMidmenuItem;
-function bindClickToMidMenu($midmenuItem1, toRightPanelFn, getMidmenuIdFn) {
-    $midmenuItem1.bind("click", function(event){  
-        $currentMidmenuItem = $(this);
-        
-        if(selected_midmenu_id != null && selected_midmenu_id.length > 0)
-            $("#"+selected_midmenu_id).find("#content").removeClass("selected");
-        selected_midmenu_id = getMidmenuIdFn($currentMidmenuItem.data("jsonObj"));
-               
-        $currentMidmenuItem.find("#content").addClass("selected");  
-                                              
-        clearRightPanel();        
-        toRightPanelFn($currentMidmenuItem);	  
-        return false;
-    }); 
-}
-function clickItemInMultipleSelectionMidmenu($midmenuItem1) {
-    $midmenuItem1.find("#content").addClass("selected");  //"selected" is a CSS class in cloudstack-defined CSS
-
-    if($midmenuItem1.hasClass("ui-selected") == false)  //"ui-selected" is a CSS class in JQuery selectable widget 
-        $midmenuItem1.addClass("ui-selected");                
-    
-    clearRightPanel();
-    var toRightPanelFn = $midmenuItem1.data("toRightPanelFn");
-    toRightPanelFn($midmenuItem1);	
-    
-    var jsonObj = $midmenuItem1.data("jsonObj");    	
-    selectedItemsInMidMenu[jsonObj.id] = $midmenuItem1;  
-    
-    selected_midmenu_id = $midmenuItem1.attr("id");
-    $currentMidmenuItem = $midmenuItem1;
-}
-
-
 function switchBetweenDifferentTabs(tabArray, tabContentArray, afterSwitchFnArray) {        
     for(var tabIndex=0; tabIndex<tabArray.length; tabIndex++) {  
         switchToTab(tabIndex, tabArray, tabContentArray, afterSwitchFnArray);
@@ -994,6 +960,45 @@ function initDialogWithOK(elementId, width1, addToActive) {
     }
 } 
 
+var $currentMidmenuItem;
+function bindClickToMidMenu($midmenuItem1, toRightPanelFn, getMidmenuIdFn) {
+    $midmenuItem1.bind("click", function(event){  
+        $currentMidmenuItem = $(this);
+        
+        if(selected_midmenu_id != null && selected_midmenu_id.length > 0)
+            $("#"+selected_midmenu_id).find("#content").removeClass("selected");
+        selected_midmenu_id = getMidmenuIdFn($currentMidmenuItem.data("jsonObj"));
+               
+        $currentMidmenuItem.find("#content").addClass("selected");  
+                                              
+        clearRightPanel();        
+        toRightPanelFn($currentMidmenuItem);	  
+        return false;
+    }); 
+}
+
+function clickItemInMultipleSelectionMidmenu($midmenuItem1) {
+    $midmenuItem1.find("#content").addClass("selected");  //"selected" is a CSS class in cloudstack-defined CSS
+
+    if($midmenuItem1.hasClass("ui-selected") == false)  //"ui-selected" is a CSS class in JQuery selectable widget 
+        $midmenuItem1.addClass("ui-selected");                
+    
+    clearRightPanel();
+    var toRightPanelFn = $midmenuItem1.data("toRightPanelFn");
+    toRightPanelFn($midmenuItem1);	
+    
+    var jsonObj = $midmenuItem1.data("jsonObj");    	
+    selectedItemsInMidMenu[jsonObj.id] = $midmenuItem1;  
+    
+    selected_midmenu_id = $midmenuItem1.attr("id");
+    $currentMidmenuItem = $midmenuItem1;
+}
+
+function unclickItemInMultipleSelectionMidmenu($midmenuItem1, id) {    
+    delete selectedItemsInMidMenu[id];
+    $midmenuItem1.find("#content").removeClass("selected"); 
+}
+
 function createMultipleSelectionSubContainer() {      
     var $multipleSelectionSubContainer = $("<div id='multiple_selection_sub_container'></div>"); 
     $("#midmenu_container").empty().append($multipleSelectionSubContainer);    
@@ -1018,8 +1023,7 @@ function createMultipleSelectionSubContainer() {
                 var $midmenuItem1 = $("#"+ui.unselecting.id);
                 var id = $midmenuItem1.data("jsonObj").id;
                 if(id in selectedItemsInMidMenu) {                    
-                    delete selectedItemsInMidMenu[id];
-                    $midmenuItem1.find("#content").removeClass("selected"); 
+                    unclickItemInMultipleSelectionMidmenu($midmenuItem1, id);                   
                 }
             }             
         }
