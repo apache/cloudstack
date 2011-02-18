@@ -36,7 +36,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
-import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AttachIsoCmd;
@@ -58,8 +57,6 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
-import com.cloud.event.EventUtils;
-import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
@@ -71,6 +68,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -161,6 +159,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Inject UserVmManager _vmMgr;
     @Inject ConfigurationDao _configDao;
     @Inject UsageEventDao _usageEventDao;
+    @Inject HypervisorGuruManager _hvGuruMgr;
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     
     @Override
@@ -679,7 +678,9 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                 }
             	dcmd.setLocalPath(vo.getLocalPath());
             	// set 120 min timeout for this command
-            	PrimaryStorageDownloadAnswer answer = (PrimaryStorageDownloadAnswer)_agentMgr.easySend(vo.getHostId(), dcmd, 120*60*1000);
+            	
+            	PrimaryStorageDownloadAnswer answer = (PrimaryStorageDownloadAnswer)_agentMgr.easySend(
+            		_hvGuruMgr.getGuruProcessedCommandTargetHost(vo.getHostId(), dcmd), dcmd, 120*60*1000);
                 if (answer != null && answer.getResult() ) {
             		templateStoragePoolRef.setDownloadPercent(100);
             		templateStoragePoolRef.setDownloadState(Status.DOWNLOADED);

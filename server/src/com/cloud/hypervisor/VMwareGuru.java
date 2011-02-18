@@ -19,7 +19,18 @@ package com.cloud.hypervisor;
 
 import javax.ejb.Local;
 
+import com.cloud.agent.api.BackupSnapshotCommand;
+import com.cloud.agent.api.Command;
+import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
+import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
+import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
+import com.cloud.agent.api.DeleteSnapshotBackupCommand;
+import com.cloud.agent.api.DeleteSnapshotsDirCommand;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.host.dao.DetailsDao;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
@@ -31,6 +42,8 @@ import com.cloud.vm.VirtualMachineProfile;
 @Local(value=HypervisorGuru.class)
 public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject GuestOSDao _guestOsDao;
+    @Inject HostDao _hostDao;
+    @Inject DetailsDao _hostDetailsDao;
 
     protected VMwareGuru() {
     	super();
@@ -50,5 +63,44 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
         GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
         to.setOs(guestOS.getDisplayName());
         return to;
+    }
+    
+    @Override
+    public long getCommandHostDelegation(long hostId, Command cmd) {
+    	boolean needDelegation = false;
+    	
+    	if(cmd instanceof PrimaryStorageDownloadCommand || 
+    		cmd instanceof BackupSnapshotCommand ||
+    		cmd instanceof DeleteSnapshotsDirCommand ||
+    		cmd instanceof DeleteSnapshotBackupCommand ||
+    		cmd instanceof CreatePrivateTemplateFromVolumeCommand ||
+    		cmd instanceof CreatePrivateTemplateFromSnapshotCommand ||
+    		cmd instanceof CopyVolumeCommand ||
+    		cmd instanceof CreateVolumeFromSnapshotCommand) {
+    		needDelegation = true;
+    	}
+
+    	// Enable when SSVM packaging is ready
+/*
+    	if(needDelegation) {
+    		HostVO host = _hostDao.findById(hostId);
+    		assert(host != null);
+    		assert(host.getHypervisorType() == HypervisorType.VMware);
+    		long dcId = host.getDataCenterId();
+    		
+    		HostVO hostSecStorage = _hostDao.findSecondaryStorageHost(dcId);
+    		if(hostSecStorage != null && hostSecStorage.getStatus() == Status.Up) {
+    			// TODO, we need to make sure agent is actually connected too
+    			cmd.setContextParam("hypervisor", HypervisorType.VMware.toString());
+    		    Map<String, String> hostDetails = _hostDetailsDao.findDetails(hostId);
+    		    cmd.setContextParam("guid", hostDetails.get("guid"));
+    		    cmd.setContextParam("username", hostDetails.get("username"));
+    		    cmd.setContextParam("password", hostDetails.get("password"));
+    			
+    			return hostSecStorage.getId();
+    		}
+    	}
+*/  
+    	return hostId;
     }
 }

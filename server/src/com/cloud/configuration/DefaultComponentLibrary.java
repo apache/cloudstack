@@ -62,6 +62,7 @@ import com.cloud.ha.HighAvailabilityManagerImpl;
 import com.cloud.ha.dao.HighAvailabilityDaoImpl;
 import com.cloud.host.dao.DetailsDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
+import com.cloud.hypervisor.HypervisorGuruManagerImpl;
 import com.cloud.maid.StackMaidManagerImpl;
 import com.cloud.maid.dao.StackMaidDaoImpl;
 import com.cloud.maint.UpgradeManagerImpl;
@@ -79,7 +80,6 @@ import com.cloud.network.lb.LoadBalancingRulesManagerImpl;
 import com.cloud.network.ovs.OvsNetworkManagerImpl;
 import com.cloud.network.ovs.OvsTunnelManagerImpl;
 import com.cloud.network.ovs.dao.GreTunnelDaoImpl;
-import com.cloud.network.ovs.dao.OvsTunnelAccountDao;
 import com.cloud.network.ovs.dao.OvsTunnelAccountDaoImpl;
 import com.cloud.network.ovs.dao.OvsTunnelDaoImpl;
 import com.cloud.network.ovs.dao.OvsWorkDaoImpl;
@@ -322,6 +322,8 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addManager("Cluster Manager", ClusterManagerImpl.class);
         addManager("ClusteredAgentManager", ClusteredAgentManagerImpl.class);
         addManager("VirtualMachineManager", ClusteredVirtualMachineManagerImpl.class);
+        addManager("HypervisorGuruManager", HypervisorGuruManagerImpl.class);
+        
         ComponentInfo<? extends Manager> info = addManager("ConsoleProxyManager", ConsoleProxyManagerImpl.class);
         info.addParameter("consoleproxy.sslEnabled", "true");
     }

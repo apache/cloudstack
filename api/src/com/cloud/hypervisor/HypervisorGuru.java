@@ -17,6 +17,7 @@
  */
 package com.cloud.hypervisor;
 
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.Adapter;
@@ -33,4 +34,13 @@ public interface HypervisorGuru extends Adapter {
      * @return
      */
     <T extends VirtualMachine> VirtualMachineTO implement(VirtualMachineProfile<T> vm);
+    
+    /**
+     * Give hypervisor guru opportunity to decide if certain command needs to be delegated to other host, mainly to secondary storage VM host
+     * @param hostId original hypervisor host
+     * @param cmd command that is going to be sent, hypervisor guru usually needs to register various context objects into the command object
+     * 
+     * @return delegated host id if the command will be delegated
+     */
+    long getCommandHostDelegation(long hostId, Command cmd);
 }

@@ -114,6 +114,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.offering.ServiceOffering;
@@ -231,7 +232,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Inject protected DomainRouterDao _domrDao;
     @Inject protected SecondaryStorageVmDao _secStrgDao;
     @Inject protected StoragePoolWorkDao _storagePoolWorkDao;
-
+    @Inject protected HypervisorGuruManager _hvGuruMgr;
     
     @Inject(adapter=StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
@@ -1636,10 +1637,12 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 List<Answer> answers = new ArrayList<Answer>();
                 Command[] cmdArray = cmds.toCommands();
                 for (Command cmd : cmdArray) {
+                	long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(hostId, cmd);
+                	
                     if (cmd instanceof BackupSnapshotCommand) {
-                        answers.add(_agentMgr.send(hostId, cmd, _snapshotTimeout));
+                        answers.add(_agentMgr.send(targetHostId, cmd, _snapshotTimeout));
                     } else {
-                        answers.add(_agentMgr.send(hostId, cmd));
+                        answers.add(_agentMgr.send(targetHostId, cmd));
                     }
                 }
                 return new Pair<Long, Answer[]>(hostId, answers.toArray(new Answer[answers.size()]));

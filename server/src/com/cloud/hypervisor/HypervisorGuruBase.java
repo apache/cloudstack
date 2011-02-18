@@ -19,6 +19,7 @@ package com.cloud.hypervisor;
 
 import java.util.List;
 
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
@@ -79,4 +80,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         return to;
     }
     
+    public long getCommandHostDelegation(long hostId, Command cmd) {
+    	return hostId;
+    }
 }

@@ -92,6 +92,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.maid.StackMaid;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
@@ -170,12 +171,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     @Inject protected HighAvailabilityManager _haMgr;
     @Inject protected HostPodDao _podDao;
     @Inject protected DataCenterDao _dcDao;
+    @Inject protected HypervisorGuruManager _hvGuruMgr;
     
     @Inject(adapter=DeploymentPlanner.class)
     protected Adapters<DeploymentPlanner> _planners;
     
     Map<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>>();
-    Map<HypervisorType, HypervisorGuru> _hvGurus = new HashMap<HypervisorType, HypervisorGuru>();
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
     
     ScheduledExecutorService _executor = null;
@@ -375,12 +376,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         
         ReservationContextImpl.setComponents(_userDao, _domainDao, _accountDao);
         VirtualMachineProfileImpl.setComponents(_offeringDao, _templateDao, _accountDao);
-        
-        Adapters<HypervisorGuru> hvGurus = locator.getAdapters(HypervisorGuru.class);
-        for (HypervisorGuru guru : hvGurus) {
-            _hvGurus.put(guru.getHypervisorType(), guru);
-        }
-        
+
         _cancelWait = NumbersUtil.parseLong(params.get(Config.VmOpCancelInterval.key()), 3600);
         _cleanupWait = NumbersUtil.parseLong(params.get(Config.VmOpCleanupWait.key()), 3600);
         _cleanupInterval = NumbersUtil.parseLong(params.get(Config.VmOpCleanupInterval.key()), 86400) * 1000;
@@ -538,8 +534,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         ServiceOfferingVO offering = _offeringDao.findById(vm.getServiceOfferingId());
         VMTemplateVO template = _templateDao.findById(vm.getTemplateId());
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodId(), null, null);
-        HypervisorGuru hvGuru = _hvGurus.get(vm.getHypervisorType());
-        
+        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
         
         try {
             Journal journal = start.second().getJournal();
@@ -934,8 +929,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
         _networkMgr.prepareNicForMigration(profile, dest);
         _storageMgr.prepareForMigration(profile, dest);
+        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
         
-        HypervisorGuru hvGuru = _hvGurus.get(vm.getHypervisorType());
         VirtualMachineTO to = hvGuru.implement(profile);
         PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(to);
         
