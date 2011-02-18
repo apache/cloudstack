@@ -118,9 +118,14 @@ function publicNetworkToMidmenu(jsonObj, $midmenuItem1) {
     var $iconContainer = $midmenuItem1.find("#icon_container").show();   
     $iconContainer.find("#icon").attr("src", "images/midmenuicon_storage_snapshots.png");		
     */
-         
-    $midmenuItem1.find("#first_row").text("Public Network"); 
-    $midmenuItem1.find("#second_row").text("VLAN: Multiple");   
+    
+    var firstRowText = "Public Network";
+    $midmenuItem1.find("#first_row").text(firstRowText);    
+    $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
+    
+    var secondRowText = "VLAN: Multiple";
+    $midmenuItem1.find("#second_row").text(secondRowText); 
+    $midmenuItem1.find("#second_row_container").attr("title", secondRowText); 
 }
 
 function publicNetworkToRightPanel($midmenuItem1) {      
@@ -974,9 +979,14 @@ function directNetworkToMidmenu(jsonObj, $midmenuItem1) {
     var $iconContainer = $midmenuItem1.find("#icon_container").show();   
     $iconContainer.find("#icon").attr("src", "images/midmenuicon_storage_snapshots.png");		
     */
-         
-    $midmenuItem1.find("#first_row").text(fromdb(jsonObj.name).substring(0,25)); 
-    $midmenuItem1.find("#second_row").text("VLAN : " + fromdb(jsonObj.vlan));   
+    
+    var firstRowText = fromdb(jsonObj.name);
+    $midmenuItem1.find("#first_row").text(firstRowText);    
+    $midmenuItem1.find("#first_row_container").attr("title", firstRowText);   
+    
+    var secondRowText = "VLAN : " + fromdb(jsonObj.vlan);
+    $midmenuItem1.find("#second_row").text(secondRowText); 
+    $midmenuItem1.find("#second_row_container").attr("title", secondRowText);  
 }
 
 function directNetworkToRightPanel($midmenuItem1) {    
