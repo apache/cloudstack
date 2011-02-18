@@ -537,12 +537,14 @@ If Cancel button in dialog is clicked, action won't preceed.
 i.e. doActionToMidMenu() won't get called => highlight won't be removd from middle menu. 
 So, we need to remove highlight here. Otherwise, it won't be consistent of selectedItemsInMidMenu which will be emptied soon.
 */
+/*
 function removeHighlightInMiddleMenu(selectedItemsInMidMenu) {
     for(var id in selectedItemsInMidMenu) {
         var $midmenuItem1 = $("#midmenuItem_"+id);	
         $midmenuItem1.find("#content").removeClass("selected");
     }
 }	     	
+*/
 
 function copyActionInfoFromMidMenuToRightPanel($midmenuItem1) {     
     var $afterActionInfoContainer = $("#right_panel_content #after_action_info_container_on_top");       
@@ -1006,7 +1008,8 @@ function initDialogWithOK(elementId, width1, addToActive) {
 function createMultipleSelectionSubContainer() {      
     var $multipleSelectionSubContainer = $("<div id='multiple_selection_sub_container'></div>"); 
     $("#midmenu_container").empty().append($multipleSelectionSubContainer);    
-  
+    selectedItemsInMidMenu = {};  
+    
     $multipleSelectionSubContainer.selectable({
         selecting: function(event, ui) {	 	                               
             if(ui.selecting.id.indexOf("midmenuItem") != -1) {                     
@@ -1078,8 +1081,7 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
 			    $container = $("#midmenu_container").empty(); 
 			else
 				$container = createMultipleSelectionSubContainer();
-		
-            selectedItemsInMidMenu = {};                           
+		                                     
             var items = json[jsonResponse1][jsonResponse2];      
             if(items != null && items.length > 0) {
                 (items.length == midmenuItemCount)? $("#midmenu_nextbutton").show(): $("#midmenu_nextbutton").hide();

@@ -2109,11 +2109,8 @@ function appendInstanceGroup(groupId, groupName) {
                         vmToMidmenu(instances[i], $midmenuItem1); 
                         bindClickToMidMenu($midmenuItem1, vmToRightPanel, getMidmenuId);  
                         $("#midmenu_container").append($midmenuItem1.show()); 
-                        if(i == 0) {  //click the 1st item in middle menu as default  
-                            $midmenuItem1.click();                               
-                            $midmenuItem1.addClass("ui-selected");  //because instance page is using JQuery selectable widget to do multiple-selection
-                            selectedItemsInMidMenu[instances[i].id] = $midmenuItem1; //because instance page is using JQuery selectable widget to do multiple-selection
-                        }                    
+                        if(i == 0)  //click the 1st item in middle menu as default  
+                            clickItemInMultipleSelectionMidmenu($midmenuItem1); 
                     }  
                 }  
             }
