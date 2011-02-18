@@ -649,6 +649,41 @@ public abstract class CitrixResourceBase implements ServerResource {
         return vif;
     }
     
+    protected void prepareISO(Connection conn, String vmName) throws XmlRpcException, XenAPIException {
+        
+        Set<VM> vms = VM.getByNameLabel(conn, vmName);
+        if( vms == null || vms.size() != 1) {
+            throw new CloudRuntimeException("There are " + ((vms == null) ? "0" : vms.size()) + " VMs named " + vmName);
+        }
+        VM vm = vms.iterator().next();
+        Set<VBD> vbds = vm.getVBDs(conn);
+        for ( VBD vbd : vbds ) {
+            VBD.Record vbdr = vbd.getRecord(conn);
+            if ( vbdr.type == Types.VbdType.CD && vbdr.empty == false ) {
+                VDI vdi = vbdr.VDI;
+                SR sr = vdi.getSR(conn);
+                Set<PBD> pbds = sr.getPBDs(conn);
+                if( pbds == null ) {
+                    throw new CloudRuntimeException("There is no pbd for sr " + sr);
+                }
+                for ( PBD pbd : pbds ) {
+                    PBD.Record pbdr = pbd.getRecord(conn);
+                    if ( pbdr.host.getUuid(conn).equals(_host.uuid)) {
+                        return;
+                    }
+                }
+                sr.setShared(conn, true);
+                Host host = Host.getByUuid(conn, _host.uuid);
+                PBD.Record pbdr = pbds.iterator().next().getRecord(conn);
+                pbdr.host = host;
+                pbdr.uuid = "";
+                PBD pbd = PBD.create(conn, pbdr);
+                pbdPlug(conn, pbd, pbd.getUuid(conn));
+                break;
+            }
+        }
+    }
+    
     protected VDI mount(Connection conn, String vmName, VolumeTO volume) throws XmlRpcException, XenAPIException {
         if (volume.getType() == VolumeType.ISO) {
         	
@@ -1994,13 +2029,9 @@ public abstract class CitrixResourceBase implements ServerResource {
             s_logger.debug("Preparing host for migrating " + vm);
         }
         
-        VolumeTO[] disks = vm.getDisks();
         NicTO[] nics = vm.getNics();
         try {
-            for (VolumeTO disk : disks) {
-                //TODO: Anthony will change this for handling ISO attached VMs.
-                mount(conn, vm.getName(), disk);
-            }
+            prepareISO(conn, vm.getName());
             
             for (NicTO nic : nics) {
                 getNetwork(conn, nic);
@@ -2010,11 +2041,8 @@ public abstract class CitrixResourceBase implements ServerResource {
             }
             
             return new PrepareForMigrationAnswer(cmd);
-        } catch (XenAPIException e) {
-            s_logger.warn("Unable to prepare for migration ", e);
-            return new PrepareForMigrationAnswer(cmd, e);
-        } catch (XmlRpcException e) {
-            s_logger.warn("Unable to prepare for migration ", e);
+        } catch (Exception e) {
+            s_logger.warn("Catch Exception " + e.getClass().getName() + " prepare for migration failed due to " + e.toString(), e);
             return new PrepareForMigrationAnswer(cmd, e);
         }
     }
