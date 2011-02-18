@@ -144,18 +144,14 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     }
     
     @Override
-    public void create(){
-        try {
-            Volume volume = _storageService.allocVolume(this);
-            if (volume != null) {
-                this.setEntityId(volume.getId());
-            } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create volume");
-            }
-        } catch (ResourceAllocationException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
-        } 
+    public void create() throws ResourceAllocationException{
+        
+        Volume volume = _storageService.allocVolume(this);
+        if (volume != null) {
+            this.setEntityId(volume.getId());
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create volume");
+        }  
     }
     
     @Override

@@ -44,8 +44,6 @@ import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.SecurityIngressRulesCmd;
 import com.cloud.agent.api.SecurityIngressRulesCmd.IpPortAndProto;
 import com.cloud.agent.manager.Commands;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AuthorizeSecurityGroupIngressCmd;
 import com.cloud.api.commands.CreateSecurityGroupCmd;
 import com.cloud.api.commands.DeleteSecurityGroupCmd;
@@ -674,11 +672,11 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Unable to revoke ingress rule id = " + id + ", permission denied.");
                     }
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to revoke ingress rule id  = " + id + ", permission denied.");
+                    throw new PermissionDeniedException("Unable to revoke ingress rule id  = " + id + ", permission denied.");
                 }
                 Account groupOwner =  _accountDao.findActiveAccount(accountName, domainId);
                 if (groupOwner == null) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
+                    throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                 }
                 accountId = groupOwner.getId();
             } else {
@@ -695,13 +693,13 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
 
         if (accountId == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account for ingress rule id:" + id + "; failed to revoke ingress.");
+            throw new InvalidParameterValueException("Unable to find account for ingress rule id:" + id + "; failed to revoke ingress.");
         }
 
         IngressRuleVO rule = _ingressRuleDao.findById(id);
         if (rule == null) {
             s_logger.debug("Unable to find ingress rule with id " + id);
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find ingress rule with id " + id);
+            throw new InvalidParameterValueException("Unable to find ingress rule with id " + id);
         }
 		
         final Transaction txn = Transaction.currentTxn();
@@ -1014,7 +1012,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
 	@DB
 	@Override
-	public boolean deleteSecurityGroup(DeleteSecurityGroupCmd cmd) throws ResourceInUseException, PermissionDeniedException, InvalidParameterValueException{
+	public boolean deleteSecurityGroup(DeleteSecurityGroupCmd cmd) throws ResourceInUseException{
 		Long id = cmd.getId();
 		String accountName = cmd.getAccountName();
 		Long domainId = cmd.getDomainId();
@@ -1038,7 +1036,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
                 Account groupOwner = _accountDao.findActiveAccount(accountName, domainId);
                 if (groupOwner == null) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
+                    throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                 }
                 accountId = groupOwner.getId();
             } else {
@@ -1060,7 +1058,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
         SecurityGroupVO sg = _securityGroupDao.findById(id);
         if (sg == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find network group: " + id + "; failed to delete group.");
+            throw new InvalidParameterValueException("Unable to find network group: " + id + "; failed to delete group.");
         }
         
         Long groupId = sg.getId();

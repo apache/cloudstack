@@ -29,6 +29,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -98,7 +99,7 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
     }
 	
     @Override
-    public void execute(){
+    public void execute() throws ResourceUnavailableException{
         StoragePool result = _storageService.cancelPrimaryStorageForMaintenance(this);
         if (result != null) {
             StoragePoolResponse response = _responseGenerator.createStoragePoolResponse(result);

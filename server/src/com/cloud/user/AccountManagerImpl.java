@@ -1101,7 +1101,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     	Account account = _accountDao.findActiveAccount(accountName, domainId);
     	
     	if( account == null){
-    		throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find account to create user");
+    		throw new InvalidParameterValueException("Unable to find account to create user");
     	}else{
     		accountId = account.getAccountId();
     	}

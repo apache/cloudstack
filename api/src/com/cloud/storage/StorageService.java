@@ -19,7 +19,6 @@ package com.cloud.storage;
 
 import java.net.UnknownHostException;
 
-import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
 import com.cloud.api.commands.CreateStoragePoolCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
@@ -28,10 +27,12 @@ import com.cloud.api.commands.DeleteVolumeCmd;
 import com.cloud.api.commands.PreparePrimaryStorageForMaintenanceCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.exception.ResourceUnavailableException;
 
 public interface StorageService {
     /**
@@ -41,9 +42,9 @@ public interface StorageService {
      * @throws ResourceInUseException
      * @throws IllegalArgumentException
      * @throws UnknownHostException
-     * @throws ResourceAllocationException
+     * @throws ResourceUnavailableException TODO
      */
-    StoragePool createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceAllocationException;
+    StoragePool createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceUnavailableException;
     
     /**
      * Creates the database object for a volume based on the given criteria
@@ -73,17 +74,18 @@ public interface StorageService {
      * Enable maintenance for primary storage
      * @param cmd - the command specifying primaryStorageId
      * @return the primary storage pool
-     * @throws ServerApiException
+     * @throws ResourceUnavailableException TODO
+     * @throws InsufficientCapacityException TODO
      */
-    public StoragePool preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws ServerApiException;
+    public StoragePool preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException;
     
     /**
      * Complete maintenance for primary storage
      * @param cmd - the command specifying primaryStorageId
      * @return the primary storage pool
-     * @throws ServerApiException
+     * @throws ResourceUnavailableException TODO
      */
-    public StoragePool cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ServerApiException;
+    public StoragePool cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ResourceUnavailableException;
 
     public StoragePool updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
     

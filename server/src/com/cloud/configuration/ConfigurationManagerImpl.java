@@ -33,8 +33,6 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.SecurityChecker;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateCfgCmd;
 import com.cloud.api.commands.CreateDiskOfferingCmd;
 import com.cloud.api.commands.CreateNetworkOfferingCmd;
@@ -549,7 +547,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         //verify parameters
         HostPodVO pod = _podDao.findById(id);;
         if (pod == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find pod by id " + id);
+            throw new InvalidParameterValueException("Unable to find pod by id " + id);
         }
             
         String[] existingPodIpRange = pod.getDescription().split("-"); 
@@ -968,7 +966,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     	DataCenterVO zone = _zoneDao.findById(zoneId);
     	if (zone == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find zone by id " + zoneId);
+    		throw new InvalidParameterValueException("unable to find zone by id " + zoneId);
     	}
     	
     	if (zoneName == null) {
@@ -1239,7 +1237,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override
-    public ServiceOffering createServiceOffering(CreateServiceOfferingCmd cmd) throws InvalidParameterValueException {
+    public ServiceOffering createServiceOffering(CreateServiceOfferingCmd cmd){
         Long userId = UserContext.current().getCallerUserId();
         if (userId == null) {
             userId = User.UID_SYSTEM;
@@ -1262,12 +1260,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         Long cpuSpeed = cmd.getCpuSpeed();
         if ((cpuSpeed == null) || (cpuSpeed.intValue() <= 0) || (cpuSpeed.intValue() > 2147483647)) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Failed to create service offering " + name + ": specify the cpu speed value between 1 and 2147483647");
+            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the cpu speed value between 1 and 2147483647");
         }
 
         Long memory = cmd.getMemory();
         if ((memory == null) || (memory.intValue() <= 0) || (memory.intValue() > 2147483647)) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Failed to create service offering " + name + ": specify the memory value between 1 and 2147483647");
+            throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the memory value between 1 and 2147483647");
         }
 
     	//check if valid domain
@@ -1329,7 +1327,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // Verify input parameters
         ServiceOfferingVO offeringHandle = _serviceOfferingDao.findById(id);;
     	if (offeringHandle == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find service offering " + id);
+    		throw new InvalidParameterValueException("unable to find service offering " + id);
     	}
     	    	
     	boolean updateNeeded = (name != null || displayText != null);
@@ -1505,9 +1503,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         //Verify service offering id
         ServiceOfferingVO offering = _serviceOfferingDao.findById(offeringId);
     	if (offering == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find service offering " + offeringId);
+    		throw new InvalidParameterValueException("unable to find service offering " + offeringId);
     	} else if (offering.getRemoved() != null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find service offering " + offeringId);
+    		throw new InvalidParameterValueException("unable to find service offering " + offeringId);
     	}
     	
     	if (_serviceOfferingDao.remove(offeringId)) {
@@ -1537,7 +1535,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
     
     @Override @DB
-    public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException, ResourceUnavailableException {
+    public Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         Long zoneId = cmd.getZoneId();
         Long podId = cmd.getPodId();
         String startIP = cmd.getStartIp();
@@ -1556,7 +1554,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if ((accountName != null) && (domainId != null)) {
             account = _accountDao.findActiveAccount(accountName, domainId);
             if (account == null) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid account.");
+                throw new InvalidParameterValueException("Please specify a valid account.");
             }
         }
 
@@ -2552,7 +2550,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // Verify input parameters
         NetworkOfferingVO offeringHandle = _networkOfferingDao.findById(id);
         if (offeringHandle == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find network offering " + id);
+            throw new InvalidParameterValueException("unable to find network offering " + id);
         }
 
         NetworkOfferingVO offering = _networkOfferingDao.createForUpdate(id);

@@ -37,7 +37,7 @@ public interface SecurityGroupService {
     public SecurityGroup createSecurityGroup(CreateSecurityGroupCmd command) throws PermissionDeniedException, InvalidParameterValueException;
     boolean revokeSecurityGroupIngress(RevokeSecurityGroupIngressCmd cmd);
     
-    boolean deleteSecurityGroup(DeleteSecurityGroupCmd cmd) throws ResourceInUseException, PermissionDeniedException, InvalidParameterValueException;
+    boolean deleteSecurityGroup(DeleteSecurityGroupCmd cmd) throws ResourceInUseException;
 
     /**
      * Search for security groups and associated ingress rules for the given account, domain, group name, and/or keyword.

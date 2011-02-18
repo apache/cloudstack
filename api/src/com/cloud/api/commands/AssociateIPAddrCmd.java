@@ -129,7 +129,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     }
     
     @Override
-    public void create(){
+    public void create() throws ResourceAllocationException{
         try {
             IpAddress ip = _networkService.allocateIP(this);
             if (ip != null) {
@@ -137,9 +137,6 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to allocate ip address");
             }
-        } catch (ResourceAllocationException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
@@ -152,26 +149,14 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
-        try {
-            UserContext.current().setEventDetails("Ip Id: "+getEntityId());
-            IpAddress result = _networkService.associateIP(this);
-            if (result != null) {
-                IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(result);
-                ipResponse.setResponseName(getCommandName());
-                this.setResponseObject(ipResponse);
-            } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to assign ip address");
-            }
-        } catch (ResourceAllocationException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
-        } catch (ConcurrentOperationException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        } catch (InsufficientAddressCapacityException ex) {
-            s_logger.info(ex);
-            s_logger.trace(ex);
-            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
+        UserContext.current().setEventDetails("Ip Id: "+getEntityId());
+        IpAddress result = _networkService.associateIP(this);
+        if (result != null) {
+            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(result);
+            ipResponse.setResponseName(getCommandName());
+            this.setResponseObject(ipResponse);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to assign ip address");
         }
     }
     

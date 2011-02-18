@@ -50,7 +50,6 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.UpdateCertificateCommand;
 import com.cloud.agent.manager.Commands;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.DestroyConsoleProxyCmd;
 import com.cloud.certificate.CertificateVO;
@@ -69,6 +68,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
@@ -1355,7 +1355,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         // verify parameters
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyId);
         if (proxy == null) {
-            throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a console proxy with id " + proxyId);
+            throw new InvalidParameterValueException("unable to find a console proxy with id " + proxyId);
         }
         
         return destroyProxy(proxyId);

@@ -250,7 +250,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public void create() {
+    public void create() throws ResourceAllocationException{
         try {
             UserVm result = _userVmService.createVirtualMachine(this);
             if (result != null){
@@ -268,10 +268,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         }  catch (ConcurrentOperationException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
-        } catch (ResourceAllocationException ex) {
-		    s_logger.warn("Exception: ", ex);
-		    throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
-        }    
+        }  
     }
 
 }

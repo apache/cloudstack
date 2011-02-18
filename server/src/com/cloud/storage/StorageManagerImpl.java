@@ -62,8 +62,6 @@ import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
 import com.cloud.api.commands.CreateStoragePoolCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
@@ -903,13 +901,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     @Override
     @SuppressWarnings("rawtypes")
     public StoragePoolVO createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException,
-            ResourceAllocationException {
+            ResourceUnavailableException {
         Long clusterId = cmd.getClusterId();
         Long podId = cmd.getPodId();
         Map ds = cmd.getDetails();
 
         if (clusterId != null && podId == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Cluster id requires pod id");
+            throw new InvalidParameterValueException("Cluster id requires pod id");
         }
 
         Map<String, String> details = new HashMap<String, String>();
@@ -930,28 +928,28 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         Long zoneId = cmd.getZoneId();
         DataCenterVO zone = _dcDao.findById(cmd.getZoneId());
         if (zone == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find zone by id " + zoneId);
+            throw new InvalidParameterValueException("unable to find zone by id " + zoneId);
         }
 
         URI uri = null;
         try {
             uri = new URI(cmd.getUrl());
             if (uri.getScheme() == null) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "scheme is null " + cmd.getUrl() + ", add nfs:// as a prefix");
+                throw new InvalidParameterValueException("scheme is null " + cmd.getUrl() + ", add nfs:// as a prefix");
             } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
                 String uriHost = uri.getHost();
                 String uriPath = uri.getPath();
                 if (uriHost == null || uriPath == null || uriHost.trim().isEmpty() || uriPath.trim().isEmpty()) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "host or path is null, should be nfs://hostname/path");
+                    throw new InvalidParameterValueException("host or path is null, should be nfs://hostname/path");
                 }
             } else if (uri.getScheme().equalsIgnoreCase("sharedMountPoint")) {
                 String uriPath = uri.getPath();
                 if (uriPath == null) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "host or path is null, should be sharedmountpoint://localhost/path");
+                    throw new InvalidParameterValueException("host or path is null, should be sharedmountpoint://localhost/path");
                 }
             }
         } catch (URISyntaxException e) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, cmd.getUrl() + " is not a valid uri");
+            throw new InvalidParameterValueException(cmd.getUrl() + " is not a valid uri");
         }
 
         String tags = cmd.getTags();
@@ -1051,7 +1049,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         // pod
         List<HostVO> allHosts = _hostDao.listBy(Host.Type.Routing, clusterId, podId, zoneId);
         if (allHosts.isEmpty()) {
-            throw new ResourceAllocationException("No host exists to associate a storage pool with");
+            throw new ResourceUnavailableException("No host exists to associate a storage pool with in pod: ", HostPodVO.class, podId);
         }
         long poolId = _storagePoolDao.getNextInSequence(Long.class, "id");
         String uuid = null;
@@ -1351,7 +1349,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
      */
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", create = true)
-    public VolumeVO allocVolume(CreateVolumeCmd cmd) throws InvalidParameterValueException, PermissionDeniedException, ResourceAllocationException {
+    public VolumeVO allocVolume(CreateVolumeCmd cmd) throws ResourceAllocationException {
         // FIXME: some of the scheduled event stuff might be missing here...
         Account account = UserContext.current().getCaller();
         String accountName = cmd.getAccountName();
@@ -1445,7 +1443,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             Long snapshotId = cmd.getSnapshotId();
             Snapshot snapshotCheck = _snapshotDao.findById(snapshotId);
             if (snapshotCheck == null) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a snapshot with id " + snapshotId);
+                throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
             }
 
             VolumeVO vol = _volsDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId());
@@ -1457,11 +1455,11 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 if (isAdmin(account.getType())) {
                     Account snapshotOwner = _accountDao.findById(snapshotCheck.getAccountId());
                     if (!_domainDao.isChildDomain(account.getDomainId(), snapshotOwner.getDomainId())) {
-                        throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to create volume from snapshot with id " + snapshotId
+                        throw new PermissionDeniedException("Unable to create volume from snapshot with id " + snapshotId
                                 + ", permission denied.");
                     }
                 } else if (account.getId() != snapshotCheck.getAccountId()) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a snapshot with id " + snapshotId + " for this account");
+                    throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId + " for this account");
                 }
             }
         }
@@ -1765,7 +1763,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     }
     
     @Override @DB
-    public StoragePoolVO preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws ServerApiException{
+    public StoragePoolVO preparePrimaryStorageForMaintenance(PreparePrimaryStorageForMaintenanceCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException{
     	Long primaryStorageId = cmd.getId();
     	Long userId = UserContext.current().getCallerUserId();
     	User user = _userDao.findById(userId);
@@ -1976,22 +1974,22 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         	if(e instanceof ExecutionException || e instanceof ResourceUnavailableException){
                 s_logger.error("Exception in enabling primary storage maintenance:",e);
                 setPoolStateToError(primaryStorage);
-                throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
+                throw (ResourceUnavailableException)e;
             }
             if (e instanceof InvalidParameterValueException) {
                 s_logger.error("Exception in enabling primary storage maintenance:", e);
                 setPoolStateToError(primaryStorage);
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, e.getMessage());
+                throw (InvalidParameterValueException)e;
             }
             if (e instanceof InsufficientCapacityException) {
                 s_logger.error("Exception in enabling primary storage maintenance:", e);
                 setPoolStateToError(primaryStorage);
-                throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, e.getMessage());
+                throw (InsufficientCapacityException)e;
             }
         	//for everything else
         	s_logger.error("Exception in enabling primary storage maintenance:",e);
         	setPoolStateToError(primaryStorage);
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
+        	throw new CloudRuntimeException(e.getMessage());
         	
         }
     }
@@ -2003,7 +2001,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 
 	@Override
 	@DB
-	public StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ServerApiException{
+	public StoragePoolVO cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ResourceUnavailableException{
 		Long primaryStorageId = cmd.getId();
 		Long userId = UserContext.current().getCallerUserId();
 	    User user = _userDao.findById(userId);
@@ -2150,13 +2148,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
 		} catch (Exception e) {
             setPoolStateToError(primaryStorage);
 			if(e instanceof ExecutionException){
-				throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
+				throw (ResourceUnavailableException)e;
 			}	
 			else if(e instanceof InvalidParameterValueException){
-				throw new ServerApiException(BaseCmd.PARAM_ERROR, e.getMessage());
+				throw (InvalidParameterValueException)e;
 			}
 			else{//all other exceptions
-				throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
+				throw new CloudRuntimeException(e.getMessage());
 			}
 		}
 	}
@@ -2195,26 +2193,26 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     	// Check that the volume ID is valid
     	VolumeVO volume = _volsDao.findById(volumeId);
     	if (volume == null) {
-    		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId);
+    		throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId);
     	}
     	
     	// If the account is not an admin, check that the volume is owned by the account that was passed in
     	if (!isAdmin) {
     		if (account.getId() != volume.getAccountId()) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
+                throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
     		}
     	} else if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId())) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to delete volume with id " + volumeId + ", permission denied.");
+            throw new PermissionDeniedException("Unable to delete volume with id " + volumeId + ", permission denied.");
     	}
 
         // If the account is not an admin, check that the volume is owned by the account that was passed in
         if (!isAdmin) {
             if (account.getId() != volume.getAccountId()) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId + " for account: "
+                throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId + " for account: "
                         + account.getAccountName());
             }
         } else if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId())) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to delete volume with id " + volumeId + ", permission denied.");
+            throw new PermissionDeniedException("Unable to delete volume with id " + volumeId + ", permission denied.");
         }
 
         // Check that the volume is stored on shared storage

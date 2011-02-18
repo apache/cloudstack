@@ -39,8 +39,6 @@ import com.cloud.agent.api.DeleteSnapshotBackupCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateSnapshotCmd;
 import com.cloud.api.commands.CreateSnapshotPolicyCmd;
 import com.cloud.api.commands.DeleteSnapshotCmd;
@@ -390,8 +388,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 	                throw new CloudRuntimeException("Created snapshot: " + snapshotId + " on primary but failed to backup on secondary");
 	            }
 	        }
-        } catch (Exception e){
-            throw new CloudRuntimeException("Creating snapshot failed due to " + e.toString());
         } finally {
             // Cleanup jobs to do after the snapshot has been created.
         	if( snapshotId != null) {
@@ -611,17 +607,17 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         
     }
     
-    private Long checkAccountPermissions(long targetAccountId, long targetDomainId, String targetDesc, long targetId) throws ServerApiException {
+    private Long checkAccountPermissions(long targetAccountId, long targetDomainId, String targetDesc, long targetId) {
     	Long accountId = null;
 
     	Account account = UserContext.current().getCaller();
     	if (account != null) {
     		if (!isAdmin(account.getType())) {
     			if (account.getId() != targetAccountId) {
-    				throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find a " + targetDesc + " with id " + targetId + " for this account");
+    				throw new InvalidParameterValueException("Unable to find a " + targetDesc + " with id " + targetId + " for this account");
     			}
     		} else if (!_domainDao.isChildDomain(account.getDomainId(), targetDomainId)) {
-    			throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to perform operation for " + targetDesc + " with id " + targetId + ", permission denied.");
+    			throw new PermissionDeniedException("Unable to perform operation for " + targetDesc + " with id " + targetId + ", permission denied.");
     		}
     		accountId = account.getId();
     	}
@@ -642,13 +638,13 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         //Verify parameters
         Snapshot snapshotCheck = _snapshotDao.findByIdIncludingRemoved(snapshotId.longValue());
         if (snapshotCheck == null) {
-            throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a snapshot with id " + snapshotId);
+            throw new InvalidParameterValueException ("unable to find a snapshot with id " + snapshotId);
         }
 
         // If an account was passed in, make sure that it matches the account of the snapshot
         Account snapshotOwner = _accountDao.findById(snapshotCheck.getAccountId());
         if (snapshotOwner == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Snapshot id " + snapshotId + " does not have a valid account");
+            throw new InvalidParameterValueException("Snapshot id " + snapshotId + " does not have a valid account");
         }
         checkAccountPermissions(snapshotOwner.getId(), snapshotOwner.getDomainId(), "snapshot", snapshotId);
 
@@ -658,7 +654,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
 
             if (!status) {
                 s_logger.warn("Failed to delete snapshot");
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"Failed to delete snapshot:"+snapshotId);
+                throw new CloudRuntimeException("Failed to delete snapshot:"+snapshotId);
             }
         } else {
             List<SnapshotPolicyVO> policies = listPoliciesforVolume(snapshotCheck.getVolumeId());
@@ -668,7 +664,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 
                 if (!status) {
                     s_logger.warn("Failed to delete snapshot");
-                    throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"Failed to delete snapshot:"+snapshotId);
+                    throw new CloudRuntimeException("Failed to delete snapshot:"+snapshotId);
                 }
             }
         }
@@ -1267,13 +1263,13 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     }
 
 	@Override
-	public boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd) throws InvalidParameterValueException {
+	public boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd){
     	Long policyId = cmd.getId();
         List<Long> policyIds = cmd.getIds();
         Long userId = getSnapshotUserId();
 
         if ((policyId == null) && (policyIds == null)) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "No policy id (or list of ids) specified.");
+            throw new InvalidParameterValueException("No policy id (or list of ids) specified.");
         }
         
         if (policyIds == null) {
@@ -1281,17 +1277,17 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         	policyIds.add(policyId);
         } else if(policyIds.size()<=0){
         	// Not even sure how this is even possible
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR,"There are no policy ids");
+        	throw new InvalidParameterValueException("There are no policy ids");
         }
         
         for (Long policy : policyIds) {
             SnapshotPolicyVO snapshotPolicyVO = _snapshotPolicyDao.findById(policy);
             if (snapshotPolicyVO == null) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Policy id given: " + policy + " does not exist");
+                throw new InvalidParameterValueException("Policy id given: " + policy + " does not exist");
             }
             VolumeVO volume = _volsDao.findById(snapshotPolicyVO.getVolumeId());
             if (volume == null) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Policy id given: " + policy + " does not belong to a valid volume");
+                throw new InvalidParameterValueException("Policy id given: " + policy + " does not belong to a valid volume");
             }
             
             // If an account was passed in, make sure that it matches the account of the volume

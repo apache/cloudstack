@@ -71,8 +71,6 @@ import com.cloud.agent.manager.allocator.PodAllocator;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.alert.AlertManager;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AddClusterCmd;
 import com.cloud.api.commands.AddHostCmd;
 import com.cloud.api.commands.AddSecondaryStorageCmd;
@@ -1922,8 +1920,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		if (result) {
 			return host;
 		}
-		throw new ServerApiException(BaseCmd.INTERNAL_ERROR,
-				"Failed to reconnect host with id " + hostId.toString()
+		throw new CloudRuntimeException("Failed to reconnect host with id " + hostId.toString()
 						+ ", internal error.");
 	}
 

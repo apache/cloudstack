@@ -112,7 +112,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() throws ResourceAllocationException{
         try {
             VirtualMachineTemplate template = _templateService.copyTemplate(this);
             TemplateResponse templateResponse = _responseGenerator.createTemplateResponse(template, destZoneId);
@@ -122,10 +122,7 @@ public class CopyTemplateCmd extends BaseAsyncCmd {
         } catch (StorageUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
-        } catch (ResourceAllocationException ex) {
-        	s_logger.warn("Exception: ", ex);
-        	throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
-		}
+        } 
     }
 }
 

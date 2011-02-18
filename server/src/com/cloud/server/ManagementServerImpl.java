@@ -73,7 +73,6 @@ import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.CreateDomainCmd;
 import com.cloud.api.commands.CreateSSHKeyPairCmd;
 import com.cloud.api.commands.DeleteDomainCmd;
@@ -200,7 +199,6 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
@@ -603,7 +601,7 @@ public class ManagementServerImpl implements ManagementServer {
     	User user = _userDao.findById(userId);
 
     	if (user == null) {
-           throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to find user for id : " + userId);
+           throw new InvalidParameterValueException("unable to find user for id : " + userId);
     	}
 
     	// generate both an api key and a secret key, update the user table with the keys, return the keys to the user
@@ -1018,7 +1016,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<ServiceOfferingVO> searchForServiceOfferings(ListServiceOfferingsCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public List<ServiceOfferingVO> searchForServiceOfferings(ListServiceOfferingsCmd cmd) {
 
     	//Note
     	//The list method for offerings is being modified in accordance with discussion with Will/Kevin
@@ -1046,7 +1044,7 @@ public class ManagementServerImpl implements ManagementServer {
         			//perm check succeeded
         			return _offeringsDao.findServiceOfferingByDomainId(domainId);
         		}else{
-        			throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account:"+account.getAccountName()+" does not fall in the same domain hierarchy as the service offering");
+        			throw new PermissionDeniedException("The account:"+account.getAccountName()+" does not fall in the same domain hierarchy as the service offering");
         		}
         	}
         }
@@ -1712,7 +1710,7 @@ public class ManagementServerImpl implements ManagementServer {
                 isRecursive = true;
             } else if (account != null) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid domain id (" + domainId + ") given, unable to list accounts");
+                    throw new PermissionDeniedException("Invalid domain id (" + domainId + ") given, unable to list accounts");
                 }
             }
         } else {
@@ -1992,7 +1990,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<EventVO> searchForEvents(ListEventsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
+    public List<EventVO> searchForEvents(ListEventsCmd cmd){
         Account account = UserContext.current().getCaller();
         Long accountId = null;
         boolean isAdmin = false;
@@ -2012,7 +2010,7 @@ public class ManagementServerImpl implements ManagementServer {
                     if (userAccount != null) {
                         accountId = userAccount.getId();
                     } else {
-                        throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                     }
                 }
             } else {
@@ -2119,7 +2117,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override
-    public List<DomainRouterVO> searchForRouters(ListRoutersCmd cmd) throws InvalidParameterValueException, PermissionDeniedException {
+    public List<DomainRouterVO> searchForRouters(ListRoutersCmd cmd){
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long accountId = null;
@@ -2135,7 +2133,7 @@ public class ManagementServerImpl implements ManagementServer {
                 if (userAccount != null) {
                     accountId = userAccount.getId();
                 } else {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
+                    throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                 }
             }
         } else {
@@ -3247,7 +3245,7 @@ public class ManagementServerImpl implements ManagementServer {
         VMTemplateVO template = _templateDao.findById(id);
         
         if (template == null || !templateIsCorrectType(template)) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find " + mediaType + " with id " + id);
+            throw new InvalidParameterValueException("unable to find " + mediaType + " with id " + id);
         }
 
         if(cmd instanceof UpdateTemplatePermissionsCmd)
@@ -3255,7 +3253,7 @@ public class ManagementServerImpl implements ManagementServer {
         	mediaType = "template";
         	if(template.getFormat().equals(ImageFormat.ISO))
         	{
-        		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please provide a valid template");
+        		throw new InvalidParameterValueException("Please provide a valid template");
         	}
         }
         if(cmd instanceof UpdateIsoPermissionsCmd)
@@ -3263,18 +3261,18 @@ public class ManagementServerImpl implements ManagementServer {
         	mediaType = "iso";
         	if(!template.getFormat().equals(ImageFormat.ISO))
         	{
-        		throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please provide a valid iso");
+        		throw new InvalidParameterValueException("Please provide a valid iso");
         	}
         }
         
         if (account != null) 
         {
             if (!isAdmin(account.getType()) && (template.getAccountId() != account.getId())) {
-                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to update permissions for " + mediaType + " with id " + id);
+                throw new PermissionDeniedException("unable to update permissions for " + mediaType + " with id " + id);
             } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                 Long templateOwnerDomainId = findDomainIdByAccountId(template.getAccountId());
                 if (!isChildDomain(account.getDomainId(), templateOwnerDomainId)) {
-                    throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to update permissions for " + mediaType + " with id " + id);
+                    throw new PermissionDeniedException("Unable to update permissions for " + mediaType + " with id " + id);
                 }
             }
         }
@@ -3287,17 +3285,17 @@ public class ManagementServerImpl implements ManagementServer {
         // If the template is removed throw an error.
         if (template.getRemoved() != null){
         	s_logger.error("unable to update permissions for " + mediaType + " with id " + id + " as it is removed  ");
-        	throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to update permissions for " + mediaType + " with id " + id + " as it is removed ");
+        	throw new InvalidParameterValueException("unable to update permissions for " + mediaType + " with id " + id + " as it is removed ");
         }
         
         if (id == Long.valueOf(1)) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to update permissions for " + mediaType + " with id " + id);
+            throw new InvalidParameterValueException("unable to update permissions for " + mediaType + " with id " + id);
         }
         
         boolean isAdmin = ((account == null) || isAdmin(account.getType()));
         boolean allowPublicUserTemplates = Boolean.parseBoolean(getConfigurationValue("allow.public.user.templates"));        
         if (!isAdmin && !allowPublicUserTemplates && isPublic != null && isPublic) {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Only private " + mediaType + "s can be created.");
+        	throw new InvalidParameterValueException("Only private " + mediaType + "s can be created.");
         }
 
 //        // package up the accountNames as a list
@@ -3306,7 +3304,7 @@ public class ManagementServerImpl implements ManagementServer {
         {
             if ((operation == null) || (!operation.equalsIgnoreCase("add") && !operation.equalsIgnoreCase("remove") && !operation.equalsIgnoreCase("reset"))) 
             {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid operation on accounts, the operation must be either 'add' or 'remove' in order to modify launch permissions." +
+                throw new InvalidParameterValueException("Invalid operation on accounts, the operation must be either 'add' or 'remove' in order to modify launch permissions." +
                         "  Given operation is: '" + operation + "'");
             }
 //            StringTokenizer st = new StringTokenizer(accountNames, ",");
@@ -3528,7 +3526,7 @@ public class ManagementServerImpl implements ManagementServer {
         			//perm check succeeded
         			return _diskOfferingDao.listByDomainId(domainId);
         		}else{
-        			throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "The account:"+account.getAccountName()+" does not fall in the same domain hierarchy as the disk offering");
+        			throw new PermissionDeniedException("The account:"+account.getAccountName()+" does not fall in the same domain hierarchy as the disk offering");
         		}
         	}
         }
@@ -4032,7 +4030,7 @@ public class ManagementServerImpl implements ManagementServer {
 		VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
 	
 		if (systemVm == null) {
-        	throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + cmd.getId());
+        	throw new InvalidParameterValueException("unable to find a system vm with id " + cmd.getId());
         }
 		
 		if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
@@ -4047,7 +4045,7 @@ public class ManagementServerImpl implements ManagementServer {
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
     
         if (systemVm == null) {
-            throw new ServerApiException (BaseCmd.PARAM_ERROR, "unable to find a system vm with id " + cmd.getId());
+            throw new InvalidParameterValueException("unable to find a system vm with id " + cmd.getId());
         }
         
         if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)){
@@ -4240,14 +4238,14 @@ public class ManagementServerImpl implements ManagementServer {
         
         VolumeVO volume = _volumeDao.findById(volumeId);        
         if (volume == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with id " + volumeId);
+            throw new InvalidParameterValueException("Unable to find volume with id " + volumeId);
         }
 
         if (_dcDao.findById(zoneId) == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid zone.");          
+            throw new InvalidParameterValueException("Please specify a valid zone.");          
         }
         if(volume.getPoolId() == null){
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "The volume doesnt belong to a storage pool so cant extract it");
+            throw new InvalidParameterValueException("The volume doesnt belong to a storage pool so cant extract it");
         }
         //Extract activity only for detached volumes or for volumes whose instance is stopped
         if(volume.getInstanceId() != null && ApiDBUtils.findVMInstanceById(volume.getInstanceId()).getState() != State.Stopped ){
@@ -4263,7 +4261,7 @@ public class ManagementServerImpl implements ManagementServer {
         
         Upload.Mode extractMode;
         if( mode == null || (!mode.equals(Upload.Mode.FTP_UPLOAD.toString()) && !mode.equals(Upload.Mode.HTTP_DOWNLOAD.toString())) ){
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid extract Mode ");
+            throw new InvalidParameterValueException("Please specify a valid extract Mode ");
         }else{
             extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
         }
@@ -4388,15 +4386,15 @@ public class ManagementServerImpl implements ManagementServer {
         // Verify input parameters
         InstanceGroupVO group = _vmGroupDao.findById(groupId.longValue());
         if (group == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a vm group with id " + groupId);
+            throw new InvalidParameterValueException("unable to find a vm group with id " + groupId);
         }
 
         if (account != null) {
             Account tempAccount = _accountDao.findById(group.getAccountId());
             if (!isAdmin(account.getType()) && (account.getId() != group.getAccountId())) {
-                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "unable to find a group with id " + groupId + " for this account");
+                throw new InvalidParameterValueException("unable to find a group with id " + groupId + " for this account");
             } else if (!_domainDao.isChildDomain(account.getDomainId(), tempAccount.getDomainId())) {
-                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Invalid group id (" + groupId + ") given, unable to update the group.");
+                throw new InvalidParameterValueException("Invalid group id (" + groupId + ") given, unable to update the group.");
             }
         }
 
@@ -4404,7 +4402,7 @@ public class ManagementServerImpl implements ManagementServer {
         boolean isNameInUse = _vmGroupDao.isNameInUse(group.getAccountId(), groupName);
 
         if (isNameInUse && !group.getName().equals(groupName)) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to update vm group, a group with name " + groupName + " already exisits for account");
+            throw new InvalidParameterValueException("Unable to update vm group, a group with name " + groupName + " already exisits for account");
         }
 
         if (groupName != null) {
@@ -4423,13 +4421,13 @@ public class ManagementServerImpl implements ManagementServer {
         if ((account == null) || isAdmin(account.getType())) {
             if (domainId != null) {
                 if ((account != null) && !_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid domain id (" + domainId + ") given, unable to list vm groups.");
+                    throw new InvalidParameterValueException("Invalid domain id (" + domainId + ") given, unable to list vm groups.");
                 }
 
                 if (accountName != null) {
                     account = _accountDao.findActiveAccount(accountName, domainId);
                     if (account == null) {
-                        throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to find account " + accountName + " in domain " + domainId);
+                        throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
                     }
                     accountId = account.getId();
                 }
@@ -4532,7 +4530,7 @@ public class ManagementServerImpl implements ManagementServer {
     }
 
     @Override @DB
-    public String uploadCertificate(UploadCustomCertificateCmd cmd) throws ServerApiException{
+    public String uploadCertificate(UploadCustomCertificateCmd cmd){
     	CertificateVO cert = null;
     	Long certVOId = null;
     	try 
@@ -4636,37 +4634,37 @@ public class ManagementServerImpl implements ManagementServer {
 		}catch (Exception e) {
 			s_logger.warn("Failed to successfully update the cert across console proxies on management server:"+this.getId());			
 			if(e instanceof ExecutionException) {
-                throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
+                throw new CloudRuntimeException(e.getMessage());
             } else if(e instanceof ManagementServerException) {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
+                throw new CloudRuntimeException(e.getMessage());
             } else if(e instanceof IndexOutOfBoundsException){
 				String msg = "Custom certificate record in the db deleted; this should never happen. Please create a new record in the certificate table";
 				s_logger.error(msg,e);
-				throw new ServerApiException(BaseCmd.INTERNAL_ERROR, msg);
+				throw new CloudRuntimeException(msg);
 			}
 			else if(e instanceof FileNotFoundException){
 				String msg = "Invalid file path for custom cert found during cert validation";
 				s_logger.error(msg,e);
-				throw new ServerApiException(BaseCmd.INTERNAL_ERROR, msg);
+				throw new InvalidParameterValueException(msg);
 			}
 			else if(e instanceof CertificateException){
 				String msg = "The file format for custom cert does not conform to the X.509 specification";
 				s_logger.error(msg,e);
-				throw new ServerApiException(BaseCmd.INTERNAL_ERROR, msg);				
+				throw new CloudRuntimeException(msg);				
 			}
 			else if(e instanceof UnsupportedEncodingException){
 				String msg = "Unable to encode the certificate into UTF-8 input stream for validation";
 				s_logger.error(msg,e);
-				throw new ServerApiException(BaseCmd.INTERNAL_ERROR, msg);								
+				throw new CloudRuntimeException(msg);								
 			}
 			else if(e instanceof IOException){
 				String msg = "Cannot generate input stream during custom cert validation";
 				s_logger.error(msg,e);
-				throw new ServerApiException(BaseCmd.INTERNAL_ERROR, msg);								
+				throw new CloudRuntimeException(msg);								
 			} else {
 			    String msg = "Cannot upload custom certificate, internal error.";
                 s_logger.error(msg,e);
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, msg);          
+                throw new CloudRuntimeException(msg);          
 			}
 			
 		}finally{

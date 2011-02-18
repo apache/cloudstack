@@ -36,8 +36,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
-import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AttachIsoCmd;
 import com.cloud.api.commands.CopyIsoCmd;
 import com.cloud.api.commands.CopyTemplateCmd;
@@ -220,17 +218,17 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         boolean isAdmin = _accountDao.findById(accountId).getType() == Account.ACCOUNT_TYPE_ADMIN;
         
         if (!isAdmin && zoneId == null) {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid zone Id.");
+        	throw new InvalidParameterValueException("Please specify a valid zone Id.");
         }
         
         if((!url.toLowerCase().endsWith("iso"))&&(!url.toLowerCase().endsWith("iso.zip"))&&(!url.toLowerCase().endsWith("iso.bz2"))
         		&&(!url.toLowerCase().endsWith("iso.gz"))){
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid iso");
+        	throw new InvalidParameterValueException("Please specify a valid iso");
         }
         
         boolean allowPublicUserTemplates = Boolean.parseBoolean(_configDao.getValue("allow.public.user.templates"));        
         if (!isAdmin && !allowPublicUserTemplates && isPublic) {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Only private ISOs can be created.");
+        	throw new InvalidParameterValueException("Only private ISOs can be created.");
         }
         
         if (!isAdmin || featured == null) {
@@ -255,7 +253,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
         //removing support for file:// type urls (bug: 4239)
         if(url.toLowerCase().contains("file://")){
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "File:// type urls are currently unsupported");
+        	throw new InvalidParameterValueException("File:// type urls are currently unsupported");
         }
         
         return createTemplateOrIso(userId, accountId, zoneId, name, displayText, isPublic.booleanValue(), featured.booleanValue(), true, ImageFormat.ISO.toString(), TemplateType.USER, url, null, true, 64 /*bits*/, false, guestOSId, bootable, HypervisorType.None);
@@ -339,11 +337,11 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         boolean isAdmin = _accountDao.findById(accountId).getType() == Account.ACCOUNT_TYPE_ADMIN;
         
         if (!isAdmin && zoneId == null) {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid zone Id.");
+        	throw new InvalidParameterValueException("Please specify a valid zone Id.");
         }
         
         if(url.toLowerCase().contains("file://")){
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "File:// type urls are currently unsupported");
+        	throw new InvalidParameterValueException("File:// type urls are currently unsupported");
         }
         
         if((!url.toLowerCase().endsWith("vhd"))&&(!url.toLowerCase().endsWith("vhd.zip"))
@@ -352,12 +350,12 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         	&&(!url.toLowerCase().endsWith("qcow2.bz2"))&&(!url.toLowerCase().endsWith("qcow2.gz"))
         	&&(!url.toLowerCase().endsWith("ova"))&&(!url.toLowerCase().endsWith("ova.zip"))
         	&&(!url.toLowerCase().endsWith("ova.bz2"))&&(!url.toLowerCase().endsWith("ova.gz"))){
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid "+format.toLowerCase());
+        	throw new InvalidParameterValueException("Please specify a valid "+format.toLowerCase());
         }
         	
         boolean allowPublicUserTemplates = Boolean.parseBoolean(_configDao.getValue("allow.public.user.templates"));        
         if (!isAdmin && !allowPublicUserTemplates && isPublic) {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "Only private templates can be created.");
+        	throw new InvalidParameterValueException("Only private templates can be created.");
         }
         
         if (!isAdmin || featured == null) {
@@ -542,7 +540,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         
         Upload.Mode extractMode;
         if( mode == null || (!mode.equals(Upload.Mode.FTP_UPLOAD.toString()) && !mode.equals(Upload.Mode.HTTP_DOWNLOAD.toString())) ){
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Please specify a valid extract Mode "+Upload.Mode.values());
+            throw new InvalidParameterValueException("Please specify a valid extract Mode "+Upload.Mode.values());
         }else{
             extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
         }
@@ -1134,7 +1132,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         // Verify input parameters
         UserVmVO vmInstanceCheck = _userVmDao.findById(vmId.longValue());
         if (vmInstanceCheck == null) {
-            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Unable to find a virtual machine with id " + vmId);
+            throw new InvalidParameterValueException ("Unable to find a virtual machine with id " + vmId);
         }
         
         UserVm userVM = _userVmDao.findById(vmId);
@@ -1174,7 +1172,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	
     	VMTemplateVO iso = _tmpltDao.findById(isoId);
     	if (iso == null) {
-            throw new ServerApiException (BaseCmd.PARAM_ERROR, "Unable to find an ISO with id " + isoId);
+            throw new InvalidParameterValueException("Unable to find an ISO with id " + isoId);
     	}
     	
         State vmState = vmInstanceCheck.getState();
@@ -1257,7 +1255,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         
         VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
         if (template == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find template with id " + templateId);
+            throw new InvalidParameterValueException("unable to find template with id " + templateId);
         }
         
         userId = accountAndUserValidation(account, userId, null, template, "Unable to delete template " );
@@ -1290,7 +1288,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         
         VMTemplateVO template = _tmpltDao.findById(templateId.longValue());
         if (template == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find iso with id " + templateId);
+            throw new InvalidParameterValueException("unable to find iso with id " + templateId);
         }
         
         userId = accountAndUserValidation(account, userId, null, template, "Unable to delete iso " );

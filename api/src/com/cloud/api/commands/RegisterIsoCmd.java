@@ -123,19 +123,15 @@ public class RegisterIsoCmd extends BaseCmd {
     }
 	
     @Override
-    public void execute(){
-        try {
-            VirtualMachineTemplate template = _templateService.registerIso(this);
-                if (template != null) {
-                ListResponse<TemplateResponse> response = _responseGenerator.createIsoResponses(template, zoneId);
-                response.setResponseName(getCommandName());
-                this.setResponseObject(response);
-            } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to register iso");
-            }
-        } catch (ResourceAllocationException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
+    public void execute() throws ResourceAllocationException{
+        VirtualMachineTemplate template = _templateService.registerIso(this);
+            if (template != null) {
+            ListResponse<TemplateResponse> response = _responseGenerator.createIsoResponses(template, zoneId);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to register iso");
         }
+      
     }
 }

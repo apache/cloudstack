@@ -29,8 +29,8 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.StoragePoolResponse;
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.StoragePool;
 
 @SuppressWarnings("rawtypes")
@@ -117,9 +117,9 @@ public class CreateStoragePoolCmd extends BaseCmd {
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to add storage pool");
             }
-        } catch (ResourceAllocationException ex1) {
+        } catch (ResourceUnavailableException ex1) {
             s_logger.warn("Exception: ", ex1);
-            throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex1.getMessage());
+            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex1.getMessage());
         }catch (ResourceInUseException ex2) {
             s_logger.warn("Exception: ", ex2);
             throw new ServerApiException(BaseCmd.RESOURCE_IN_USE_ERROR, ex2.getMessage());

@@ -129,19 +129,14 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     }
     
     @Override
-    public void execute(){
-        try {       	
-            Snapshot snapshot = _snapshotService.createSnapshot(this);
-            if (snapshot != null) {
-                SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
-                response.setResponseName(getCommandName());
-                this.setResponseObject(response);
-            } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + volumeId);
-            }
-        } catch (ResourceAllocationException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
+    public void execute() throws ResourceAllocationException{ 	
+        Snapshot snapshot = _snapshotService.createSnapshot(this);
+        if (snapshot != null) {
+            SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot for volume " + volumeId);
         }
     }
 }

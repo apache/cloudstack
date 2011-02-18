@@ -168,7 +168,7 @@ public interface ConfigurationService {
      * @throws 
      * @return The new Vlan object
      */
-    Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException, ResourceUnavailableException;
+    Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
 
     boolean deleteVlanIpRange(DeleteVlanIpRangeCmd cmd);
     

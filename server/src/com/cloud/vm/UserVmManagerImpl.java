@@ -51,7 +51,6 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.ServerApiException;
 import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.CreateTemplateCmd;
 import com.cloud.api.commands.CreateVMGroupCmd;
@@ -438,7 +437,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // Check that the device ID is valid
         if( deviceId != null ) {
             if(deviceId.longValue() == 0) {
-                throw new ServerApiException (BaseCmd.PARAM_ERROR, "deviceId can't be 0, which is used by Root device");
+                throw new InvalidParameterValueException ("deviceId can't be 0, which is used by Root device");
             }
         }
         
@@ -660,17 +659,17 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     	// Check that the volume ID is valid
     	if (volume == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId);
+            throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId);
         }
 
     	// If the account is not an admin, check that the volume is owned by the account that was passed in
     	if (!isAdmin) {
     		if (account.getId() != volume.getAccountId()) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
+                throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId + " for account: " + account.getAccountName());
             }
     	} else if (account != null) {
     	    if (!_domainDao.isChildDomain(account.getDomainId(), volume.getDomainId())) {
-                throw new ServerApiException(BaseCmd.ACCOUNT_ERROR, "Unable to detach volume with ID: " + volumeId + ", permission denied.");
+                throw new PermissionDeniedException("Unable to detach volume with ID: " + volumeId + ", permission denied.");
     	    }
     	}
 
@@ -814,7 +813,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     /*
      * TODO: cleanup eventually - Refactored API call
      */
-    public UserVm upgradeVirtualMachine(UpgradeVMCmd cmd) throws ServerApiException, InvalidParameterValueException {
+    public UserVm upgradeVirtualMachine(UpgradeVMCmd cmd){
         Long virtualMachineId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
         Account account = UserContext.current().getCaller();
@@ -823,7 +822,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // Verify input parameters
         UserVmVO vmInstance = _vmDao.findById(virtualMachineId);
         if (vmInstance == null) {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId);
+        	throw new InvalidParameterValueException("unable to find a virtual machine with id " + virtualMachineId);
         }       
 
         userId = accountAndUserValidation(virtualMachineId, account, userId,vmInstance);                         
@@ -890,12 +889,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		return _vmDao.findById(vmInstance.getId());
     }
 
-	private Long accountAndUserValidation(Long virtualMachineId,Account account, Long userId, UserVmVO vmInstance) throws ServerApiException {
+	private Long accountAndUserValidation(Long virtualMachineId,Account account, Long userId, UserVmVO vmInstance) {
 		if (account != null) {
             if (!isAdmin(account.getType()) && (account.getId() != vmInstance.getAccountId())) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + virtualMachineId + " for this account");
+                throw new InvalidParameterValueException("Unable to find a virtual machine with id " + virtualMachineId + " for this account");
             } else if (!_domainDao.isChildDomain(account.getDomainId(),vmInstance.getDomainId())) {
-                throw new ServerApiException(BaseCmd.PARAM_ERROR, "Invalid virtual machine id (" + virtualMachineId + ") given, unable to upgrade virtual machine.");
+                throw new InvalidParameterValueException( "Invalid virtual machine id (" + virtualMachineId + ") given, unable to upgrade virtual machine.");
             }
         }
 
@@ -1570,14 +1569,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         UserVmVO vmInstance = null;
 
         // Verify input parameters
-        try  {
-        	vmInstance = _vmDao.findById(id.longValue());
-        } catch (Exception ex1) {
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "unable to find virtual machine by id");
-        }
-
+    	vmInstance = _vmDao.findById(id.longValue());
+        
         if (vmInstance == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find virtual machine with id " + id);
+            throw new InvalidParameterValueException("unable to find virtual machine with id " + id);
         }
 
         userId = accountAndUserValidation(id, account, userId,vmInstance);  
@@ -1644,7 +1639,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         //Verify input parameters
         UserVmVO vmInstance = _vmDao.findById(vmId.longValue());
         if (vmInstance == null) {
-        	throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
+        	throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
         userId = accountAndUserValidation(vmId, account, userId, vmInstance);
@@ -2332,7 +2327,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
+            throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
         }
 
         userId = accountAndUserValidation(vmId, account, userId, vm);
@@ -2348,7 +2343,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         //Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, "unable to find a virtual machine with id " + vmId);
+            throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
         }
 
         userId = accountAndUserValidation(vmId, account, userId, vm);
@@ -2431,7 +2426,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 return recursivelySearchForVms(cmd, path, isAdmin, domainsToSearchForVms, accountId);
             }
         } else if(isRecursive && domainId == null){
-            throw new ServerApiException(BaseCmd.MALFORMED_PARAMETER_ERROR, "Please enter a parent domain id for listing vms recursively");
+            throw new InvalidParameterValueException("Please enter a parent domain id for listing vms recursively");
         }
                
         Criteria c = new Criteria("id", Boolean.TRUE, cmd.getStartIndex(), cmd.getPageSizeVal());

@@ -60,19 +60,15 @@ public class RecoverVMCmd extends BaseCmd {
     }
     
     @Override
-    public void execute(){
-        try {
-            UserVm result = _userVmService.recoverVirtualMachine(this);
-            if (result != null){
-                UserVmResponse recoverVmResponse = _responseGenerator.createUserVmResponse(result);
-                recoverVmResponse.setResponseName(getCommandName());
-                this.setResponseObject(recoverVmResponse);
-            } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to recover vm");
-            }
-        } catch (ResourceAllocationException ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
+    public void execute() throws ResourceAllocationException{
+        UserVm result = _userVmService.recoverVirtualMachine(this);
+        if (result != null){
+            UserVmResponse recoverVmResponse = _responseGenerator.createUserVmResponse(result);
+            recoverVmResponse.setResponseName(getCommandName());
+            this.setResponseObject(recoverVmResponse);
+        } else {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to recover vm");
         }
+       
     }
 }

@@ -111,7 +111,7 @@ public class CopyIsoCmd extends BaseAsyncCmd {
     }
 	
     @Override
-    public void execute(){
+    public void execute() throws ResourceAllocationException{
         try {
             VirtualMachineTemplate iso = _templateService.copyIso(this);
             TemplateResponse isoResponse = _responseGenerator.createIsoResponse3(iso, destZoneId);
@@ -120,9 +120,6 @@ public class CopyIsoCmd extends BaseAsyncCmd {
         } catch (StorageUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
-        } catch (ResourceAllocationException ex) {
-        	s_logger.warn("Exception: ", ex);
-        	throw new ServerApiException(BaseCmd.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
-		}
+        } 
     }
 }
