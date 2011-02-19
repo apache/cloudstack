@@ -26,6 +26,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddress;
@@ -96,10 +97,12 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
         return ownerId;
     }
     
+    @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.networkSyncObject;
     }
 
+    @Override
     public Long getSyncObjId() {
         IpAddress ip = getIpAddress(id);
         return ip.getAssociatedWithNetworkId();
@@ -113,5 +116,15 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
         } else {
             return ip;
         }
+    }
+    
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.IpAddress;
+    }
+    
+    @Override
+    public Long getInstanceId() {
+        return getIpAddressId();
     }
 }

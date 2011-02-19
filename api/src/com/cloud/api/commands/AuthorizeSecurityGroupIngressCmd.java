@@ -34,6 +34,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.IngressRuleResponse;
 import com.cloud.api.response.SecurityGroupResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.network.security.IngressRule;
 import com.cloud.user.Account;
@@ -205,5 +206,15 @@ public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to authorize security group ingress rule(s)");
         }
         
+    }
+    
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.SecurityGroup;
+    }
+    
+    @Override
+    public Long getInstanceId() {
+        return getSecurityGroupId();
     }
 }

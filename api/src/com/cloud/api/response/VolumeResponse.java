@@ -123,8 +123,29 @@ public class VolumeResponse extends BaseResponse {
     @SerializedName("isextractable") @Param(description="true if the volume is extractable, false otherwise")
     private Boolean extractable;
     
+    @Override
     public Long getObjectId() {
     	return getId();
+    }
+    
+    @Override
+    public Long getJobId() {
+        return jobId;
+    }
+
+    @Override
+    public void setJobId(Long jobId) {
+        this.jobId = jobId;
+    }
+    
+    @Override
+    public Integer getJobStatus() {
+        return jobStatus;
+    }
+
+    @Override
+    public void setJobStatus(Integer jobStatus) {
+        this.jobStatus = jobStatus;
     }
 
     public Boolean getDestroyed() {
@@ -141,22 +162,6 @@ public class VolumeResponse extends BaseResponse {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Long getJobId() {
-        return jobId;
-    }
-
-    public void setJobId(Long jobId) {
-        this.jobId = jobId;
-    }
-
-    public Integer getJobStatus() {
-        return jobStatus;
-    }
-
-    public void setJobStatus(Integer jobStatus) {
-        this.jobStatus = jobStatus;
     }
 
     public String getName() {

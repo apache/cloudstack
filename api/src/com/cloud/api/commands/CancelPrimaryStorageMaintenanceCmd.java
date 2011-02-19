@@ -70,10 +70,12 @@ public class CancelPrimaryStorageMaintenanceCmd extends BaseAsyncCmd {
     	return "primarystorage";
     }
     
+    @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.StoragePool;
     }
     
+    @Override
     public Long getInstanceId() {
         return getId();
     }

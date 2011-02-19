@@ -141,8 +141,29 @@ public class HostResponse extends BaseResponse {
     @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
     
+    @Override
     public Long getObjectId() {
-    	return getId();
+        return getId();
+    }
+    
+    @Override
+    public Long getJobId() {
+        return jobId;
+    }
+
+    @Override
+    public void setJobId(Long jobId) {
+        this.jobId = jobId;
+    }
+    
+    @Override
+    public Integer getJobStatus() {
+        return jobStatus;
+    }
+
+    @Override
+    public void setJobStatus(Integer jobStatus) {
+        this.jobStatus = jobStatus;
     }
 
     public Long getId() {
@@ -431,21 +452,5 @@ public class HostResponse extends BaseResponse {
 
     public void setEvents(String events) {
         this.events = events;
-    }
-    
-    public Long getJobId() {
-        return jobId;
-    }
-
-    public void setJobId(Long jobId) {
-        this.jobId = jobId;
-    }
-
-    public Integer getJobStatus() {
-        return jobStatus;
-    }
-
-    public void setJobStatus(Integer jobStatus) {
-        this.jobStatus = jobStatus;
     }
 }

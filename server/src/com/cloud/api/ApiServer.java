@@ -445,7 +445,15 @@ public class ApiServer implements HttpRequestHandler {
     private void buildAsyncListResponse(BaseListCmd command, Account account) {
     	List<ResponseObject> responses = ((ListResponse)command.getResponseObject()).getResponses();
     	if (responses != null && responses.size() > 0) {
-    		List<? extends AsyncJob> jobs = _asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType(), account.getId());
+    		List<? extends AsyncJob> jobs = null;
+    		
+    		//list all jobs for ROOT admin
+    		if (account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
+    		    jobs = _asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType(), null);
+    		} else {
+    		   jobs = _asyncMgr.findInstancePendingAsyncJobs(command.getInstanceType(), account.getId());
+    		}
+    		
         	if (jobs.size() == 0) {
         		return;
         	}

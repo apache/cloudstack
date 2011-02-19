@@ -19,6 +19,7 @@ package com.cloud.api.response;
 
 import java.util.List;
 
+import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
@@ -40,6 +41,12 @@ public class SecurityGroupResponse extends BaseResponse {
 
     @SerializedName("domain") @Param(description="the domain name of the security group")
     private String domainName;
+    
+    @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
+    private Long jobId;
+
+    @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
+    private Integer jobStatus;
 
     @SerializedName("ingressrule")  @Param(description="the list of ingress rules associated with the security group", responseObject = IngressRuleResponse.class)
     private List<IngressRuleResponse> ingressRules;
@@ -98,5 +105,30 @@ public class SecurityGroupResponse extends BaseResponse {
 
     public void setIngressRules(List<IngressRuleResponse> ingressRules) {
         this.ingressRules = ingressRules;
+    }
+
+    @Override
+    public Long getObjectId() {
+        return getId();
+    }
+    
+    @Override
+    public Long getJobId() {
+        return jobId;
+    }
+
+    @Override
+    public void setJobId(Long jobId) {
+        this.jobId = jobId;
+    }
+    
+    @Override
+    public Integer getJobStatus() {
+        return jobStatus;
+    }
+
+    @Override
+    public void setJobStatus(Integer jobStatus) {
+        this.jobStatus = jobStatus;
     }
 }

@@ -87,10 +87,13 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         return null;
 	}
 	
-	public List<AsyncJobVO> findInstancePendingAsyncJobs(AsyncJob.Type instanceType, long accountId) {
+	public List<AsyncJobVO> findInstancePendingAsyncJobs(AsyncJob.Type instanceType, Long accountId) {
 		SearchCriteria<AsyncJobVO> sc = pendingAsyncJobsSearch.create();
         sc.setParameters("instanceType", instanceType);
-        sc.setParameters("accountId", accountId);
+        
+        if (accountId != null) {
+            sc.setParameters("accountId", accountId);
+        }
         sc.setParameters("status", AsyncJobResult.STATUS_IN_PROGRESS);
         
         return listBy(sc);

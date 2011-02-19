@@ -106,7 +106,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     }
     
     @Override
-    public List<AsyncJobVO> findInstancePendingAsyncJobs(AsyncJob.Type instanceType, long accountId) {
+    public List<AsyncJobVO> findInstancePendingAsyncJobs(AsyncJob.Type instanceType, Long accountId) {
     	return _jobDao.findInstancePendingAsyncJobs(instanceType, accountId);
     }
     

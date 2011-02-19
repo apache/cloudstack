@@ -27,6 +27,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SecurityGroupResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.network.security.SecurityGroupRules;
 
 @Implementation(description="Lists security groups", responseObject=SecurityGroupResponse.class)
@@ -94,5 +95,10 @@ public class ListSecurityGroupsCmd extends BaseListCmd {
         ListResponse<SecurityGroupResponse> response = _responseGenerator.createSecurityGroupResponses(securityGroups);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
+    }
+    
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.SecurityGroup;
     }
 }

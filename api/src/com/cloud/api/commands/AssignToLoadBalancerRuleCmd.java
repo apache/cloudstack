@@ -102,10 +102,12 @@ public class AssignToLoadBalancerRuleCmd extends BaseAsyncCmd {
         }
     }
     
+    @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.networkSyncObject;
     }
 
+    @Override
     public Long getSyncObjId() {
         return _lbService.findById(id).getNetworkId();
     }

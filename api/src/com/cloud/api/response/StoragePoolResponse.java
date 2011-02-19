@@ -20,7 +20,6 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.host.Status;
 import com.cloud.serializer.Param;
 import com.cloud.storage.StoragePoolStatus;
 import com.google.gson.annotations.SerializedName;
@@ -80,8 +79,29 @@ public class StoragePoolResponse extends BaseResponse {
     @SerializedName("jobstatus") @Param(description="shows the current pending asynchronous job status")
     private Integer jobStatus;
     
+    @Override
     public Long getObjectId() {
         return getId();
+    }
+    
+    @Override
+    public Long getJobId() {
+        return jobId;
+    }
+
+    @Override
+    public void setJobId(Long jobId) {
+        this.jobId = jobId;
+    }
+    
+    @Override
+    public Integer getJobStatus() {
+        return jobStatus;
+    }
+
+    @Override
+    public void setJobStatus(Integer jobStatus) {
+        this.jobStatus = jobStatus;
     }
 
     public Long getId() {
@@ -212,19 +232,4 @@ public class StoragePoolResponse extends BaseResponse {
         this.state = state;
     }
     
-    public Integer getJobStatus() {
-        return jobStatus;
-    }
-
-    public void setJobStatus(Integer jobStatus) {
-        this.jobStatus = jobStatus;
-    }
-
-    public Long getJobId() {
-        return jobId;
-    }
-
-    public void setJobId(Long jobId) {
-        this.jobId = jobId;
-    }
 }

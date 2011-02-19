@@ -89,10 +89,12 @@ public class CancelMaintenanceCmd extends BaseAsyncCmd  {
         return  "canceling maintenance for host: " + getId();
     }
     
+    @Override
     public AsyncJob.Type getInstanceType() {
     	return AsyncJob.Type.Host;
     }
     
+    @Override
     public Long getInstanceId() {
     	return getId();
     }

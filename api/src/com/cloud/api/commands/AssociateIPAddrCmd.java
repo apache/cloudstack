@@ -29,6 +29,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.IPAddressResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -161,11 +162,18 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     }
     
     
+    @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.networkSyncObject;
     }
 
+    @Override
     public Long getSyncObjId() {
         return getNetworkId();
+    }
+    
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.IpAddress;
     }
 }

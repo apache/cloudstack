@@ -31,7 +31,9 @@ public interface AsyncJob {
         Iso,
         SystemVm,
         Host,
-        StoragePool
+        StoragePool,
+        IpAddress,
+        SecurityGroup,
     }
 	
     Long getId();

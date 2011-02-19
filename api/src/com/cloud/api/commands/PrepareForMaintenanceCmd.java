@@ -86,10 +86,12 @@ public class PrepareForMaintenanceCmd extends BaseAsyncCmd {
         return  "preparing host: " + getId() + " for maintenance";
     }
     
+    @Override
     public AsyncJob.Type getInstanceType() {
     	return AsyncJob.Type.Host;
     }
     
+    @Override
     public Long getInstanceId() {
     	return getId();
     }

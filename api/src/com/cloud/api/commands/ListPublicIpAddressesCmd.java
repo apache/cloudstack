@@ -29,6 +29,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.IPAddressResponse;
 import com.cloud.api.response.ListResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.network.IpAddress;
 
 @Implementation(description="Lists all public ip addresses", responseObject=IPAddressResponse.class)
@@ -123,5 +124,9 @@ public class ListPublicIpAddressesCmd extends BaseListCmd {
         response.setResponses(ipAddrResponses);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
+    }
+    
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.IpAddress;
     }
 }
