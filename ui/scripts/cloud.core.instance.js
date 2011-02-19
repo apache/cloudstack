@@ -1652,6 +1652,8 @@ function vmToMidmenu(jsonObj, $midmenuItem1) {
     
     $midmenuItem1.data("toRightPanelFn", vmToRightPanel);   
     countTopButtonMapFn = vmCountTopButtonMap;
+    uncountTopButtonMapFn = vmUncountTopButtonMap;
+    grayoutTopButtonsFn = vmGrayoutTopButtons;
     resetTopButtonMapFn = vmResetTopButtonMap;
 }
 
@@ -1839,7 +1841,7 @@ var vmTopButtonMap = {
     "destroy_vm_button": 0
 };
 
-function vmCountTopButtonMap(jsonObj) {   
+function vmCountTopButtonMap(jsonObj) {       
     if(jsonObj == null)
         return;
         
@@ -1855,6 +1857,38 @@ function vmCountTopButtonMap(jsonObj) {
 	else if (jsonObj.state == 'Error') {		    
 	    vmTopButtonMap["destroy_vm_button"] += 1;	    
 	}
+}
+
+function vmUncountTopButtonMap(jsonObj) {       
+    if(jsonObj == null)
+        return;
+        
+	if (jsonObj.state == 'Running') {			
+		vmTopButtonMap["stop_vm_button"] -= 1;	
+		vmTopButtonMap["reboot_vm_button"] -= 1;
+		vmTopButtonMap["destroy_vm_button"] -= 1;	
+	} 
+	else if (jsonObj.state == 'Stopped') {	
+		vmTopButtonMap["start_vm_button"] -= 1;
+		vmTopButtonMap["destroy_vm_button"] -= 1;		  					
+	}
+	else if (jsonObj.state == 'Error') {		    
+	    vmTopButtonMap["destroy_vm_button"] -= 1;	    
+	}
+}
+
+function vmGrayoutTopButtons() {    
+    var itemCounts = 0;
+    for(var id in selectedItemsInMidMenu) {
+        itemCounts ++;
+    }
+      
+    for(var buttonElementId in vmTopButtonMap) {
+        if(vmTopButtonMap[buttonElementId] < itemCounts)
+            $("#"+buttonElementId).hide();
+        else 
+            $("#"+buttonElementId).show();               
+    }
 }
 
 function vmResetTopButtonMap() {

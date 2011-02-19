@@ -989,6 +989,7 @@ function clickItemInMultipleSelectionMidmenu($midmenuItem1) {
     
     var jsonObj = $midmenuItem1.data("jsonObj");    	
     selectedItemsInMidMenu[jsonObj.id] = $midmenuItem1;  
+    countTopButtonMapFn(jsonObj);      
            
     selected_midmenu_id = $midmenuItem1.attr("id");
     $currentMidmenuItem = $midmenuItem1;
@@ -997,15 +998,20 @@ function clickItemInMultipleSelectionMidmenu($midmenuItem1) {
 function unclickItemInMultipleSelectionMidmenu($midmenuItem1, id) {    
     delete selectedItemsInMidMenu[id];
     $midmenuItem1.find("#content").removeClass("selected"); 
+    var jsonObj = $midmenuItem1.data("jsonObj");  
+    uncountTopButtonMapFn(jsonObj);   
 }
 
 var countTopButtonMapFn = function() {};
+var uncountTopButtonMapFn = function() {};
+var grayoutTopButtonsFn = function() {};
 var resetTopButtonMapFn = function() {};
 
 function createMultipleSelectionSubContainer() {      
     var $multipleSelectionSubContainer = $("<div id='multiple_selection_sub_container'></div>"); 
     $("#midmenu_container").empty().append($multipleSelectionSubContainer);    
     selectedItemsInMidMenu = {};  
+    resetTopButtonMapFn();
     
     $multipleSelectionSubContainer.selectable({
         selecting: function(event, ui) {	 	                               
@@ -1030,11 +1036,11 @@ function createMultipleSelectionSubContainer() {
                 }
             }             
         },
-        start: function(event, ui) {            
-            resetTopButtonMapFn();           
+        start: function(event, ui) {                 
+              
         },
         stop: function(event, ui) {            
-            countTopButtonMapFn();            
+            grayoutTopButtonsFn();                         
         }
     }); 
     
@@ -1099,7 +1105,8 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
                         }
                         else {                                                            
                             clickItemInMultipleSelectionMidmenu($midmenuItem1);  
-                            countTopButtonMapFn();                         
+                            countTopButtonMapFn(items[i]);  
+                            grayoutTopButtonsFn();                       
                         }                        
                     }                 
                 }  
