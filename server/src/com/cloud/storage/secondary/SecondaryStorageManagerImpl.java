@@ -977,7 +977,10 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         }
 
         buf.append(" mount.path=").append(nfsMountPoint);
-        buf.append(" resource=com.cloud.storage.resource.NfsSecondaryStorageResource");
+        if(_configDao.isPremium())
+            buf.append(" resource=com.cloud.storage.resource.PremiumSecondaryStorageResource");
+        else	
+        	buf.append(" resource=com.cloud.storage.resource.NfsSecondaryStorageResource");
         buf.append(" instance=SecStorage");
         buf.append(" sslcopy=").append(Boolean.toString(_useSSlCopy));
 
