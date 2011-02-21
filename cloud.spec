@@ -596,6 +596,7 @@ fi
 %{_sysconfdir}/%{name}/management/components-premium.xml
 %{_datadir}/%{name}/setup/create-database-premium.sql
 %{_datadir}/%{name}/setup/create-schema-premium.sql
+%{_libdir}/%{name}/agent/vms/premium-systemvm.zip
 
 %files usage
 %defattr(0644,root,root,0775)

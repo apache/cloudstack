@@ -158,6 +158,8 @@ def build_systemvm_patch ():
 		bld.install_files ("${AGENTLIBDIR}/vms", "%s/systemvm.zip" % distdir)
 		# ISO creation
 		bld.install_as("${AGENTLIBDIR}/vms/systemvm.iso", "%s/systemvm.iso" % distdir)
+		if buildpremium:
+			bld.install_as("${AGENTLIBDIR}/vms/premium-systemvm.zip", "%s/premium-systemvm.zip" % distdir)
 
 def build_systemvm_iso ():
 	if buildpremium:

@@ -123,6 +123,29 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         _ipAddressDao = locator.getDao(IPAddressDao.class);
 	}
 
+	private void updatePremiumStuff() {
+		if (!_configDao.isPremium()) {
+			return;
+		}
+		
+		String injectScript = "scripts/vm/systemvm/inject_premium_stuff.sh";
+		String scriptPath = Script.findScript("", injectScript);
+		if (scriptPath == null) {
+			throw new CloudRuntimeException("Unable to find key inject script "
+					+ injectScript);
+		}
+
+		final Script command = new Script(scriptPath, s_logger);
+		final String result = command.execute();
+		if (result != null) {
+			s_logger.warn("Failed to inject premium stuff into systemvm iso "
+					+ result);
+			throw new CloudRuntimeException(
+					"Failed to inject premium stuff into systemvm iso "
+							+ result);
+		}
+	}
+	
 	@Override @DB
     public void persistDefaultValues() throws InvalidParameterValueException, InternalErrorException {
 		
@@ -242,6 +265,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 	            }
  	        }
 		}
+
+		updatePremiumStuff();
 
 		// store the public and private keys in the database
 		updateKeyPairs();
