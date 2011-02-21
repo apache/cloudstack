@@ -132,10 +132,10 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     }
     
     @Override
-    public List<AccountVO> listAccounts(String accountName, Long domainId) {
+    public List<AccountVO> listAccounts(String accountName, Long domainId, Filter filter) {
         SearchCriteria<AccountVO> sc = AccountNameSearch.create("accountName", accountName);
         sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
-        return listIncludingRemovedBy(sc);
+        return listIncludingRemovedBy(sc, filter);
     }
     
     @Override

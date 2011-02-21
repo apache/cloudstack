@@ -40,5 +40,5 @@ public interface AccountDao extends GenericDao<AccountVO, Long> {
     List<AccountVO> findCleanups();
     List<AccountVO> findAdminAccountsForDomain(Long domainId);
     void markForCleanup(long accountId);
-    List<AccountVO> listAccounts(String accountName, Long domainId);
+    List<AccountVO> listAccounts(String accountName, Long domainId, Filter filter);
 }
