@@ -45,6 +45,25 @@ function snapshotGetSearchParams() {
 
 function afterLoadSnapshotJSP() {    
     initDialog("dialog_add_volume_from_snapshot");  
+    $.ajax({
+        data: createURL("command=listDiskOfferings"),
+	    dataType: "json",
+	    success: function(json) {			    
+	        var offerings = json.listdiskofferingsresponse.diskoffering;								
+		    var diskOfferingDropdown = $("#dialog_add_volume_from_snapshot").find("#diskoffering_dropdown").empty();	
+		    if (offerings != null && offerings.length > 0) {								
+				for (var i = 0; i < offerings.length; i++) {
+				    if(offerings[i].iscustomized ==	true) {
+					    var $option = $("<option value='" + offerings[i].id + "'>" + fromdb(offerings[i].displaytext) + "</option>");	
+					    $option.data("jsonObj", offerings[i]);	
+					    diskOfferingDropdown.append($option); 
+					}
+				}					
+			}	
+	    }
+    });	 
+    
+    
     initCreateTemplateFromSnapshotDialog();
 }
 
@@ -220,18 +239,20 @@ function doCreateVolumeFromSnapshotInSnapshotPage($actionLink, $detailsTab, $mid
     $("#dialog_add_volume_from_snapshot")
     .dialog("option", "buttons", {	                    
      "Add": function() {	
-         var thisDialog = $(this);	 
+         var $thisDialog = $(this);	 
                                         
          var isValid = true;					
-         isValid &= validateString("Name", thisDialog.find("#name"), thisDialog.find("#name_errormsg"));					          		
+         isValid &= validateString("Name", $thisDialog.find("#name"), $thisDialog.find("#name_errormsg"));	
+         isValid &= validateDropDownBox("Disk Offering", $thisDialog.find("#diskoffering_dropdown"), $thisDialog.find("#diskoffering_dropdown_errormsg"));					          		
          if (!isValid) return;   
          
-         thisDialog.dialog("close");       	                                             
+         $thisDialog.dialog("close");       	                                             
          
-         var name = thisDialog.find("#name").val();	                
-         
+         var name = $thisDialog.find("#name").val();	  
+         var diskofferingId = $thisDialog.find("#diskoffering_dropdown").val();	
+		    
          var id = jsonObj.id;
-         var apiCommand = "command=createVolume&snapshotid="+id+"&name="+name;
+         var apiCommand = "command=createVolume&snapshotid="+id+"&name="+name+"&diskOfferingId="+diskofferingId;
     	 doActionToTab(id, $actionLink, apiCommand, $midmenuItem1, $detailsTab);		
      },
      "Cancel": function() {	                         

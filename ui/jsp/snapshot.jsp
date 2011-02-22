@@ -147,7 +147,15 @@ dictionary = {
                 <label><fmt:message key="label.name"/>:</label>
                 <input class="text" type="text" id="name" />
                 <div id="name_errormsg" class="dialog_formcontent_errormsg" style="display: none;"></div>
-            </li>           
+            </li>              
+            <li>
+                <label><fmt:message key="label.disk.offering"/>:</label>
+                <select class="select" id="diskoffering_dropdown">
+                    <option value="default"><fmt:message key="label.please.wait"/>...</option>
+                </select>
+                <div id="diskoffering_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
+                </div>
+            </li>                     
         </ol>
         </form>
     </div>
