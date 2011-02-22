@@ -87,7 +87,7 @@ public class ListCapacityCmd extends BaseListCmd {
 
     @Override
     public Long getPageSizeVal() {
-        Long pageSizeVal = 1000000L;
+        Long pageSizeVal = 100L;
         Integer pageSize = getPageSize();
         if (pageSize != null) {
             pageSizeVal = pageSize.longValue();

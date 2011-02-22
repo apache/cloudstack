@@ -45,7 +45,7 @@ public abstract class BaseListCmd extends BaseCmd {
         	pageSize = pageSizeInt.longValue();
             if (pageSize == -1) {
                 pageSize = null;
-            } else if (pageSize > MAX_PAGESIZE){                
+            } else if (pageSize > MAX_PAGESIZE){//FIX ME - have a validator and do this.                
                 throw new InvalidParameterValueException("The parameter " +ApiConstants.PAGE_SIZE+ " exceeded its max value - "+MAX_PAGESIZE);
             }
         }
