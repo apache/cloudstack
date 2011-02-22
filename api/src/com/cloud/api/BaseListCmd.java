@@ -1,11 +1,14 @@
 package com.cloud.api;
 
 import com.cloud.async.AsyncJob;
+import com.cloud.exception.InvalidParameterValueException;
 
 
 public abstract class BaseListCmd extends BaseCmd {
 
-    /////////////////////////////////////////////////////
+    private static final Long MAX_PAGESIZE = 500L;
+
+	/////////////////////////////////////////////////////
     /////////// BaseList API parameters /////////////////
     /////////////////////////////////////////////////////
 
@@ -39,10 +42,11 @@ public abstract class BaseListCmd extends BaseCmd {
         Long pageSize = null;
         Integer pageSizeInt = getPageSize();
         if (pageSizeInt != null) {
-            if (pageSizeInt.longValue() == -1) {
+        	pageSize = pageSizeInt.longValue();
+            if (pageSize == -1) {
                 pageSize = null;
-            } else {
-                pageSize = pageSizeInt.longValue();
+            } else if (pageSize > MAX_PAGESIZE){                
+                throw new InvalidParameterValueException("The parameter " +ApiConstants.PAGE_SIZE+ " exceeded its max value - "+MAX_PAGESIZE);
             }
         }
         return pageSize;
