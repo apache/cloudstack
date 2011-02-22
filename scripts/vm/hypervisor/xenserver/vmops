@@ -1926,11 +1926,14 @@ def cleanup_rules_for_dead_vms(session):
     util.SMlog("Failed to cleanup rules for dead vms!")
         
 
-
 @echo
 def cleanup_rules(session, args):
+  instance = args.get('instance')
+  if not instance:
+    instance = 'VM'
+ 
   try:
-    chainscmd = "iptables-save | grep '^:' | awk '{print $1}' | cut -d':' -f2 | sed 's/-def/-VM/'|sort|uniq"
+    chainscmd = "iptables-save | grep '^:' | awk '{print $1}' | cut -d':' -f2 | sed 's/-def/-%s/'|sort|uniq" % instance
     chains = util.pread2(['/bin/bash', '-c', chainscmd]).split('\n')
     cleaned = 0
     cleanup = []

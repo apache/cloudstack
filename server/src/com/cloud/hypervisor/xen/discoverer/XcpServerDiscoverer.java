@@ -87,6 +87,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     protected String _increase;
     protected boolean _checkHvm;
     protected String _guestNic;
+    protected String _instance;
 
     @Inject protected AlertManager _alertMgr;
     @Inject protected AgentManager _agentMgr;
@@ -242,6 +243,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 
                 params.put(Config.Wait.toString().toLowerCase(), Integer.toString(_wait));
                 details.put(Config.Wait.toString().toLowerCase(), Integer.toString(_wait));
+                params.put(Config.InstanceName.toString().toLowerCase(), _instance);
                 try {
                     resource.configure("Xen Server", params);
                 } catch (ConfigurationException e) {
@@ -441,6 +443,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         _guestNic = _params.get(Config.XenGuestNetwork.key());
         
         _increase = _params.get(Config.XenPreallocatedLunSizeRange.key());
+        _instance = _params.get(Config.InstanceName.key());
         
         String value = _params.get(Config.Wait.toString());
         _wait = NumbersUtil.parseInt(value, Integer.parseInt(Config.Wait.getDefaultValue()));

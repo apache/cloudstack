@@ -234,6 +234,8 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     protected String _storageNetworkName2;
     protected String _guestNetworkName;
     protected int _wait;
+    protected String _instance; //instance name (default is usually "VM")
+
     protected IAgentControl _agentControl;
     protected Map<String, String> _domrIPMap = new ConcurrentHashMap<String, String>();
 
@@ -638,7 +640,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         if (!_canBridgeFirewall) {
             return new Answer(cmd, true, null);
         }
-        String result = callHostPlugin("cleanup_rules");
+        String result = callHostPlugin("cleanup_rules", "instance", _instance);
         int numCleaned = Integer.parseInt(result);
         if (result == null || result.isEmpty() || (numCleaned < 0)) {
             s_logger.warn("Failed to cleanup rules for host " + _host.ip);
@@ -3547,7 +3549,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
     }
     
     protected boolean can_bridge_firewall() {
-        return Boolean.valueOf(callHostPlugin("can_bridge_firewall", "host_uuid", _host.uuid));
+        return Boolean.valueOf(callHostPlugin("can_bridge_firewall", "host_uuid", _host.uuid, "instance", _instance));
     }
 
     protected boolean getHostInfo() throws IllegalArgumentException{
@@ -4277,6 +4279,7 @@ public abstract class CitrixResourceBase implements StoragePoolResource, ServerR
         _privateNetworkName = (String) params.get("private.network.device");
         _publicNetworkName = (String) params.get("public.network.device");
         _guestNetworkName = (String)params.get("guest.network.device");
+        _instance = (String) params.get("instance.name");
         
         _linkLocalPrivateNetworkName = (String) params.get("private.linkLocal.device");
         if (_linkLocalPrivateNetworkName == null)
