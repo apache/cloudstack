@@ -92,6 +92,11 @@ ALTER TABLE `cloud_usage`.`usage_ip_address` ADD COLUMN `is_source_nat` smallint
 update `cloud`.`usage_event` SET size = 0 where type = 'NET.IPASSIGN' and size is null;
 update `cloud_usage`.`usage_event` SET size = 0 where type = 'NET.IPASSIGN' and size is null;
 
+----------------------volume units changed from MB to bytes. Update the same in existing usage_volume records and volume usage events which are not processed-------------
+
+update `cloud_usage`.`usage_volume` set size = (size * 1048576);
+update `cloud_usage`.`usage_event` set size = (size * 1048576) where type = 'VOLUME.CREATE' and processed = 0;
+
 ALTER TABLE `cloud_usage`.`cloud_usage` ADD COLUMN `type` varchar(32);
 
 CREATE TABLE  `cloud_usage`.`usage_port_forwarding` (
