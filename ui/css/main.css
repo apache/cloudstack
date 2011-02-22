@@ -2276,10 +2276,10 @@ a:hover.search_button {
 	float:left;
 	margin:0;
 	padding:0;
-	filter:alpha(opacity=50);
-    -moz-opacity:0.5;
-    -khtml-opacity: 0.5;
-    opacity: 0.5;
+	filter:alpha(opacity=20);
+    -moz-opacity:0.2;
+    -khtml-opacity: 0.2;
+    opacity: 0.2;
 
 }
 
