@@ -241,6 +241,8 @@ public abstract class CitrixResourceBase implements ServerResource {
     protected String _storageNetworkName2;
     protected String _guestNetworkName;
     protected int _wait;
+    protected String _instance; //instance name (default is usually "VM")
+
     protected IAgentControl _agentControl;
     
     int _userVMCap = 0;
@@ -572,6 +574,7 @@ public abstract class CitrixResourceBase implements ServerResource {
 		return null;
     }
     
+<<<<<<< HEAD
     private synchronized Network createTunnelNetwork(Connection conn, long account) {
         try {
             String nwName = "OVSTunnel" + account;
@@ -594,6 +597,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             return null;
         }
     }
+
     
     protected Network getNetwork(Connection conn, NicTO nic) throws XenAPIException, XmlRpcException {
         Pair<Network, String> network = getNativeNetworkForTraffic(conn, nic.getType());
@@ -4345,6 +4349,7 @@ public abstract class CitrixResourceBase implements ServerResource {
         _privateNetworkName = (String) params.get("private.network.device");
         _publicNetworkName = (String) params.get("public.network.device");
         _guestNetworkName = (String)params.get("guest.network.device");
+        _instance = (String) params.get("instance.name");
         
         _linkLocalPrivateNetworkName = (String) params.get("private.linkLocal.device");
         if (_linkLocalPrivateNetworkName == null) {

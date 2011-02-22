@@ -99,8 +99,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     private String _maxProductVersion;
     private String _maxXapiVersion;
     private String _maxXenVersion;
-
-
+    protected String _instance;
 
     @Inject protected AlertManager _alertMgr;
     @Inject protected AgentManager _agentMgr;
@@ -279,6 +278,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 }                             
                 params.put(Config.Wait.toString().toLowerCase(), Integer.toString(_wait));
                 details.put(Config.Wait.toString().toLowerCase(), Integer.toString(_wait));
+                params.put(Config.InstanceName.toString().toLowerCase(), _instance);
                 try {
                     resource.configure("Xen Server", params);
                 } catch (ConfigurationException e) {
@@ -431,6 +431,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                
         String value = _params.get(Config.XapiWait.toString());
         _wait = NumbersUtil.parseInt(value, Integer.parseInt(Config.XapiWait.getDefaultValue()));
+        
+        _instance = _params.get(Config.InstanceName.key());
         
         value = _params.get(Config.XenSetupMultipath.key());
         Boolean.parseBoolean(value);
