@@ -3818,21 +3818,28 @@ public class ManagementServerImpl implements ManagementServer {
         }
         
         //if account doesn't have direct ip addresses and there are no direct Zone wide vlans, return virtual service offerings only
+        //If untagged network is enabled, return only direct service offerings
         List<VlanVO> accountDirectVlans = new ArrayList<VlanVO>();
         List<VlanVO> zoneDirectVlans = new ArrayList<VlanVO>();
-        if (accountId != null && zoneId != null) {
-            accountDirectVlans = _vlanDao.listVlansForAccountByType(null, ((Long)accountId).longValue(), VlanType.DirectAttached);
-            zoneDirectVlans = listZoneWideVlansByType(VlanType.DirectAttached, (Long)zoneId);
-            if (accountDirectVlans.isEmpty() && zoneDirectVlans.isEmpty()) {
-                sc.addAnd("guestIpType", SearchCriteria.Op.EQ, GuestIpType.Virtualized);
-            }
-        } else if (zoneId != null) {
-            zoneDirectVlans = listZoneWideVlansByType(VlanType.DirectAttached, (Long)zoneId);
-            if (zoneDirectVlans.isEmpty()) {
-                sc.addAnd("guestIpType", SearchCriteria.Op.EQ, GuestIpType.Virtualized);
-            }
-        }  
         
+        boolean isDirectUntaggedNetworkEnabled = new Boolean(_configDao.getValue("direct.attach.untagged.vlan.enabled"));
+        
+        if (isDirectUntaggedNetworkEnabled) {
+            sc.addAnd("guestIpType", SearchCriteria.Op.EQ, GuestIpType.DirectSingle);
+        } else {
+            if (accountId != null && zoneId != null) {
+                accountDirectVlans = _vlanDao.listVlansForAccountByType(null, ((Long)accountId).longValue(), VlanType.DirectAttached);
+                zoneDirectVlans = listZoneWideVlansByType(VlanType.DirectAttached, (Long)zoneId);
+                if (accountDirectVlans.isEmpty() && zoneDirectVlans.isEmpty()) {
+                    sc.addAnd("guestIpType", SearchCriteria.Op.EQ, GuestIpType.Virtualized);
+                }
+            } else if (zoneId != null) {
+                zoneDirectVlans = listZoneWideVlansByType(VlanType.DirectAttached, (Long)zoneId);
+                if (zoneDirectVlans.isEmpty()) {
+                    sc.addAnd("guestIpType", SearchCriteria.Op.EQ, GuestIpType.Virtualized);
+                }
+            }  
+        }
         
         return _offeringsDao.search(sc, searchFilter);
     }
