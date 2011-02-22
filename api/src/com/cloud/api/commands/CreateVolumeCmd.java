@@ -58,7 +58,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.SIZE, type=CommandType.LONG, description="Arbitrary volume size. Mutually exclusive with diskOfferingId")
     private Long size;
 
-    @Parameter(name=ApiConstants.SNAPSHOT_ID, type=CommandType.LONG, description="the snapshot ID for the disk volume. Either diskOfferingId or snapshotId must be passed in.")
+    @Parameter(name=ApiConstants.SNAPSHOT_ID, type=CommandType.LONG, description="the snapshot ID for the disk volume. If snapshot id is passed in, a private disk offering id must be passed in as well (no disk size, only tags).")
     private Long snapshotId;
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of the availability zone")
@@ -145,7 +145,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     
     @Override
     public void create() throws ResourceAllocationException{
-        
+
         Volume volume = _storageService.allocVolume(this);
         if (volume != null) {
             this.setEntityId(volume.getId());

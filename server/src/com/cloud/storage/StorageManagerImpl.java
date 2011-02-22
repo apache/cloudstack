@@ -518,7 +518,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         // Create an event
         Long templateId = originalVolume.getTemplateId();
         ;
-        Long diskOfferingId = originalVolume.getDiskOfferingId();
+        Long diskOfferingId = volume.getDiskOfferingId();
 
         if (createdVolume.getPath() != null) {
             Long offeringId = null;
@@ -1442,16 +1442,29 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                 size = (size * 1024 * 1024 * 1024);// custom size entered is in GB, to be converted to bytes
             }
         } else {
+            DiskOfferingVO privOffering = null;
             Long snapshotId = cmd.getSnapshotId();
             Snapshot snapshotCheck = _snapshotDao.findById(snapshotId);
+            diskOfferingId = cmd.getDiskOfferingId();
             if (snapshotCheck == null) {
                 throw new InvalidParameterValueException("unable to find a snapshot with id " + snapshotId);
             }
 
+            if(diskOfferingId == null) {
+                throw new InvalidParameterValueException("Please specify a valid private disk offering");
+            } else {
+                privOffering = _diskOfferingDao.findById(diskOfferingId);
+                if(privOffering == null) {
+                    throw new InvalidParameterValueException("Please specify a valid private disk offering");
+                } else {
+                    if(!privOffering.isCustomized())
+                        throw new InvalidParameterValueException("Please specify a valid private disk offering");
+                }
+            }
+            
             VolumeVO vol = _volsDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId());
             zoneId = vol.getDataCenterId();
-            diskOfferingId = vol.getDiskOfferingId();
-            size = vol.getSize();
+            size = vol.getSize(); //we maintain size from org vol ; disk offering is used for tags purposes
 
             if (account != null) {
                 if (isAdmin(account.getType())) {
