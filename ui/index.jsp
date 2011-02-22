@@ -81,6 +81,7 @@
 		'label.maximum': '<fmt:message key="label.maximum"/>',
 		'label.character': '<fmt:message key="label.character"/>',
 		'label.double.quotes.are.not.allowed': '<fmt:message key="label.double.quotes.are.not.allowed"/>',
+		'label.not.found': '<fmt:message key="label.not.found"/>',
 		'label.example': '<fmt:message key="label.example"/>',
 		'label.by.zone': '<fmt:message key="label.by.zone"/>', 
 		'label.by.pod': '<fmt:message key="label.by.pod"/>', 

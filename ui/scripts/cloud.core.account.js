@@ -133,7 +133,27 @@ function bindAddAccountButton() {
     initDialog("dialog_add_account", 450);
                    
     var $dialogAddAccount = $("#dialog_add_account");
-       
+    
+    var domainObjs = [];    
+    $dialogAddAccount.find("#domain").autocomplete({
+		source: function(request, response) {			
+			$.ajax({
+			  data: createURL("command=listDomains&keyword=" + request.term),				
+				dataType: "json",
+				success: function(json) {	   
+					domainObjs = json.listdomainsresponse.domain;					
+					var array1 = [];				
+					if(domainObjs != null && domainObjs.length > 0) {									
+						for(var i=0; i < domainObjs.length; i++) 					        
+							array1.push(fromdb(domainObjs[i].name));		   					   			    
+					}					
+					response(array1);
+				}
+			});		
+		}
+	}); 
+     
+    /*   
     $.ajax({
 	    data: createURL("command=listDomains"),
 		dataType: "json",
@@ -146,6 +166,7 @@ function bindAddAccountButton() {
 			}					    	
 		}
 	});		    
+    */
              
     $("#add_account_button").unbind("click").bind("click", function(event) {    		
 		$dialogAddAccount
@@ -160,7 +181,26 @@ function bindAddAccountButton() {
 				isValid &= validateString("Email", $thisDialog.find("#add_user_email"), $thisDialog.find("#add_user_email_errormsg"), false);              //required	
 				isValid &= validateString("First name", $thisDialog.find("#add_user_firstname"), $thisDialog.find("#add_user_firstname_errormsg"), false); //required	
 				isValid &= validateString("Last name", $thisDialog.find("#add_user_lastname"), $thisDialog.find("#add_user_lastname_errormsg"), false);    //required	
-				isValid &= validateString("Account", $thisDialog.find("#add_user_account"), $thisDialog.find("#add_user_account_errormsg"), true);         //optional	
+				isValid &= validateString("Account", $thisDialog.find("#add_user_account"), $thisDialog.find("#add_user_account_errormsg"), true);         //optional
+				isValid &= validateString("Domain", $thisDialog.find("#domain"), $thisDialog.find("#domain_errormsg"), false);                             //required	
+				
+				var domainName = $thisDialog.find("#domain").val();
+				var domainId;
+				if(domainName != null && domainName.length > 0) { 				    
+				    if(domainObjs != null && domainObjs.length > 0) {									
+					    for(var i=0; i < domainObjs.length; i++) {					        
+					      if(fromdb(domainObjs[i].name) == domainName) {
+					          domainId = domainObjs[i].id;
+					          break;	
+					      }
+				        } 					   			    
+				    }					    				    
+				    if(domainId == null) {
+				        showError(false, $thisDialog.find("#domain"), $thisDialog.find("#domain_errormsg"), g_dictionary["label.not.found"]);
+				        isValid &= false;
+				    }				    
+				}				
+				
 				if (!isValid) 
 				    return;
 				
@@ -188,7 +228,9 @@ function bindAddAccountButton() {
 			    array1.push("&account="+todb(account));
 					
 				var accountType = $thisDialog.find("#add_user_account_type").val();	
-				var domainId = $thisDialog.find("#domain_dropdown").val();				
+								
+				//var domainId = $thisDialog.find("#domain_dropdown").val();				
+											
 				if (parseInt(domainId) != rootDomainId && accountType == "1") {
 					accountType = "2"; // Change to domain admin 
 				}
