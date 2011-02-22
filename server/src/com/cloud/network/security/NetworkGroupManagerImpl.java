@@ -774,7 +774,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
 
     @Override
     public List<NetworkGroupRulesVO> searchForNetworkGroupRules(Criteria c) {
-        Filter searchFilter = new Filter(NetworkGroupRulesVO.class, "id", true, c.getOffset(), c.getLimit());
+        Filter searchFilter = new Filter(NetworkGroupVO.class, "id", true, c.getOffset(), c.getLimit());
         Object accountId = c.getCriteria(Criteria.ACCOUNTID);
         Object domainId = c.getCriteria(Criteria.DOMAINID);
         Object networkGroup = c.getCriteria(Criteria.NETWORKGROUP);
@@ -782,7 +782,7 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
         Object recursive = c.getCriteria(Criteria.ISRECURSIVE);
         Object keyword = c.getCriteria(Criteria.KEYWORD);
 
-        SearchBuilder<NetworkGroupRulesVO> sb = _networkGroupRulesDao.createSearchBuilder();
+        SearchBuilder<NetworkGroupVO> sb = _networkGroupDao.createSearchBuilder();
         sb.and("accountId", sb.entity().getAccountId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
@@ -815,8 +815,18 @@ public class NetworkGroupManagerImpl implements NetworkGroupManager {
                 sc.setParameters("domainId", domainId);
             }
         }
-
-        return _networkGroupRulesDao.search(sc, searchFilter);
+        
+        List<NetworkGroupVO> networkGroups = _networkGroupDao.search(sc, searchFilter);
+        List<NetworkGroupRulesVO> networkRulesList = new ArrayList<NetworkGroupRulesVO>();
+        for (NetworkGroupVO group : networkGroups) {
+            networkRulesList.addAll(_networkGroupRulesDao.listNetworkRulesByGroupId(group.getId()));
+        }
+      
+        if (instanceId != null) {
+            return listNetworkGroupRulesByVM((Long)instanceId);
+        } 
+        
+        return networkRulesList;
     }
 
 	private List<NetworkGroupRulesVO> listNetworkGroupRulesByVM(long vmId) {

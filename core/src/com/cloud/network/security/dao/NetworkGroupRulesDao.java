@@ -34,4 +34,10 @@ public interface NetworkGroupRulesDao extends GenericDao<NetworkGroupRulesVO, Lo
      * @return the list of network groups with associated ingress rules
      */
 	List<NetworkGroupRulesVO> listNetworkGroupRulesByDomain(long domainId, boolean recursive);
+	
+	 /**
+	* List all network rules belonging to the specific group
+	* @return the network group with associated ingress rules
+	*/
+	List<NetworkGroupRulesVO> listNetworkRulesByGroupId(long groupId);
 }
