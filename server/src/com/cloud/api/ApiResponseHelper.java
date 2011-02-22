@@ -784,7 +784,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         volResponse.setSize(volume.getSize());
 
         volResponse.setCreated(volume.getCreated());
-        volResponse.setState(volume.getStatus().toString());
+        volResponse.setState(volume.getState().toString());
+        volResponse.setStatus(volume.getStatus().toString());
 
         Account accountTemp = ApiDBUtils.findAccountById(volume.getAccountId());
         if (accountTemp != null) {

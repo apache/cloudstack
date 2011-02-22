@@ -150,6 +150,7 @@ public class ApiConstants {
     public static final String START_IP = "startip";
     public static final String START_PORT = "startport";
     public static final String STATE = "state";
+    public static final String STATUS = "status";
     public static final String STORAGE_TYPE = "storagetype";
     public static final String SYSTEM_VM_TYPE = "systemvmtype";
     public static final String TAGS = "tags";

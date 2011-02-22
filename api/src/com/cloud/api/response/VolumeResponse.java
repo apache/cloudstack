@@ -68,6 +68,9 @@ public class VolumeResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the disk volume")
     private String state;
+    
+    @SerializedName(ApiConstants.STATUS) @Param(description="the status of the disk volume")
+    private String status;
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account associated with the disk volume")
     private String accountName;
@@ -252,12 +255,12 @@ public class VolumeResponse extends BaseResponse {
         this.created = created;
     }
 
-    public String getState() {
-        return state;
+    public String getStatus() {
+        return status;
     }
 
-    public void setState(String state) {
-        this.state = state;
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     public String getAccountName() {
@@ -395,4 +398,12 @@ public class VolumeResponse extends BaseResponse {
 	public void setExtractable(Boolean extractable) {
 		this.extractable = extractable;
 	}
+	
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }	
 }
