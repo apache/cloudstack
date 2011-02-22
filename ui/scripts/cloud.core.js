@@ -1104,8 +1104,7 @@ function listMidMenuItems2(commandString, getSearchParamsFn, jsonResponse1, json
                             $midmenuItem1.click(); 
                         }
                         else {                                                            
-                            clickItemInMultipleSelectionMidmenu($midmenuItem1);  
-                            countTopButtonMapFn(items[i]);  
+                            clickItemInMultipleSelectionMidmenu($midmenuItem1);                              
                             grayoutTopButtonsFn();                       
                         }                        
                     }                 
