@@ -1884,10 +1884,14 @@ function vmGrayoutTopButtons() {
     }
       
     for(var buttonElementId in vmTopButtonMap) {
-        if(vmTopButtonMap[buttonElementId] < itemCounts)
-            $("#"+buttonElementId).hide();
-        else 
+        if(vmTopButtonMap[buttonElementId] < itemCounts) {   
+            $("#"+buttonElementId).hide();       
+            //$("#"+buttonElementId).find("#button_content").removeClass("actionpanel_button").addClass("actionpanel_button_hidden");
+        }
+        else {  
             $("#"+buttonElementId).show();               
+            //$("#"+buttonElementId).find("#button_content").removeClass("actionpanel_button_hidden").addClass("actionpanel_button"); 
+        }        
     }
 }
 

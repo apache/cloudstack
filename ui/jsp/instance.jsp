@@ -1096,7 +1096,7 @@ dictionary = {
 <!--  top buttons (begin) -->
 <div id="top_buttons">
     <div class="actionpanel_button_wrapper" id="add_vm_button">
-        <div class="actionpanel_button">
+        <div class="actionpanel_button" id="button_content">
             <div class="actionpanel_button_icons">
                 <img src="images/addvm_actionicon.png" /></div>
             <div class="actionpanel_button_links">
@@ -1106,7 +1106,7 @@ dictionary = {
     </div>
 
     <div class="actionpanel_button_wrapper" id="start_vm_button">
-        <div class="actionpanel_button">
+        <div class="actionpanel_button" id="button_content">
             <div class="actionpanel_button_icons">
                 <img src="images/startvm_actionicon.png" /></div>
             <div class="actionpanel_button_links">
@@ -1115,7 +1115,7 @@ dictionary = {
         </div>
     </div>
     <div class="actionpanel_button_wrapper" id="stop_vm_button">
-        <div class="actionpanel_button">
+        <div class="actionpanel_button" id="button_content">
             <div class="actionpanel_button_icons">
                 <img src="images/stopvm_actionicon.png"/></div>
             <div class="actionpanel_button_links">
@@ -1124,7 +1124,7 @@ dictionary = {
         </div>
     </div>
     <div class="actionpanel_button_wrapper" id="reboot_vm_button">
-        <div class="actionpanel_button">
+        <div class="actionpanel_button" id="button_content">
             <div class="actionpanel_button_icons">
                 <img src="images/rebootvm_actionicon.png" /></div>
             <div class="actionpanel_button_links">
