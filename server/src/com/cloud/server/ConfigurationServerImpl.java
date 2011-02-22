@@ -161,7 +161,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 				}
 			}
 			
-		
 			_configDao.update("secondary.storage.vm", "true");
 			s_logger.debug("ConfigurationServer made secondary storage vm required.");
 

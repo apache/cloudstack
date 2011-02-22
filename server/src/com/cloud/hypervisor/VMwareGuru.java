@@ -17,6 +17,8 @@
  */
 package com.cloud.hypervisor;
 
+import java.util.Map;
+
 import javax.ejb.Local;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
@@ -29,6 +31,8 @@ import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -80,8 +84,6 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     		needDelegation = true;
     	}
 
-    	// Enable when SSVM packaging is ready
-/*
     	if(needDelegation) {
     		HostVO host = _hostDao.findById(hostId);
     		assert(host != null);
@@ -100,7 +102,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     			return hostSecStorage.getId();
     		}
     	}
-*/  
+  
     	return hostId;
     }
 }

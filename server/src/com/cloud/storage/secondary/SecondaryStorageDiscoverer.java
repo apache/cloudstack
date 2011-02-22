@@ -18,6 +18,8 @@
 package com.cloud.storage.secondary;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.Date;
 import java.util.HashMap;
@@ -38,8 +40,6 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ServerResource;
-import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -47,9 +47,7 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.storage.resource.NfsSecondaryStorageResource;
-import com.cloud.storage.template.TemplateConstants;
 import com.cloud.utils.component.Inject;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NfsUtils;
 import com.cloud.utils.script.Script;
 
@@ -138,7 +136,41 @@ public class SecondaryStorageDiscoverer extends DiscovererBase implements Discov
         
         Map<NfsSecondaryStorageResource, Map<String, String>> srs = new HashMap<NfsSecondaryStorageResource, Map<String, String>>();
         
-        NfsSecondaryStorageResource storage = new NfsSecondaryStorageResource();
+        NfsSecondaryStorageResource storage;
+        if(_configDao.isPremium()) {
+            Class<?> impl;
+            String name = "com.cloud.storage.resource.PremiumSecondaryStorageResource";
+            try {
+                impl = Class.forName(name);
+                final Constructor<?> constructor = impl.getDeclaredConstructor();
+                constructor.setAccessible(true);
+                storage = (NfsSecondaryStorageResource)constructor.newInstance();
+            } catch (final ClassNotFoundException e) {
+            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to ClassNotFoundException");
+            	return null;
+            } catch (final SecurityException e) {
+            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to SecurityException");
+            	return null;
+            } catch (final NoSuchMethodException e) {
+            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to NoSuchMethodException");
+            	return null;
+            } catch (final IllegalArgumentException e) {
+            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to IllegalArgumentException");
+            	return null;
+            } catch (final InstantiationException e) {
+            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to InstantiationException");
+            	return null;
+            } catch (final IllegalAccessException e) {
+            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to IllegalAccessException");
+            	return null;
+            } catch (final InvocationTargetException e) {
+            	s_logger.error("Unable to load com.cloud.storage.resource.PremiumSecondaryStorageResource due to InvocationTargetException");
+            	return null;
+            }
+        } else {
+        	storage = new NfsSecondaryStorageResource();
+        }
+        
         Map<String, String> details = new HashMap<String, String>();
         details.put("mount.path", mountStr);
         details.put("orig.url", uri.toString());
