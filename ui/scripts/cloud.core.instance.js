@@ -879,18 +879,14 @@ function initVMWizard() {
 													dataType: "json",
 													async: false,
 													success: function(json) {
-														var network = json.createnetworkresponse.network;
-														if (network.networkofferingavailability != 'Unavailable') {
-															$virtualNetworkElement.show();
-															if (network.networkofferingavailability == 'Required') {
-																requiredVirtual = true;
-																$virtualNetworkElement.find("#network_virtual").attr('disabled', true);
-															}
-															defaultNetworkAdded = true;
-															$virtualNetworkElement.find("#network_virtual").data("id", network.id).data("jsonObj", network);
-														} else {
-															$virtualNetworkElement.hide();
+														var network = json.createnetworkresponse.network;														
+														$virtualNetworkElement.show();
+														if (network.networkofferingavailability == 'Required') {
+															requiredVirtual = true;
+															$virtualNetworkElement.find("#network_virtual").attr('disabled', true);
 														}
+														defaultNetworkAdded = true;
+														$virtualNetworkElement.find("#network_virtual").data("id", network.id).data("jsonObj", network);														 
 													}
 												});
 											}
