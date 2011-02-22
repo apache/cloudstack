@@ -107,6 +107,7 @@ CloudStack uses.
 Summary:   Cloud.com library dependencies
 Requires: java >= 1.6.0
 Obsoletes: vmops-deps < %{version}-%{release}
+Obsoletes: cloud-premium-deps < %{version}-%{release}
 Group:     System Environment/Libraries
 %description deps
 This package contains a number of third-party dependencies
