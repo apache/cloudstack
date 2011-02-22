@@ -21,65 +21,185 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
+import com.cloud.maint.Version;
 import com.cloud.upgrade.dao.VersionVO.Step;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Local(value=VersionDao.class)
-public class VersionDaoImpl extends GenericDaoBase<VersionVO, String> implements VersionDao {
+@Local(value=VersionDao.class) @DB(txn=false)
+public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements VersionDao {
+    private static final Logger s_logger = Logger.getLogger(VersionDaoImpl.class);
+    
+    static HashMap<Pair<String, String>, DbUpgrade[]> s_upgradeMap = new HashMap<Pair<String, String>, DbUpgrade[]>();
+    static {
+        s_upgradeMap.put(new Pair<String, String>("2.1.7", "2.2.1"), new DbUpgrade[] { new Upgrade217to22() });
+    }
+    
+    String _dumpPath = null;
+    
     final GenericSearchBuilder<VersionVO, String> CurrentVersionSearch;
+    final SearchBuilder<VersionVO> AllFieldsSearch;
+    
     protected VersionDaoImpl() {
         super();
         
         CurrentVersionSearch = createSearchBuilder(String.class);
         CurrentVersionSearch.select(null, Func.FIRST, CurrentVersionSearch.entity().getVersion());
         CurrentVersionSearch.and("step", CurrentVersionSearch.entity().getStep(), Op.EQ);
+        CurrentVersionSearch.done();
         
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("version", AllFieldsSearch.entity().getVersion(), Op.EQ);
+        AllFieldsSearch.and("step", AllFieldsSearch.entity().getStep(), Op.EQ);
+        AllFieldsSearch.and("updated", AllFieldsSearch.entity().getUpdated(), Op.EQ);
+        AllFieldsSearch.done();
+        
+    }
+    
+    protected VersionVO findByVersion(String version, Step step) {
+        SearchCriteria<VersionVO> sc = AllFieldsSearch.create();
+        sc.setParameters("version", version);
+        sc.setParameters("step", step);
+        
+        return findOneBy(sc);
     }
     
     @DB
     protected String getCurrentVersion() {
         Transaction txn = Transaction.currentTxn();
+        Connection conn = null;
         try {
-            Connection conn = txn.getConnection();
+            s_logger.debug("Checking to see if the database is at a version before it was the version table is created");
             
+            conn = txn.getConnection();
+    
             PreparedStatement pstmt = conn.prepareStatement("SHOW TABLES LIKE 'VERSION'");
             ResultSet rs = pstmt.executeQuery();
-            if (rs.getRow() == 0) {
-                return "2.1.7";
+            if (!rs.next()) {
+                pstmt.close();
+                rs.close();
+                pstmt = conn.prepareStatement("SHOW TABLES LIKE 'NICS'");
+                rs = pstmt.executeQuery();
+                if (!rs.next()) {
+                    pstmt.close();
+                    rs.close();
+                    s_logger.debug("No version table and no nics table, returning 2.1.7");
+                    return "2.1.7";
+                } else {
+                    pstmt.close();
+                    rs.close();
+                    s_logger.debug("No version table but has nics table, returning 2.1.2");
+                    return "2.2.1";
+                }
             }
-            pstmt.close();
-            rs.close();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to get the current version", e);
         } 
-            SearchCriteria<String> sc = CurrentVersionSearch.create();
-            
-            sc.setParameters("step", Step.Complete);
-            Filter filter = new Filter(VersionVO.class, "updated", true, 0l, 1l);
-            
-            List<String> vers = customSearch(sc, filter);
-            return vers.get(0);
+        
+        SearchCriteria<String> sc = CurrentVersionSearch.create();
+        
+        sc.setParameters("step", Step.Complete);
+        Filter filter = new Filter(VersionVO.class, "updated", true, 0l, 1l);
+        
+        List<String> vers = customSearch(sc, filter);
+        return vers.get(0);
     }
     
+    @DB
+    protected void upgrade(String dbVersion, String currentVersion) throws ConfigurationException {
+        s_logger.info("Database upgrade must be performed from " + dbVersion + " to " + currentVersion);
+        
+        DbUpgrade[] upgrades = s_upgradeMap.get(new Pair<String, String>(dbVersion, currentVersion));
+        if (upgrades == null) {
+            throw new ConfigurationException("There is no upgrade path from " + dbVersion + " to " + currentVersion);
+        }
+        
+        boolean supportsRollingUpgrade = true;
+        for (DbUpgrade upgrade : upgrades) {
+            if (!upgrade.supportsRollingUpgrade()) {
+                supportsRollingUpgrade = false;
+                break;
+            }
+        }
+        
+        if (!supportsRollingUpgrade) {
+            // TODO: Check if the other management server is still running by looking at the database.  If so, then throw an exception.
+        }
+        
+        for (DbUpgrade upgrade : upgrades) {
+            s_logger.info("Running upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade.getUpgradableVersionRange()[1] + " to " + upgrade.getUpgradedVersion());
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            upgrade.prepare();
+            upgrade.upgrade();
+            VersionVO version = new VersionVO(upgrade.getUpgradedVersion());
+            persist(version);
+            txn.commit();
+        }
+        
+        for (DbUpgrade upgrade : upgrades) {
+            s_logger.info("Cleanup upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade.getUpgradableVersionRange()[1] + " to " + upgrade.getUpgradedVersion());
+            VersionVO version = findByVersion(upgrade.getUpgradedVersion(), Step.Upgrade);
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            upgrade.cleanup();
+            version.setStep(Step.Complete);
+            version.setUpdated(new Date());
+            update(version.getId(), version);
+            txn.commit();
+        }
+    }
     
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         
+        _dumpPath = (String)params.get("upgrade.dump.path");
+        if (_dumpPath == null) {
+            _dumpPath = System.getenv("upgrade.dump.path");
+            if (_dumpPath == null) {
+                _dumpPath = "/var/log/";
+            }
+        }
+        
+        String dbVersion = getCurrentVersion();
+        String currentVersion = this.getClass().getPackage().getImplementationVersion();
+        if (currentVersion == null) {
+            currentVersion = this.getClass().getSuperclass().getPackage().getImplementationVersion();
+        }
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("DB version = " + dbVersion + " Code Version = " + currentVersion);
+        }
+        
+        if (Version.compare(dbVersion, currentVersion) > 0) {
+            throw new ConfigurationException("Database version " + dbVersion + " is higher than management software version " + currentVersion);
+        }
+        
+        if (Version.compare(dbVersion, currentVersion) == 0) {
+            return true;
+        }
+        
+        upgrade(dbVersion, currentVersion);
         
         return true;
     }

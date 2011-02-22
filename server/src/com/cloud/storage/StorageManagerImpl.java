@@ -122,7 +122,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.StorageResourceType;
-import com.cloud.storage.Volume.SourceType;
 import com.cloud.storage.Volume.VolumeType;
 import com.cloud.storage.allocator.StoragePoolAllocator;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -1542,8 +1541,6 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         } else {
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(cmd.getDiskOfferingId());
             _accountMgr.incrementResourceCount(volume.getAccountId(), ResourceType.volume);
-            volume.setSourceId(diskOffering.getId());
-            volume.setSourceType(SourceType.DiskOffering);
             volume.setStatus(AsyncInstanceCreateStatus.Created);
             _volsDao.update(volume.getId(), volume);
         }

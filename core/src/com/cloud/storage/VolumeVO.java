@@ -34,7 +34,6 @@ import javax.persistence.TemporalType;
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.db.GenericDao;
-import com.google.gson.annotations.Expose;
 
 @Entity
 @Table(name="volumes")
@@ -45,7 +44,6 @@ public class VolumeVO implements Volume {
     @Column(name="id")
     long id;
     
-    @Expose
     @Column(name="name")
     String name;
     
@@ -61,23 +59,18 @@ public class VolumeVO implements Volume {
     @Column(name="instance_id")
     Long instanceId = null;
     
-    @Expose
     @Column(name="device_id")
     Long deviceId = null;
     
-    @Expose
     @Column(name="size")
     long size;
 
-    @Expose
     @Column(name="folder")
     String folder;
     
-    @Expose
     @Column(name="path")
     String path;
     
-    @Expose
     @Column(name="iscsi_name")
     String iscsiName;
     
@@ -94,7 +87,6 @@ public class VolumeVO implements Volume {
     @Column(name="data_center_id")
     long dataCenterId;
     
-    @Expose
     @Column(name="host_ip")
     String hostip;
 
@@ -107,12 +99,10 @@ public class VolumeVO implements Volume {
     @Column(name="first_snapshot_backup_uuid")
     String firstSnapshotBackupUuid;
 
-    @Expose
     @Column(name="volume_type")
     @Enumerated(EnumType.STRING)
 	VolumeType volumeType = Volume.VolumeType.UNKNOWN;
 
-    @Expose
     @Column(name="pool_type")
     @Enumerated(EnumType.STRING)
     StoragePoolType poolType;
@@ -120,12 +110,10 @@ public class VolumeVO implements Volume {
     @Column(name=GenericDao.REMOVED_COLUMN)
     Date removed;
     
-    @Expose
     @Column(name="resource_type")
     @Enumerated(EnumType.STRING)
 	Storage.StorageResourceType storageResourceType;
     
-    @Expose
     @Column(name="status", updatable = true, nullable=false)
     @Enumerated(value=EnumType.STRING)
     private AsyncInstanceCreateStatus status;
@@ -140,13 +128,6 @@ public class VolumeVO implements Volume {
     @Column(name="state")
     @Enumerated(value=EnumType.STRING)
     private State state;
-    
-    @Column(name="source_type")
-    @Enumerated(value=EnumType.STRING)
-    Volume.SourceType sourceType;
-    
-    @Column(name="source_id")
-    Long sourceId;
     
     @Column(name="chain_info")
     String chainInfo;
@@ -500,24 +481,6 @@ public class VolumeVO implements Volume {
 	    return new StringBuilder("Vol[").append(id).append("|vm=").append(instanceId).append("|").append(volumeType).append("]").toString();
 	}
 
-	@Override
-	public SourceType getSourceType() {
-		return this.sourceType;
-	}
-
-	public void setSourceType(SourceType sourceType) {
-		this.sourceType = sourceType;
-	}
-	
-	public void setSourceId(Long sourceId){
-		this.sourceId = sourceId;
-	}
-	
-	@Override
-	public Long getSourceId(){
-		return this.sourceId;
-	}
-	
 	@Override
 	public Date getAttached(){
 		return this.attached; 

@@ -1,14 +1,5 @@
 # This file is obsolete!  Put what you need into create-schema.sql
 
-ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD INDEX `i_op_dc_ip_address_alloc__pod_id__data_center_id__taken` (`pod_id`, `data_center_id`, `taken`, `instance_id`);
-ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD UNIQUE `i_op_dc_ip_address_alloc__ip_address__data_center_id`(`ip_address`, `data_center_id`);
-ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD CONSTRAINT `fk_op_dc_ip_address_alloc__pod_id` FOREIGN KEY `fk_op_dc_ip_address_alloc__pod_id` (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD INDEX `i_op_dc_ip_address_alloc__pod_id`(`pod_id`);
-
-ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD UNIQUE `i_op_dc_vnet_alloc__vnet__data_center_id__account_id`(`vnet`, `data_center_id`, `account_id`);
-ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD INDEX `i_op_dc_vnet_alloc__dc_taken`(`data_center_id`, `taken`);
-ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD UNIQUE `i_op_dc_vnet_alloc__vnet__data_center_id`(`vnet`, `data_center_id`);
-
 ALTER TABLE `cloud`.`storage_pool` ADD CONSTRAINT `fk_storage_pool__pod_id` FOREIGN KEY `fk_storage_pool__pod_id` (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`storage_pool` ADD INDEX `i_storage_pool__pod_id`(`pod_id`);
 ALTER TABLE `cloud`.`storage_pool` ADD CONSTRAINT `fk_storage_pool__cluster_id` FOREIGN KEY `fk_storage_pool__cluster_id`(`cluster_id`) REFERENCES `cloud`.`cluster`(`id`);
@@ -43,29 +34,10 @@ ALTER TABLE `cloud`.`event` ADD INDEX `i_event__type_id`(`type`);
 ALTER TABLE `cloud`.`vm_template` ADD INDEX `i_vm_template__removed`(`removed`);
 ALTER TABLE `cloud`.`vm_template` ADD INDEX `i_vm_template__public`(`public`);
 
-ALTER TABLE `cloud`.`service_offering` ADD CONSTRAINT `fk_service_offering__id` FOREIGN KEY `fk_service_offering__id`(`id`) REFERENCES `disk_offering`(`id`) ON DELETE CASCADE;
-
-ALTER TABLE `cloud`.`op_host_capacity` ADD INDEX `i_op_host_capacity__host_type`(`host_id`, `capacity_type`);
-ALTER TABLE `cloud`.`op_host_capacity` ADD CONSTRAINT `fk_op_host_capacity__pod_id` FOREIGN KEY `fk_op_host_capacity__pod_id` (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`op_host_capacity` ADD INDEX `i_op_host_capacity__pod_id`(`pod_id`);
-ALTER TABLE `cloud`.`op_host_capacity` ADD CONSTRAINT `fk_op_host_capacity__data_center_id` FOREIGN KEY `fk_op_host_capacity__data_center_id` (`data_center_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`op_host_capacity` ADD INDEX `i_op_host_capacity__data_center_id`(`data_center_id`);
 
 ALTER TABLE `cloud`.`upload` ADD CONSTRAINT `fk_upload__host_id` FOREIGN KEY `fk_upload__host_id` (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`upload` ADD INDEX `i_upload__host_id`(`host_id`);
 ALTER TABLE `cloud`.`upload` ADD INDEX `i_upload__type_id`(`type_id`);
-
-ALTER TABLE `cloud`.`pod_vlan_map` ADD CONSTRAINT `fk_pod_vlan_map__pod_id` FOREIGN KEY `fk_pod_vlan_map__pod_id` (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`pod_vlan_map` ADD INDEX `i_pod_vlan_map__pod_id`(`pod_id`);
-
-ALTER TABLE `cloud`.`pod_vlan_map` ADD CONSTRAINT `fk_pod_vlan_map__vlan_id` FOREIGN KEY `fk_pod_vlan_map__vlan_id` (`vlan_db_id`) REFERENCES `vlan` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`pod_vlan_map` ADD INDEX `i_pod_vlan_map__vlan_id`(`vlan_db_id`);
-
-ALTER TABLE `cloud`.`account_vlan_map` ADD CONSTRAINT `fk_account_vlan_map__account_id` FOREIGN KEY `fk_account_vlan_map__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`account_vlan_map` ADD INDEX `i_account_vlan_map__account_id`(`account_id`);
-
-ALTER TABLE `cloud`.`account_vlan_map` ADD CONSTRAINT `fk_account_vlan_map__vlan_id` FOREIGN KEY `fk_account_vlan_map__vlan_id` (`vlan_db_id`) REFERENCES `vlan` (`id`) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`account_vlan_map` ADD INDEX `i_account_vlan_map__vlan_id`(`vlan_db_id`);
 
 ALTER TABLE `cloud`.`user_statistics` ADD CONSTRAINT `fk_user_statistics__account_id` FOREIGN KEY `fk_user_statistics__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE;
 ALTER TABLE `cloud`.`user_statistics` ADD INDEX `i_user_statistics__account_id`(`account_id`);

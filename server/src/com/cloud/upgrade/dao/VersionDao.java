@@ -19,6 +19,6 @@ package com.cloud.upgrade.dao;
 
 import com.cloud.utils.db.GenericDao;
 
-public interface VersionDao extends GenericDao<VersionVO, String> {
+public interface VersionDao extends GenericDao<VersionVO, Long> {
 
 }

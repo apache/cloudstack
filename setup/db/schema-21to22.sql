@@ -1,15 +1,11 @@
-SET foreign_key_checks = 0;
-
 --
 -- Schema upgrade from 2.1 to 2.2
 --
-ALTER TABLE `cloud`.`template_host_ref` ADD COLUMN `physical_size` bigint unsigned NOT NULL DEFAULT 0
-ALTER TABLE `cloud`.`snapshots` MODIFY COLUMN `id` bigint unsigned UNIQUE NOT NULL
-ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `group`
-ALTER TABLE `cloud`.`cluster` ADD COLUMN `guid` varchar(255) UNIQUE DEFAULT NULL
-ALTER TABLE `cloud`.`cluster` ADD COLUMN `cluster_type` varchar(64) DEFAULT 'CloudManaged'
-
-
+ALTER TABLE `cloud`.`template_host_ref` ADD COLUMN `physical_size` bigint unsigned NOT NULL DEFAULT 0;
+ALTER TABLE `cloud`.`snapshots` MODIFY COLUMN `id` bigint unsigned UNIQUE NOT NULL;
+ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `group`;
+ALTER TABLE `cloud`.`cluster` ADD COLUMN `guid` varchar(255) UNIQUE DEFAULT NULL;
+ALTER TABLE `cloud`.`cluster` ADD COLUMN `cluster_type` varchar(64) DEFAULT 'CloudManaged';
 
 -- NOTE for tables below
 -- these 2 tables were used in 2.1, but are not in 2.2
@@ -20,4 +16,285 @@ ALTER TABLE `cloud`.`cluster` ADD COLUMN `cluster_type` varchar(64) DEFAULT 'Clo
 DROP TABLE `cloud`.`security_group`;
 DROP TABLE `cloud`.`security_group_vm_map`;
 -- needs a migration step
-ALTER TABLE `cloud`.`account` DROP COLUMN `network_domain`;
+#ALTER TABLE `cloud`.`account` DROP COLUMN `network_domain`;
+
+-- New migration from 2.1 to 2.2
+
+-- Easy stuff first.  All new tables.
+
+CREATE TABLE `cloud`.`version` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `version` char(40) NOT NULL UNIQUE COMMENT 'version',
+  `updated` datetime NOT NULL COMMENT 'Date this version table was updated',
+  `step` char(32) NOT NULL COMMENT 'Step in the upgrade to this version',
+  PRIMARY KEY (`id`),
+  INDEX `i_version__version`(`version`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`mshost` MODIFY COLUMN `msid` bigint unsigned;
+
+CREATE TABLE `cloud`.`op_it_work` (
+  `id` char(40) COMMENT 'reservation id',
+  `mgmt_server_id` bigint unsigned COMMENT 'management server id',
+  `created_at` bigint unsigned NOT NULL COMMENT 'when was this work detail created',
+  `thread` varchar(255) NOT NULL COMMENT 'thread name',
+  `type` char(32) NOT NULL COMMENT 'type of work',
+  `vm_type` char(32) NOT NULL COMMENT 'type of vm',
+  `step` char(32) NOT NULL COMMENT 'state',
+  `updated_at` bigint unsigned NOT NULL COMMENT 'time it was taken over',
+  `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance',
+  `resource_type` char(32) COMMENT 'type of resource being worked on',
+  `resource_id` bigint unsigned COMMENT 'resource id being worked on',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_op_it_work__mgmt_server_id` FOREIGN KEY (`mgmt_server_id`) REFERENCES `mshost`(`msid`),
+  CONSTRAINT `fk_op_it_work__instance_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
+  INDEX `i_op_it_work__step`(`step`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`op_networks`(
+  `id` bigint unsigned NOT NULL UNIQUE KEY,
+  `mac_address_seq` bigint unsigned NOT NULL DEFAULT 1 COMMENT 'mac address',
+  `nics_count` int unsigned NOT NULL DEFAULT 0 COMMENT '# of nics',
+  `gc` tinyint unsigned NOT NULL DEFAULT 1 COMMENT 'gc this network or not',
+  `check_for_gc` tinyint unsigned NOT NULL DEFAULT 1 COMMENT 'check this network for gc or not',
+  PRIMARY KEY(`id`),
+  CONSTRAINT `fk_op_networks__id` FOREIGN KEY (`id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`networks` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `name` varchar(255) COMMENT 'name for this network',
+  `display_text` varchar(255) COMMENT 'display text for this network',
+  `traffic_type` varchar(32) NOT NULL COMMENT 'type of traffic going through this network',
+  `broadcast_domain_type` varchar(32) NOT NULL COMMENT 'type of broadcast domain used',
+  `broadcast_uri` varchar(255) COMMENT 'broadcast domain specifier',
+  `gateway` varchar(15) COMMENT 'gateway for this network configuration',
+  `cidr` varchar(18) COMMENT 'network cidr', 
+  `mode` varchar(32) COMMENT 'How to retrieve ip address in this network',
+  `network_offering_id` bigint unsigned NOT NULL COMMENT 'network offering id that this configuration is created from',
+  `data_center_id` bigint unsigned NOT NULL COMMENT 'data center id that this configuration is used in',
+  `guru_name` varchar(255) NOT NULL COMMENT 'who is responsible for this type of network configuration',
+  `state` varchar(32) NOT NULL COMMENT 'what state is this configuration in',
+  `related` bigint unsigned NOT NULL COMMENT 'related to what other network configuration',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'foreign key to domain id',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner of this network',
+  `dns1` varchar(255) COMMENT 'comma separated DNS list',
+  `dns2` varchar(255) COMMENT 'comma separated DNS list',
+  `guru_data` varchar(1024) COMMENT 'data stored by the network guru that setup this network',
+  `set_fields` bigint unsigned NOT NULL DEFAULT 0 COMMENT 'which fields are set already',
+  `guest_type` char(32) COMMENT 'type of guest network',
+  `shared` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '0 if network is shared, 1 if network dedicated',
+  `network_domain` varchar(255) COMMENT 'domain',
+  `reservation_id` char(40) COMMENT 'reservation id',
+  `is_default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is default',
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_networks__network_offering_id` FOREIGN KEY (`network_offering_id`) REFERENCES `network_offerings`(`id`),
+  CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
+  CONSTRAINT `fk_networks__related` FOREIGN KEY(`related`) REFERENCES `networks`(`id`),
+  CONSTRAINT `fk_networks__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`),
+  CONSTRAINT `fk_networks__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`account_network_ref` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `account_id` bigint unsigned NOT NULL COMMENT 'account id',
+  `network_id` bigint unsigned NOT NULL COMMENT 'network id',
+  `is_owner` smallint(1) NOT NULL COMMENT 'is the owner of the network',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_account_network_ref__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_account_network_ref__networks_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE `cloud`.`certificate` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `certificate` text COMMENT 'the actual custom certificate being stored in the db',
+  `updated` varchar(1) COMMENT 'status of the certificate',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `cloud`.`certificate` (id,certificate,updated) VALUES ('1',null,'N');
+
+CREATE TABLE `cloud`.`nics` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `instance_id` bigint unsigned COMMENT 'vm instance id',
+  `mac_address` varchar(17) COMMENT 'mac address',
+  `ip4_address` varchar(15) COMMENT 'ip4 address',
+  `netmask` varchar(15) COMMENT 'netmask for ip4 address',
+  `gateway` varchar(15) COMMENT 'gateway',
+  `ip_type` varchar(32) COMMENT 'type of ip',
+  `broadcast_uri` varchar(255) COMMENT 'broadcast uri',
+  `network_id` bigint unsigned NOT NULL COMMENT 'network configuration id',
+  `mode` varchar(32) COMMENT 'mode of getting ip address',  
+  `state` varchar(32) NOT NULL COMMENT 'state of the creation',
+  `strategy` varchar(32) NOT NULL COMMENT 'reservation strategy',
+  `reserver_name` varchar(255) COMMENT 'Name of the component that reserved the ip address',
+  `reservation_id` varchar(64) COMMENT 'id for the reservation',
+  `device_id` int(10) COMMENT 'device id for the network when plugged into the virtual machine',
+  `update_time` timestamp NOT NULL COMMENT 'time the state was changed',
+  `isolation_uri` varchar(255) COMMENT 'id for isolation',
+  `ip6_address` char(40) COMMENT 'ip6 address',
+  `default_nic` tinyint NOT NULL COMMENT "None", 
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_nics__instance_id` FOREIGN KEY `fk_nics__instance_id`(`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_nics__networks_id` FOREIGN KEY `fk_nics__networks_id`(`network_id`) REFERENCES `networks`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`network_offerings` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `name` varchar(64) NOT NULL unique COMMENT 'network offering',
+  `display_text` varchar(255) NOT NULL COMMENT 'text to display to users',
+  `nw_rate` smallint unsigned COMMENT 'network rate throttle mbits/s',
+  `mc_rate` smallint unsigned COMMENT 'mcast rate throttle mbits/s',
+  `concurrent_connections` int(10) unsigned COMMENT 'concurrent connections supported on this network',
+  `traffic_type` varchar(32) NOT NULL COMMENT 'traffic type carried on this network',
+  `tags` varchar(4096) COMMENT 'tags supported by this offering',
+  `system_only` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is this network offering for system use only',
+  `specify_vlan` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Should the user specify vlan',
+  `service_offering_id` bigint unsigned UNIQUE COMMENT 'service offering id that this network offering is tied to',
+  `created` datetime NOT NULL COMMENT 'time the entry was created',
+  `removed` datetime DEFAULT NULL COMMENT 'time the entry was removed',
+  `default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network offering is default',
+  `availability` varchar(255) NOT NULL COMMENT 'availability of the network',
+  `dns_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides dns service',
+  `gateway_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides gateway service',
+  `firewall_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides firewall service',
+  `lb_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides lb service',
+  `userdata_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides user data service',
+  `vpn_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides vpn service',
+  `dhcp_service` int(1) unsigned NOT NULL DEFAULT 0 COMMENT 'true if network offering provides dhcp service',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`cluster_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `cluster_id` bigint unsigned NOT NULL COMMENT 'cluster id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_cluster_details__cluster_id` FOREIGN KEY (`cluster_id`) REFERENCES `cluster`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`firewall_rules` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `ip_address_id` bigint unsigned NOT NULL COMMENT 'id of the corresponding ip address',
+  `start_port` int(10) NOT NULL COMMENT 'starting port of a port range',
+  `end_port` int(10) NOT NULL COMMENT 'end port of a port range',
+  `state` char(32) NOT NULL COMMENT 'current state of this rule',
+  `protocol` char(16) NOT NULL default 'TCP' COMMENT 'protocol to open these ports for',
+  `purpose` char(32) NOT NULL COMMENT 'why are these ports opened?',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner id',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain id',
+  `network_id` bigint unsigned NOT NULL COMMENT 'network id',
+  `xid` char(40) NOT NULL COMMENT 'external id',
+  `created` datetime COMMENT 'Date created',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_firewall_rules__ip_address_id` FOREIGN KEY(`ip_address_id`) REFERENCES `user_ip_address`(`id`),
+  CONSTRAINT `fk_firewall_rules__network_id` FOREIGN KEY(`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_firewall_rules__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_firewall_rules__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`load_balancing_rules` (
+  `id` bigint unsigned NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `description` varchar(4096) NULL COMMENT 'description',
+  `default_port_start` int(10) NOT NULL COMMENT 'default private port range start',
+  `default_port_end` int(10) NOT NULL COMMENT 'default destination port range end',
+  `algorithm` varchar(255) NOT NULL,
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_load_balancing_rules__id` FOREIGN KEY(`id`) REFERENCES `firewall_rules`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`load_balancer_vm_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `load_balancer_id` bigint unsigned NOT NULL,
+  `instance_id` bigint unsigned NOT NULL,
+  `revoke` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 is when rule is set for Revoke',
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY (`load_balancer_id`, `instance_id`),
+  CONSTRAINT `fk_load_balancer_vm_map__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_load_balancer_vm_map__instance_id` FOREIGN KEY(`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`port_forwarding_rules` (
+  `id` bigint unsigned NOT NULL COMMENT 'id',
+  `instance_id` bigint unsigned NOT NULL COMMENT 'vm instance id',
+  `dest_ip_address` char(40) NOT NULL COMMENT 'id_address',
+  `dest_port_start` int(10) NOT NULL COMMENT 'starting port of the port range to map to',
+  `dest_port_end` int(10) NOT NULL COMMENT 'end port of the the port range to map to',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_port_forwarding_rules__id` FOREIGN KEY(`id`) REFERENCES `firewall_rules`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`op_host` (
+  `id` bigint unsigned NOT NULL UNIQUE COMMENT 'host id',
+  `sequence` bigint unsigned DEFAULT 1 NOT NULL COMMENT 'sequence for the host communication',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_op_host__id` FOREIGN KEY (`id`) REFERENCES `host`(`id`) ON DELETE CASCADE 
+) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO op_host(id, sequence) values (select id from host, 0);
+
+-- Alter Tables to add Columns
+
+ALTER TABLE `cloud`.`cluster` ADD COLUMN `hypervisor_type` varchar(32);
+UPDATE `cloud`.`cluster` SET hypervisor_type=(SELECT DISTINCT host.hypervisor_type from host where host.cluster_id = cluster.id GROUP BY host.hypervisor_type); 
+
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `attached` datetime;
+UPDATE `cloud`.`volumes` SET attached=now() WHERE removed IS NULL AND instance_id IS NOT NULL;
+
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `chain_info` text;
+
+ALTER TABLE `cloud`.`volumes` MODIFY COLUMN `volume_type` VARCHAR(64) NOT NULL;
+
+ALTER TABLE `cloud`.`volumes` ADD COLUMN `state` VARCHAR(32);
+UPDATE `cloud`.`volumes` SET state='Destroyed' WHERE removed IS NOT NULL OR destroyed=1 OR status='Creating' OR status='Corrupted' OR status='Failed';
+UPDATE `cloud`.`volumes` SET state='Ready' WHERE removed IS NULL AND destroyed=0 AND status='Created';
+ALTER TABLE `cloud`.`volumes` MODIFY COLUMN `state` VARCHAR(32) NOT NULL;
+
+ALTER TABLE `cloud`.`vlan` ADD COLUMN `network_id` bigint unsigned NOT NULL;
+ALTER TABLE `cloud`.`vlan` ADD CONSTRAINT `fk_vlan__network_id` FOREIGN KEY `fk_vlan__network_id`(`network_id`) REFERENCES `networks`(`id`);
+ALTER TABLE `cloud`.`vlan` ADD CONSTRAINT `fk_vlan__data_center_id` FOREIGN KEY `fk_vlan__data_center_id`(`data_center_id`) REFERENCES `data_center`(`id`);
+
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `domain` varchar(100);
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `domain_id` bigint unsigned;
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `networktype` varchar(255) NOT NULL DEFAULT 'Basic'; 
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `dns_provider` char(64) DEFAULT 'VirtualRouter';
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `gateway_provider` char(64) DEFAULT 'VirtualRouter';
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `firewall_provider` char(64) DEFAULT 'VirtualRouter';
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `dhcp_provider` char(64) DEFAULT 'VirtualRouter';
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `lb_provider` char(64) DEFAULT 'VirtualRouter';
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `vpn_provider` char(64) DEFAULT 'VirtualRouter';
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `userdata_provider` char(64) DEFAULT 'VirtualRouter';
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `enable` tinyint NOT NULL DEFAULT 1;
+
+#TODO: We need something to adjust the networktype for all of the existing data centers.  How to tell if it is Basic/Advance?
+
+ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD COLUMN `reservation_id` char(40) NULL;
+ALTER TABLE `cloud`.`op_dc_ip_address_alloc` ADD COLUMN `mac_address` bigint unsigned NOT NULL;
+UPDATE `cloud`.`op_dc_ip_address_alloc` SET reservation_id=concat(cast(instance_id as CHAR), ip_address) WHERE taken is NOT NULL;
+UPDATE `cloud`.`op_dc_ip_address_alloc` as alloc1 SET mac_address=id-(SELECT min(alloc2.id) from op_dc_ip_address_alloc as alloc2 WHERE alloc2.data_center_id=alloc1.data_center_id)+1;  
+
+ALTER TABLE `cloud`.`op_dc_link_local_ip_address_alloc` ADD COLUMN `reservation_id` char(40) NULL;
+UPDATE `cloud`.`op_dc_link_local_ip_address_alloc` SET reservation_id=concat(cast(instance_id as CHAR),ip_address) WHERE taken is NOT NULL;
+
+#TODO: Set the Reservation id for this table?
+
+ALTER TABLE `cloud`.`host_pod_ref` ADD COLUMN `enabled` tinyint NOT NULL DEFAULT 1;
+
+ALTER TABLE `cloud`.`op_dc_vnet_alloc` ADD COLUMN `reservation_id` char(40) NULL;
+#TODO: Set the Reservation id for this table
+
+
+
+
+
+-- Insert stuff?
+INSERT INTO `cloud`.`sequence` (name, value) VALUES ('volume_seq', (SELECT max(id) + 1 or 200 from volumes));
+INSERT INTO `cloud`.`sequence` (name, value) VALUES ('networks_seq', 200);
+INSERT INTO `cloud`.`sequence` (name, value) VALUES ('snapshots_seq', (SELECT max(id) + 1 or 200 from snapshots));

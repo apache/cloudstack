@@ -23,12 +23,12 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-
-import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 @Entity
 @Table(name="version")
@@ -40,6 +40,8 @@ public class VersionVO {
         Complete
     };
     
+    @Id
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     long id;
     
@@ -51,15 +53,16 @@ public class VersionVO {
     Date updated;
     
     @Enumerated(value=EnumType.STRING)
-    @Column(name="")
+    @Column(name="step")
     Step step;
     
-    public VersionVO() {
-        version = ComponentLocator.class.getPackage().getImplementationVersion();
-        if (version == null) {
-            throw new CloudRuntimeException("Uanble to get the implementation version of the package");
-        }
-        updated = new Date();
+    public VersionVO(String version) {
+        this.version = version; 
+        this.updated = new Date();
+        this.step = Step.Upgrade;
+    }
+    
+    protected VersionVO() {
     }
     
     public long getId() {
@@ -74,8 +77,16 @@ public class VersionVO {
         return updated;
     }
     
+    public void setUpdated(Date updated) {
+        this.updated = updated;
+    }
+    
     public Step getStep() {
         return step;
+    }
+    
+    public void setStep(Step step) {
+        this.step = step;
     }
     
 }

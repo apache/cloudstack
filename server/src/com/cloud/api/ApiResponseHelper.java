@@ -829,10 +829,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         Long poolId = volume.getPoolId();
         String poolName = (poolId == null) ? "none" : ApiDBUtils.findStoragePoolById(poolId).getName();
         volResponse.setStoragePoolName(poolName);
-        volResponse.setSourceId(volume.getSourceId());
-        if (volume.getSourceType() != null) {
-            volResponse.setSourceType(volume.getSourceType().toString());
-        }
+//        volResponse.setSourceId(volume.getSourceId());
+//        if (volume.getSourceType() != null) {
+//            volResponse.setSourceType(volume.getSourceType().toString());
+//        }
         volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());
         volResponse.setAttached(volume.getAttached());
         volResponse.setDestroyed(volume.getState() == Volume.State.Destroy);

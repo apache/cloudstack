@@ -77,7 +77,6 @@ DROP TABLE IF EXISTS `cloud`.`nics`;
 DROP TABLE IF EXISTS `cloud`.`networks`;
 DROP TABLE IF EXISTS `cloud`.`op_networks`;
 DROP TABLE IF EXISTS `cloud`.`network_offerings`;
-DROP TABLE IF EXISTS `cloud`.`hypervisor_properties`;
 DROP TABLE IF EXISTS `cloud`.`account_network_ref`;
 DROP TABLE IF EXISTS `cloud`.`instance_group`;
 DROP TABLE IF EXISTS `cloud`.`instance_group_vm_map`;
@@ -91,13 +90,35 @@ DROP TABLE IF EXISTS `cloud`.`ssh_keypairs`;
 DROP TABLE IF EXISTS `cloud`.`usage_event`;
 DROP TABLE IF EXISTS `cloud`.`host_tags`;
 DROP TABLE IF EXISTS `cloud`.`version`;
+DROP TABLE IF EXISTS `cloud`.`account_vlan_map`;
+DROP TABLE IF EXISTS `cloud`.`cluster_details`;
+DROP TABLE IF EXISTS `cloud`.`guest_os_category`;
+DROP TABLE IF EXISTS `cloud`.`guest_os_hypervisor`;
+DROP TABLE IF EXISTS `cloud`.`host_master`;
+DROP TABLE IF EXISTS `cloud`.`op_dc_link_local_ip_address_alloc`;
+DROP TABLE IF EXISTS `cloud`.`op_host`;
+DROP TABLE IF EXISTS `cloud`.`op_nwgrp_work`;
+DROP TABLE IF EXISTS `cloud`.`op_vm_ruleset_log`;
+DROP TABLE IF EXISTS `cloud`.`ovs_host_vlan_alloc`;
+DROP TABLE IF EXISTS `cloud`.`ovs_tunnel`;
+DROP TABLE IF EXISTS `cloud`.`ovs_tunnel_account`;
+DROP TABLE IF EXISTS `cloud`.`ovs_tunnel_alloc`;
+DROP TABLE IF EXISTS `cloud`.`ovs_vlan_mapping_dirty`;
+DROP TABLE IF EXISTS `cloud`.`ovs_vm_flow_log`;
+DROP TABLE IF EXISTS `cloud`.`ovs_work`;
+DROP TABLE IF EXISTS `cloud`.`remote_access_vpn`;
+DROP TABLE IF EXISTS `cloud`.`resource_count`;
+DROP TABLE IF EXISTS `cloud`.`security_ingress_rule`;
+DROP TABLE IF EXISTS `cloud`.`stack_maid`;
+DROP TABLE IF EXISTS `cloud`.`storage_pool_work`;
+DROP TABLE IF EXISTS `cloud`.`user_vm_details`;
+DROP TABLE IF EXISTS `cloud`.`vpn_users`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
   `version` char(40) NOT NULL UNIQUE COMMENT 'version',
   `updated` datetime NOT NULL COMMENT 'Date this version table was updated',
   `step` char(32) NOT NULL COMMENT 'Step in the upgrade to this version',
-  `dump_path` char(255) NOT NULL COMMENT 'path to the dump of the database before upgrade',
   PRIMARY KEY (`id`),
   INDEX `i_version__version`(`version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -118,13 +139,6 @@ CREATE TABLE `cloud`.`op_it_work` (
   CONSTRAINT `fk_op_it_work__mgmt_server_id` FOREIGN KEY (`mgmt_server_id`) REFERENCES `mshost`(`msid`),
   CONSTRAINT `fk_op_it_work__instance_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
   INDEX `i_op_it_work__step`(`step`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`hypervsior_properties` (
-  `hypervisor` varchar(32) NOT NULL UNIQUE COMMENT 'hypervisor type',
-  `max_storage_devices` int(10) NOT NULL COMMENT 'maximum number of storage devices',
-  `cdrom_device` int(10) NOT NULL COMMENT 'device id reserved for cdrom',
-  `max_network_devices` int(10) NOT NULL COMMENT 'maximum number of network devices'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_networks`(
@@ -165,7 +179,12 @@ CREATE TABLE `cloud`.`networks` (
   `is_default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is default',
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_networks__network_offering_id` FOREIGN KEY (`network_offering_id`) REFERENCES `network_offerings`(`id`),
+  CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
+  CONSTRAINT `fk_networks__related` FOREIGN KEY(`related`) REFERENCES `networks`(`id`),
+  CONSTRAINT `fk_networks__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`),
+  CONSTRAINT `fk_networks__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`account_network_ref` (
@@ -401,21 +420,31 @@ CREATE TABLE `cloud`.`vlan` (
   `vlan_type` varchar(255),
   `data_center_id` bigint unsigned NOT NULL,
   `network_id` bigint unsigned NOT NULL COMMENT 'id of corresponding network offering',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_vlan__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+  CONSTRAINT `fk_vlan__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`pod_vlan_map` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `pod_id` bigint unsigned NOT NULL COMMENT 'pod id. foreign key to pod table',
   `vlan_db_id` bigint unsigned NOT NULL COMMENT 'database id of vlan. foreign key to vlan table',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_pod_vlan_map__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE,
+  INDEX `i_pod_vlan_map__pod_id`(`pod_id`),
+  CONSTRAINT `fk_pod_vlan_map__vlan_id` FOREIGN KEY (`vlan_db_id`) REFERENCES `vlan` (`id`) ON DELETE CASCADE,
+  INDEX `i_pod_vlan_map__vlan_id`(`vlan_db_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`account_vlan_map` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
   `account_id` bigint unsigned NOT NULL COMMENT 'account id. foreign key to account table',
   `vlan_db_id` bigint unsigned NOT NULL COMMENT 'database id of vlan. foreign key to vlan table',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_account_vlan_map__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
+  INDEX `i_account_vlan_map__account_id`(`account_id`),
+  CONSTRAINT `fk_account_vlan_map__vlan_id` FOREIGN KEY (`vlan_db_id`) REFERENCES `vlan` (`id`) ON DELETE CASCADE,
+  INDEX `i_account_vlan_map__vlan_id`(`vlan_db_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE  `cloud`.`data_center` (
@@ -443,7 +472,8 @@ CREATE TABLE  `cloud`.`data_center` (
   `vpn_provider` char(64) DEFAULT 'VirtualRouter',
   `userdata_provider` char(64) DEFAULT 'VirtualRouter',
   `enable` tinyint NOT NULL DEFAULT 1 COMMENT 'Is this data center enabled for activities',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_data_center__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_dc_ip_address_alloc` (
@@ -455,7 +485,12 @@ CREATE TABLE `cloud`.`op_dc_ip_address_alloc` (
   `reservation_id` char(40) NULL COMMENT 'reservation id',
   `taken` datetime COMMENT 'Date taken',
   `mac_address` bigint unsigned NOT NULL COMMENT 'mac address for management ips',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_op_dc_ip_address_alloc__data_center_id`(`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+  INDEX `i_op_dc_ip_address_alloc__pod_id__data_center_id__taken` (`pod_id`, `data_center_id`, `taken`, `instance_id`),
+  UNIQUE `i_op_dc_ip_address_alloc__ip_address__data_center_id`(`ip_address`, `data_center_id`),
+  CONSTRAINT `fk_op_dc_ip_address_alloc__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE,
+  INDEX `i_op_dc_ip_address_alloc__pod_id`(`pod_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`op_dc_link_local_ip_address_alloc` (
@@ -490,7 +525,10 @@ CREATE TABLE `cloud`.`op_dc_vnet_alloc` (
     `reservation_id` char(40) NULL COMMENT 'reservation id',
     `account_id` bigint unsigned NULL COMMENT 'account the vnet belongs to right now',
     `taken` datetime COMMENT 'Date taken',
-    PRIMARY KEY (`id`)
+    PRIMARY KEY (`id`),
+    UNIQUE `i_op_dc_vnet_alloc__vnet__data_center_id__account_id`(`vnet`, `data_center_id`, `account_id`),
+    INDEX `i_op_dc_vnet_alloc__dc_taken`(`data_center_id`, `taken`),
+    UNIQUE `i_op_dc_vnet_alloc__vnet__data_center_id`(`vnet`, `data_center_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`firewall_rules` (
@@ -947,7 +985,12 @@ CREATE TABLE `cloud`.`op_host_capacity` (
   `reserved_capacity` bigint unsigned NOT NULL,
   `total_capacity` bigint unsigned NOT NULL,
   `capacity_type` int(1) unsigned NOT NULL,
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  INDEX `i_op_host_capacity__host_type`(`host_id`, `capacity_type`),
+  CONSTRAINT `fk_op_host_capacity__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE,
+  ADD INDEX `i_op_host_capacity__pod_id`(`pod_id`),
+  ADD CONSTRAINT `fk_op_host_capacity__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
+  INDEX `i_op_host_capacity__data_center_id`(`data_center_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`alert` (
@@ -1050,7 +1093,8 @@ CREATE TABLE  `cloud`.`service_offering` (
   `mc_rate` smallint unsigned default 10 COMMENT 'mcast rate throttle mbits/s',
   `ha_enabled` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Enable HA',
   `host_tag` varchar(255) COMMENT 'host tag specified by the service_offering',
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_service_offering__id` FOREIGN KEY (`id`) REFERENCES `disk_offering`(`id`) ON DELETE CASCADE,
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`network_rule_config` (

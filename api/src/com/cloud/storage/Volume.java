@@ -89,10 +89,6 @@ public interface Volume extends ControlledEntity, BasedOn {
 	    Destroy;
 	}
 	
-	enum SourceType {
-		Snapshot,DiskOffering,Template
-	}
-	
 	long getId();
 	/**
      * @return the volume name
@@ -131,10 +127,6 @@ public interface Volume extends ControlledEntity, BasedOn {
 	
 	State getState();
 	
-	SourceType getSourceType();
-	
-	Long getSourceId();
-
 	Date getAttached();
 
 	Long getDeviceId();
