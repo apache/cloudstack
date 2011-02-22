@@ -1286,14 +1286,16 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         HostPodVO destPoolPod = _podDao.findById(destPoolPodId);
         StoragePoolVO destPool = findStoragePool(dskCh, destPoolDataCenter, destPoolPod, destPoolClusterId, null, null, null,
                 new HashSet<StoragePool>());
+        String secondaryStorageURL = getSecondaryStorageURL(volume.getDataCenterId());
+        String secondaryStorageVolumePath = null;
 
         if (destPool == null) {
             throw new CloudRuntimeException("Failed to find a storage pool with enough capacity to move the volume to.");
+        }if (secondaryStorageURL == null){
+        	throw new CloudRuntimeException("Failed to find secondary storage.");
         }
 
-        StoragePoolVO srcPool = _storagePoolDao.findById(volume.getPoolId());
-        String secondaryStorageURL = getSecondaryStorageURL(volume.getDataCenterId());
-        String secondaryStorageVolumePath = null;
+        StoragePoolVO srcPool = _storagePoolDao.findById(volume.getPoolId());        
 
         // Copy the volume from the source storage pool to secondary storage
         CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volume.getPath(), srcPool, secondaryStorageURL, true);
