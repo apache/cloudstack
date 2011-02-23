@@ -305,7 +305,7 @@ dictionary = {
             	    <div id="grid_header_title" class="grid_header_title"></div>
                 </div>
                 
-                
+                <!--  
                 <div class="dbrow odd" id="cpu_barchart">
                     <div class="dbrow_cell" style="width: 40%;">
                         <div class="dbgraph_titlebox">
@@ -332,9 +332,36 @@ dictionary = {
                         </div>
                     </div>
                 </div>
+                -->
                 
+                <div class="grid_rows odd">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            <fmt:message key="label.total.cpu"/>:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles">
+                            <span id="cpunumber">M</span> 
+	                        x 
+	                        <span id="cpuspeed">N</span> 
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="grid_rows even">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            <fmt:message key="label.cpu.utilized"/>:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="percentused">
+                        </div>
+                    </div>
+                </div>
+                
+                
+                
+                <div class="grid_rows odd">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
                             <fmt:message key="label.network.read"/>:</div>
@@ -344,7 +371,7 @@ dictionary = {
                         </div>
                     </div>
                 </div>
-                <div class="grid_rows odd">
+                <div class="grid_rows even">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
                             <fmt:message key="label.network.write"/>:</div>
