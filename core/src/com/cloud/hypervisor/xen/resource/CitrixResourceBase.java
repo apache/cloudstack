@@ -2656,7 +2656,7 @@ public abstract class CitrixResourceBase implements ServerResource {
             } catch (InterruptedException e) {
             }
             if( System.currentTimeMillis() - beginTime > timeout){
-                String msg = "Async " + timeout/100 + " seconds timeout for task " + task.toString();
+                String msg = "Async " + timeout/1000 + " seconds timeout for task " + task.toString();
                 s_logger.warn(msg);
                 task.cancel(c);               
                 throw new Types.BadAsyncResult(msg);
@@ -2728,8 +2728,16 @@ public abstract class CitrixResourceBase implements ServerResource {
         } catch (XenAPIException e) {
             s_logger.debug("Unable to cleanShutdown VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString());
             try {
-                vm.hardShutdown(conn);
-                return;
+                Types.VmPowerState state = vm.getPowerState(conn);
+                if (state == Types.VmPowerState.RUNNING ) {
+                    vm.hardShutdown(conn);
+                } else if (state == Types.VmPowerState.HALTED ) {
+                    return;
+                } else {
+                    String msg = "After cleanShutdown the VM status is " + state.toString() + ", that is not expected";
+                    s_logger.warn(msg);
+                    throw new CloudRuntimeException(msg);
+                }
             } catch (Exception e1) {
                 String msg = "Unable to hardShutdown VM(" + vmName + ") on host(" + _host.uuid +") due to " + e.toString();
                 s_logger.warn(msg, e1);
