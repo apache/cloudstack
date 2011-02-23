@@ -1222,16 +1222,31 @@ function handleErrorInDialog2(errorMsg, $thisDialog) {
 	$infoContainer.show();
 }
 
-function parseXMLHttpResponse(XMLHttpResponse) {
-	var json = jQuery.parseJSON(XMLHttpResponse.responseText);
+function parseXMLHttpResponse(XMLHttpResponse) {	
+	if(isValidJsonString(XMLHttpResponse.responseText) == false) {
+	    return "";
+	}
+	
+	//var json = jQuery.parseJSON(XMLHttpResponse.responseText);	
+	var json = JSON.parse(XMLHttpResponse.responseText);
 	if (json != null) {
 		var property;
 		for(property in json) {}
 		var errorObj = json[property];
 		return fromdb(errorObj.errortext);	
 	} else {
-		return null;
+		return "";
 	}
+}
+
+function isValidJsonString(str) {
+    try {         
+        JSON.parse(str);     
+    } 
+    catch (e) {         
+        return false;     
+    }     
+    return true;
 }
 
 function showLeftNavigationBasedOnRole() {
