@@ -663,7 +663,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     			List<SyncQueueItemVO> items = _queueMgr.getActiveQueueItems(msHost.getId(), true);
     			cleanupPendingJobs(items);
         		_queueMgr.resetQueueProcess(msHost.getId());
-        		_jobDao.resetJobProcess(msHost.getId());
+        		_jobDao.resetJobProcess(msHost.getId(), BaseCmd.INTERNAL_ERROR, getResetResultMessage());
     			txn.commit();
     		} catch(Throwable e) {
     			s_logger.warn("Unexpected exception ", e);
@@ -680,7 +680,7 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
     		List<SyncQueueItemVO> l = _queueMgr.getActiveQueueItems(getMsid(), false);
     		cleanupPendingJobs(l);
     		_queueMgr.resetQueueProcess(getMsid());
-    		_jobDao.resetJobProcess(getMsid());
+    		_jobDao.resetJobProcess(getMsid(), BaseCmd.INTERNAL_ERROR, getResetResultMessage());
     	} catch(Throwable e) {
     		s_logger.error("Unexpected exception " + e.getMessage(), e);
     	}
@@ -691,6 +691,13 @@ public class AsyncJobManagerImpl implements AsyncJobManager, ClusterManagerListe
 			GC_INTERVAL, TimeUnit.MILLISECONDS);
     	
         return true;
+    }
+    
+    private static String getResetResultMessage() {
+		ExceptionResponse resultObject = new ExceptionResponse();
+		resultObject.setErrorCode(BaseCmd.INTERNAL_ERROR);
+		resultObject.setErrorText("job cancelled because of management server restart");
+    	return ApiSerializerHelper.toSerializedStringOld(resultObject);
     }
 
     @Override
