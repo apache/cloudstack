@@ -32,7 +32,7 @@ public interface Network extends ControlledEntity {
         public static final Service Dns = new Service("Dns");
         public static final Service Gateway = new Service("Gateway");
         public static final Service Firewall = new Service("Firewall", Capability.PortForwarding, Capability.StaticNat, Capability.SupportedProtocols, Capability.MultipleIps, Capability.SupportedSourceNatTypes, Capability.TrafficStatistics);
-        public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedProtocols, Capability.TrafficStatistics);
+        public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps);
         public static final Service UserData = new Service("UserData");
         
         private String name;
@@ -95,6 +95,7 @@ public interface Network extends ControlledEntity {
         public static final Capability SupportedSourceNatTypes = new Capability("SupportedSourceNatTypes");
         public static final Capability SupportedVpnTypes = new Capability("SupportedVpnTypes");
         public static final Capability TrafficStatistics = new Capability("TrafficStatistics");
+        public static final Capability LoadBalancingSupportedIps = new Capability("LoadBalancingSupportedIps");
         
         private String name;
         
