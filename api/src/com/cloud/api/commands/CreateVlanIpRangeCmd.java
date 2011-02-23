@@ -91,8 +91,7 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     }
 
     public Boolean isForVirtualNetwork() {
-        return false;
-        //return forVirtualNetwork == null ? true : forVirtualNetwork;
+        return forVirtualNetwork == null ? true : forVirtualNetwork;
     }
 
     public String getGateway() {
