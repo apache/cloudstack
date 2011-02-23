@@ -251,7 +251,7 @@
                     <div class="resource_titlebox">
                         <div class="domain_dbicons">
                             <img src="images/instance_dbdomain.png" /></div>
-                        <h2>
+                        <h2 style="width:60%;">
                             <fmt:message key="label.instance"/></h2>
                     </div>
                 </div>
@@ -267,7 +267,7 @@
                     <div class="resource_titlebox">
                         <div class="domain_dbicons">
                             <img src="images/diskvolume_dbdomain.png" /></div>
-                        <h2>
+                       <h2 style="width:60%;">
                             <fmt:message key="label.disk.volume"/></h2>
                     </div>
                 </div>
@@ -283,7 +283,7 @@
                     <div class="resource_titlebox">
                         <div class="domain_dbicons">
                             <img src="images/snapshots_dbdomain.png" /></div>
-                        <h2>
+                        <h2 style="width:60%;">
                             <fmt:message key="label.snapshots"/></h2>
                     </div>
                 </div>
@@ -299,7 +299,7 @@
                     <div class="resource_titlebox">
                         <div class="domain_dbicons">
                             <img src="images/users_dbdomain.png" /></div>
-                        <h2>
+                        <h2 style="width:60%;">
                             <fmt:message key="label.accounts"/></h2>
                     </div>
                 </div>
