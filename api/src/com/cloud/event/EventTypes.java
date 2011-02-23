@@ -179,7 +179,7 @@ public class EventTypes {
     public static final String EVENT_VPN_USER_REMOVE = "VPN.USER.REMOVE";
     
     //Network
-    public static final String NETWORK_RESTART = "NETWORK.RESTART";
+    public static final String EVENT_NETWORK_RESTART = "NETWORK.RESTART";
     
     //Custom certificates
 	public static final String EVENT_UPLOAD_CUSTOM_CERTIFICATE = "UPLOAD.CUSTOM.CERTIFICATE";

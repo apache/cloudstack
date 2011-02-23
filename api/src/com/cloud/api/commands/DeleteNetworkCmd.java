@@ -21,15 +21,19 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.Network;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes a network", responseObject=SuccessResponse.class)
-public class DeleteNetworkCmd extends BaseCmd{
+public class DeleteNetworkCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(DeleteNetworkOfferingCmd.class.getName());
     private static final String s_name = "deletenetworkresponse";
 
@@ -68,6 +72,37 @@ public class DeleteNetworkCmd extends BaseCmd{
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete network");
+        }
+    }
+    
+    
+    @Override
+    public String getSyncObjType() {
+        return BaseAsyncCmd.networkSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        return id;
+    }
+    
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_NETWORK_DELETE;
+    }
+    
+    @Override
+    public String getEventDescription() {
+        return  "Deleting network: " + id;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        Network network = _networkService.getNetwork(id);
+        if (network == null) {
+            throw new InvalidParameterValueException("Networkd id=" + id + " doesn't exist");
+        } else {
+            return _networkService.getNetwork(id).getAccountId();
         }
     }
 }
