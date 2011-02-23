@@ -182,4 +182,6 @@ public interface StorageManager extends Manager {
 	void cleanupVolumes(long vmId) throws ConcurrentOperationException;
 	
 	void prepareForMigration(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest);
+
+	Answer sendToPool(StoragePool pool, long[] hostIdsToTryFirst, Command cmd) throws StorageUnavailableException;
 }

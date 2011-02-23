@@ -346,6 +346,15 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
     public Answer[] sendToPool(StoragePool pool, Commands cmds) throws StorageUnavailableException {
         return sendToPool(pool, null, null, cmds).second();
     }
+    
+    @Override
+    public Answer sendToPool(StoragePool pool, long[] hostIdsToTryFirst, Command cmd) throws StorageUnavailableException {
+        Answer[] answers =sendToPool(pool, hostIdsToTryFirst, null, new Commands(cmd)).second();
+        if (answers == null) {
+            return null;
+        }
+        return answers[0];
+    }
 
     @Override
     public Answer sendToPool(StoragePool pool, Command cmd) throws StorageUnavailableException {
@@ -2543,7 +2552,8 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             } else {
                 cmd = new CreateCommand(diskProfile, new StorageFilerTO(pool));
             }
-            Answer answer = sendToPool(pool, cmd);
+            long[] hostIdsToTryFirst = {dest.getHost().getId()};
+            Answer answer = sendToPool(pool, hostIdsToTryFirst, cmd);
             if (answer.getResult()) {
                 CreateAnswer createAnswer = (CreateAnswer) answer;
                 return new Pair<VolumeTO, StoragePool>(createAnswer.getVolume(), pool);
