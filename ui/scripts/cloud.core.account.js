@@ -133,10 +133,8 @@ function bindAddAccountButton() {
     initDialog("dialog_add_account", 450);
                    
     var $dialogAddAccount = $("#dialog_add_account");
-        
-    //applyAutoComplete($field, commandString, jsonResponse1, jsonResponse2, objs);
-    applyAutoComplete($dialogAddAccount.find("#domain"), "listDomains", "listdomainsresponse", "domain");
-         
+    
+    applyAutoComplete($dialogAddAccount.find("#domain"), "listDomains", "listdomainsresponse", "domain");         
     /*   
     $dialogAddAccount.find("#domain").autocomplete({
 		source: function(request, response) {			

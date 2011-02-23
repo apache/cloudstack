@@ -36,20 +36,34 @@ function vmGetSearchParams() {
 	    if (zone!=null && zone.length > 0) 
 			moreCriteria.push("&zoneid="+todb(zone));			
 		
-	    if ($advancedSearchPopup.find("#adv_search_domain_li").css("display") != "none") {
-	        if($advancedSearchPopup.find("#adv_search_domain").length > 0) {
-	            var domainId = $advancedSearchPopup.find("#adv_search_domain").val();		
-	            if(domainId!=null && domainId.length > 0) 
-			        moreCriteria.push("&domainid="+todb(domainId));		
+	    if ($advancedSearchPopup.find("#adv_search_domain_li").css("display") != "none"
+	        && $advancedSearchPopup.find("#domain").hasClass("textwatermark") == false) {
+	        var domainName = $advancedSearchPopup.find("#domain").val();
+	        if (domainName != null && domainName.length > 0) { 	
+				var domainId;							    
+			    if(autoCompleteItems != null && autoCompleteItems.length > 0) {									
+				    for(var i=0; i < autoCompleteItems.length; i++) {					        
+				      if(fromdb(autoCompleteItems[i].name) == domainName) {
+				          domainId = autoCompleteItems[i].id;
+				          break;	
+				      }
+			        } 					   			    
+			    } 	     	
+	            if(domainId == null) { 
+			        showError(false, $advancedSearchPopup.find("#domain"), $advancedSearchPopup.find("#domain_errormsg"), g_dictionary["label.not.found"]);
+			    }
+			    else { //e.g. domainId == 5 (number)
+			        showError(true, $advancedSearchPopup.find("#domain"), $advancedSearchPopup.find("#domain_errormsg"), null)
+			        moreCriteria.push("&domainid="+todb(domainId));	
+			    }
 			}
 	    }
 						
 		if ($advancedSearchPopup.find("#adv_search_account_li").css("display") != "none" 
     	    && $advancedSearchPopup.find("#adv_search_account").hasClass("textwatermark") == false) {			    
 	        var account = $advancedSearchPopup.find("#adv_search_account").val();	
-	        if(account!=null && account.length > 0) 
-		        moreCriteria.push("&account="+todb(account));		
-			
+	        if(account != null && account.length > 0) 
+		        moreCriteria.push("&account="+todb(account));	
         }
 	} 	
 	

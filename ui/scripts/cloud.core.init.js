@@ -409,7 +409,7 @@ $(document).ready(function() {
 	                    var params = $("#middle_menu_pagination").data("params");
 	                    if(params == null)
 	                        return;	        	    
-	                    //lastSearchType = "advanced_search";  	                
+	                    //(to-do: close auto-complete fields)	                
 	                    listMidMenuItems2(params.commandString, params.getSearchParamsFn, params.jsonResponse1, params.jsonResponse2, params.toMidmenuFn, params.toRightPanelFn, params.getMidmenuIdFn, params.isMultipleSelectionInMidMenu, 1);    	                            
 	                }	
 	            });	
@@ -471,6 +471,9 @@ $(document).ready(function() {
 	                }
 	            }
             	
+            	
+            	applyAutoComplete($advancedSearchPopup.find("#domain"), "listDomains", "listdomainsresponse", "domain");         
+                	
 	            var domainSelect = $advancedSearchPopup.find("#adv_search_domain");	
 	            if(domainSelect.length>0 && $advancedSearchPopup.find("#adv_search_domain_li").css("display")!="none") {	                		
 	                $.ajax({
