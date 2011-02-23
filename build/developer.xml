@@ -244,7 +244,7 @@
     </junit>
     <junitreport todir="${unittest.dir}">
       <fileset dir="${unittest.dir}"/>
-      <report todir="test-reports"/>
+      <report todir="${unittest.dir}/test-reports"/>
     </junitreport>
     <fail if="junit.failure" message="Unit test(s) failed.  See reports!"/>
   </target>
@@ -270,7 +270,7 @@
     <jvmarg value="${debug.jvmarg}"/>
     <junitreport todir="${unittest.dir}">
       <fileset dir="${unittest.dir}"/>
-      <report todir="test-reports"/>
+      <report todir="${unittest.dir}/test-reports"/>
     </junitreport>
     <fail if="junit.failure" message="Unit test(s) failed.  See reports!"/>
   </target>
