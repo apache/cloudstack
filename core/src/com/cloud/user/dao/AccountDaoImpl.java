@@ -180,4 +180,11 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         	update(accountId, account);
 		}
 	}
+	
+    public List<AccountVO> listAccounts(String accountName, Long domainId, Filter filter) {
+        SearchCriteria sc = AccountNameSearch.create("accountName", accountName);
+        sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
+        return listBy(sc, filter);
+    }
+
 }
