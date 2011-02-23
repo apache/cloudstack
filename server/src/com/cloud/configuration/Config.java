@@ -144,7 +144,7 @@ public enum Config {
 	LinkLocalIpNums("Advanced", ManagementServer.class, Integer.class, "linkLocalIp.nums", "10", "The number of link local ip that needed by domR(in power of 2)", null),
 	HypervisorList("Advanced", ManagementServer.class, String.class, "hypervisor.list", HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VMware, "The list of hypervisors that this deployment will use.", "hypervisorList"),
 	ManagementHostIPAdr("Advanced", ManagementServer.class, String.class, "host", "localhost", "The ip address of management server", null),
-	EventPurgeDelay("Advanced", ManagementServer.class, Integer.class, "event.purge.delay", "0", "Events older than specified number days will be purged", null),
+	EventPurgeDelay("Advanced", ManagementServer.class, Integer.class, "event.purge.delay", "15", "Events older than specified number days will be purged. Set this value to 0 to never delete events", null),
     UseLocalStorage("Premium", ManagementServer.class, Boolean.class, "use.local.storage", "false", "Should we use the local storage if it's available?", null),
 	SecStorageVmRamSize("Advanced", AgentManager.class, Integer.class, "secstorage.vm.ram.size", String.valueOf(SecondaryStorageVmManager.DEFAULT_SS_VM_RAMSIZE), "RAM size (in MB) used to create new secondary storage vms", null),
 	SecStorageVmCpuMHz("Advanced", AgentManager.class, Integer.class, "secstorage.vm.cpu.mhz", String.valueOf(SecondaryStorageVmManager.DEFAULT_SS_VM_CPUMHZ), "CPU speed (in MHz) used to create new secondary storage vms", null),

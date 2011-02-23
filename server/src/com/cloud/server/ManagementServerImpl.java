@@ -414,7 +414,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         String value = _configs.get("account.cleanup.interval");
-        int cleanup = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 hour.
+        int cleanup = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
 
         // Parse the max number of UserVMs and public IPs from server-setup.xml,
         // and set them in the right places
