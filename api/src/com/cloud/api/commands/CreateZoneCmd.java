@@ -116,8 +116,7 @@ public class CreateZoneCmd extends BaseCmd {
     }
     
     public boolean isSecurityGroupEnabled() {
-        return true;
-        //return is_security_group_enabled == null ? false : true;
+        return is_security_group_enabled == null ? false : true;
     }
     
     /////////////////////////////////////////////////////
