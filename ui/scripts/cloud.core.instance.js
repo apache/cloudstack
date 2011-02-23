@@ -1990,6 +1990,9 @@ function vmJsonToStatisticsTab() {
 	}
 
     var $thisTab = $("#right_panel_content #tab_content_statistics");  	
+	
+	
+	/*
 	var $barChartContainer = $thisTab.find("#cpu_barchart");
 		 
 	var cpuNumber = ((jsonObj.cpunumber==null)? "":jsonObj.cpunumber.toString());
@@ -2002,7 +2005,13 @@ function vmJsonToStatisticsTab() {
 	$barChartContainer.find("#percentused").text("");   
 	if(jsonObj.cpuused!=null)
 		drawBarChart($barChartContainer, jsonObj.cpuused);		
-	
+	*/
+    
+    $thisTab.find("#cpunumber").text(fromdb(jsonObj.cpunumber));
+    $thisTab.find("#cpuspeed").text(convertHz(jsonObj.cpuspeed));
+    
+    $thisTab.find("#percentused").text(jsonObj.cpuused); 
+    
 	var networkKbsRead = ((jsonObj.networkkbsread==null)? "":convertBytes(jsonObj.networkkbsread * 1024));
 	$thisTab.find("#networkkbsread").text(networkKbsRead);
 	
