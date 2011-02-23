@@ -528,7 +528,7 @@ function showInstancesTab(p_domainId, p_account) {
 														vmInstance.find("#vm_loading_container").hide();
 														if (result.jobstatus == 1) {
 															// Succeeded
-															vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").html("Your password has been successfully resetted.  Your new password is : <b>" + result.virtualmachine[0].password + "</b> .  Please reboot your virtual instance for the new password to take effect.");
+															vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").html("Your password has been successfully resetted.  Your new password is : <b>" + result.virtualmachine[0].password + "</b>.  Please reboot your virtual instance for the new password to take effect.");
 															vmInstance.find(".loadingmessage_container_vm").fadeIn("slow");
 														} else if (result.jobstatus == 2) {
 															// Failed
@@ -1682,7 +1682,7 @@ function showInstancesTab(p_domainId, p_account) {
 											// Succeeded
 											vmJSONToTemplate(result.virtualmachine[0], vmInstance, true);
 											if (result.virtualmachine[0].passwordenabled == 'true') {
-												vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").html("Your instance has been successfully created.  Your new password is : <b>" + result.virtualmachine[0].password + "</b> .  Please change it as soon as you log into your new instance");
+												vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").html("Your instance has been successfully created.  Your new password is : <b>" + result.virtualmachine[0].password + "</b>.  Please change it as soon as you log into your new instance");
 											} else {
 												vmInstance.find(".loadingmessage_container_vm .loadingmessage_top_vm p").html("Your instance has been successfully created.");
 											}
