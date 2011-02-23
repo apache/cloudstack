@@ -148,7 +148,7 @@ $(document).ready(function() {
 		var username = encodeURIComponent($("#account_username").val());
 		array1.push("&username="+username);
 		
-		var password = $.md5(encodeURIComponent($("#account_password").val()));
+		var password = $.md5($("#account_password").val());
 		array1.push("&password="+password);
 		
 		var domain = encodeURIComponent($("#account_domain").val());

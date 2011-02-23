@@ -285,7 +285,7 @@ $(document).ready(function() {
                         submenuContent.find("#grid_content").prepend(template.fadeIn("slow"));    
 																								
 						var username = thisDialog.find("#add_user_username").val();
-						var password = $.md5(encodeURIComponent(thisDialog.find("#add_user_password").val()));
+						var password = $.md5(thisDialog.find("#add_user_password").val());
 						var email = thisDialog.find("#add_user_email").val();
 						if(email == "")
 							email = username;
@@ -421,7 +421,7 @@ $(document).ready(function() {
 								isValid &= validateString("Password", thisDialog.find("#change_password_password1"), thisDialog.find("#change_password_password1_errormsg"), false); //required						      		   	
 								if (!isValid) return;
 																						
-								var password = $.md5(encodeURIComponent((thisDialog.find("#change_password_password1").val())));						   					
+								var password = $.md5((thisDialog.find("#change_password_password1").val()));						   					
 																
 								thisDialog.dialog("close");
 								$.ajax({
