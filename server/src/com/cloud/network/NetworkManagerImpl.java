@@ -1491,17 +1491,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         networkConfigs.add(endIP);
         networkConfigs.add(netmask);
         boolean defineNetworkConfig = false;
-        short nullElementsCount = 0;
+        short configElementsCount = 0;
         
         for (String networkConfig : networkConfigs) {
-            if (networkConfig == null) {
-                nullElementsCount++;
+            if (networkConfig != null) {
+                configElementsCount++;
             }
         }
         
-        if (nullElementsCount > 0 && nullElementsCount != networkConfigs.size()) {
+        if (configElementsCount > 0 && configElementsCount != networkConfigs.size()) {
             throw new InvalidParameterValueException("startIP/endIP/netmask/gateway must be specified together");
-        } else if (nullElementsCount == networkConfigs.size()) {
+        } else if (configElementsCount == networkConfigs.size()) {
             defineNetworkConfig = true;
         }
         
@@ -1519,13 +1519,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         
+        //Regular user can create guest network only
+        if (ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL && networkOffering.getTrafficType() != TrafficType.Guest) {
+            throw new InvalidParameterValueException("Regular user can create a network only from the network offering having traffic type " + TrafficType.Guest);
+        }
+        
         //Don't allow to specify cidr/gateway/vlan if the caller is a regular user
         if (ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL && cidr != null) {
             throw new InvalidParameterValueException("Regular user is not allowed to specify gateway/netmask/ipRange");
         }
         
+        //For non-root admins check cidr limit - if it's allowed by global config value
         if (ctxAccount.getType() != Account.ACCOUNT_TYPE_ADMIN && cidr != null) {
-            //Check cidr limit - if it's allowed by global config value
+            
             String[] cidrPair = cidr.split("\\/");
             int cidrSize = Integer.valueOf(cidrPair[1]);
   

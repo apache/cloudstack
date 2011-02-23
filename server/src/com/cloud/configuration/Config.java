@@ -196,7 +196,6 @@ public enum Config {
     KvmPrivateNetwork("Advanced", ManagementServer.class, String.class, "kvm.private.network.device", null, "Specify the private bridge on host for private network", null),
     
 	// Premium
-	
 	UsageExecutionTimezone("Premium", ManagementServer.class, String.class, "usage.execution.timezone", null, "The timezone to use for usage job execution time", null),
 	UsageStatsJobAggregationRange("Premium", ManagementServer.class, Integer.class, "usage.stats.job.aggregation.range", "1440", "The range of time for aggregating the user statistics specified in minutes (e.g. 1440 for daily, 60 for hourly.", null),
 	UsageStatsJobExecTime("Premium", ManagementServer.class, String.class, "usage.stats.job.exec.time", "00:15", "The time at which the usage statistics aggregation job will run as an HH24:MM time, e.g. 00:30 to run at 12:30am.", null),
