@@ -421,7 +421,7 @@ CREATE TABLE `cloud`.`vlan` (
   `data_center_id` bigint unsigned NOT NULL,
   `network_id` bigint unsigned NOT NULL COMMENT 'id of corresponding network offering',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_vlan__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
+#  CONSTRAINT `fk_vlan__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`),
   CONSTRAINT `fk_vlan__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -486,7 +486,7 @@ CREATE TABLE `cloud`.`op_dc_ip_address_alloc` (
   `taken` datetime COMMENT 'Date taken',
   `mac_address` bigint unsigned NOT NULL COMMENT 'mac address for management ips',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_op_dc_ip_address_alloc__data_center_id`(`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_op_dc_ip_address_alloc__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
   INDEX `i_op_dc_ip_address_alloc__pod_id__data_center_id__taken` (`pod_id`, `data_center_id`, `taken`, `instance_id`),
   UNIQUE `i_op_dc_ip_address_alloc__ip_address__data_center_id`(`ip_address`, `data_center_id`),
   CONSTRAINT `fk_op_dc_ip_address_alloc__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE,
@@ -988,8 +988,8 @@ CREATE TABLE `cloud`.`op_host_capacity` (
   PRIMARY KEY  (`id`),
   INDEX `i_op_host_capacity__host_type`(`host_id`, `capacity_type`),
   CONSTRAINT `fk_op_host_capacity__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref` (`id`) ON DELETE CASCADE,
-  ADD INDEX `i_op_host_capacity__pod_id`(`pod_id`),
-  ADD CONSTRAINT `fk_op_host_capacity__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
+  INDEX `i_op_host_capacity__pod_id`(`pod_id`),
+  CONSTRAINT `fk_op_host_capacity__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
   INDEX `i_op_host_capacity__data_center_id`(`data_center_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1094,7 +1094,7 @@ CREATE TABLE  `cloud`.`service_offering` (
   `ha_enabled` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Enable HA',
   `host_tag` varchar(255) COMMENT 'host tag specified by the service_offering',
   PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_service_offering__id` FOREIGN KEY (`id`) REFERENCES `disk_offering`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_service_offering__id` FOREIGN KEY (`id`) REFERENCES `disk_offering`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`network_rule_config` (
