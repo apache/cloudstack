@@ -211,6 +211,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     int _networkGcWait;
     int _networkGcInterval;
     String _networkDomain;
+    int _cidrLimit;
 
     private Map<String, String> _configs;
 
@@ -662,6 +663,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         _configs = _configDao.getConfiguration("Network", params);
         _networkDomain = _configs.get(Config.GuestDomainSuffix.key());
+        
+        _cidrLimit = NumbersUtil.parseInt(_configs.get(Config.NetworkGuestCidrLimit.key()), 22);
 
         NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, TrafficType.Public);
         publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
@@ -1434,10 +1437,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // finalize owner for the network
         Account ctxAccount = UserContext.current().getCaller();
-        String accountName = cmd.getAccountName();
-        Long domainId = cmd.getDomainId();
-
-        Account owner = _accountMgr.finalizeOwner(ctxAccount, accountName, domainId);
+        Account owner = _accountMgr.finalizeOwner(ctxAccount, cmd.getAccountName(), cmd.getDomainId());
+        
         // if end ip is not specified, default it to startIp
         if (endIP == null && startIP != null) {
             endIP = startIP;
@@ -1472,7 +1473,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
-        // Check if zone exists
+        // Check if zone exists; allow network creation in Advanced zone only
         if (zoneId == null || ((_dcDao.findById(zoneId)) == null)) {
             throw new InvalidParameterValueException("Please specify a valid zone.");
         }
@@ -1480,6 +1481,28 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         DataCenter zone = _dcDao.findById(zoneId);
         if (zone.getNetworkType() == NetworkType.Basic) {
             throw new InvalidParameterValueException("Network creation is not allowed in zone with network type " + NetworkType.Basic);
+        }
+        
+        
+        //If one of the following parameters are defined (starIP/endIP/netmask/gateway), all the rest should be defined too
+        ArrayList<String> networkConfigs = new ArrayList<String>();
+        networkConfigs.add(gateway);
+        networkConfigs.add(startIP);
+        networkConfigs.add(endIP);
+        networkConfigs.add(netmask);
+        boolean defineNetworkConfig = false;
+        short nullElementsCount = 0;
+        
+        for (String networkConfig : networkConfigs) {
+            if (networkConfig == null) {
+                nullElementsCount++;
+            }
+        }
+        
+        if (nullElementsCount > 0 && nullElementsCount != networkConfigs.size()) {
+            throw new InvalidParameterValueException("startIP/endIP/netmask/gateway must be specified together");
+        } else if (nullElementsCount == networkConfigs.size()) {
+            defineNetworkConfig = true;
         }
         
         String cidr = null;
@@ -1495,8 +1518,23 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists in zone " + zoneId);
             }
         }
+        
+        //Don't allow to specify cidr/gateway/vlan if the caller is a regular user
+        if (ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL && cidr != null) {
+            throw new InvalidParameterValueException("Regular user is not allowed to specify gateway/netmask/ipRange");
+        }
+        
+        if (ctxAccount.getType() != Account.ACCOUNT_TYPE_ADMIN && cidr != null) {
+            //Check cidr limit - if it's allowed by global config value
+            String[] cidrPair = cidr.split("\\/");
+            int cidrSize = Integer.valueOf(cidrPair[1]);
+  
+            if (cidrSize < _cidrLimit) {
+                throw new InvalidParameterValueException("Cidr size can't be less than " + _cidrLimit);
+            }
+        }
 
-        // VlanId can be specified only when network offering supports it
+        // VlanId can be specified by regular user only when network offering supports it
         if (ctxAccount.getType() == Account.ACCOUNT_TYPE_NORMAL && vlanId != null && !networkOffering.getSpecifyVlan()) {
             throw new InvalidParameterValueException("Can't specify vlan because network offering doesn't support it");
         }
@@ -1510,7 +1548,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             owner = null;
         }
 
-        if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN && network.getGuestType() == GuestIpType.Direct && startIP != null && endIP != null && gateway != null) {
+        if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN && network.getGuestType() == GuestIpType.Direct && defineNetworkConfig) {
             // Create vlan ip range
             _configMgr.createVlanAndPublicIpRange(userId, zoneId, null, startIP, endIP, gateway, netmask, false, vlanId, owner, network.getId());
         }
@@ -1523,7 +1561,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override @DB
     public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain, Account owner, boolean isSecurityGroupEnabled)
             throws ConcurrentOperationException, InsufficientCapacityException {
-        Account ctxAccount = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
         
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(networkOfferingId);
@@ -1531,29 +1568,27 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        // Create network
+        
         DataCenterDeployment plan = new DataCenterDeployment(zoneId, null, null, null);
         NetworkVO userNetwork = new NetworkVO();
         userNetwork.setNetworkDomain(networkDomain);
         userNetwork.setSecurityGroupEnabled(isSecurityGroupEnabled);
 
         // cidr should be set only when the user is admin
-        if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-            if (cidr != null && gateway != null) {
-                userNetwork.setCidr(cidr);
-                userNetwork.setGateway(gateway);
-                if (vlanId != null) {
-                    userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
+        if (cidr != null && gateway != null) {
+            userNetwork.setCidr(cidr);
+            userNetwork.setGateway(gateway);
+            if (vlanId != null) {
+                userNetwork.setBroadcastUri(URI.create("vlan://" + vlanId));
+                userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
+                if (!vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
                     userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
-                    if (!vlanId.equalsIgnoreCase(Vlan.UNTAGGED)) {
-                        userNetwork.setBroadcastDomainType(BroadcastDomainType.Vlan);
-                    } else {
-                        userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
-                    }
+                } else {
+                    userNetwork.setBroadcastDomainType(BroadcastDomainType.Native);
                 }
             }
         }
-
+        
         List<NetworkVO> networks = setupNetwork(owner, networkOffering, userNetwork, plan, name, displayText, isShared, isDefault, true);
 
         Network network = null;

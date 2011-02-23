@@ -173,6 +173,7 @@ public enum Config {
     XenStorageNetwork1("Network", ManagementServer.class, String.class, "xen.storage.network.device1", "cloud-stor1", "Specify when there are storage networks", null),
     XenStorageNetwork2("Network", ManagementServer.class, String.class, "xen.storage.network.device2", "cloud-stor2", "Specify when there are storage networks", null),
     XenPrivateNetwork("Network", ManagementServer.class, String.class, "xen.private.network.device", null, "Specify when the private network name is different", null),
+    NetworkGuestCidrLimit("Network", NetworkManager.class, Integer.class, "network.guest.cidr.limit", "22", "size limit for guest cidr; can't be less than this value", null),
     XenMinVersion("Advanced", ManagementServer.class, String.class, "xen.min.version", "3.3.1", "Minimum Xen version", null),
     XenProductMinVersion("Advanced", ManagementServer.class, String.class, "xen.min.product.version", "0.1.1", "Minimum XenServer version", null),
 	XenXapiMinVersion("Advanced", ManagementServer.class, String.class, "xen.min.xapi.version", "1.3", "Minimum Xapi Tool Stack version", null),
@@ -216,6 +217,7 @@ public enum Config {
 	VmOpCleanupInterval("Advanced", ManagementServer.class, Long.class, "vm.op.cleanup.interval", "86400", "Interval to run the thread that cleans up the vm operations (in seconds)", "Seconds"),
 	VmOpCleanupWait("Advanced", ManagementServer.class, Long.class, "vm.op.cleanup.wait", "3600", "Time (in seconds) to wait before cleanuping up any vm work items", "Seconds"),
 	VmOpCancelInterval("Advanced", ManagementServer.class, Long.class, "vm.op.cancel.interval", "3600", "Time (in seconds) to wait before cancelling a operation", "Seconds");
+	
 	
 	private final String _category;
 	private final Class<?> _componentClass;
