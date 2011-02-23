@@ -49,6 +49,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     final SearchBuilder<NetworkVO> RelatedConfigSearch;
     final SearchBuilder<NetworkVO> AccountNetworkSearch;
     final SearchBuilder<NetworkVO> ZoneBroadcastUriSearch;
+    final SearchBuilder<NetworkVO> ZoneSecurityGroupSearch;
     
     NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
     NetworkOpDaoImpl _opDao = ComponentLocator.inject(NetworkOpDaoImpl.class);
@@ -99,6 +100,11 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         ZoneBroadcastUriSearch.and("dataCenterId", ZoneBroadcastUriSearch.entity().getDataCenterId(), Op.EQ);
         ZoneBroadcastUriSearch.and("broadcastUri", ZoneBroadcastUriSearch.entity().getBroadcastUri(), Op.EQ);
         ZoneBroadcastUriSearch.done();
+        
+        ZoneSecurityGroupSearch = createSearchBuilder();
+        ZoneSecurityGroupSearch.and("dataCenterId", ZoneSecurityGroupSearch.entity().getDataCenterId(), Op.EQ);
+        ZoneSecurityGroupSearch.and("securityGroup", ZoneSecurityGroupSearch.entity().isSecurityGroupEnabled(), Op.EQ);
+        ZoneSecurityGroupSearch.done();
         
         _tgMacAddress = _tgs.get("macAddress");
     }
@@ -227,6 +233,15 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     public List<NetworkVO> listByZone(long zoneId) {
         SearchCriteria<NetworkVO> sc = ZoneBroadcastUriSearch.create();
         sc.setParameters("dataCenterId", zoneId);
+        return search(sc, null);
+    }
+    
+    @Override
+    public List<NetworkVO> listByZoneSecurityGroup(Long zoneId) {
+        SearchCriteria<NetworkVO> sc = ZoneSecurityGroupSearch.create();
+        if (zoneId != null)
+            sc.setParameters("dataCenterId", zoneId);
+        sc.setParameters("securityGroup", true);
         return search(sc, null);
     }
     

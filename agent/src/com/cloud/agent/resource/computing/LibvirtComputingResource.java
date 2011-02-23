@@ -1401,12 +1401,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private Answer execute(SecurityIngressRulesCmd cmd) {
+        String vif = null;
+        try {
+            Connect conn = LibvirtConnection.getConnection();
+            List<InterfaceDef> nics = getInterfaces(conn, cmd.getVmName());
+            vif = nics.get(0).getBrName();
+        } catch (LibvirtException e) {
+            
+        }
+        
     	boolean result = add_network_rules(cmd.getVmName(),
     			Long.toString(cmd.getVmId()), 
     			cmd.getGuestIp(),cmd.getSignature(), 
     			Long.toString(cmd.getSeqNum()), 
     			cmd.getGuestMac(), 
-    			cmd.stringifyRules());
+    			cmd.stringifyRules(), vif);
 
     	if (!result) {
     		s_logger.warn("Failed to program network rules for vm " + cmd.getVmName());
@@ -2046,23 +2055,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 			
 			if (vmSpec.getType() != VirtualMachine.Type.User) {
 			    default_network_rules_for_systemvm(vmName);
-			} else {
-			    NicTO[] nics = vmSpec.getNics();
-			    List<InterfaceDef> vifs = getInterfaces(conn, vmName);
-			    StringBuilder rules = new StringBuilder();
-			    
-			    for (NicTO nic : nics) { 
-			        if (nic.getIsolationUri() != null ) {
-			            if (nic.getIsolationUri().getScheme().equalsIgnoreCase(IsolationType.Ec2.toString()) ||
-			                nic.getType() == TrafficType.Public) {
-			                rules.append(nic.getIp() + "," + nic.getMac() + "," + vifs.get(nic.getDeviceId()).getDevName() + ";") ;
-			            }
-			        }
-			    }
-			    
-			    if (rules.toString() != null)
-			        default_network_rules(vmName, vmSpec.getId(), rules.toString());
-			}
+			} 
 
 			// Attach each data volume to the VM, if there is a deferred attached disk
 			for (DiskDef disk : vm.getDevices().getDisks()) {
@@ -3179,7 +3172,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	return true;
     }
     
-    private boolean add_network_rules(String vmName, String vmId, String guestIP, String sig, String seq, String mac, String rules) {
+    private boolean add_network_rules(String vmName, String vmId, String guestIP, String sig, String seq, String mac, String rules, String vif) {
     	if (!_can_bridge_firewall) {
             return false;
         }
@@ -3192,6 +3185,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     	cmd.add("--sig", sig);
     	cmd.add("--seq", seq);
     	cmd.add("--vmmac", mac);
+    	cmd.add("--vif", vif);
     	if (rules != null)
     	    cmd.add("--rules", newRules);
     	String result = cmd.execute();

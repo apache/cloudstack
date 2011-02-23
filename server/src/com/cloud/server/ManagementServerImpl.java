@@ -183,6 +183,8 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.ConsoleProxyInfo;
 import com.cloud.network.IPAddressVO;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
@@ -320,6 +322,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final NetworkDao _networkDao;
     private final StorageManager _storageMgr;
     private final VirtualMachineManager _itMgr;
+    private final NetworkManager _networkMgr;
 
     private final Adapters<UserAuthenticator> _userAuthenticators;
     private final HostPodDao _hostPodDao;
@@ -407,6 +410,7 @@ public class ManagementServerImpl implements ManagementServer {
         _uploadMonitor = locator.getManager(UploadMonitor.class);
         _sshKeyPairDao = locator.getDao(SSHKeyPairDao.class);
         _itMgr = locator.getManager(VirtualMachineManager.class);
+        _networkMgr = locator.getManager(NetworkManager.class);
     	
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
@@ -4185,8 +4189,12 @@ public class ManagementServerImpl implements ManagementServer {
     @Override
     public Map<String, Object> listCapabilities(ListCapabilitiesCmd cmd) {
         Map<String, Object> capabilities = new HashMap<String, Object>();
+        String securityGroupsEnabled = "false";
+        Network net = _networkMgr.getNetworkWithSecurityGroupEnabled(null);
+        if (net != null) {
+            securityGroupsEnabled = "true";
+        }
         
-        String securityGroupsEnabled = _configs.get(Config.DirectAttachSecurityGroupsEnabled.key());
         String userPublicTemplateEnabled = _configs.get(Config.AllowPublicUserTemplates.key());
 
         capabilities.put("securityGroupsEnabled", (securityGroupsEnabled == null || securityGroupsEnabled.equals("false") ? false : true)); 

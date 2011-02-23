@@ -134,6 +134,9 @@ public class NetworkVO implements Network {
     @Column(name="is_default")
     boolean isDefault;
     
+    @Column(name="is_security_group_enabled")
+    boolean securityGroupEnabled = false;
+    
     public NetworkVO() {
     }
     
@@ -161,7 +164,7 @@ public class NetworkVO implements Network {
         this.guestType = guestType;
     }
     
-    public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText, Boolean isShared, boolean isDefault) {
+    public NetworkVO(long id, Network that, long offeringId, long dataCenterId, String guruName, long domainId, long accountId, long related, String name, String displayText, Boolean isShared, boolean isDefault, boolean isSecurityGroupEnabled) {
         this(id, that.getTrafficType(), that.getGuestType(), that.getMode(), that.getBroadcastDomainType(), offeringId, dataCenterId, domainId, accountId, related, name, displayText, isShared, isDefault);
         this.gateway = that.getGateway();
         this.cidr = that.getCidr();
@@ -170,6 +173,7 @@ public class NetworkVO implements Network {
         this.guruName = guruName;
         this.state = that.getState();
         this.networkDomain = that.getNetworkDomain();
+        this.securityGroupEnabled = isSecurityGroupEnabled;
         if (state == null) {
             state = State.Allocated;
         }
@@ -380,6 +384,15 @@ public class NetworkVO implements Network {
     @Override
     public boolean isDefault() {
         return isDefault;
+    }
+    
+    @Override 
+    public boolean isSecurityGroupEnabled() {
+        return securityGroupEnabled;
+    }
+    
+    public void setSecurityGroupEnabled(boolean enabled) {
+        this.securityGroupEnabled = enabled;
     }
 
     public void setShared(boolean isShared) {

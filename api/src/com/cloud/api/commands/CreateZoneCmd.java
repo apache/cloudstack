@@ -67,6 +67,9 @@ public class CreateZoneCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.NETWORK_TYPE, type=CommandType.STRING, required=true, description="network type of the zone, can be Basic or Advanced")
     private String networkType; 
+    
+    @Parameter(name=ApiConstants.SECURITY_GROUP_EANBLED, type=CommandType.BOOLEAN, description="true if network is security group enabled, false otherwise")
+    private Boolean is_security_group_enabled;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -110,6 +113,11 @@ public class CreateZoneCmd extends BaseCmd {
     
     public String getNetworkType(){
         return networkType;
+    }
+    
+    public boolean isSecurityGroupEnabled() {
+        return true;
+        //return is_security_group_enabled == null ? false : true;
     }
     
     /////////////////////////////////////////////////////

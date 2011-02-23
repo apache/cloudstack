@@ -849,7 +849,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         if (dc.getNetworkType() == NetworkType.Advanced) {
             String cidr = network.getCidr();
-            dhcpRange = NetUtils.getDhcpRange(cidr);
+            if (cidr != null) {
+                dhcpRange = NetUtils.getDhcpRange(cidr);
+            }
         } 
         
         if (router.getRole() == Role.DHCP_USERDATA) {

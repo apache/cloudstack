@@ -1091,7 +1091,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override @DB
-    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, NetworkType zoneType)  {
+    public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String vnetRange, String guestCidr, String domain, Long domainId, NetworkType zoneType, boolean isSecurityGroupEnabled)  {
         int vnetStart = 0;
         int vnetEnd = 0;
         if (vnetRange != null) {
@@ -1134,8 +1134,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
             
             //Create deafult networks
-            createDefaultNetworks(zone.getId());
+            createDefaultNetworks(zone.getId(), isSecurityGroupEnabled);
             
+            if (isSecurityGroupEnabled) {
+                _configDao.update(Config.DirectAttachSecurityGroupsEnabled.key(), "true");
+            }
             txn.commit();
             return zone;
         } catch (Exception ex) {
@@ -1148,7 +1151,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
     
     @Override
-    public void createDefaultNetworks(long zoneId) throws ConcurrentOperationException{
+    public void createDefaultNetworks(long zoneId, boolean isSecurityGroupEnabled) throws ConcurrentOperationException{
         DataCenterVO zone = _zoneDao.findById(zoneId);
         //Create public, management, control and storage networks as a part of the zone creation 
         if (zone != null) {
@@ -1168,6 +1171,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     broadcastDomainType = BroadcastDomainType.LinkLocal;
                 } else if (offering.getTrafficType() == TrafficType.Public) {
                     if (zone.getNetworkType() == NetworkType.Advanced) {
+                        if (isSecurityGroupEnabled) {
+                            isNetworkDefault = true;
+                            userNetwork.setSecurityGroupEnabled(isSecurityGroupEnabled);
+                        }
                         broadcastDomainType = BroadcastDomainType.Vlan;
                     } else {
                         continue;
@@ -1176,6 +1183,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     if (zone.getNetworkType() == NetworkType.Basic) {
                         isNetworkDefault = true;
                         broadcastDomainType = BroadcastDomainType.Native;
+                        userNetwork.setSecurityGroupEnabled(isSecurityGroupEnabled);
                     } else {
                         continue;
                     }
@@ -1233,7 +1241,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             vnetRange = null;
         }
         
-       return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType);
+        boolean securityGroupEnabled = cmd.isSecurityGroupEnabled();
+        if (zoneType == NetworkType.Basic) {
+            securityGroupEnabled = true;
+        }
+        
+       return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType, securityGroupEnabled);
     }
 
     @Override
@@ -1588,7 +1601,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 if (zone.getNetworkType() == DataCenter.NetworkType.Basic) {
                     networkId = _networkMgr.getSystemNetworkByZoneAndTrafficType(zoneId, TrafficType.Guest).getId();
                 } else {
-                    throw new InvalidParameterValueException("Nework id is required for Direct vlan creation ");
+                    network = _networkMgr.getNetworkWithSecurityGroupEnabled(zoneId);
+                    if (network == null) {
+                        throw new InvalidParameterValueException("Nework id is required for Direct vlan creation ");
+                    }
+                    networkId = network.getId();
                 }
             } else if (network.getGuestType() == null || network.getGuestType() == GuestIpType.Virtual) {
                 throw new InvalidParameterValueException("Can't create direct vlan for network id=" + networkId + " with GuestType: " + network.getGuestType());
@@ -1600,7 +1617,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             endIP = startIP;
         }
           
-        if (forVirtualNetwork || zone.getNetworkType() == DataCenter.NetworkType.Basic) {
+        if (forVirtualNetwork || zone.getNetworkType() == DataCenter.NetworkType.Basic || network.isSecurityGroupEnabled()) {
             if (vlanGateway == null || vlanNetmask == null || zoneId == null) {
                 throw new InvalidParameterValueException("Gateway, netmask and zoneId have to be passed in for virtual and direct untagged networks");
             }

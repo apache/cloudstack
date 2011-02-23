@@ -2306,6 +2306,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDns1(profile.getDns1());
         response.setDns2(profile.getDns2());
         
+        response.setIsSecurityGroupEnabled(network.isSecurityGroupEnabled());
+        
         //populate capability
         Map<Service, Map<Capability, String>>  serviceCapabilitiesMap = ApiDBUtils.getNetworkCapabilities(network.getId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();

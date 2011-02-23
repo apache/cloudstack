@@ -138,6 +138,7 @@ public class ApiConstants {
     public static final String SECURITY_GROUP_IDS = "securitygroupids";
     public static final String SECURITY_GROUP_NAME = "securitygroupname";
     public static final String SECURITY_GROUP_ID = "securitygroupid";
+    public static final String SECURITY_GROUP_EANBLED = "securitygroupEnabled";
     public static final String SENT = "sent";
     public static final String SENT_BYTES = "sentbytes";
     public static final String SERVICE_OFFERING_ID = "serviceofferingid";

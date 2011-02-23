@@ -204,4 +204,6 @@ public interface Network extends ControlledEntity {
     
     String getNetworkDomain();
 
+    boolean isSecurityGroupEnabled();
+
 }

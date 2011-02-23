@@ -19,6 +19,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
@@ -70,7 +71,12 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         
         if (offering.getTrafficType() == TrafficType.Public) {
-            NetworkVO ntwk = new NetworkVO(offering.getTrafficType(), null, Mode.Static, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId(), State.Setup);
+            GuestIpType type = null;
+            if (network.isSecurityGroupEnabled()) {
+                type = GuestIpType.Direct;
+            }
+
+            NetworkVO ntwk = new NetworkVO(offering.getTrafficType(), type, Mode.Static, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId(), State.Setup);
             return ntwk;
         } else {
             return null;
@@ -83,7 +89,14 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     
     protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null) {
-            PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.VirtualNetwork, null);
+            VlanType type = VlanType.VirtualNetwork;
+            Long networkId = null;
+            if (network.isSecurityGroupEnabled()) {
+                type = VlanType.DirectAttached;
+                networkId = network.getId();
+            }
+
+            PublicIp ip = _networkMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), type, networkId);
             nic.setIp4Address(ip.getAddress().toString());
             nic.setGateway(ip.getGateway());
             nic.setNetmask(ip.getNetmask()); 

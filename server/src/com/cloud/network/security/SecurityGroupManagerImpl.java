@@ -84,6 +84,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -108,6 +109,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	@Inject DomainDao _domainDao;
 	@Inject AgentManager _agentMgr;
 	@Inject VirtualMachineManager _itMgr;
+	@Inject UserVmManager _userVmMgr;
 	ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
 
@@ -115,8 +117,6 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
 	private final long _timeBetweenCleanups = 30; //seconds
 
-	
-	boolean _enabled = false;
 	SecurityGroupListener _answerListener;
     
 	
@@ -300,7 +300,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	}
 
 	protected void handleVmStarted(VMInstanceVO vm) {
-	    if (vm.getType() != VirtualMachine.Type.User || !_enabled)
+	    if (vm.getType() != VirtualMachine.Type.User || !isVmSecurityGroupEnabled(vm.getId()))
 	        return;
 		Set<Long> affectedVms = getAffectedVmsForVmStart(vm);
 		scheduleRulesetUpdateToHosts(affectedVms, true, null);
@@ -308,9 +308,6 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	
 	@DB
 	public void scheduleRulesetUpdateToHosts(Set<Long> affectedVms, boolean updateSeqno, Long delayMs) {
-	    if (!_enabled) {
-	        return;
-	    }
 		if (delayMs == null) {
             delayMs = new Long(100l);
         }
@@ -413,7 +410,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	}
 	
 	protected void handleVmStopped(VMInstanceVO vm) {
-	    if (vm.getType() != VirtualMachine.Type.User || !_enabled)
+	    if (vm.getType() != VirtualMachine.Type.User || !isVmSecurityGroupEnabled(vm.getId()))
             return;
 		Set<Long> affectedVms = getAffectedVmsForVmStop(vm);
 		scheduleRulesetUpdateToHosts(affectedVms, true, null);
@@ -449,10 +446,6 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 		Integer startPortOrType = null;
         Integer endPortOrCode = null;
         Long accountId = null;
-		
-		if (!_enabled) {
-			return null;
-		}
 		
 		//Verify input parameters
         if (protocol == null) {
@@ -653,11 +646,6 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	@Override
 	@DB 
 	public boolean revokeSecurityGroupIngress(RevokeSecurityGroupIngressCmd cmd) {
-		
-       if (!_enabled) {
-            return false;
-        }
-       
 		//input validation
 		Account account = UserContext.current().getCaller();
         Long domainId = cmd.getDomainId();
@@ -741,9 +729,6 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
 	@Override
     public SecurityGroupVO createSecurityGroup(CreateSecurityGroupCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
-        if (!_enabled) {
-            return null;
-        }
 
         String accountName = cmd.getAccountName();
 	    Long domainId = cmd.getDomainId();
@@ -802,9 +787,6 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	@DB
 	@Override
 	public SecurityGroupVO createSecurityGroup(String name, String description, Long domainId, Long accountId, String accountName) {
-		if (!_enabled) {
-			return null;
-		}
 		final Transaction txn = Transaction.currentTxn();
 		AccountVO account = null;
 		txn.start();
@@ -835,13 +817,6 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	    /*register state listener, no matter security group is enabled or not*/
 	    VirtualMachine.State.getStateMachine().registerListener(this);
 	    
-		String enabled =_configDao.getValue("direct.attach.security.groups.enabled");
-		if ("true".equalsIgnoreCase(enabled)) {
-			_enabled = true;
-		}
-		if (!_enabled) {
-			return false;
-		}
 		_answerListener = new SecurityGroupListener(this, _agentMgr, _workDao);
 		_agentMgr.registerForHostEvents(_answerListener, true, true, true);
 		
@@ -861,9 +836,6 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
 	@Override
 	public boolean start() {
-	    if (!_enabled) {
-	        return true;
-	    }
 		_cleanupExecutor.scheduleAtFixedRate(new CleanupThread(), _timeBetweenCleanups, _timeBetweenCleanups, TimeUnit.SECONDS);
 		return true;
 	}
@@ -876,9 +848,6 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
 	@Override
 	public SecurityGroupVO createDefaultSecurityGroup(Long accountId) {
-		if (!_enabled) {
-			return null;
-		}
 		SecurityGroupVO groupVO = _securityGroupDao.findByAccountAndName(accountId, SecurityGroupManager.DEFAULT_GROUP_NAME);
 		if (groupVO == null ) {
 			Account accVO = _accountDao.findById(accountId);
@@ -947,7 +916,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	@Override
 	@DB
 	public boolean addInstanceToGroups(final Long userVmId, final List<Long> groups) {
-		if (!_enabled) {
+		if (!isVmSecurityGroupEnabled(userVmId)) {
 			return true;
 		}
 		if (groups != null && !groups.isEmpty()) {
@@ -995,7 +964,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 	@Override
 	@DB
 	public void removeInstanceFromGroups(Long userVmId) {
-		if (!_enabled) {
+		if (!isVmSecurityGroupEnabled(userVmId)) {
 			return;
 		}
 		final Transaction txn = Transaction.currentTxn();
@@ -1017,10 +986,6 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 		String accountName = cmd.getAccountName();
 		Long domainId = cmd.getDomainId();
 		Account account = UserContext.current().getCaller();
-		
-		if (!_enabled) {
-			return true;
-		}
 		
 		//Verify input parameters
         Long accountId = null;
@@ -1343,4 +1308,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         return true;
     }
     
+    private boolean isVmSecurityGroupEnabled(Long vmId) {
+        return _userVmMgr.isVmSecurityGroupEnabled(vmId);
+    }
 }
