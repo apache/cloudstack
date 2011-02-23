@@ -1293,7 +1293,7 @@ a:hover.vm_create_close {
 	border-bottom:2px solid #b1b1b1;
 	margin:0;
 	padding:0;
-	z-index:1004;
+	z-index:30000;
 }
 
 .adv_searchformbox {
