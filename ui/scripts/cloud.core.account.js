@@ -178,7 +178,7 @@ function bindAddAccountButton() {
 				var isValid = true;					
 				isValid &= validateString("User name", $thisDialog.find("#add_user_username"), $thisDialog.find("#add_user_username_errormsg"), false);    //required
 				isValid &= validateString("Password", $thisDialog.find("#add_user_password"), $thisDialog.find("#add_user_password_errormsg"), false);     //required	
-				isValid &= validateString("Email", $thisDialog.find("#add_user_email"), $thisDialog.find("#add_user_email_errormsg"), false);              //required	
+				isValid &= validateEmail("Email", $thisDialog.find("#add_user_email"), $thisDialog.find("#add_user_email_errormsg"), false);              //required	
 				isValid &= validateString("First name", $thisDialog.find("#add_user_firstname"), $thisDialog.find("#add_user_firstname_errormsg"), false); //required	
 				isValid &= validateString("Last name", $thisDialog.find("#add_user_lastname"), $thisDialog.find("#add_user_lastname_errormsg"), false);    //required	
 				isValid &= validateString("Account", $thisDialog.find("#add_user_account"), $thisDialog.find("#add_user_account_errormsg"), true);         //optional
@@ -301,7 +301,7 @@ function bindAddUserButton() {
 				var isValid = true;					
 				isValid &= validateString("User name", $thisDialog.find("#add_user_username"), $thisDialog.find("#add_user_username_errormsg"), false);    //required
 				isValid &= validateString("Password", $thisDialog.find("#add_user_password"), $thisDialog.find("#add_user_password_errormsg"), false);     //required	
-				isValid &= validateString("Email", $thisDialog.find("#add_user_email"), $thisDialog.find("#add_user_email_errormsg"), false);              //required
+				isValid &= validateEmail("Email", $thisDialog.find("#add_user_email"), $thisDialog.find("#add_user_email_errormsg"), false);              //required
 				isValid &= validateString("First name", $thisDialog.find("#add_user_firstname"), $thisDialog.find("#add_user_firstname_errormsg"), false); //required
 				isValid &= validateString("Last name", $thisDialog.find("#add_user_lastname"), $thisDialog.find("#add_user_lastname_errormsg"), false);    //required				
 				if (!isValid) 
