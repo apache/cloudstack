@@ -44,6 +44,11 @@ public abstract class DiscovererBase implements Discoverer {
         
         return null;
     }
+    
+    @Override
+    public void putParam(Map<String, String> params) {
+    	_params.putAll(params);
+    }
 
     @Override
     public String getName() {

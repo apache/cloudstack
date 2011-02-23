@@ -65,6 +65,14 @@ public class AddHostCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=true, description="hypervisor type of the host")
     private String hypervisor;
+    
+    @Parameter(name=ApiConstants.HOST_CPU_CAPACITY, type=CommandType.LONG, description="CPU capacity of host")
+    private Long cpuCapacity;
+    
+    @Parameter(name=ApiConstants.HOST_MEM_CAPACITY, type=CommandType.LONG, description="memory capacity of host")
+    private Long memCapacity;
+    
+    
 
 
     /////////////////////////////////////////////////////
@@ -103,6 +111,14 @@ public class AddHostCmd extends BaseCmd {
     	return hypervisor;
     }
 
+    public Long getCpuCapacity() {
+    	return cpuCapacity;
+    }
+    
+    public Long getMemCapacity() {
+    	return memCapacity;
+    }
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

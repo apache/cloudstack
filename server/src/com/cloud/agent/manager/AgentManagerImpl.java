@@ -749,12 +749,30 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		String url = cmd.getUrl();
 		String username = cmd.getUsername();
 		String password = cmd.getPassword();
+		Long memCapacity = cmd.getMemCapacity();
+		Long cpuCapacity = cmd.getCpuCapacity();
+		Map<String, String>bareMetalParams = new HashMap<String, String>();
+		
 		// this is for standalone option
 		if (clusterName == null && clusterId == null) {
 			clusterName = "Standalone-" + url;
 		}
-		return discoverHosts(dcId, podId, clusterId, clusterName, url,
-				username, password, cmd.getHypervisor());
+		
+		if (cmd.getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.BareMetal.toString())) {
+			if (memCapacity == null) {
+				memCapacity = Long.valueOf(0);
+			}
+			if (cpuCapacity == null) {
+				cpuCapacity = Long.valueOf(0);
+			}
+			
+			bareMetalParams.put("cpuCapacity", cpuCapacity.toString());
+			bareMetalParams.put("memCapacity", memCapacity.toString());
+		}
+		
+		
+		return discoverHostsFull(dcId, podId, clusterId, clusterName, url,
+				username, password, cmd.getHypervisor(), bareMetalParams);
 	}
 
 	@Override
@@ -771,6 +789,14 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 	public List<HostVO> discoverHosts(Long dcId, Long podId, Long clusterId,
 			String clusterName, String url, String username, String password,
 			String hypervisorType) throws IllegalArgumentException,
+			DiscoveryException, InvalidParameterValueException {
+		return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, hypervisorType, null);
+	}
+	
+	
+	private List<HostVO> discoverHostsFull(Long dcId, Long podId, Long clusterId,
+			String clusterName, String url, String username, String password,
+			String hypervisorType, Map<String, String>params) throws IllegalArgumentException,
 			DiscoveryException, InvalidParameterValueException {
 		URI uri = null;
 
@@ -865,6 +891,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		boolean isHypervisorTypeSupported = false;
 		while (en.hasMoreElements()) {
 			Discoverer discoverer = en.nextElement();
+			discoverer.putParam(params);
+			
 			if (!discoverer.matchHypervisor(hypervisorType)) {
 				continue;
 			}
