@@ -22,12 +22,15 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.allocator.StoragePoolAllocator;
+import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.vm.UserVmManager;
 
@@ -86,9 +89,9 @@ public enum Config {
 	ConsoleProxyRestart("Console Proxy", AgentManager.class, Boolean.class, "consoleproxy.restart", "true", "Console proxy restart flag, defaulted to true", null),
 	ConsoleProxyUrlDomain("Console Proxy", AgentManager.class, String.class, "consoleproxy.url.domain", "realhostip.com", "Console proxy url domain", null),
 	ConsoleProxyLoadscanInterval("Console Proxy", AgentManager.class, String.class, "consoleproxy.loadscan.interval", "10000", "The time interval(in milliseconds) to scan console proxy working-load info", null),
-	ConsoleProxyRamSize("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.ram.size", "1024", "RAM size (in MB) used to create new console proxy VMs", null),
-	ConsoleProxyCpuMHz("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.cpu.mhz", "512", "CPU speed (in MHz) used to create new console proxy VMs", null),
-	ConsoleProxySessionMax("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.session.max", "50", "The max number of viewer sessions console proxy is configured to serve for", null),
+	ConsoleProxyRamSize("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.ram.size", String.valueOf(ConsoleProxyManager.DEFAULT_PROXY_VM_RAMSIZE), "RAM size (in MB) used to create new console proxy VMs", null),
+	ConsoleProxyCpuMHz("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.cpu.mhz", String.valueOf(ConsoleProxyManager.DEFAULT_PROXY_VM_CPUMHZ), "CPU speed (in MHz) used to create new console proxy VMs", null),
+	ConsoleProxySessionMax("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.session.max", String.valueOf(ConsoleProxyManager.DEFAULT_PROXY_CAPACITY), "The max number of viewer sessions console proxy is configured to serve for", null),
 	ConsoleProxySessionTimeout("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.session.timeout", "300000", "Timeout(in milliseconds) that console proxy tries to maintain a viewer session before it times out the session for no activity", null),
 	ConsoleProxyDisableRpFilter("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.disable.rpfilter", "true", "disable rp_filter on console proxy VM public interface", null),
     ConsoleProxyLaunchMax("Console Proxy", AgentManager.class, Integer.class, "consoleproxy.launch.max", "10", "maximum number of console proxy instances per zone can be launched", null),
@@ -120,7 +123,7 @@ public enum Config {
 	PingInterval("Advanced", AgentManager.class, Integer.class, "ping.interval", "60", "Ping interval in seconds", null),
 	PingTimeout("Advanced", AgentManager.class, Float.class, "ping.timeout", "2.5", "Multiplier to ping.interval before announcing an agent has timed out", null),
 	Port("Advanced", AgentManager.class, Integer.class, "port", "8250", "Port to listen on for agent connection.", null),
-	RouterCpuMHz("Advanced", NetworkManager.class, Integer.class, "router.cpu.mhz", "500", "Default CPU speed (MHz) for router VM.", null),
+	RouterCpuMHz("Advanced", NetworkManager.class, Integer.class, "router.cpu.mhz", String.valueOf(VirtualNetworkApplianceManager.DEFAULT_ROUTER_CPU_MHZ), "Default CPU speed (MHz) for router VM.", null),
 	RestartRetryInterval("Advanced", HighAvailabilityManager.class, Integer.class, "restart.retry.interval", "600", "Time (in seconds) between retries to restart a vm", null),
 	RouterStatsInterval("Advanced", NetworkManager.class, Integer.class, "router.stats.interval", "300", "Interval (in seconds) to report router statistics.", null),
 	RouterTemplateId("Advanced", NetworkManager.class, Long.class, "router.template.id", "1", "Default ID for template.", null),
@@ -143,8 +146,8 @@ public enum Config {
 	ManagementHostIPAdr("Advanced", ManagementServer.class, String.class, "host", "localhost", "The ip address of management server", null),
 	EventPurgeDelay("Advanced", ManagementServer.class, Integer.class, "event.purge.delay", "0", "Events older than specified number days will be purged", null),
     UseLocalStorage("Premium", ManagementServer.class, Boolean.class, "use.local.storage", "false", "Should we use the local storage if it's available?", null),
-	SecStorageVmRamSize("Advanced", AgentManager.class, Integer.class, "secstorage.vm.ram.size", null, "RAM size (in MB) used to create new secondary storage vms", null),
-	SecStorageVmCpuMHz("Advanced", AgentManager.class, Integer.class, "secstorage.vm.cpu.mhz", null, "CPU speed (in MHz) used to create new secondary storage vms", null),
+	SecStorageVmRamSize("Advanced", AgentManager.class, Integer.class, "secstorage.vm.ram.size", String.valueOf(SecondaryStorageVmManager.DEFAULT_SS_VM_RAMSIZE), "RAM size (in MB) used to create new secondary storage vms", null),
+	SecStorageVmCpuMHz("Advanced", AgentManager.class, Integer.class, "secstorage.vm.cpu.mhz", String.valueOf(SecondaryStorageVmManager.DEFAULT_SS_VM_CPUMHZ), "CPU speed (in MHz) used to create new secondary storage vms", null),
 	MaxTemplateAndIsoSize("Advanced",  ManagementServer.class, Long.class, "max.template.iso.size", "50", "The maximum size for a downloaded template or ISO (in GB).", null),
 	SecStorageAllowedInternalDownloadSites("Advanced", ManagementServer.class, String.class, "secstorage.allowed.internal.sites", null, "Comma separated list of cidrs internal to the datacenter that can host template download servers", null),
 	SecStorageEncryptCopy("Advanced", ManagementServer.class, Boolean.class, "secstorage.encrypt.copy", "false", "Use SSL method used to encrypt copy traffic between zones", "true,false"),
