@@ -871,7 +871,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     related = id;
                 }
 
-                NetworkVO vo = new NetworkVO(id, config, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isShared, isDefault);
+                NetworkVO vo = new NetworkVO(id, config, offering.getId(), plan.getDataCenterId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, isShared, isDefault, predefined.isSecurityGroupEnabled());
                 configs.add(_networksDao.persist(vo, vo.getGuestType() != null));
             }
 
@@ -1502,7 +1502,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         txn.start();
-        Network network = createNetwork(networkOfferingId, name, displayText, isShared, isDefault, zoneId, gateway, cidr, vlanId, networkDomain, owner);
+        Network network = createNetwork(networkOfferingId, name, displayText, isShared, isDefault, zoneId, gateway, cidr, vlanId, networkDomain, owner, cmd.isSecurityGroupEnabled());
         
         // Don't pass owner to create vlan when network offering is of type Direct - done to prevent accountVlanMap entry
         // creation when vlan is mapped to network
@@ -1521,7 +1521,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override @DB
-    public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain, Account owner)
+    public Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain, Account owner, boolean isSecurityGroupEnabled)
             throws ConcurrentOperationException, InsufficientCapacityException {
         Account ctxAccount = UserContext.current().getCaller();
         Long userId = UserContext.current().getCallerUserId();
@@ -1535,6 +1535,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         DataCenterDeployment plan = new DataCenterDeployment(zoneId, null, null, null);
         NetworkVO userNetwork = new NetworkVO();
         userNetwork.setNetworkDomain(networkDomain);
+        userNetwork.setSecurityGroupEnabled(isSecurityGroupEnabled);
 
         // cidr should be set only when the user is admin
         if (ctxAccount.getType() == Account.ACCOUNT_TYPE_ADMIN) {
@@ -2142,6 +2143,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         return networks.get(0);
     }
+    
+    @Override
+    public Network getNetworkWithSecurityGroupEnabled(Long zoneId) {
+        List<NetworkVO> networks = _networksDao.listByZoneSecurityGroup(zoneId);
+        if (networks == null || networks.isEmpty()) {
+            return null;
+        }
+        
+        if (networks.size() > 1) {
+            s_logger.debug("There are multiple network with security group enabled? select one of them...");
+        }
+        return networks.get(0);
+    }
 
     @Override
     public PublicIpAddress getPublicIpAddress(long ipAddressId) {
@@ -2205,7 +2219,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // create new Virtual network for the user if it doesn't exist
         if (createNetwork) {
             List<? extends NetworkOffering> offerings = _configMgr.listNetworkOfferings(TrafficType.Guest, false);
-            network = createNetwork(offerings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", false, true, zoneId, null, null, null, null, owner);
+            network = createNetwork(offerings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", false, true, zoneId, null, null, null, null, owner, false);
 
             if (network == null) {
                 s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);

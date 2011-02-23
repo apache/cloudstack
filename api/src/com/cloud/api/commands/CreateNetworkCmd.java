@@ -25,6 +25,7 @@ import com.cloud.api.BaseCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -81,6 +82,9 @@ public class CreateNetworkCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
     private String networkDomain;
+    
+    @Parameter(name=ApiConstants.SECURITY_GROUP_EANBLED, type=CommandType.BOOLEAN, description="true if network is security group enabled, false otherwise")
+    private Boolean is_security_group_enabled;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -139,6 +143,10 @@ public class CreateNetworkCmd extends BaseCmd {
 
     public String getNetworkDomain() {
         return networkDomain;
+    }
+    
+    public boolean isSecurityGroupEnabled() {
+        return is_security_group_enabled == null ? false : true;
     }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

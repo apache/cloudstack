@@ -2009,8 +2009,35 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
         
+        List<Long> sgs = cmd.getSecurityGroupIdList();
+        if (sgs != null && !sgs.isEmpty()) {
+            if (networkList == null || networkList.isEmpty()) {
+                Network networkWithSecurityGroup = _networkMgr.getNetworkWithSecurityGroupEnabled(dc.getId());
+                if (networkWithSecurityGroup == null) {
+                    throw new InvalidParameterValueException("No network with security enabled");
+                }
+                networkList = new ArrayList<Long>();
+                networkList.add(networkWithSecurityGroup.getId());
+            } else {
+                if (networkList.size() > 1) {
+                    throw new InvalidParameterValueException("Only support one network per VM if security group enabled");
+                }
+                
+                Network net = _networkMgr.getNetwork(networkList.get(0).longValue());
+                if (!net.isSecurityGroupEnabled()) {
+                    throw new InvalidParameterValueException("need to enable security group for network: " + net.getId());  
+                }
+            }
+        }
+        
         if (networkList == null || networkList.isEmpty()) {
-            throw new InvalidParameterValueException("NetworkIds have to be specified");
+            Network networkWithSecurityGroup = _networkMgr.getNetworkWithSecurityGroupEnabled(dc.getId());
+            if (networkWithSecurityGroup != null) {
+                networkList = new ArrayList<Long>();
+                networkList.add(networkWithSecurityGroup.getId());
+            } else {
+                throw new InvalidParameterValueException("NetworkIds have to be specified");
+            }
         }
         
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
@@ -2675,5 +2702,17 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         return _vmDao.search(sc, searchFilter);
+    }
+    
+    @Override
+    public boolean isVmSecurityGroupEnabled(Long vmId) {
+       List<NicVO> nics = _nicDao.listByVmId(vmId);
+       for (NicVO nic : nics) {
+           Network network = _networkDao.findById(nic.getNetworkId());
+           if (network != null && network.isSecurityGroupEnabled()) {
+               return true;
+           }
+       }
+       return false;
     }
 }

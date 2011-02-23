@@ -142,7 +142,7 @@ public interface NetworkManager extends NetworkService {
     
     boolean destroyNetwork(long networkId, ReservationContext context);
    
-    Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain, Account owner) throws ConcurrentOperationException, InsufficientCapacityException;
+    Network createNetwork(long networkOfferingId, String name, String displayText, Boolean isShared, Boolean isDefault, Long zoneId, String gateway, String cidr, String vlanId, String networkDomain, Account owner, boolean isSecurityGroupEnabled) throws ConcurrentOperationException, InsufficientCapacityException;
     
     /**
      * @throws InsufficientCapacityException 
@@ -178,5 +178,7 @@ public interface NetworkManager extends NetworkService {
     boolean deleteNetworkInternal(long networkId, ReservationContext context);
     
     boolean isServiceSupported(long networkId, Network.Service service);
+
+    Network getNetworkWithSecurityGroupEnabled(Long zoneId);
 
 }

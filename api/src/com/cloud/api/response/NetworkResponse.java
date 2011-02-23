@@ -95,6 +95,9 @@ public class NetworkResponse extends BaseResponse{
     @SerializedName("networkdomain") @Param(description="the network domain")
     private String networkDomain;
     
+    @SerializedName(ApiConstants.SECURITY_GROUP_EANBLED) @Param(description="true if security group is enabled, false otherwise")
+    private Boolean isSecurityGroupEnabled;
+    
     public Long getId() {
         return id;
     }
@@ -325,6 +328,14 @@ public class NetworkResponse extends BaseResponse{
 
     public void setNetworkDomain(String networkDomain) {
         this.networkDomain = networkDomain;
+    }
+    
+    public Boolean getIsSecurityGroupEnabled() {
+        return this.isSecurityGroupEnabled;
+    }
+    
+    public void setIsSecurityGroupEnabled(Boolean sgEnabled) {
+        this.isSecurityGroupEnabled = sgEnabled;
     }
     
 }

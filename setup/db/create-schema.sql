@@ -179,6 +179,7 @@ CREATE TABLE `cloud`.`networks` (
   `is_default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is default',
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
+  `is_security_group_enabled` smallint(1) NOT NULL COMMENT '1: enabled, 0: not',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_networks__network_offering_id` FOREIGN KEY (`network_offering_id`) REFERENCES `network_offerings`(`id`),
   CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
