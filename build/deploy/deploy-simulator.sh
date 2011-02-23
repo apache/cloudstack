@@ -44,8 +44,8 @@ printf "NOTE: You must have root privileges to install and run this program.\n"
 
 if [ "$mode" == "setup" ]; then
   mode="expert"
-  deploydir="/usr/local/vmops/agent-simulator"
-  confdir="/etc/vmops"
+  deploydir="/usr/local/cloud/agent-simulator"
+  confdir="/etc/cloud"
   /bin/cp -f $deploydir/conf/agent.properties $confdir/agent.properties
   if [ $? -gt 0 ]; then
     printf "ERROR: Failed to copy the agent.properties file into the right place."
@@ -111,11 +111,11 @@ fi
 
 if [ "$deploydir" == "" ]; then 
     if [ "$mode" != "expert" ]; then
-        printf "Directory to deploy to [defaults to /usr/local/vmops/agent-simulator]: "
+        printf "Directory to deploy to [defaults to /usr/local/cloud/agent-simulator]: "
         read deploydir
     fi
     if [ "$deploydir" == "" ]; then 
-        deploydir="/usr/local/vmops/agent-simulator"
+        deploydir="/usr/local/cloud/agent-simulator"
     fi
 fi
 if ! mkdir -p $deploydir
