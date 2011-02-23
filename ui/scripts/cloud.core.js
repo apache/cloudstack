@@ -1051,6 +1051,28 @@ function getMidmenuId(jsonObj) {
     return "midmenuItem_" + jsonObj.id; 
 }
 
+var autoCompleteItems = [];
+function applyAutoComplete($field, commandString, jsonResponse1, jsonResponse2) {  
+    $field.autocomplete({
+		source: function(request, response) {			
+			$.ajax({
+			    data: createURL("command="+commandString+"&keyword=" + request.term),				
+				dataType: "json",
+				async: false,
+				success: function(json) {					   
+					autoCompleteItems = json[jsonResponse1][jsonResponse2];					
+					var array1 = [];				
+					if(autoCompleteItems != null && autoCompleteItems.length > 0) {									
+						for(var i=0; i < autoCompleteItems.length; i++) 					        
+							array1.push(fromdb(autoCompleteItems[i].name));		   					   			    
+					}					
+					response(array1);
+				}
+			});		
+		}
+	}); 
+}
+
 //var lastSearchType;
 var currentCommandString;
 var searchParams;
