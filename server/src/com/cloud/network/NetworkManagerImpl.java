@@ -1757,8 +1757,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return networks;
     }
 
-    @Override
-    @ActionEvent (eventType=EventTypes.EVENT_NETWORK_DELETE, eventDescription="deleting network")
+    @Override @ActionEvent (eventType=EventTypes.EVENT_NETWORK_DELETE, eventDescription="deleting network", async=true)
     public boolean deleteNetwork(long networkId){   
         //Don't allow to delete network via api call when it has vms assigned to it
         int nicCount = getActiveNicsInNetwork(networkId);
@@ -2022,7 +2021,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    @Override
+    @Override @ActionEvent (eventType=EventTypes.EVENT_NETWORK_RESTART, eventDescription="restarting network", async=true)
     public boolean restartNetwork(RestartNetworkCmd cmd) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // This method restarts all network elements belonging to the network
         Long networkId = cmd.getNetworkId();

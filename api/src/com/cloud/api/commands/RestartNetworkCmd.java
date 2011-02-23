@@ -53,23 +53,6 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
     
-    public String getEventDescription() {
-        return  "Restarting network: " + getNetworkId();
-    }
-    
-    public String getEventType() {
-        return EventTypes.NETWORK_RESTART;
-    }
-    
-    public long getEntityOwnerId() {
-        Network network = _networkService.getNetwork(id);
-        if (network == null) {
-            throw new InvalidParameterValueException("Networkd id=" + id + " doesn't exist");
-        } else {
-            return _networkService.getNetwork(id).getAccountId();
-        }
-    }
-    
     public Long getNetworkId() {
         Network network = _networkService.getNetwork(id);
         if (network == null) {
@@ -105,7 +88,6 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
         }
     }
     
-    
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.networkSyncObject;
@@ -114,5 +96,24 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     @Override
     public Long getSyncObjId() {
         return id;
+    }
+    
+    public String getEventDescription() {
+        return  "Restarting network: " + getNetworkId();
+    }
+    
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_NETWORK_RESTART;
+    }
+    
+    @Override
+    public long getEntityOwnerId() {
+        Network network = _networkService.getNetwork(id);
+        if (network == null) {
+            throw new InvalidParameterValueException("Networkd id=" + id + " doesn't exist");
+        } else {
+            return _networkService.getNetwork(id).getAccountId();
+        }
     }
 }
