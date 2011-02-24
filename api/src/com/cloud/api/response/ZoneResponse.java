@@ -64,6 +64,9 @@ public class ZoneResponse extends BaseResponse {
     
     @SerializedName(ApiConstants.NETWORK_TYPE) @Param(description="the network type of the zone; can be Basic or Advanced")
     private String networkType;
+    
+    @SerializedName("securitygroupsenabled") @Param(description="true if security groups support is enabled, false otherwise")
+    private boolean securityGroupsEnabled;
 
     public Long getId() {
         return id;
@@ -177,4 +180,11 @@ public class ZoneResponse extends BaseResponse {
         this.networkType = networkType;
     }
 
+    public boolean getSecurityGroupsEnabled() {
+        return securityGroupsEnabled;
+    }
+
+    public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
+        this.securityGroupsEnabled = securityGroupsEnabled;
+    }
 }
