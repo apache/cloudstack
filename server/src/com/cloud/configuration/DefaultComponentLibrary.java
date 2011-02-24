@@ -147,6 +147,8 @@ import com.cloud.vm.dao.SecondaryStorageVmDaoImpl;
 import com.cloud.vm.dao.UserVmDaoImpl;
 import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
+import com.cloud.vm.BareMetalVmManagerImpl;;
+
 
 public class DefaultComponentLibrary implements ComponentLibrary {
 
@@ -323,6 +325,7 @@ public class DefaultComponentLibrary implements ComponentLibrary {
         addManager("ClusteredAgentManager", ClusteredAgentManagerImpl.class);
         addManager("VirtualMachineManager", ClusteredVirtualMachineManagerImpl.class);
         addManager("HypervisorGuruManager", HypervisorGuruManagerImpl.class);
+        addManager("BareMetalVmManager", BareMetalVmManagerImpl.class);
         
         ComponentInfo<? extends Manager> info = addManager("ConsoleProxyManager", ConsoleProxyManagerImpl.class);
         info.addParameter("consoleproxy.sslEnabled", "true");

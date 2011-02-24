@@ -1848,7 +1848,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 		}
 	}
 	
-    private boolean validPassword(String password) {
+    protected boolean validPassword(String password) {
         if (password == null || password.length() == 0) {
             return false;
         }

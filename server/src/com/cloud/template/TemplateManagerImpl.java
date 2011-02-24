@@ -349,7 +349,8 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         	&&(!url.toLowerCase().endsWith("qcow2"))&&(!url.toLowerCase().endsWith("qcow2.zip"))
         	&&(!url.toLowerCase().endsWith("qcow2.bz2"))&&(!url.toLowerCase().endsWith("qcow2.gz"))
         	&&(!url.toLowerCase().endsWith("ova"))&&(!url.toLowerCase().endsWith("ova.zip"))
-        	&&(!url.toLowerCase().endsWith("ova.bz2"))&&(!url.toLowerCase().endsWith("ova.gz"))){
+        	&&(!url.toLowerCase().endsWith("ova.bz2"))&&(!url.toLowerCase().endsWith("ova.gz"))
+        	&&hypervisorType != HypervisorType.BareMetal){
         	throw new InvalidParameterValueException("Please specify a valid "+format.toLowerCase());
         }
         	
@@ -381,25 +382,28 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             }
                         
             URI uri = new URI(url);
-            if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
+            if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file") && !uri.getScheme().equalsIgnoreCase("baremetal"))) {
                throw new IllegalArgumentException("Unsupported scheme for url: " + url);
             }
-            int port = uri.getPort();
-            if (!(port == 80 || port == 443 || port == -1)) {
-            	throw new IllegalArgumentException("Only ports 80 and 443 are allowed");
-            }
-            String host = uri.getHost();
-            try {
-            	InetAddress hostAddr = InetAddress.getByName(host);
-            	if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress() ) {
-            		throw new IllegalArgumentException("Illegal host specified in url");
-            	}
-            	if (hostAddr instanceof Inet6Address) {
-            		throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
-            	}
-            } catch (UnknownHostException uhe) {
-            	throw new IllegalArgumentException("Unable to resolve " + host);
-            }
+            
+			if (!uri.getScheme().equalsIgnoreCase("baremetal")) {
+				int port = uri.getPort();
+				if (!(port == 80 || port == 443 || port == -1)) {
+					throw new IllegalArgumentException("Only ports 80 and 443 are allowed");
+				}
+				String host = uri.getHost();
+				try {
+					InetAddress hostAddr = InetAddress.getByName(host);
+					if (hostAddr.isAnyLocalAddress() || hostAddr.isLinkLocalAddress() || hostAddr.isLoopbackAddress() || hostAddr.isMulticastAddress()) {
+						throw new IllegalArgumentException("Illegal host specified in url");
+					}
+					if (hostAddr instanceof Inet6Address) {
+						throw new IllegalArgumentException("IPV6 addresses not supported (" + hostAddr.getHostAddress() + ")");
+					}
+				} catch (UnknownHostException uhe) {
+					throw new IllegalArgumentException("Unable to resolve " + host);
+				}
+			}
             
             // Check that the resource limit for templates/ISOs won't be exceeded
             UserVO user = _userDao.findById(userId);

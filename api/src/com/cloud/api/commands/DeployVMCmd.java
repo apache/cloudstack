@@ -35,6 +35,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -228,7 +229,12 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         UserVm result;
         try {
             UserContext.current().setEventDetails("Vm Id: "+getEntityId());
-            result = _userVmService.startVirtualMachine(this);
+            if (getHypervisor() == HypervisorType.BareMetal) {
+            	result = _bareMetalVmService.startVirtualMachine(this);
+            } else {
+            	result = _userVmService.startVirtualMachine(this);
+            }
+            
             if (result != null) {
                 UserVmResponse response = _responseGenerator.createUserVmResponse(result);
                 response.setResponseName(getCommandName());
@@ -252,7 +258,13 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException{
         try {
-            UserVm result = _userVmService.createVirtualMachine(this);
+        	UserVm result;
+        	if (getHypervisor() == HypervisorType.BareMetal) {
+        		result = _bareMetalVmService.createVirtualMachine(this);
+        	} else {
+        		result = _userVmService.createVirtualMachine(this);
+        	}
+        	
             if (result != null){
                 setEntityId(result.getId());
             } else {

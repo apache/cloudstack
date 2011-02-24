@@ -246,9 +246,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         
         if (template.getFormat() == ImageFormat.ISO) {
             _storageMgr.allocateRawVolume(VolumeType.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), rootDiskOffering.second(), vm, owner);
-        } else {
+        } else if (template.getFormat() == ImageFormat.BAREMETAL) {
+        }else {
             _storageMgr.allocateTemplatedVolume(VolumeType.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), template, vm, owner);
         }
+        
         for (Pair<DiskOfferingVO, Long> offering : dataDiskOfferings) {
             _storageMgr.allocateRawVolume(VolumeType.DATADISK, "DATA-" + vm.getId(), offering.first(), offering.second(), vm, owner);
         }
