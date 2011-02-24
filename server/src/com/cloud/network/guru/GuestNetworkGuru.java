@@ -78,10 +78,10 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
         //This guru handles only non-system Guest network
-        if (dc.getNetworkType() == NetworkType.Advanced && offering.getTrafficType() == TrafficType.Guest && !offering.isSystemOnly()) {
+        if (dc.getNetworkType() == NetworkType.Advanced && offering.getTrafficType() == TrafficType.Guest && offering.getGuestType() == GuestIpType.Virtual &&  !offering.isSystemOnly()) {
             return true;
         } else {
-            s_logger.trace("We only take care of Guest networks in zone of type " + NetworkType.Advanced);
+            s_logger.trace("We only take care of Guest Virtual networks in zone of type " + NetworkType.Advanced);
             return false;
         }
     }
@@ -93,7 +93,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
             return null;
         }
 
-        NetworkVO network = new NetworkVO(offering.getTrafficType(), GuestIpType.Virtual, Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId(), State.Allocated);
+        NetworkVO network = new NetworkVO(offering.getTrafficType(), offering.getGuestType(), Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId(), State.Allocated);
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) ||
                 (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {

@@ -28,9 +28,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -106,6 +106,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     
     @Column(name="dhcp_service")
     boolean dhcpService;
+    
+    @Column(name="guest_type")
+    GuestIpType guestType;
 
     @Override
     public String getDisplayText() {
@@ -292,8 +295,17 @@ public class NetworkOfferingVO implements NetworkOffering {
     public void setDhcpService(boolean dhcpService) {
         this.dhcpService = dhcpService;
     }
+    
+    @Override
+    public GuestIpType getGuestType() {
+        return guestType;
+    }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, boolean dhcpService, boolean dnsService, boolean userDataService, boolean gatewayService, boolean firewallService, boolean lbService, boolean vpnService) {
+    public void setGuestType(GuestIpType guestType) {
+        this.guestType = guestType;
+    }
+
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps, Integer concurrentConnections, boolean isDefault, Availability availability, boolean dhcpService, boolean dnsService, boolean userDataService, boolean gatewayService, boolean firewallService, boolean lbService, boolean vpnService, GuestIpType guestIpType) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
@@ -310,22 +322,17 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.gatewayService = gatewayService;
         this.firewallService = firewallService;
         this.lbService = lbService;
-        this.vpnService = vpnService;   
+        this.vpnService = vpnService;
+        this.guestType = guestIpType;
     }
     
-    public NetworkOfferingVO(ServiceOfferingVO offering) {
-        this("Network Offering for " + offering.getName(), "Network Offering for " + offering.getDisplayText(), TrafficType.Guest, false, false, offering.getRateMbps(), offering.getMulticastRateMbps(), null, false, Availability.Required, false, false, false, false, false, false, false);
-        this.serviceOfferingId = offering.getId();
-    }
-    
-
     /**
      * Network Offering for all system vms.
      * @param name
      * @param trafficType
      */
     public NetworkOfferingVO(String name, TrafficType trafficType) {
-        this(name, "System Offering for " + name, trafficType, true, false, null, null, null, false, Availability.Required, false, false, false, false, false, false, false);
+        this(name, "System Offering for " + name, trafficType, true, false, null, null, null, false, Availability.Required, false, false, false, false, false, false, false, null);
     }
     
     @Override

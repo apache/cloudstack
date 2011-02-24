@@ -47,6 +47,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, required=true, description="the traffic type for the network offering, supported types are Public, Management, Control, Guest, Vlan or Storage.")
     private String traffictype;
     
+    @Parameter(name=ApiConstants.GUEST_IP_TYPE, type=CommandType.STRING, required=true, description="the guest ip type for the network offering, supported types are Direct and Virtual.")
+    private String guestIpType;
+    
     @Parameter(name=ApiConstants.MAX_CONNECTIONS, type=CommandType.INTEGER, description="maximum number of concurrent connections supported by the network offering")
     private Integer maxConnections;
     
@@ -97,6 +100,10 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     
     public Integer getNetworkRate() {
         return networkRate;
+    }
+
+    public String getGuestIpType() {
+        return guestIpType;
     }
 
     /////////////////////////////////////////////////////
