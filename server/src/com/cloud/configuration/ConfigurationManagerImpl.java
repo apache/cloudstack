@@ -2394,8 +2394,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String trafficTypeString = cmd.getTraffictype();
         Boolean specifyVlan = cmd.getSpecifyVlan();
         String availabilityStr = cmd.getAvailability();
+        String guestIpTypeString = cmd.getGuestIpType();
         
         TrafficType trafficType = null;
+        GuestIpType guestIpType = null;
         Availability availability = null;
        
         
@@ -2403,11 +2405,26 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         for (TrafficType tType : TrafficType.values()) {
             if (tType.name().equalsIgnoreCase(trafficTypeString)) {
                 trafficType = tType;
+                break;
             }
         }
         if (trafficType == null) {
             throw new InvalidParameterValueException("Invalid value for traffictype. Supported traffic types: Public, Management, Control, Guest, Vlan or Storage");
         }
+        
+        
+        //Verify guest ip type
+        for (GuestIpType gType : GuestIpType.values()) {
+            if (gType.name().equalsIgnoreCase(guestIpTypeString)) {
+                guestIpType = gType;
+                break;
+            }
+        }
+        
+        if (guestIpType == null) {
+            throw new InvalidParameterValueException("Invalid guest IP type; can have Direct or Virtual value");
+        }
+        
         
         //Verify availability
         for (Availability avlb : Availability.values()) {
@@ -2421,11 +2438,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         Integer maxConnections = cmd.getMaxconnections();
-        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability);
+        return createNetworkOffering(userId, name, displayText, trafficType, tags, maxConnections, specifyVlan, availability, guestIpType);
     }
     
     @Override
-    public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability) {
+    public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, Integer maxConnections, boolean specifyVlan, Availability availability, GuestIpType guestIpType) {
         String networkRateStr = _configDao.getValue("network.throttling.rate");
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int networkRate = ((networkRateStr == null) ? 200 : Integer.parseInt(networkRateStr));
@@ -2444,7 +2461,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             gatewayService = true;
         }
         
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, false, specifyVlan, networkRate, multicastRate, maxConnections, false, availability, true, true, true, gatewayService, firewallService, lbService, vpnService);
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, false, specifyVlan, networkRate, multicastRate, maxConnections, false, availability, true, true, true, gatewayService, firewallService, lbService, vpnService, guestIpType);
         
         if ((offering = _networkOfferingDao.persist(offering)) != null) {
             return offering;
@@ -2466,6 +2483,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Object specifyVlan = cmd.getSpecifyVlan();
         Object isShared = cmd.getIsShared();
         Object availability = cmd.getAvailability();
+        Object guestIpType = cmd.getGuestIpType();
         
         Object keyword = cmd.getKeyword();
 
@@ -2480,6 +2498,11 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
+        
+        if (guestIpType != null) {
+            sc.addAnd("guestType", SearchCriteria.Op.EQ, guestIpType);
+        }
+        
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }

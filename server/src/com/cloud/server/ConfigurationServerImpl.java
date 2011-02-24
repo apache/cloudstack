@@ -57,6 +57,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.Network.GuestIpType;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -735,7 +736,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 true, false, null, null, null, true, 
                 Availability.Required, 
                 true, true, true, //services - all true except for firewall/lb/vpn and gateway
-                false, false, false, false);
+                false, false, false, false, GuestIpType.Direct);
 
         guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
         
@@ -746,16 +747,16 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 false, false, null, null, null, true, 
                 Availability.Required, 
                 true, true, true, //services
-                true, true, true, true);
+                true, true, true, true, GuestIpType.Virtual);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
         NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(
                 NetworkOffering.DefaultDirectNetworkOffering, 
                 "Direct", 
-                TrafficType.Public, 
+                TrafficType.Guest, 
                 false, false, null, null, null, true, 
                 Availability.Required, 
                 true, true, true, //services - all true except for firewall/lb/vpn and gateway
-                false, false, false, false);
+                false, false, false, false, GuestIpType.Direct);
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
     }
     

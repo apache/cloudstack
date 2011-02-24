@@ -62,7 +62,11 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     private Boolean isShared; 
     
     @Parameter(name=ApiConstants.AVAILABILITY, type=CommandType.STRING, description="the availability of network offering. Default value is Required")
-    private String availability; 
+    private String availability;
+    
+    
+    @Parameter(name=ApiConstants.GUEST_IP_TYPE, type=CommandType.STRING, description="the guest ip type for the network offering, supported types are Direct and Virtual.")
+    private String guestIpType;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -98,6 +102,10 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     
     public String getAvailability() {
         return availability;
+    }
+
+    public String getGuestIpType() {
+        return guestIpType;
     }
 
     /////////////////////////////////////////////////////

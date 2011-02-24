@@ -68,11 +68,11 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject NetworkOfferingDao _networkOfferingDao;
     
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
-        //this guru handles only non-system Public network
-        if (dc.getNetworkType() == NetworkType.Advanced && offering.getTrafficType() == TrafficType.Public && !offering.isSystemOnly()) {
+        //this guru handles only non-system network with guestIpType = Direct
+        if (dc.getNetworkType() == NetworkType.Advanced && offering.getGuestType() == GuestIpType.Direct && offering.getTrafficType() == TrafficType.Guest && !offering.isSystemOnly()) {
             return true;
         } else {
-            s_logger.trace("We only take care of Public Direct networks");
+            s_logger.trace("We only take care of Guest Direct networks");
             return false;
         }
     }
@@ -90,7 +90,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             state = State.Setup;
         }
         
-        NetworkVO config = new NetworkVO(offering.getTrafficType(), GuestIpType.Direct, Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId(), state);
+        NetworkVO config = new NetworkVO(offering.getTrafficType(), offering.getGuestType(), Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId(), state);
 
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) ||

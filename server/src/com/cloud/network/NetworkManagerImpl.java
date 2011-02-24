@@ -687,7 +687,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 true, 
                 Availability.Required, 
                 //services - all true except for firewall/lb/vpn and gateway services
-                true, true, true, false, false,false, false);
+                true, true, true, false, false,false, false, GuestIpType.Direct);
         guestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(guestNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemGuestNetwork, guestNetworkOffering);
 
@@ -703,13 +703,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 true, 
                 Availability.Required, 
                 //services
-                true, true, true, true,true, true, true);
+                true, true, true, true,true, true, true, GuestIpType.Virtual);
         
         defaultGuestNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestNetworkOffering);
         NetworkOfferingVO defaultGuestDirectNetworkOffering = new NetworkOfferingVO(
                 NetworkOffering.DefaultDirectNetworkOffering, 
                 "Direct", 
-                TrafficType.Public, 
+                TrafficType.Guest, 
                 false, 
                 false, 
                 null, 
@@ -718,7 +718,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 true, 
                 Availability.Required, 
                 //services - all true except for firewall/lb/vpn and gateway services
-                true, true, true, false, false,false, false);
+                true, true, true, false, false,false, false, GuestIpType.Direct);
         defaultGuestDirectNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultGuestDirectNetworkOffering);
 
         AccountsUsingNetworkSearch = _accountDao.createSearchBuilder();
@@ -1449,10 +1449,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Unable to find network offeirng by id " + networkOfferingId);
         }
 
-        // allow isDefault to be set only for Virtual network
-        if (networkOffering.getTrafficType() == TrafficType.Guest) {
+        // allow isDefault to be set only for Direct network
+        if (networkOffering.getGuestType() == GuestIpType.Virtual) {
             if (isDefault != null) {
-                throw new InvalidParameterValueException("Can specify isDefault parameter only for Public network. ");
+                throw new InvalidParameterValueException("Can specify isDefault parameter only for Direct network.");
             } else {
                 isDefault = true;
             }
