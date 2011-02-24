@@ -1814,6 +1814,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     public void shutdownNetwork(long networkId, ReservationContext context) {
+        
         Transaction txn = Transaction.currentTxn();
         txn.start();
         NetworkVO network = _networksDao.lockRow(networkId, true);
@@ -2014,16 +2015,23 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 _lastNetworkIdsToFree = stillFree;
 
                 for (Long networkId : shutdownList) {
-                    try {
-                        
-                        User caller = _accountMgr.getSystemUser();
-                        Account owner = _accountMgr.getAccount(getNetwork(networkId).getAccountId());
-                        
-                        ReservationContext context = new ReservationContextImpl(null, null, caller, owner);
-                        
-                        shutdownNetwork(networkId, context);
-                    } catch (Exception e) {
-                        s_logger.warn("Unable to shutdown network: " + networkId);
+                    
+                    //If network is removed, unset gc flag for it
+                    if (getNetwork(networkId) == null) {
+                        s_logger.debug("Network id=" + networkId + " is removed, so clearing up corresponding gc check");
+                        _networksDao.clearCheckForGc(networkId);
+                    } else {
+                        try {
+                            
+                            User caller = _accountMgr.getSystemUser();
+                            Account owner = _accountMgr.getAccount(getNetwork(networkId).getAccountId());
+                            
+                            ReservationContext context = new ReservationContextImpl(null, null, caller, owner);
+                            
+                            shutdownNetwork(networkId, context);
+                        } catch (Exception e) {
+                            s_logger.warn("Unable to shutdown network: " + networkId);
+                        }
                     }
                 }
             } catch (Exception e) {
