@@ -155,7 +155,9 @@ function zoneJsonToDetailsTab() {
 		    }
 	    } 
     }	
-        
+    
+    setBooleanReadField(jsonObj.securitygroupsenabled, $thisTab.find("#securitygroupsenabled"));	
+            
     $thisTab.find("#guestcidraddress").text(fromdb(jsonObj.guestcidraddress));   
     $thisTab.find("#guestcidraddress_edit").val(fromdb(jsonObj.guestcidraddress));   
         

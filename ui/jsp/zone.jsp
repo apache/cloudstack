@@ -141,8 +141,18 @@ dictionary = {
                         <div class="row_celltitles" id="networktype">
                         </div>                             
                     </div>
-                </div>                
-                <div class="grid_rows even" id="vlan_container">
+                </div>    
+                <div class="grid_rows even">
+                    <div class="grid_row_cell" style="width: 20%;">
+                        <div class="row_celltitles">
+                            <fmt:message key="label.security.groups.enabled"/>:</div>
+                    </div>
+                    <div class="grid_row_cell" style="width: 79%;">
+                        <div class="row_celltitles" id="securitygroupsenabled">
+                        </div>                             
+                    </div>
+                </div>    
+                <div class="grid_rows odd" id="vlan_container">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
                             <fmt:message key="label.vlan"/>:</div>
@@ -156,7 +166,7 @@ dictionary = {
 	                    <div id="endvlan_edit_errormsg" style="display:none"></div>            
                     </div>
                 </div>
-                <div class="grid_rows odd" id="guestcidraddress_container">
+                <div class="grid_rows even" id="guestcidraddress_container">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
                             <fmt:message key="label.guest.cidr"/>:</div>
@@ -168,7 +178,7 @@ dictionary = {
 	                    <div id="guestcidraddress_edit_errormsg" style="display:none"></div>       
                     </div>
                 </div>                
-                <div class="grid_rows even">
+                <div class="grid_rows odd">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
                             <fmt:message key="label.public"/>:</div>
@@ -182,7 +192,7 @@ dictionary = {
 	                    </select>             
                     </div>
                 </div>                
-                <div class="grid_rows odd">
+                <div class="grid_rows even">
                     <div class="grid_row_cell" style="width: 20%;">
                         <div class="row_celltitles">
                             <fmt:message key="label.domain"/>:</div>
