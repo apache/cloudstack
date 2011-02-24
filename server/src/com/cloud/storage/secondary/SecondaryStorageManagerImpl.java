@@ -984,9 +984,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         buf.append(" instance=SecStorage");
         buf.append(" sslcopy=").append(Boolean.toString(_useSSlCopy));
 
-        NicProfile controlNic = null;
-        NicProfile managementNic = null;
-
         boolean externalDhcp = false;
         String externalDhcpStr = _configDao.getValue("direct.attach.network.externalIpAllocator.enabled");
         if (externalDhcpStr != null && externalDhcpStr.equalsIgnoreCase("true")) {
@@ -1009,12 +1006,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             }
             if (nic.getTrafficType() == TrafficType.Management) {
                 buf.append(" localgw=").append(dest.getPod().getGateway());
-                managementNic = nic;
                 buf.append(" private.network.device=").append("eth").append(deviceId);
-            } else if (nic.getTrafficType() == TrafficType.Control) {
-                if (nic.getIp4Address() != null) {
-                    controlNic = nic;
-                }
             } else if (nic.getTrafficType() == TrafficType.Public) {
                 buf.append(" public.network.device=").append("eth").append(deviceId);
             }
@@ -1023,11 +1015,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         /* External DHCP mode */
         if (externalDhcp) {
             buf.append(" bootproto=dhcp");
-        }
-
-        if (controlNic == null) {
-            assert (managementNic != null);
-            controlNic = managementNic;
         }
 
         DataCenterVO dc = _dcDao.findById(profile.getVirtualMachine().getDataCenterId());
@@ -1040,8 +1027,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + bootArgs);
         }
-
-        profile.setParameter(VirtualMachineProfile.Param.ControlNic, controlNic);
 
         return true;
     }
@@ -1072,7 +1057,22 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     
     @Override
     public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<SecondaryStorageVmVO> profile) {
-        NicProfile controlNic = (NicProfile) profile.getParameter(VirtualMachineProfile.Param.ControlNic);
+        
+        NicProfile managementNic = null;
+        NicProfile controlNic = null;
+        for (NicProfile nic : profile.getNics()) {
+           if (nic.getTrafficType() == TrafficType.Management) {
+               managementNic = nic;
+           } else if (nic.getTrafficType() == TrafficType.Control && nic.getIp4Address() != null) {
+               controlNic = nic;
+           }
+        }
+
+        if (controlNic == null) {
+          assert (managementNic != null);
+          controlNic = managementNic;
+        }
+
         CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20);
         cmds.addCommand("checkSsh", check);
         

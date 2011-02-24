@@ -934,8 +934,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             throw new CloudRuntimeException("Didn't start a control port");
         }
 
-        profile.setParameter(VirtualMachineProfile.Param.ControlNic, controlNic);
-
         return true;
     }
 
@@ -964,9 +962,21 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     
     @Override
     public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile) {
-        DomainRouterVO router = profile.getVirtualMachine();
-        NicProfile controlNic = (NicProfile) profile.getParameter(VirtualMachineProfile.Param.ControlNic);
-        cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20));
+       DomainRouterVO router = profile.getVirtualMachine();
+        
+       NicProfile controlNic = null;
+       for (NicProfile nic : profile.getNics()) {
+           if (nic.getTrafficType() == TrafficType.Control && nic.getIp4Address() != null) {
+               controlNic = nic;
+           }
+       }
+
+       if (controlNic == null) {
+           s_logger.error("Control network doesn't exist for the router " + router);
+           return false;
+       }
+        
+       cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20));
         
         //restart network if restartNetwork = false is not specified in profile parameters
         boolean restartNetwork = true;

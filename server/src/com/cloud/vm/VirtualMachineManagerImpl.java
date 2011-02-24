@@ -1331,26 +1331,33 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     
                     Commands cmds = new Commands(OnError.Revert);
                     s_logger.debug("Finalizing commands that need to be send to complete Start process for the vm " + vm);
-                    vmGuru.finalizeCommandsOnStart(cmds, profile);
                     
-                    if (cmds.size() != 0) {
-                        try {
-                            _agentMgr.send(vm.getHostId(), cmds);
-                        } catch (OperationTimedoutException e){
-                            s_logger.error("Exception during update for running vm: " + vm, e);                        
-                            return null;
-                        } catch (ResourceUnavailableException e) {
-                            s_logger.error("Exception during update for running vm: " + vm, e); 
+                    
+                    if (vmGuru.finalizeCommandsOnStart(cmds, profile)) {
+                        if (cmds.size() != 0) {
+                            try {
+                                _agentMgr.send(vm.getHostId(), cmds);
+                            } catch (OperationTimedoutException e){
+                                s_logger.error("Exception during update for running vm: " + vm, e);                        
+                                return null;
+                            } catch (ResourceUnavailableException e) {
+                                s_logger.error("Exception during update for running vm: " + vm, e); 
+                                return null;
+                            }
+                        }
+                        
+                        if (vmGuru.finalizeStart(profile, vm.getHostId(), cmds, null)) {
+                            stateTransitTo(vm, Event.AgentReportRunning, vm.getHostId());
+                        } else {
+                            s_logger.error("Exception during update for running vm: " + vm); 
                             return null;
                         }
-                    }
-                    
-                    if (vmGuru.finalizeStart(profile, vm.getHostId(), cmds, null)) {
-                        stateTransitTo(vm, Event.AgentReportRunning, vm.getHostId());
                     } else {
-                        s_logger.error("Exception during update for running vm: " + vm); 
+                        s_logger.error("Unable to finalize commands on start for vm: " + vm);
                         return null;
                     }
+                    
+                    
                 }
             } else if (serverState == State.Stopping) {
                 s_logger.debug("Scheduling a stop command for " + vm);

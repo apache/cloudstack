@@ -1388,8 +1388,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             externalDhcp = true;
         }
         
-        NicProfile controlNic = null;
-        NicProfile managementNic = null;
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
             if(nic.getIp4Address() == null) {
@@ -1410,12 +1408,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             
             if (nic.getTrafficType() == TrafficType.Management) {
                 buf.append(" localgw=").append(dest.getPod().getGateway());
-                managementNic = nic;
-            } else if (nic.getTrafficType() == TrafficType.Control) {
-                if(nic.getIp4Address() != null) {
-                    controlNic = nic;
-                }
-            }
+            } 
         }
 
 		/*External DHCP mode*/
@@ -1423,17 +1416,10 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             buf.append(" bootproto=dhcp");
         }
         
-        if(controlNic == null) {
-        	assert(managementNic != null);
-        	controlNic = managementNic;
-        }
-        
         String bootArgs = buf.toString();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Boot Args for " + profile + ": " + bootArgs);
         }
-        
-        profile.setParameter(VirtualMachineProfile.Param.ControlNic, controlNic);
         
         return true;
     }
@@ -1462,7 +1448,22 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     
     @Override
     public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<ConsoleProxyVO> profile) {
-        NicProfile controlNic = (NicProfile)profile.getParameter(VirtualMachineProfile.Param.ControlNic);
+        
+        NicProfile managementNic = null;
+        NicProfile controlNic = null;
+        for (NicProfile nic : profile.getNics()) {
+           if (nic.getTrafficType() == TrafficType.Management) {
+               managementNic = nic;
+           } else if (nic.getTrafficType() == TrafficType.Control && nic.getIp4Address() != null) {
+               controlNic = nic;
+           }
+        }
+
+        if (controlNic == null) {
+          assert (managementNic != null);
+          controlNic = managementNic;
+        }
+
         CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922, 5, 20);
         cmds.addCommand("checkSsh", check);
         
