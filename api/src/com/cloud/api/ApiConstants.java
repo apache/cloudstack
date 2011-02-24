@@ -191,6 +191,8 @@ public class ApiConstants {
     public static final String AVAILABILITY = "availability";
     public static final String NETWORKRATE = "networkrate";
     public static final String HOST_CPU_CAPACITY = "hostcpucapacity";
-    public static final String HOST_MEM_CAPACITY = "hostmemcapacity";  
+    public static final String HOST_CPU_NUM = "hostcpunum";
+    public static final String HOST_MEM_CAPACITY = "hostmemcapacity";
+    public static final String HOST_MAC = "hostmac";
 }
  

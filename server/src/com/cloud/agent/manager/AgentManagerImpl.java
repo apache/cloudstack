@@ -751,6 +751,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		String password = cmd.getPassword();
 		Long memCapacity = cmd.getMemCapacity();
 		Long cpuCapacity = cmd.getCpuCapacity();
+		Long cpuNum = cmd.getCpuNum();
+		String mac = cmd.getMac();
 		Map<String, String>bareMetalParams = new HashMap<String, String>();
 		
 		// this is for standalone option
@@ -765,9 +767,17 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			if (cpuCapacity == null) {
 				cpuCapacity = Long.valueOf(0);
 			}
+			if (cpuNum == null) {
+				cpuNum = Long.valueOf(0);
+			}
+			if (mac == null) {
+				mac = "unknown";
+			}
 			
+			bareMetalParams.put("cpuNum", cpuNum.toString());
 			bareMetalParams.put("cpuCapacity", cpuCapacity.toString());
 			bareMetalParams.put("memCapacity", memCapacity.toString());
+			bareMetalParams.put("mac", mac);
 		}
 		
 		
@@ -891,7 +901,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 		boolean isHypervisorTypeSupported = false;
 		while (en.hasMoreElements()) {
 			Discoverer discoverer = en.nextElement();
-			discoverer.putParam(params);
+			if (params != null) {
+				discoverer.putParam(params);
+			}
 			
 			if (!discoverer.matchHypervisor(hypervisorType)) {
 				continue;
@@ -2684,7 +2696,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory,
 			// If this command is from a KVM agent, or from an agent that has a
 			// null hypervisor type, don't do the CIDR check
 			if (hypervisorType == null || hypervisorType == HypervisorType.KVM
-					|| hypervisorType == HypervisorType.VMware) {
+					|| hypervisorType == HypervisorType.VMware || hypervisorType == HypervisorType.BareMetal) {
 				doCidrCheck = false;
 			}
 

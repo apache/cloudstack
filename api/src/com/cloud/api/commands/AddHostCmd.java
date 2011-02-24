@@ -66,11 +66,17 @@ public class AddHostCmd extends BaseCmd {
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, required=true, description="hypervisor type of the host")
     private String hypervisor;
     
-    @Parameter(name=ApiConstants.HOST_CPU_CAPACITY, type=CommandType.LONG, description="CPU capacity of host")
+    @Parameter(name=ApiConstants.HOST_CPU_CAPACITY, type=CommandType.LONG, description="HZ per CPU of host")
     private Long cpuCapacity;
+    
+    @Parameter(name=ApiConstants.HOST_CPU_NUM, type=CommandType.LONG, description="number of CPU on host")
+    private Long cpuNum;
     
     @Parameter(name=ApiConstants.HOST_MEM_CAPACITY, type=CommandType.LONG, description="memory capacity of host")
     private Long memCapacity;
+    
+    @Parameter(name=ApiConstants.HOST_MAC, type=CommandType.STRING, required=true, description="Mac of PXE nic")
+    private String mac;
     
     
 
@@ -115,8 +121,16 @@ public class AddHostCmd extends BaseCmd {
     	return cpuCapacity;
     }
     
+    public Long getCpuNum() {
+    	return cpuNum;
+    }
+    
     public Long getMemCapacity() {
     	return memCapacity;
+    }
+    
+    public String getMac() {
+    	return mac;
     }
     
     /////////////////////////////////////////////////////
