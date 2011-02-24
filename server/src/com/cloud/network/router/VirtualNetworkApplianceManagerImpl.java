@@ -761,7 +761,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Creating user statistics for the account: " + owner.getId() + " Router Id: "+router.getId());
             }
-            stats = new UserStatisticsVO(owner.getId(), dcId, null, router.getId(), router.getType().toString());
+            stats = new UserStatisticsVO(owner.getId(), dcId, null, router.getId(), router.getType().toString(), guestNetwork.getId());
             _userStatsDao.persist(stats);
         }
         return router;
@@ -829,7 +829,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Creating user statistics for the account: " + owner.getId() + " Router Id: "+router.getId());
             }
-            stats = new UserStatisticsVO(owner.getId(), dcId, null, router.getId(), router.getType().toString());
+            stats = new UserStatisticsVO(owner.getId(), dcId, null, router.getId(), router.getType().toString(), guestNetwork.getId());
             _userStatsDao.persist(stats);
         }
 
