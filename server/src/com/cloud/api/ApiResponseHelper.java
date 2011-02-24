@@ -728,6 +728,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         ZoneResponse zoneResponse = new ZoneResponse();
         zoneResponse.setId(dataCenter.getId());
         zoneResponse.setName(dataCenter.getName());
+        zoneResponse.setSecurityGroupsEnabled(ApiDBUtils.isSecurityGroupEnabledInZone(dataCenter.getId()));
 
         if ((dataCenter.getDescription() != null) && !dataCenter.getDescription().equalsIgnoreCase("null")) {
             zoneResponse.setDescription(dataCenter.getDescription());

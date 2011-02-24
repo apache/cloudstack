@@ -30,6 +30,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
@@ -539,6 +540,15 @@ public class ApiDBUtils {
     
     public static Account getVlanAccount(long vlanId) {
        return _configMgr.getVlanAccount(vlanId);
+    }
+    
+    public static boolean isSecurityGroupEnabledInZone(long zoneId) {
+        Network network = _networkMgr.getNetworkWithSecurityGroupEnabled(zoneId);
+        if (network != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
     
 }
