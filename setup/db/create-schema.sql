@@ -738,6 +738,7 @@ CREATE TABLE  `cloud`.`user_statistics` (
   `public_ip_address` varchar(15),
   `device_id` bigint unsigned NOT NULL,
   `device_type` varchar(32) NOT NULL,
+  `network_id` bigint unsigned,
   `net_bytes_received` bigint unsigned NOT NULL default '0',
   `net_bytes_sent` bigint unsigned NOT NULL default '0',
   `current_bytes_received` bigint unsigned NOT NULL default '0',
