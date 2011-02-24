@@ -43,7 +43,7 @@ function vmGetSearchParams() {
 				var domainId;							    
 			    if(autoCompleteItems != null && autoCompleteItems.length > 0) {									
 				    for(var i=0; i < autoCompleteItems.length; i++) {					        
-				      if(fromdb(autoCompleteItems[i].name) == domainName) {
+				      if(fromdb(autoCompleteItems[i].name).toLowerCase() == domainName.toLowerCase()) {
 				          domainId = autoCompleteItems[i].id;
 				          break;	
 				      }
