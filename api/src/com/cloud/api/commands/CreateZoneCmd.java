@@ -69,7 +69,7 @@ public class CreateZoneCmd extends BaseCmd {
     private String networkType; 
     
     @Parameter(name=ApiConstants.SECURITY_GROUP_EANBLED, type=CommandType.BOOLEAN, description="true if network is security group enabled, false otherwise")
-    private Boolean is_security_group_enabled;
+    private Boolean securitygroupenabled;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -116,7 +116,10 @@ public class CreateZoneCmd extends BaseCmd {
     }
     
     public boolean isSecurityGroupEnabled() {
-        return is_security_group_enabled == null ? false : true;
+        if (securitygroupenabled == null) {
+            return false;
+        }
+        return securitygroupenabled;
     }
     
     /////////////////////////////////////////////////////
