@@ -482,8 +482,18 @@ function ipToRightPanel($midmenuItem1) {
 	            }
 	            
 	            //Load Balancer tab	  
-	            if (ipObj.issourcenat == true) {
-	                $("#tab_load_balancer").hide();	
+	            if (ipObj.issourcenat == true) {	                
+	                var lbServiceObj = ipFindNetworkServiceByName("Lb", networkObj);
+	                if(lbServiceObj != null) {
+	                    var LoadBalancingSupportedIpsCapabilityObj = ipFindCapabilityByName("LoadBalancingSupportedIps", lbServiceObj);
+	                    if(LoadBalancingSupportedIpsCapabilityObj != null)
+	                        $("#tab_load_balancer").hide();	
+	                    else
+	                        $("#tab_load_balancer").show();	  
+	                }
+	                else {
+	                    $("#tab_load_balancer").hide();	
+	                }	                
 	            }
 	            else { 
 	                if(networkObj != null) {
