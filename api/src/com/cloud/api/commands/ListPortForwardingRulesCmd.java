@@ -26,6 +26,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.FirewallRuleResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.network.rules.PortForwardingRule;
@@ -39,6 +40,8 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Lists rule with the specified ID.")
+    private Long id;
     
     @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.LONG, description="the id of IP address of the port forwarding services")
     private Long ipAddressId;
@@ -63,6 +66,10 @@ public class ListPortForwardingRulesCmd extends BaseListCmd {
     
     public Long getIpAddressId() {
         return ipAddressId;
+    }
+    
+    public Long getId() {
+        return id;
     }
 
     /////////////////////////////////////////////////////

@@ -582,6 +582,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     public List<? extends PortForwardingRule> listPortForwardingRules(ListPortForwardingRulesCmd cmd) {
        Account caller = UserContext.current().getCaller();
        Long ipId = cmd.getIpAddressId();
+       Long id = cmd.getId();
        String path = null;
         
        Pair<String, Long> accountDomainPair = _accountMgr.finalizeAccountDomainForList(caller, cmd.getAccountName(), cmd.getDomainId());
@@ -603,6 +604,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         
         Filter filter = new Filter(PortForwardingRuleVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal()); 
         SearchBuilder<PortForwardingRuleVO> sb = _forwardingDao.createSearchBuilder();
+        sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
         sb.and("accountId", sb.entity().getAccountId(), Op.EQ);
         sb.and("domainId", sb.entity().getDomainId(), Op.EQ);
@@ -616,6 +618,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
         
         SearchCriteria<PortForwardingRuleVO> sc = sb.create();
+        
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
         
         if (ipId != null) {
             sc.setParameters("ip", ipId);
