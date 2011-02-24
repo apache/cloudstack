@@ -18,46 +18,38 @@
 package com.cloud.upgrade.dao;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.SQLException;
 
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.db.ScriptRunner;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade217to22 implements DbUpgrade {
 
     @Override
-    public void prepare() {
+    public File getPrepareScript() {
         File file = PropertiesUtil.findConfigFile("schema-21to22.sql");
         if (file == null) {
             throw new CloudRuntimeException("Unable to find the upgrade script, schema-21to22.sql");
         }
         
-        try {
-            FileReader reader = new FileReader(file);
-            Connection conn = Transaction.getStandaloneConnection();
-            ScriptRunner runner = new ScriptRunner(conn, false, false);
-            runner.runScript(reader);
-        } catch (FileNotFoundException e) {
-            throw new CloudRuntimeException("Unable to find upgrade script, schema-21to22.sql", e);
-        } catch (IOException e) {
-            throw new CloudRuntimeException("Unable to read upgrade script, schema-21to22.sql", e);
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to execute upgrade script, schema-21to22.sql", e);
-        }
+        return file;
+    }
+    
+    protected void upgradeNetworks() {
+        
     }
     
     @Override
-    public void upgrade() {
+    public void performDataMigration() {
     }
 
     @Override
-    public void cleanup() {
+    public File getCleanupScript() {
+        File file = PropertiesUtil.findConfigFile("schema-21to22-cleanup.sql");
+        if (file == null) {
+            throw new CloudRuntimeException("Unable to find the upgrade script, schema-21to22-cleanup.sql");
+        }
+        
+        return file;
     }
 
     @Override

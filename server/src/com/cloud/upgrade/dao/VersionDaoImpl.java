@@ -17,6 +17,10 @@
  */
 package com.cloud.upgrade.dao;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -38,6 +42,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.ScriptRunner;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
@@ -124,6 +129,21 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
         return vers.get(0);
     }
     
+    protected void runScript(File file) {
+        try {
+            FileReader reader = new FileReader(file);
+            Connection conn = Transaction.getStandaloneConnection();
+            ScriptRunner runner = new ScriptRunner(conn, false, true);
+            runner.runScript(reader);
+        } catch (FileNotFoundException e) {
+            throw new CloudRuntimeException("Unable to find upgrade script, schema-21to22.sql", e);
+        } catch (IOException e) {
+            throw new CloudRuntimeException("Unable to read upgrade script, schema-21to22.sql", e);
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to execute upgrade script, schema-21to22.sql", e);
+        }
+    }
+    
     @DB
     protected void upgrade(String dbVersion, String currentVersion) throws ConfigurationException {
         s_logger.info("Database upgrade must be performed from " + dbVersion + " to " + currentVersion);
@@ -149,8 +169,9 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
             s_logger.info("Running upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade.getUpgradableVersionRange()[1] + " to " + upgrade.getUpgradedVersion());
             Transaction txn = Transaction.currentTxn();
             txn.start();
-            upgrade.prepare();
-            upgrade.upgrade();
+            File script = upgrade.getPrepareScript();
+            runScript(script);
+            upgrade.performDataMigration();
             VersionVO version = new VersionVO(upgrade.getUpgradedVersion());
             persist(version);
             txn.commit();
@@ -161,7 +182,8 @@ public class VersionDaoImpl extends GenericDaoBase<VersionVO, Long> implements V
             VersionVO version = findByVersion(upgrade.getUpgradedVersion(), Step.Upgrade);
             Transaction txn = Transaction.currentTxn();
             txn.start();
-            upgrade.cleanup();
+            File script = upgrade.getCleanupScript();
+            runScript(script);
             version.setStep(Step.Complete);
             version.setUpdated(new Date());
             update(version.getId(), version);

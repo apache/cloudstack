@@ -17,6 +17,8 @@
  */
 package com.cloud.upgrade.dao;
 
+import java.io.File;
+
 public interface DbUpgrade {
     String[] getUpgradableVersionRange();
     
@@ -24,7 +26,20 @@ public interface DbUpgrade {
     
     boolean supportsRollingUpgrade();
 
-    void prepare();
-    void upgrade();
-    void cleanup();
+    /**
+     * @return the script to prepare the database schema for the 
+     * data migration step.
+     */
+    File getPrepareScript();
+    
+    /**
+     * Performs the actual data migration.
+     */
+    void performDataMigration();
+    
+    /**
+     * 
+     * @return
+     */
+    File getCleanupScript();
 }
