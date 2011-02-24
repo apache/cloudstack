@@ -243,9 +243,10 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public void destroy(Network network, NetworkOffering offering) {
-        s_logger.debug("Releasing vnet for the network id=" + network.getId());
-        _dcDao.releaseVnet(network.getBroadcastUri().getHost(), network.getDataCenterId(), network.getAccountId(), network.getReservationId());
+    public void shutdown(NetworkProfile profile, NetworkOffering offering) {
+        s_logger.debug("Releasing vnet for the network id=" + profile.getId());
+        _dcDao.releaseVnet(profile.getBroadcastUri().getHost(), profile.getDataCenterId(), profile.getAccountId(), profile.getReservationId());
+        profile.setBroadcastUri(null);
     }
 
     @Override
@@ -255,7 +256,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     
     @Override
     public void updateNetworkProfile(NetworkProfile networkProfile) {
-        DataCenter dc = _dcDao.findById(networkProfile.getNetwork().getDataCenterId());
+        DataCenter dc = _dcDao.findById(networkProfile.getDataCenterId());
         networkProfile.setDns1(dc.getDns1());
         networkProfile.setDns2(dc.getDns2());
     }

@@ -2252,8 +2252,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     
     @Override
     public NetworkResponse createNetworkResponse(Network network) {
-        NetworkProfile profile = ApiDBUtils.getNetworkProfile(network.getId());
-        network = profile.getNetwork();     
+        //need to get network profile in order to retrieve dns information from there
+        NetworkProfile profile = ApiDBUtils.getNetworkProfile(network.getId());   
         NetworkResponse response = new NetworkResponse();
         response.setId(network.getId());
         response.setName(network.getName());

@@ -75,7 +75,7 @@ public interface NetworkGuru extends Adapter {
     
     void updateNicProfile(NicProfile profile, Network network);
     
-    void destroy(Network network, NetworkOffering offering);
+    void shutdown(NetworkProfile network, NetworkOffering offering);
     
     /**
      * Throw away the design.

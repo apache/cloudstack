@@ -502,7 +502,7 @@ public class ApiDBUtils {
     }
     
     public static NetworkProfile getNetworkProfile(long networkId) {
-        return _networkMgr.getNetworkProfile(networkId);
+        return _networkMgr.convertNetworkToNetworkProfile(networkId);
     }
     
     public static NetworkOfferingVO findNetworkOfferingById(long networkOfferingId) {
