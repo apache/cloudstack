@@ -42,10 +42,10 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
     public static final Logger s_logger = Logger.getLogger(UsageEventDaoImpl.class.getName());
 
     private final SearchBuilder<UsageEventVO> latestEventsSearch;
-    private static final String COPY_EVENTS = "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size) " +
-    		"SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size FROM cloud.usage_event vmevt WHERE vmevt.id > ? and vmevt.created <= ? ";
-    private static final String COPY_ALL_EVENTS = "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size) " +
-    		"SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size FROM cloud.usage_event where id <= ? ";
+    private static final String COPY_EVENTS = "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type) " +
+    		"SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type FROM cloud.usage_event vmevt WHERE vmevt.id > ? and vmevt.created <= ? ";
+    private static final String COPY_ALL_EVENTS = "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type) " +
+    		"SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type FROM cloud.usage_event where id <= ? ";
 
 
     public UsageEventDaoImpl () {

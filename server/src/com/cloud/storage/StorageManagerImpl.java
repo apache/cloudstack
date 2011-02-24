@@ -2253,7 +2253,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         if (volume.getState() != Volume.State.Destroy) {
             destroyVolume(volume);
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volumeId,
-                    volume.getName(), null, null, null);
+                    volume.getName());
             _usageEventDao.persist(usageEvent);
         }
 
@@ -2632,7 +2632,7 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
                     VMInstanceVO vm = _vmInstanceDao.findById(vmId);
                     if(vm.getType() == VirtualMachine.Type.User){
                         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(),
-                                vol.getName(), null, null, null);
+                                vol.getName());
                         _usageEventDao.persist(usageEvent);
                     }
                 }

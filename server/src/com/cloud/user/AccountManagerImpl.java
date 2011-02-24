@@ -869,7 +869,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     s_logger.error("Unable to destroy vm: " + vm.getId());
                     accountCleanupNeeded = true;
                 }
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), vm.getServiceOfferingId(), vm.getTemplateId(), null);
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), 
+                        vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHypervisorType().toString());
                 _usageEventDao.persist(usageEvent);
             }
             
@@ -880,7 +881,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     _storageMgr.destroyVolume(volume);
                     if(volume.getPoolId() != null){
                         UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(),
-                                volume.getName(), null, null, null);
+                                volume.getName());
                         _usageEventDao.persist(usageEvent);
                     }
                 }

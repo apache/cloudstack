@@ -933,7 +933,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 						_tmpltZoneDao.remove(templateZone.getId());
 					}
 					
-					UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), sZoneId, templateId, null, null, null, null);
+					UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), sZoneId, templateId, null);
 					_usageEventDao.persist(usageEvent);
 				} finally {
 					if (lock != null) {

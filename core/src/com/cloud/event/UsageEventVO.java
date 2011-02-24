@@ -64,6 +64,9 @@ public class UsageEventVO implements UsageEvent {
     @Column(name="size")
     private Long size;
     
+    @Column(name="resource_type")
+    private String resourceType;
+    
     @Column(name="processed")
     boolean processed;
 
@@ -98,6 +101,17 @@ public class UsageEventVO implements UsageEvent {
         this.resourceName = resourceName;
         this.size = size;
     }
+	
+	public UsageEventVO(String usageType, long accountId, long zoneId, long resourceId, String resourceName, Long offeringId, Long templateId, String resourceType) {
+	    this.type = usageType;
+	    this.accountId = accountId;
+	    this.zoneId = zoneId;
+	    this.resourceId = resourceId;
+	    this.resourceName = resourceName;
+	    this.offeringId = offeringId;
+	    this.templateId = templateId;
+	    this.resourceType = resourceType;
+	}
 	
 	@Override
     public long getId() {
@@ -181,6 +195,10 @@ public class UsageEventVO implements UsageEvent {
 
     public void setProcessed(boolean processed) {
         this.processed = processed;
+    }
+    
+    public String getResourceType() {
+        return resourceType;
     }
 
 }
