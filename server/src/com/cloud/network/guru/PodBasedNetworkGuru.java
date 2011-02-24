@@ -124,7 +124,7 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     }
     
     @Override
-    public void destroy(Network config, NetworkOffering offering) {
+    public void shutdown(NetworkProfile config, NetworkOffering offering) {
     }
     
     @Override

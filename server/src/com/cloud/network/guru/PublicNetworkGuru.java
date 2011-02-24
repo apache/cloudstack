@@ -174,7 +174,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     }
     
     @Override
-    public void destroy(Network network, NetworkOffering offering) {
+    public void shutdown(NetworkProfile network, NetworkOffering offering) {
     }
 
     @Override
@@ -184,7 +184,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     
     @Override
     public void updateNetworkProfile(NetworkProfile networkProfile) {
-        DataCenter dc = _dcDao.findById(networkProfile.getNetwork().getDataCenterId());
+        DataCenter dc = _dcDao.findById(networkProfile.getDataCenterId());
         networkProfile.setDns1(dc.getDns1());
         networkProfile.setDns2(dc.getDns2());
     }

@@ -33,6 +33,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -156,7 +157,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     }
     
     @Override
-    public void destroy(Network config, NetworkOffering offering) {
+    public void shutdown(NetworkProfile config, NetworkOffering offering) {
         assert false : "Destroying a link local...Either you're out of your mind or something has changed.";
     }
     

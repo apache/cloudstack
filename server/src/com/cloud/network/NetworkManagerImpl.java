@@ -1028,6 +1028,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         vo.setIsolationUri(profile.getIsolationUri());
         vo.setNetmask(profile.getNetmask());
     }
+    
+    protected void applyProfileToNetwork(NetworkVO network, NetworkProfile profile) {
+        network.setBroadcastUri(profile.getBroadcastUri());
+        network.setDns1(profile.getDns1());
+        network.setDns2(profile.getDns2());
+    }
 
     protected NicTO toNicTO(NicVO nic, NicProfile profile, NetworkVO config) {
         NicTO to = new NicTO();
@@ -1819,6 +1825,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.debug("Network is not implemented: " + network);
             return;
         }
+        
         network.setState(Network.State.Shutdown);
         _networksDao.update(network.getId(), network);
         txn.commit();
@@ -1849,11 +1856,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 s_logger.debug("Network id=" + networkId + " is shutdown successfully, cleaning up corresponding resources now.");
             }
             NetworkGuru guru = _networkGurus.get(network.getGuruName());
-            guru.destroy(network, _networkOfferingDao.findById(network.getNetworkOfferingId()));
-            network.setBroadcastUri(null);
+            NetworkProfile profile = convertNetworkToNetworkProfile(network.getId());
+            guru.shutdown(profile, _networkOfferingDao.findById(network.getNetworkOfferingId()));
+            
+            applyProfileToNetwork(network, profile);
+            
             network.setState(Network.State.Allocated);
             _networksDao.update(network.getId(), network);
             _networksDao.clearCheckForGc(networkId);
+            
         } else {
             network.setState(Network.State.Implemented);
             _networksDao.update(network.getId(), network);
@@ -2303,10 +2314,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public NetworkProfile getNetworkProfile(long networkId) {
+    public NetworkProfile convertNetworkToNetworkProfile(long networkId) {
         NetworkVO network = _networksDao.findById(networkId);
         NetworkGuru concierge = _networkGurus.get(network.getGuruName());
-        NetworkProfile profile = new NetworkProfile(network, null, null);
+        NetworkProfile profile = new NetworkProfile(network);
         concierge.updateNetworkProfile(profile);
 
         return profile;

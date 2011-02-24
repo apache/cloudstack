@@ -65,7 +65,7 @@ public interface NetworkService {
     
     IpAddress getIp(long id);
     
-    NetworkProfile getNetworkProfile(long networkId);
+    NetworkProfile convertNetworkToNetworkProfile(long networkId);
     
     Map<Service, Map<Capability, String>> getZoneCapabilities(long zoneId);
     
