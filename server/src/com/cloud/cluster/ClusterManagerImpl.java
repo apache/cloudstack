@@ -23,8 +23,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.Listener;
+import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ChangeAgentCommand;
 import com.cloud.agent.api.Command;
@@ -81,6 +81,7 @@ public class ClusterManagerImpl implements ClusterManager {
     private HostDao _hostDao;
     
     protected long _id = MacAddress.getMacAddress().toLong();
+    protected long _runId = System.currentTimeMillis();
     
     private Long _mshostId = null;
     
@@ -773,6 +774,11 @@ public class ClusterManagerImpl implements ClusterManager {
     @Override
     public long getId() {
         return _id;
+    }
+    
+    @Override
+    public long getCurrentRunId() {
+        return _runId;
     }
     
     @Override

@@ -39,6 +39,8 @@ public class DummyClusterManagerImpl implements ClusterManager {
     private static final Logger s_logger = Logger.getLogger(DummyClusterManagerImpl.class);
 	
     protected long _id = MacAddress.getMacAddress().toLong();
+    protected long _runId = System.currentTimeMillis();
+    
     private String _name;
     private final String _clusterNodeIP = "127.0.0.1";
 	
@@ -82,6 +84,10 @@ public class DummyClusterManagerImpl implements ClusterManager {
 	public long getId() {
         return _id;
 	}
+	
+    public long getCurrentRunId() {
+        return _runId;
+    }
 	
 	@Override
 	public ManagementServerHostVO getPeer(String str) {
