@@ -380,7 +380,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
 
         List<NetworkOfferingVO> defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork);
-        if (dc.getNetworkType() == NetworkType.Basic) {
+        
+        if (dc.getNetworkType() == NetworkType.Basic || dc.isSecurityGroupEnabled()) {
             defaultOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemGuestNetwork);
         }
 

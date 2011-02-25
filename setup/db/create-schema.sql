@@ -179,7 +179,7 @@ CREATE TABLE `cloud`.`networks` (
   `is_default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if network is default',
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
-  `is_security_group_enabled` smallint(1) NOT NULL COMMENT '1: enabled, 0: not',
+  `is_security_group_enabled` tinyint NOT NULL DEFAULT 0 COMMENT '1: enabled, 0: not',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_networks__network_offering_id` FOREIGN KEY (`network_offering_id`) REFERENCES `network_offerings`(`id`),
   CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`),
@@ -474,6 +474,7 @@ CREATE TABLE  `cloud`.`data_center` (
   `vpn_provider` char(64) DEFAULT 'VirtualRouter',
   `userdata_provider` char(64) DEFAULT 'VirtualRouter',
   `enable` tinyint NOT NULL DEFAULT 1 COMMENT 'Is this data center enabled for activities',
+  `is_security_group_enabled` tinyint NOT NULL DEFAULT 0 COMMENT '1: enabled, 0: not',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_data_center__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

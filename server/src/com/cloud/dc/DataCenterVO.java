@@ -97,6 +97,9 @@ public class DataCenterVO implements DataCenter {
     @Column(name="firewall_provider")
     private String firewallProvider;
     
+    @Column(name="is_security_group_enabled")
+    boolean securityGroupEnabled;
+    
     @Column(name="mac_address", updatable = false, nullable=false)
     @TableGenerator(name="mac_address_sq", table="data_center", pkColumnName="id", valueColumnName="mac_address", allocationSize=1)
     private long macAddress = 1;
@@ -147,11 +150,11 @@ public class DataCenterVO implements DataCenter {
     }
 
     public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, NetworkType zoneType) {
-        this(name, description, dns1, dns2, dns3, dns4, vnet, guestCidr, domain, domainId, zoneType);
+        this(name, description, dns1, dns2, dns3, dns4, vnet, guestCidr, domain, domainId, zoneType, false);
         this.id = id;
 	}
 
-    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, NetworkType zoneType) {
+    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String vnet, String guestCidr, String domain, Long domainId, NetworkType zoneType, boolean securityGroupEnabled) {
         this.name = name;
         this.description = description;
         this.dns1 = dns1;
@@ -163,6 +166,7 @@ public class DataCenterVO implements DataCenter {
         this.domain = domain;
         this.domainId = domainId;
         this.networkType = zoneType;
+        this.securityGroupEnabled = securityGroupEnabled;
         loadBalancerProvider = Provider.VirtualRouter.getName();
         firewallProvider = Provider.VirtualRouter.getName();
         dhcpProvider = Provider.VirtualRouter.getName();
@@ -303,4 +307,12 @@ public class DataCenterVO implements DataCenter {
         return networkType;
     }
     
+    @Override 
+    public boolean isSecurityGroupEnabled() {
+        return securityGroupEnabled;
+    }
+    
+    public void setSecurityGroupEnabled(boolean enabled) {
+        this.securityGroupEnabled = enabled;
+    }
 }

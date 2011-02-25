@@ -135,7 +135,7 @@ public class NetworkVO implements Network {
     boolean isDefault;
     
     @Column(name="is_security_group_enabled")
-    boolean securityGroupEnabled = false;
+    boolean securityGroupEnabled;
     
     public NetworkVO() {
     }

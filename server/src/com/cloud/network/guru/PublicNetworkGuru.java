@@ -54,7 +54,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     
     
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
-        if (dc.getNetworkType() == NetworkType.Advanced && offering.getTrafficType() == TrafficType.Public && offering.isSystemOnly()) {
+        if (dc.getNetworkType() == NetworkType.Advanced && offering.getTrafficType() == TrafficType.Public && offering.isSystemOnly() && !dc.isSecurityGroupEnabled()) {
             return true;
         } else {
             s_logger.trace("We only take care of System only Public Virtual Network");
@@ -71,12 +71,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         
         if (offering.getTrafficType() == TrafficType.Public) {
-            GuestIpType type = null;
-            if (network.isSecurityGroupEnabled()) {
-                type = GuestIpType.Direct;
-            }
-
-            NetworkVO ntwk = new NetworkVO(offering.getTrafficType(), type, Mode.Static, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId(), State.Setup);
+            NetworkVO ntwk = new NetworkVO(offering.getTrafficType(), null, Mode.Static, BroadcastDomainType.Vlan, offering.getId(), plan.getDataCenterId(), State.Setup);
             return ntwk;
         } else {
             return null;

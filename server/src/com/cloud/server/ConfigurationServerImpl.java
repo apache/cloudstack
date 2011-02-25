@@ -610,7 +610,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             }
         }
         // Create the new zone in the database
-        DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain, domainId, zoneType);
+        DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, vnetRange, guestCidr, domain, domainId, zoneType, false);
         zone = _zoneDao.persist(zone);
 
         // Add vnet entries for the new zone

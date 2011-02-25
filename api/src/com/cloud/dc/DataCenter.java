@@ -11,7 +11,7 @@ import com.cloud.org.Grouping;
 public interface DataCenter extends Grouping {
     public enum NetworkType {
         Basic,
-        Advanced
+        Advanced,
     }
     long getId();
     String getDns1();
@@ -33,5 +33,6 @@ public interface DataCenter extends Grouping {
     String getLoadBalancerProvider();
     String getUserDataProvider();
     String getVpnProvider();
+    boolean isSecurityGroupEnabled();
 
 }
