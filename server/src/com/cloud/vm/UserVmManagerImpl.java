@@ -104,7 +104,6 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.DetailsDao;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
@@ -2707,13 +2706,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     
     @Override
     public boolean isVmSecurityGroupEnabled(Long vmId) {
-      UserVmVO userVM = _vmDao.findById(vmId);
-      if (userVM != null) {
-         DataCenterVO dataCenter =  _dcDao.findById(userVM.getDataCenterId());
-         if (dataCenter != null && dataCenter.isSecurityGroupEnabled() && userVM.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
-            return true;
-         }
-      }
+       List<NicVO> nics = _nicDao.listByVmId(vmId);
+       UserVmVO vm = _vmDao.findById(vmId);
+       for (NicVO nic : nics) {
+           Network network = _networkDao.findById(nic.getNetworkId());
+           if (network != null && network.isSecurityGroupEnabled() && vm.getHypervisorType() != HypervisorType.VMware) {
+               return true;
+           }
+       }
        return false;
     }
 }
