@@ -415,9 +415,10 @@ a:hover {
 .zonepopup_container_closebutton {
 	width:13px;
 	height:13px;
-	float:left;
+	float:right;
 	background:url(../images/vm_closebutton.gif) no-repeat top left;
-	margin:8px 0 0 0;
+	margin:8px 15px 0 0;
+	display:inline;
 	padding:0;
 	cursor:pointer;
 	cursor:hand;
@@ -448,6 +449,7 @@ a:hover {
 	text-align:left;
 	margin:0;
 	padding:9px 0 0 25px;
+	overflow:hidden;
 }
 
 .vmpopup_maincontentarea {
@@ -4782,11 +4784,11 @@ a:hover.search_button {
 
 
 .zonepopup_container {
-	width:500px;
-	height:342px;
+	width:600px;
+	height:447px;
 	float:left;
 	position:absolute;
-	top:200px;
+	top:175px;
 	left:22%;
 	z-index:2002;
 	margin:0;
@@ -4794,7 +4796,7 @@ a:hover.search_button {
 }
 
 .zonepopup_container_top {
-	width:500px;
+	width:600px;
 	height:30px;
 	float:left;
 	background:url(../images/zonepopup_top.png) no-repeat top left;
@@ -4814,10 +4816,18 @@ a:hover.search_button {
 	margin:0;
 	padding:9px 0 0 25px;
 }
+.zonepopup_container_mid {
+	width:600px;
+	height:405px;
+	float:left;
+	background:url(../images/zonepopup_mid.gif) repeat-y top left;
+	margin:0;
+	padding:0;
+}
 
 .zonepopup_maincontentarea {
-	width:460px;
-	height:270px;
+	width:570px;
+	height:350px;
 	float:left;
 	margin:20px 0 0 19px;
 	display:inline;
@@ -4825,7 +4835,7 @@ a:hover.search_button {
 }
 
 .zonepopup_titlebox {
-	width:450px;
+	width:550px;
 	height:auto;
 	float:left;
 	margin:0;
@@ -4833,7 +4843,7 @@ a:hover.search_button {
 }
 
 .zonepopup_titlebox h2 {
-	width:450px;
+	width:550px;
 	height:auto;
 	color:#003a53;
 	font-size:16px;
@@ -4845,7 +4855,7 @@ a:hover.search_button {
 }
 
 .zonepopup_titlebox p {
-	width:450px;
+	width:550px;
 	height:auto;
 	color:#999;
 	font-size:11px;
@@ -4857,15 +4867,15 @@ a:hover.search_button {
 }
 
 .zonepopup_contentpanel {
-	width:460px;
-	height:225px;
+	width:560px;
+	height:300px;
 	float:left;
 	margin:8px 0 0 0;
 	padding:0;
 }
 
 .zonepopup_contentpanel h3 {
-	width:420px;
+	width:520px;
 	height:auto;
 	color:#003a52;
 	font-size:12px;
@@ -4874,26 +4884,19 @@ a:hover.search_button {
 	margin:0 0 0 0;
 }
 
-.zonepopup_container_mid {
-	width:500px;
-	height:340px;
-	float:left;
-	background:url(../images/zonepopup_mid.gif) repeat-y top left;
-	margin:0;
-	padding:0;
-}
+
 
 .zonepopup_navigationpanel {
-	width:460px;
+	width:560px;
 	height:29px;
 	float:left;
-	margin:15px 0 0 0;
+	margin:5px 0 0 0;
 	padding:0;
 }
 
 .zonepopup_selectionpanel{
-	width:450px;
-	height:220px;
+	width:550px;
+	height:300px;
 	float:left;
 	margin:0 0 0 0;
 	padding:0;
@@ -4903,7 +4906,7 @@ a:hover.search_button {
 }
 
 .zonepopup_selectionbox {
-	width:440px;
+	width:540px;
 	height:auto;
 	float:left;
 	border:1px solid #c0c0c0;
@@ -4974,20 +4977,77 @@ a:hover.search_button {
 	padding:0;
 }
 
-.zonepopup_selectionbox span {
-	width:auto;
+.zonepopup_subselectionbox {
+	width:440px;
 	height:auto;
 	float:left;
-	color:#666;
-	font-size:10px;
-	font-weight:normal;
-	margin:7px 0 0 3px;
+	margin:0 0 0 15px;
+	display:inline;
+	padding:0 0 5px 0;
+}
+
+.zonepopup_subselectionbox_helptext {
+	width:400px;
+	height:auto;
+	float:left;
+	font-size:12px;
+	text-align:left;
+	font-weight:bold;
+	color:#003A53;
+	display:inline;
+	margin:5px 0 0 25px;
+	padding:0;
+}
+
+.zonepopup_subselectionbox li {
+	width:430px;
+	height:auto;
+	float:left;
+	list-style:none;
+	margin:2px 0 0 0;
+	display:inline;
+	padding: 0;
+}
+
+.zonepopup_subselectionbox .radio {
+	width:13px;
+	height:13px;
+	float:left;
+	margin:5px 0 0 10px;
+	display:inline;
+	padding:0;
+	
+}
+
+
+.zonepopup_subselectionbox .label {
+	width:auto;
+	height:13px;
+	float:left;
+	color:#333;
+	font-size:11px;
+	font-weight:bold;
+	margin:5px 0 0 10px;
 	display:inline;
 	padding:0;
 }
 
+.zonepopup_subselectionbox span {
+	width:405px;
+	height:auto;
+	float:left;
+	margin:3px 0 0 35px;
+	display:inline;
+	padding:0;
+	font-size:10px;
+	text-align:left;
+	color:#666;
+	font-weight:normal;
+}
+
+
 .zonepopup_selectiondescriptionbox {
-	width:380px;
+	width:480px;
 	height:auto;
 	float:left;
 	margin:2px 0 0 35px;
@@ -4995,7 +5055,7 @@ a:hover.search_button {
 }
 
 .zonepopup_selectiondescriptionbox_top {
-	width:380px;
+	width:480px;
 	height:5px;
 	float:left;
 	background:url(../images/offeringbox_destop.gif) no-repeat top left;
@@ -5004,7 +5064,7 @@ a:hover.search_button {
 }
 
 .zonepopup_selectiondescriptionbox_bot {
-	width:380px;
+	width:480px;
 	height:auto;
 	float:left;
 	background:#FFF repeat top left;
@@ -5016,12 +5076,12 @@ a:hover.search_button {
 }
 
 .zonepopup_selectiondescriptionbox_bot p {
-	width:360px;
+	width:460px;
 	height:auto;
 	float:left;
 	color:#666;
 	text-align:left;
-	font-size:11px;
+	font-size:10px;
 	font-weight:normal;
 	margin:5px 0 0 10px;
 	display:inline;
@@ -5134,7 +5194,7 @@ a:hover.search_button {
 }
 
 .zonepopup_container_bot {
-	width:500px;
+	width:600px;
 	height:12px;
 	float:left;
 	background:url(../images/zonepopup_bot.png) no-repeat top left;
