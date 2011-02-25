@@ -21,9 +21,9 @@ enableUser=com.cloud.api.commands.EnableUserCmd;3
 
 
 #### Domain commands
-createDomain=com.cloud.api.commands.CreateDomainCmd;3
-updateDomain=com.cloud.api.commands.UpdateDomainCmd;3
-deleteDomain=com.cloud.api.commands.DeleteDomainCmd;3
+createDomain=com.cloud.api.commands.CreateDomainCmd;1
+updateDomain=com.cloud.api.commands.UpdateDomainCmd;1
+deleteDomain=com.cloud.api.commands.DeleteDomainCmd;1
 listDomains=com.cloud.api.commands.ListDomainsCmd;7
 listDomainChildren=com.cloud.api.commands.ListDomainChildrenCmd;7
 
