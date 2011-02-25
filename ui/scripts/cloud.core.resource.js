@@ -1148,35 +1148,38 @@ function initAddZoneWizard() {
             
             case "Basic":  //create VLAN in pod-level   
                 $thisWizard.find("#step1").find("input[name=isolation_mode]").removeAttr("checked"); //uncheck all radio buttons under Isolation Mode
-                                
-                //hide Zone VLAN Range in Add Zone(step 2), show Guest IP Range in Add Pod(step3)                 
+                                                             
                 $thisWizard.find("#step2").find("#add_zone_vlan_container, #add_zone_guestcidraddress_container").hide();
-                
-                //$thisWizard.find("#step3").find("#guestip_container, #guestnetmask_container, #guestgateway_container").show();     
-                $thisWizard.find("#step4").find("#guestip_list").show();
+                 
+                //direct VLAN: createVlanIpRange&forVirtualNetwork=false   //BasicZone's SecurityGroupsEnabled is true                    
+                $thisWizard.find("#step4").find("#guestip_list").show();  
                 $thisWizard.find("#step4").find("#publicip_list").hide();           
                 return true;
                 break;
                 
             case "Advanced":  //create VLAN in zone-level                 
-                $thisWizard.find("#step1").find("input[name=isolation_mode]:eq(0)").attr("checked", true); //check the 1st radio button under Insolation Mode
-                
-                //show Zone VLAN Range in Add Zone(step 2), hide Guest IP Range in Add Pod(step3) 
+                //$thisWizard.find("#step1").find("input[name=isolation_mode]:eq(0)").attr("checked", true); //check the 1st radio button under Insolation Mode
+                $thisWizard.find("#step1").find("input[name=isolation_mode]:eq(0)").click(); //check the 1st radio button under Insolation Mode
+                                
                 $thisWizard.find("#step2").find("#add_zone_vlan_container, #add_zone_guestcidraddress_container").show();  
-                
-                //$thisWizard.find("#step3").find("#guestip_container, #guestnetmask_container, #guestgateway_container").hide();                  
-                $thisWizard.find("#step4").find("#guestip_list").hide();
-                $thisWizard.find("#step4").find("#publicip_list").show();                   
-		        $addZoneWizard.find("#step4").find("#add_publicip_vlan_scope").change(); 		
-                
+                                
                 return true;
                 break;
             
-            case "isolation_mode_virtual":
+            case "isolation_mode_virtual":  
+                //virtual VLAN: createVlanIpRange&forVirtualNetwork=true    //Advanced Zone - when securitygroup is NOT enabled                     
+                $thisWizard.find("#step4").find("#publicip_list").show();                 
+		        $addZoneWizard.find("#step4").find("#publicip_list").find("#add_publicip_vlan_scope").change(); 	
+		        $thisWizard.find("#step4").find("#guestip_list").hide();	
+		        
                 return true;
                 break;
             
             case "isolation_mode_securitygroup":
+                //direct VLAN: createVlanIpRange&forVirtualNetwork=false   //Advanced Zone - when securitygroup is enabled               
+                $thisWizard.find("#step4").find("#guestip_list").show();  
+                $thisWizard.find("#step4").find("#publicip_list").hide();     
+                
                 return true;
                 break;    
             
@@ -1499,8 +1502,7 @@ function addZoneWizardSubmit($thisWizard) {
         // add guest IP range to basic zone (end) 
         
         // add public IP range to basic zone (begin) 
-        if($thisWizard.find("#step4").find("#publicip_list").css("display") != "none") {   
-            var isDirect = false;
+        if($thisWizard.find("#step4").find("#publicip_list").css("display") != "none") {  
 			var isTagged = $thisWizard.find("#step4").find("#add_publicip_vlan_tagged").val() == "tagged";
 			
 			var vlan = trim($thisWizard.find("#step4").find("#add_publicip_vlan_vlan").val());
@@ -1513,9 +1515,7 @@ function addZoneWizardSubmit($thisWizard) {
 			var scopeParams = "";
 			if($thisWizard.find("#step4").find("#add_publicip_vlan_scope").val() == "account-specific") {
 			    scopeParams = "&domainId="+trim($thisWizard.find("#step4").find("#add_publicip_vlan_domain").val())+"&account="+trim($thisWizard.find("#step4").find("#add_publicip_vlan_account").val());  
-			} else if (isDirect) {
-				scopeParams = "&isshared=true";
-			}
+			} 
 			
 			var array1 = [];						
 			var gateway = $thisWizard.find("#step4").find("#add_publicip_vlan_gateway").val();
