@@ -463,6 +463,8 @@ dictionary = {
                     -->								
                 </select>
             </li>
+<!-- CloudManaged cluster for VMware is disabled for now, it may be added back when we want to manage ESXi host directly  -->            
+<!--              
             <li input_group="vmware">
                 <label>
                     <fmt:message key="label.cluster.type"/>:</label>
@@ -473,6 +475,7 @@ dictionary = {
                 <div id="pod_dropdown_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                 </div>
             </li>   
+-->
             <li>
                 <label>
                     <fmt:message key="label.pod"/>:</label>

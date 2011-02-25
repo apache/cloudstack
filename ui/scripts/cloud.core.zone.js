@@ -537,13 +537,16 @@ function bindAddClusterButtonOnZonePage($button, zoneId, zoneName) {
         $dialogAddCluster.find("#cluster_hypervisor").change(function() {
         	if($(this).val() == "VMware") {
         		$('li[input_group="vmware"]', $dialogAddCluster).show();
-        		$dialogAddCluster.find("#type_dropdown").change();
+        		// $dialogAddCluster.find("#type_dropdown").change();
+        		$('li[input_sub_group="external"]', $dialogAddCluster).show();
+        		$("#cluster_name_label", $dialogAddCluster).text("vCenter Cluster:");
         	} else {
         		$('li[input_group="vmware"]', $dialogAddCluster).hide();
         		$("#cluster_name_label", $dialogAddCluster).text("Cluster:");
         	}
         }).change();
-        
+
+/*        
         $dialogAddCluster.find("#type_dropdown").change(function() {
         	if($(this).val() == "ExternalManaged") {
         		$('li[input_sub_group="external"]', $dialogAddCluster).show();
@@ -553,7 +556,7 @@ function bindAddClusterButtonOnZonePage($button, zoneId, zoneName) {
         		$("#cluster_name_label", $dialogAddCluster).text("Cluster:");
         	}
         });
-        
+*/        
         $dialogAddCluster.dialog('option', 'buttons', { 				
 	        "Add": function() { 
 	            var $thisDialog = $(this);		            
@@ -562,9 +565,11 @@ function bindAddClusterButtonOnZonePage($button, zoneId, zoneName) {
 		        // validate values
 			    var hypervisor = $thisDialog.find("#cluster_hypervisor").val();
 			    var clusterType="CloudManaged";
-			    if(hypervisor == "VMware")
-			    	clusterType = $thisDialog.find("#type_dropdown").val();
-	            
+			    if(hypervisor == "VMware") {
+			    	// clusterType = $thisDialog.find("#type_dropdown").val();
+				    clusterType="ExternalManaged";
+			    }
+			    
 		        var isValid = true;
 		        isValid &= validateDropDownBox("Pod", $thisDialog.find("#pod_dropdown"), $thisDialog.find("#pod_dropdown_errormsg"));	
 		        if(hypervisor == "VMware" && clusterType != "CloudManaged") {

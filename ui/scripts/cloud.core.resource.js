@@ -668,13 +668,16 @@ function initAddClusterShortcut() {
     $hypervisorDropdown.change(function() {
         if($(this).val() == "VMware") {
     		$('li[input_group="vmware"]', $dialogAddCluster).show();
-    		$dialogAddCluster.find("#type_dropdown").change();
+    		// $dialogAddCluster.find("#type_dropdown").change();
+    		$('li[input_sub_group="external"]', $dialogAddCluster).show();
+    		$("#cluster_name_label", $dialogAddCluster).text("vCenter Cluster:");
     	} else {
     		$('li[input_group="vmware"]', $dialogAddCluster).hide();
     		$("#cluster_name_label", $dialogAddCluster).text("Cluster:");
     	}
     });
     
+/*    
     $dialogAddCluster.find("#type_dropdown").change(function() {
     	if($(this).val() == "ExternalManaged") {
     		$('li[input_sub_group="external"]', $dialogAddCluster).show();
@@ -684,6 +687,7 @@ function initAddClusterShortcut() {
     		$("#cluster_name_label", $dialogAddCluster).text("Cluster:");
     	}
     });
+*/    
             
     $("#add_cluster_shortcut").unbind("click").bind("click", function(event) {          
         $dialogAddCluster.find("#info_container").hide();          
@@ -699,8 +703,10 @@ function initAddClusterShortcut() {
 		        // validate values
 			    var hypervisor = $thisDialog.find("#cluster_hypervisor").val();
 			    var clusterType="CloudManaged";
-			    if(hypervisor == "VMware")
-			    	clusterType = $thisDialog.find("#type_dropdown").val();
+			    if(hypervisor == "VMware") {
+			    	// clusterType = $thisDialog.find("#type_dropdown").val();
+			    	clusterType = "ExternalManaged";
+			    }
 	            
 		        var isValid = true;		        
 		        isValid &= validateDropDownBox("Zone", $thisDialog.find("#zone_dropdown"), $thisDialog.find("#zone_dropdown_errormsg"));	

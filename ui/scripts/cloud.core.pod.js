@@ -324,13 +324,18 @@ function bindAddClusterButton($leftmenuItem1) {
         dialogAddCluster.find("#cluster_hypervisor").change(function() {
         	if($(this).val() == "VMware") {
         		$('li[input_group="vmware"]', dialogAddCluster).show();
-        		dialogAddCluster.find("#type_dropdown").change();
+        		
+        		$('li[input_sub_group="external"]', dialogAddCluster).show();
+        		$("#cluster_name_label", dialogAddCluster).text("vCenter Cluster:");
+        		
+        		// dialogAddCluster.find("#type_dropdown").change();
         	} else {
         		$('li[input_group="vmware"]', dialogAddCluster).hide();
         		$("#cluster_name_label", dialogAddCluster).text("Cluster:");
         	}
         }).change();
-        
+
+/*        
         dialogAddCluster.find("#type_dropdown").change(function() {
         	if($(this).val() == "ExternalManaged") {
         		$('li[input_sub_group="external"]', dialogAddCluster).show();
@@ -340,6 +345,7 @@ function bindAddClusterButton($leftmenuItem1) {
         		$("#cluster_name_label", dialogAddCluster).text("Cluster:");
         	}
         });
+*/        
         
         dialogAddCluster.dialog('option', 'buttons', { 				
 	        "Add": function() { 
@@ -348,9 +354,11 @@ function bindAddClusterButton($leftmenuItem1) {
                 
 			    var hypervisor = $thisDialog.find("#cluster_hypervisor").val();
 			    var clusterType="CloudManaged";
-			    if(hypervisor == "VMware")
-			    	clusterType = $thisDialog.find("#type_dropdown").val();
-	            
+			    if(hypervisor == "VMware") {
+			    	// clusterType = $thisDialog.find("#type_dropdown").val();
+			    	clusterType="ExternalManaged";
+			    }
+			    
 		        // validate values
 		        var isValid = true;
 		        if(hypervisor == "VMware" && clusterType != "CloudManaged") {
