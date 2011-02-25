@@ -190,15 +190,15 @@
                                         <form>
                                             <ol>
                                                 <li>
-                                                    <input type="radio" name="isolation_mode" value="false" id="isolation_mode_virtual" class="radio" />
+                                                    <input type="radio" name="isolation_mode" value="false" id="advanced_virtual" class="radio" />
                                                     <label class="label"><fmt:message key="label.virtual"/></label>
-                                                    <span>Some description will appear here. Some description will appear here. Some description will appear here..</span>
+                                                    <span><fmt:message key="message.advanced.virtual"/></span>
                                                 </li>
                                                 
                                                 <li>
-                                                    <input type="radio" name="isolation_mode" value="true" id="isolation_mode_securitygroup" class="radio" />
+                                                    <input type="radio" name="isolation_mode" value="true" id="advanced_securitygroup" class="radio" />
                                                     <label class="label"><fmt:message key="label.security.group"/></label>
-                                                    <span>Some description will appear here. Some description will appear here. Some description will appear here..</span>
+                                                    <span><fmt:message key="message.advanced.security.group"/></span>
                                                 </li>
                                             </ol>
                                         </form>
@@ -429,7 +429,29 @@
                 <div class="zonepopup_contentpanel">
                     <div class="zonepoup_formcontent">
                         <form action="#" method="post" id="form_acquire">
-                        <ol id="guestip_list">                            
+                        <ol id="create_direct_vlan">   
+                        
+                            <li style="display: none" id="vlan_id_container">
+                                <label style="width: 115px;">
+                                    <fmt:message key="label.vlan.id"/>:</label>
+                                <input class="text" type="text" id="vlan_id" />
+                                <div id="vlan_id_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
+                                </div>
+                            </li>                                                 
+                            <li id="guestgateway_container">
+                                <label style="width: 115px;">
+                                    <fmt:message key="label.guest.gateway"/>:</label>
+                                <input class="text" type="text" id="guestgateway" />
+                                <div id="guestgateway_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
+                                </div>
+                            </li>       
+							<li id="guestnetmask_container">
+                                <label style="width: 115px;">
+                                    <fmt:message key="label.guest.netmask"/>:</label>
+                                <input class="text" type="text" id="guestnetmask" />
+                                <div id="guestnetmask_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
+                                </div>
+                            </li>	
                             <li id="guestip_container">
                                 <label style="width: 115px;">
                                    <fmt:message key="label.guest.ip.range"/>:</label>
@@ -440,22 +462,8 @@
                                 <div id="endguestip_errormsg" class="dialog_formcontent_errormsg" style="display: none;">
                                 </div>
                             </li>  
-							<li id="guestnetmask_container">
-                                <label style="width: 115px;">
-                                    <fmt:message key="label.guest.netmask"/>:</label>
-                                <input class="text" type="text" id="guestnetmask" />
-                                <div id="guestnetmask_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
-                                </div>
-                            </li>	                            
-                            <li id="guestgateway_container">
-                                <label style="width: 115px;">
-                                    <fmt:message key="label.guest.gateway"/>:</label>
-                                <input class="text" type="text" id="guestgateway" />
-                                <div id="guestgateway_errormsg" class="dialog_formcontent_errormsg" style="display: none; margin-left:0;">
-                                </div>
-                            </li>              
                         </ol>
-                        <ol id="publicip_list" style="display:none">
+                        <ol id="create_virtual_vlan" style="display:none">
                             <li id="add_publicip_vlan_container">
                                 <label for="add_publicip_vlan_tagged">
                                     <fmt:message key="label.vlan"/>:</label>

@@ -489,7 +489,7 @@ function initAddPodShortcut() {
 		        isValid &= validateIp("Gateway", $thisDialog.find("#add_pod_gateway"), $thisDialog.find("#add_pod_gateway_errormsg"));  //required when creating
 		        
 		        if($thisDialog.find("#guestip_container").css("display") != "none")
-                    isValid &= addZoneWizardValidateGuestIPRange($thisDialog);
+                    isValid &= addZoneWizardValidateDirectVLAN($thisDialog);
 		        
 		        if (!isValid) 
 		            return;			
@@ -1158,13 +1158,14 @@ function initAddZoneWizard() {
                 $thisWizard.find("#step2").find("#add_zone_vlan_container, #add_zone_guestcidraddress_container").hide();
                  
                 //direct VLAN: createVlanIpRange&forVirtualNetwork=false   //BasicZone's SecurityGroupsEnabled is true                    
-                $thisWizard.find("#step4").find("#guestip_list").show();  
-                $thisWizard.find("#step4").find("#publicip_list").hide();           
+                $thisWizard.find("#step4").find("#create_direct_vlan").show();  
+                $thisWizard.find("#step4").find("#create_direct_vlan").find("#vlan_id_container").hide(); 
+                
+                $thisWizard.find("#step4").find("#create_virtual_vlan").hide();           
                 return true;
                 break;
                 
-            case "Advanced":  //create VLAN in zone-level                 
-                //$thisWizard.find("#step1").find("input[name=isolation_mode]:eq(0)").attr("checked", true); //check the 1st radio button under Insolation Mode
+            case "Advanced":  //create VLAN in zone-level  
                 $thisWizard.find("#step1").find("input[name=isolation_mode]:eq(0)").click(); //check the 1st radio button under Insolation Mode
                                 
                 $thisWizard.find("#step2").find("#add_zone_vlan_container, #add_zone_guestcidraddress_container").show();  
@@ -1172,19 +1173,21 @@ function initAddZoneWizard() {
                 return true;
                 break;
             
-            case "isolation_mode_virtual":  
+            case "advanced_virtual":  
                 //virtual VLAN: createVlanIpRange&forVirtualNetwork=true    //Advanced Zone - when securitygroup is NOT enabled                     
-                $thisWizard.find("#step4").find("#publicip_list").show();                 
-		        $addZoneWizard.find("#step4").find("#publicip_list").find("#add_publicip_vlan_scope").change(); 	
-		        $thisWizard.find("#step4").find("#guestip_list").hide();	
+                $thisWizard.find("#step4").find("#create_virtual_vlan").show();                 
+		        $addZoneWizard.find("#step4").find("#create_virtual_vlan").find("#add_publicip_vlan_scope").change(); 	
+		        $thisWizard.find("#step4").find("#create_direct_vlan").hide();	
 		        
                 return true;
                 break;
             
-            case "isolation_mode_securitygroup":
+            case "advanced_securitygroup":
                 //direct VLAN: createVlanIpRange&forVirtualNetwork=false   //Advanced Zone - when securitygroup is enabled               
-                $thisWizard.find("#step4").find("#guestip_list").show();  
-                $thisWizard.find("#step4").find("#publicip_list").hide();     
+                $thisWizard.find("#step4").find("#create_direct_vlan").show();  
+                $thisWizard.find("#step4").find("#create_direct_vlan").find("#vlan_id_container").show(); 
+                
+                $thisWizard.find("#step4").find("#create_virtual_vlan").hide();     
                 
                 return true;
                 break;    
@@ -1267,10 +1270,10 @@ function initAddZoneWizard() {
                         
             case "submit": //step 4 => make API call  
                 var isValid = true;	          
-                if($thisWizard.find("#step4").find("#guestip_list").css("display") != "none")
-                    isValid = addZoneWizardValidateGuestIPRange($thisWizard); 
-                if($thisWizard.find("#step4").find("#publicip_list").css("display") != "none")
-                    isValid &= addZoneWizardValidatePublicIPRange($thisWizard);        
+                if($thisWizard.find("#step4").find("#create_direct_vlan").css("display") != "none")
+                    isValid = addZoneWizardValidateDirectVLAN($thisWizard); 
+                if($thisWizard.find("#step4").find("#create_virtual_vlan").css("display") != "none")
+                    isValid &= addZoneWizardValidateVirtualVLAN($thisWizard);        
                 if (!isValid) 
 	                return;	  	                  
                 
@@ -1312,16 +1315,20 @@ function addZoneWizardValidatePod($thisWizard) {
     return isValid;			
 }
 
-function addZoneWizardValidateGuestIPRange($thisWizard) {   
+function addZoneWizardValidateDirectVLAN($thisWizard) {   
     var isValid = true;	
-    isValid &= validateIp("Guest IP Range", $thisWizard.find("#startguestip"), $thisWizard.find("#startguestip_errormsg"));  //required
-    isValid &= validateIp("Guest IP Range", $thisWizard.find("#endguestip"), $thisWizard.find("#endguestip_errormsg"), true);  //optional
-    isValid &= validateIp("Guest Netmask", $thisWizard.find("#guestnetmask"), $thisWizard.find("#guestnetmask_errormsg"));  //required when creating
-    isValid &= validateIp("Guest Gateway", $thisWizard.find("#guestgateway"), $thisWizard.find("#guestgateway_errormsg"));  
+    
+    var $createDirectVLAN = $thisWizard.find("#step4").find("#create_direct_vlan");
+    if($createDirectVLAN.find("#vlan_id_container").css("display") != "none") 	
+        isValid &= validateNumber("VLAN ID", $createDirectVLAN.find("#vlan_id"), $createDirectVLAN.find("#vlan_id_errormsg"));  //required	 	
+    isValid &= validateIp("Guest IP Range", $createDirectVLAN.find("#startguestip"), $createDirectVLAN.find("#startguestip_errormsg"));  //required
+    isValid &= validateIp("Guest IP Range", $createDirectVLAN.find("#endguestip"), $createDirectVLAN.find("#endguestip_errormsg"), true);  //optional
+    isValid &= validateIp("Guest Netmask", $createDirectVLAN.find("#guestnetmask"), $createDirectVLAN.find("#guestnetmask_errormsg"));  //required when creating
+    isValid &= validateIp("Guest Gateway", $createDirectVLAN.find("#guestgateway"), $createDirectVLAN.find("#guestgateway_errormsg"));  
     return isValid;			
 }
 
-function addZoneWizardValidatePublicIPRange($thisWizard) {   
+function addZoneWizardValidateVirtualVLAN($thisWizard) {   
     var isValid = true;					
 	var isTagged = $thisWizard.find("#step4").find("#add_publicip_vlan_tagged").val() == "tagged";	
 	
@@ -1468,18 +1475,25 @@ function addZoneWizardSubmit($thisWizard) {
         });	
         // create pod (end) 
         
-        // add guest IP range to basic zone (begin) 
-        if($thisWizard.find("#step4").find("#guestip_list").css("display") != "none") {
-            var netmask = $thisWizard.find("#step4").find("#guestip_list").find("#guestnetmask").val();
-		    var startip = $thisWizard.find("#step4").find("#guestip_list").find("#startguestip").val();
-		    var endip = $thisWizard.find("#step4").find("#guestip_list").find("#endguestip").val();	
-		    var guestgateway = $thisWizard.find("#step4").find("#guestip_list").find("#guestgateway").val();
+        // create direct VLAN (basic zone, advanced zone + security group)
+        if($thisWizard.find("#step4").find("#create_direct_vlan").css("display") != "none") {
+            var netmask = $thisWizard.find("#step4").find("#create_direct_vlan").find("#guestnetmask").val();
+		    var startip = $thisWizard.find("#step4").find("#create_direct_vlan").find("#startguestip").val();
+		    var endip = $thisWizard.find("#step4").find("#create_direct_vlan").find("#endguestip").val();	
+		    var guestgateway = $thisWizard.find("#step4").find("#create_direct_vlan").find("#guestgateway").val();
     				
 		    var array1 = [];
-		    array1.push("&vlan=untagged");	
-		    array1.push("&zoneid=" + zoneId);
-		    array1.push("&podId=" + podId);	
 		    array1.push("&forVirtualNetwork=false"); //direct VLAN	
+		    array1.push("&zoneid=" + zoneId);
+		    
+		    if($thisWizard.find("#step4").find("#create_direct_vlan").find("#vlan_id_container").css("display") != "none") {		      
+		        array1.push("&vlan="+$thisWizard.find("#step4").find("#create_direct_vlan").find("#vlan_id").val());
+		    }
+		    else {
+		        array1.push("&vlan=untagged");	
+		        array1.push("&podId=" + podId);	
+		    }		    
+		      
 		    array1.push("&gateway="+todb(guestgateway));
 		    array1.push("&netmask="+todb(netmask));	
 		    array1.push("&startip="+todb(startip));
@@ -1505,10 +1519,10 @@ function addZoneWizardSubmit($thisWizard) {
                 }
 		    });		            
         }
-        // add guest IP range to basic zone (end) 
         
-        // add public IP range to basic zone (begin) 
-        if($thisWizard.find("#step4").find("#publicip_list").css("display") != "none") {  
+        
+        // create virtual VLAN (advanced zone + virtual)
+        if($thisWizard.find("#step4").find("#create_virtual_vlan").css("display") != "none") {  
 			var isTagged = $thisWizard.find("#step4").find("#add_publicip_vlan_tagged").val() == "tagged";
 			
 			var vlan = trim($thisWizard.find("#step4").find("#add_publicip_vlan_vlan").val());
