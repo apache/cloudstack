@@ -695,7 +695,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 throw new CloudRuntimeException("Unable to find ip address to map to in vm id=" + vm.getId());
             }
             
-            Nic guestNic = _networkMgr.getNicInNetwork(vm.getId(), networkId); 
+            Nic guestNic = _networkMgr.getNicInNetworkIncludingRemoved(vm.getId(), networkId); 
             FirewallRuleVO ruleVO = _firewallDao.findById(rule.getId());
             
             staticNatRules.add(new StaticNatRuleImpl(ruleVO, guestNic.getIp4Address()));
@@ -761,7 +761,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             
             UserVmVO vm = _vmDao.findById(sourceIp.getAssociatedWithVmId());
             
-            Nic guestNic = _networkMgr.getNicInNetwork(vm.getId(), networkId);
+            Nic guestNic = _networkMgr.getNicInNetworkIncludingRemoved(vm.getId(), networkId);
             String dstIp = guestNic.getIp4Address();
             
             staticNatRules.add(new StaticNatRuleImpl(rule, dstIp));
