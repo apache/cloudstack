@@ -843,7 +843,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 try {
                     allTemplatesDeleted = _tmpltMgr.delete(callerUserId, template.getId(), null);
                 } catch (Exception e) {
-                    s_logger.warn("Failed to delete template while removing account: " + template.getName() + " due to: " + e.getMessage());
+                    s_logger.warn("Failed to delete template while removing account: " + template.getName() + " due to: ", e);
                     allTemplatesDeleted = false;
                 }
             }
@@ -1074,7 +1074,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             return _userAccountDao.findById(dbUser.getId());
         } catch (Exception e) {
             if (e instanceof CloudRuntimeException) {
-                s_logger.info("unable to create user: " + e);
+                s_logger.info("unable to create user: ", e);
             } else {
                 s_logger.warn("unknown exception creating user", e);
             }
