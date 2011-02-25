@@ -139,7 +139,9 @@ public class EventTypes {
     
     //Network offerings
     public static final String EVENT_NETWORK_OFFERING_CREATE = "NETWORK.OFFERING.CREATE";
+    public static final String EVENT_NETWORK_OFFERING_ASSIGN = "NETWORK.OFFERING.ASSIGN";
     public static final String EVENT_NETWORK_OFFERING_EDIT = "NETWORK.OFFERING.EDIT";
+    public static final String EVENT_NETWORK_OFFERING_REMOVE = "NETWORK.OFFERING.REMOVE";
     public static final String EVENT_NETWORK_OFFERING_DELETE = "NETWORK.OFFERING.DELETE";
 
 	// Pods

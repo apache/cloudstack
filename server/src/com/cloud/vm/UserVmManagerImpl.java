@@ -2262,7 +2262,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
             long isDefault = (nic.isDefaultNic()) ? 1 : 0;
-            usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), network.getNetworkOfferingId(), null, isDefault);
+            usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getName(), network.getNetworkOfferingId(), null, isDefault);
             _usageEventDao.persist(usageEvent);   
         }
         
@@ -2331,7 +2331,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (NicVO nic : nics) {
             NetworkVO network = _networkDao.findById(nic.getNetworkId());
-            usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_DELETE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), null, network.getNetworkOfferingId(), null, 0L);
+            usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), null, network.getNetworkOfferingId(), null, 0L);
             _usageEventDao.persist(usageEvent);   
         }
     }
