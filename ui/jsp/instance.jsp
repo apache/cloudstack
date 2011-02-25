@@ -668,7 +668,9 @@ dictionary = {
                     <h2>
 						<fmt:message key="label.step.4.title"/></h2>
                     <p>
+                        <!--  
 						<fmt:message key="message.step.4.desc"/>
+						-->
                     </p>
                 </div>
                 <div class="vmpopup_contentpanel">
@@ -685,7 +687,8 @@ dictionary = {
                         </div>
                     </div>
                     <div class="vmpopup_offeringpanel" style="position:relative;">
-                        <div id="for_advanced_zone" style="display: none;">
+                        <div id="network_container" style="display: none;">
+                            <h3><fmt:message key="message.step.4.desc"/></h3>	
 	                        <div class="vmpopup_offeringbox" id="network_virtual_container" style="display:none">
 	                            <input type="radio" id="network_virtual" name="primary_network" class="radio" checked="checked" />
 	                            <label class="label" id="network_virtual_name"><fmt:message key="label.virtual.network"/></label>
@@ -708,7 +711,7 @@ dictionary = {
 							</p>
 							<div id="network_direct_secondary_container"></div>
 						</div>
-						<div id="for_basic_zone" style="display:none">		
+						<div id="securitygroup_container" style="display:none">		
 						    <h3><fmt:message key="label.security.groups"/></h3>		
 						    <span id="not_available_message" style="display:none"><fmt:message key="label.no.security.groups"/></span>				    
 						    <ol id="security_group_section" style="display:none; float:left; list-style:none">						        

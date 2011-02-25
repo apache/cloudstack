@@ -347,7 +347,7 @@ var vmPopupTemplatePageSize = 6; //max number of templates in VM wizard
 var currentStepInVmPopup = 1;
 function initVMWizard() {
     $vmPopup = $("#vm_popup");  
-    $vmPopup.draggable();
+    //$vmPopup.draggable();
 
     if (isAdmin() || (getUserPublicTemplateEnabled() == "true")) {
         $vmPopup.find("#wiz_community").show();   
@@ -848,11 +848,12 @@ function initVMWizard() {
 	            diskOfferingName += (" (Disk Size: " + $diskOfferingElement.find("#custom_disk_size").val() + " MB)");
 	        $thisPopup.find("#wizard_review_disk_offering").text(diskOfferingName);  
 			
-			//Setup Networking before showing it.  This only applies to zones with Advanced Networking support.
+			
 			var zoneObj = $thisPopup.find("#wizard_zone option:selected").data("zoneObj");
-			if (zoneObj.networktype == "Advanced") {			    
-			    $thisPopup.find("#step4").find("#for_advanced_zone").show();
-			    $thisPopup.find("#step4").find("#for_basic_zone").hide();	
+						
+			if (zoneObj.securitygroupsenabled == false) { //Select Network			    
+			    $thisPopup.find("#step4").find("#network_container").show();
+			    $thisPopup.find("#step4").find("#securitygroup_container").hide();	
 				$thisPopup.find("#step4").find("#for_no_network_support").hide();
 			    		    
 				var networkName = "Virtual Network";
@@ -1004,16 +1005,16 @@ function initVMWizard() {
 					}
 				});
 			} 
-			else {  // Basic Network
-			    $thisPopup.find("#step4").find("#for_advanced_zone").hide();	
+			else if (zoneObj.securitygroupsenabled == true) {  // Select Security Group
+			    $thisPopup.find("#step4").find("#network_container").hide();	
 			    if($selectedVmWizardTemplate.data("hypervisor") != "VMware" && getDirectAttachSecurityGroupsEnabled() == "true") {		
-					$thisPopup.find("#step4").find("#for_basic_zone").show();
+					$thisPopup.find("#step4").find("#securitygroup_container").show();
 					$thisPopup.find("#step4").find("#for_no_network_support").hide();
 			        $thisPopup.find("#step4").find("#security_group_section").show();			        
 				    $thisPopup.find("#step5").find("#wizard_review_network").text("Basic Network");
 				}
 				else {
-					$thisPopup.find("#step4").find("#for_basic_zone").hide();
+					$thisPopup.find("#step4").find("#securitygroup_container").hide();
 					
 					$thisPopup.find("#step4").find("#for_no_network_support").show();	
 					if($selectedVmWizardTemplate.data("hypervisor") == "VMware") {
@@ -1030,9 +1031,8 @@ function initVMWizard() {
 			}
 	    }	
 	    	
-	    if (currentStepInVmPopup == 4) { //network
-			var zoneObj = $thisPopup.find("#wizard_zone option:selected").data("zoneObj");
-			if (zoneObj.networktype == "Advanced") {
+	    if (currentStepInVmPopup == 4) { //network			
+			if ($thisPopup.find("#step4").find("#network_container").css("display") != "none") {
 				var $selectedSecondaryNetworks = $thisPopup.find("input:checkbox[name=secondary_network]:checked");
 				
 				var $selectedPrimaryNetworks;	
@@ -1077,8 +1077,9 @@ function initVMWizard() {
 				} else {
 					$reviewNetworkContainer.data("directNetworkIds", null);
 				}
-			} else {
-				// Any basic network/security groups handling
+			} 
+			else if ($thisPopup.find("#step4").find("#securitygroup_container").css("display") != "none") { 
+							
 			}
 	    }	
 	    
@@ -1097,9 +1098,8 @@ function initVMWizard() {
 			moreCriteria.push("&hypervisor="+$selectedVmWizardTemplate.data("hypervisor"));	    								
 		    moreCriteria.push("&templateId="+$selectedVmWizardTemplate.data("templateId"));    							
 		    moreCriteria.push("&serviceOfferingId="+$thisPopup.find("input:radio[name=service_offering_radio]:checked").val());
-			
-			var zoneObj = $thisPopup.find("#wizard_zone option:selected").data("zoneObj");
-			if (zoneObj.networktype == "Advanced") {				
+						
+			if ($thisPopup.find("#step4").find("#network_container").css("display") != "none") {		
 				var $selectedPrimaryNetworks;	
 				if($thisPopup.find("#network_virtual_container").css("display") == "none") 				
 				    $selectedPrimaryNetworks = $thisPopup.find("#network_direct_container").find("input:radio[name=primary_network]:checked");
@@ -1118,7 +1118,7 @@ function initVMWizard() {
 				}
 				moreCriteria.push("&networkIds="+networkIds);
 			} 
-			else {  //Basic zone
+			else if ($thisPopup.find("#step4").find("#securitygroup_container").css("display") != "none") {  
 			    if($thisPopup.find("#step4").find("#security_group_section").css("display") != "none") {
 				    if($thisPopup.find("#security_group_dropdown").val() != null && $thisPopup.find("#security_group_dropdown").val().length > 0) {
 			            var securityGroupList = $thisPopup.find("#security_group_dropdown").val().join(",");
