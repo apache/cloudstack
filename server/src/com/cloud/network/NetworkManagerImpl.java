@@ -1172,6 +1172,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
                 element.prepare(network, profile, vmProfile, dest, context);
             }
+            profile.setSecurityGroupEnabled(network.isSecurityGroupEnabled());
             concierge.updateNicProfile(profile, network);
             vmProfile.addNic(profile);
         }

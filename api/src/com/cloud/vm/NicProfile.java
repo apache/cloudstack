@@ -34,6 +34,7 @@ public class NicProfile {
     String dns1;
     String dns2;
     int networkRate;
+    boolean isSecurityGroupEnabled;
     
     public String getDns1() {
         return dns1;
@@ -236,6 +237,14 @@ public class NicProfile {
     
     public void setReservationId(String reservationId) {
         this.reservationId = reservationId;
+    }
+    
+    public boolean isSecurityGroupEnabled() {
+        return this.isSecurityGroupEnabled;
+    }
+    
+    public void setSecurityGroupEnabled(boolean enabled) {
+        this.isSecurityGroupEnabled = enabled;
     }
     
     public void deallocate() {
