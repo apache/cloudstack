@@ -1328,18 +1328,21 @@ function bindAddNetworkButton($button) {
 }
 
 function bindAddIpRangeToDirectNetworkButton($button, $midmenuItem1) {   
-    var jsonObj = $midmenuItem1.data("jsonObj");       
-        
-    var $dialogAddIpRangeToDirectNetwork = $("#dialog_add_iprange_to_directnetwork");     
-  
-    $dialogAddIpRangeToDirectNetwork.find("#directnetwork_name").text(fromdb(jsonObj.name));
-    $dialogAddIpRangeToDirectNetwork.find("#zone_name").text(fromdb(zoneObj.name));
+    var jsonObj = $midmenuItem1.data("jsonObj");    
     
-    $button.show();   
     $button.unbind("click").bind("click", function(event) {    
         if($("#direct_network_page").find("#tab_content_ipallocation").css("display") == "none")       
             $("#direct_network_page").find("#tab_ipallocation").click();    
+                       
+        var $dialogAddIpRangeToDirectNetwork = $("#dialog_add_iprange_to_directnetwork");  
+        $dialogAddIpRangeToDirectNetwork.find("#directnetwork_name").text(fromdb(jsonObj.name));
+        $dialogAddIpRangeToDirectNetwork.find("#zone_name").text(fromdb(zoneObj.name));
         
+        if(zoneObj.securitygroupsenabled) 
+            $dialogAddIpRangeToDirectNetwork.find("#vlan_id_container, #gateway_container, #netmask_container").show();
+        else
+            $dialogAddIpRangeToDirectNetwork.find("#vlan_id_container, #gateway_container, #netmask_container").hide();    
+               
 		$dialogAddIpRangeToDirectNetwork
 		.dialog('option', 'buttons', { 	
 			"Add": function() { 	
@@ -1347,6 +1350,12 @@ function bindAddIpRangeToDirectNetworkButton($button, $midmenuItem1) {
 			    					
 				// validate values
 				var isValid = true;		
+				if($thisDialog.find("#vlan_id_container").css("display") != "none")
+				    isValid &= validateNumber("VLAN", $thisDialog.find("#vlan_id"), $thisDialog.find("#vlan_id_errormsg"), 1, 4095);				    
+				if($thisDialog.find("#gateway_container").css("display") != "none")
+				    isValid &= validateIp("Gateway", $thisDialog.find("#gateway"), $thisDialog.find("#gateway_errormsg"), false); //required				    
+				if($thisDialog.find("#netmask_container").css("display") != "none")
+				    isValid &= validateIp("Netmask", $thisDialog.find("#netmask"), $thisDialog.find("#netmask_errormsg"), false); //required				    
 				isValid &= validateIp("Start IP Range", $thisDialog.find("#add_publicip_vlan_startip"), $thisDialog.find("#add_publicip_vlan_startip_errormsg"), false);   //required
 				isValid &= validateIp("End IP Range", $thisDialog.find("#add_publicip_vlan_endip"), $thisDialog.find("#add_publicip_vlan_endip_errormsg"), true);  //optional
 				if (!isValid) 
@@ -1354,7 +1363,27 @@ function bindAddIpRangeToDirectNetworkButton($button, $midmenuItem1) {
 				
 				$thisDialog.find("#spinning_wheel").show()
 						
-				var array1 = [];							
+				var array1 = [];
+								
+				if($thisDialog.find("#vlan_id_container").css("display") != "none") {
+				    var vlanId = $thisDialog.find("#vlan_id").val();
+				    array1.push("&vlan="+todb(vlanId)); 
+				}
+				else {
+				    array1.push("&vlan=untagged");
+				}
+				 
+				    			    
+				if($thisDialog.find("#gateway_container").css("display") != "none") {
+				    var gateway = $thisDialog.find("#gateway").val();
+				    array1.push("&gateway="+todb(gateway));
+				}
+				        
+				if($thisDialog.find("#netmask_container").css("display") != "none") {
+				    var netmask = $thisDialog.find("#netmask").val();
+				    array1.push("&netmask="+todb(netmask));
+				}
+															
 				var startip = $thisDialog.find("#add_publicip_vlan_startip").val();
 				array1.push("&startip="+todb(startip));
 				
