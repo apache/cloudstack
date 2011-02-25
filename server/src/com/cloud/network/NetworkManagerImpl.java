@@ -1746,13 +1746,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             sc.addAnd("guestType", SearchCriteria.Op.EQ, type);
         }
 
-        if (!isSystem && (isShared == null || !isShared) && accountName != null && domainId != null) {
-            sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
-            sc.addAnd("isShared", SearchCriteria.Op.EQ, false);
-        }
-
-        if (isShared != null) {
-            sc.addAnd("isShared", SearchCriteria.Op.EQ, isShared);
+        if (!isSystem) {
+            
+            if (accountName != null && domainId != null) {  
+                if (isShared == null) {
+                    sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+                    sc.addOr("isShared", SearchCriteria.Op.EQ, true);
+                } else if (!isShared) {
+                    sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+                } else {
+                    sc.addAnd("isShared", SearchCriteria.Op.EQ, true);
+                }
+            } else if (isShared != null) {
+                sc.addAnd("isShared", SearchCriteria.Op.EQ, isShared);
+            }    
         }
 
         if (isDefault != null) {
